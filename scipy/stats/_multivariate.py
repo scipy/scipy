@@ -3863,13 +3863,13 @@ n : array_like
 """
 
 _mhg_doc_callparams_note = \
-"""`m` must be an array of positive integers. Quantiles `x` must
-sum up to the sample size `n`. If the quantile :math:`i` contains
-values out of the range :math:`[0, m_i]` where :math:`m_i` is the
-number of objects of type :math:`i` in the population, appropriate
-values (like zero by ``pmf`` method) are returned by the called
-methods. If `m` or `n` contain negative values, the result will
-contain ``nan`` there.
+"""`m` must be an array of positive integers. If the quantile
+:math:`i` contains values out of the range :math:`[0, m_i]`
+where :math:`m_i` is the number of objects of type :math:`i`
+in the population or if the parameters are inconsistent with one
+another (e.g. ``x.sum() != n``), methods return the appropriate
+value (e.g. ``0`` for ``pmf``). If `m` or `n` contain negative
+values, the result will contain ``nan`` there.
 """
 
 _mhg_doc_frozen_callparams = ""
@@ -3996,13 +3996,12 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            [[ 1.56, -1.56],
             [-1.56,  1.56]]])
 
-    In this example, ``m.shape == (2, 2)`` and ``n.shape == (2,)``,
-    broadcast, following the rules above, as if ``m.shape == (2,)``.
+    In this example, ``m.shape == (2, 2)`` and ``n.shape == (2,)``.
+    Following the rules above, ``m`` and ``n`` broadcast, as if ``m.shape == (2,)``.
     Thus the result should also be of shape ``(2,)``, but since each output is
-    a :math:`2 \times 2` matrix. The result, in fact, has shape ``(2, 2, 2)``,
-    where ``result[0]`` is equal to
-    ``multivariate_hypergeom.cov(m=[7, 9], n=8)`` and ``result[1]`` is equal
-    to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
+    a :math:`2 \times 2` matrix, the result, in fact, has shape ``(2, 2, 2)``,
+    where ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
+    and ``result[1]`` is equal to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
 
     Alternatively, the object may be called (as a function) to fix the `m`
     and `n` parameters, returning a "frozen" multivariate hypergeometric
@@ -4076,9 +4075,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return result
 
     def _logpmf(self, x, M, m, n):
+        # This equation of the pmf comes from the relation,
+        # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
         num = betaln(m+1, 1) - betaln(x+1, m-x+1)
         den = betaln(M+1, 1) - betaln(n+1, M-n+1)
-        return num.sum(axis=-1) - den
+        cond = (num == np.NINF)
+        np.place(num, cond, np.nan)
+        cond = np.any(cond, axis=-1)
+        num = num.sum(axis=-1)
+        return np.where(cond, np.NINF, num) - den
 
     def logpmf(self, x, m, n):
         """
@@ -4241,6 +4246,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
         rem = M
 
+        # This sampler has been taken from numpy gh-13794
+        # https://github.com/numpy/numpy/pull/13794
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
             rvs[..., c] = ((n != 0) *

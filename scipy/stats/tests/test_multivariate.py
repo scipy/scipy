@@ -1657,6 +1657,9 @@ class TestMultivariateHypergeom(object):
                                            n=[3, 7])
         assert_allclose(vals5, [np.NAN, np.NAN], rtol=1e-8)
 
+        vals6 = multivariate_hypergeom.pmf(x=[-5, -2, 10], m=[5, 2, 15], n=3)
+        assert_allclose(vals6, 0., rtol=1e-8)
+
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
         # hypergeom pmf in the 2d case.
