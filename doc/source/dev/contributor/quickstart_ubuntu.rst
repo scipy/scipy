@@ -30,7 +30,7 @@ development environment with Docker may be more reliable.*
 Building SciPy
 --------------
 
-#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the Spyder integrated development environment (IDE), the ``conda`` package manager, and tools for managing virtual environments.
+#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the ``conda`` package manager, and tools for managing virtual environments.
 
    `In a terminal, navigate <https://help.ubuntu.com/community/UsingTheTerminal>`_ to the location in which you'd like to install Anaconda. You can download the file using the terminal command ``curl -O URL_OF_FILE``, where ``URL_OF_FILE`` is to be replaced with the URL of the Anaconda installer ``.sh`` file found at the Anaconda Distribution website. Run the installer by entering ``bash file.sh``, where ``file.sh`` is again to be replaced with the full name of the downloaded file. This starts the installation process. From there, simply follow the prompts, including the "Next Steps" at the end after the installer finishes. You might also need to restart your terminal window or enter ``source ~/.bashrc`` for all the changes to take effect.
 
