@@ -146,12 +146,13 @@ supported:
 The following synonyms are also supported for consistency with the
 interpolation routines:
 
- =============   =======================
-   **mode**          **description**
- =============   =======================
- "grid-mirror"   equivalent to "reflect"
- "grid-wrap"     equivalent to "wrap"
- =============   =======================
+ ===============   ========================
+     **mode**           **description**
+ ===============   ========================
+ "grid-constant"   equivalent to "constant"
+ "grid-mirror"     equivalent to "reflect"
+ "grid-wrap"       equivalent to "wrap"
+ ===============   ========================
 
 The "constant" mode is special since it needs an additional parameter to
 specify the constant value that should be used.

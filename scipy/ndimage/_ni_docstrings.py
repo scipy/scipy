@@ -61,6 +61,9 @@ _mode_reflect_doc = (
     'grid-mirror'
         This is a synonym for 'reflect'.
 
+    'grid-constant'
+        This is a synonym for 'constant'.
+
     'grid-wrap'
         This is a synonym for 'wrap'.""")
 
@@ -142,6 +145,9 @@ _mode_multiple_doc = (
 
     For consistency with the interpolation functions, the following mode
     names can also be used:
+
+    'grid-constant'
+        This is a synonym for 'constant'.
 
     'grid-mirror'
         This is a synonym for 'reflect'.
