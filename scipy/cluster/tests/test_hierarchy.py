@@ -1072,7 +1072,7 @@ def test_cut_tree_balanced():
 
     # Tests cut_tree_balanced(Z, max_cluster_size) on hardcoded numbers for a 
     # very small linkage tree. Since the data is unbalanced, there is a bigger
-    # cluster containing 4 samples, and 2 smaller clusters containing 2 samples. 
+    # cluster containing 4 samples, and 2 smaller clusters with 2 samples.
     # Note however that the size of all clusters is "<= max_cluster_size".
     X = np.array([[1], [2], [10], [11], [15], [16], [18], [19]])
     Z = scipy.cluster.hierarchy.ward(X)
@@ -1089,9 +1089,10 @@ def test_cut_tree_balanced():
     assert_equal(cluster_level[6], [0, 0, 0])
     assert_equal(cluster_level[7], [0, 0, 0])
 
-    # Tests cut_tree_balanced(Z, max_cluster_size) on the same hardcoded numbers
-    # but a smaller max_cluster_size (= 2). Note that in this case the biggest
-    # cluster is splitted into two smaller, deeper clusters with 2 samples each.
+    # Tests cut_tree_balanced(Z, max_cluster_size) on the same hardcoded
+    # numbers but a smaller max_cluster_size (= 2). Note that in this case the
+    # biggest cluster is splitted into two smaller, deeper clusters with 2
+    # samples each.
     max_cluster_size = 2
     [cluster_id, cluster_level] = cut_tree_balanced(
         Z, max_cluster_size=max_cluster_size)

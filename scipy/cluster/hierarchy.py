@@ -1402,7 +1402,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
 def cut_tree_balanced(Z, max_cluster_size):
     """
-    Given a linkage matrix Z and max cluster size, return the balanced cut tree.
+    Given a linkage matrix Z and max cluster size, return a balanced cut tree.
 
     The function looks recursively along the hierarchical tree, from the root
     (single cluster gathering all the samples) to the leaves (i.e. the clusters
