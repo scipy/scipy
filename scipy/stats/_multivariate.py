@@ -3964,28 +3964,16 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     The functions ``pmf``, ``logpmf``, ``mean``, ``var``, ``cov``, and ``rvs``
     support broadcasting, under the convention that the vector parameters
     (``x``, ``m``, and ``n``) are interpreted as if each row along the last
-    axis is a single object. For instance:
+    axis is a single object. For instance, we can combine the previous two calls 
+    to `multivariate_hypergeom` as
 
     >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]], n=[12, 4])
     array([0.00252072, 0.43956044])
 
-    This combines the result of previous two examples in a single array.
     In this example, the last axis of the each array ``x``, ``m``, and ``n``
     are treated as independent objects and the ``pmf`` is exaluated over
     each of them to generate a combined result.
 
-    Here, ``x.shape == (2, 2)``, ``m.shape == (2, 2)``, and
-    ``n.shape == (2,)`` but following the rules mentioned above, they behave
-    as if the rows ``[8, 4]`` and ``[3, 1]`` in ``x``, ``[10, 20]`` and
-    ``[10, 5]`` in ``m``, and ``12`` and ``4`` in ``n`` were two independent
-    objects, and as if we had two populations with ``x.shape = (2,)``,
-    ``m.shape = (2,)``, and ``n.shape = ()``. To obtain the individual
-    elements without broadcasting,  we would do this:
-
-    >>> multivariate_hypergeom.pmf([8, 4], m=[10, 20], n=12)
-    0.0025207176631464523
-    >>> multivariate_hypergeom.pmf([3, 1], m=[10, 5], n=4)
-    0.4395604395604395
 
     This broadcasting also works for ``cov``, where the output objects are
     square matrices of size ``m.shape[-1]``. For example:
@@ -3996,11 +3984,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            [[ 1.56, -1.56],
             [-1.56,  1.56]]])
 
-    In this example, ``m.shape == (2, 2)`` and ``n.shape == (2,)``.
-    Following the rules above, ``m`` and ``n`` broadcast, as if ``m.shape == (2,)``.
-    Thus the result should also be of shape ``(2,)``, but since each output is
-    a :math:`2 \times 2` matrix, the result, in fact, has shape ``(2, 2, 2)``,
-    where ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
+    That is, ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
     and ``result[1]`` is equal to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
 
     Alternatively, the object may be called (as a function) to fix the `m`
