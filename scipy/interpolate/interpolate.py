@@ -3,8 +3,6 @@ __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
 
 import itertools
 import warnings
-import functools
-import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
@@ -12,6 +10,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
+from scipy._lib._util import prod
 
 from . import fitpack
 from . import dfitpack
@@ -21,13 +20,6 @@ from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
-
-
-def prod(x):
-    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
-    if len(x) == 0:
-        return 1
-    return functools.reduce(operator.mul, x)
 
 
 def lagrange(x, w):
@@ -223,12 +215,14 @@ class interp2d(object):
                 raise ValueError(
                     "Invalid length for input z for non rectangular grid")
 
+        interpolation_types = {'linear': 1, 'cubic': 3, 'quintic': 5}
         try:
-            kx = ky = {'linear': 1,
-                       'cubic': 3,
-                       'quintic': 5}[kind]
-        except KeyError:
-            raise ValueError("Unsupported interpolation type.")
+            kx = ky = interpolation_types[kind]
+        except KeyError as e:
+            raise ValueError(
+                f"Unsupported interpolation type {repr(kind)}, must be "
+                f"either of {', '.join(map(repr, interpolation_types))}."
+            ) from e
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
@@ -279,8 +273,8 @@ class interp2d(object):
             raise ValueError("x and y should both be 1-D arrays")
 
         if not assume_sorted:
-            x = np.sort(x)
-            y = np.sort(y)
+            x = np.sort(x, kind="mergesort")
+            y = np.sort(y, kind="mergesort")
 
         if self.bounds_error or self.fill_value is not None:
             out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
@@ -339,9 +333,6 @@ class interp1d(_Interpolator1D):
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
-
-    Note that calling `interp1d` with NaNs present in input values results in
-    undefined behaviour.
 
     Parameters
     ----------
@@ -406,6 +397,15 @@ class interp1d(_Interpolator1D):
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
     interp2d : 2-D interpolation
 
+    Notes
+    -----
+    Calling `interp1d` with NaNs present in input values results in
+    undefined behaviour.
+
+    Input values `x` and `y` must be convertible to `float` values like 
+    `int` or `float`.
+
+
     Examples
     --------
     >>> import matplotlib.pyplot as plt
@@ -443,7 +443,7 @@ class interp1d(_Interpolator1D):
         y = array(y, copy=self.copy)
 
         if not assume_sorted:
-            ind = np.argsort(x)
+            ind = np.argsort(x, kind="mergesort")
             x = x[ind]
             y = np.take(y, ind, axis=axis)
 
@@ -818,9 +818,11 @@ class _PPolyBase(object):
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("x and c have incompatible sizes")
+            raise ValueError("Shapes of x {} and c {} are incompatible"
+                             .format(x.shape, c.shape))
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("c and self.c have incompatible shapes")
+            raise ValueError("Shapes of c {} and self.c {} are incompatible"
+                             .format(c.shape, self.c.shape))
 
         if c.size == 0:
             return
@@ -1716,8 +1718,10 @@ class BPoly(_PPolyBase):
         # global poly order is k-1, local orders are <=k and can vary
         try:
             k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
-        except TypeError:
-            raise ValueError("Using a 1-D array for y? Please .reshape(-1, 1).")
+        except TypeError as e:
+            raise ValueError(
+                "Using a 1-D array for y? Please .reshape(-1, 1)."
+            ) from e
 
         if orders is None:
             orders = [None] * m
@@ -1815,7 +1819,8 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('ya and yb have incompatible dimensions.')
+            raise ValueError('Shapes of ya {} and yb {} are incompatible'
+                             .format(ya.shape, yb.shape))
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
@@ -1931,6 +1936,10 @@ class NdPPoly(object):
     Methods
     -------
     __call__
+    derivative
+    antiderivative
+    integrate
+    integrate_1d
     construct_fast
 
     See also
@@ -2662,11 +2671,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                          "%d, but this RegularGridInterpolator has "
                          "dimension %d" % (xi.shape[1], len(grid)))
 
-    for i, p in enumerate(xi.T):
-        if bounds_error and not np.logical_and(np.all(grid[i][0] <= p),
-                                               np.all(p <= grid[i][-1])):
-            raise ValueError("One of the requested xi is out of bounds "
-                             "in dimension %d" % i)
+    if bounds_error:
+        for i, p in enumerate(xi.T):
+            if not np.logical_and(np.all(grid[i][0] <= p),
+                                                np.all(p <= grid[i][-1])):
+                raise ValueError("One of the requested xi is out of bounds "
+                                "in dimension %d" % i)
 
     # perform interpolation
     if method == "linear":

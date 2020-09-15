@@ -195,7 +195,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
+    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
     so far:
 
     .. math::
@@ -246,6 +246,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Let's try and do a constrained minimization
+
     >>> from scipy.optimize import NonlinearConstraint, Bounds
     >>> def constr_f(x):
     ...     return np.array(x[0] + x[1])
@@ -871,13 +872,14 @@ class DifferentialEvolutionSolver(object):
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
-            energies[0:nfevs] = calc_energies
-        except (TypeError, ValueError):
+            energies[0:nfevs] = np.squeeze(calc_energies)
+        except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
             # or wrong length returned from the mapper
-            raise RuntimeError("The map-like callable must be of the"
-                               " form f(func, iterable), returning a sequence"
-                               " of numbers the same length as 'iterable'")
+            raise RuntimeError(
+                "The map-like callable must be of the form f(func, iterable), "
+                "returning a sequence of numbers the same length as 'iterable'"
+            ) from e
 
         self._nfev += nfevs
 

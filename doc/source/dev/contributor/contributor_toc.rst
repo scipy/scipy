@@ -17,6 +17,7 @@ This guide is designed to help you quickly find the information you need about S
 
 Development environment
 -----------------------
+- :ref:`quickstart-pip` presents an overview of setting up the development environment using pip on Linux
 - :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
 - :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
 - :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option

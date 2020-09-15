@@ -138,8 +138,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             else:
                 try:
                     obj, (row, col) = arg1
-                except (TypeError, ValueError):
-                    raise TypeError('invalid input format')
+                except (TypeError, ValueError) as e:
+                    raise TypeError('invalid input format') from e
 
                 if shape is None:
                     if len(row) == 0 or len(col) == 0:
@@ -567,7 +567,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)

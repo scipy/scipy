@@ -708,8 +708,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
-                                                tol=tol)
+        x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
                               'complete': False, 'status': 0,
@@ -789,8 +788,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
-                                                    tol=tol)
+            x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,
                                   'complete': False, 'status': 0,

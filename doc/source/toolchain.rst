@@ -175,7 +175,7 @@ SciPy always requires a recent Cython compiler.
  Tool    Tool Version  SciPy version
 ======== ============ ===============
 Cython     >= 0.29.13  1.4.1
-Cython     >= 0.29.14  1.5.0
+Cython     >= 0.29.18  1.5.0
 ======== ============ ===============
 
 
@@ -262,7 +262,7 @@ A Recent version of:
 =============  ========  =============================================
  Tool          Version    URL
 =============  ========  =============================================
-setuptools     Recent     https://https://pypi.org/project/setuptools/
+setuptools     Recent     https://pypi.org/project/setuptools/
 wheel          Recent     https://pythonwheels.com
 multibuild     Recent     https://github.com/matthew-brett/multibuild
 =============  ========  =============================================

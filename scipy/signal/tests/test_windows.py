@@ -30,7 +30,6 @@ window_funcs = [
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
-    ('slepian', (2,)),
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
@@ -569,7 +568,7 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('slepian', 'hanning'):
+            if window_name in ('hanning',):
                 sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
@@ -621,7 +620,7 @@ def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
+                   'dss', 'dpss',
                    'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
                    'tuk', 'dpss']:
         assert_raises(ValueError, get_window, winstr, 7)

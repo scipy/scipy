@@ -34,7 +34,7 @@ Functions
 ## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
 import numpy as np
-from numpy import array, asarray, float64, int32, zeros
+from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, _prepare_scalar_function)
@@ -459,7 +459,7 @@ class LbfgsInvHessProduct(LinearOperator):
         if q.ndim == 2 and q.shape[1] == 1:
             q = q.reshape(-1)
 
-        alpha = np.zeros(n_corrs)
+        alpha = np.empty(n_corrs)
 
         for i in range(n_corrs-1, -1, -1):
             alpha[i] = rho[i] * np.dot(s[i], q)

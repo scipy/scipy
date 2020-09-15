@@ -142,15 +142,10 @@ Once there are successful wheel builds, it is recommended to create a versioned 
 in the ``scipy-wheels`` repo, which will for example be adjusted to point to different
 maintenance branch commits if there are multiple release candidates.
 
-From there you can download them for uploading to PyPI.  This can be
-done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy>`_
-(note the -n switch which makes it only download the wheels and skip the upload
-to PyPI step - we want to be able to check the wheels and put their checksums
-into README first)::
+From there you can download them for uploading to PyPI. This can be
+done in an automated fashion using ``tools/download-wheels.py``::
 
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t win scipy 0.19.0
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
-  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+  $ python tools/download-wheels.py 1.5.0rc1 -w REPO_ROOT/release/installers
 
 The correct URL to use is shown in https://github.com/MacPython/scipy-wheels
 and should agree with the above one.

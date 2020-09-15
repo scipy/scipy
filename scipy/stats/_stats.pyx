@@ -334,7 +334,7 @@ def _center_distance_matrix(distx, global_corr='mgc', is_ranked=True):
         rank_distx = _rank_distance_matrix(distx)
 
     if global_corr == "rank":
-        distx = rank_distx.astype(np.float, copy=False)
+        distx = rank_distx.astype(np.float64, copy=False)
 
     # 'mgc' distance transform (col-wise mean) - default
     cdef ndarray exp_distx = np.repeat(((distx.mean(axis=0) * n) / (n-1)), n).reshape(-1, n).T
@@ -548,7 +548,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
         int i, j, k
         int n, d, m, p
         real arg, residual, norm
-    
+
     n = points.shape[0]
     d = points.shape[1]
     m = xi.shape[0]
@@ -566,7 +566,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
-    norm = (2 * math.M_PI) ** (- d / 2)
+    norm = (2 * PI) ** (- d / 2)
     for i in range(d):
         norm *= whitening[i, i]
 

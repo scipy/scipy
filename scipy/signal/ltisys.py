@@ -1400,7 +1400,8 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1417,11 +1418,12 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
-        return StateSpace(self.A, self.B, -self.C, -self.D)
+        return StateSpace(self.A, self.B, -self.C, -self.D, **self._dt_dict)
 
     def __add__(self, other):
         """
@@ -1463,13 +1465,16 @@ class StateSpace(LinearTimeInvariant):
                 c = self.C
                 d = self.D + other
             else:
-                raise ValueError("Cannot add systems with incompatible dimensions")
+                raise ValueError("Cannot add systems with incompatible "
+                                 "dimensions ({} and {})"
+                                 .format(self.D.shape, other.shape))
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
@@ -1920,7 +1925,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:
@@ -2054,7 +2059,7 @@ def lsim(system, U, T, X0=None, interp=True):
     n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
-    xout = zeros((n_steps, n_states), sys.A.dtype)
+    xout = np.empty((n_steps, n_states), sys.A.dtype)
 
     if T[0] == 0:
         xout[0] = X0
@@ -3355,10 +3360,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
-        except np.linalg.LinAlgError:
+        except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "
-                             "another set of poles")
+                             "another set of poles") from e
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix

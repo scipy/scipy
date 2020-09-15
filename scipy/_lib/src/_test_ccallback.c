@@ -400,8 +400,7 @@ static struct PyModuleDef test_ccallback_module = {
 };
 
 
-PyMODINIT_FUNC
-PyInit__test_ccallback(void)
+PyObject *PyInit__test_ccallback(void)
 {
     return PyModule_Create(&test_ccallback_module);
 }

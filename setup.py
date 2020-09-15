@@ -54,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 5
+MINOR = 6
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -470,10 +470,17 @@ def configuration(parent_package='', top_path=None):
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
-        msg = 'No lapack/blas resources found.'
         if sys.platform == "darwin":
-            msg = ('No lapack/blas resources found. '
+            msg = ('No BLAS/LAPACK libraries found. '
                    'Note: Accelerate is no longer supported.')
+        else:
+            msg = 'No BLAS/LAPACK libraries found.'
+        msg += ("\n"
+                "To build Scipy from sources, BLAS & LAPACK libraries "
+                "need to be installed.\n"
+                "See site.cfg.example in the Scipy source directory and\n"
+                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "for details.")
         raise NotFoundError(msg)
 
     config = Configuration(None, parent_package, top_path)
@@ -505,12 +512,12 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.14.5']
+        build_requires = ['numpy>=1.16.5']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.14.5'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.16.5'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
     install_requires = build_requires

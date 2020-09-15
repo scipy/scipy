@@ -37,14 +37,16 @@ def _open_file(file_like, appendmat, mode='rb'):
 
     try:
         return open(file_like, mode), True
-    except IOError:
+    except IOError as e:
         # Probably "not found"
         if isinstance(file_like, str):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
             return open(file_like, mode), True
         else:
-            raise IOError('Reader needs file name or open file-like object')
+            raise IOError(
+                'Reader needs file name or open file-like object'
+            ) from e
 
 
 @docfiller
@@ -128,6 +130,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         MATLAB variables to read from the file. The reader will skip any
         variable with a name not in this sequence, possibly saving some read
         processing.
+    simplify_cells : False, optional
+        If True, return a simplified dict structure (which is useful if the mat
+        file contains cell arrays). Note that this only affects the structure
+        of the result and not its contents (which is identical for both output
+        structures). If True, this automatically sets `struct_as_record` to
+        False and `squeeze_me` to True, which is required to simplify cells.
 
     Returns
     -------

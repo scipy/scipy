@@ -364,8 +364,8 @@ def build_project(args):
             cvars = distutils.sysconfig.get_config_vars()
             env['OPT'] = '-O0 -ggdb'
             env['FOPT'] = '-O0 -ggdb'
-            env['CC'] = cvars['CC'] + ' --coverage'
-            env['CXX'] = cvars['CXX'] + ' --coverage'
+            env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
+            env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
             env['F77'] = 'gfortran --coverage '
             env['F90'] = 'gfortran --coverage '
             env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
@@ -500,11 +500,11 @@ def run_mypy(args):
 
     try:
         import mypy.api
-    except ImportError:
+    except ImportError as e:
         raise RuntimeError(
             "Mypy not found. Please install it by running "
             "pip install -r mypy_requirements.txt from the repo root"
-        )
+        ) from e
 
     site_dir = build_project(args)
     config = os.path.join(
