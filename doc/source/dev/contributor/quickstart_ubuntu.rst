@@ -51,7 +51,7 @@ Building SciPy
 
 #. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
 
-#. Enter ``conda install python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx git``. |br| Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
+#. Enter ``conda install python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx matplotlib mypy git``. |br| Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
    * ``numpy pybind11 cython pytest`` are four packages that Scipy depends on.
 
