@@ -45,8 +45,44 @@ def initialize_direction_numbers():
     up to the dimension 21201. This is the recommended choice by the authors.
 
     Original data can be found at https://web.maths.unsw.edu.au/~fkuo/sobol/.
-    The c-code generated from putting the numbers in as literals is obscenely
-    large/inefficient. It was thus packaged and save as an .npz data file.
+    The C-code generated from putting the numbers in as literals is obscenely
+    large/inefficient. The data file was thus packaged and save as an .npz data file
+    for fast loading using the following code (this assumes that the file
+    https://web.maths.unsw.edu.au/~fkuo/sobol/new-joe-kuo-6.21201 is present in the
+    working directory):
+
+        import pandas as pd
+        import numpy as np
+
+        # read in file content
+        with open("./new-joe-kuo-6.21201", "r") as f:
+            lines = f.readlines()
+
+        rows = []
+
+        # parse data from file line by line
+        for l in lines[1:]:
+            nums = [int(n) for n in l.replace(" \n", "").split()]
+            d, s, a = nums[:3]
+            vs = {f"v{i}": int(v) for i,v in enumerate(nums[3:])}
+            rows.append({"d": d, "s": s, "a": a, **vs})
+
+
+        # read in as dataframe, explicitly use zero values
+        df = pd.DataFrame(rows).fillna(0).astype(int)
+
+        # peform conversion
+        df["poly"] = 2 ** df["a"] + 2** df["s"] + 1
+
+        # ensure columns are properly ordered
+        vs = df[[f"v{i}" for i in range(18)]].values
+
+        # add the degenerate d=1 column (not included in the data file)
+        vs = np.vstack([vs[0][np.newaxis, :], vs])
+        poly = np.concatenate([[1], df["poly"].values])
+
+        # save as compressed .npz file to minimize size of distribution
+        np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
     global is_initialized, poly, vinit
@@ -166,8 +202,11 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
         for j in range(m):
             v[d, j] = vinit[d][j]
 
-        # Fill in remaining elements of V per Bratley and Fox, Section 2
-        # @TODO: UPDATE
+        # Fill in remaining elements of v as in Section 2 (top of pg. 90) of:
+        #
+        #    P. Bratley and B. L. Fox. Algorithm 659: Implementing sobol’s quasirandom
+        #    sequence generator. ACM Trans. Math. Softw., 14(1):88–100, Mar. 1988.
+        #
         for j in range(m, MAXBIT):
             newv = v[d, j - m]
             pow2 = 1
