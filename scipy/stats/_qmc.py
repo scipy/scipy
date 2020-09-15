@@ -1,3 +1,4 @@
+"""Quasi-Monte Carlo engines and helpers."""
 from abc import ABC, abstractmethod
 import math
 import warnings
@@ -482,7 +483,7 @@ class QMCEngine(ABC):
     **Subclassing**
 
     When subclassing `QMCEngine` to create a new sampler,  ``__init__`` and
-    ``random`` has to be redefined.
+    ``random`` must be redefined.
 
     * ``__init__(dim, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like

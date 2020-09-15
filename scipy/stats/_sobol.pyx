@@ -46,10 +46,10 @@ def initialize_direction_numbers():
 
     Original data can be found at https://web.maths.unsw.edu.au/~fkuo/sobol/.
     The C-code generated from putting the numbers in as literals is obscenely
-    large/inefficient. The data file was thus packaged and save as an .npz data file
-    for fast loading using the following code (this assumes that the file
-    https://web.maths.unsw.edu.au/~fkuo/sobol/new-joe-kuo-6.21201 is present in the
-    working directory):
+    large/inefficient. The data file was thus packaged and save as an .npz data
+    file for fast loading using the following code (this assumes that the file
+    https://web.maths.unsw.edu.au/~fkuo/sobol/new-joe-kuo-6.21201 is present in
+    the working directory):
 
         import pandas as pd
         import numpy as np
@@ -204,8 +204,9 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
 
         # Fill in remaining elements of v as in Section 2 (top of pg. 90) of:
         #
-        #    P. Bratley and B. L. Fox. Algorithm 659: Implementing sobol’s quasirandom
-        #    sequence generator. ACM Trans. Math. Softw., 14(1):88–100, Mar. 1988.
+        # P. Bratley and B. L. Fox. Algorithm 659: Implementing sobol's
+        # quasirandom sequence generator. ACM Trans.
+        # Math. Softw., 14(1):88-100, Mar. 1988.
         #
         for j in range(m, MAXBIT):
             newv = v[d, j - m]

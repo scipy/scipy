@@ -377,10 +377,10 @@ Univariate and multivariate kernel density estimation
 Quasi-Monte Carlo
 =================
 
-.. autosummary::
-   :toctree: generated/
+.. toctree::
+   :maxdepth: 4
 
-   qmc
+   stats.qmc
 
 
 Warnings used in :mod:`scipy.stats`
