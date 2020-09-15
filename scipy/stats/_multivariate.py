@@ -3971,9 +3971,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     array([0.00252072, 0.43956044])
 
     In this example, the last axis of the each array ``x``, ``m``, and ``n``
-    are treated as independent objects and the ``pmf`` is exaluated over
+    are treated as independent objects and the ``pmf`` is evaluated over
     each of them to generate a combined result.
-
 
     This broadcasting also works for ``cov``, where the output objects are
     square matrices of size ``m.shape[-1]``. For example:
@@ -3998,7 +3997,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     See also
     --------
     scipy.stats.hypergeom : The hypergeometric distribution.
-    numpy.random.Generator.multivariate_hypergeometric : The multivariate hypergeometric distribution sampler in numpy.
+    numpy.random.Generator.multivariate_hypergeometric : The multivariate hypergeometric distribution sampler in NumPy.
     scipy.stats.multinomial : The multinomial distribution.
 
     References
@@ -4063,11 +4062,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
         num = betaln(m+1, 1) - betaln(x+1, m-x+1)
         den = betaln(M+1, 1) - betaln(n+1, M-n+1)
-        cond = (num == np.NINF)
-        np.place(num, cond, np.nan)
-        cond = np.any(cond, axis=-1)
+        cond_num, cond_den = (num == np.NINF), (den == np.NINF)
+        np.place(num, cond_num, np.nan)
+        den = np.where(cond_den, np.nan, den)
         num = num.sum(axis=-1)
-        return np.where(cond, np.NINF, num) - den
+        return num - den
 
     def logpmf(self, x, m, n):
         """

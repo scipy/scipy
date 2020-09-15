@@ -1660,6 +1660,9 @@ class TestMultivariateHypergeom(object):
         vals6 = multivariate_hypergeom.logpmf(x=[-3, 4], m=[-5, 10], n=1)
         assert_allclose(vals6, np.nan, rtol=1e-8)
 
+        vals7 = multivariate_hypergeom.pmf(x=[1, 11], m=[10, 1], n=12)
+        assert_allclose(vals7, np.nan, rtol=1e-8)
+
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
         # hypergeom pmf in the 2d case.
