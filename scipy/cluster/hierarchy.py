@@ -1409,8 +1409,8 @@ def cut_tree_balanced(Z, max_cluster_size):
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix resulting from calling `ward`. I.e. it contains the
-        hierarchical clustering encoded as a linkage matrix.
+        The linkage matrix resulting from calling `ward` or `linkage`. I.e. it 
+        contains the hierarchical clustering encoded as a linkage matrix.
     max_cluster_size : int
         Maximum number of data samples contained within the resulting clusters.
         Thus, all resulting clusters will contain a number of data samples
@@ -1450,7 +1450,7 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     >>> X = stats.gamma.rvs(0.1, size=400).reshape((100, 4))
 
-    Compute the linkage matrix using the scipy ward() method:
+    Compute the linkage matrix using the scipy ward() or linkage() method:
 
     >>> Z = hierarchy.ward(X)
 
