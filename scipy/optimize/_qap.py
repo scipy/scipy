@@ -55,26 +55,17 @@ def quadratic_assignment(A, B, method="faq", options=None):
             (GMP) rather than the Quadratic Assignment Problem (QAP).
 
         partial_match : 2-D array of integers, optional (default: None)
-            Allows the user to fix part of the matching between the two
-            matrices. In the literature, a partial match is also
-            known as a "seed" [2]_.
+            Fixes part of the matching. Also known as a "seed" [2]_.
 
-            Each row of `partial_match` specifies the indices of a pair of
-            corresponding nodes, that is, node ``partial_match[i, 0]`` of `A`
-            is matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-            ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
-            not greater than the number of nodes.
+            Each row of `partial_match` specifies a pair of matched nodes:
+            node ``partial_match[i, 0]`` of `A` is matched to node
+            ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
+            where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
-            This parameter defines the object to use for drawing random
-            variates.
-            If `rng` is ``None`` the `~np.random.RandomState` singleton is
-            used.
-            If `rng` is an int, a new ``RandomState`` instance is used,
-            seeded with `rng`.
-            If `rng` is already a ``RandomState`` or ``Generator``
-            instance, then that object is used.
-            Default is None.
+        rng : int, `RandomState`, `Generator` or None, optional (default: None)
+            Accepts an integer as a seed for the random generator or a
+            ``RandomState`` or ``Generator`` object. If None (default), uses
+            global `numpy.random` random state.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -85,21 +76,20 @@ def quadratic_assignment(A, B, method="faq", options=None):
         `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
-            An array of column indices corresponding with the best
-            permutation of the nodes of `B` found.
+            Column indices corresponding to the best permutation found of the
+            nodes of `B`.
         fun : float
-            The corresponding value of the objective function.
+            The objective value of the solution.
         nit : int
             The number of iterations performed during optimization.
 
     Notes
     -----
     The default method :ref:`'faq' <optimize.qap-faq>` uses the Fast
-    Approximate QAP algorithm [1]_; it is typically offers the best
-    combination of speed and accuracy.
-    Method :ref:`'2opt' <optimize.qap-2opt>` can be computationally expensive,
-    but may be a useful alternative, or it can be used to refine the solution
-    returned by another method.
+    Approximate QAP algorithm [1]_; it typically offers the best combination of
+    speed and accuracy. Method :ref:`'2opt' <optimize.qap-2opt>` can be
+    computationally expensive, but may be a useful alternative, or it can be
+    used to refine the solution returned by another method.
 
     References
     ----------
@@ -296,61 +286,43 @@ def _quadratic_assignment_faq(A, B,
         accomplished through trivial negation of the objective function.
 
     partial_match : 2-D array of integers, optional (default: None)
-        Allows the user to fix part of the matching between the two
-        matrices. In the literature, a partial match is also known as a
-        "seed".
+        Fixes part of the matching. Also known as a "seed" [2]_.
 
-        Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
-        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-        ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
-        not greater than the number of nodes, :math:`n`.
+        Each row of `partial_match` specifies a pair of matched nodes:
+        node ``partial_match[i, 0]`` of `A` is matched to node
+        ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
+        ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
-        This parameter defines the object to use for drawing random
-        variates.
-        If `rng` is ``None`` the `~np.random.RandomState` singleton is
-        used.
-        If `rng` is an int, a new ``RandomState`` instance is used,
-        seeded with `rng`.
-        If `rng` is already a ``RandomState`` or ``Generator``
-        instance, then that object is used.
-        Default is None.
+    rng : int, `RandomState`, `Generator` or None, optional (default: None)
+        Accepts an integer as a seed for the random generator or a
+        ``RandomState`` or ``Generator`` object. If None (default), uses
+        global `numpy.random` random state.
 
-    P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
-        The initial (guess) permutation matrix or search "position".
+    P0 : "barycenter", "randomized", or a 2-D array (default: "barycenter")
+        Initial guess. Must be a doubly-stochastic matrix [3]_.
 
-        `P0` need not be a proper permutation matrix;
-        however, it must be :math:`m' x m'`, where :math:`m' = n - m`,
-        and it must be doubly stochastic: each of its rows and columns must
-        sum to 1.
+        If ``"barycenter"`` (default), the initial position is the barycenter
+        of the Birkhoff polytope (the space of doubly stochastic matrices).
+        This is a :math:`m' x m'` matrix with all entries equal to
+        :math:1 / m'`.
 
-        If unspecified or ``"barycenter"``, the non-informative "flat
-        doubly stochastic matrix" :math:`J = \mathbf{1} \cdot \mathbf{1}^T/m'`,
-        where :math:`1` is a :math:`m' \times 1` array of ones, is used. This
-        is the "barycenter" of the search space of doubly-stochastic matrices.
+        If ``"randomized"`` the initial search position is
+        :math:`P_0 = (J + K) / 2`, where :math:`J` is the barycenter and
+        :math:`K` is a random doubly stochastic matrix.
 
-        If ``"randomized"``, the algorithm will start from the
-        randomized initial search position :math:`P_0 = (J + K)/2`,
-        where :math:`J` is the "barycenter" and :math:`K` is a random
-        doubly stochastic matrix.
+        If the initial position is an array, it must be a doubly stochastic
+        matrix of size :math:`m' x m'` where :math:`m' = n - m`.
 
     shuffle_input : bool (default: False)
-        To avoid artificially high or low matching due to inherent
-        sorting of input matrices, gives users the option
-        to shuffle the nodes. Results are then unshuffled so that the
-        returned results correspond with the node order of inputs.
-        Shuffling may cause the algorithm to be non-deterministic,
-        unless a random seed is set or an `rng` option is provided.
+        Set to `True` to resolve degenerate gradients randomly. For
+        non-degenerate gradients this option has no effect.
 
     maxiter : int, positive (default: 30)
-        Integer specifying the max number of Franke-Wolfe iterations performed.
+        Integer specifying the max number of Frank-Wolfe iterations performed.
 
     tol : float (default: 0.03)
-        A threshold for the stopping criterion. Franke-Wolfe
-        iteration terminates when the change in search position between
-        iterations is sufficiently small, that is, when the relative Frobenius
-        norm, :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{len(P_{i})}} \leq tol`,
+        Tolerance for termination. Frank-Wolfe iteration terminates when
+        :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m')}} \leq tol`,
         where :math:`i` is the iteration number.
 
     Returns
@@ -359,12 +331,12 @@ def _quadratic_assignment_faq(A, B,
         `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
-            An array of column indices corresponding with the best
-            permutation of the nodes of `B` found.
+            Column indices corresponding to the best permutation found of the
+            nodes of `B`.
         fun : float
-            The corresponding value of the objective function.
+            The objective value of the solution.
         nit : int
-            The number of Franke-Wolfe iterations performed.
+            The number of Frank-Wolfe iterations performed.
 
     Notes
     -----
@@ -372,7 +344,7 @@ def _quadratic_assignment_faq(A, B,
     search "position") due to the possibility of several local minima
     within the feasible region. A barycenter initialization is more likely to
     result in a better solution than a single random initialization. However,
-    ``quadratic_assignment`` calling several times with different random
+    calling ``quadratic_assignment`` several times with different random
     initializations may result in a better optimum at the cost of longer
     total execution time.
 
@@ -420,6 +392,8 @@ def _quadratic_assignment_faq(A, B,
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
            203-215, :doi:`10.1016/j.patcog.2018.09.014`
+
+    .. [3] https://en.wikipedia.org/wiki/Doubly_stochastic_matrix
     """
 
     _check_unknown_options(unknown_options)
@@ -527,7 +501,7 @@ def _quadratic_assignment_faq(A, B,
     # [1] Algorithm 1 Line 7 - end main loop
 
     # [1] Algorithm 1 Line 8 - project onto the set of permutation matrices
-    _, col = linear_sum_assignment(-P)
+    _, col = linear_sum_assignment(P, maximize=True)
     perm = np.concatenate((np.arange(n_seeds), col + n_seeds))
 
     unshuffled_perm = np.zeros(n, dtype=int)
@@ -635,38 +609,28 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
         rather than the Quadratic Assignment Problem (QAP).
 
-    rng : {None, int, `~np.random.RandomState`, `~np.random.Generator`}
-        This parameter defines the object to use for drawing random
-        variates.
-        If `rng` is ``None`` the `~np.random.RandomState` singleton is
-        used.
-        If `rng` is an int, a new ``RandomState`` instance is used,
-        seeded with `rng`.
-        If `rng` is already a ``RandomState`` or ``Generator``
-        instance, then that object is used.
-        Default is None.
+    rng : int, `RandomState`, `Generator` or None, optional (default: None)
+        Accepts an integer as a seed for the random generator or a
+        ``RandomState`` or ``Generator`` object. If None (default), uses
+        global `numpy.random` random state.
 
     partial_match : 2-D array of integers, optional (default: None)
-        Allows the user to fix part of the matching between the two
-        matrices. In the literature, a partial match is also known as a
-        "seed".
+        Fixes part of the matching. Also known as a "seed" [2]_.
 
-        Each row of `partial_match` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_match[i, 0]`` of `A` is
-        matched to node ``partial_match[i, 1]`` of `B`. Accordingly,
-        ``partial_match`` is an array of size ``(m, 2)``, where ``m`` is
-        not greater than the number of nodes.
+        Each row of `partial_match` specifies a pair of matched nodes: node
+        ``partial_match[i, 0]`` of `A` is matched to node
+        ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
+        where ``m`` is not greater than the number of nodes, :math:`n`.
 
     partial_guess : 2-D array of integers, optional (default: None)
-        Allows the user to provide a guess for the matching between the two
-        matrices. Unlike `partial_match`, `partial_guess` does not fix the
-        indices; they are still free to be optimized.
+        A guess for the matching between the two matrices. Unlike
+        `partial_match`, `partial_guess` does not fix the indices; they are
+        still free to be optimized.
 
-        Each row of `partial_guess` specifies the indices of a pair of
-        corresponding nodes, that is, node ``partial_guess[i, 0]`` of `A` is
-        matched to node ``partial_guess[i, 1]`` of `B`. Accordingly,
-        ``partial_guess`` is an array of size ``(m, 2)``, where ``m`` is
-        less than or equal to the number of nodes.
+        Each row of `partial_guess` specifies a pair of matched nodes: node
+        ``partial_guess[i, 0]`` of `A` is matched to node
+        ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
+        where ``m`` is not greater than the number of nodes, :math:`n`.
 
 
     Returns
@@ -675,10 +639,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         `OptimizeResult` containing the following fields.
 
         col_ind : 1-D array
-            An array of column indices corresponding with the best
-            permutation of the nodes of `B` found.
+            Column indices corresponding to the best permutation found of the
+            nodes of `B`.
         fun : float
-            The corresponding value of the objective function.
+            The objective value of the solution.
         nit : int
             The number of iterations performed during optimization.
 
