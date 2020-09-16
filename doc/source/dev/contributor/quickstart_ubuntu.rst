@@ -59,15 +59,15 @@ Building SciPy
 
    Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
-.. note::
+   .. note::
 
-	You could ``conda create`` an empty virtual environment first, then
-	``conda install`` the packages, but creating the virtual environment
-	with all the packages you need is preferable to installing packages
-	individually because it makes it easier for ``conda`` to solve
-	the package dependencies optimally.
+      You could ``conda create`` an empty virtual environment first, then
+      ``conda install`` the packages, but creating the virtual environment
+      with all the packages you need is preferable to installing packages
+      individually because it makes it easier for ``conda`` to solve
+      the package dependencies optimally.
 
-#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
+#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__). Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
