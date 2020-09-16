@@ -87,9 +87,10 @@ def quadratic_assignment(A, B, method="faq", options=None):
     -----
     The default method :ref:`'faq' <optimize.qap-faq>` uses the Fast
     Approximate QAP algorithm [1]_; it typically offers the best combination of
-    speed and accuracy. Method :ref:`'2opt' <optimize.qap-2opt>` can be
-    computationally expensive, but may be a useful alternative, or it can be
-    used to refine the solution returned by another method.
+    speed and accuracy.
+    Method :ref:`'2opt' <optimize.qap-2opt>` can be computationally expensive,
+    but may be a useful alternative, or it can be used to refine the solution
+    returned by another method.
 
     References
     ----------
