@@ -1641,7 +1641,7 @@ class TestUnitaryGroup(object):
 class TestMultivariateHypergeom(object):
     def test_logpmf(self):
         vals1 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=7)
-        assert_allclose(vals1, -1.1198144963187122, rtol=1e-8)
+        assert_allclose(vals1, -1.119814, rtol=1e-6)
 
         vals2 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=0)
         assert_allclose(vals2, np.NAN, rtol=1e-8)
@@ -1705,13 +1705,13 @@ class TestMultivariateHypergeom(object):
         assert_allclose(vals0, 1, rtol=1e-8)
 
         vals1 = multivariate_hypergeom.pmf(x=[3, 4], m=[5, 10], n=7)
-        assert_allclose(vals1, 0.3263403263403265, rtol=1e-8)
+        assert_allclose(vals1, 0.3263403, rtol=1e-7)
 
         vals2 = multivariate_hypergeom.pmf(x=[[[3, 5], [0, 8]],
                                               [[-1, 9], [1, 1]]],
                                            m=[5, 10], n=[[8, 8], [8, 2]])
-        assert_allclose(vals2, [[0.39160839, 0.00699301], [0, 0.47619048]],
-                        rtol=1e-6)
+        assert_allclose(vals2, [[0.3916084, 0.006993007], [0, 0.4761905]],
+                        rtol=1e-7)
 
         x = np.empty((0, 2), dtype=np.float64)
         vals3 = multivariate_hypergeom.pmf(x=x, m=[4], n=0)
@@ -1721,12 +1721,12 @@ class TestMultivariateHypergeom(object):
         assert_allclose(vals4, 0, rtol=1e-8)
 
         vals5 = multivariate_hypergeom.pmf(x=[3, 3, 0], m=[5, 6, 7], n=6)
-        assert_allclose(vals5, 0.010773540185304875, rtol=1e-8)
+        assert_allclose(vals5, 0.01077354, rtol=1e-7)
 
     def test_pmf_broadcasting(self):
         vals0 = multivariate_hypergeom.pmf(x=[3, 4], m=[[5, 10], [10, 15]],
                                            n=7)
-        assert_allclose(vals0, [0.32634033, 0.34075307], rtol=1e-7)
+        assert_allclose(vals0, [0.3263403, 0.3407531], rtol=1e-7)
 
         vals1 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[3], [4]],
                                            n=[1, 3])
