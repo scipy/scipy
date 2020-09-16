@@ -30,14 +30,14 @@ development environment with Docker may be more reliable.*
 Building SciPy
 --------------
 
-#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda distribution includes dozens of the most popular Python packages for scientific computing, the ``conda`` package manager, and tools for managing virtual environments.
+#. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda Distribution includes dozens of the most popular Python packages for scientific computing, the ``conda`` package manager, and tools for managing virtual environments.
 
    If you're installing using the terminal, be sure to follow the "Next Steps"
-   listed after the installer finishes. You might also need to restart your 
-   terminal window or enter ``source ~/.bashrc`` for all the changes to take 
+   listed after the installer finishes. You might also need to restart your
+   terminal window or enter ``source ~/.bashrc`` for all the changes to take
    effect.
 
-#. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list of all the Python packages that came with the Anaconda distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
+#. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list of all the Python packages that came with the Anaconda Distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
 
    Ideally, we'd like to have both versions, and we'd like to be able to switch between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_ can do just that. With a few keystrokes in the terminal or even the click of an icon, we can enable or disable our development version. Let's set that up.
 
@@ -45,15 +45,9 @@ Building SciPy
 
       If ``conda`` is not a recognized command, try restarting your terminal. If it is still not recognized, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
-#. Enter ``conda create --name scipydev``. |br| This tells ``conda`` to create a virtual environment named ``scipydev``. Note that ``scipydev`` can be replaced with any name you'd like to refer to your virtual environment.
+#. Enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
 
-#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
-
-#. (Optional) Enter ``conda list`` again. Note that the new virtual environment has no packages installed. If you were to open a Python interpreter now, you wouldn't be able to import ``numpy``, ``scipy``, etc...
-
-#. Enter ``conda install python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx matplotlib mypy git``. |br| Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
-
-   * ``numpy pybind11 cython pytest`` are four packages that Scipy depends on.
+   * ``numpy pybind11 cython pytest`` are four packages that SciPy depends on.
 
    * ``gfortran_linux-64 gxx_linux-64`` are compilers used to build SciPy's Fortran, C, and C++ source code.
 
@@ -62,6 +56,18 @@ Building SciPy
    * ``mypy`` is a static type checker for Python. Consider using it.
 
    * ``git`` is a version control system used to download and manage the SciPy source code.
+
+   Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
+
+.. note::
+
+	You could ``conda create`` an empty virtual environment first, then
+	``conda install`` the packages, but creating the virtual environment
+	with all the packages you need is preferable to installing packages
+	individually because it makes it easier for ``conda`` to solve
+	the package dependencies optimally.
+
+#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
@@ -75,11 +81,9 @@ Building SciPy
 
 #. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
 
-#. (Optional) Check your present working directory by entering ``pwd`` at the terminal. You should be in the root ``..../scipy`` directory, not in a directory ending ``..../scipy/scipy``.
-
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 
-#. Test the build: enter ``python3 runtests.py -v``. ``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output. If the tests are successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build from within the SciPy root directory. This would be inconvenient, for instance, if you wrote a script that performs an ``import`` of something you changed in SciPy but wanted to save it elsewhere on your computer. Without taking additional steps to add this version of SciPy to the |PYTHONPATH|_ , this script would ``import`` from the version of SciPy distributed with Anaconda rather than the development version you just built. (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__ for much more information about how Python imports modules.)
+#. Test the build: enter ``python3 runtests.py -v``. ``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output. If the tests are successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build when the Python working directory is the SciPy root directory.
 
 #. Enter ``conda develop .``, where ``.`` refers to the present directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
 
