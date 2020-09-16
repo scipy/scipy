@@ -657,6 +657,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     ----------
     .. [1] "2-opt," Wikipedia.
            https://en.wikipedia.org/wiki/2-opt
+
+    .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
+           C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
+           203-215, https://doi.org/10.1016/j.patcog.2018.09.014
     """
 
     _check_unknown_options(unknown_options)
