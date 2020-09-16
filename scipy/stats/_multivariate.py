@@ -4026,12 +4026,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         n = np.asarray(n, dtype=np.int_)
         if m.ndim == 0:
             raise ValueError("'m' must be an array!")
-        mcond = np.any(m < 0, axis=-1)
+
+        m, n = np.broadcast_arrays(m, n[..., np.newaxis])
+        n = n[..., 0]
+        mcond = m < 0
 
         M = m.sum(axis=-1)
 
         ncond = (n <= 0) | (n > M)
-        return M, m, n, mcond | ncond
+        return M, m, n, mcond, ncond, np.any(mcond, axis=-1) | ncond
 
     def _process_quantiles(self, x, M, m, n):
         xx = np.asarray(x, dtype=np.int_)
@@ -4042,10 +4045,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
                              f"received {xx.shape[-1]}, "
                              f"but expected {m.shape[-1]}.")
 
-        xcond = np.any(xx != x, axis=-1)
-        xcond = xcond | np.any((xx < 0) | (xx > m), axis=-1)
-        xcond = xcond | (xx.sum(axis=-1) != n)
-        return xx, xcond
+        xx, m, n, M = np.broadcast_arrays(xx, m,
+                                          n[..., np.newaxis],
+                                          M[..., np.newaxis])
+        n, M = n[..., 0], M[..., 0]
+
+        xcond = xx != x
+        xcond = xcond | (xx < 0) | (xx > m)
+        return (xx, M, m, n, xcond,
+                np.any(xcond, axis=-1) | (xx.sum(axis=-1) != n))
 
     def _checkresult(self, result, cond, bad_value):
         result = np.asarray(result)
@@ -4057,14 +4065,17 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             return result[()]
         return result
 
-    def _logpmf(self, x, M, m, n):
+    def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
-        num = betaln(m+1, 1) - betaln(x+1, m-x+1)
-        den = betaln(M+1, 1) - betaln(n+1, M-n+1)
-        cond_num, cond_den = (num == np.NINF), (den == np.NINF)
-        np.place(num, cond_num, np.nan)
-        den = np.where(cond_den, np.nan, den)
+        num = np.zeros_like(m, dtype=np.float_)
+        den = np.zeros_like(n, dtype=np.float_)
+        num[~mxcond] = (betaln(m[~mxcond]+1, 1) -
+                        betaln(x[~mxcond]+1, m[~mxcond]-x[~mxcond]+1))
+        den[~ncond] = (betaln(M[~ncond]+1, 1) - betaln(n[~ncond]+1,
+                       M[~ncond]-n[~ncond]+1))
+        num[mxcond] = np.NAN
+        den[ncond] = np.NAN
         num = num.sum(axis=-1)
         return num - den
 
@@ -4087,19 +4098,22 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        M, m, n, mncond = self._process_parameters(m, n)
-        x, xcond = self._process_quantiles(x, M, m, n)
+        M, m, n, mcond, ncond, mncond = self._process_parameters(m, n)
+        (x, M, m, n, xcond,
+         xcond_reduced) = self._process_quantiles(x, M, m, n)
+        mxcond = mcond | xcond
+        ncond = ncond | np.zeros(n.shape, dtype=np.bool_)
 
-        result = self._logpmf(x, M, m, n)
+        result = self._logpmf(x, M, m, n, mxcond, ncond)
 
         # replace values for which x was out of the domain; broadcast
         # xcond to the right shape
-        xcond_ = xcond | np.zeros(mncond.shape, dtype=np.bool_)
+        xcond_ = xcond_reduced | np.zeros(mncond.shape, dtype=np.bool_)
         result = self._checkresult(result, xcond_, np.NINF)
 
         # replace values bad for n or m; broadcast
         # mncond to the right shape
-        mncond_ = mncond | np.zeros(xcond.shape, dtype=np.bool_)
+        mncond_ = mncond | np.zeros(xcond_reduced.shape, dtype=np.bool_)
         return self._checkresult(result, mncond_, np.NAN)
 
     def pmf(self, x, m, n):
@@ -4137,7 +4151,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         mean : array_like or scalar
             The mean of the distribution
         """
-        M, m, n, mncond = self._process_parameters(m, n)
+        M, m, n, _, _, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         mu = n*(m/M)
         return self._checkresult(mu, mncond, np.NAN)
@@ -4155,7 +4169,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         cov : array_like
             The covariance matrix of the distribution
         """
-        M, m, n, mncond = self._process_parameters(m, n)
+        M, m, n, _, _, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
         return self._checkresult(output, mncond, np.NAN)
@@ -4174,7 +4188,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             The covariance matrix of the distribution
         """
         # cov( x_i,x_j ) = -n * (M-n)/(M-1) * (K_i*K_j) / (M**2)
-        M, m, n, mncond = self._process_parameters(m, n)
+        M, m, n, _, _, mncond = self._process_parameters(m, n)
         M = M[..., np.newaxis, np.newaxis]
         n = n[..., np.newaxis, np.newaxis]
         output = (-n * (M-n)/(M-1) / (M**2) *
@@ -4208,7 +4222,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        M, m, n, mncond = self._process_parameters(m, n)
+        M, m, n, _, _, mncond = self._process_parameters(m, n)
 
         random_state = self._get_random_state(random_state)
         try:
@@ -4249,12 +4263,15 @@ multivariate_hypergeom = multivariate_hypergeom_gen()
 class multivariate_hypergeom_frozen(multi_rv_frozen):
     def __init__(self, m, n, seed=None):
         self._dist = multivariate_hypergeom_gen(seed)
-        (self.M, self.m,
-         self.n, self.mcond) = self._dist._process_parameters(m, n)
+        (self.M, self.m, self.n,
+         self.mcond, self.ncond,
+         self.mncond) = self._dist._process_parameters(m, n)
 
         # monkey patch self._dist
         def _process_parameters(m, n):
-            return self.M, self.m, self.n, self.mcond
+            return (self.M, self.m, self.n,
+                    self.mcond, self.ncond,
+                    self.mncond)
         self._dist._process_parameters = _process_parameters
 
     def logpmf(self, x):
