@@ -412,6 +412,26 @@ def _quadratic_assignment_faq(A, B,
     n_seeds = len(partial_match)  # number of seeds
     n_unseed = n - n_seeds
 
+    # [1] Algorithm 1 Line 1 - choose initialization
+    if not isinstance(P0, str):
+        P0 = np.atleast_2d(P0)
+        if P0.shape != (n_unseed, n_unseed):
+            msg = "`P0` matrix must have shape m' x m', where m'=n-m"
+        elif ((P0 < 0).any() or not np.allclose(np.sum(P0, axis=0), 1)
+            or not np.allclose(np.sum(P0, axis=1), 1)):
+            msg = "`P0` matrix must be doubly stochastic"
+        if msg is not None:
+            raise ValueError(msg)
+    elif P0 == 'barycenter':
+        P0 = np.ones((n_unseed, n_unseed)) / n_unseed
+    elif P0 == 'randomized':
+        J = np.ones((n_unseed, n_unseed)) / n_unseed
+        # generate a nxn matrix where each entry is a random number [0, 1]
+        # would use rand, but Generators don't have it
+        # would use random, but old mtrand.RandomStates don't have it
+        K = _doubly_stochastic(rng.uniform(size=(n_unseed, n_unseed)))
+        P0 = (J + K) / 2
+
     # check trivial cases
     if n == 0 or n_seeds == n:
         score = _calc_score(A, B, partial_match[:, 1])
@@ -425,7 +445,6 @@ def _quadratic_assignment_faq(A, B,
     nonseed_B = np.setdiff1d(range(n), partial_match[:, 1])
     if shuffle_input:
         nonseed_B = rng.permutation(nonseed_B)
-        # shuffle_input to avoid results from inputs that were already matched
 
     nonseed_A = np.setdiff1d(range(n), partial_match[:, 0])
     perm_A = np.concatenate([partial_match[:, 0], nonseed_A])
@@ -434,28 +453,9 @@ def _quadratic_assignment_faq(A, B,
     # definitions according to Seeded Graph Matching [2].
     A11, A12, A21, A22 = _split_matrix(A[perm_A][:, perm_A], n_seeds)
     B11, B12, B21, B22 = _split_matrix(B[perm_B][:, perm_B], n_seeds)
-
-    # [1] Algorithm 1 Line 1 - choose initialization
-    if isinstance(P0, str):
-        # initialize J, a doubly stochastic barycenter
-        J = np.ones((n_unseed, n_unseed)) / n_unseed
-        if P0 == 'barycenter':
-            P = J
-        elif P0 == 'randomized':
-            # generate a nxn matrix where each entry is a random number [0, 1]
-            # would use rand, but Generators don't have it
-            # would use random, but old mtrand.RandomStates don't have it
-            K = rng.uniform(size=(n_unseed, n_unseed))
-            # Sinkhorn balancing
-            K = _doubly_stochastic(K)
-            P = J * 0.5 + K * 0.5
-    else:
-        P0 = np.atleast_2d(P0)
-        _check_init_input(P0, n_unseed)
-        P = P0
-
     const_sum = A21 @ B21.T + A12.T @ B12
 
+    P = P0
     # [1] Algorithm 1 Line 2 - loop while stopping criteria not met
     for n_iter in range(1, maxiter+1):
         # [1] Algorithm 1 Line 3 - compute the gradient of f(P) = -tr(APB^tP^t)
@@ -504,21 +504,6 @@ def _quadratic_assignment_faq(A, B,
     score = _calc_score(A, B, unshuffled_perm)
     res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
     return OptimizeResult(res)
-
-
-def _check_init_input(P0, n):
-    row_sum = np.sum(P0, axis=0)
-    col_sum = np.sum(P0, axis=1)
-    tol = 1e-3
-    msg = None
-    if P0.shape != (n, n):
-        msg = "`P0` matrix must have shape m' x m', where m'=n-m"
-    elif ((~np.isclose(row_sum, 1, atol=tol)).any() or
-          (~np.isclose(col_sum, 1, atol=tol)).any() or
-          (P0 < 0).any()):
-        msg = "`P0` matrix must be doubly stochastic"
-    if msg is not None:
-        raise ValueError(msg)
 
 
 def _split_matrix(X, n):
