@@ -1768,9 +1768,8 @@ class TestMultivariateT:
 
     def test_reproducibility(self):
         rng = np.random.RandomState(4)
-        loc = rng.uniform(3)
-        tmp = rng.random((20, 3))
-        shape = np.matmul(tmp.T, tmp)
+        loc = rng.uniform(size=3)
+        shape = np.eye(3)
         dist1 = multivariate_t(loc, shape, df=3, seed=2)
         dist2 = multivariate_t(loc, shape, df=3, seed=2)
         samples1 = dist1.rvs(size=10)
