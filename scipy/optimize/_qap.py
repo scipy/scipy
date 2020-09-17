@@ -51,8 +51,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
         A dictionary of solver options. All solvers support the following:
 
         maximize : bool (default: False)
-            Setting `maximize` to ``True`` solves the Graph Matching Problem
-            (GMP) rather than the Quadratic Assignment Problem (QAP).
+            Maximizes the objective function if ``True``.
 
         partial_match : 2-D array of integers, optional (default: None)
             Fixes part of the matching. Also known as a "seed" [2]_.
@@ -282,9 +281,7 @@ def _quadratic_assignment_faq(A, B,
     -------
 
     maximize : bool (default: False)
-        Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the Quadratic Assignment Problem (QAP). This is
-        accomplished through trivial negation of the objective function.
+        Maximizes the objective function if ``True``.
 
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
@@ -607,8 +604,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
 
     maximize : bool (default: False)
-        Setting `maximize` to ``True`` solves the Graph Matching Problem (GMP)
-        rather than the Quadratic Assignment Problem (QAP).
+        Maximizes the objective function if ``True``.
 
     rng : int, `RandomState`, `Generator` or None, optional (default: None)
         Accepts an integer as a seed for the random generator or a
