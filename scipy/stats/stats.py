@@ -3751,7 +3751,14 @@ def AlexanderGovern(*args):
     # to perform the test.
 
     # (1) determine standard errors for each sample
-    standard_errors = [sem(arg) for arg in args]
+    def standard_error(data):
+        # this is much faster than using stats.sem for some reason
+        mean = np.mean(data)
+        sum_ = np.sum((data - mean)**2)
+        n = len(data)
+        w = n * (n - 1)
+        return (sum_ / w) ** .5
+    standard_errors = [standard_error(arg) for arg in args]
 
     # precalculate weighted sum for following step
     weight_denom = np.sum(1 / np.square(standard_errors))
