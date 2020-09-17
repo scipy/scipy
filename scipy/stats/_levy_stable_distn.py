@@ -2,6 +2,7 @@
 #
 
 import warnings
+from functools import partial
 
 import numpy as np
 
@@ -11,8 +12,24 @@ from scipy import interpolate
 import scipy.special as sc
 from scipy._lib._util import _lazywhere
 from ._distn_infrastructure import rv_continuous
-from ._continuous_distns import uniform, expon, _norm_pdf
+from ._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from ._fft_char_fn import pdf_from_cf_with_fft
+
+# Stable distributions are known for various parameterisations
+# some being advantageous for numerical considerations and others
+# useful due to their location/scale awareness.
+#
+# Here we follow [NO] convention.
+#
+# S0 / Z0 / x0 (aka Zoleterav's M)
+# S1 / Z1 / x1
+#
+# Where S* denotes parameterisation, Z* denotes standardized
+# version where gamma = 1, delta = 0 and x* denotes variable.
+#
+# Scipy's original Stable was a random variate generator. It
+# uses S1 and unfortunately is not a location/scale aware.
+
 
 # default numerical integration tolerance
 # used for epsrel in piecewise and both epsrel and epsabs in dni
@@ -20,7 +37,15 @@ from ._fft_char_fn import pdf_from_cf_with_fft
 _QUAD_EPS = 1.2e-14
 
 
-def Phi(alpha, t):
+def _Phi_Z0(alpha, t):
+    return (
+        -np.tan(np.pi * alpha / 2) * (np.abs(t) ** (1 - alpha) - 1)
+        if alpha != 1
+        else -2.0 * np.log(np.abs(t)) / np.pi
+    )
+
+
+def _Phi_Z1(alpha, t):
     return (
         np.tan(np.pi * alpha / 2)
         if alpha != 1
@@ -28,14 +53,18 @@ def Phi(alpha, t):
     )
 
 
-def _cf(t, alpha, beta):
+def _cf(Phi, t, alpha, beta):
     """Characteristic function."""
     return np.exp(
         -(np.abs(t) ** alpha) * (1 - 1j * beta * np.sign(t) * Phi(alpha, t))
     )
 
 
-def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
+_cf_Z0 = partial(_cf, _Phi_Z0)
+_cf_Z1 = partial(_cf, _Phi_Z1)
+
+
+def _pdf_single_value_cf_integrate(Phi, x, alpha, beta, **kwds):
     """To improve DNI accuracy convert characteristic function in to real
     valued integral using Euler's formula, then exploit cosine symmetry to
     change limits to [0, inf). Finally use cosine addition formula to split
@@ -57,7 +86,7 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             np.sin(beta * (t ** alpha) * Phi(alpha, t))
         )
 
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid="ignore"):
         int1, *ret1 = integrate.quad(
             integrand1,
             0,
@@ -67,7 +96,7 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             limit=1000,
             epsabs=quad_eps,
             epsrel=quad_eps,
-            full_output=1
+            full_output=1,
         )
 
         int2, *ret2 = integrate.quad(
@@ -79,16 +108,24 @@ def _pdf_single_value_cf_integrate(x, alpha, beta, **kwds):
             limit=1000,
             epsabs=quad_eps,
             epsrel=quad_eps,
-            full_output=1
+            full_output=1,
         )
 
     return (int1 + int2) / np.pi
 
 
-def _nolan_round_difficult_input(x0, alpha, beta, zeta, **kwds):
+_pdf_single_value_cf_integrate_Z0 = partial(
+    _pdf_single_value_cf_integrate, _Phi_Z0
+)
+_pdf_single_value_cf_integrate_Z1 = partial(
+    _pdf_single_value_cf_integrate, _Phi_Z1
+)
+
+
+def _nolan_round_difficult_input(
+    x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
+):
     """Round difficult input values for Nolan's method in [NO]."""
-    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
-    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
 
     # following Nolan's STABLE,
     #   "1. When 0 < |alpha-1| < 0.005, the program has numerical problems
@@ -193,29 +230,33 @@ def _nolan_c3(alpha):
         return 1 / np.pi
 
 
-def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
-    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
-
-    zeta = -beta * np.tan(np.pi * alpha / 2.0)
-    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
-
+def _pdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
     # convert from Nolan's S_1 (aka S) to S_0 (aka Zolaterev M)
     # parameterization
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
     x0 = x + zeta if alpha != 1 else x
 
+    return _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds)
+
+
+def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
+
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
+    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
+    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
     x0, alpha, beta = _nolan_round_difficult_input(
-        x0, alpha, beta, zeta, **kwds
+        x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
     )
 
-    # handle Nolan's initial case logic with
     # some other known distribution pdfs / analytical cases
     # TODO: add more where possible with test coverage,
     # eg https://en.wikipedia.org/wiki/Stable_distribution#Other_analytic_cases
     if alpha == 2.0:
         # normal
-        return _norm_pdf(x / np.sqrt(2)) / np.sqrt(2)
+        return _norm_pdf(x0 / np.sqrt(2)) / np.sqrt(2)
     elif alpha == 0.5 and beta == 1.0:
         # levy
         # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
@@ -230,8 +271,22 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
         ) / np.sqrt(2 * np.pi * np.abs(x0) ** 3)
     elif alpha == 1.0 and beta == 0.0:
         # cauchy
-        return 1 / (1 + x ** 2) / np.pi
-    elif x0 == zeta:
+        return 1 / (1 + x0 ** 2) / np.pi
+
+    return _pdf_single_value_piecewise_post_rounding_Z0(
+        x0, alpha, beta, quad_eps
+    )
+
+
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
+    """Calculate pdf using Nolan's methods as detailed in [NO].
+    """
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
+
+    # handle Nolan's initial case logic
+    if x0 == zeta:
         return (
             sc.gamma(1 + 1 / alpha)
             * np.cos(xi)
@@ -239,7 +294,9 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             / ((1 + zeta ** 2) ** (1 / alpha / 2))
         )
     elif x0 < zeta:
-        return _pdf_single_value_piecewise(-x, alpha, -beta, **kwds)
+        return _pdf_single_value_piecewise_post_rounding_Z0(
+            -x0, alpha, -beta, quad_eps
+        )
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -311,42 +368,70 @@ def _pdf_single_value_piecewise(x, alpha, beta, **kwds):
             limit=100,
             epsrel=quad_eps,
             epsabs=0,
-            full_output=1
+            full_output=1,
         )
 
     return c2 * intg
 
 
-def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
+def _cdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
+    # convert from Nolan's S_1 (aka S) to S_0 (aka Zolaterev M)
+    # parameterization
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    x0 = x + zeta if alpha != 1 else x
+
+    return _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds)
+
+
+def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
+
+    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
+    x_tol_near_zeta = kwds.get("piecewise_x_tol_near_zeta", 0.005)
+    alpha_tol_near_one = kwds.get("piecewise_alpha_tol_near_one", 0.005)
+
+    zeta = -beta * np.tan(np.pi * alpha / 2.0)
+    x0, alpha, beta = _nolan_round_difficult_input(
+        x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
+    )
+
+    # some other known distribution cdfs / analytical cases
+    # TODO: add more where possible with test coverage,
+    # eg https://en.wikipedia.org/wiki/Stable_distribution#Other_analytic_cases
+    if alpha == 2.0:
+        # normal
+        return _norm_cdf(x0 / np.sqrt(2))
+    elif alpha == 0.5 and beta == 1.0:
+        # levy
+        # since S(1/2, 1, γ, δ; <x>) == S(1/2, 1, γ, δ+γ; <x0>).
+        _x = x0 + 1
+        return sc.erfc(np.sqrt(0.5 / _x))
+    elif alpha == 1.0 and beta == 0.0:
+        # cauchy
+        return 0.5 + np.arctan(x0) / np.pi
+
+    return _cdf_single_value_piecewise_post_rounding_Z0(
+        x0, alpha, beta, quad_eps
+    )
+
+
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
-    quad_eps = kwds.get("quad_eps", _QUAD_EPS)
-
     zeta = -beta * np.tan(np.pi * alpha / 2.0)
     xi = np.arctan(-zeta) / alpha if alpha != 1 else np.pi / 2
 
-    # convert from Nolan's S_1 (aka S) to S_0 (aka Zolaterev M)
-    # parameterization
-    x0 = x + zeta if alpha != 1 else x
-
-    x0, alpha, beta = _nolan_round_difficult_input(
-        x0, alpha, beta, zeta, **kwds
-    )
-
     # handle Nolan's initial case logic
-    if alpha == 1:
-        if beta == 0:
-            return 0.5 + np.arctan(x) / np.pi
-        elif beta < 0:
-            # NOTE: Nolan's paper has a typo here!
-            # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
-            # incorrect since F(-infty) would be 1.0 in this case
-            # Indeed, the alpha != 1, x0 < zeta case is correct here.
-            return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
+    if (alpha == 1 and beta < 0) or x0 < zeta:
+        # NOTE: Nolan's paper has a typo here!
+        # He states F(x) = 1 - F(x, alpha, -beta), but this is clearly
+        # incorrect since F(-infty) would be 1.0 in this case
+        # Indeed, the alpha != 1, x0 < zeta case is correct here.
+        return 1 - _cdf_single_value_piecewise_post_rounding_Z0(
+            -x0, alpha, -beta, quad_eps
+        )
     elif x0 == zeta:
         return 0.5 - xi / np.pi
-    elif x0 < zeta:
-        return 1 - _cdf_single_value_piecewise(-x, alpha, -beta, **kwds)
 
     # following Nolan, we may now assume
     #   x0 > zeta when alpha != 1
@@ -398,10 +483,228 @@ def _cdf_single_value_piecewise(x, alpha, beta, **kwds):
             limit=100,
             epsrel=quad_eps,
             epsabs=0,
-            full_output=1
+            full_output=1,
         )
 
     return c1 + c3 * intg
+
+
+def _rvs_Z1(alpha, beta, size=None, random_state=None):
+    """Simulate random variables using Nolan's methods as detailed in [NO].
+    """
+
+    def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+        return (
+            2
+            / np.pi
+            * (
+                (np.pi / 2 + bTH) * tanTH
+                - beta * np.log((np.pi / 2 * W * cosTH) / (np.pi / 2 + bTH))
+            )
+        )
+
+    def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+        return (
+            W
+            / (cosTH / np.tan(aTH) + np.sin(TH))
+            * ((np.cos(aTH) + np.sin(aTH) * tanTH) / W) ** (1.0 / alpha)
+        )
+
+    def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+        # alpha is not 1 and beta is not 0
+        val0 = beta * np.tan(np.pi * alpha / 2)
+        th0 = np.arctan(val0) / alpha
+        val3 = W / (cosTH / np.tan(alpha * (th0 + TH)) + np.sin(TH))
+        res3 = val3 * (
+            (
+                np.cos(aTH)
+                + np.sin(aTH) * tanTH
+                - val0 * (np.sin(aTH) - np.cos(aTH) * tanTH)
+            )
+            / W
+        ) ** (1.0 / alpha)
+        return res3
+
+    def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+        res = _lazywhere(
+            beta == 0,
+            (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+            beta0func,
+            f2=otherwise,
+        )
+        return res
+
+    alpha = np.broadcast_to(alpha, size)
+    beta = np.broadcast_to(beta, size)
+    TH = uniform.rvs(
+        loc=-np.pi / 2.0, scale=np.pi, size=size, random_state=random_state
+    )
+    W = expon.rvs(size=size, random_state=random_state)
+    aTH = alpha * TH
+    bTH = beta * TH
+    cosTH = np.cos(TH)
+    tanTH = np.tan(TH)
+    res = _lazywhere(
+        alpha == 1,
+        (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+        alpha1func,
+        f2=alphanot1func,
+    )
+    return res
+
+
+def _fitstart_S0(data):
+    alpha, beta, delta1, gamma = _fitstart_S1(data)
+
+    # TODO: is this correct?
+    if alpha != 1:
+        delta0 = delta1 + beta * gamma * np.tan(np.pi * alpha / 2.0)
+    else:
+        delta0 = delta1 + 2 * beta * gamma * np.log(gamma) / np.pi
+
+    return alpha, beta, delta0, gamma
+
+
+def _fitstart_S1(data):
+    # We follow McCullock 1986 method - Simple Consistent Estimators
+    # of Stable Distribution Parameters
+
+    # fmt: off
+    # Table III and IV
+    nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4,
+                        5, 6, 8, 10, 15, 25]
+    nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
+
+    # table III - alpha = psi_1(nu_alpha, nu_beta)
+    alpha_table = [
+        [2.000, 2.000, 2.000, 2.000, 2.000, 2.000, 2.000],
+        [1.916, 1.924, 1.924, 1.924, 1.924, 1.924, 1.924],
+        [1.808, 1.813, 1.829, 1.829, 1.829, 1.829, 1.829],
+        [1.729, 1.730, 1.737, 1.745, 1.745, 1.745, 1.745],
+        [1.664, 1.663, 1.663, 1.668, 1.676, 1.676, 1.676],
+        [1.563, 1.560, 1.553, 1.548, 1.547, 1.547, 1.547],
+        [1.484, 1.480, 1.471, 1.460, 1.448, 1.438, 1.438],
+        [1.391, 1.386, 1.378, 1.364, 1.337, 1.318, 1.318],
+        [1.279, 1.273, 1.266, 1.250, 1.210, 1.184, 1.150],
+        [1.128, 1.121, 1.114, 1.101, 1.067, 1.027, 0.973],
+        [1.029, 1.021, 1.014, 1.004, 0.974, 0.935, 0.874],
+        [0.896, 0.892, 0.884, 0.883, 0.855, 0.823, 0.769],
+        [0.818, 0.812, 0.806, 0.801, 0.780, 0.756, 0.691],
+        [0.698, 0.695, 0.692, 0.689, 0.676, 0.656, 0.597],
+        [0.593, 0.590, 0.588, 0.586, 0.579, 0.563, 0.513]]
+
+    # table IV - beta = psi_2(nu_alpha, nu_beta)
+    beta_table = [
+        [0, 2.160, 1.000, 1.000, 1.000, 1.000, 1.000],
+        [0, 1.592, 3.390, 1.000, 1.000, 1.000, 1.000],
+        [0, 0.759, 1.800, 1.000, 1.000, 1.000, 1.000],
+        [0, 0.482, 1.048, 1.694, 1.000, 1.000, 1.000],
+        [0, 0.360, 0.760, 1.232, 2.229, 1.000, 1.000],
+        [0, 0.253, 0.518, 0.823, 1.575, 1.000, 1.000],
+        [0, 0.203, 0.410, 0.632, 1.244, 1.906, 1.000],
+        [0, 0.165, 0.332, 0.499, 0.943, 1.560, 1.000],
+        [0, 0.136, 0.271, 0.404, 0.689, 1.230, 2.195],
+        [0, 0.109, 0.216, 0.323, 0.539, 0.827, 1.917],
+        [0, 0.096, 0.190, 0.284, 0.472, 0.693, 1.759],
+        [0, 0.082, 0.163, 0.243, 0.412, 0.601, 1.596],
+        [0, 0.074, 0.147, 0.220, 0.377, 0.546, 1.482],
+        [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
+        [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
+
+    # Table V and VII
+    alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
+                    1, 0.9, 0.8, 0.7, 0.6, 0.5]
+    beta_range = [0, 0.25, 0.5, 0.75, 1]
+
+    # Table V - nu_c = psi_3(alpha, beta)
+    nu_c_table = [
+        [1.908, 1.908, 1.908, 1.908, 1.908],
+        [1.914, 1.915, 1.916, 1.918, 1.921],
+        [1.921, 1.922, 1.927, 1.936, 1.947],
+        [1.927, 1.930, 1.943, 1.961, 1.987],
+        [1.933, 1.940, 1.962, 1.997, 2.043],
+        [1.939, 1.952, 1.988, 2.045, 2.116],
+        [1.946, 1.967, 2.022, 2.106, 2.211],
+        [1.955, 1.984, 2.067, 2.188, 2.333],
+        [1.965, 2.007, 2.125, 2.294, 2.491],
+        [1.980, 2.040, 2.205, 2.435, 2.696],
+        [2.000, 2.085, 2.311, 2.624, 2.973],
+        [2.040, 2.149, 2.461, 2.886, 3.356],
+        [2.098, 2.244, 2.676, 3.265, 3.912],
+        [2.189, 2.392, 3.004, 3.844, 4.775],
+        [2.337, 2.634, 3.542, 4.808, 6.247],
+        [2.588, 3.073, 4.534, 6.636, 9.144]]
+
+    # Table VII - nu_zeta = psi_5(alpha, beta)
+    nu_zeta_table = [
+        [0, 0.000, 0.000, 0.000, 0.000],
+        [0, -0.017, -0.032, -0.049, -0.064],
+        [0, -0.030, -0.061, -0.092, -0.123],
+        [0, -0.043, -0.088, -0.132, -0.179],
+        [0, -0.056, -0.111, -0.170, -0.232],
+        [0, -0.066, -0.134, -0.206, -0.283],
+        [0, -0.075, -0.154, -0.241, -0.335],
+        [0, -0.084, -0.173, -0.276, -0.390],
+        [0, -0.090, -0.192, -0.310, -0.447],
+        [0, -0.095, -0.208, -0.346, -0.508],
+        [0, -0.098, -0.223, -0.380, -0.576],
+        [0, -0.099, -0.237, -0.424, -0.652],
+        [0, -0.096, -0.250, -0.469, -0.742],
+        [0, -0.089, -0.262, -0.520, -0.853],
+        [0, -0.078, -0.272, -0.581, -0.997],
+        [0, -0.061, -0.279, -0.659, -1.198]]
+    # fmt: on
+
+    psi_1 = interpolate.interp2d(
+        nu_beta_range, nu_alpha_range, alpha_table, kind="linear"
+    )
+    psi_2 = interpolate.interp2d(
+        nu_beta_range, nu_alpha_range, beta_table, kind="linear"
+    )
+    psi_2_1 = lambda nu_beta, nu_alpha: (
+        psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+    )
+
+    phi_3 = interpolate.interp2d(
+        beta_range, alpha_range, nu_c_table, kind="linear"
+    )
+    phi_3_1 = lambda beta, alpha: (
+        phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
+    )
+    phi_5 = interpolate.interp2d(
+        beta_range, alpha_range, nu_zeta_table, kind="linear"
+    )
+    phi_5_1 = lambda beta, alpha: (
+        phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
+    )
+
+    # quantiles
+    p05 = np.percentile(data, 5)
+    p50 = np.percentile(data, 50)
+    p95 = np.percentile(data, 95)
+    p25 = np.percentile(data, 25)
+    p75 = np.percentile(data, 75)
+
+    nu_alpha = (p95 - p05) / (p75 - p25)
+    nu_beta = (p95 + p05 - 2 * p50) / (p95 - p05)
+
+    if nu_alpha >= 2.439:
+        alpha = np.clip(psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.0)
+        beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1.0, 1.0)
+    else:
+        alpha = 2.0
+        beta = np.sign(nu_beta)
+    c = (p75 - p25) / phi_3_1(beta, alpha)[0]
+    zeta = p50 + c * phi_5_1(beta, alpha)[0]
+    delta = np.clip(
+        zeta - beta * c * np.tan(np.pi * alpha / 2.0)
+        if alpha == 1.0
+        else zeta,
+        np.finfo(float).eps,
+        np.inf,
+    )
+
+    return (alpha, beta, delta, c)
 
 
 class levy_stable_gen(rv_continuous):
@@ -422,7 +725,7 @@ class levy_stable_gen(rv_continuous):
         \varphi(t, \alpha, \beta, c, \mu) =
         e^{it\mu -|ct|^{\alpha}(1-i\beta\operatorname{sign}(t)\Phi(\alpha, t))}
 
-    where:
+    where two different parameterizations are supported. The first :math:`S_1`:
 
     .. math::
 
@@ -430,6 +733,17 @@ class levy_stable_gen(rv_continuous):
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
                 -{\frac {2}{\pi }}\log |t|&\alpha =1
                 \end{cases}
+
+    The second :math:`S_0`:
+
+    .. math::
+
+        \Phi = \begin{cases}
+                -\tan \left({\frac {\pi \alpha }{2}}\right)(|ct|^{1-\alpha}-1)
+                &\alpha \neq 1\\
+                -{\frac {2}{\pi }}\log |ct|&\alpha =1
+                \end{cases}
+
 
     The probability density function for `levy_stable` is:
 
@@ -441,9 +755,12 @@ class levy_stable_gen(rv_continuous):
     closed form.
 
     For evaluation of pdf we use either Nolan's piecewise approach using
-    Zolotarev :math:`S_0` parameterization with integration, direct numerical
+    Zolotarev :math:`M` parameterization with integration, direct numerical
     integration of standard parameterization of characteristic function or FFT
     of characteristic function.
+
+    Switch parameterizations by setting ``levy_stable.parameterization``
+    to either 'S0' or 'S1'. The default is 'S1'.
 
     The default method is 'piecewise' which uses Nolan's piecewise method. The
     default method can be changed by setting ``levy_stable.pdf_default_method``
@@ -516,68 +833,102 @@ class levy_stable_gen(rv_continuous):
     %(example)s
 
     """
-
-    def _rvs(self, alpha, beta, size=None, random_state=None):
-        """Simulate random variables using Nolan's methods as detailed in [NO].
-        """
-        def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return 2 / np.pi * (np.pi / 2 + bTH) * tanTH - beta * np.log(
-                (np.pi / 2 * W * cosTH) / (np.pi / 2 + bTH)
-            )
-
-        def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (
-                W
-                / (cosTH / np.tan(aTH) + np.sin(TH))
-                * ((np.cos(aTH) + np.sin(aTH) * tanTH) / W) ** (1.0 / alpha)
-            )
-
-        def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            # alpha is not 1 and beta is not 0
-            val0 = beta * np.tan(np.pi * alpha / 2)
-            th0 = np.arctan(val0) / alpha
-            val3 = W / (cosTH / np.tan(alpha * (th0 + TH)) + np.sin(TH))
-            res3 = val3 * (
-                (
-                    np.cos(aTH)
-                    + np.sin(aTH) * tanTH
-                    - val0 * (np.sin(aTH) - np.cos(aTH) * tanTH)
-                )
-                / W
-            ) ** (1.0 / alpha)
-            return res3
-
-        def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            res = _lazywhere(
-                beta == 0,
-                (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-                beta0func,
-                f2=otherwise,
-            )
-            return res
-
-        alpha = np.broadcast_to(alpha, size)
-        beta = np.broadcast_to(beta, size)
-        TH = uniform.rvs(
-            loc=-np.pi / 2.0, scale=np.pi, size=size, random_state=random_state
-        )
-        W = expon.rvs(size=size, random_state=random_state)
-        aTH = alpha * TH
-        bTH = beta * TH
-        cosTH = np.cos(TH)
-        tanTH = np.tan(TH)
-        res = _lazywhere(
-            alpha == 1,
-            (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-            alpha1func,
-            f2=alphanot1func,
-        )
-        return res
+    # Configurable options as class variables
+    # (accesible from self by attribute lookup).
+    parameterization = "S1"
+    pdf_default_method = "piecewise"
+    cdf_default_method = "piecewise"
+    quad_eps = _QUAD_EPS
+    piecewise_x_tol_near_zeta = 0.005
+    piecewise_alpha_tol_near_one = 0.005
+    pdf_fft_min_points_threshold = None
+    pdf_fft_grid_spacing = 0.001
+    pdf_fft_n_points_two_power = None
+    pdf_fft_interpolation_level = 3
+    pdf_fft_interpolation_kind = 3
 
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
+    def _parameterization(self):
+        allowed = ("S0", "S1")
+        pz = self.parameterization
+        if pz not in allowed:
+            raise RuntimeError(
+                f"Parameterization '{pz}' in supported list: {allowed}"
+            )
+        return pz
+
+    def rvs(self, *args, **kwds):
+        X1 = super().rvs(*args, **kwds)
+
+        discrete = kwds.pop("discrete", None)  # noqa
+        rndm = kwds.pop("random_state", None)  # noqa
+        (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
+
+        # shift location for this parameterisation (S1)
+        X1 = np.where(
+            alpha == 1.0, X1 + 2 * beta * gamma * np.log(gamma) / np.pi, X1
+        )
+
+        if self._parameterization() == "S0":
+            return np.where(
+                alpha == 1.0,
+                X1 - (beta * 2 * gamma * np.log(gamma) / np.pi),
+                X1 - gamma * beta * np.tan(np.pi * alpha / 2.0),
+            )
+        elif self._parameterization() == "S1":
+            return X1
+
+    def _rvs(self, alpha, beta, size=None, random_state=None):
+        return _rvs_Z1(alpha, beta, size, random_state)
+
+    def pdf(self, x, *args, **kwds):
+        # override base class version to correct
+        # location for S1 parameterization
+        if self._parameterization() == "S0":
+            return super().pdf(x, *args, **kwds)
+        elif self._parameterization() == "S1":
+            (alpha, beta), delta, gamma = self._parse_args(*args, **kwds)
+            if np.all(np.reshape(alpha, (1, -1))[0, :] != 1):
+                return super().pdf(x, *args, **kwds)
+            else:
+                # correct location for this parameterisation
+                x = np.reshape(x, (1, -1))[0, :]
+                x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
+
+                data_in = np.dstack((x, alpha, beta))[0]
+                data_out = np.empty(shape=(len(data_in), 1))
+                # group data in unique arrays of alpha, beta pairs
+                uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
+                for pair in uniq_param_pairs:
+                    _alpha, _beta = pair
+                    _delta = (
+                        delta + 2 * _beta * gamma * np.log(gamma) / np.pi
+                        if _alpha == 1.0
+                        else delta
+                    )
+                    data_mask = np.all(data_in[:, 1:] == pair, axis=-1)
+                    _x = data_in[data_mask, 0]
+                    data_out[data_mask] = (
+                        super()
+                        .pdf(_x, _alpha, _beta, loc=_delta, scale=gamma)
+                        .reshape(len(_x), 1)
+                    )
+                output = data_out.T[0]
+                if output.shape == (1,):
+                    return output[0]
+                return output
+
     def _pdf(self, x, alpha, beta):
+        if self._parameterization() == "S0":
+            _pdf_single_value_piecewise = _pdf_single_value_piecewise_Z0
+            _pdf_single_value_cf_integrate = _pdf_single_value_cf_integrate_Z0
+            _cf = _cf_Z0
+        elif self._parameterization() == "S1":
+            _pdf_single_value_piecewise = _pdf_single_value_piecewise_Z1
+            _pdf_single_value_cf_integrate = _pdf_single_value_cf_integrate_Z1
+            _cf = _cf_Z1
 
         x = np.asarray(x).reshape(1, -1)[0, :]
 
@@ -586,37 +937,27 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in), 1))
 
-        pdf_default_method_name = getattr(
-            self, "pdf_default_method", "piecewise"
-        )
+        pdf_default_method_name = levy_stable_gen.pdf_default_method
         if pdf_default_method_name in ("piecewise", "best", "zolotarev"):
             pdf_single_value_method = _pdf_single_value_piecewise
         elif pdf_default_method_name in ("dni", "quadrature"):
             pdf_single_value_method = _pdf_single_value_cf_integrate
         elif (
             pdf_default_method_name == "fft-simpson"
-            or getattr(self, "pdf_fft_min_points_threshold", None) is not None
+            or self.pdf_fft_min_points_threshold is not None
         ):
             pdf_single_value_method = None
 
         pdf_single_value_kwds = {
-            "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
-            "piecewise_x_tol_near_zeta": getattr(
-                self, "piecewise_x_tol_near_zeta", 0.005
-            ),
-            "piecewise_alpha_tol_near_one": getattr(
-                self, "piecewise_alpha_tol_near_one", 0.005
-            )
+            "quad_eps": self.quad_eps,
+            "piecewise_x_tol_near_zeta": self.piecewise_x_tol_near_zeta,
+            "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
-        fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
-        fft_n_points_two_power = getattr(
-            self, "pdf_fft_n_points_two_power", None
-        )
-        fft_interpolation_level = getattr(
-            self, "pdf_fft_interpolation_level", 3
-        )
-        fft_interpolation_kind = getattr(self, "pdf_fft_interpolation_kind", 3)
+        fft_grid_spacing = self.pdf_fft_grid_spacing
+        fft_n_points_two_power = self.pdf_fft_n_points_two_power
+        fft_interpolation_level = self.pdf_fft_interpolation_level
+        fft_interpolation_kind = self.pdf_fft_interpolation_kind
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -687,7 +1028,51 @@ class levy_stable_gen(rv_continuous):
 
         return data_out.T[0]
 
+    def cdf(self, x, *args, **kwds):
+        # override base class version to correct
+        # location for S1 parameterization
+        # NOTE: this is near identical to pdf() above
+        if self._parameterization() == "S0":
+            return super().cdf(x, *args, **kwds)
+        elif self._parameterization() == "S1":
+            (alpha, beta), delta, gamma = self._parse_args(*args, **kwds)
+            if np.all(np.reshape(alpha, (1, -1))[0, :] != 1):
+                return super().cdf(x, *args, **kwds)
+            else:
+                # correct location for this parameterisation
+                x = np.reshape(x, (1, -1))[0, :]
+                x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
+
+                data_in = np.dstack((x, alpha, beta))[0]
+                data_out = np.empty(shape=(len(data_in), 1))
+                # group data in unique arrays of alpha, beta pairs
+                uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
+                for pair in uniq_param_pairs:
+                    _alpha, _beta = pair
+                    _delta = (
+                        delta + 2 * _beta * gamma * np.log(gamma) / np.pi
+                        if _alpha == 1.0
+                        else delta
+                    )
+                    data_mask = np.all(data_in[:, 1:] == pair, axis=-1)
+                    _x = data_in[data_mask, 0]
+                    data_out[data_mask] = (
+                        super()
+                        .cdf(_x, _alpha, _beta, loc=_delta, scale=gamma)
+                        .reshape(len(_x), 1)
+                    )
+                output = data_out.T[0]
+                if output.shape == (1,):
+                    return output[0]
+                return output
+
     def _cdf(self, x, alpha, beta):
+        if self._parameterization() == "S0":
+            _cdf_single_value_piecewise = _cdf_single_value_piecewise_Z0
+            _cf = _cf_Z0
+        elif self._parameterization() == "S1":
+            _cdf_single_value_piecewise = _cdf_single_value_piecewise_Z1
+            _cf = _cf_Z1
 
         x = np.asarray(x).reshape(1, -1)[0, :]
 
@@ -696,32 +1081,22 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in), 1))
 
-        cdf_default_method_name = getattr(
-            self, "cdf_default_method", "piecewise"
-        )
+        cdf_default_method_name = self.cdf_default_method
         if cdf_default_method_name == "piecewise":
             cdf_single_value_method = _cdf_single_value_piecewise
         elif cdf_default_method_name == "fft-simpson":
             cdf_single_value_method = None
 
         cdf_single_value_kwds = {
-            "quad_eps": getattr(self, "quad_eps", _QUAD_EPS),
-            "piecewise_x_tol_near_zeta": getattr(
-                self, "piecewise_x_tol_near_zeta", 0.005
-            ),
-            "piecewise_alpha_tol_near_one": getattr(
-                self, "piecewise_alpha_tol_near_one", 0.005
-            )
+            "quad_eps": self.quad_eps,
+            "piecewise_x_tol_near_zeta": self.piecewise_x_tol_near_zeta,
+            "piecewise_alpha_tol_near_one": self.piecewise_alpha_tol_near_one,
         }
 
-        fft_grid_spacing = getattr(self, "pdf_fft_grid_spacing", 0.001)
-        fft_n_points_two_power = getattr(
-            self, "pdf_fft_n_points_two_power", None
-        )
-        fft_interpolation_level = getattr(
-            self, "pdf_fft_interpolation_level", 3
-        )
-        fft_interpolation_kind = getattr(self, "pdf_fft_interpolation_kind", 3)
+        fft_grid_spacing = self.pdf_fft_grid_spacing
+        fft_n_points_two_power = self.pdf_fft_n_points_two_power
+        fft_interpolation_level = self.pdf_fft_interpolation_level
+        fft_interpolation_kind = self.pdf_fft_interpolation_kind
 
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.unique(data_in[:, 1:], axis=0)
@@ -780,149 +1155,11 @@ class levy_stable_gen(rv_continuous):
         return data_out.T[0]
 
     def _fitstart(self, data):
-        # We follow McCullock 1986 method - Simple Consistent Estimators
-        # of Stable Distribution Parameters
-
-        # fmt: off
-        # Table III and IV
-        nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4,
-                          5, 6, 8, 10, 15, 25]
-        nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
-
-        # table III - alpha = psi_1(nu_alpha, nu_beta)
-        alpha_table = [
-            [2.000, 2.000, 2.000, 2.000, 2.000, 2.000, 2.000],
-            [1.916, 1.924, 1.924, 1.924, 1.924, 1.924, 1.924],
-            [1.808, 1.813, 1.829, 1.829, 1.829, 1.829, 1.829],
-            [1.729, 1.730, 1.737, 1.745, 1.745, 1.745, 1.745],
-            [1.664, 1.663, 1.663, 1.668, 1.676, 1.676, 1.676],
-            [1.563, 1.560, 1.553, 1.548, 1.547, 1.547, 1.547],
-            [1.484, 1.480, 1.471, 1.460, 1.448, 1.438, 1.438],
-            [1.391, 1.386, 1.378, 1.364, 1.337, 1.318, 1.318],
-            [1.279, 1.273, 1.266, 1.250, 1.210, 1.184, 1.150],
-            [1.128, 1.121, 1.114, 1.101, 1.067, 1.027, 0.973],
-            [1.029, 1.021, 1.014, 1.004, 0.974, 0.935, 0.874],
-            [0.896, 0.892, 0.884, 0.883, 0.855, 0.823, 0.769],
-            [0.818, 0.812, 0.806, 0.801, 0.780, 0.756, 0.691],
-            [0.698, 0.695, 0.692, 0.689, 0.676, 0.656, 0.597],
-            [0.593, 0.590, 0.588, 0.586, 0.579, 0.563, 0.513]]
-
-        # table IV - beta = psi_2(nu_alpha, nu_beta)
-        beta_table = [
-            [0, 2.160, 1.000, 1.000, 1.000, 1.000, 1.000],
-            [0, 1.592, 3.390, 1.000, 1.000, 1.000, 1.000],
-            [0, 0.759, 1.800, 1.000, 1.000, 1.000, 1.000],
-            [0, 0.482, 1.048, 1.694, 1.000, 1.000, 1.000],
-            [0, 0.360, 0.760, 1.232, 2.229, 1.000, 1.000],
-            [0, 0.253, 0.518, 0.823, 1.575, 1.000, 1.000],
-            [0, 0.203, 0.410, 0.632, 1.244, 1.906, 1.000],
-            [0, 0.165, 0.332, 0.499, 0.943, 1.560, 1.000],
-            [0, 0.136, 0.271, 0.404, 0.689, 1.230, 2.195],
-            [0, 0.109, 0.216, 0.323, 0.539, 0.827, 1.917],
-            [0, 0.096, 0.190, 0.284, 0.472, 0.693, 1.759],
-            [0, 0.082, 0.163, 0.243, 0.412, 0.601, 1.596],
-            [0, 0.074, 0.147, 0.220, 0.377, 0.546, 1.482],
-            [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
-            [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
-
-        # Table V and VII
-        alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
-                       1, 0.9, 0.8, 0.7, 0.6, 0.5]
-        beta_range = [0, 0.25, 0.5, 0.75, 1]
-
-        # Table V - nu_c = psi_3(alpha, beta)
-        nu_c_table = [
-            [1.908, 1.908, 1.908, 1.908, 1.908],
-            [1.914, 1.915, 1.916, 1.918, 1.921],
-            [1.921, 1.922, 1.927, 1.936, 1.947],
-            [1.927, 1.930, 1.943, 1.961, 1.987],
-            [1.933, 1.940, 1.962, 1.997, 2.043],
-            [1.939, 1.952, 1.988, 2.045, 2.116],
-            [1.946, 1.967, 2.022, 2.106, 2.211],
-            [1.955, 1.984, 2.067, 2.188, 2.333],
-            [1.965, 2.007, 2.125, 2.294, 2.491],
-            [1.980, 2.040, 2.205, 2.435, 2.696],
-            [2.000, 2.085, 2.311, 2.624, 2.973],
-            [2.040, 2.149, 2.461, 2.886, 3.356],
-            [2.098, 2.244, 2.676, 3.265, 3.912],
-            [2.189, 2.392, 3.004, 3.844, 4.775],
-            [2.337, 2.634, 3.542, 4.808, 6.247],
-            [2.588, 3.073, 4.534, 6.636, 9.144]]
-
-        # Table VII - nu_zeta = psi_5(alpha, beta)
-        nu_zeta_table = [
-            [0, 0.000, 0.000, 0.000, 0.000],
-            [0, -0.017, -0.032, -0.049, -0.064],
-            [0, -0.030, -0.061, -0.092, -0.123],
-            [0, -0.043, -0.088, -0.132, -0.179],
-            [0, -0.056, -0.111, -0.170, -0.232],
-            [0, -0.066, -0.134, -0.206, -0.283],
-            [0, -0.075, -0.154, -0.241, -0.335],
-            [0, -0.084, -0.173, -0.276, -0.390],
-            [0, -0.090, -0.192, -0.310, -0.447],
-            [0, -0.095, -0.208, -0.346, -0.508],
-            [0, -0.098, -0.223, -0.380, -0.576],
-            [0, -0.099, -0.237, -0.424, -0.652],
-            [0, -0.096, -0.250, -0.469, -0.742],
-            [0, -0.089, -0.262, -0.520, -0.853],
-            [0, -0.078, -0.272, -0.581, -0.997],
-            [0, -0.061, -0.279, -0.659, -1.198]]
-        # fmt: on
-
-        psi_1 = interpolate.interp2d(
-            nu_beta_range, nu_alpha_range, alpha_table, kind="linear"
-        )
-        psi_2 = interpolate.interp2d(
-            nu_beta_range, nu_alpha_range, beta_table, kind="linear"
-        )
-        psi_2_1 = lambda nu_beta, nu_alpha: (
-            psi_2(nu_beta, nu_alpha)
-            if nu_beta > 0
-            else -psi_2(-nu_beta, nu_alpha)
-        )
-
-        phi_3 = interpolate.interp2d(
-            beta_range, alpha_range, nu_c_table, kind="linear"
-        )
-        phi_3_1 = lambda beta, alpha: (
-            phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
-        )
-        phi_5 = interpolate.interp2d(
-            beta_range, alpha_range, nu_zeta_table, kind="linear"
-        )
-        phi_5_1 = lambda beta, alpha: (
-            phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
-        )
-
-        # quantiles
-        p05 = np.percentile(data, 5)
-        p50 = np.percentile(data, 50)
-        p95 = np.percentile(data, 95)
-        p25 = np.percentile(data, 25)
-        p75 = np.percentile(data, 75)
-
-        nu_alpha = (p95 - p05) / (p75 - p25)
-        nu_beta = (p95 + p05 - 2 * p50) / (p95 - p05)
-
-        if nu_alpha >= 2.439:
-            alpha = np.clip(
-                psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.0
-            )
-            beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1.0, 1.0)
-        else:
-            alpha = 2.0
-            beta = np.sign(nu_beta)
-        c = (p75 - p25) / phi_3_1(beta, alpha)[0]
-        zeta = p50 + c * phi_5_1(beta, alpha)[0]
-        delta = np.clip(
-            zeta - beta * c * np.tan(np.pi * alpha / 2.0)
-            if alpha == 1.0
-            else zeta,
-            np.finfo(float).eps,
-            np.inf,
-        )
-
-        return (alpha, beta, delta, c)
+        if self._parameterization() == "S0":
+            _fitstart = _fitstart_S0
+        elif self._parameterization() == "S1":
+            _fitstart = _fitstart_S1
+        return _fitstart(data)
 
     def _stats(self, alpha, beta):
         mu = 0 if alpha > 1 else np.nan

@@ -6,7 +6,8 @@ import warnings
 import re
 import sys
 import pickle
-import os
+import platform
+from pathlib import Path
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -2255,6 +2256,28 @@ class TestGumbelL(object):
 
 
 class TestLevyStable(object):
+    @pytest.mark.slow
+    def test_rvs(self):
+        for param in ["S0", "S1"]:
+            # Various arbitrary pairs. It's
+            # important to have variations of
+            # alpha, beta == 1 and !=1.
+            for alpha, beta in [
+                (1.0, 0),
+                (1.0, -0.5),
+                (1.5, 0),
+                (1.9, 0.5),
+            ]:
+                # check standardized and non-standardized
+                for gamma, delta in [(1, 0), (3, 2)]:
+                    stats.levy_stable.parameterization = param
+                    ls = stats.levy_stable(
+                        alpha=alpha, beta=beta,
+                        scale=gamma, loc=delta)
+                    _, p = stats.kstest(
+                        ls.rvs(size=1500, random_state=1234), ls.cdf)
+                    assert_equal(p > 0.05, True)
+
     def test_fit(self):
         # construct data to have percentiles that match
         # example in McCulloch 1986.
@@ -2305,14 +2328,21 @@ class TestLevyStable(object):
                 1,0 # gamma, delta
                 2 # output file
         """
-        fn = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                          'data/stable-pdf-sample-data.npy'))
-        data = np.load(fn)
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-pdf-sample-data.npy'
+        )
 
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
 
         # support numpy 1.8.2 for travis
         npisin = np.isin if hasattr(np, "isin") else np.in1d
+
+        # some tests break on linux 32 bit
+        uname = platform.uname()
+        is_linux_32 = uname.system == 'Linux' and uname.machine == 'i686'
+        platform_desc = "/".join(
+            [uname.system, uname.machine, uname.processor])
 
         # fmt: off
         tests = [
@@ -2329,10 +2359,8 @@ class TestLevyStable(object):
                     & npisin(np.abs(r['beta']), [.5, .6, .7]))
                 | ((r['alpha'] == 0.1) & npisin(r['pct'], [.5])
                     & npisin(np.abs(r['beta']), [.1]))
-                | ((r['alpha'] == 0.1) & (r['beta'] == -0.3)
-                    & (r['pct'] == 0.65))
-                | ((r['alpha'] == 0.1) & (r['beta'] == 0.4)
-                    & (r['pct'] == 0.35))
+                | ((r['alpha'] == 0.1) & npisin(r['pct'], [.35, .65])
+                    & npisin(np.abs(r['beta']), [-.4, -.3, .3, .4, .5]))
                 | ((r['alpha'] == 0.2) & (r['beta'] == 0.5)
                     & (r['pct'] == 0.25))
                 | ((r['alpha'] == 0.2) & (r['beta'] == -0.3)
@@ -2343,13 +2371,20 @@ class TestLevyStable(object):
                     & npisin(np.abs(r['beta']), [.1, .2, .3, .4]))
                 | ((r['alpha'] == 1.) & npisin(r['pct'], [.35, .65])
                     & npisin(np.abs(r['beta']), [.8, .9, 1.]))
+                | ((r['alpha'] == 1.) & npisin(r['pct'], [.01, .99])
+                    & npisin(np.abs(r['beta']), [-.1, .1]))
                 # various points ok but too sparse to list
                 | ((r['alpha'] >= 1.1))
             )],
 
             # piecewise generally good accuracy
             ['piecewise', 1e-11, lambda r: (
-                (r['alpha'] > 0.2)
+                (r['alpha'] > 0.2) & (r['alpha'] != 1.)
+            )],
+            # for alpha = 1. for linux 32 bit optimize.bisect
+            # has some issues for .01 and .99 percentile
+            ['piecewise', 1e-11, lambda r: (
+                (r['alpha'] == 1.) & (not is_linux_32)
             )],
             # for small alpha very slightly reduced accuracy
             ['piecewise', 5e-11, lambda r: (
@@ -2402,8 +2437,10 @@ class TestLevyStable(object):
                     p,
                     subdata['p'],
                     rtol,
-                    err_msg="pdf test %s failed with method '%s'\n%s\n%s" %
-                    (ix, default_method, failures.dtype.names, failures),
+                    err_msg="pdf test %s failed with method '%s'"
+                            " [platform: %s]\n%s\n%s" %
+                    (ix, default_method, platform_desc, failures.dtype.names,
+                        failures),
                     verbose=False
                 )
 
@@ -2443,12 +2480,8 @@ class TestLevyStable(object):
                 2 # output file
         """
         data = np.load(
-            os.path.abspath(
-                os.path.join(
-                    os.path.dirname(__file__),
-                    'data/stable-cdf-sample-data.npy'
-                )
-            )
+            Path(__file__).parent /
+            'data/levy_stable/stable-Z1-cdf-sample-data.npy'
         )
 
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
@@ -2518,6 +2551,45 @@ class TestLevyStable(object):
                     (ix, default_method, failures.dtype.names, failures),
                     verbose=False
                 )
+
+    def test_location_scale(self):
+        """Data extracted in similar way to pdf/cdf above using
+        Nolan's stablec but set to an arbitrary location scale of
+        (2, 3) for various important parameters alpha, beta and for
+        parameterisations S0 and S1.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/levy_stable/stable-loc-scale-sample-data.npy'
+        )
+
+        # We only test against piecewise as location/scale transforms
+        # are same for other methods.
+        stats.levy_stable.cdf_default_method = "piecewise"
+        stats.levy_stable.pdf_default_method = "piecewise"
+
+        for param in [0, 1]:
+
+            subdata = data[data["param"] == param]
+            stats.levy_stable.parameterization = f"S{param}"
+
+            v1pdf = stats.levy_stable.pdf(
+                subdata['x'],
+                subdata['alpha'],
+                subdata['beta'],
+                scale=2,
+                loc=3
+            )
+            assert_allclose(v1pdf, subdata['pdf'], 1e-5)
+
+            v1cdf = stats.levy_stable.cdf(
+                subdata['x'],
+                subdata['alpha'],
+                subdata['beta'],
+                scale=2,
+                loc=3
+            )
+            assert_allclose(v1cdf, subdata['cdf'], 1e-5)
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable
