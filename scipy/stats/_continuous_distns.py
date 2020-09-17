@@ -5197,7 +5197,7 @@ class kappa4_gen(rv_continuous):
     B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
     Site in the Chi River Basin, Thailand", Journal of Water Resource and
     Protection, vol. 4, 866-869, (2012).
-    https://doi.org/10.4236/jwarp.2012.410101
+    :doi:`10.4236/jwarp.2012.410101`
 
     C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
     Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
@@ -5398,11 +5398,11 @@ class kappa3_gen(rv_continuous):
     P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
     Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
     701-707, (September, 1973),
-    https://doi.org/10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2
+    :doi:`10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2`
 
     B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
     Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
-    415-419 (2012), https://doi.org/10.4236/ojs.2012.24050
+    415-419 (2012), :doi:`10.4236/ojs.2012.24050`
 
     %(after_notes)s
 
@@ -6707,7 +6707,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        https://arxiv.org/abs/0911.2093
+        :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -6788,7 +6788,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
 
     """

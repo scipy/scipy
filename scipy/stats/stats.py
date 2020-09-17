@@ -4308,7 +4308,7 @@ def pointbiserialr(x, y):
 
     .. [3] D. Kornbrot "Point Biserial Correlation", In Wiley StatsRef:
            Statistics Reference Online (eds N. Balakrishnan, et al.), 2014.
-           https://doi.org/10.1002/9781118445112.stat06227
+           :doi:`10.1002/9781118445112.stat06227`
 
     Examples
     --------
@@ -4980,13 +4980,13 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     .. [2] Panda, S., Palaniappan, S., Xiong, J., Swaminathan, A.,
            Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
            mgcpy: A Comprehensive High Dimensional Independence Testing Python
-           Package. ArXiv:1907.02088 [Cs, Stat].
+           Package. :arXiv:`1907.02088`
     .. [3] Shen, C., Priebe, C.E., & Vogelstein, J. T. (2019). From distance
            correlation to multiscale graph correlation. Journal of the American
            Statistical Association.
     .. [4] Shen, C. & Vogelstein, J. T. (2018). The Exact Equivalence of
-           Distance and Kernel Methods for Hypothesis Testing. ArXiv:1806.05514
-           [Cs, Stat].
+           Distance and Kernel Methods for Hypothesis Testing.
+           :arXiv:`1806.05514`
 
     Examples
     --------
