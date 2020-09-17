@@ -299,20 +299,20 @@ def _quadratic_assignment_faq(A, B,
         ``RandomState`` or ``Generator`` object. If None (default), uses
         global `numpy.random` random state.
 
-    P0 : "barycenter", "randomized", or a 2-D array (default: "barycenter")
-        Initial guess. Must be a doubly-stochastic matrix [3]_.
+    P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
+        Initial position. Must be a doubly-stochastic matrix [3]_.
+
+        If the initial position is an array, it must be a doubly stochastic
+        matrix of size :math:`m' \times m'` where :math:`m' = n - m`.
 
         If ``"barycenter"`` (default), the initial position is the barycenter
         of the Birkhoff polytope (the space of doubly stochastic matrices).
-        This is a :math:`m' x m'` matrix with all entries equal to
-        :math:1 / m'`.
+        This is a :math:`m' \times m'` matrix with all entries equal to
+        :math:`1 / m'`.
 
         If ``"randomized"`` the initial search position is
         :math:`P_0 = (J + K) / 2`, where :math:`J` is the barycenter and
         :math:`K` is a random doubly stochastic matrix.
-
-        If the initial position is an array, it must be a doubly stochastic
-        matrix of size :math:`m' x m'` where :math:`m' = n - m`.
 
     shuffle_input : bool (default: False)
         Set to `True` to resolve degenerate gradients randomly. For
