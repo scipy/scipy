@@ -28,10 +28,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     disagreements, or, in the case of weighted graphs, the sum of squared
     edge weight differences.
 
-    Note that the quadratic assignment problem is NP-hard, is not
-    known to be solvable in polynomial time, and is computationally
-    intractable. Therefore, the results given are approximations,
-    not guaranteed to be exact solutions.
+    Note that the quadratic assignment problem is NP-hard. The results given
+    here are approximations and are not guaranteed to be optimal.
 
 
     Parameters
@@ -258,10 +256,8 @@ def _quadratic_assignment_faq(A, B,
     disagreements, or, in the case of weighted graphs, the sum of squared
     edge weight differences.
 
-    Note that the quadratic assignment problem is NP-hard, is not
-    known to be solvable in polynomial time, and is computationally
-    intractable. Therefore, the results given are approximations,
-    not guaranteed to be exact solutions.
+    Note that the quadratic assignment problem is NP-hard. The results given
+    here are approximations and are not guaranteed to be optimal.
 
 
     Parameters
@@ -581,10 +577,8 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     disagreements, or, in the case of weighted graphs, the sum of squared
     edge weight differences.
 
-    Note that the quadratic assignment problem is NP-hard, is not
-    known to be solvable in polynomial time, and is computationally
-    intractable. Therefore, the results given are approximations,
-    not guaranteed to be exact solutions.
+    Note that the quadratic assignment problem is NP-hard. The results given
+    here are approximations and are not guaranteed to be optimal.
 
 
     Parameters
