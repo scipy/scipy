@@ -4831,9 +4831,36 @@ class TestAlexanderGovern(object):
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
         A, p = stats.AlexanderGovern(young, middle, old)
-        assert_allclose(A,  5.3237)
-        assert_allclose(p, 0.06982)
+        assert_allclose(A,  5.3237, atol=1e-3)
+        assert_allclose(p, 0.06982, atol=1e-4)
 
+    def test_compare_scholar2(self):
+        j1 = [1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 6]                                    
+        j2 = [2, 3, 3, 3, 3, 3,3,3,3,3,4,4,4,4,4,4,4,5,5,5]                                    
+        j3 = [2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6]                                    
+        j4 = [3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,16]   
+        A, p = stats.AlexanderGovern(j1, j2, j3, j4)
+        assert_allclose(A, 7.38, atol=1e-2)
+
+
+    def test_compare_scholar3(self):
+        '''
+        Data taken from 'Robustness And Comparative Power Of WelchAspin,
+        Alexander-Govern And Yuen Tests Under Non-Normality And Variance
+        Heteroscedasticity', by Ayed A. Almoied. 2017. Page 34-37.
+        https://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=2775&context=oa_dissertations
+        '''
+        x1 = [-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152,
+              0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555,
+              0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442,
+              0.999554, 1.642958]
+        x2 = [-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253,
+              -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
+              0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
+              1.33964, 1.576766]
+        A, p = stats.AlexanderGovern(x1, x2)
+        assert_allclose(A, 0.713526, atol=1e-5)
+        assert_allclose(p, 0.398276, atol=1e-5)
 
 
 class TestFOneWay(object):

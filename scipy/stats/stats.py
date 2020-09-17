@@ -3767,7 +3767,6 @@ def AlexanderGovern(*args):
 
     # (4) determine one-sample t statistic for each group
     t_stats = [((mean - var_w)/s) for mean, s in zip(means, standard_errors)]
-
     # calculate parameters to be used in transformation
     v = [len(k) - 1 for k in args]
     a = [v_i - .5 for v_i in v]
