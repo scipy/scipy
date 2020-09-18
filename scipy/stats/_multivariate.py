@@ -4183,6 +4183,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         cov : array_like
             The covariance matrix of the distribution
         """
+        # see [1]_ for the formula and [2]_ for implementation
         # cov( x_i,x_j ) = -n * (M-n)/(M-1) * (K_i*K_j) / (M**2)
         M, m, n, _, _, mncond = self._process_parameters(m, n)
         M = M[..., np.newaxis, np.newaxis]
