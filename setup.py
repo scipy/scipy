@@ -521,7 +521,7 @@ def setup_package():
                           else [])
 
     install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.4.3']
+    setup_requires = build_requires + ['pybind11>=2.4.3,<=2.5.0']
 
     metadata = dict(
         name='scipy',
