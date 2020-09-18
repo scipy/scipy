@@ -1722,11 +1722,7 @@ class TestMultivariateT:
     @pytest.mark.parametrize("x, mu, df, shape, ans", MULTIVARIATE_T_TESTS)
     def test_logpdf_correct(self, x, mu, df, shape, ans):
         dist = multivariate_t(mu, df, shape, seed=0)
-        # We already test this elsewhere, but let's explicitly confirm the
-        # PDF is correct since this test requires checking the log of that
-        # value.
         val1 = dist.pdf(x)
-        assert_array_almost_equal(val1, ans)
         val2 = dist.logpdf(x)
         assert_array_almost_equal(np.log(val1), val2)
 
