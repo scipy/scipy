@@ -3783,7 +3783,7 @@ class unitary_group_gen(multi_rv_generic):
     References
     ----------
     .. [1] F. Mezzadri, "How to generate random matrices from the classical
-           compact groups", arXiv:math-ph/0609050v2.
+           compact groups", :arXiv:`math-ph/0609050v2`.
 
     Examples
     --------

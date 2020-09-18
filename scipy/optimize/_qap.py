@@ -108,11 +108,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
            S.G. Kratzer, E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and
            C.E. Priebe, "Fast approximate quadratic programming for graph
            matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015,
-           https://doi.org/10.1371/journal.pone.0121002
+           :doi:`10.1371/journal.pone.0121002`
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215, https://doi.org/10.1016/j.patcog.2018.09.014
+           203-215, :doi:`10.1016/j.patcog.2018.09.014`
 
     .. [3] "2-opt," Wikipedia.
            https://en.wikipedia.org/wiki/2-opt
@@ -419,11 +419,11 @@ def _quadratic_assignment_faq(A, B,
            S.G. Kratzer, E.T. Harley, D.E. Fishkind, R.J. Vogelstein, and
            C.E. Priebe, "Fast approximate quadratic programming for graph
            matching," PLOS one, vol. 10, no. 4, p. e0121002, 2015,
-           https://doi.org/10.1371/journal.pone.0121002
+           :doi:`10.1371/journal.pone.0121002`
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
-           203-215, https://doi.org/10.1016/j.patcog.2018.09.014
+           203-215, :doi:`10.1016/j.patcog.2018.09.014`
     """
 
     _check_unknown_options(unknown_options)
