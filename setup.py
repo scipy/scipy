@@ -543,7 +543,7 @@ def setup_package():
         test_suite='nose.collector',
         setup_requires=setup_requires,
         install_requires=install_requires,
-        python_requires='>=3.6',
+        python_requires='>=3.6,<=3.9',
     )
 
     if "--force" in sys.argv:
