@@ -3858,7 +3858,7 @@ _mvt_doc_default_callparams = \
 loc : array_like, optional
     Location of the distribution. (default ``0``)
 shape : array_like, optional
-    Positive definite matrix of the distribution. (default ``1``)
+    Positive semidefinite matrix of the distribution. (default ``1``)
 df : integer, optional
     Degrees of freedom of the distribution; must be a positive whole number. (default ``1``) 
 allow_singular : bool, optional
@@ -3891,8 +3891,9 @@ mvt_docdict_noparams = {
 class multivariate_t_gen(multi_rv_generic):
     r"""
     A multivariate t-distributed random variable.
+    
     The `loc` parameter specifies the location. The `shape` parameter specifies
-    the positive definite shape matrix. The `df` parameter specifies the
+    the positive semidefinite shape matrix. The `df` parameter specifies the
     degrees of freedom.
 
     In addition to calling the methods below, the object itself may be called
@@ -3918,7 +3919,7 @@ class multivariate_t_gen(multi_rv_generic):
     Notes
     -----
     %(_mvt_doc_callparams_note)s
-    The matrix `shape` must be a (symmetric) positive definite matrix. The
+    The matrix `shape` must be a (symmetric) positive semidefinite matrix. The
     determinant and inverse of `shape` are computed as the pseudo-determinant
     and pseudo-inverse, respectively, so that `shape` does not need to have
     full rank.
@@ -3943,7 +3944,7 @@ class multivariate_t_gen(multi_rv_generic):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_t
-    >>> x, y = np.mgrid[-1:1:.01, -1:1:.01]
+    >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
     >>> pos = np.dstack((x, y))
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
     >>> plt.contourf(x, y, rv.pdf(pos))
@@ -4109,6 +4110,7 @@ class multivariate_t_gen(multi_rv_generic):
         # For implementation details, see equation (3):
         #
         #    Hofert, "On Sampling from the Multivariatet Distribution", 2013
+        #     http://rjournal.github.io/archive/2013-2/hofert.pdf
         #
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         if random_state is not None:
