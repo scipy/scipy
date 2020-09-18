@@ -1640,6 +1640,7 @@ class TestUnitaryGroup(object):
 
 class TestMultivariateHypergeom(object):
     def test_logpmf(self):
+        # Ground truth value from R dmvhyper
         vals1 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=7)
         assert_allclose(vals1, -1.119814, rtol=1e-6)
 
@@ -1705,6 +1706,7 @@ class TestMultivariateHypergeom(object):
         assert_allclose(vals0, 1, rtol=1e-8)
 
         vals1 = multivariate_hypergeom.pmf(x=[3, 4], m=[5, 10], n=7)
+        # Ground truth value from R dmvhyper
         assert_allclose(vals1, 0.3263403, rtol=1e-7)
 
         vals2 = multivariate_hypergeom.pmf(x=[[[3, 5], [0, 8]],

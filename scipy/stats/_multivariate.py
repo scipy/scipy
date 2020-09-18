@@ -3970,10 +3970,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]], n=[12, 4])
     array([0.00252072, 0.43956044])
 
-    In this example, the last axis of the each array ``x``, ``m``, and ``n``
-    are treated as independent objects and the ``pmf`` is evaluated over
-    each of them to generate a combined result.
-
     This broadcasting also works for ``cov``, where the output objects are
     square matrices of size ``m.shape[-1]``. For example:
 
