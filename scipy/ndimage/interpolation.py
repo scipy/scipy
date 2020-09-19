@@ -598,7 +598,8 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift = numpy.asarray(shift, dtype=numpy.float64)
     if not shift.flags.contiguous:
         shift = shift.copy()
-    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval, npad)
+    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval,
+                         npad)
     return output
 
 
