@@ -22,7 +22,7 @@ class NdimageInterpolation(Benchmark):
     params = [
         [(64, 64), (512, 512), (2048, 2048), (16, 16, 16), (128, 128, 128)],
         [0, 1, 3, 5],
-        ['mirror', 'constant', 'reflect', 'nearest', 'wrap', 'grid-wrap', 'grid-constant']
+        ['mirror', 'constant']
     ]
 
     def setup(self, shape, order, mode):
