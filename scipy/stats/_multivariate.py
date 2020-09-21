@@ -4029,7 +4029,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
         M = m.sum(axis=-1)
 
-        ncond = (n <= 0) | (n > M)
+        ncond = (n < 0) | (n > M)
         return M, m, n, mcond, ncond, np.any(mcond, axis=-1) | ncond
 
     def _process_quantiles(self, x, M, m, n):
@@ -4046,8 +4046,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
                                           M[..., np.newaxis])
         n, M = n[..., 0], M[..., 0]
 
-        xcond = xx != x
-        xcond = xcond | (xx < 0) | (xx > m)
+        xcond = (xx != x) | (xx < 0) | (xx > m)
         return (xx, M, m, n, xcond,
                 np.any(xcond, axis=-1) | (xx.sum(axis=-1) != n))
 
@@ -4066,10 +4065,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
         num = np.zeros_like(m, dtype=np.float_)
         den = np.zeros_like(n, dtype=np.float_)
-        num[~mxcond] = (betaln(m[~mxcond]+1, 1) -
-                        betaln(x[~mxcond]+1, m[~mxcond]-x[~mxcond]+1))
-        den[~ncond] = (betaln(M[~ncond]+1, 1) - betaln(n[~ncond]+1,
-                       M[~ncond]-n[~ncond]+1))
+        m, x = m[~mxcond], x[~mxcond]
+        M, n = M[~ncond], n[~ncond]
+        num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))
+        den[~ncond] = (betaln(M+1, 1) - betaln(n+1, M-n+1))
         num[mxcond] = np.NAN
         den[ncond] = np.NAN
         num = num.sum(axis=-1)
@@ -4222,17 +4221,14 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, _, _, mncond = self._process_parameters(m, n)
 
         random_state = self._get_random_state(random_state)
-        try:
-            # Generator is only available in numpy >= 1.17 while
-            # `multivariate_hypergeometric` distribution is only
-            # available in numpy >= 1.18
-            if (isinstance(random_state, np.random.Generator) and
-                np.__version__ >= '1.18'):  # noqa: E129
-                out = random_state.multivariate_hypergeometric(m, n,
-                                                               size)
-                return _squeeze_output(out)
-        except AttributeError:
-            pass
+        # Generator is only available in numpy >= 1.17 while
+        # `multivariate_hypergeometric` distribution is only
+        # available in numpy >= 1.18
+        if (np.__version__ >= '1.18' and
+            isinstance(random_state, np.random.Generator)):  # noqa: E129
+            out = random_state.multivariate_hypergeometric(m, n,
+                                                            size)
+            return _squeeze_output(out)
 
         if isinstance(size, int):
             size = (size, )

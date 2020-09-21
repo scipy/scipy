@@ -1644,28 +1644,43 @@ class TestMultivariateHypergeom(object):
         vals1 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=7)
         assert_allclose(vals1, -1.119814, rtol=1e-6)
 
+        # test for `n=0`
         vals2 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=0)
-        assert_allclose(vals2, np.NAN, rtol=1e-8)
+        assert_equal(vals2, np.NINF)
 
+        # test for `x < 0`
         vals3 = multivariate_hypergeom.logpmf(x=[-3, 4], m=[5, 10], n=7)
-        assert_allclose(vals3, np.NINF, rtol=1e-8)
+        assert_equal(vals3, np.NINF)
 
+        # test for `m < 0` (RuntimeWarning issue)
         vals4 = multivariate_hypergeom.logpmf(x=[3, 4], m=[-5, 10], n=7)
-        assert_allclose(vals4, np.NAN, rtol=1e-8)
+        assert_equal(vals4, np.nan)
 
+        # test for all `m < 0` and `x.sum() != n`
         vals5 = multivariate_hypergeom.logpmf(x=[[1, 2], [3, 4]],
                                               m=[[-4, -6], [-5, -10]],
                                               n=[3, 7])
-        assert_allclose(vals5, [np.nan, np.nan], rtol=1e-8)
+        assert_equal(vals5, [np.nan, np.nan])
 
+        # test for `x < 0` and `m < 0` (RuntimeWarning issue)
         vals6 = multivariate_hypergeom.logpmf(x=[-3, 4], m=[-5, 10], n=1)
-        assert_allclose(vals6, np.nan, rtol=1e-8)
+        assert_equal(vals6, np.nan)
 
+        # test for `x > m`
         vals7 = multivariate_hypergeom.logpmf(x=[1, 11], m=[10, 1], n=12)
-        assert_allclose(vals7, np.nan, rtol=1e-8)
+        assert_equal(vals7, np.nan)
 
+        # test for `m < 0` (RuntimeWarning issue)
         vals8 = multivariate_hypergeom.logpmf(x=[1, 11], m=[10, -1], n=12)
-        assert_allclose(vals8, np.nan, rtol=1e-8)
+        assert_equal(vals8, np.nan)
+
+        # test for `n < 0`
+        vals9 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=-7)
+        assert_equal(vals9, np.nan)
+
+        # test for `x.sum() != n`
+        vals10 = multivariate_hypergeom.logpmf(x=[3, 3], m=[5, 10], n=7)
+        assert_equal(vals10, np.NINF)
 
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
