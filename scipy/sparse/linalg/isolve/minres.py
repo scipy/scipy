@@ -166,7 +166,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
     
     beta1 = inner(r0,y)
     
-    if r0 == 0 :
+    if inner(r0,r0) == 0 :
         betacheck = inf
     else : 
         betacheck = beta1/inner(r0,r0)
@@ -280,9 +280,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
                 istop = 9
                 show = True
                 done = True
-                x1 = x[1]
+                x1 = x[0]
                 if x0norm > 0 :
-                    x1 = x0[1] + x1
+                    x1 = x0[0] + x1
                 print('%6g %12.5e  betacheck=%10.3e ' % (itn, x1, betacheck))
                 raise ValueError('non-symmetric matrix')
 
