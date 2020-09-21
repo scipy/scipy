@@ -3859,8 +3859,8 @@ loc : array_like, optional
     Location of the distribution. (default ``0``)
 shape : array_like, optional
     Positive semidefinite matrix of the distribution. (default ``1``)
-df : integer, optional
-    Degrees of freedom of the distribution; must be a positive whole number. (default ``1``) 
+df : float, optional
+    Degrees of freedom of the distribution; must be greater than zero. If ``np.inf`` then results are multivariate normal. The default is ``1``. 
 allow_singular : bool, optional
     Whether to allow a singular matrix. (default ``False``)
 """
@@ -3971,6 +3971,10 @@ class multivariate_t_gen(multi_rv_generic):
         `multivariate_t_frozen` for parameters.
 
         """
+        if df == np.inf:
+            return multivariate_normal_frozen(mean=loc, cov=shape,
+                                              allow_singular=allow_singular, 
+                                              seed=seed)
         return multivariate_t_frozen(loc=loc, shape=shape, df=df,
                                      allow_singular=allow_singular, seed=seed)
 
@@ -4003,7 +4007,7 @@ class multivariate_t_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape, allow_singular=allow_singular)
         logpdf = self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df,
-                              dim)
+                              dim, shape_info.rank)
         return np.exp(logpdf)
 
     def logpdf(self, x, loc=None, shape=1, df=1):
@@ -4039,9 +4043,10 @@ class multivariate_t_gen(multi_rv_generic):
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
-        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim)
+        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
+                            shape_info.rank)
 
-    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim):
+    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -4054,12 +4059,14 @@ class multivariate_t_gen(multi_rv_generic):
         prec_U : ndarray
             A decomposition such that `np.dot(prec_U, prec_U.T)` is the inverse
             of the shape matrix.
-        log_det_cov : float
+        log_pdet : float
             Logarithm of the determinant of the shape matrix.
-        df : int
+        df : float
             Degrees of freedom of the distribution.
         dim : int
             Dimension of the quantiles x.
+        rank : int
+            Rank of the shape matrix.   
 
         Notes
         -----
@@ -4067,6 +4074,9 @@ class multivariate_t_gen(multi_rv_generic):
         directly; use 'logpdf' instead.
 
         """
+        if df == np.inf:
+            return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
+
         dev  = x - loc
         maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
 
@@ -4077,7 +4087,7 @@ class multivariate_t_gen(multi_rv_generic):
         D = 0.5 * log_pdet
         E = -t * np.log(1 + (1./df) * maha)
 
-        return A - B - C - D + E
+        return _squeeze_output(A - B - C - D + E)
 
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """
@@ -4118,14 +4128,14 @@ class multivariate_t_gen(multi_rv_generic):
         else:
             rng = self._random_state
 
-        if df == np.inf:
+        if np.isinf(df):
             x = np.ones(size)
         else:
             x = rng.chisquare(df, size=size) / df
 
         z = rng.multivariate_normal(np.zeros(dim), shape, size=size)
         samples = loc + z / np.sqrt(x)[:, None]
-        return samples
+        return _squeeze_output(samples)
 
     def _process_quantiles(self, x, dim):
         """
@@ -4150,6 +4160,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         """
         if loc is None and shape is None:
+            loc = np.asarray(0, dtype=float)
             shape = np.asarray(1, dtype=float)
             dim = 1
         elif loc is None:
@@ -4159,6 +4170,10 @@ class multivariate_t_gen(multi_rv_generic):
             else:
                 dim = shape.shape[0]
             loc = np.zeros(dim)
+        elif shape is None:
+            loc = np.asarray(loc, dtype=float)
+            dim = loc.size
+            shape = np.eye(dim)
         else:
             shape = np.asarray(shape, dtype=float)
             loc = np.asarray(loc, dtype=float)
@@ -4192,9 +4207,10 @@ class multivariate_t_gen(multi_rv_generic):
         # Process degrees of freedom.
         if df is None:
             df = 1
-        if not isinstance(df, int) and not np.isinf(df):
-            raise ValueError("'df' must be an integer or 'np.inf' but is of "
-                             "type %s" % type(df))
+        elif df <= 0:
+            raise ValueError("'df' must be greater than zero.")
+        elif np.isnan(df):
+            raise ValueError("'df' must be greater than zero or 'np.inf'.")
 
         return dim, loc, shape, df
 
@@ -4231,7 +4247,8 @@ class multivariate_t_frozen(multi_rv_frozen):
         x = self._dist._process_quantiles(x, self.dim)
         U = self.shape_info.U
         log_pdet = self.shape_info.log_pdet
-        return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim)
+        return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim,
+                                  self.shape_info.rank)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))

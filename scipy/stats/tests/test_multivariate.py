@@ -16,7 +16,10 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-from scipy.stats._multivariate import _PSD, _lnB, _cho_inv_batch
+from scipy.stats._multivariate import (_PSD,
+                                       _lnB, 
+                                       _cho_inv_batch, 
+                                       multivariate_normal_frozen)
 from scipy.stats import multivariate_normal
 from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
@@ -35,6 +38,8 @@ from scipy.integrate import romb
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
+
+from unittest.mock import patch
 
 
 class TestMultivariateNormal(object):
@@ -1751,16 +1756,116 @@ class TestMultivariateT:
         _, p = normaltest(samples)
         assert ((p > P_VAL_MIN).all())
 
+    @patch('scipy.stats.multivariate_normal._logpdf')
+    def test_mvt_with_inf_df_calls_normal(self, mock):
         dist = multivariate_t(0, 1, df=np.inf, seed=7)
-        samples = dist.rvs(size=100000)
-        _, p = normaltest(samples)
-        assert (p > P_VAL_MIN)
+        assert isinstance(dist, multivariate_normal_frozen)
+        multivariate_t.pdf(0, df=np.inf)
+        assert mock.call_count == 1
+        multivariate_t.logpdf(0, df=np.inf)
+        assert mock.call_count == 2
+
+    def test_shape_correctness(self):
+        # pdf and logpdf should return scalar when the 
+        # number of samples in x is one.
+        dim = 4
+        loc = np.zeros(dim)
+        shape = np.eye(dim)
+        df = 1
+        x = np.zeros(dim)
+        res = multivariate_t(loc, shape, df).pdf(x)
+        assert np.isscalar(res)
+        res = multivariate_t(loc, shape, df).logpdf(x)
+        assert np.isscalar(res)
+
+        # pdf() and logpdf() should return probabilities of shape 
+        # (n_samples,) when x has n_samples.
+        n_samples = 7
+        x = np.random.random((n_samples, dim))
+        res = multivariate_t(loc, shape, df).pdf(x)
+        assert (res.shape == (n_samples,))
+        res = multivariate_t(loc, shape, df).logpdf(x)
+        assert (res.shape == (n_samples,))
+
+        # rvs() should return scalar unless a size argument is applied.
+        res = multivariate_t(1, 1, 1).rvs()
+        assert np.isscalar(res)
+        res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs()
+        assert np.isscalar(res)
+
+        # rvs() should return vector of shape (size,) if size argument 
+        # is applied.
+        size = 7
+        res = multivariate_t(1, 1, 1).rvs(size=size)
+        assert (res.shape == (size,))
 
     def test_default_arguments(self):
         dist = multivariate_t()
         assert_equal(dist.loc, [0])
         assert_equal(dist.shape, [[1]])
         assert (dist.df == 1)
+
+    def test_argument_handling(self):
+        dist = multivariate_t(loc=None, shape=None, df=None)
+        assert_equal(dist.loc, 0)
+        assert_equal(dist.shape, 1)
+        assert (dist.df == 1)
+
+        dist = multivariate_t(loc=None, shape=None, df=7)
+        assert_equal(dist.loc, 0)
+        assert_equal(dist.shape, 1)
+        assert (dist.df == 7)
+
+        dist = multivariate_t(loc=None, shape=[[7, 0], [0, 7]], df=None)
+        assert_equal(dist.loc, [0, 0])
+        assert_equal(dist.shape, [[7, 0], [0, 7]])
+        assert (dist.df == 1)
+
+        dist = multivariate_t(loc=None, shape=[[7, 0], [0, 7]], df=7)
+        assert_equal(dist.loc, [0, 0])
+        assert_equal(dist.shape, [[7, 0], [0, 7]])
+        assert (dist.df == 7)
+
+        dist = multivariate_t(loc=[7, 7], shape=None, df=None)
+        assert_equal(dist.loc, [7, 7])
+        assert_equal(dist.shape, [[1, 0], [0, 1]])
+        assert (dist.df == 1)
+
+        dist = multivariate_t(loc=[7, 7], shape=None, df=7)
+        assert_equal(dist.loc, [7, 7])
+        assert_equal(dist.shape, [[1, 0], [0, 1]])
+        assert (dist.df == 7)
+
+        dist = multivariate_t(loc=[7, 7], shape=[[7, 0], [0, 7]], df=None)
+        assert_equal(dist.loc, [7, 7])
+        assert_equal(dist.shape, [[7, 0], [0, 7]])
+        assert (dist.df == 1)
+
+        dist = multivariate_t(loc=[7, 7], shape=[[7, 0], [0, 7]], df=7)
+        assert_equal(dist.loc, [7, 7])
+        assert_equal(dist.shape, [[7, 0], [0, 7]])
+        assert (dist.df == 7)
+
+    def test_argument_error_handling(self):
+        # `loc` should be a one-dimensional vector.
+        with pytest.raises(ValueError):
+            multivariate_t(loc=[[1, 1]])
+
+        # `shape` should be scalar or square matrix.
+        with pytest.raises(ValueError):
+            multivariate_t(shape=[[1, 1], [2, 2], [3, 3]])
+
+        # Confirm df > 0, otherwise `ValueError`:
+        with pytest.raises(ValueError):
+            multivariate_t(df=-1)
+        with pytest.raises(ValueError):
+            multivariate_t(df=0)
+
+        # Floats are okay:
+        try:
+            multivariate_t(df=5.0)
+        except ValueError:
+            pytest.fail("Test failure: `df` should allow floats.")
 
     def test_reproducibility(self):
         rng = np.random.RandomState(4)
