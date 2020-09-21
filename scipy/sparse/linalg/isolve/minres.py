@@ -8,7 +8,7 @@ __all__ = ['minres']
 
 
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
-           M=None, precon = 0, callback=None, show=False, check=False):
+           M=None, callback=None, show=False, check=False):
     """
     Use MINimum RESidual iteration to solve Ax=b
 
@@ -244,7 +244,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
         print('   Itn     x(1)     Compatible    LS       norm(A)  cond(A) gbar/|A|')
         x1 = 0
         if x0norm > 0 :
-            x1 = x0(0)
+            x1 = x0[0]
         print('%6g %12.5e' % (itn, x1))
         print()
         
@@ -271,7 +271,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
             y = psolve(r2)
             oldb = beta
             beta = inner(r2,y)
-            if r2 == 0 :
+            if inner(r2,r2) == 0 :
                 betacheck = inf
             else :
                 betacheck = beta/inner(r2,r2)
@@ -458,7 +458,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
             info = 0
 
         return (postprocess(x),info)
-
 
 if __name__ == '__main__':
     from numpy import arange
