@@ -598,7 +598,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     oo = offsets;
     for(jj = 0; jj < size; jj++) {
         double tmp = 0.0;
-        npy_longlong itmp = 0;
+        int64_t itmp = 0;
         switch (PyArray_TYPE(input)) {
             CASE_MIN_OR_MAX_POINT(NPY_BOOL, npy_bool,
                                   pi, oo, filter_size, cvalue, minimum, itmp,
