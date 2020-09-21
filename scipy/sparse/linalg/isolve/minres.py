@@ -118,7 +118,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, tolMPD = 0.0, maxiter=None,
         r0norm = norm(r0)
         x0norm = norm(x0)
     
-    if M.size == 0 :
+    if M.shape == 0 :
         precon = 0
 
     nnzr0 = count_nonzero(r0)
