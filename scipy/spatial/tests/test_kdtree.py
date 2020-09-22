@@ -1,6 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
+import os
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose)
@@ -996,7 +997,8 @@ def test_ckdtree_copy_data():
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
-def test_ckdtree_parallel():
+
+def test_ckdtree_parallel(monkeypatch):
     # check if parallel=True also generates correct
     # query results
     np.random.seed(0)
@@ -1009,6 +1011,11 @@ def test_ckdtree_parallel():
     T3 = T.query(points, k=5)[-1]
     assert_array_equal(T1, T2)
     assert_array_equal(T1, T3)
+
+    monkeypatch.setattr(os, 'cpu_count', lambda: None)
+    with pytest.raises(NotImplementedError, match="Cannot determine the"):
+        T.query(points, 1, workers=-1)
+
 
 def test_ckdtree_view():
     # Check that the nodes can be correctly viewed from Python.
@@ -1549,4 +1556,3 @@ def test_kdtree_attributes():
     assert_array_equal(t.maxes, np.amax(points, axis=0))
     assert_array_equal(t.mins, np.amin(points, axis=0))
     assert t.data is points
-
