@@ -18,8 +18,7 @@ from libcpp.algorithm cimport sort
 from libcpp cimport bool
 
 cimport cython
-
-from multiprocessing import cpu_count
+from os import cpu_count
 import threading
 import operator
 import warnings
