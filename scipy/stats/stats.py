@@ -3867,7 +3867,9 @@ def alexandergovern_alt(*args):
     # Calculate sample constants to avoid recalculating
     lens = np.asarray([len(A) for A in a])
     means = np.asarray([np.mean(A) for A in a])
-    standard_error = np.vectorize(calc_sem)(a, means, lens)
+    # List comprehension used over vectorization to avoid broadcasting errors
+    standard_error = np.asarray([calc_sem(a, m, l) for a, m, l
+                                 in zip(a, means, lens)])
     sample_weights = 1 / standard_error ** 2 / np.sum(1 / standard_error ** 2)
     var_w = np.sum(sample_weights * means)
 
