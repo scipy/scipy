@@ -225,12 +225,10 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         params[kk] = NULL;
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
-        if (PyArray_DIM(input, kk) > 1) {
-            params[kk] = malloc(PyArray_DIM(input, kk) * sizeof(double));
-            if (!params[kk]) {
-                PyErr_NoMemory();
-                goto exit;
-            }
+        params[kk] = malloc(PyArray_DIM(input, kk) * sizeof(double));
+        if (!params[kk]) {
+            PyErr_NoMemory();
+            goto exit;
         }
     }
 
