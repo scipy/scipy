@@ -209,7 +209,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'AlexanderGovern']
+           'brunnermunzel', 'epps_singleton_2samp', 'AlexanderGovern' ,'alexandergovern_alt']
 
 
 def _contains_nan(a, nan_policy='propagate'):
