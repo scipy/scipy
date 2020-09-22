@@ -146,6 +146,7 @@ ANOVA Functions
    :toctree: generated/
 
    f_oneway
+   alexandergovern
 
 Support Functions
 -----------------
@@ -209,7 +210,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'AlexanderGovern' ,'alexandergovern_alt']
+           'brunnermunzel', 'epps_singleton_2samp', 'alexandergovern',
+           'alexandergovern_alt']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -3696,7 +3698,7 @@ AlexanderGovernResult = namedtuple("AlexanderGovernResult", ("statistic",
                                                              "pvalue"))
 
 
-def AlexanderGovern(*args):
+def alexandergovern(*args):
     """
     Performs the Alexander Govern test.
 

@@ -4726,7 +4726,7 @@ class TestSigmaClip(object):
 
 class TestAlexanderGovern(object):
     @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                      stats.AlexanderGovern])
+                                         stats.alexandergovern])
     def test_compare_r(self, version):
         '''
         Data generated in R with
@@ -4780,9 +4780,9 @@ class TestAlexanderGovern(object):
         A, p = version(one, two, eight)
         assert_allclose(A,  1.3599405447999450836)
         assert_allclose(p, 0.50663205309676440091)
-        
+
     @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                         stats.AlexanderGovern])
+                                         stats.alexandergovern])
     def test_compare_scholar(self, version):
         '''
         Data taken from 'The Modification and Evaluation of the
@@ -4801,7 +4801,7 @@ class TestAlexanderGovern(object):
         assert_allclose(p, 0.06982, atol=1e-4)
 
     @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                         stats.AlexanderGovern])
+                                         stats.alexandergovern])
     def test_compare_scholar3(self, version):
         '''
         Data taken from 'Robustness And Comparative Power Of WelchAspin,
