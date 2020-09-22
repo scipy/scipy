@@ -235,16 +235,16 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
 
 
 class AlexanderGovernImplementations(Benchmark):
-    params = [[stats.AlexanderGovern, stats.alexander_govern_progressive]]
-    
+    params = [[stats.AlexanderGovern, stats.alexandergovern_alt]]
+
     def setup(self, func):
         valMult = 500
         sampMin = 100
         sampMax = 1000
-        
+
         colMin = 1000
         colMax = 10000
-        
+
         np.random.seed(1235)
         self.samples = [(np.random.rand(np.random.randint(colMin, colMax)) * valMult).tolist() 
 		for i in range(np.random.randint(sampMin, sampMax))]
