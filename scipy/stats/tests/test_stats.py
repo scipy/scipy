@@ -4731,15 +4731,25 @@ class TestAlexanderGovern(object):
         '''
         Data generated in R with
          set.seed(1)
-         y <- c(rnorm(40, sd=10),
+        y <- c(rnorm(40, sd=10),
                 rnorm(30, sd=15),
                 rnorm(20, sd=20))
-         x <- c(rep("one", times=40),
+        x <- c(rep("one", times=40),
                 rep("two", times=30),
                 rep("eight", times=20))
+        x <- factor(x)
+        ag.test(y ~ x, tibble(y,x))
 
-        Results tested against:
-        ## ag.test(y, x)
+        Alexander-Govern Test (alpha = 0.05) 
+        ------------------------------------------------------------- 
+        data : y and x 
+
+        statistic  : 1.359941 
+        parameter  : 2 
+        p.value    : 0.5066321 
+
+        Result     : Difference is not statistically significant. 
+        ------------------------------------------------------------- 
         Example adapted from:
         https://eval-serv2.metpsy.uni-jena.de/wiki-metheval-hp/index.php/R_FUN_Alexander-Govern
 
@@ -4800,6 +4810,35 @@ class TestAlexanderGovern(object):
         assert_allclose(A,  5.3237, atol=1e-3)
         assert_allclose(p, 0.06982, atol=1e-4)
 
+        # verify with ag.test in r
+        '''
+        > young <- c(482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
+        +                  518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1, 584.68,
+        +                  609.09, 609.53, 666.63, 676.4)
+        > middle <- c(335.59, 338.43, 353.54, 404.27, 437.5, 469.01, 485.85,
+        +                   487.3, 493.08, 494.31, 499.1, 886.41)
+        > old <- c(519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
+        +                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84)
+        > young_fct <- c(rep("young", times=19))
+        > middle_fct <-c(rep("middle", times=12))
+        > old_fct <- c(rep("old", times=15))
+        > ag.test(a ~ b, tibble(a=c(young, middle, old), b=factor(c(young_fct, middle_fct, old_fct))))
+
+        Alexander-Govern Test (alpha = 0.05) 
+        ------------------------------------------------------------- 
+        data : a and b 
+
+        statistic  : 5.324629 
+        parameter  : 2 
+        p.value    : 0.06978651 
+
+        Result     : Difference is not statistically significant. 
+        ------------------------------------------------------------- 
+
+        '''
+        assert_allclose(A, 5.324629)
+        assert_allclose(p, 0.06978651)
+
     @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
                                          stats.alexandergovern])
     def test_compare_scholar3(self, version):
@@ -4820,6 +4859,37 @@ class TestAlexanderGovern(object):
         A, p = version(x1, x2)
         assert_allclose(A, 0.713526, atol=1e-5)
         assert_allclose(p, 0.398276, atol=1e-5)
+
+        '''
+        tested in ag.test in R:
+        > x1 <- c(-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152, 
+        +               0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555, 
+        +               0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442, 
+        +               0.999554, 1.642958)
+        > 
+        > x2 <- c(-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253, 
+        +              -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824, 
+        +              0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475, 
+        +              1.33964, 1.576766)
+        > x1_fact <- c(rep("x1", times=20))
+        > x2_fact <- c(rep("x2", times=20))
+        > a <- c(x1, x2)
+        > b <- factor(c(x1_fact, x2_fact))
+        > ag.test(a ~ b, tibble(a, b))
+        Alexander-Govern Test (alpha = 0.05) 
+        ------------------------------------------------------------- 
+        data : a and b 
+
+        statistic  : 0.7135182 
+        parameter  : 1 
+        p.value    : 0.3982783 
+
+        Result     : Difference is not statistically significant. 
+        ------------------------------------------------------------- 
+        '''
+        assert_allclose(A, 0.7135182)
+        assert_allclose(p, 0.3982783)
+        
 
 
 class TestFOneWay(object):
