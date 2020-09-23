@@ -1651,7 +1651,7 @@ class TestMultivariateT:
     #
     # >> ans = vpa(mvtpdf(x - mu, shape, df));
     #
-    MULTIVARIATE_T_TESTS = [(
+    PDF_TESTS = [(
         # x
         [
             [1, 2],
@@ -1665,7 +1665,7 @@ class TestMultivariateT:
             [4, 4],
             [5, 1],
         ],
-        # mu
+        # loc
         [0, 0],
         # shape
         [
@@ -1689,7 +1689,6 @@ class TestMultivariateT:
         ]
 
     ), (
-
         # x
         [
             [0.9718, 0.1298, 0.8134],
@@ -1698,7 +1697,7 @@ class TestMultivariateT:
             [0.5971, 0.2585, 0.8940],
             [0.5434, 0.5287, 0.9507],
         ],
-        # mu
+        # loc
         [-1, 1, 50],
         # shape
         [
@@ -1718,15 +1717,15 @@ class TestMultivariateT:
         ]
     )]
 
-    @pytest.mark.parametrize("x, mu, df, shape, ans", MULTIVARIATE_T_TESTS)
-    def test_pdf_correctness(self, x, mu, df, shape, ans):
-        dist = multivariate_t(mu, df, shape, seed=0)
+    @pytest.mark.parametrize("x, loc, shape, df, ans", PDF_TESTS)
+    def test_pdf_correctness(self, x, loc, shape, df, ans):
+        dist = multivariate_t(loc, shape, df, seed=0)
         val = dist.pdf(x)
         assert_array_almost_equal(val, ans)
 
-    @pytest.mark.parametrize("x, mu, df, shape, ans", MULTIVARIATE_T_TESTS)
-    def test_logpdf_correct(self, x, mu, df, shape, ans):
-        dist = multivariate_t(mu, df, shape, seed=0)
+    @pytest.mark.parametrize("x, loc, shape, df, ans", PDF_TESTS)
+    def test_logpdf_correct(self, x, loc, shape, df, ans):
+        dist = multivariate_t(loc, shape, df, seed=0)
         val1 = dist.pdf(x)
         val2 = dist.logpdf(x)
         assert_array_almost_equal(np.log(val1), val2)
@@ -1771,7 +1770,7 @@ class TestMultivariateT:
         dim = 4
         loc = np.zeros(dim)
         shape = np.eye(dim)
-        df = 1
+        df = 4.5
         x = np.zeros(dim)
         res = multivariate_t(loc, shape, df).pdf(x)
         assert np.isscalar(res)
@@ -1788,15 +1787,13 @@ class TestMultivariateT:
         assert (res.shape == (n_samples,))
 
         # rvs() should return scalar unless a size argument is applied.
-        res = multivariate_t(1, 1, 1).rvs()
-        assert np.isscalar(res)
         res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs()
         assert np.isscalar(res)
 
         # rvs() should return vector of shape (size,) if size argument 
         # is applied.
         size = 7
-        res = multivariate_t(1, 1, 1).rvs(size=size)
+        res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs(size=size)
         assert (res.shape == (size,))
 
     def test_default_arguments(self):
@@ -1805,67 +1802,61 @@ class TestMultivariateT:
         assert_equal(dist.shape, [[1]])
         assert (dist.df == 1)
 
-    def test_argument_handling(self):
-        dist = multivariate_t(loc=None, shape=None, df=None)
-        assert_equal(dist.loc, 0)
-        assert_equal(dist.shape, 1)
-        assert (dist.df == 1)
+    DEFAULT_ARGS_TESTS = [
+        (None, None, None, 0, 1, 1),
+        (None, None, 7, 0, 1, 7),
+        (None, [[7, 0], [0, 7]], None, [0, 0], [[7, 0], [0, 7]], 1),
+        (None, [[7, 0], [0, 7]], 7, [0, 0], [[7, 0], [0, 7]], 7),
+        ([7, 7], None, None, [7, 7], [[1, 0], [0, 1]], 1),
+        ([7, 7], None, 7, [7, 7], [[1, 0], [0, 1]], 7),
+        ([7, 7], [[7, 0], [0, 7]], None, [7, 7], [[7, 0], [0, 7]], 1),
+        ([7, 7], [[7, 0], [0, 7]], 7, [7, 7], [[7, 0], [0, 7]], 7)
+    ]
 
-        dist = multivariate_t(loc=None, shape=None, df=7)
-        assert_equal(dist.loc, 0)
-        assert_equal(dist.shape, 1)
-        assert (dist.df == 7)
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", DEFAULT_ARGS_TESTS)
+    def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+        dist = multivariate_t(loc=loc, shape=shape, df=df)
+        assert_equal(dist.loc, loc_ans)
+        assert_equal(dist.shape, shape_ans)
+        assert (dist.df == df_ans)
 
-        dist = multivariate_t(loc=None, shape=[[7, 0], [0, 7]], df=None)
-        assert_equal(dist.loc, [0, 0])
-        assert_equal(dist.shape, [[7, 0], [0, 7]])
-        assert (dist.df == 1)
+    ARGS_SHAPES_TESTS = [
+        (-1, 2, 3, [-1], [[2]], 3),
+        ([-1], [2], 3, [-1], [[2]], 3),
+        (np.array([-1]), np.array([2]), 3, [-1], [[2]], 3)
+    ]
 
-        dist = multivariate_t(loc=None, shape=[[7, 0], [0, 7]], df=7)
-        assert_equal(dist.loc, [0, 0])
-        assert_equal(dist.shape, [[7, 0], [0, 7]])
-        assert (dist.df == 7)
-
-        dist = multivariate_t(loc=[7, 7], shape=None, df=None)
-        assert_equal(dist.loc, [7, 7])
-        assert_equal(dist.shape, [[1, 0], [0, 1]])
-        assert (dist.df == 1)
-
-        dist = multivariate_t(loc=[7, 7], shape=None, df=7)
-        assert_equal(dist.loc, [7, 7])
-        assert_equal(dist.shape, [[1, 0], [0, 1]])
-        assert (dist.df == 7)
-
-        dist = multivariate_t(loc=[7, 7], shape=[[7, 0], [0, 7]], df=None)
-        assert_equal(dist.loc, [7, 7])
-        assert_equal(dist.shape, [[7, 0], [0, 7]])
-        assert (dist.df == 1)
-
-        dist = multivariate_t(loc=[7, 7], shape=[[7, 0], [0, 7]], df=7)
-        assert_equal(dist.loc, [7, 7])
-        assert_equal(dist.shape, [[7, 0], [0, 7]])
-        assert (dist.df == 7)
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", ARGS_SHAPES_TESTS)
+    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+        dist = multivariate_t(loc, shape, df)
+        assert_equal(dist.loc, loc_ans)
+        assert_equal(dist.shape, shape_ans)
+        assert_equal(dist.df, df_ans)
 
     def test_argument_error_handling(self):
         # `loc` should be a one-dimensional vector.
-        with pytest.raises(ValueError):
-            multivariate_t(loc=[[1, 1]])
+        loc = [[1, 1]]
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc))
 
         # `shape` should be scalar or square matrix.
-        with pytest.raises(ValueError):
-            multivariate_t(shape=[[1, 1], [2, 2], [3, 3]])
+        shape = [[1, 1], [2, 2], [3, 3]]
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape))
 
-        # Confirm df > 0, otherwise `ValueError`:
-        with pytest.raises(ValueError):
-            multivariate_t(df=-1)
-        with pytest.raises(ValueError):
-            multivariate_t(df=0)
-
-        # Floats are okay:
-        try:
-            multivariate_t(df=5.0)
-        except ValueError:
-            pytest.fail("Test failure: `df` should allow floats.")
+        # `df` should be greater than zero.
+        loc = np.zeros(2)
+        shape = np.eye(2)
+        df = -1
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape, df=df))
+        df = 0
+        assert_raises(ValueError,
+                      multivariate_t,
+                      **dict(loc=loc, shape=shape, df=df))
 
     def test_reproducibility(self):
         rng = np.random.RandomState(4)
@@ -1877,46 +1868,10 @@ class TestMultivariateT:
         samples2 = dist2.rvs(size=10)
         assert_equal(samples1, samples2)
 
-    def test_scalar_list_and_ndarray_arguments(self):
-        dist = multivariate_t(-1, 2, 3)
-        assert(dist.loc == np.array([-1]))
-        assert(dist.shape == np.array([2]))
-        assert(dist.df == 3)
-
-        dist = multivariate_t([-1], [2], 3)
-        assert(dist.loc == np.array([-1]))
-        assert(dist.shape == np.array([2]))
-        assert(dist.df == 3)
-
-        dist = multivariate_t(np.array([-1]), np.array([2]), 3)
-        assert(dist.loc == np.array([-1]))
-        assert(dist.shape == np.array([2]))
-        assert(dist.df == 3)
-
     def test_allow_singular(self):
-        loc = np.zeros(4)
-        shape = np.eye(4)
-        df = 1
-
-        try:
-            multivariate_t(loc, shape, df, allow_singular=False)
-        except np.linalg.LinAlgError:
-            pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
-
         # Make shape singular and verify error was raised.
-        shape[2, 2] = 0
-        allow_singular = False
-        seed = 0
-        assert_raises(np.linalg.LinAlgError,
-                      multivariate_t,
-                      loc, shape, df, allow_singular, seed)
-
-        # Check that singular `shape` is when when `allow_singular=True`.
-        try:
-            multivariate_t(loc, shape, df, allow_singular=True)
-        except np.linalg.LinAlgError:
-            pytest.fail("Test failed by unexpectedly raising `LinAlgError`.")
-
+        args = dict(loc=[0,0], shape=[[0,0],[0,1]], df=1, allow_singular=False)
+        assert_raises(np.linalg.LinAlgError, multivariate_t, **args)
 
 
 def check_pickling(distfn, args):

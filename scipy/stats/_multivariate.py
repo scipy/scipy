@@ -3860,7 +3860,8 @@ loc : array_like, optional
 shape : array_like, optional
     Positive semidefinite matrix of the distribution. (default ``1``)
 df : float, optional
-    Degrees of freedom of the distribution; must be greater than zero. If ``np.inf`` then results are multivariate normal. The default is ``1``. 
+    Degrees of freedom of the distribution; must be greater than zero.
+    If ``np.inf`` then results are multivariate normal. The default is ``1``.
 allow_singular : bool, optional
     Whether to allow a singular matrix. (default ``False``)
 """
@@ -3947,6 +3948,8 @@ class multivariate_t_gen(multi_rv_generic):
     >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
     >>> pos = np.dstack((x, y))
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.set_aspect('equal')
     >>> plt.contourf(x, y, rv.pdf(pos))
 
     """
