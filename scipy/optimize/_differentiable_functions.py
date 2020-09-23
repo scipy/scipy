@@ -86,14 +86,16 @@ class ScalarFunction(object):
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
                  finite_diff_bounds, epsilon=None):
         if not callable(grad) and grad not in FD_METHODS:
-            raise ValueError("`grad` must be either callable or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(
+                f"`grad` must be either callable or one of {FD_METHODS}."
+            )
 
         if not (callable(hess) or hess in FD_METHODS
                 or isinstance(hess, HessianUpdateStrategy)):
-            raise ValueError("`hess` must be either callable,"
-                             "HessianUpdateStrategy or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(
+                f"`hess` must be either callable, HessianUpdateStrategy"
+                f" or one of {FD_METHODS}."
+            )
 
         if grad in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the gradient is estimated via "
