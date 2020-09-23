@@ -231,6 +231,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     gmin = finfo(xtype).max
     cs = -1
     sn = 0
+    numtol = 1
     tol10 = tol
     r2 = r0
     if sparser0 :
@@ -268,7 +269,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
             y = y - (alfa/beta)*r2
             r1 = r2
             r2 = y
-            y = psolve(r2)
+            if precon > 0 :
+                y = psolve(r2)
             oldb = beta
             beta = inner(r2,y)
             if inner(r2,r2) == 0 :
@@ -426,7 +428,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 x1 = x[0]
                 if x0norm > 0:
                     x1 = x0[0] + x1
-                str1 = '%6g %12.5e %10.3e' % (itn, x[0], test1)
+                str1 = '%6g %12.5e %10.3e' % (itn, x1, test1)
                 str2 = ' %10.3e' % (test2,)
                 str3 = ' %8.1e %8.1e %8.1e' % (Anorm, Acond, gbar/Anorm)
 
