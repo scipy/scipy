@@ -139,6 +139,9 @@ class CramerVonMisesResult:
         self.statistic = statistic
         self.pvalue = pvalue
 
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(statistic={self.statistic}, "
+                f"pvalue={self.pvalue})")
 
 def _psi1_mod(x):
     """
