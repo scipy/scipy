@@ -249,6 +249,7 @@ Statistical tests
    ttest_ind_from_stats
    ttest_rel
    chisquare
+   cramervonmises
    power_divergence
    kstest
    ks_1samp
