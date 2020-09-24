@@ -3790,6 +3790,7 @@ def alexandergovern(*args):
     p = distributions.chi2.sf(A, len(args) - 1)
     return AlexanderGovernResult(A, p)
 
+
 def alexandergovern_alt(*args):
     """
     Performs the Alexander Govern test.
@@ -3833,57 +3834,51 @@ def alexandergovern_alt(*args):
         (6.941146076872535, 0.03109920451449096)
     """
 
-    def calc_sem(data, mean, length):
-        """Calculates standard error using precalculated values"""
-        sum_ = np.sum((data - mean) ** 2)
-        d = length * (length - 1)
-        return (sum_ / d) ** .5
-
-    def calc_z2(var_w, sem, mean, length):
-        """Calculates the AG Z^2 statistic for the passed array"""
-        # Calc degrees of freedom and t, as described in formula [2](7)
-        df = length - 1
-        t = (mean - var_w) / sem
-
-        # Calculate a,b,c using evaluating AG's formula [2](9), [2](10)
-        a = df - .5
-        b = 48 * a ** 2
-        c = (a * np.log(1 + t ** 2 / df)) ** .5
-
-        # Calculate the three terms in evaluating AG's Z formula [2](8)
-        t0 = c
-        t1 = (c ** 3 + 3 * c) / b
-        t3 = (4 * c ** 7 + 33 * c ** 5 + 240 * c ** 3 + 855 * c)
-        t3d = (10 * b ** 2 + 8 * b * c ** 4 + 1000 * b)
-
-        return (t0 + t1 - t3/t3d) ** 2
-
     if len(args) < 2:
-        raise TypeError(f"2 or more inputs required, got {len(args)}")
+        raise ValueError(f"2 or more inputs required, got {len(args)}")
 
-    # Convert passed list to ndarray. `fromiter` is faster than `asarray`.
-    a = [np.fromiter(A, float) for A in args]
+    # Convert passed list to ndarray using list comprehension. `np.asarray`
+    # isn't used directly on input b/c it doesn't support jagged 2d arrays
+    a = [np.asarray(A) for A in args]
 
     # Calculate sample constants to avoid recalculating
     lens = np.asarray([len(A) for A in a])
     means = np.asarray([np.mean(A) for A in a])
-    # List comprehension used over vectorization to avoid broadcasting errors
-    standard_error = np.asarray([calc_sem(a, m, l) for a, m, l
-                                 in zip(a, means, lens)])
+
+    # Calc standard error of mean.
+    # List comprehension used to deal with possible jagged input arrays
+    # Alternative method using linalg.norm is slower.
+    standard_error = np.asarray([np.std(a, ddof=1) / np.sqrt(l) for a, l
+                                 in zip(a, lens)])
+
+    # Calculate sample weights and varience
     sample_weights = 1 / standard_error ** 2 / np.sum(1 / standard_error ** 2)
     var_w = np.sum(sample_weights * means)
 
-    # Calculate the AG statistic by running calc_z2. Vectorization is faster
-    # than list comprehension for larger sample sizes. From this point forth
-    # all interactions between samples (standard error, etc) have been cached
-    # in the above variables
-    z = np.vectorize(calc_z2)(var_w, standard_error, means, lens)
-    z = np.sum(z)
+    # Calculate the AG statistic using the previously calculated values.
+    # At this point all are non-jagged, allowing avoidance of list
+    # comprehension/loops
+    df = lens - 1
+    t = (means - var_w) / standard_error
+
+    # Calculate a,b,c using evaluating AG's formulas (9), (10)
+    a = df - .5
+    b = 48 * a ** 2
+    c = (a * np.log(1 + t ** 2 / df)) ** .5
+
+    # Calculate the three terms in evaluating AG's Z formula (8)
+    t0 = c
+    t1 = (c ** 3 + 3 * c) / b
+    t3 = (4 * c ** 7 + 33 * c ** 5 + 240 * c ** 3 + 855 * c)
+    t3d = (10 * b ** 2 + 8 * b * c ** 4 + 1000 * b)
+    z = t0 + t1 - t3 / t3d
+
+    zf = np.sum(z ** 2)
 
     # Calculate P value
-    p = distributions.chi2.sf(z, len(a) - 1)
+    p = distributions.chi2.sf(zf, len(a) - 1)
 
-    return AlexanderGovernResult(z, p)
+    return AlexanderGovernResult(zf, p)
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):
