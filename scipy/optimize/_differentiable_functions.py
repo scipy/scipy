@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sps
-from ._numdiff import approx_derivative, group_columns
+from ._numdiff import approx_derivative, group_columns, _prepare_bounds
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
 
@@ -159,11 +159,17 @@ class ScalarFunction:
                 self.g = grad_wrapped(self.x)
 
         elif grad in FD_METHODS:
+            lb, ub = _prepare_bounds(finite_diff_bounds, x0)
+            equal_bounds = lb == ub
+
             def update_grad():
                 self._update_fun()
                 self.ngev += 1
                 self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
                                            **finite_diff_options)
+                # when the lower and upper bounds are equal then set the
+                # gradient to 0.
+                self.g[equal_bounds] = 0.0
 
         self._update_grad_impl = update_grad
         self._update_grad()

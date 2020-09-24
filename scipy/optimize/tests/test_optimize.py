@@ -26,6 +26,7 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
 from scipy.optimize.optimize import MemoizeJac, show_options
+from scipy.optimize._constraints import Bounds
 
 
 def test_check_grad():
@@ -1132,6 +1133,23 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(f, x0, method='slsqp',
                                 constraints={'type': 'ineq', 'fun': cons})
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
+
+    @pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+                                        'trust-constr'])
+    def test_equal_bounds(self, method):
+        # bounded methods should still work if the lower and upper bounds are
+        # equal
+        x0 = np.array([2.0, 2.0, 2.0])
+        bounds = Bounds([0.0, 0.0, 2.0], [10.0, 10.0, 2.0])
+        with np.testing.suppress_warnings() as sup:
+            # filter divide by zero originating from _numdiff._dense_difference
+            # when lower and upper bounds are equal
+            sup.filter(RuntimeWarning, "invalid value encountered in"
+                                       " true_divide")
+            res = optimize.minimize(
+                optimize.rosen, x0, bounds=bounds
+            )
+            assert res.success
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
                                         'Newton-CG', 'L-BFGS-B', 'SLSQP',
