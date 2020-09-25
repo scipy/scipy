@@ -195,7 +195,7 @@ def _psi1_mod(x):
 
 def _cdf_cvm_inf(x):
     """
-    Calculate the cdf of the Cramer-von Mises statistic (infinite sample size).
+    Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
     See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
 
@@ -231,7 +231,7 @@ def _cdf_cvm_inf(x):
 
 def _cdf_cvm(x, n=None):
     """
-    Calculate the cdf of the Cramer-von Mises statistic for a finite sample
+    Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf)
 
     See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
@@ -260,7 +260,7 @@ def _cdf_cvm(x, n=None):
 
 def cramervonmises(rvs, cdf, args=()):
     """
-    Perform the Cramer-von Mises test for goodness of fit.
+    Perform the Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -285,7 +285,7 @@ def cramervonmises(rvs, cdf, args=()):
     -------
     res : object with attributes
         statistic : float
-            Cramer-von Mises statistic.
+            Cramér-von Mises statistic.
         pvalue :  float
             The p-value.
 
@@ -295,6 +295,8 @@ def cramervonmises(rvs, cdf, args=()):
 
     Notes
     -----
+    .. versionadded:: 1.6.0
+
     The p-value relies on the approximation given by equation 1.8 in [2]_.
     It is important to keep in mind that the p-value is only accurate if
     one tests a simple hypothesis, i.e. the parameters of the reference
@@ -303,9 +305,9 @@ def cramervonmises(rvs, cdf, args=()):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Cramer-von_Mises_criterion
+    .. [1] https://en.wikipedia.org/wiki/Cramér-von_Mises_criterion
     .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
-           Distribution of Cramer-von Mises Statistics. Journal of the
+           Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
 
     Examples

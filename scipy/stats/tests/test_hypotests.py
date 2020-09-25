@@ -72,7 +72,7 @@ class TestEppsSingleton(object):
 class TestCvm(object):
     # the expected values of the cdfs are taken from Table 1 in
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
-    # Cramer-von Mises Statistics, 1996.
+    # Cramér-von Mises Statistics, 1996.
     def test_cdf_4(self):
         assert_allclose(
                 _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
