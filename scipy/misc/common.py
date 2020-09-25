@@ -97,6 +97,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     Notes
     -----
     Decreasing the step size too small can result in round-off error.
+    Behavior at a non-differentiable point is unreliable.
 
     Examples
     --------
