@@ -3518,6 +3518,10 @@ def f_oneway(*args, axis=0):
     be possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`)
     although with some loss of power.
 
+    In cases where there exists heterogeneity of variance betweent the samples,
+    the Alexander-Govern test (`scipy.stats.alexandergovern`) may be possible
+    to use for better results.
+
     The length of each group must be at least one, and there must be at
     least one group with length greater than one.  If these conditions
     are not satisfied, a warning is generated and (``np.nan``, ``np.nan``)
@@ -3715,14 +3719,22 @@ def alexandergovern(*args):
     pvalue : float
         The associated p-value from the chi-squared distribution.
 
+    Notes
+    ----------
+    The use of this test relies on several assumptions. 
+
+    See Also
+    --------
+    f_oneway : one-way ANOVA
+
     References
-        ----------
+    ----------
         ... [1] Alexander, Ralph A., and Diane M. Govern. “A New and Simpler
                 Approximation for ANOVA under Variance Heterogeneity.” Journal
                 of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
                 JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
     Examples
-        --------
+    --------
         >>> from scipy.stats import AlexanderGovern, Kruskal, F_oneway
 
         >>> young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
