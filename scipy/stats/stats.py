@@ -3694,10 +3694,6 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-AlexanderGovernResult = namedtuple("AlexanderGovernResult", ("statistic",
-                                                             "pvalue"))
-
-
 def alexandergovern(*args):
     """
     Performs the Alexander Govern test.
@@ -3788,7 +3784,7 @@ def alexandergovern(*args):
     # "[the p value is determined from] central chi-square random deviates
     # with n_i - 1 degrees of freedom". Alexander, Govern (94)
     p = distributions.chi2.sf(A, len(args) - 1)
-    return AlexanderGovernResult(A, p)
+    return alexandergovernresult(A, p)
 
 
 def alexandergovern_alt(*args):
@@ -3878,7 +3874,23 @@ def alexandergovern_alt(*args):
     # Calculate P value
     p = distributions.chi2.sf(zf, len(a) - 1)
 
-    return AlexanderGovernResult(zf, p)
+    return alexandergovernresult(zf, p)
+
+
+class alexandergovernresult:
+    def __init__(self, statistic, pvalue):
+        self.statistic = statistic
+        self.pvalue = pvalue
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(statistic={self.statistic}, "
+                f"pvalue={self.pvalue})")
+
+    def __eq__(self, o):
+        if o is None:
+            return False
+        else:
+            return self.statistic == o.statistic and self.pvalue == o.pvalue
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):
