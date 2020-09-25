@@ -7701,7 +7701,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     (resp. :math:`v`).
 
     As shown in [2]_, for one-dimensional real-valued variables, the energy
-    distance is linked to the non-distribution-free version of the Cramer-von
+    distance is linked to the non-distribution-free version of the Cramér-von
     Mises distance:
 
     .. math::
@@ -7709,7 +7709,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
         D(u, v) = \sqrt{2} l_2(u, v) = \left( 2 \int_{-\infty}^{+\infty} (U-V)^2
         \right)^{1/2}
 
-    Note that the common Cramer-von Mises criterion uses the distribution-free
+    Note that the common Cramér-von Mises criterion uses the distribution-free
     version of the distance. See [2]_ (section 2), for more details about both
     versions of the distance.
 
