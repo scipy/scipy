@@ -4740,13 +4740,13 @@ class TestAlexanderGovern(object):
         x <- factor(x)
         ag.test(y ~ x, tibble(y,x))
 
-        Alexander-Govern Test (alpha = 0.05) 
-        ------------------------------------------------------------- 
-        data : y and x 
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : y and x
 
-        statistic  : 1.359941 
-        parameter  : 2 
-        p.value    : 0.5066321 
+        statistic  : 1.359941
+        parameter  : 2
+        p.value    : 0.5066321
 
         Result     : Difference is not statistically significant. 
         ------------------------------------------------------------- 
