@@ -3720,8 +3720,8 @@ def alexandergovern(*args):
         The associated p-value from the chi-squared distribution.
 
     Notes
-    ----------
-    The use of this test relies on several assumptions. 
+    -----
+    The use of this test relies on several assumptions.
 
     See Also
     --------
@@ -3729,10 +3729,11 @@ def alexandergovern(*args):
 
     References
     ----------
-        ... [1] Alexander, Ralph A., and Diane M. Govern. “A New and Simpler
-                Approximation for ANOVA under Variance Heterogeneity.” Journal
-                of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
-                JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
+    .. [1] Alexander, Ralph A., and Diane M. Govern. “A New and Simpler
+           Approximation for ANOVA under Variance Heterogeneity.” Journal
+           of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
+           JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
+
     Examples
     --------
         >>> from scipy.stats import AlexanderGovern
