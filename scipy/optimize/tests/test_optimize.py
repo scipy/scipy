@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import warnings
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_, assert_almost_equal,
@@ -1133,23 +1134,6 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(f, x0, method='slsqp',
                                 constraints={'type': 'ineq', 'fun': cons})
         assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
-
-    @pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
-                                        'trust-constr'])
-    def test_equal_bounds(self, method):
-        # bounded methods should still work if the lower and upper bounds are
-        # equal
-        x0 = np.array([2.0, 2.0, 2.0])
-        bounds = Bounds([0.0, 0.0, 2.0], [10.0, 10.0, 2.0])
-        with np.testing.suppress_warnings() as sup:
-            # filter divide by zero originating from _numdiff._dense_difference
-            # when lower and upper bounds are equal
-            sup.filter(RuntimeWarning, "invalid value encountered in"
-                                       " true_divide")
-            res = optimize.minimize(
-                optimize.rosen, x0, bounds=bounds
-            )
-            assert res.success
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
                                         'Newton-CG', 'L-BFGS-B', 'SLSQP',
@@ -2326,3 +2310,31 @@ def test_x_overwritten_user_function():
             hess = fquad_hess
         res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
+
+
+@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+                                    'trust-constr'])
+def test_equal_bounds(method):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    def f(x):
+        return optimize.rosen([x, 2.0])
+
+    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
+    x0 = np.array([0.5, 3.0])
+    bounds = [(0.0, 3.0), (2.0, 2.0)]
+
+    with warnings.catch_warnings(record=True):
+        # warning filter is for trust-constr
+        # UserWarning: delta_grad == 0.0.Check if the approximated
+        # function is linear.
+        warnings.simplefilter('ignore', category=UserWarning)
+
+        res = optimize.minimize(
+            optimize.rosen, x0, method=method, bounds=bounds,
+        )
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
