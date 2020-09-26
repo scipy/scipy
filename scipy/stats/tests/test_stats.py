@@ -4748,8 +4748,8 @@ class TestAlexanderGovern(object):
         parameter  : 2
         p.value    : 0.5066321
 
-        Result     : Difference is not statistically significant. 
-        ------------------------------------------------------------- 
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
         Example adapted from:
         https://eval-serv2.metpsy.uni-jena.de/wiki-metheval-hp/index.php/R_FUN_Alexander-Govern
 

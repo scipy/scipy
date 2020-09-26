@@ -3735,7 +3735,7 @@ def alexandergovern(*args):
                 JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
     Examples
     --------
-        >>> from scipy.stats import AlexanderGovern, Kruskal, F_oneway
+        >>> from scipy.stats import AlexanderGovern
 
         >>> young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
         ...         518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1,
@@ -3760,35 +3760,34 @@ def alexandergovern(*args):
     # tests that serve as the basis for equation (8) but are not needed
     # to perform the test.
 
-    # (1) determine standard errors for each sample
-    standard_errors = [np.std(arg, ddof=1) / np.sqrt(len(arg)) for arg in args]
-
-    # precalculate weighted sum for following step
-    weight_denom = np.sum(1 / np.square(standard_errors))
-
-    # (2) define a weight for each samlple
-    weights = [(1 / s**2) / weight_denom for s in standard_errors]
-
-    # precalculate means of each sample
+    # precalculate mean and length of each sample
     means = np.asarray([np.mean(arg) for arg in args])
+    lengths = np.asarray([len(arg) for arg in args])
+
+    # (1) determine standard error of the mean for each sample
+    standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
+                       for arg, length in zip(args, lengths)]
+
+    # (2) define a weight for each sample
+    weights = ((1 / np.square(standard_errors)) /
+               np.sum(1 / np.square(standard_errors)))
 
     # (3) determine variance-weighted estimate of the common mean
     var_w = np.sum(weights * means)
 
     # (4) determine one-sample t statistic for each group
-    t_stats = [((mean - var_w)/s) for mean, s in zip(means, standard_errors)]
+    t_stats = (means - var_w)/standard_errors
+
     # calculate parameters to be used in transformation
-    v = [len(k) - 1 for k in args]
-    a = [v_i - .5 for v_i in v]
-    b = [48 * a_i**2 for a_i in a]
-    c = [((a_i * np.log(1 + (t_i ** 2)/v_i))**.5)
-         for a_i, t_i, v_i in zip(a, t_stats, v)]
+    v = lengths - 1
+    a = v - .5
+    b = 48 * a**2
+    c = (a * np.log(1 + (t_stats ** 2)/v))**.5
 
     # (8) perform a normalizing transformation on t statistic
-    z = [(c_i + ((c_i**3 + 3*c_i)/b_i) -
-          ((4*c_i**7 + 33*c_i**5 + 240*c_i**3 + 855*c_i) /
-           (10*b_i**2 + 8*b_i*c_i**4 + 1000*b_i)))
-         for c_i, b_i in zip(c, b)]
+    z = (c + ((c**3 + 3*c)/b) -
+         ((4*c**7 + 33*c**5 + 240*c**3 + 855*c) /
+          (b**2*10 + 8*b*c**4 + 1000*b)))
 
     # (9) calculate statistic
     A = np.sum(np.square(z))
