@@ -578,7 +578,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Simulated Annealing for Efficient Global Optimization: the GenSA
         Package for R. The R Journal, Volume 5/1 (2013).
     .. [6] Mullen, K. Continuous Global Optimization in R. Journal of
-        Statistical Software, 60(6), 1 - 45, (2014). DOI:10.18637/jss.v060.i06
+        Statistical Software, 60(6), 1 - 45, (2014).
+        :doi:`10.18637/jss.v060.i06`
 
     Examples
     --------

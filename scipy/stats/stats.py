@@ -185,7 +185,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
-from ._hypotests import epps_singleton_2samp
+from ._hypotests import epps_singleton_2samp, cramervonmises
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -210,8 +210,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'alexandergovern',
-           'alexandergovern_alt']
+           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
+           'alexandergovern', 'alexandergovern_alt']
+
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -4524,7 +4525,7 @@ def pointbiserialr(x, y):
 
     .. [3] D. Kornbrot "Point Biserial Correlation", In Wiley StatsRef:
            Statistics Reference Online (eds N. Balakrishnan, et al.), 2014.
-           https://doi.org/10.1002/9781118445112.stat06227
+           :doi:`10.1002/9781118445112.stat06227`
 
     Examples
     --------
@@ -5196,13 +5197,13 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     .. [2] Panda, S., Palaniappan, S., Xiong, J., Swaminathan, A.,
            Ramachandran, S., Bridgeford, E. W., ... Vogelstein, J. T. (2019).
            mgcpy: A Comprehensive High Dimensional Independence Testing Python
-           Package. ArXiv:1907.02088 [Cs, Stat].
+           Package. :arXiv:`1907.02088`
     .. [3] Shen, C., Priebe, C.E., & Vogelstein, J. T. (2019). From distance
            correlation to multiscale graph correlation. Journal of the American
            Statistical Association.
     .. [4] Shen, C. & Vogelstein, J. T. (2018). The Exact Equivalence of
-           Distance and Kernel Methods for Hypothesis Testing. ArXiv:1806.05514
-           [Cs, Stat].
+           Distance and Kernel Methods for Hypothesis Testing.
+           :arXiv:`1806.05514`
 
     Examples
     --------
@@ -7917,7 +7918,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     (resp. :math:`v`).
 
     As shown in [2]_, for one-dimensional real-valued variables, the energy
-    distance is linked to the non-distribution-free version of the Cramer-von
+    distance is linked to the non-distribution-free version of the Cramér-von
     Mises distance:
 
     .. math::
@@ -7925,7 +7926,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
         D(u, v) = \sqrt{2} l_2(u, v) = \left( 2 \int_{-\infty}^{+\infty} (U-V)^2
         \right)^{1/2}
 
-    Note that the common Cramer-von Mises criterion uses the distribution-free
+    Note that the common Cramér-von Mises criterion uses the distribution-free
     version of the distance. See [2]_ (section 2), for more details about both
     versions of the distance.
 

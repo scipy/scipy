@@ -504,6 +504,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
 
+        # If either column is entirely NaN or Inf
+        if not np.any(x.data):
+            return SpearmanrResult(np.nan, np.nan)
+
         m = ma.getmask(x)
         n_obs = x.shape[0]
         dof = n_obs - 2 - int(m.sum(axis=0)[0])
