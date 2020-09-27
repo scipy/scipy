@@ -419,6 +419,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     except (TypeError, ValueError) as e:
         raise ValueError("Objective function must return a scalar") from e
     g = append(wrapped_grad(x), 0.0)
+
     c = _eval_constraint(x, cons)
     a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
