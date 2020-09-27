@@ -145,7 +145,7 @@ class ScalarFunction(object):
                 self.g = grad_wrapped(self.x)
 
         elif grad in FD_METHODS:
-            lb, ub = _prepare_bounds(finite_diff_bounds, x0)
+            lb, ub = _prepare_bounds(finite_diff_bounds, self.x)
             equal_bounds = lb == ub
 
             def update_grad():
