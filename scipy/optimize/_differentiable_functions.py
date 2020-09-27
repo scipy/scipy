@@ -152,7 +152,7 @@ class ScalarFunction:
         try:
             _ = float(np.asarray(self.f))
         except (TypeError, ValueError) as e:
-            raise ValueError("ScalarFunction: fun must return a scalar") from e
+            raise ValueError("The user-provided objective function must return a scalar value.") from e
 
         # Gradient evaluation
         if callable(grad):
