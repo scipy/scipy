@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
-                           assert_equal)
+                           assert_equal, assert_raises)
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
@@ -339,6 +339,13 @@ class TestScalarFunction(TestCase):
         assert_equal(sf.fun(x), 14.0)
         assert_equal(sf.x, np.array([1., 2., 3.]))
         assert x is not sf.x
+
+    def test_non_scalar_func(self):
+        # Use of a non-scalar function should raise an error when using
+        # ScalarFunction
+        with assert_raises(ValueError):
+            ScalarFunction(lambda x: [0, 1], [1, 2, 3], (), '2-point',
+                           lambda x: x, None, (-np.inf, np.inf))
 
 
 class ExVectorialFunction:
