@@ -298,17 +298,17 @@ class lil_matrix(spmatrix, IndexMixin):
 
         return new
 
-    def _set_intXint(self, row, col, x):
+    def _set_intXint(self, row, col, x, insert_zeros):
         _csparsetools.lil_insert(self.shape[0], self.shape[1], self.rows,
                                  self.data, row, col, x)
 
-    def _set_arrayXarray(self, row, col, x):
+    def _set_arrayXarray(self, row, col, x, insert_zeros):
         i, j, x = map(np.atleast_2d, _prepare_index_for_memoryview(row, col, x))
         _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     i, j, x)
 
-    def _set_arrayXarray_sparse(self, row, col, x):
+    def _set_arrayXarray_sparse(self, row, col, x, insert_zeros):
         # Special case: full matrix assignment
         if (x.shape == self.shape and
                 isinstance(row, slice) and row == slice(None) and
@@ -320,7 +320,7 @@ class lil_matrix(spmatrix, IndexMixin):
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
-        self._set_arrayXarray(row, col, x)
+        self._set_arrayXarray(row, col, x, insert_zeros)
 
     def __setitem__(self, key, x):
         # Fast path for simple (int, int) indexing.
@@ -330,7 +330,7 @@ class lil_matrix(spmatrix, IndexMixin):
             x = self.dtype.type(x)
             if x.size > 1:
                 raise ValueError("Trying to assign a sequence to an item")
-            return self._set_intXint(key[0], key[1], x)
+            return self._set_intXint(key[0], key[1], x, None)
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
 

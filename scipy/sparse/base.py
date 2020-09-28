@@ -1121,7 +1121,7 @@ class spmatrix(object):
         """
         return self.tocsr().diagonal(k=k)
 
-    def setdiag(self, values, k=0):
+    def setdiag(self, values, k=0, insert_zeros=None):
         """
         Set diagonal or off-diagonal elements of the array.
 
@@ -1140,38 +1140,46 @@ class spmatrix(object):
             Which off-diagonal to set, corresponding to elements a[i,i+k].
             Default: 0 (the main diagonal).
 
+        insert_zeros : bool, optional
+            If True, always insert explicit zeros into the matrix, even for
+            elements that are empty (and thus treated as equal to zero); if
+            False, matrix types will typically not insert explicit zeros, but
+            they may still appear, both when overwriting existing elements and
+            for existing empty elements. For backwards compatibility, None (the
+            default) is equivalent to True for some matrix types and False for
+            others.
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
             raise ValueError("k exceeds matrix dimensions")
-        self._setdiag(np.asarray(values), k)
+        self._setdiag(np.asarray(values), k, insert_zeros)
 
-    def _setdiag(self, values, k):
+    def _setdiag(self, values, k, insert_zeros):
         M, N = self.shape
         if k < 0:
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M+k, N)
                 for i in range(max_index):
-                    self[i - k, i] = values
+                    self._setitem((i - k, i), values, insert_zeros)
             else:
                 max_index = min(M+k, N, len(values))
                 if max_index <= 0:
                     return
                 for i, v in enumerate(values[:max_index]):
-                    self[i - k, i] = v
+                    self._setitem((i - k, i), v, insert_zeros)
         else:
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M, N-k)
                 for i in range(max_index):
-                    self[i, i + k] = values
+                    self._setitem((i, i + k), values, insert_zeros)
             else:
                 max_index = min(M, N-k, len(values))
                 if max_index <= 0:
                     return
                 for i, v in enumerate(values[:max_index]):
-                    self[i, i + k] = v
+                    self._setitem((i, i + k), v, insert_zeros)
 
     def _process_toarray_args(self, order, out):
         if out is not None:

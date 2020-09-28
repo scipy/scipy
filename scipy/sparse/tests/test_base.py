@@ -857,6 +857,8 @@ class _TestCommon(object):
             m.setdiag((9,), k=-2)
             assert_array_equal(m.A[2,0], 9)
 
+            m.setdiag
+
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)

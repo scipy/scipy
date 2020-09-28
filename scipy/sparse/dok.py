@@ -224,24 +224,25 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 dict.__setitem__(newdok, key, v)
         return newdok
 
-    def _set_intXint(self, row, col, x):
+    def _set_intXint(self, row, col, x, insert_zeros):
         key = (row, col)
-        if x:
+        if x or insert_zeros:
             dict.__setitem__(self, key, x)
         elif dict.__contains__(self, key):
             del self[key]
 
-    def _set_arrayXarray(self, row, col, x):
+    def _set_arrayXarray(self, row, col, x, insert_zeros):
         row = list(map(int, row.ravel()))
         col = list(map(int, col.ravel()))
         x = x.ravel()
         dict.update(self, zip(zip(row, col), x))
 
-        for i in np.nonzero(x == 0)[0]:
-            key = (row[i], col[i])
-            if dict.__getitem__(self, key) == 0:
-                # may have been superseded by later update
-                del self[key]
+        if not insert_zeros:
+            for i in np.nonzero(x == 0)[0]:
+                key = (row[i], col[i])
+                if dict.__getitem__(self, key) == 0:
+                    # may have been superseded by later update
+                    del self[key]
 
     def __add__(self, other):
         if isscalarlike(other):

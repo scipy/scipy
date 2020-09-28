@@ -75,13 +75,20 @@ class IndexMixin(object):
         return self._get_arrayXarray(row, col)
 
     def __setitem__(self, key, x):
+        self._setitem(key, x, None)
+
+    def _setitem(self, key, x, insert_zeros):
+        """
+        The insert_zeros parameter can be True (always insert explicit zeros), False (do the best thing
+        for the current matrix type), None (default: be backward compatible).
+        """
         row, col = self._validate_indices(key)
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
             x = np.asarray(x, dtype=self.dtype)
             if x.size != 1:
                 raise ValueError('Trying to assign a sequence to an item')
-            self._set_intXint(row, col, x.flat[0])
+            self._set_intXint(row, col, x.flat[0], insert_zeros)
             return
 
         if isinstance(row, slice):
@@ -115,7 +122,7 @@ class IndexMixin(object):
                 return
             x = x.tocoo(copy=True)
             x.sum_duplicates()
-            self._set_arrayXarray_sparse(i, j, x)
+            self._set_arrayXarray_sparse(i, j, x, insert_zeros)
         else:
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
@@ -123,7 +130,7 @@ class IndexMixin(object):
             if x.size == 0:
                 return
             x = x.reshape(i.shape)
-            self._set_arrayXarray(i, j, x)
+            self._set_arrayXarray(i, j, x, insert_zeros)
 
     def _validate_indices(self, key):
         M, N = self.shape
@@ -231,17 +238,17 @@ class IndexMixin(object):
     def _get_arrayXarray(self, row, col):
         raise NotImplementedError()
 
-    def _set_intXint(self, row, col, x):
+    def _set_intXint(self, row, col, x, insert_zeros):
         raise NotImplementedError()
 
-    def _set_arrayXarray(self, row, col, x):
+    def _set_arrayXarray(self, row, col, x, insert_zeros):
         raise NotImplementedError()
 
-    def _set_arrayXarray_sparse(self, row, col, x):
+    def _set_arrayXarray_sparse(self, row, col, x, insert_zeros):
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
-        self._set_arrayXarray(row, col, x)
+        self._set_arrayXarray(row, col, x, insert_zeros)
 
 
 def _unpack_index(index):
