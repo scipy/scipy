@@ -3516,12 +3516,9 @@ def f_oneway(*args, axis=0):
        property is known as homoscedasticity.
 
     If these assumptions are not true for a given set of data, it may still
-    be possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`)
-    although with some loss of power.
-
-    In cases where there exists heterogeneity of variance betweent the samples,
-    the Alexander-Govern test (`scipy.stats.alexandergovern`) may be possible
-    to use for better results.
+    be possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) or
+    the Alexander-Govern test (`scipy.stats.alexandergovern`) although with
+    some loss of power.
 
     The length of each group must be at least one, and there must be at
     least one group with length greater than one.  If these conditions
@@ -3711,7 +3708,7 @@ def alexandergovern(*args):
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group.  There must be at least
-        two arguments.
+        two samples.
 
     Returns
     -------
@@ -3723,6 +3720,10 @@ def alexandergovern(*args):
     Notes
     -----
     The use of this test relies on several assumptions.
+    1. The samples are independent.
+    2. Each sample is from a normally distributed population.
+    3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
+     instead relaxing the assumption of equal variances.
 
     See Also
     --------
@@ -3730,27 +3731,26 @@ def alexandergovern(*args):
 
     References
     ----------
-    .. [1] Alexander, Ralph A., and Diane M. Govern. “A New and Simpler
-           Approximation for ANOVA under Variance Heterogeneity.” Journal
+    .. [1] Alexander, Ralph A., and Diane M. Govern. "A New and Simpler
+           Approximation for ANOVA under Variance Heterogeneity." Journal
            of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
            JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
 
     Examples
     --------
-        >>> from scipy.stats import AlexanderGovern
+        >>> from scipy.stats import alexandergovern
+        Here are some data on annual percentage rate of interest charged on
+        new car loans at nine of the largest banks in 4 American cities.
+        https://www.itl.nist.gov/div898/education/datasets.htm#anova
 
-        >>> young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
-        ...         518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1,
-        ...         584.68, 609.09, 609.53, 666.63, 676.4]
-        >>> middle = [335.59, 338.43, 353.54, 404.27, 437.5, 469.01, 485.85,
-        ...          487.3, 493.08, 494.31, 499.1, 800]
-        >>> old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24,
-        ...        558.61, 558.95, 565.43, 586.39, 594.69, 629.22, 645.69,
-        ...        691.84]
-
-        >>> A, p = AlexanderGovern(young, middle, old)
-        >>> A, p
-        (6.941146076872535, 0.03109920451449096)
+        >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
+        >>> chicago = [14.25, 13.0, 12.75, 12.5, 12.5, 12.4, 12.3, 11.9, 11.9]
+        >>> houston = [14.0, 14.0, 13.51, 13.5, 13.5, 13.25, 13.0, 12.5, 12.5]
+        >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
+        ...           11.89]
+        >>> alexandergovern(young, middle, old)
+        alexandergovernresult(statistic=6.941146076872535,
+                              pvalue=0.03109920451449096)
     """
     if len(args) < 2:
         raise TypeError(f"2 or more inputs required, got {len(args)}")
@@ -3829,7 +3829,7 @@ def alexandergovern_alt(*args):
                 Science, 9(13), 1. https://doi.org/10.5539/mas.v9n13p1
     Examples
         --------
-        >>> from scipy.stats import alexandergovern_alt, Kruskal, F_oneway
+        >>> from scipy.stats import alexandergovern_alt
         >>> young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
         ...         518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1,
         ...         584.68, 609.09, 609.53, 666.63, 676.4]
@@ -3838,9 +3838,15 @@ def alexandergovern_alt(*args):
         >>> old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24,
         ...        558.61, 558.95, 565.43, 586.39, 594.69, 629.22, 645.69,
         ...        691.84]
-        >>> A, p = alexandergovern_alt(young, middle, old)
-        >>> A, p
-        (6.941146076872535, 0.03109920451449096)
+        >>> soln = alexandergovern_alt(young, middle, old)
+        >>> soln
+        alexandergovernresult(statistic=6.941146076872535,
+        pvalue=0.03109920451449096)
+
+        The value of A is 6.94 which corresponds to p value 0.0310. If our
+        desired significance level is 5%, a p value of .0310 lets us reject the
+        null hypothesis to determine that the measurements are the same at
+        different locations.
     """
 
     if len(args) < 2:
@@ -3898,15 +3904,6 @@ class alexandergovernresult:
     def __repr__(self):
         return (f"{self.__class__.__name__}(statistic={self.statistic}, "
                 f"pvalue={self.pvalue})")
-
-    def __eq__(self, o):
-        if o is None:
-            return False
-        else:
-            return self.statistic == o.statistic and self.pvalue == o.pvalue
-
-    def __getitem__(self, index):
-        return (self.statistic, self.pvalue)[index]
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):
