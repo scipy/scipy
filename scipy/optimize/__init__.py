@@ -255,12 +255,21 @@ The simplex method supports callback functions, such as:
 
    linprog_verbose_callback -- Sample callback function for linprog (simplex).
 
-Assignment problems:
+Assignment problems
+===================
 
 .. autosummary::
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem.
+   quadratic_assignment -- Solves the quadratic assignment problem.
+
+The `quadratic_assignment` function supports the following methods:
+
+.. toctree::
+
+   optimize.qap-faq
+   optimize.qap-2opt
 
 Utilities
 =========
@@ -407,6 +416,7 @@ from ._constraints import (NonlinearConstraint,
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
+from ._qap import quadratic_assignment
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

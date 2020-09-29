@@ -1273,24 +1273,21 @@ cdef class cKDTree:
 
         .. [1] Gray and Moore,
                "N-body problems in statistical learning",
-               Mining the sky, 2000,
-               https://arxiv.org/abs/astro-ph/0012333
+               Mining the sky, 2000, :arxiv:`astro-ph/0012333`
 
         .. [2] Landy and Szalay,
                "Bias and variance of angular correlation functions",
-               The Astrophysical Journal, 1993,
-               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+               The Astrophysical Journal, 1993, :doi:`10.1086/172900`
 
         .. [3] Sheth, Connolly and Skibba,
                "Marked correlations in galaxy formation models",
-               Arxiv e-print, 2005,
-               https://arxiv.org/abs/astro-ph/0511773
+               2005, :arxiv:`astro-ph/0511773`
 
         .. [4] Hawkins, et al.,
                "The 2dF Galaxy Redshift Survey: correlation functions,
                peculiar velocities and the matter density of the Universe",
                Monthly Notices of the Royal Astronomical Society, 2002,
-               http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
+               :doi:`10.1046/j.1365-2966.2003.07063.x`
 
         .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
 

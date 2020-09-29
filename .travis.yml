@@ -80,7 +80,7 @@ matrix:
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="numpy==1.15.4"
+        - NUMPYSPEC="numpy==1.18.5"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
     # so we must install python3.6-dbg using apt.
@@ -137,7 +137,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
-        - NUMPYSPEC="numpy==1.14.6"
+        - NUMPYSPEC="numpy==1.16.5"
         # The following is needed for optimized "-OO" test run but since we use
         # pytest-xdist plugin for load scheduling its workers don't pick up the
         # flag. This environment variable starts all Py instances in -OO mode.

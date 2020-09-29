@@ -77,12 +77,42 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
-def _assert_lessthan_loglike(dist, data, func, **kwds):
+# Expected values of the vonmises PDF were computed using
+# mpmath with 50 digits of precision:
+#
+# def vmpdf_mp(x, kappa):
+#     x = mpmath.mpf(x)
+#     kappa = mpmath.mpf(kappa)
+#     num = mpmath.exp(kappa*mpmath.cos(x))
+#     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
+#     return num/den
+#
+@pytest.mark.parametrize('x, kappa, expected_pdf',
+                         [(0.1, 0.01, 0.16074242744907072),
+                          (0.1, 25.0, 1.7515464099118245),
+                          (0.1, 800, 0.2073272544458798),
+                          (2.0, 0.01, 0.15849003875385817),
+                          (2.0, 25.0, 8.356882934278192e-16),
+                          (2.0, 800, 0.0)])
+def test_vonmises_pdf(x, kappa, expected_pdf):
+    pdf = stats.vonmises.pdf(x, kappa)
+    assert_allclose(pdf, expected_pdf, rtol=1e-15)
+
+
+def _assert_less_or_close_loglike(dist, data, func, **kwds):
+    """
+    This utility function checks that the log-likelihood (computed by
+    func) of the result computed using dist.fit() is less than or equal
+    to the result computed using the generic fit method.  Because of
+    normal numerical imprecision, the "equality" check is made using
+    `np.allclose` with a relative tolerance of 1e-15.
+    """
     mle_analytical = dist.fit(data, **kwds)
     numerical_opt = super(type(dist), dist).fit(data, **kwds)
     ll_mle_analytical = func(mle_analytical, data)
     ll_numerical_opt = func(numerical_opt, data)
-    assert ll_mle_analytical < ll_numerical_opt
+    assert (ll_mle_analytical <= ll_numerical_opt or
+            np.allclose(ll_mle_analytical, ll_numerical_opt, rtol=1e-15))
 
 
 def assert_fit_warnings(dist):
@@ -1063,20 +1093,20 @@ class TestPareto(object):
 
         # fixed `floc` to actual location provides a better fit than the
         # super method
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
+        _assert_less_or_close_loglike(stats.pareto, data, func, floc=rvs_loc)
 
         # fixing `floc` to an arbitrary number, 0, still provides a better
         # fit than the super method
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
+        _assert_less_or_close_loglike(stats.pareto, data, func, floc=0)
 
         # fixed shape still uses MLE formula and provides a better fit than
         # the super method
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
+        _assert_less_or_close_loglike(stats.pareto, data, func, floc=0, f0=4)
 
         # valid fixed fscale still uses MLE formulas and provides a better
         # fit than the super method
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
-                                 fscale=rvs_scale/2)
+        _assert_less_or_close_loglike(stats.pareto, data, func, floc=0,
+                                      fscale=rvs_scale/2)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)
@@ -1612,21 +1642,22 @@ class TestInvgauss(object):
 
         # fixed `floc` uses analytical formula and provides better fit than
         # super method
-        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc)
+        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc)
 
         # fixed `floc` not resulting in invalid data < 0 uses analytical
         # formulas and provides a better fit than the super method
         assert np.all((data - (rvs_loc - 1)) > 0)
-        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc - 1)
+        _assert_less_or_close_loglike(stats.invgauss, data, func,
+                                      floc=rvs_loc - 1)
 
         # fixed `floc` to an arbitrary number, 0, still provides a better fit
         # than the super method
-        _assert_lessthan_loglike(stats.invgauss, data, func, floc=0)
+        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=0)
 
         # fixed `fscale` to an arbitrary number still provides a better fit
         # than the super method
-        _assert_lessthan_loglike(stats.invgauss, data, func, floc=rvs_loc,
-                                 fscale=np.random.rand(1)[0])
+        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc,
+                                      fscale=np.random.rand(1)[0])
 
     def test_fit_raise_errors(self):
         assert_fit_warnings(stats.invgauss)

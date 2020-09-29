@@ -59,7 +59,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     ----------
     .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
            Maximum Matchings in Bipartite Graphs" In: SIAM Journal of Computing
-           2.4 (1973), pp. 225--231. <https://dx.doi.org/10.1137/0202019>.
+           2.4 (1973), pp. 225--231. :doi:`10.1137/0202019`
 
     Examples
     --------
