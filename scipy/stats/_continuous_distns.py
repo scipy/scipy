@@ -6438,9 +6438,10 @@ class rayleigh_gen(rv_continuous):
         this function uses the default optimization method to determine
         the MLE. If the location parameter is fixed by using the `floc`
         argument, the analytical formula for the estimate of the scale 
-        is used. If neither parameter is fixed, analytical MLE for
-        `scale` as a function of `loc` in numerical optimization of
-        `loc`, injecting corresponding analytical optimum for `scale`.\n\n""")
+        is used. If neither parameter is fixed, the analytical MLE for
+        `scale` is used as a function of `loc` in numerical optimization
+        of `loc`, injecting corresponding analytical optimum for 
+        `scale`.\n\n""")
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
