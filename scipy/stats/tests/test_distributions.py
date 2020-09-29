@@ -3464,7 +3464,7 @@ class TestRayleigh(object):
         args = [data, (stats.rayleigh._fitstart(data), )]
         func = stats.rayleigh._reduce_func(args, {})[1]
 
-        _assert_lessthan_loglike(stats.rayleigh, data, func)
+        _assert_less_or_close_loglike(stats.rayleigh, data, func)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
