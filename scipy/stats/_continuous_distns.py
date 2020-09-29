@@ -6433,29 +6433,15 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the scale parameter is fixed by using the `fscale` argument,
+        this function uses the default optimization method to determine
+        the MLE. If the location parameter is fixed by using the `floc`
+        argument, the analytical formula for the estimate of the scale 
+        is used. If neither parameter is fixed, analytical MLE for
+        `scale` as a function of `loc` in numerical optimization of
+        `loc`, injecting corresponding analytical optimum for `scale`.\n\n""")
     def fit(self, data, *args, **kwds):
-        """
-        Maxmimum likelihood estimation of the `scale` parameter
-        is used in the numerical optimization to determine `loc`.
-
-        Parameters
-        ----------
-        data : array_like
-            Data to use in calculating the maximum likelihood estimate.
-
-        Returns
-        -------
-        loc, scale : float
-            Maximum likelihood estimate for the scale, provided loc.
-
-        Notes:
-        If `floc` is provided, the maximum likelihood scale may be calculated
-        without numerical optimization. If `fscale` is provided, it falls back
-        on `.rv_continuous`'s fit method. Otherwise, numerical optimization
-        over the location is used in conjuction with the maximum likelihood
-        estimation equation of the scale.
-        """
-
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
