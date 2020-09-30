@@ -4741,15 +4741,17 @@ class TestAlexanderGovern(object):
     def test_compare_r(self):
         '''
         Data generated in R with
-         set.seed(1)
-        y <- c(rnorm(40, sd=10),
-                rnorm(30, sd=15),
-                rnorm(20, sd=20))
-        x <- c(rep("one", times=40),
-                rep("two", times=30),
-                rep("eight", times=20))
-        x <- factor(x)
-        ag.test(y ~ x, tibble(y,x))
+        > set.seed(1)
+        > library("onewaytests")
+        > library("tibble")
+        > y <- c(rnorm(40, sd=10),
+        +        rnorm(30, sd=15),
+        +        rnorm(20, sd=20))
+        > x <- c(rep("one", times=40),
+        +        rep("two", times=30),
+        +        rep("eight", times=20))
+        > x <- factor(x)
+        > ag.test(y ~ x, tibble(y,x))
 
         Alexander-Govern Test (alpha = 0.05)
         -------------------------------------------------------------
@@ -4821,6 +4823,8 @@ class TestAlexanderGovern(object):
 
         # verify with ag.test in r
         '''
+        > library("onewaytests")
+        > library("tibble")
         > young <- c(482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
         +                  518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1, 584.68,
         +                  609.09, 609.53, 666.63, 676.4)
@@ -4869,6 +4873,8 @@ class TestAlexanderGovern(object):
 
         '''
         tested in ag.test in R:
+        > library("onewaytests")
+        > library("tibble")
         > x1 <- c(-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152, 
         +               0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555, 
         +               0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442, 
