@@ -85,7 +85,7 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools wheel cython gmpy2 pytest pytest-xdist pybind11 pytest-xdist mpmath scikit-umfpack scikit-sparse
+        pip install setuptools wheel cython gmpy2 pytest==5.4.3 pytest-xdist pybind11 pytest-xdist mpmath scikit-umfpack scikit-sparse
 
     - name: Test SciPy
       run: |

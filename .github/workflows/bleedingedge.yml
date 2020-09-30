@@ -34,7 +34,7 @@ jobs:
 
     - name: Install packages
       run: |
-        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist
+        python3.9 -m pip install --user numpy setuptools wheel cython pytest==5.4.3 pytest-xdist pybind11 pytest-xdist
 
     - name: Test SciPy
       run: |
