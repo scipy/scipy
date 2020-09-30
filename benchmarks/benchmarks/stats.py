@@ -232,22 +232,3 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
-
-
-class AlexanderGovernImplementations(Benchmark):
-    params = [[stats.alexandergovern, stats.alexandergovern_alt]]
-
-    def setup(self, func):
-        valMult = 500
-        sampMin = 100
-        sampMax = 1000
-
-        colMin = 1000
-        colMax = 10000
-
-        np.random.seed(1235)
-        self.samples = [(np.random.rand(np.random.randint(colMin, colMax)) * valMult).tolist() 
-		for i in range(np.random.randint(sampMin, sampMax))]
-
-    def time_test(self, func):
-        func(*self.samples)

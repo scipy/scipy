@@ -4738,9 +4738,7 @@ class TestSigmaClip(object):
 
 
 class TestAlexanderGovern(object):
-    @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                         stats.alexandergovern])
-    def test_compare_r(self, version):
+    def test_compare_r(self):
         '''
         Data generated in R with
          set.seed(1)
@@ -4800,13 +4798,11 @@ class TestAlexanderGovern(object):
                  23.56173993146409, -30.47133600859524, 11.878923752568431,
                  6.659007424270365, 21.261996745527256, -6.083678472686013,
                  7.400376198325763, 5.341975815444621]
-        A, p = version(one, two, eight)
-        assert_allclose(A,  1.3599405447999450836)
-        assert_allclose(p, 0.50663205309676440091)
+        soln = stats.alexandergovern(one, two, eight)
+        assert_allclose(soln.statistic,  1.3599405447999450836)
+        assert_allclose(soln.pvalue, 0.50663205309676440091)
 
-    @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                         stats.alexandergovern])
-    def test_compare_scholar(self, version):
+    def test_compare_scholar(self):
         '''
         Data taken from 'The Modification and Evaluation of the
         Alexander-Govern Test in Terms of Power' by Kingsley Ochuko, T.,
@@ -4819,9 +4815,9 @@ class TestAlexanderGovern(object):
                   487.3, 493.08, 494.31, 499.1, 886.41]
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
-        A, p = version(young, middle, old)
-        assert_allclose(A,  5.3237, atol=1e-3)
-        assert_allclose(p, 0.06982, atol=1e-4)
+        soln = stats.alexandergovern(young, middle, old)
+        assert_allclose(soln.statistic,  5.3237, atol=1e-3)
+        assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
 
         # verify with ag.test in r
         '''
@@ -4849,12 +4845,10 @@ class TestAlexanderGovern(object):
         ------------------------------------------------------------- 
 
         '''
-        assert_allclose(A, 5.324629)
-        assert_allclose(p, 0.06978651)
+        assert_allclose(soln.statistic, 5.324629)
+        assert_allclose(soln.pvalue, 0.06978651)
 
-    @pytest.mark.parametrize("version", [stats.alexandergovern_alt,
-                                         stats.alexandergovern])
-    def test_compare_scholar3(self, version):
+    def test_compare_scholar3(self):
         '''
         Data taken from 'Robustness And Comparative Power Of WelchAspin,
         Alexander-Govern And Yuen Tests Under Non-Normality And Variance
@@ -4869,9 +4863,9 @@ class TestAlexanderGovern(object):
               -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
               0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
               1.33964, 1.576766]
-        A, p = version(x1, x2)
-        assert_allclose(A, 0.713526, atol=1e-5)
-        assert_allclose(p, 0.398276, atol=1e-5)
+        soln = stats.alexandergovern(x1, x2)
+        assert_allclose(soln.statistic, 0.713526, atol=1e-5)
+        assert_allclose(soln.pvalue, 0.398276, atol=1e-5)
 
         '''
         tested in ag.test in R:
@@ -4900,8 +4894,8 @@ class TestAlexanderGovern(object):
         Result     : Difference is not statistically significant. 
         ------------------------------------------------------------- 
         '''
-        assert_allclose(A, 0.7135182)
-        assert_allclose(p, 0.3982783)
+        assert_allclose(soln.statistic, 0.7135182)
+        assert_allclose(soln.pvalue, 0.3982783)
         
 
 

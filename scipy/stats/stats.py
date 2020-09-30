@@ -211,7 +211,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'alexandergovern', 'alexandergovern_alt']
+           'alexandergovern']
 
 
 
@@ -3798,102 +3798,6 @@ def alexandergovern(*args):
     # with n_i - 1 degrees of freedom". Alexander, Govern (94)
     p = distributions.chi2.sf(A, len(args) - 1)
     return alexandergovernresult(A, p)
-
-
-def alexandergovern_alt(*args):
-    """
-    Performs the Alexander Govern test.
-    The Alexander-Govern approximation tests the equality of k independent
-    means in the face of heterogeneity of variance. The test is applied to
-    samples from two or more groups, possibly with differing sizes.
-    Parameters
-    ----------
-    sample1, sample2, ... : array_like
-        The sample measurements for each group.  There must be at least
-        two arguments.
-    Returns
-    -------
-    statistic : float
-        The computed A statistic of the test.
-    pvalue : float
-        The associated p-value from the chi-squared distribution.
-    References
-        ----------
-        ... [1] Alexander, Ralph A., and Diane M. Govern. “A New and Simpler
-                Approximation for ANOVA under Variance Heterogeneity.” Journal
-                of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
-                JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
-        ... [2] Kingsley Ochuko, T., Abdullah, S., Binti Zain, Z., & Soaad Syed
-                Yahaya, S. (2015). The Modification and Evaluation of the
-                Alexander-Govern Test in Terms of Power. Modern Applied
-                Science, 9(13), 1. https://doi.org/10.5539/mas.v9n13p1
-    Examples
-        --------
-        >>> from scipy.stats import alexandergovern_alt
-        >>> young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
-        ...         518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1,
-        ...         584.68, 609.09, 609.53, 666.63, 676.4]
-        >>> middle = [335.59, 338.43, 353.54, 404.27, 437.5, 469.01, 485.85,
-        ...          487.3, 493.08, 494.31, 499.1, 800]
-        >>> old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24,
-        ...        558.61, 558.95, 565.43, 586.39, 594.69, 629.22, 645.69,
-        ...        691.84]
-        >>> soln = alexandergovern_alt(young, middle, old)
-        >>> soln
-        alexandergovernresult(statistic=6.941146076872535,
-        pvalue=0.03109920451449096)
-
-        The value of A is 6.94 which corresponds to p value 0.0310. If our
-        desired significance level is 5%, a p value of .0310 lets us reject the
-        null hypothesis to determine that the measurements are the same at
-        different locations.
-    """
-
-    if len(args) < 2:
-        raise ValueError(f"2 or more inputs required, got {len(args)}")
-
-    # Convert passed list to ndarray using list comprehension. `np.asarray`
-    # isn't used directly on input b/c it doesn't support jagged 2d arrays
-    a = [np.asarray(A) for A in args]
-
-    # Calculate sample constants to avoid recalculating
-    lens = np.asarray([len(A) for A in a])
-    means = np.asarray([np.mean(A) for A in a])
-
-    # Calc standard error of mean.
-    # List comprehension used to deal with possible jagged input arrays
-    # Alternative method using linalg.norm is slower.
-    standard_error = np.asarray([np.std(a, ddof=1) / np.sqrt(l) for a, l
-                                 in zip(a, lens)])
-
-    # Calculate sample weights and varience
-    sample_weights = 1 / standard_error ** 2 / np.sum(1 / standard_error ** 2)
-    var_w = np.sum(sample_weights * means)
-
-    # Calculate the AG statistic using the previously calculated values.
-    # At this point all are non-jagged, allowing avoidance of list
-    # comprehension/loops
-    df = lens - 1
-    t = (means - var_w) / standard_error
-
-    # Calculate a,b,c using evaluating AG's formulas (9), (10)
-    a = df - .5
-    b = 48 * a ** 2
-    c = (a * np.log(1 + t ** 2 / df)) ** .5
-
-    # Calculate the three terms in evaluating AG's Z formula (8)
-    t0 = c
-    t1 = (c ** 3 + 3 * c) / b
-    t3 = (4 * c ** 7 + 33 * c ** 5 + 240 * c ** 3 + 855 * c)
-    t3d = (10 * b ** 2 + 8 * b * c ** 4 + 1000 * b)
-    z = t0 + t1 - t3 / t3d
-
-    zf = np.sum(z ** 2)
-
-    # Calculate P value
-    p = distributions.chi2.sf(zf, len(a) - 1)
-
-    return alexandergovernresult(zf, p)
 
 
 class alexandergovernresult:
