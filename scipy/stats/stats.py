@@ -3800,7 +3800,7 @@ def alexandergovern(*args):
     return alexandergovernresult(A, p)
 
 
-class alexandergovernresult:
+class AlexanderGovernResult:
     def __init__(self, statistic, pvalue):
         self.statistic = statistic
         self.pvalue = pvalue
