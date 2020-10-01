@@ -24,7 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
+    _fit_determine_optimizer)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -6431,6 +6432,61 @@ class rayleigh_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the scale parameter is fixed by using the `fscale` argument,
+        this function uses the default optimization method to determine
+        the MLE. If the location parameter is fixed by using the `floc`
+        argument, the analytical formula for the estimate of the scale
+        is used. If neither parameter is fixed, the analytical MLE for
+        `scale` is used as a function of `loc` in numerical optimization
+        of `loc`, injecting corresponding analytical optimum for
+        `scale`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def scale_mle(loc, data):
+            # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+            # and Peacock (2000), Page 175
+            return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
+
+        if floc is not None:
+            # `loc` is fixed, analytically determine `scale`.
+            if np.any(data - floc <= 0):
+                raise FitDataError("rayleigh", lower=1, upper=np.inf)
+            else:
+                return floc, scale_mle(floc, data)
+        if fscale is not None:
+            # `scale` is fixed, but we cannot analytically determine `loc`, so
+            # we use the superclass fit method.
+            return super(rayleigh_gen,
+                         self).fit(data, *args, **kwds)
+        else:
+            # `floc` and `fscale` are not fixed. Use the analytical MLE for
+            # `scale` as a function of `loc` in numerical optimization of
+            # `loc`, injecting corresponding analytical optimum for `scale`.
+
+            # account for user provided guesses
+            loc, scale = self._fitstart(data)  # rv_continuous provided guesses
+            loc = kwds.pop('loc', loc)  # only `loc` user guesses are relevant
+
+            # the second argument rv_continuous._reduce_func returns is the
+            # log-likelihood function. Its inputs are the initial guesses for
+            # `loc` and `scale`, but these are not modified in the scenario
+            # where neither `floc` or `fscale` is provided in kwds.
+            _, ll, _, _ = self._reduce_func((loc, scale), kwds)
+
+            optimizer = _fit_determine_optimizer(kwds.pop('optimizer',
+                                                          optimize.fmin))
+
+            # wrap log-likelihood function to optimize only over `loc`
+            def func(loc, data):
+                return ll([loc, scale_mle(loc, data)], data)
+
+            loc = optimizer(func, loc, args=(data,), disp=0)
+
+            return loc[0], scale_mle(loc, data)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
