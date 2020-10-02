@@ -2970,6 +2970,12 @@ class gumbel_r_gen(rv_continuous):
     def _ppf(self, q):
         return -np.log(-np.log(q))
 
+    def _sf(self, x):
+        return -sc.expm1(-np.exp(-x))
+
+    def _isf(self, p):
+        return -np.log(-np.log1p(-p))
+
     def _stats(self):
         return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
 
