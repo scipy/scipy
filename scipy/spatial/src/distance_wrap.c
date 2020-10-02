@@ -290,7 +290,6 @@ static PyObject *cdist_weighted_chebyshev_double_wrap(
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *w;
-  double p;
   static char *kwlist[] = {"XA", "XB", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O!O!O!O!:cdist_weighted_chebyshev_double_wrap", kwlist,
@@ -611,7 +610,6 @@ static PyObject *pdist_weighted_chebyshev_double_wrap(
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
   double *dm, *X, *w;
-  double p;
   static char *kwlist[] = {"X", "dm", "w", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs,
                                    "O!O!O!:pdist_weighted_minkowski_double_wrap", kwlist,
