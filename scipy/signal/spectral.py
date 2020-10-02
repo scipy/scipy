@@ -46,7 +46,7 @@ def lombscargle(x,
     freqs : array_like
         Angular frequencies for output periodogram.
     precenter : bool, optional
-        Pre-center amplitudes by subtracting the mean.
+        Pre-center measurement values by subtracting the mean.
     normalize : bool, optional
         Compute normalized periodogram.
 
