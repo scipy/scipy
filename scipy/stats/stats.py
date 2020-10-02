@@ -3797,7 +3797,7 @@ def alexandergovern(*args):
     # "[the p value is determined from] central chi-square random deviates
     # with n_i - 1 degrees of freedom". Alexander, Govern (94)
     p = distributions.chi2.sf(A, len(args) - 1)
-    return alexandergovernresult(A, p)
+    return AlexanderGovernResult(A, p)
 
 
 class AlexanderGovernResult:
