@@ -341,10 +341,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     if show:
         print()
-        print(last + ' istop   =  %3g         itn   =     %5g' % (istop,itn))
-        print(last + ' Anorm   =  %12.4e      Acond =  %12.4e' % (Anorm,Acond))
-        print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e' % (rnorm,ynorm))
-        print(last + ' Arnorm  =  %12.4e' % (Arnorm,))
+        print(last + ' istop   =  %3g         itn   =     %5g' % (istop, itn))
+        print(last + ' Anorm   =  %12.4e      Acond =  %12.4e' % (Anorm, Acond))
+        print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e' % (rnorm, ynorm))
+        print(last + ' Arnorm  =  %12.4e' % (Arnorm, ))
         print(last + msg[istop+1])
 
     if istop == 6:
@@ -352,7 +352,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     else:
         info = 0
 
-    return (postprocess(x),info)
+    return (postprocess(x), info)
 
 
 if __name__ == '__main__':
@@ -376,7 +376,7 @@ if __name__ == '__main__':
     x0 = b
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     A.psolve = M.matvec
-    x, exitCode = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
+    x, exitCode = minres(A, b, tol=1e-12, maxiter=None, callback=cb)
     print(exitCode)
     print('Is Ax=b ? %s ' % (allclose(A.dot(x), b)))
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
