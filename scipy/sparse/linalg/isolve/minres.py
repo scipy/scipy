@@ -1,7 +1,7 @@
 from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 
-from scipy.sparse.linalg.isolve.utils import make_system
+from .utils import make_system
 
 __all__ = ['minres']
 
