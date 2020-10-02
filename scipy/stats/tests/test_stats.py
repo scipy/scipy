@@ -4818,7 +4818,7 @@ class TestAlexanderGovern(object):
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
         soln = stats.alexandergovern(young, middle, old)
-        assert_allclose(soln.statistic,  5.3237, atol=1e-3)
+        assert_allclose(soln.statistic, 5.3237, atol=1e-3)
         assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
 
         # verify with ag.test in r
@@ -4839,16 +4839,16 @@ class TestAlexanderGovern(object):
         > ag.test(a ~ b, tibble(a=c(young, middle, old), b=factor(c(young_fct,
         +                                              middle_fct, old_fct))))
 
-        Alexander-Govern Test (alpha = 0.05) 
-        ------------------------------------------------------------- 
-        data : a and b 
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : a and b
 
-        statistic  : 5.324629 
-        parameter  : 2 
-        p.value    : 0.06978651 
+        statistic  : 5.324629
+        parameter  : 2
+        p.value    : 0.06978651
 
-        Result     : Difference is not statistically significant. 
-        ------------------------------------------------------------- 
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
 
         '''
         assert_allclose(soln.statistic, 5.324629)
@@ -4877,12 +4877,11 @@ class TestAlexanderGovern(object):
         tested in ag.test in R:
         > library("onewaytests")
         > library("tibble")
-        > x1 <- c(-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152, 
+        > x1 <- c(-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152,
         +          0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555,
         +          0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442,
         +          0.999554, 1.642958)
-        > 
-        > x2 <- c(-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253, 
+        > x2 <- c(-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253,
         +         -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
         +         0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
         +         1.33964, 1.576766)
@@ -4891,20 +4890,19 @@ class TestAlexanderGovern(object):
         > a <- c(x1, x2)
         > b <- factor(c(x1_fact, x2_fact))
         > ag.test(a ~ b, tibble(a, b))
-        Alexander-Govern Test (alpha = 0.05) 
-        ------------------------------------------------------------- 
-        data : a and b 
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : a and b
 
-        statistic  : 0.7135182 
-        parameter  : 1 
-        p.value    : 0.3982783 
+        statistic  : 0.7135182
+        parameter  : 1
+        p.value    : 0.3982783
 
-        Result     : Difference is not statistically significant. 
-        ------------------------------------------------------------- 
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
         '''
         assert_allclose(soln.statistic, 0.7135182)
         assert_allclose(soln.pvalue, 0.3982783)
-        
 
 
 class TestFOneWay(object):
