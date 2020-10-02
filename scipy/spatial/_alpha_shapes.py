@@ -7,7 +7,7 @@ Alpha Shapes Code
 import itertools
 import numpy as np
 from scipy.spatial import Delaunay
-from . import _disjoint_set
+from scipy._lib._disjoint_set import DisjointSet
 
 
 __all__ = ['AlphaShapes']
@@ -19,7 +19,7 @@ class AlphaShapes:
 
     Alpha shapes in N dimensions.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Parameters
     ----------
@@ -168,11 +168,11 @@ class AlphaShapes:
 
     def _calculate_connectivity_thresholds(self):
         n = len(self.points)
-        uf = _disjoint_set.DisjointSet(n)
+        dis = DisjointSet(range(n))
         self.thresholds = np.zeros(n)
         for ii, s in enumerate(self.simplices):
             for i, j in itertools.combinations(s, 2):
-                if uf.merge(i, j):
+                if dis.merge(i, j):
                     n -= 1
                     self.thresholds[n] = self.radii[ii]
 
