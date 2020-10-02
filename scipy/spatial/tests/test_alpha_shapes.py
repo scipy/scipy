@@ -31,23 +31,23 @@ class TestAlphaShapes(object):
         radii = np.linalg.norm(deltas, axis=1)
         assert_allclose(radii, alpha.radii, atol=TOL)
 
-    def test_surface_facet_intervals(self):
+    def test_boundary_facet_intervals(self):
         alpha = self.alpha
         assert (alpha._start <= alpha._end).all()
 
     def test_convex_hull(self):
         alpha = self.alpha
         simplices = np.sort(ConvexHull(self.points).simplices)
-        facets = np.sort(alpha.get_surface_facets(float("inf")))
+        facets = np.sort(alpha.get_boundary_facets(float("inf")))
         assert simplices.shape == facets.shape
 
         findices = np.lexsort(facets.T)
         sindices = np.lexsort(simplices.T)
         assert (facets[findices] == simplices[sindices]).all()
 
-    def test_zero_surface_radius(self):
+    def test_zero_boundary_radius(self):
         alpha = self.alpha
-        assert alpha.get_surface_facets(0).shape == (0,)
+        assert alpha.get_boundary_facets(0).shape == (0,)
 
     def test_connected_components(self):
         alpha = self.alpha
