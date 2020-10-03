@@ -2381,6 +2381,27 @@ class TestGumbelL(object):
         assert_allclose(x, xx)
 
 
+class TestGumbelR:
+
+    def test_sf(self):
+        # Expected value computed with mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.mp.dps = 40
+        #   >>> float(mpmath.mp.one - mpmath.exp(-mpmath.exp(-50)))
+        #   1.9287498479639178e-22
+        assert_allclose(stats.gumbel_r.sf(50), 1.9287498479639178e-22,
+                        rtol=1e-14)
+
+    def test_isf(self):
+        # Expected value computed with mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.mp.dps = 40
+        #   >>> float(-mpmath.log(-mpmath.log(mpmath.mp.one - 1e-17)))
+        #   39.14394658089878
+        assert_allclose(stats.gumbel_r.isf(1e-17), 39.14394658089878,
+                        rtol=1e-14)
+
+
 class TestLevyStable(object):
 
     def test_fit(self):
