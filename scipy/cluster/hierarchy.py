@@ -3548,7 +3548,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # Actual indices of a and b
     aa = int(Z[i - n, 0])
     ab = int(Z[i - n, 1])
-    if aa > n:
+    if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
         # The distance between a's two direct children.
@@ -3556,14 +3556,14 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     else:
         na = 1
         da = 0.0
-    if ab > n:
+    if ab >= n:
         nb = Z[ab - n, 3]
         db = Z[ab - n, 2]
     else:
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort:
+    if count_sort == 'ascending' or count_sort == True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3584,7 +3584,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort:
+    elif distance_sort == 'ascending' or distance_sort == True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:
