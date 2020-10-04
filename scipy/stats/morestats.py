@@ -1606,7 +1606,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
-def shapiro(x):
+def shapiro(x, axis=None, nan_policy="propagate"):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -1617,6 +1617,15 @@ def shapiro(x):
     ----------
     x : array_like
         Array of sample data.
+    axis: int or None, optional
+        Axis along which to compute test. If None, input is flatterned into 1d array. Default is None.
+    nan_policy: {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns ShapiroResult(nan, 1)
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1663,7 +1672,55 @@ def shapiro(x):
     0.08144091814756393
 
     """
-    x = np.ravel(x)
+    x = np.ma.asarray(x)
+
+    # check x size
+    if x.size == 0:
+        raise ValueError("Empty array is given.")
+
+    if axis is None:
+        # use axis 0 by default as input will be 1d array
+        axis = 0
+        x = np.ravel(x)
+
+    contains_nan, nan_policy = _contains_nan(x, nan_policy=nan_policy)
+
+    if contains_nan and nan_policy == "omit":
+        x = np.ma.masked_invalid(x)
+
+    result = np.apply_along_axis(_apply_sharipo_1d, axis, x)
+    result = np.moveaxis(result, axis, 0)
+
+    w = result[0]
+    pw = result[1]
+
+    return ShapiroResult(w, pw)
+
+
+def _apply_sharipo_1d(x: np.ma.MaskedArray):
+    """
+   Perform the Shapiro-Wilk test for normality of 1d array.
+
+   The Shapiro-Wilk test tests the null hypothesis that the
+   data was drawn from a normal distribution.
+
+   Parameters
+   ----------
+   x : array_like
+       Array of sample data.
+
+   Returns
+   -------
+   statistic : float
+       The test statistic.
+   p-value : float
+       The p-value for the hypothesis test.
+
+   """
+
+    # take only non-masked value only if masked
+    if np.ma.is_masked(x):
+        x = x[~x.mask]
 
     N = len(x)
     if N < 3:
@@ -1679,8 +1736,7 @@ def shapiro(x):
                       "may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
-
-    return ShapiroResult(w, pw)
+    return w, pw
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
