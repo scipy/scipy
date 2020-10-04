@@ -181,10 +181,13 @@ class TestShapiro(object):
         shapiro_test = stats.shapiro(self.nd.copy(), axis=1)
 
         # verify against R
-        assert_almost_equal(w1, [[0.94757220950073784, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(shapiro_test.statistic, [[0.94757220950073784, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(pw1, [[0.63987350188392544, 0.38917735845393642]], decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, [[0.63987350188392544, 0.38917735845393642]], decimal=3)
+        expect_w1 = [[0.94757220950073784, 0.92373675927168242]]
+        expect_pw1 = [[0.63987350188392544, 0.38917735845393642]]
+
+        assert_almost_equal(w1, expect_w1, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, expect_w1, decimal=6)
+        assert_almost_equal(pw1, expect_pw1, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, expect_pw1, decimal=3)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.shapiro, [])
@@ -215,10 +218,14 @@ class TestShapiro(object):
         n1[0, 0, 0] = np.NaN
         w1, pw1 = stats.shapiro(n1, axis=1)
         shapiro_test = stats.shapiro(n1, axis=1)
-        assert_almost_equal(w1, [[np.NaN, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(shapiro_test.statistic, [[np.NaN, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(pw1, [[1, 0.38917735845393642]], decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, [[1, 0.38917735845393642]], decimal=3)
+
+        expect_w1 = [[np.NaN, 0.92373675927168242]]
+        expect_pw1 = [[1, 0.38917735845393642]]
+
+        assert_almost_equal(w1, expect_w1, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, expect_w1, decimal=6)
+        assert_almost_equal(pw1, expect_pw1, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, expect_pw1, decimal=3)
 
     def test_nan_policies(self):
         n1 = self.nd.copy()
@@ -231,14 +238,18 @@ class TestShapiro(object):
         w1, pw1 = stats.shapiro(n1, axis=1, nan_policy="omit")
         shapiro_test = stats.shapiro(n1, axis=1, nan_policy="omit")
 
+        expected_w1 = [[0.96561990493900784, 0.92373675927168242]]
+        expected_pw1 = [[0.85489472509292730, 0.38917735845393642]]
+
         # verify against R
-        assert_almost_equal(w1, [[0.96561990493900784, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(shapiro_test.statistic, [[0.96561990493900784, 0.92373675927168242]], decimal=6)
-        assert_almost_equal(pw1, [[0.85489472509292730, 0.38917735845393642]], decimal=3)
-        assert_almost_equal(shapiro_test.pvalue, [[0.85489472509292730, 0.38917735845393642]], decimal=3)
+        assert_almost_equal(w1, expected_w1, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, expected_w1, decimal=6)
+        assert_almost_equal(pw1, expected_pw1, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, expected_pw1, decimal=3)
 
         # [raise]
-        assert_raises(ValueError, stats.shapiro, n1, axis=1, nan_policy="raise")
+        assert_raises(ValueError, stats.shapiro, n1,
+                      axis=1, nan_policy="raise")
 
 
 class TestAnderson(object):

@@ -1618,7 +1618,9 @@ def shapiro(x, axis=None, nan_policy="propagate"):
     x : array_like
         Array of sample data.
     axis: int or None, optional
-        Axis along which to compute test. If None, input is flatterned into 1d array. Default is None.
+        Axis along which to compute test.
+        If None, input is flatterned into 1d array.
+        Default is None.
     nan_policy: {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
