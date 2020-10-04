@@ -377,6 +377,4 @@ if __name__ == '__main__':
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     A.psolve = M.matvec
     x, exitCode = minres(A, b, tol=1e-12, maxiter=None, callback=cb)
-    print(exitCode)
-    print('Is Ax=b ? %s ' % (allclose(A.dot(x), b)))
     # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
