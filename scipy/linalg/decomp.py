@@ -293,7 +293,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
@@ -370,7 +370,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Notes
     -----
-    This function does not check the input array for being hermitian/symmetric
+    This function does not check the input array for being Hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
     triangular parts. Also, note that even though not taken into account,
     finiteness check applies to the whole array and unaffected by "lower"
@@ -460,8 +460,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             raise ValueError("wrong b dimensions {}, should "
                              "be {}".format(b1.shape, a1.shape))
 
+        if type not in [1, 2, 3]:
+            raise ValueError('"type" keyword only accepts 1, 2, and 3.')
+
         cplx = True if iscomplexobj(b1) else (cplx or False)
-        drv_args.update({'overwrite_b': overwrite_b})
+        drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
     # backwards-compatibility handling
     subset_by_index = subset_by_index if (eigvals is None) else eigvals
@@ -723,7 +726,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eig : eigenvalues and right eigenvectors of general arrays.
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -905,7 +908,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
@@ -1006,9 +1009,9 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=None, type=type,
-                check_finite=check_finite, subset_by_index=eigvals,
-                subset_by_value=None, driver=None)
+                turbo=turbo, eigvals=eigvals, type=type,
+                check_finite=check_finite, subset_by_index=subset_by_index,
+                subset_by_value=subset_by_value, driver=driver)
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,

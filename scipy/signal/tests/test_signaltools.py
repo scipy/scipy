@@ -31,6 +31,7 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
+from scipy._lib import _testutils
 
 
 class _TestConvolve(object):
@@ -407,6 +408,22 @@ class TestConvolve2d(_TestConvolve2d):
         assert_raises(ValueError, convolve2d, 3, 4)
         assert_raises(ValueError, convolve2d, [3], [4])
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_large_array(self):
+        # Test indexing doesn't overflow an int (gh-10761)
+        n = 2**31 // (1000 * np.int64().itemsize)
+        _testutils.check_free_memory(2 * n * 1001 * np.int64().itemsize / 1e6)
+
+        # Create a chequered pattern of 1s and 0s
+        a = np.zeros(1001 * n, dtype=np.int64)
+        a[::2] = 1
+        a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
+
+        count = signal.convolve2d(a, [[1, 1]])
+        fails = np.where(count > 1)
+        assert fails[0].size == 0
 
 
 class TestFFTConvolve(object):

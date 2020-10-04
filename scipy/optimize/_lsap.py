@@ -64,7 +64,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
 
     2. DF Crouse. On implementing 2D rectangular assignment algorithms.
        *IEEE Transactions on Aerospace and Electronic Systems*,
-       52(4):1679-1696, August 2016, https://doi.org/10.1109/TAES.2016.140952
+       52(4):1679-1696, August 2016, :doi:`10.1109/TAES.2016.140952`
 
     Examples
     --------

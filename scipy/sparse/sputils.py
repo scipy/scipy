@@ -103,11 +103,11 @@ def getdtype(dtype, a=None, default=None):
     if dtype is None:
         try:
             newdtype = a.dtype
-        except AttributeError:
+        except AttributeError as e:
             if default is not None:
                 newdtype = np.dtype(default)
             else:
-                raise TypeError("could not interpret data type")
+                raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
@@ -340,22 +340,15 @@ def is_pydata_spmatrix(m):
 ###############################################################################
 # Wrappers for NumPy types that are deprecated
 
+# Numpy versions of these functions raise deprecation warnings, the
+# ones below do not.
+
+
 def matrix(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.matrix(*args, **kwargs)
+    return np.array(*args, **kwargs).view(np.matrix)
 
 
-def asmatrix(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.asmatrix(*args, **kwargs)
-
-
-def bmat(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.bmat(*args, **kwargs)
+def asmatrix(data, dtype=None):
+    if isinstance(data, np.matrix) and (dtype is None or data.dtype == dtype):
+        return data
+    return np.asarray(data, dtype=dtype).view(np.matrix)

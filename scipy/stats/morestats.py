@@ -411,7 +411,7 @@ def _calc_uniform_order_statistic_medians(n):
     >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
 
     """
-    v = np.zeros(n, dtype=np.float64)
+    v = np.empty(n, dtype=np.float64)
     v[-1] = 0.5**(1.0 / n)
     v[0] = 1 - v[-1]
     i = np.arange(2, n)
@@ -440,8 +440,8 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
-        except AttributeError:
-            raise ValueError("%s is not a valid distribution name" % dist)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid distribution name" % dist) from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -981,7 +981,7 @@ def boxcox(x, lmbda=None, alpha=None):
     -----
     The Box-Cox transform is given by::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda > 0
+        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
             log(x),                  for lmbda = 0
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
@@ -1148,7 +1148,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=float)
+        maxlog = np.empty(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -2293,8 +2293,8 @@ def bartlett(*args):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    Ni = zeros(k)
-    ssq = zeros(k, 'd')
+    Ni = np.empty(k)
+    ssq = np.empty(k, 'd')
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
@@ -2312,7 +2312,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, **kwds):
+def levene(*args, center='median', proportiontocut=0.05):
     """
     Perform Levene test for equal variances.
 
@@ -2386,17 +2386,8 @@ def levene(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("levene() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(args)
     if k < 2:
@@ -2406,12 +2397,8 @@ def levene(*args, **kwds):
         if np.asanyarray(args[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    Ni = zeros(k)
-    Yci = zeros(k, 'd')
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         " or 'trimmed'.")
+    Ni = np.empty(k)
+    Yci = np.empty(k, 'd')
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2433,7 +2420,7 @@ def levene(*args, **kwds):
         Zij[i] = abs(asarray(args[i]) - Yci[i])
 
     # compute Zbari
-    Zbari = zeros(k, 'd')
+    Zbari = np.empty(k, 'd')
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
@@ -2561,7 +2548,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, **kwds):
+def fligner(*args, center='median', proportiontocut=0.05):
     """
     Perform Fligner-Killeen test for equality of variance.
 
@@ -2648,30 +2635,17 @@ def fligner(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
+
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
-
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2801,7 +2775,7 @@ def mood(x, y, axis=0):
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
     # performance consider vectorizing rankdata function.
-    all_ranks = np.zeros_like(xy)
+    all_ranks = np.empty_like(xy)
     for j in range(xy.shape[1]):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
@@ -3085,7 +3059,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, **kwds):
+def median_test(*args, ties='below', correction=True, lambda_=1,
+                nan_policy='propagate'):
     """
     Perform a Mood's median test.
 
@@ -3224,16 +3199,6 @@ def median_test(*args, **kwds):
     choice of `ties`.
 
     """
-    ties = kwds.pop('ties', 'below')
-    correction = kwds.pop('correction', True)
-    lambda_ = kwds.pop('lambda_', None)
-    nan_policy = kwds.pop('nan_policy', 'propagate')
-
-    if len(kwds) > 0:
-        bad_kwd = kwds.keys()[0]
-        raise TypeError("median_test() got an unexpected keyword "
-                        "argument %r" % bad_kwd)
-
     if len(args) < 2:
         raise ValueError('median_test requires two or more samples.')
 

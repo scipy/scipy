@@ -383,9 +383,9 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
                 nit += 1
 
     if len(basis[:m]) == 0:
-        solution = np.zeros(T.shape[1] - 1, dtype=np.float64)
+        solution = np.empty(T.shape[1] - 1, dtype=np.float64)
     else:
-        solution = np.zeros(max(T.shape[1] - 1, max(basis[:m]) + 1),
+        solution = np.empty(max(T.shape[1] - 1, max(basis[:m]) + 1),
                             dtype=np.float64)
 
     while not complete:

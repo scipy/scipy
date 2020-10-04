@@ -45,6 +45,7 @@ from collections import namedtuple
 from . import distributions
 import scipy.special as special
 import scipy.stats.stats
+from scipy._lib._util import float_factorial
 
 from ._stats_mstats_common import (
         _find_repeats,
@@ -503,6 +504,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
 
+        # If either column is entirely NaN or Inf
+        if not np.any(x.data):
+            return SpearmanrResult(np.nan, np.nan)
+
         m = ma.getmask(x)
         n_obs = x.shape[0]
         dof = n_obs - 2 - int(m.sum(axis=0)[0])
@@ -637,9 +642,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         elif n == 2:
             prob = 1.0
         elif c == 0:
-            prob = 2.0/np.math.factorial(n)
+            prob = 2.0/float_factorial(n)
         elif c == 1:
-            prob = 2.0/np.math.factorial(n-1)
+            prob = 2.0/float_factorial(n-1)
         elif 2*c == (n*(n-1))//2:
             prob = 1.0
         else:
@@ -653,7 +658,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
                     new[k] += new[k-1]
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/np.math.factorial(n)
+            prob = 2.0*sum(new)/float_factorial(n)
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:

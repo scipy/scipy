@@ -390,13 +390,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-    See splev for evaluation of the spline and its derivatives.
-
-    The user is responsible for assuring that the values of *x* are unique.
-    Otherwise, *splrep* will not return sensible results.
-
     See Also
     --------
     UnivariateSpline, BivariateSpline
@@ -407,6 +400,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     -----
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
+
+    The user is responsible for assuring that the values of *x* are unique.
+    Otherwise, *splrep* will not return sensible results.
 
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
@@ -887,6 +883,10 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     .. [3] Dierckx P.:Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
+
     """
     x, y, z = map(ravel, [x, y, z])  # ensure 1-d arrays.
     m = len(x)
@@ -1035,6 +1035,10 @@ def bisplev(x, y, tck, dx=0, dy=0):
        report tw50, Dept. Computer Science,K.U.Leuven, 1980.
     .. [3] Dierckx P. : Curve and surface fitting with splines,
        Monographs on Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_2d_spline>`.
 
     """
     tx, ty, c, kx, ky = tck

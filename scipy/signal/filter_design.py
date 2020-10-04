@@ -15,7 +15,9 @@ from numpy.polynomial.polynomial import polyval as npp_polyval
 from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
-from scipy.special import comb, factorial
+from scipy.special import comb
+from scipy._lib._util import float_factorial
+import math
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -27,7 +29,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
            'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
-           'gammatone']
+           'gammatone', 'iircomb']
 
 
 class BadCoefficients(UserWarning):
@@ -310,7 +312,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle). If `whole` is True, compute
-        frequencies from 0 to fs. Ignored if w is array_like.
+        frequencies from 0 to fs. Ignored if worN is array_like.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -1101,7 +1103,7 @@ def zpk2tf(z, p, k):
     k = atleast_1d(k)
     if len(z.shape) > 1:
         temp = poly(z[0])
-        b = zeros((z.shape[0], z.shape[1] + 1), temp.dtype.char)
+        b = np.empty((z.shape[0], z.shape[1] + 1), temp.dtype.char)
         if len(k) == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
@@ -1864,8 +1866,8 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     ma = max([N, D])
     Np = N + ma
     Dp = D + ma
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -1951,8 +1953,8 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     M = max([N, D])
     Np = M + M
     Dp = M + M
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -2031,8 +2033,8 @@ def bilinear(b, a, fs=1.0):
     M = max([N, D])
     Np = M
     Dp = M
-    bprime = numpy.zeros(Np + 1, artype)
-    aprime = numpy.zeros(Dp + 1, artype)
+    bprime = numpy.empty(Np + 1, artype)
+    aprime = numpy.empty(Dp + 1, artype)
     for j in range(Np + 1):
         val = 0.0
         for i in range(N + 1):
@@ -2177,11 +2179,11 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     """
     try:
         ordfunc = filter_dict[ftype][1]
-    except KeyError:
-        raise ValueError("Invalid IIR filter type: %s" % ftype)
-    except IndexError:
+    except KeyError as e:
+        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+    except IndexError as e:
         raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype)
+                          "iirfilter function.") % ftype) from e
 
     _validate_gpass_gstop(gpass, gstop)
 
@@ -2337,13 +2339,13 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     try:
         btype = band_dict[btype]
-    except KeyError:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype)
+    except KeyError as e:
+        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
 
     try:
         typefunc = filter_dict[ftype][0]
-    except KeyError:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype)
+    except KeyError as e:
+        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
 
     if output not in ['ba', 'zpk', 'sos']:
         raise ValueError("'%s' is not a valid output form." % output)
@@ -2403,8 +2405,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         try:
             bw = warped[1] - warped[0]
             wo = sqrt(warped[0] * warped[1])
-        except IndexError:
-            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop filter')
+        except IndexError as e:
+            raise ValueError('Wn must specify start and stop frequencies for bandpass or bandstop '
+                             'filter') from e
 
         if btype == 'bandpass':
             z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
@@ -3638,7 +3641,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:  # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = numpy.zeros(2, float)
+        WN = numpy.empty(2, float)
         discr = sqrt((passb[1] - passb[0]) ** 2 +
                      4 * W0 ** 2 * passb[0] * passb[1])
         WN[0] = ((passb[1] - passb[0]) + discr) / (2 * W0)
@@ -3947,13 +3950,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = numpy.zeros(2, float)
+        nat = numpy.empty(2, float)
         nat[0] = (new_freq / 2.0 * (passb[0] - passb[1]) +
                   sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = numpy.zeros(2, float)
+        nat = numpy.empty(2, float)
         nat[0] = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
@@ -4384,7 +4387,7 @@ def _bessel_poly(n, reverse=False):
     out = []
     for k in range(n + 1):
         num = _falling_factorial(2*n - k, n)
-        den = 2**(n - k) * factorial(k, exact=True)
+        den = 2**(n - k) * math.factorial(k)
         out.append(num // den)
 
     if reverse:
@@ -4837,7 +4840,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = bw*np.pi
     w0 = w0*np.pi
 
-    # Compute -3dB atenuation
+    # Compute -3dB attenuation
     gb = 1/np.sqrt(2)
 
     if ftype == "notch":
@@ -4860,6 +4863,199 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     else:
         b = (1.0-gain)*np.array([1.0, 0.0, -1.0])
     a = np.array([1.0, -2.0*gain*np.cos(w0), (2.0*gain-1.0)])
+
+    return b, a
+
+
+def iircomb(w0, Q, ftype='notch', fs=2.0):
+    """
+    Design IIR notching or peaking digital comb filter.
+
+    A notching comb filter is a band-stop filter with a narrow bandwidth
+    (high quality factor). It rejects a narrow frequency band and
+    leaves the rest of the spectrum little changed.
+
+    A peaking comb filter is a band-pass filter with a narrow bandwidth
+    (high quality factor). It rejects components outside a narrow
+    frequency band.
+
+    Parameters
+    ----------
+    w0 : float
+        Frequency to attenuate (notching) or boost (peaking). If `fs` is
+        specified, this is in the same units as `fs`. By default, it is
+        a normalized scalar that must satisfy  ``0 < w0 < 1``, with
+        ``w0 = 1`` corresponding to half of the sampling frequency.
+    Q : float
+        Quality factor. Dimensionless parameter that characterizes
+        notch filter -3 dB bandwidth ``bw`` relative to its center
+        frequency, ``Q = w0/bw``.
+    ftype : {'notch', 'peak'}
+        The type of comb filter generated by the function. If 'notch', then
+        it returns a filter with notches at frequencies ``0``, ``w0``,
+        ``2 * w0``, etc. If 'peak', then it returns a filter with peaks at
+        frequencies ``0.5 * w0``, ``1.5 * w0``, ``2.5 * w0```, etc.
+        Default is 'notch'.
+    fs : float, optional
+        The sampling frequency of the signal. Default is 2.0.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (``b``) and denominator (``a``) polynomials
+        of the IIR filter.
+
+    Raises
+    ------
+    ValueError
+        If `w0` is less than or equal to 0 or greater than or equal to
+        ``fs/2``, if `fs` is not divisible by `w0`, if `ftype`
+        is not 'notch' or 'peak'
+
+    See Also
+    --------
+    iirnotch
+    iirpeak
+
+    Notes
+    -----
+    For implementation details, see [1]_. The TF implementation of the
+    comb filter is numerically stable even at higher orders due to the
+    use of a single repeated pole, which won't suffer from precision loss.
+
+    References
+    ----------
+    .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
+           Prentice-Hall, 1996
+
+    Examples
+    --------
+    Design and plot notching comb filter at 20 Hz for a
+    signal sampled at 200 Hz, using quality factor Q = 30
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> fs = 200.0  # Sample frequency (Hz)
+    >>> f0 = 20.0  # Frequency to be removed from signal (Hz)
+    >>> Q = 30.0  # Quality factor
+    >>> # Design notching comb filter
+    >>> b, a = signal.iircomb(f0, Q, ftype='notch', fs=fs)
+
+    >>> # Frequency response
+    >>> freq, h = signal.freqz(b, a, fs=fs)
+    >>> response = abs(h)
+    >>> # To avoid divide by zero when graphing
+    >>> response[response == 0] = 1e-20
+    >>> # Plot
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> ax[0].plot(freq, 20*np.log10(abs(response)), color='blue')
+    >>> ax[0].set_title("Frequency Response")
+    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_xlim([0, 100])
+    >>> ax[0].set_ylim([-30, 10])
+    >>> ax[0].grid()
+    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
+    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_xlim([0, 100])
+    >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
+    >>> ax[1].set_ylim([-90, 90])
+    >>> ax[1].grid()
+    >>> plt.show()
+
+    Design and plot peaking comb filter at 250 Hz for a
+    signal sampled at 1000 Hz, using quality factor Q = 30
+
+    >>> fs = 1000.0  # Sample frequency (Hz)
+    >>> f0 = 250.0  # Frequency to be retained (Hz)
+    >>> Q = 30.0  # Quality factor
+    >>> # Design peaking filter
+    >>> b, a = signal.iircomb(f0, Q, ftype='peak', fs=fs)
+
+    >>> # Frequency response
+    >>> freq, h = signal.freqz(b, a, fs=fs)
+    >>> response = abs(h)
+    >>> # To avoid divide by zero when graphing
+    >>> response[response == 0] = 1e-20
+    >>> # Plot
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> ax[0].plot(freq, 20*np.log10(np.maximum(abs(h), 1e-5)), color='blue')
+    >>> ax[0].set_title("Frequency Response")
+    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_xlim([0, 500])
+    >>> ax[0].set_ylim([-80, 10])
+    >>> ax[0].grid()
+    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
+    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_xlim([0, 500])
+    >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
+    >>> ax[1].set_ylim([-90, 90])
+    >>> ax[1].grid()
+    >>> plt.show()
+    """
+
+    # Convert w0, Q, and fs to float
+    w0 = float(w0)
+    Q = float(Q)
+    fs = float(fs)
+
+    # Check for invalid cutoff frequency or filter type
+    ftype = ftype.lower()
+    filter_types = ['notch', 'peak']
+    if not 0 < w0 < fs / 2:
+        raise ValueError("w0 must be between 0 and {}"
+                         " (nyquist), but given {}.".format(fs / 2, w0))
+    if np.round(fs % w0) != 0:
+        raise ValueError('fs must be divisible by w0.')
+    if ftype not in filter_types:
+        raise ValueError('ftype must be either notch or peak.')
+
+    # Compute the order of the filter
+    N = int(fs // w0)
+
+    # Compute frequency in radians and filter bandwith
+    # Eq. 11.3.1 (p. 574) from reference [1]
+    w0 = (2 * np.pi * w0) / fs
+    w_delta = w0 / Q
+
+    # Define base gain values depending on notch or peak filter
+    # Compute -3dB attenuation
+    # Eqs. 11.4.1 and 11.4.2 (p. 582) from reference [1]
+    if ftype == 'notch':
+        G0, G = [1, 0]
+    elif ftype == 'peak':
+        G0, G = [0, 1]
+    GB = 1 / np.sqrt(2)
+
+    # Compute beta
+    # Eq. 11.5.3 (p. 591) from reference [1]
+    beta = np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) * np.tan(N * w_delta / 4)
+
+    # Compute filter coefficients
+    # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]
+    ax = (1 - beta) / (1 + beta)
+    bx = (G0 + G * beta) / (1 + beta)
+    cx = (G0 - G * beta) / (1 + beta)
+
+    # Compute numerator coefficients
+    # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
+    # b - cz^-N or b + cz^-N
+    b = np.zeros(N + 1)
+    b[0] = bx
+    b[-1] = cx
+    if ftype == 'notch':
+        b[-1] = -cx
+
+    # Compute denominator coefficients
+    # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
+    # 1 - az^-N or 1 + az^-N
+    a = np.zeros(N + 1)
+    a[0] = 1
+    a[-1] = ax
+    if ftype == 'notch':
+        a[-1] = -ax
 
     return b, a
 
@@ -4936,7 +5132,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     (array([ 0.00000000e+00,  2.22196719e-07,  1.64942101e-06,  4.99298227e-06,
         1.01993969e-05,  1.63125770e-05,  2.14648940e-05,  2.29947263e-05,
         1.76776931e-05,  2.04980537e-06, -2.72062858e-05, -7.28455299e-05,
-       -1.36651076e-04, -2.19066855e-04, -3.18905076e-04, -4.33156712e-04]), 
+       -1.36651076e-04, -2.19066855e-04, -3.18905076e-04, -4.33156712e-04]),
        [1.0])
 
     IIR Gammatone filter centered at 440 Hz
@@ -4998,7 +5194,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
         # Scale the FIR filter so the frequency response is 1 at cutoff
         scale_factor = 2 * (2 * np.pi * bw) ** (order)
-        scale_factor /= np.math.factorial(order - 1)
+        scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
         b *= scale_factor
         a = [1.0]
@@ -5032,8 +5228,8 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
         g = np.abs(g)
 
         # Create empty filter coefficient lists
-        b = np.zeros((5))
-        a = np.zeros((9))
+        b = np.empty(5)
+        a = np.empty(9)
 
         # Calculate the numerator coefficients
         b[0] = (T ** 4) / g

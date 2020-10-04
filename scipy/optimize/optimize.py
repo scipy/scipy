@@ -645,7 +645,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if initial_simplex is None:
         N = len(x0)
 
-        sim = np.zeros((N + 1, N), dtype=x0.dtype)
+        sim = np.empty((N + 1, N), dtype=x0.dtype)
         sim[0] = x0
         for k in range(N):
             y = np.array(x0, copy=True)
@@ -683,7 +683,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.zeros((N + 1,), float)
+    fsim = np.empty((N + 1,), float)
 
     for k in range(N + 1):
         fsim[k] = func(sim[k])
@@ -1973,7 +1973,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = np.sign(rat) + (rat == 0)
-        x = xf + si * np.max([np.abs(rat), tol1])
+        x = xf + si * np.maximum(np.abs(rat), tol1)
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
@@ -3236,8 +3236,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     Nshape = shape(Jout)
 
     indx = argmin(Jout.ravel(), axis=-1)
-    Nindx = zeros(N, int)
-    xmin = zeros(N, float)
+    Nindx = np.empty(N, int)
+    xmin = np.empty(N, float)
     for k in range(N - 1, -1, -1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]
@@ -3371,6 +3371,11 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`highs-ds          <optimize.linprog-highs-ds>`
     - :ref:`highs-ipm         <optimize.linprog-highs-ipm>`
 
+    `scipy.optimize.quadratic_assignment`
+
+    - :ref:`faq             <optimize.qap-faq>`
+    - :ref:`2opt            <optimize.qap-2opt>`
+
     Examples
     --------
     We can print documentations of a solver in stdout:
@@ -3435,6 +3440,10 @@ def show_options(solver=None, method=None, disp=True):
             ('highs-ipm', 'scipy.optimize._linprog._linprog_highs_ipm_doc'),
             ('highs-ds', 'scipy.optimize._linprog._linprog_highs_ds_doc'),
             ('highs', 'scipy.optimize._linprog._linprog_highs_doc'),
+        ),
+        'quadratic_assignment': (
+            ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),
+            ('2opt', 'scipy.optimize._qap._quadratic_assignment_2opt'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),

@@ -214,11 +214,13 @@ static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "    Parameters\n"
 "    ----------\n"
 "    input : ndarray\n"
-"        The input signal.\n"
+"        The input signal. Must be a rank-2 array.\n"
 "    hrow : ndarray\n"
-"        A row direction filter defined by the rank-1 arrays.\n"
+"        A rank-1 array defining the row direction of the filter.\n"
+"        Must be odd-length\n"
 "    hcol : ndarray\n"
-"        A column direction filter defined by the rank-1 arrays.\n"
+"        A rank-1 array defining the column direction of the filter.\n"
+"        Must be odd-length\n"
 "\n"
 "    Returns\n"
 "    -------\n"
@@ -242,19 +244,28 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
+  if (a_image == NULL) goto fail;
+
   a_hrow = (PyArrayObject *)PyArray_ContiguousFromObject(hrow, thetype, 1, 1);
+  if (a_hrow == NULL) goto fail;
+
   a_hcol = (PyArrayObject *)PyArray_ContiguousFromObject(hcol, thetype, 1, 1);
-  
-  if ((a_image == NULL) || (a_hrow == NULL) || (a_hcol==NULL)) goto fail;
+  if (a_hcol == NULL) goto fail;
   
   out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
   if (out == NULL) goto fail;
+
   M = PyArray_DIMS(a_image)[0];
   N = PyArray_DIMS(a_image)[1];
 
   convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
   outstrides[0] = N;
   outstrides[1] = 1;
+
+  if (PyArray_DIMS(a_hrow)[0] % 2 != 1 ||
+      PyArray_DIMS(a_hcol)[0] % 2 != 1) {
+    PYERR("hrow and hcol must be odd length");
+  }
 
   switch (thetype) {
   case NPY_FLOAT:
