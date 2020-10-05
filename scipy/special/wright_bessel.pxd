@@ -153,7 +153,6 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
         dg = digamma(b)
         # dg1 = polygamma(1, b)
         dg1 = zeta(2, b)
-        # res = 1 - a*x*dg + a**2/2*x*(1+x)*(dg**2 - dg1)
         res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - dg1))
         if order >= 3:
             # dg2 = polygamma(2, b)
