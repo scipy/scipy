@@ -47,6 +47,7 @@ Issues closed for 1.5.3
 Pull requests for 1.5.3
 -----------------------
 
+* `#12611 <https://github.com/scipy/scipy/pull/12611>`__: MAINT: prepare for SciPy 1.5.3
 * `#12614 <https://github.com/scipy/scipy/pull/12614>`__: MAINT: prevent reverse broadcasting
 * `#12617 <https://github.com/scipy/scipy/pull/12617>`__: MAINT: optimize: Handle nonscalar size 1 arrays in fmin_slsqp...
 * `#12623 <https://github.com/scipy/scipy/pull/12623>`__: MAINT: stats: Loosen some test tolerances.
@@ -56,7 +57,9 @@ Pull requests for 1.5.3
 * `#12721 <https://github.com/scipy/scipy/pull/12721>`__: BUG: use special.sindg in ndimage.rotate
 * `#12724 <https://github.com/scipy/scipy/pull/12724>`__: BUG: per #12654 adjusted mudholkar_george method to combine p...
 * `#12726 <https://github.com/scipy/scipy/pull/12726>`__: BUG: Fix DOP853 error norm for complex problems
+* `#12730 <https://github.com/scipy/scipy/pull/12730>`__: CI: pin xdist for Azure windows
 * `#12786 <https://github.com/scipy/scipy/pull/12786>`__: BUG: stats: Fix formula in the \`stats\` method of the ARGUS...
+* `#12795 <https://github.com/scipy/scipy/pull/12795>`__: CI: Pin setuptools on windows CI
 * `#12830 <https://github.com/scipy/scipy/pull/12830>`__: [BUG] sparse: Avoid using size attribute in LIL __setitem__
 * `#12833 <https://github.com/scipy/scipy/pull/12833>`__: BUG: change list of globals items to list of a copy
 * `#12842 <https://github.com/scipy/scipy/pull/12842>`__: BUG: Use uint16 for cost in NI_WatershedElement
