@@ -9549,10 +9549,12 @@ add_newdoc("_factorial",
     Internal function, do not use.
     """)
 
-add_newdoc("_wright_bessel",
-    r"""Compute Wright's generalized Bessel function.
+add_newdoc("wright_bessel",
+    r"""
+    wright_bessel(a, b, x)
 
-    Note that this is an internal function.
+    Wright's generalized Bessel function.
+
     Wright's generalized Bessel function is an entire function and defined as
 
     .. math:: \Phi(a, b; x) = \sum_{k=0}^\infty \frac{x^k}{k! \Gamma(a k + b)}
@@ -9568,7 +9570,13 @@ add_newdoc("_wright_bessel",
     x : array_like of float
         x >= 0
 
+    Notes
+    -----
+    Due to the compexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
     References
     ----------
-    .. [1] https://dlmf.nist.gov/10.46.E1
+    .. [1] Digital Library of Mathematical Functions, 10.46.
+           https://dlmf.nist.gov/10.46.E1
     """)
