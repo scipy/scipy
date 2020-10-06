@@ -1409,7 +1409,7 @@
             "riemann_zeta": "d->d"
         }
     },
-    "_wright_bessel": {
+    "wright_bessel": {
         "wright_bessel.pxd": {
             "wright_bessel_scalar": "ddd->d"
         }

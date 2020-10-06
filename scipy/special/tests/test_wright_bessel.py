@@ -22,14 +22,14 @@ from numpy.testing import assert_equal, assert_allclose
 
 import scipy.special as sc
 from scipy.special import rgamma
-from scipy.special._ufuncs import _wright_bessel
+from scipy.special import wright_bessel
 
 
 @pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
 @pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
 def test_wright_bessel_zero(a, b):
     """Test at x = 0."""
-    assert_equal(_wright_bessel(a, b, 0.), rgamma(b))
+    assert_equal(wright_bessel(a, b, 0.), rgamma(b))
 
 
 @pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
@@ -42,7 +42,7 @@ def test_wright_bessel_iv(b, x):
     """
     if x != 0:
         v = b - 1
-        wb = _wright_bessel(1, v + 1, x**2 / 4.)
+        wb = wright_bessel(1, v + 1, x**2 / 4.)
         # Note: iv(v, x) has precision of less than 1e-12 for some cases
         # e.g v=1-1e-6 and x=1e-06)
         assert_allclose(np.power(x / 2., v) * wb,
@@ -64,9 +64,9 @@ def test_wright_functional(a, b, x):
     Publ. de l' Institut Mathematique, Beograd,
     Nouvelle S`er. 10 (1970), 113-124.
     """
-    assert_allclose(_wright_bessel(a, b - 1, x),
-                    a * x * _wright_bessel(a, b + a, x)
-                    + (b - 1) * _wright_bessel(a, b, x),
+    assert_allclose(wright_bessel(a, b - 1, x),
+                    a * x * wright_bessel(a, b + a, x)
+                    + (b - 1) * wright_bessel(a, b, x),
                     rtol=1e-8, atol=1e-8)
 
 
@@ -87,4 +87,4 @@ def test_wright_functional(a, b, x):
      [2, 100, 100000, 5.475089686699177e-153, 1e-11]])
 def test_wright_data_grid_failures(a, b, x, phi, accuracy):
     """Test cases of test_data that do not reach relative accuracy of 1e-11"""
-    assert_allclose(_wright_bessel(a, b, x), phi, rtol=accuracy)
+    assert_allclose(wright_bessel(a, b, x), phi, rtol=accuracy)
