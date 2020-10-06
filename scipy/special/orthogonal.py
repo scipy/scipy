@@ -76,7 +76,7 @@ References
 
 # SciPy imports.
 import numpy as np
-from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
+from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
@@ -437,7 +437,7 @@ def sh_jacobi(n, p, q, monic=False):
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
     n1 = n
-    x, w, mu0 = roots_sh_jacobi(n1, p, q, mu=True)
+    x, w = roots_sh_jacobi(n1, p, q)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
     hn /= (2 * n + p) * (_gam(2 * n + p)**2)
     # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
@@ -565,7 +565,7 @@ def genlaguerre(n, alpha, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_genlaguerre(n1, alpha, mu=True)
+    x, w = roots_genlaguerre(n1, alpha)
     wfunc = lambda x: exp(-x) * x**alpha
     if n == 0:
         x, w = [], []
@@ -656,7 +656,7 @@ def laguerre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_laguerre(n1, mu=True)
+    x, w = roots_laguerre(n1)
     if n == 0:
         x, w = [], []
     hn = 1.0
@@ -1151,7 +1151,7 @@ def hermite(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermite(n1, mu=True)
+    x, w = roots_hermite(n1)
     wfunc = lambda x: exp(-x * x)
     if n == 0:
         x, w = [], []
@@ -1276,7 +1276,7 @@ def hermitenorm(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermitenorm(n1, mu=True)
+    x, w = roots_hermitenorm(n1)
     wfunc = lambda x: exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
@@ -1690,7 +1690,7 @@ def chebyc(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebyc(n1, mu=True)
+    x, w = roots_chebyc(n1)
     if n == 0:
         x, w = [], []
     hn = 4 * pi * ((n == 0) + 1)
@@ -1796,7 +1796,7 @@ def chebys(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebys(n1, mu=True)
+    x, w = roots_chebys(n1)
     if n == 0:
         x, w = [], []
     hn = pi
@@ -2074,7 +2074,7 @@ def legendre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_legendre(n1, mu=True)
+    x, w = roots_legendre(n1)
     if n == 0:
         x, w = [], []
     hn = 2.0 / (2 * n + 1)
@@ -2164,7 +2164,7 @@ def sh_legendre(n, monic=False):
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
                            lambda x: eval_sh_legendre(n, x))
-    x, w, mu0 = roots_sh_legendre(n, mu=True)
+    x, w = roots_sh_legendre(n)
     hn = 1.0 / (2 * n + 1.0)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2
     p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,

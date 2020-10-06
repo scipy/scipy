@@ -369,12 +369,12 @@ Hessian product example:
 
 .. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
            implementation of the GLTR method for iterative solution of
-           the trust region problem", https://arxiv.org/abs/1611.04718
+           the trust region problem", :arxiv:`1611.04718`
 
 .. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
            Trust-Region Subproblem using the Lanczos Method",
            SIAM J. Optim., 9(2), 504--525, (1999).
-           https://doi.org/10.1137/S1052623497322735
+           :doi:`10.1137/S1052623497322735`
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
@@ -1233,7 +1233,7 @@ The problem we have can now be solved as follows:
     # visualize
     import matplotlib.pyplot as plt
     x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-    plt.pcolor(x, y, sol.x)
+    plt.pcolormesh(x, y, sol.x, shading='gouraud')
     plt.colorbar()
     plt.show()
 
@@ -1369,7 +1369,7 @@ Consider the following simple linear programming problem:
 
 We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
 
-First of all, let's consider the objective function. 
+First of all, let's consider the objective function.
 We want to maximize the objective
 function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
 :math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
@@ -1548,7 +1548,7 @@ Some further reading and related software, such as Newton-Krylov [KK]_,
 PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
-        J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
+        J. Comp. Phys. 193, 357 (2004). :doi:`10.1016/j.jcp.2003.08.010`
 
 .. [PP] PETSc https://www.mcs.anl.gov/petsc/ and its Python bindings
         https://bitbucket.org/petsc/petsc4py/

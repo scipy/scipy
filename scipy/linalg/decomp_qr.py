@@ -15,7 +15,7 @@ def safecall(f, name, *args, **kwargs):
     if lwork in (None, -1):
         kwargs['lwork'] = -1
         ret = f(*args, **kwargs)
-        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int)
+        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
         raise ValueError("illegal value in %dth argument of internal %s"

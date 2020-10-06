@@ -4,8 +4,8 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad, simps, fixed_quad)
-from scipy.integrate.quadrature import AccuracyWarning
+                             cumtrapz, quad, simps, fixed_quad,
+                             AccuracyWarning)
 
 
 class TestFixedQuad(object):
@@ -227,4 +227,3 @@ class TestCumtrapz(object):
         y_int = cumtrapz(y, dx=3, initial=1.23)
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
-

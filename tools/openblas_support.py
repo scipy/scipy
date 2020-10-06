@@ -33,7 +33,9 @@ sha256_vals = {
 'openblas-v0.3.9-win32-gcc_7_1_0.zip':
 '69a7dc265e8a8e45b358637d11cb1710ce88c4456634c7ce37d429b1d9bc9aaa',
 'openblas-v0.3.9-win_amd64-gcc_7_1_0.zip': 
-'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48'
+'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48',
+'openblas-v0.3.9-manylinux2014_aarch64.tar.gz':
+'10d5ef5e9e19af5c199b59a17f43763e0c85ecf13cbc8f2d91e076f7847cdb5e'
 }
 
 IS_32BIT = sys.maxsize < 2**32
@@ -238,7 +240,7 @@ def test_setup(arches):
         try:
             try:
                 target = setup_openblas(arch, ilp64)
-            except:
+            except Exception:
                 print(f'Could not setup {arch}')
                 raise
             if not target:
@@ -272,7 +274,7 @@ def test_version(expected_version, ilp64=get_ilp64()):
         get_config = dll.openblas_get_config64_
     else:
         get_config = dll.openblas_get_config
-    get_config.restype=ctypes.c_char_p
+    get_config.restype = ctypes.c_char_p
     res = get_config()
     print('OpenBLAS get_config returned', str(res))
     check_str = b'OpenBLAS %s' % expected_version[0].encode()
@@ -286,10 +288,11 @@ def test_version(expected_version, ilp64=get_ilp64()):
     else:
         assert b"USE64BITINT" not in res
 
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
-        description='Download and expand an OpenBLAS archive for this ' \
+        description='Download and expand an OpenBLAS archive for this '
                     'architecture')
     parser.add_argument('--test', nargs='*', default=None,
         help='Test different architectures. "all", or any of %s' % ARCHITECTURES)

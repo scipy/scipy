@@ -22,12 +22,12 @@ from . import _stats
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value, _check_shape)
+from ._distn_infrastructure import (
+    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
+    _fit_determine_optimizer)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX,
+from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
@@ -517,13 +517,13 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 class FitDataError(ValueError):
     # This exception is raised by, for example, beta_gen.fit when both floc
-    # and fscale  are fixed and there are values in the data not in the open
+    # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
     def __init__(self, distr, lower, upper):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < x "
-            "< {upper!r} for each x in `data`.".format(
+            "estimation with {distr!r} requires that {lower!r} < "
+            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
                 distr=distr, lower=lower, upper=upper),
         )
 
@@ -1546,9 +1546,9 @@ class expon_gen(rv_continuous):
 expon = expon_gen(a=0.0, name='expon')
 
 
-## Exponentially Modified Normal (exponential distribution
-##  convolved with a Normal).
-## This is called an exponentially modified gaussian on wikipedia
+# Exponentially Modified Normal (exponential distribution
+# convolved with a Normal).
+# This is called an exponentially modified gaussian on wikipedia.
 class exponnorm_gen(rv_continuous):
     r"""An exponentially modified Normal continuous random variable.
 
@@ -1590,19 +1590,12 @@ class exponnorm_gen(rv_continuous):
         return expval + gval
 
     def _pdf(self, x, K):
-        # exponnorm.pdf(x, K) =
-        #     1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc-(x - 1/K) / sqrt(2))
-        invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        # Avoid overflows; setting np.exp(exparg) to the max float works
-        #  all right here
-        expval = _lazywhere(exparg < _LOGXMAX, (exparg,), np.exp, _XMAX)
-        return 0.5 * invK * (expval * sc.erfc(-(x - invK) / np.sqrt(2)))
+        return np.exp(self._logpdf(x, K))
 
     def _logpdf(self, x, K):
         invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
-        return exparg + np.log(0.5 * invK * sc.erfc(-(x - invK) / np.sqrt(2)))
+        exparg = invK * (0.5 * invK - x)
+        return exparg + _norm_logcdf(x - invK) - np.log(K)
 
     def _cdf(self, x, K):
         invK = 1.0 / K
@@ -2042,7 +2035,7 @@ class weibull_min_gen(rv_continuous):
     """
 
     def _pdf(self, x, c):
-        # frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
+        # weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
         return c*pow(x, c-1)*np.exp(-pow(x, c))
 
     def _logpdf(self, x, c):
@@ -2108,7 +2101,7 @@ class weibull_max_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        # frechet_l.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
+        # weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
         return c*pow(-x, c-1)*np.exp(-pow(-x, c))
 
     def _logpdf(self, x, c):
@@ -2140,250 +2133,6 @@ class weibull_max_gen(rv_continuous):
 
 weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
-# Public methods to be deprecated in frechet_r and frechet_l:
-# ['__call__', 'cdf', 'entropy', 'expect', 'fit', 'fit_loc_scale', 'freeze',
-#  'interval', 'isf', 'logcdf', 'logpdf', 'logsf', 'mean', 'median', 'moment',
-#  'nnlf', 'pdf', 'ppf', 'rvs', 'sf', 'stats', 'std', 'var']
-
-_frechet_r_deprec_msg = """\
-The distribution `frechet_r` is a synonym for `weibull_min`; this historical
-usage is deprecated because of possible confusion with the (quite different)
-Frechet distribution.  To preserve the existing behavior of the program, use
-`scipy.stats.weibull_min`.  For the Frechet distribution (i.e. the Type II
-extreme value distribution), use `scipy.stats.invweibull`."""
-
-
-class frechet_r_gen(weibull_min_gen):
-    """A Frechet right (or Weibull minimum) continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    weibull_min : The same distribution as `frechet_r`.
-
-    Notes
-    -----
-    %(after_notes)s
-
-    %(example)s
-    """
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def __call__(self, *args, **kwargs):
-        return weibull_min_gen.__call__(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def cdf(self, *args, **kwargs):
-        return weibull_min_gen.cdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def entropy(self, *args, **kwargs):
-        return weibull_min_gen.entropy(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def expect(self, *args, **kwargs):
-        return weibull_min_gen.expect(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def fit(self, *args, **kwargs):
-        return weibull_min_gen.fit(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def fit_loc_scale(self, *args, **kwargs):
-        return weibull_min_gen.fit_loc_scale(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def freeze(self, *args, **kwargs):
-        return weibull_min_gen.freeze(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def interval(self, *args, **kwargs):
-        return weibull_min_gen.interval(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def isf(self, *args, **kwargs):
-        return weibull_min_gen.isf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logcdf(self, *args, **kwargs):
-        return weibull_min_gen.logcdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logpdf(self, *args, **kwargs):
-        return weibull_min_gen.logpdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def logsf(self, *args, **kwargs):
-        return weibull_min_gen.logsf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def mean(self, *args, **kwargs):
-        return weibull_min_gen.mean(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def median(self, *args, **kwargs):
-        return weibull_min_gen.median(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def moment(self, *args, **kwargs):
-        return weibull_min_gen.moment(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def nnlf(self, *args, **kwargs):
-        return weibull_min_gen.nnlf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def pdf(self, *args, **kwargs):
-        return weibull_min_gen.pdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def ppf(self, *args, **kwargs):
-        return weibull_min_gen.ppf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def rvs(self, *args, **kwargs):
-        return weibull_min_gen.rvs(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def sf(self, *args, **kwargs):
-        return weibull_min_gen.sf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def stats(self, *args, **kwargs):
-        return weibull_min_gen.stats(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def std(self, *args, **kwargs):
-        return weibull_min_gen.std(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_r', message=_frechet_r_deprec_msg)
-    def var(self, *args, **kwargs):
-        return weibull_min_gen.var(self, *args, **kwargs)
-
-
-frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
-
-
-_frechet_l_deprec_msg = """\
-The distribution `frechet_l` is a synonym for `weibull_max`; this historical
-usage is deprecated because of possible confusion with the (quite different)
-Frechet distribution.  To preserve the existing behavior of the program, use
-`scipy.stats.weibull_max`.  For the Frechet distribution (i.e. the Type II
-extreme value distribution), use `scipy.stats.invweibull`."""
-
-
-class frechet_l_gen(weibull_max_gen):
-    """A Frechet left (or Weibull maximum) continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    weibull_max : The same distribution as `frechet_l`.
-
-    Notes
-    -----
-    %(after_notes)s
-
-    %(example)s
-    """
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def __call__(self, *args, **kwargs):
-        return weibull_max_gen.__call__(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def cdf(self, *args, **kwargs):
-        return weibull_max_gen.cdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def entropy(self, *args, **kwargs):
-        return weibull_max_gen.entropy(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def expect(self, *args, **kwargs):
-        return weibull_max_gen.expect(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def fit(self, *args, **kwargs):
-        return weibull_max_gen.fit(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def fit_loc_scale(self, *args, **kwargs):
-        return weibull_max_gen.fit_loc_scale(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def freeze(self, *args, **kwargs):
-        return weibull_max_gen.freeze(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def interval(self, *args, **kwargs):
-        return weibull_max_gen.interval(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def isf(self, *args, **kwargs):
-        return weibull_max_gen.isf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logcdf(self, *args, **kwargs):
-        return weibull_max_gen.logcdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logpdf(self, *args, **kwargs):
-        return weibull_max_gen.logpdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def logsf(self, *args, **kwargs):
-        return weibull_max_gen.logsf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def mean(self, *args, **kwargs):
-        return weibull_max_gen.mean(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def median(self, *args, **kwargs):
-        return weibull_max_gen.median(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def moment(self, *args, **kwargs):
-        return weibull_max_gen.moment(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def nnlf(self, *args, **kwargs):
-        return weibull_max_gen.nnlf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def pdf(self, *args, **kwargs):
-        return weibull_max_gen.pdf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def ppf(self, *args, **kwargs):
-        return weibull_max_gen.ppf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def rvs(self, *args, **kwargs):
-        return weibull_max_gen.rvs(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def sf(self, *args, **kwargs):
-        return weibull_max_gen.sf(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def stats(self, *args, **kwargs):
-        return weibull_max_gen.stats(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def std(self, *args, **kwargs):
-        return weibull_max_gen.std(self, *args, **kwargs)
-
-    @np.deprecate(old_name='frechet_l', message=_frechet_l_deprec_msg)
-    def var(self, *args, **kwargs):
-        return weibull_max_gen.var(self, *args, **kwargs)
-
-
-frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
-
 
 class genlogistic_gen(rv_continuous):
     r"""A generalized logistic continuous random variable.
@@ -2413,7 +2162,12 @@ class genlogistic_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return np.log(c) - x - (c+1.0)*sc.log1p(np.exp(-x))
+        # Two mathematically equivalent expressions for log(pdf(x, c)):
+        #     log(pdf(x, c)) = log(c) - x - (c + 1)*log(1 + exp(-x))
+        #                    = log(c) + c*x - (c + 1)*log(1 + exp(x))
+        mult = -(c - 1) * (x < 0) - 1
+        absx = np.abs(x)
+        return np.log(c) + mult*absx - (c+1) * sc.log1p(np.exp(-absx))
 
     def _cdf(self, x, c):
         Cx = (1+np.exp(-x))**(-c)
@@ -2798,7 +2552,7 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
+        f(x, a) = \frac{x^{a-1} e^{-x}}{\Gamma(a)}
 
     for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
@@ -2807,7 +2561,17 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
+    
+    Gamma distributions are sometimes parameterized with two variables,
+    with a probability density function of:
 
+    .. math::
+
+        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+
+    Note that this parameterization is equivalent to the above, with 
+    ``scale = 1 / beta``.
+    
     %(after_notes)s
 
     %(example)s
@@ -2995,9 +2759,13 @@ class gengamma_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    gamma, invgamma, weibull_min
+
     Notes
     -----
-    The probability density function for `gengamma` is:
+    The probability density function for `gengamma` is ([1]_):
 
     .. math::
 
@@ -3010,6 +2778,11 @@ class gengamma_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] E.W. Stacy, "A Generalization of the Gamma Distribution",
+       Annals of Mathematical Statistics, Vol 33(3), pp. 1187--1192.
+
     %(example)s
 
     """
@@ -3017,7 +2790,6 @@ class gengamma_gen(rv_continuous):
         return (a > 0) & (c != 0)
 
     def _pdf(self, x, a, c):
-        # gengamma.pdf(x, a, c) = abs(c) * x**(c*a-1) * exp(-x**c) / gamma(a)
         return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
@@ -3028,6 +2800,10 @@ class gengamma_gen(rv_continuous):
         val1 = sc.gammainc(a, xc)
         val2 = sc.gammaincc(a, xc)
         return np.where(c > 0, val1, val2)
+
+    def _rvs(self, a, c, size=None, random_state=None):
+        r = random_state.standard_gamma(a, size=size)
+        return r**(1./c)
 
     def _sf(self, x, a, c):
         xc = x**c
@@ -3193,6 +2969,12 @@ class gumbel_r_gen(rv_continuous):
 
     def _ppf(self, q):
         return -np.log(-np.log(q))
+
+    def _sf(self, x):
+        return -sc.expm1(-np.exp(-x))
+
+    def _isf(self, p):
+        return -np.log(-np.log1p(-p))
 
     def _stats(self):
         return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
@@ -3616,6 +3398,37 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    def fit(self, data, *args, **kwds):
+
+        if type(self) == wald_gen:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+
+        data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                   args, kwds)
+        '''
+        Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        SciPy's with the conversion `fshape_s = fshape / scale`.
+
+        MLE formulas are not used in 3 condtions:
+        - `loc` is not fixed
+        - `mu` is fixed
+        These cases fall back on the superclass fit method.
+        - `loc` is fixed but translation results in negative data raises
+          a `FitDataError`.
+        '''
+        if floc is None or fshape_s is not None:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("invgauss", lower=0, upper=np.inf)
+        else:
+            data = data - floc
+            fshape_n = np.mean(data)
+            if fscale is None:
+                fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
+            fshape_s = fshape_n / fscale
+        return fshape_s, floc, fscale
+
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
@@ -3749,7 +3562,7 @@ class geninvgauss_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, p, b, numsamples, random_state):
@@ -4187,8 +4000,72 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the Laplace distribution parameters, so the keyword
+        arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 124
+
+        if floc is None:
+            floc = np.median(data)
+
+        if fscale is None:
+            fscale = (np.sum(np.abs(data - floc))) / len(data)
+
+        return floc, fscale
+
 
 laplace = laplace_gen(name='laplace')
+
+
+def _check_fit_input_parameters(dist, data, args, kwds):
+    data = np.asarray(data)
+    floc = kwds.get('floc', None)
+    fscale = kwds.get('fscale', None)
+
+    num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
+    fshape_keys = []
+    fshapes = []
+
+    # user has many options for fixing the shape, so here we standardize it
+    # into 'f' + the number of the shape.
+    # Adapted from `_reduce_func` in `_distn_infrastructure.py`:
+    if dist.shapes:
+        shapes = dist.shapes.replace(',', ' ').split()
+        for j, s in enumerate(shapes):
+            key = 'f' + str(j)
+            names = [key, 'f' + s, 'fix_' + s]
+            val = _get_fixed_fit_value(kwds, names)
+            fshape_keys.append(key)
+            fshapes.append(val)
+            if val is not None:
+                kwds[key] = val
+
+    # determine if there are any unknown arguments in kwds
+    known_keys = {'loc', 'scale', 'optimizer', 'floc', 'fscale', *fshape_keys}
+    unknown_keys = set(kwds).difference(known_keys)
+    if unknown_keys:
+        raise TypeError(f"Unknown keyword arguments: {unknown_keys}.")
+
+    if len(args) > num_shapes:
+        raise TypeError("Too many positional arguments.")
+
+    if None not in {floc, fscale, *fshapes}:
+        # This check is for consistency with `rv_continuous.fit`.
+        # Without this check, this function would just return the
+        # parameters that were given.
+        raise RuntimeError("All parameters fixed. There is nothing to "
+                           "optimize.")
+
+    if not np.isfinite(data).all():
+        raise RuntimeError("The data contains non-finite values.")
+
+    return (data, *fshapes, floc, fscale)
 
 
 class levy_gen(rv_continuous):
@@ -4227,6 +4104,9 @@ class levy_gen(rv_continuous):
     def _cdf(self, x):
         # Equivalent to 2*norm.sf(np.sqrt(1/x))
         return sc.erfc(np.sqrt(0.5 / x))
+
+    def _sf(self, x):
+        return sc.erf(np.sqrt(0.5 / x))
 
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
@@ -4277,9 +4157,16 @@ class levy_l_gen(rv_continuous):
         ax = abs(x)
         return 2 * _norm_cdf(1 / np.sqrt(ax)) - 1
 
+    def _sf(self, x):
+        ax = abs(x)
+        return 2 * _norm_sf(1 / np.sqrt(ax))
+
     def _ppf(self, q):
         val = _norm_ppf((q + 1.0) / 2)
         return -1.0 / (val * val)
+
+    def _isf(self, p):
+        return -1/_norm_isf(p/2)**2
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -4456,7 +4343,8 @@ class levy_stable_gen(rv_continuous):
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 def g(theta):
-                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                    return (V(theta) *
+                            np.real(np.complex128(x0-zeta)**(alpha/(alpha-1))))
 
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
@@ -4520,7 +4408,8 @@ class levy_stable_gen(rv_continuous):
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
 
                 def f(theta):
-                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
+                    z = np.complex128(x0 - zeta)
+                    return np.exp(-V(theta) * np.real(z**(alpha/(alpha-1))))
 
                 with np.errstate(all="ignore"):
                     # spare calculating integral on null set
@@ -4622,9 +4511,9 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn(u'FFT method is considered experimental for ' +
-                              u'cumulative distribution function ' +
-                              u'evaluations. Use Zolotarev’s method instead).',
+                warnings.warn("FFT method is considered experimental for "
+                              "cumulative distribution function "
+                              "evaluations. Use Zolotarev's method instead.",
                               RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
@@ -4796,7 +4685,8 @@ class logistic_gen(rv_continuous):
         return np.exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return -x - 2. * sc.log1p(np.exp(-x))
+        y = -np.abs(x)
+        return y - 2. * sc.log1p(np.exp(y))
 
     def _cdf(self, x):
         return sc.expit(x)
@@ -5314,7 +5204,7 @@ class kappa4_gen(rv_continuous):
     B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
     Site in the Chi River Basin, Thailand", Journal of Water Resource and
     Protection, vol. 4, 866-869, (2012).
-    https://doi.org/10.4236/jwarp.2012.410101
+    :doi:`10.4236/jwarp.2012.410101`
 
     C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
     Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
@@ -5515,11 +5405,11 @@ class kappa3_gen(rv_continuous):
     P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
     Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
     701-707, (September, 1973),
-    https://doi.org/10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2
+    :doi:`10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2`
 
     B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
     Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
-    415-419 (2012), https://doi.org/10.4236/ojs.2012.24050
+    415-419 (2012), :doi:`10.4236/ojs.2012.24050`
 
     %(after_notes)s
 
@@ -6050,23 +5940,23 @@ class pareto_gen(rv_continuous):
         if 'm' in moments:
             mask = b > 1
             bt = np.extract(mask, b)
-            mu = valarray(np.shape(b), value=np.inf)
+            mu = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = np.extract(mask, b)
-            mu2 = valarray(np.shape(b), value=np.inf)
+            mu2 = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = np.extract(mask, b)
-            g1 = valarray(np.shape(b), value=np.nan)
+            g1 = np.full(np.shape(b), fill_value=np.nan)
             vals = 2 * (bt + 1.0) * np.sqrt(bt - 2.0) / ((bt - 3.0) * np.sqrt(bt))
             np.place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = np.extract(mask, b)
-            g2 = valarray(np.shape(b), value=np.nan)
+            g2 = np.full(np.shape(b), fill_value=np.nan)
             vals = (6.0*np.polyval([1.0, 1.0, -6, -2], bt) /
                     np.polyval([1.0, -7.0, 12.0, 0.0], bt))
             np.place(g2, mask, vals)
@@ -6074,6 +5964,24 @@ class pareto_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1 + 1.0/c - np.log(c)
+
+    def fit(self, data, *args, **kwds):
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+        if floc is None:
+            return super(pareto_gen, self).fit(data, **kwds)
+        if np.any(data - floc < (fscale if fscale else 0)):
+            raise FitDataError("pareto", lower=1, upper=np.inf)
+        data = data - floc
+
+        # Source: Evans, Hastings, and Peacock (2000), Statistical
+        # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
+
+        if fscale is None:
+            fscale = np.min(data)
+        if fshape is None:
+            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
+        return fshape, floc, fscale
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
@@ -6531,6 +6439,61 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the scale parameter is fixed by using the `fscale` argument,
+        this function uses the default optimization method to determine
+        the MLE. If the location parameter is fixed by using the `floc`
+        argument, the analytical formula for the estimate of the scale
+        is used. If neither parameter is fixed, the analytical MLE for
+        `scale` is used as a function of `loc` in numerical optimization
+        of `loc`, injecting corresponding analytical optimum for
+        `scale`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def scale_mle(loc, data):
+            # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+            # and Peacock (2000), Page 175
+            return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
+
+        if floc is not None:
+            # `loc` is fixed, analytically determine `scale`.
+            if np.any(data - floc <= 0):
+                raise FitDataError("rayleigh", lower=1, upper=np.inf)
+            else:
+                return floc, scale_mle(floc, data)
+        if fscale is not None:
+            # `scale` is fixed, but we cannot analytically determine `loc`, so
+            # we use the superclass fit method.
+            return super(rayleigh_gen,
+                         self).fit(data, *args, **kwds)
+        else:
+            # `floc` and `fscale` are not fixed. Use the analytical MLE for
+            # `scale` as a function of `loc` in numerical optimization of
+            # `loc`, injecting corresponding analytical optimum for `scale`.
+
+            # account for user provided guesses
+            loc, scale = self._fitstart(data)  # rv_continuous provided guesses
+            loc = kwds.pop('loc', loc)  # only `loc` user guesses are relevant
+
+            # the second argument rv_continuous._reduce_func returns is the
+            # log-likelihood function. Its inputs are the initial guesses for
+            # `loc` and `scale`, but these are not modified in the scenario
+            # where neither `floc` or `fscale` is provided in kwds.
+            _, ll, _, _ = self._reduce_func((loc, scale), kwds)
+
+            optimizer = _fit_determine_optimizer(kwds.pop('optimizer',
+                                                          optimize.fmin))
+
+            # wrap log-likelihood function to optimize only over `loc`
+            def func(loc, data):
+                return ll([loc, scale_mle(loc, data)], data)
+
+            loc = optimizer(func, loc, args=(data,), disp=0)
+
+            return loc[0], scale_mle(loc, data)
+
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
@@ -6806,7 +6769,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        https://arxiv.org/abs/0911.2093
+        :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -6887,7 +6850,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117–127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
 
     """
@@ -7557,7 +7520,8 @@ class truncnorm_gen(rv_continuous):
             return moments[-1]
 
         return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
-                          np.vectorize(n_th_moment, otypes=[np.float]), np.nan)
+                          np.vectorize(n_th_moment, otypes=[np.float64]),
+                          np.nan)
 
     def _stats(self, a, b, moments='mv'):
         pA, pB = self._pdf(np.array([a, b]), a, b)
@@ -7637,7 +7601,7 @@ class truncnorm_gen(rv_continuous):
                 it.iternext()
 
         if size == ():
-            out = out[()]
+            out = out.item()
         return out
 
     def _rvs_scalar(self, a, b, numsamples=None, random_state=None):
@@ -7648,7 +7612,7 @@ class truncnorm_gen(rv_continuous):
         size1d = tuple(np.atleast_1d(numsamples))
         N = np.prod(size1d)  # number of rvs needed, reshape upon return
         # Calculate some rvs
-        U = random_state.random_sample(N)
+        U = random_state.uniform(low=0, high=1, size=N)
         x = self._ppf(U, a, b)
         rvs = np.reshape(x, size1d)
         return rvs
@@ -7934,8 +7898,11 @@ class vonmises_gen(rv_continuous):
         return random_state.vonmises(0.0, kappa, size=size)
 
     def _pdf(self, x, kappa):
-        # vonmises.pdf(x, \kappa) = exp(\kappa * cos(x)) / (2*pi*I[0](\kappa))
-        return np.exp(kappa * np.cos(x)) / (2*np.pi*sc.i0(kappa))
+        # vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
+        #                        = exp(kappa * (cos(x) - 1)) /
+        #                          (2*pi*exp(-kappa)*I[0](kappa))
+        #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
+        return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
@@ -8324,7 +8291,7 @@ class crystalball_gen(rv_continuous):
             return A * lhs + rhs
 
         return N * _lazywhere(n + 1 < m, (n, beta, m),
-                              np.vectorize(n_th_moment, otypes=[np.float]),
+                              np.vectorize(n_th_moment, otypes=[np.float64]),
                               np.inf)
 
     def _argcheck(self, beta, m):
@@ -8493,7 +8460,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 
@@ -8643,7 +8610,7 @@ class rv_histogram(rv_continuous):
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().items())
+pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']

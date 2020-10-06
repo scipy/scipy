@@ -37,14 +37,16 @@ def _open_file(file_like, appendmat, mode='rb'):
 
     try:
         return open(file_like, mode), True
-    except IOError:
+    except IOError as e:
         # Probably "not found"
         if isinstance(file_like, str):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
             return open(file_like, mode), True
         else:
-            raise IOError('Reader needs file name or open file-like object')
+            raise IOError(
+                'Reader needs file name or open file-like object'
+            ) from e
 
 
 @docfiller

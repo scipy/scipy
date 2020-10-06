@@ -64,7 +64,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
 
     2. DF Crouse. On implementing 2D rectangular assignment algorithms.
        *IEEE Transactions on Aerospace and Electronic Systems*,
-       52(4):1679-1696, August 2016, https://doi.org/10.1109/TAES.2016.140952
+       52(4):1679-1696, August 2016, :doi:`10.1109/TAES.2016.140952`
 
     Examples
     --------
@@ -82,7 +82,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
                          % (cost_matrix.shape,))
 
     if not (np.issubdtype(cost_matrix.dtype, np.number) or
-            cost_matrix.dtype == np.dtype(np.bool)):
+            cost_matrix.dtype == np.dtype(np.bool_)):
         raise ValueError("expected a matrix containing numerical entries, got %s"
                          % (cost_matrix.dtype,))
 

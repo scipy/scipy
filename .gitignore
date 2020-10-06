@@ -142,6 +142,9 @@ scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
+scipy/integrate/_dop-f2pywrappers.f
+scipy/integrate/lsoda-f2pywrappers.f
+scipy/integrate/vode-f2pywrappers.f
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
@@ -186,6 +189,7 @@ scipy/linalg/cython_blas.pyx
 scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
+scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -193,7 +197,7 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
-scipy/optimize/nnls/_nnlsmodule.c
+scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
@@ -238,6 +242,7 @@ scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
+scipy/spatial/transform/rotation.c
 scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h

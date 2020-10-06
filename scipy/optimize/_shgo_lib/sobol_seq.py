@@ -285,7 +285,7 @@ class Sobol:
                 # Expand this bit pattern to separate
                 # components of the logical array INCLUD.
                 j = self.poly[i - 1]
-                includ = np.zeros(m)
+                includ = np.empty(m)
                 for k in range(m, 0, -1):
                     j2 = j // 2
                     includ[k - 1] = (j != 2 * j2)

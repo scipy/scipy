@@ -22,6 +22,7 @@ Integrating functions, given function object
    quad_explain  -- Print information for use of quad
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
    IntegrationWarning -- Warning on issues during integration
+   AccuracyWarning  -- Warning on issues during quadrature integration
 
 Integrating functions, given fixed samples
 ==========================================
@@ -86,7 +87,7 @@ Solving boundary value problems for ODE systems
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
 """
-from .quadrature import *
+from ._quadrature import *
 from .odepack import *
 from .quadpack import *
 from ._ode import *

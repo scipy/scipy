@@ -9,6 +9,7 @@ MODULES = [
     "scipy.constants",
     "scipy.fft",
     "scipy.fftpack",
+    "scipy.fftpack.convolve",
     "scipy.integrate",
     "scipy.interpolate",
     "scipy.io",
@@ -43,8 +44,9 @@ MODULES = [
 
 
 def test_modules_importable():
+    # Regression test for gh-6793.
     # Check that all modules are importable in a new Python process.
-    #This is not necessarily true if there are import cycles present.
+    # This is not necessarily true if there are import cycles present.
     for module in MODULES:
         cmd = 'import {}'.format(module)
         subprocess.check_call([sys.executable, '-c', cmd])
