@@ -214,7 +214,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'alexandergovern']
 
 
-
 def _contains_nan(a, nan_policy='propagate'):
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
@@ -3733,7 +3732,7 @@ def alexandergovern(*args):
     ----------
     .. [1] Alexander, Ralph A., and Diane M. Govern. "A New and Simpler
            Approximation for ANOVA under Variance Heterogeneity." Journal
-           of Educational Statistics, vol. 19, no. 2, 1994, pp. 91–101.
+           of Educational Statistics, vol. 19, no. 2, 1994, pp. 91-101.
            JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
 
     Examples
