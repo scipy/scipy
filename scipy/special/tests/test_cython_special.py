@@ -19,7 +19,7 @@ CYTHON_SIGNATURE_MAP = {
     'F': 'float complex',
     'D': 'double complex',
     'G': 'long double complex',
-    'i':'int',
+    'i': 'int',
     'l': 'long'
 }
 
@@ -262,6 +262,7 @@ PARAMS = [
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
     (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
+    (special.wright_bessel, cython_special.wright_bessel, ('ddd',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
     (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
