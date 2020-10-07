@@ -110,7 +110,7 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     Call: python _precompute/wright_bessel.py 2
     """
     cdef:
-        double dg, dg1, dg2, dg3, res
+        double dg, dg1, dg2, dg3, x2, x3, x4, res
         double A[6]  # powers of a^k/k!
         double B[5]  # powers of b^k/k!
         double C[5]  # coefficients of a^k1 * b^k2
@@ -137,12 +137,15 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
             A[k] = a/k * A[k-1]
             B[k] = b/k * B[k-1]
         A[5] = a/5*A[4]
+        x2 = x * x
+        x3 = x * x2
+        x4 = x * x3
         res = rgamma(b)
-        res += a*x * (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
-        res += A[2]*x*(1+x)*(C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
-        res += A[3]*x*(x**2+3*x+1) * (C[2]      + C[3]*b    + C[4]*B[2])
-        res += A[4]*x*(x**3+6*x**2+7*x+1) *      (C[3]      + C[4]*b)
-        res += A[5]*x*(x**4+10*x**3+25*x**2+15*x+1) *         C[4]
+        res +=    a*x* (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
+        res += A[2]*x*(1+x) * (C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
+        res += A[3]*x*(x2 + 3*x + 1) * (C[2]      + C[3]*b    + C[4]*B[2])
+        res += A[4]*x*(x3 + 6*x2 + 7*x +1 ) *      (C[3]      + C[4]*b)
+        res += A[5]*x*(x4 + 10*x3 + 25*x2 + 15*x + 1) *         C[4]
         res *= exp(x)
     else:
         dg = digamma(b)
