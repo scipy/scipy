@@ -1,6 +1,7 @@
 # -*-cython-*-
 #
-# Implementation of Wright's generalized Bessel function Phi [1].
+# Implementation of Wright's generalized Bessel function Phi, see
+# https://dlmf.nist.gov/10.46.E1
 #
 # Copyright: Christian Lorentzen
 #
@@ -9,29 +10,10 @@
 #
 # Implementation Overview:
 #
-# So far, only non-negative values of rho=a, beta=b and z=x are implemented.
-# There are 5 different approaches depending on the ranges of the arguments.
-# 1. Taylor series expansion in x=0 [1], for x <= 1.
-#    Involves gamma funtions in each term.
-# 2. Taylor series expansion in x=0 [2], for large a.
-# 3. Taylor series in a=0, for tiny a and not too large x.
-# 4. Asymptotic expansion for large x [3, 4].
-#    Suitable for large x while still small a and b.
-# 5. Integral representation [5], in principle for all arguments.
-#
-# References:
-# [1] https://dlmf.nist.gov/10.46.E1
-# [2] P. K. Dunn, G. K. Smyth (2005), Series evaluation of Tweedie exponential
-#     dispersion model densities. Statistics and Computing 15 (2005): 267-280.
-# [3] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
-#     function. Proc. London Math. Soc. (2) 38, pp. 257-270.
-#     https://doi.org/10.1112/plms/s2-38.1.257
-# [4] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
-#     Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
-#     https://arxiv.org/abs/1711.03006
-# [5] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
-#     the Real Arguments' Values, Fractional Calculus and Applied Analysis 11(1)
-#     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
+# First, different functions are implemented valid for certain domains of the
+# three arguments.
+# Finally they are put together in wright_bessel_scalar. See the docstring of
+# that function for more details.
 
 import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
@@ -60,14 +42,16 @@ DEF exp_inf = 709.78271289338403
 # DEF exp_zero = -745.13321910194117
 
 
-# 1. Taylor series expansion in x=0, for x <= 1
-#    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
-#
-# Note that every term, and therefore also Phi(a, b, x), is monotone decreasing
-# with increasing a or b.
 @cython.cdivision(True)
 cdef inline double _wb_series(double a, double b, double x,
     unsigned int nstart, unsigned int nstop) nogil:
+    """1. Taylor series expansion in x=0, for x <= 1
+
+    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
+
+    Note that every term, and therefore also Phi(a, b, x), is monotone
+    decreasing with increasing a or b.
+    """
     cdef:
         unsigned int k, k_max
         double xk_k, res
@@ -87,14 +71,16 @@ cdef inline double _wb_series(double a, double b, double x,
     return res
 
 
-# 2. Taylor series expansion in x=0, for large a.
-#    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
-#
-#    Use Stirling formula to find k=k_max, the maximum term.
-#    Then use n terms of Taylor series around k_max.
 @cython.cdivision(True)
 cdef inline double _wb_large_a(double a, double b, double x,
     unsigned int n) nogil:
+    """2. Taylor series expansion in x=0, for large a.
+
+    Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
+
+    Use Stirling formula to find k=k_max, the maximum term.
+    Then use n terms of Taylor series around k_max.
+    """
     cdef:
         unsigned int k, k_max
         int n_start
@@ -113,17 +99,21 @@ cdef inline double _wb_large_a(double a, double b, double x,
     return res
 
 
-# 3. Taylor series in a=0 up to order 5, for tiny a and not too large x
-# Phi(a, b, x) = exp(x)/Gamma(b)
-#               * (1 - a*x*Psi(b) + a^2/2*x*(1+x)(Psi(b)^2 - Psi'(b)) + O(a^3))
-# where Psi is the digamma function.
-# Call: python _precompute/wright_bessel.py 1
-#
-# For small b, cancellation of poles of digamma(b)/Gamma(b) and polygamma needs
-# to be carried out => series expansion in a and b around 0 to order 5.
-# Call: python _precompute/wright_bessel.py 2
 @cython.cdivision(True)
 cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
+    """3. Taylor series in a=0 up to order 5, for tiny a and not too large x
+
+    Phi(a, b, x) = exp(x)/Gamma(b)
+                   * (1 - a*x * Psi(b) + a^2/2*x*(1+x) * (Psi(b)^2 - Psi'(b))
+                   + O(a^3))
+
+    where Psi is the digamma function.
+    Call: python _precompute/wright_bessel.py 1
+
+    For small b, cancellation of poles of digamma(b)/Gamma(b) and polygamma
+    needs to be carried out => series expansion in a and b around 0 to order 5.
+    Call: python _precompute/wright_bessel.py 2
+    """
     cdef:
         double dg, dg1, dg2, dg3, res
         double A[6]  # powers of a^k/k!
@@ -169,13 +159,15 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     return res
 
 
-# 4. Asymptotic expansion for large x up to order 8
-#    Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
-#    with Z = (a*x)^(1/(1+a)).
-#
-# Call: python _precompute/wright_bessel.py 3
 @cython.cdivision(True)
 cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
+    """4. Asymptotic expansion for large x up to order 8
+
+    Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
+
+    with Z = (a*x)^(1/(1+a)).
+    Call: python _precompute/wright_bessel.py 3
+    """
     cdef:
         double A[15]  # powers of a
         double B[17]  # powers of b
@@ -434,29 +426,13 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
     return res
 
 
-# 5. Integral representation
-#    K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
-#                  * sin(x * r^(-a) * sin(pi*a) + pi * b)
-#   P(eps, a, b, x, phi) =
-#                        * exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
-#                        * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
-#                              + (1-b)*phi)
-#
-#   Phi(a, b, x) = 1/pi * int_eps^inf K(a, b, x, r) * dr
-#        + eps^(1-b)/pi * int_0^pi    P(eps, a, b, x, phi) * dphi
-#
-#   for any eps > 0.
-# Note that P has a misprint in Luchko (2008).
-#
-# As K has a leading exp(-r), we factor this out and apply Gauss-Laguerre
-# quadrature rule:
-#   int_0^inf K(a, b, x, r+eps) dr = exp(-eps) int_0^inf exp(-r) Kmod(.., r) dr
-# Note the shift r -> r+eps to have integation from 0 to infinity.
-#
-# The integral over P is done via a Gauss-Legendre quadrature rule.
 @cython.cdivision(True)
 cdef inline double _Kmod(double eps, double a, double b, double x,
                          double r) nogil:
+    """Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
+
+    K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
+    """
     cdef double x_r_a
     x_r_a = x * pow(r + eps, -a)
     return exp(x_r_a * cospi(a)) * pow(r + eps, -b) \
@@ -466,15 +442,50 @@ cdef inline double _Kmod(double eps, double a, double b, double x,
 @cython.cdivision(True)
 cdef inline double _P(double eps, double a, double b, double x,
                       double phi) nogil:
+    """Compute integrand P for Gauss-Legendre quadrature.
+
+    P(eps, a, b, x, phi) =
+                         * exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
+                         * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
+                               + (1-b)*phi)
+    """
     cdef double eps_a
     x_eps_a = x * pow(eps, -a)
     return exp(eps * cos(phi) + x_eps_a * cos(a*phi)) \
         * cos(eps * sin(phi) - x_eps_a * sin(a*phi) + (1-b)*phi)
 
 
-# Note: Hardest argument range is large z, large b and small epsilon.
 @cython.cdivision(True)
 cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
+    """5. Integral representation
+
+    K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
+                  * sin(x * r^(-a) * sin(pi*a) + pi * b)
+    P(eps, a, b, x, phi) =
+                         * exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
+                         * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
+                               + (1-b)*phi)
+
+    Phi(a, b, x) = 1/pi * int_eps^inf K(a, b, x, r) * dr
+                 + eps^(1-b)/pi * int_0^pi    P(eps, a, b, x, phi) * dphi
+
+                 for any eps > 0.
+
+    Note that P has a misprint in Luchko (2008).
+    This integral representation introduced the free parameter eps (from the
+    radius of complex contour integration). We try to choose eps such that
+    the integrand behaves smoothly.
+
+    As K has a leading exp(-r), we factor this out and apply Gauss-Laguerre
+    quadrature rule:
+
+    int_0^inf K(a, b, x, r+eps) dr = exp(-eps) int_0^inf exp(-r) Kmod(.., r) dr
+
+    Note the shift r -> r+eps to have integation from 0 to infinity.
+    The integral over P is done via a Gauss-Legendre quadrature rule.
+
+    Note: Hardest argument range is large z, large b and small eps.
+    """
     cdef:
         double res1, res2, y, eps
         int k
@@ -604,6 +615,38 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
+    """Compute Wright's generalized Bessel function for scalar arguments.
+
+    According to [1], it is an entire function defined as
+
+    .. math:: \Phi(a, b; x) = \sum_{k=0}^\infty \frac{x^k}{k! \Gamma(a k + b)}
+
+    So far, only non-negative values of rho=a, beta=b and z=x are implemented.
+    There are 5 different approaches depending on the ranges of the arguments:
+
+    1. Taylor series expansion in x=0 [1], for x <= 1.
+       Involves gamma funtions in each term.
+    2. Taylor series expansion in x=0 [2], for large a.
+    3. Taylor series in a=0, for tiny a and not too large x.
+    4. Asymptotic expansion for large x [3, 4].
+       Suitable for large x while still small a and b.
+    5. Integral representation [5], in principle for all arguments.
+
+    References
+    ----------
+    [1] https://dlmf.nist.gov/10.46.E1
+    [2] P. K. Dunn, G. K. Smyth (2005), Series evaluation of Tweedie exponential
+        dispersion model densities. Statistics and Computing 15 (2005): 267-280.
+    [3] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
+        function. Proc. London Math. Soc. (2) 38, pp. 257-270.
+        https://doi.org/10.1112/plms/s2-38.1.257
+    [4] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
+        Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
+        https://arxiv.org/abs/1711.03006
+    [5] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
+        the Real Arguments' Values, Fractional Calculus and Applied Analysis 11(1)
+        http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
+    """
     cdef:
         double xk_k, res
         int order
