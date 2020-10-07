@@ -129,10 +129,17 @@ def series_small_a_small_b():
     s += "\nM_PI = pi"
     s += "\nM_EG = EulerGamma"
     s += "\nM_Z3 = zeta(3)"
-    for name, c in zip(['A', 'X', 'C'], [A, X, C]):
+    for name, c in zip(['A', 'X'], [A, X]):
         for i in range(len(c)):
             s += f"\n{name}[{i}] = "
             s += str(c[i])
+    # For C, do also compute the values numerically
+    for i in range(len(C)):
+        s += f"\n# C[{i}] = "
+        s += str(C[i])
+        s += f"\nC[{i}] = "
+        s += str(C[i].subs({M_EG: EulerGamma, M_PI: pi, M_Z3: zeta(3)})
+                 .evalf(17))
 
     # Does B have the assumed structure?
     s += "\n\nTest if B[i] does have the assumed structure."

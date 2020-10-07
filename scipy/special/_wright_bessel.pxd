@@ -19,9 +19,6 @@ import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
                         sqrt, M_PI)
 
-cdef extern from "numpy/npy_math.h":
-    double M_EG "NPY_EULER"  # Euler Gamma aka Euler Mascheroni constant
-
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
@@ -32,8 +29,6 @@ from ._complexstuff cimport inf, nan
 from . cimport sf_error
 
 
-# zeta(3)
-DEF M_Z3 = 1.2020569031595942854
 # rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
 DEF rgamma_zero = 178.47241115886637
 # exp_inf: smallest value x for which exp(x) == inf
@@ -123,11 +118,19 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
 
     if b <= 1e-3:
         # Series expansion of both a and b up to order 5:
-        C[0] = 1
-        C[1] = 2*M_EG
-        C[2] = 3*M_EG**2 - M_PI**2/2
-        C[3] = 4*M_EG**3 - 2*M_EG*M_PI**2 + 8*M_Z3
-        C[4] = 5*M_EG**4 - 5*M_EG**2*M_PI**2 + 40*M_EG*M_Z3 + M_PI**4/12
+        # M_PI = pi
+        # M_EG = Euler Gamma aka Euler Mascheroni constant
+        # M_Z3 = zeta(3)
+        # C[0] = 1
+        C[0] = 1.0000000000000000
+        # C[1] = 2*M_EG
+        C[1] = 1.1544313298030657
+        # C[2] = 3*M_EG**2 - M_PI**2/2
+        C[2] = -3.9352684291215233
+        # C[3] = 4*M_EG**3 - 2*M_EG*M_PI**2 + 8*M_Z3
+        C[3] = -1.0080632408182857
+        # C[4] = 5*M_EG**4 - 5*M_EG**2*M_PI**2 + 40*M_EG*M_Z3 + M_PI**4/12
+        C[4] = 19.984633365874979
         A[0] = 1.
         B[0] = 1.
         for k in range(1, 5):
