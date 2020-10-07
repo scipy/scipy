@@ -19,11 +19,14 @@ import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
                         sqrt, M_PI)
 
+cdef extern from "cephes/lanczos.h":
+    double lanczos_g
+
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
 
-from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi
+from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi, lanczos_sum_expg_scaled
 from ._digamma cimport digamma
 from ._complexstuff cimport inf, nan
 from . cimport sf_error
@@ -35,6 +38,19 @@ DEF rgamma_zero = 178.47241115886637
 DEF exp_inf = 709.78271289338403
 # exp_zero: largest value x for which exp(x) == 0
 # DEF exp_zero = -745.13321910194117
+
+
+@cython.cdivision(True)
+cdef inline double _exp_rgamma(double x, double y) nogil:
+    """Compute exp(x) / gamma(y) = exp(x) * rgamma(y).
+
+    This helper function avoids overflow by using the lanczos approximation
+    of the gamma function.
+    """
+    # gamma = fac * lanczos_sum_expg_scaled(x)
+    # fac = ((x + g - 0.5)/e)**(x - 0.5)
+    return (exp(x + (1 - log(y + lanczos_g - 0.5)) * (y - 0.5))
+            / lanczos_sum_expg_scaled(y))
 
 
 @cython.cdivision(True)
@@ -161,7 +177,8 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
             dg3 =  6 * zeta(4, b)
             res += a**4/24. * x*(x**3 + 6*x**2 + 7*x + 1) \
                    *(dg**4 - 6*dg**2*dg1 + 4*dg*dg2 + 3*dg1**2 - dg3)
-        res *= exp(x) * rgamma(b)
+        # res *= exp(x) * rgamma(b)
+        res *= _exp_rgamma(x, b)
     return res
 
 
@@ -678,7 +695,8 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     elif x == 0:
         return rgamma(b)
     elif a == 0:
-        return exp(x) * rgamma(b)
+        # return exp(x) * rgamma(b)
+        return _exp_rgamma(x, b)
     elif (a <= 1e-3 and x <= 1) \
         or (a <= 1e-4 and x <= 10) \
         or (a <= 1e-5 and x <= 100) \
