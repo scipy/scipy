@@ -3939,7 +3939,7 @@ class multivariate_t_gen(multi_rv_generic):
     :math:`\boldsymbol{\Sigma}` the :math:`p \times p`-dimensional shape
     matrix, and :math:`\nu` is the degrees of freedom.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Examples
     --------
