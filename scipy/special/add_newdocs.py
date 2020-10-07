@@ -9563,9 +9563,9 @@ add_newdoc("wright_bessel",
 
     Parameters
     ----------
-    a : float
+    a : array_like of float
         a >= 0
-    b : float
+    b : array_like of float
         b >= 0
     x : array_like of float
         x >= 0
