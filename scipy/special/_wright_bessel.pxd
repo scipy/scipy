@@ -44,7 +44,7 @@ cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
 
-from ._cephes cimport Gamma, lgam, rgamma, zeta, sinpi, cospi
+from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi
 from ._digamma cimport digamma
 from ._complexstuff cimport inf, nan
 from . cimport sf_error
@@ -72,7 +72,7 @@ cdef inline double _wb_series(double a, double b, double x,
         unsigned int k, k_max
         double xk_k, res
 
-    xk_k = x**nstart * Gamma(nstart + 1)  # x^k/k!
+    xk_k = x**nstart * rgamma(nstart + 1)  # x^k/k!
     res = xk_k * rgamma(nstart*a + b)
     # term k=nstart+1 , +2 +3, ...
     if nstop > nstart:
