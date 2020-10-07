@@ -4213,7 +4213,7 @@ class multivariate_t_gen(multi_rv_generic):
         elif df <= 0:
             raise ValueError("'df' must be greater than zero.")
         elif np.isnan(df):
-            raise ValueError("'df' must be greater than zero or 'np.inf'.")
+            raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
 
         return dim, loc, shape, df
 
