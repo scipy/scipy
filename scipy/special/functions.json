@@ -1410,7 +1410,7 @@
         }
     },
     "wright_bessel": {
-        "wright_bessel.pxd": {
+        "_wright_bessel.pxd": {
             "wright_bessel_scalar": "ddd->d"
         }
     }
