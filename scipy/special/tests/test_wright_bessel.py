@@ -21,8 +21,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
 import scipy.special as sc
-from scipy.special import rgamma
-from scipy.special import wright_bessel
+from scipy.special import rgamma, wright_bessel
 
 
 @pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])

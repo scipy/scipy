@@ -17,9 +17,8 @@ from scipy.special import (
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
-    ellip_harm, ellip_harm_2, spherical_jn, spherical_yn,
+    ellip_harm, ellip_harm_2, spherical_jn, spherical_yn, wright_bessel
 )
-from scipy.special.wright_bessel import wright_bessel
 from scipy.integrate import IntegrationWarning
 
 from scipy.special._testutils import FuncData
