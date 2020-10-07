@@ -7537,6 +7537,12 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     Without further assumption on the samples (eg, the nature of the underlying distribution),
     the one-sided intervals are optimally tight.
 
+    A similar function is available in the QuantileNPCI R package [3].
+    The fundation is the same but it computes the confidence interval
+    bounds by doing interpolations between the sample values, which this
+    function uses only sample values as bounds. This results in slightly
+    more conservative intervals (i.e., larger).
+
     Parameters
     ----------
     x : array_like or int
@@ -7593,6 +7599,10 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     .. [2] H. A. David and H. N. Nagaraja, "Order Statistics in
        Nonparametric Inference" in Order Statistics,
        John Wiley & Sons, Ltd, 2005, pp. 159-170.
+       Available: https://www.jstor.org/stable/2957563.
+    .. [3] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI:
+       Nonparametric Confidence Intervals for Quantiles,"
+       R package, https://cran.r-project.org/package=QuantileNPCI
 
 
     Examples
