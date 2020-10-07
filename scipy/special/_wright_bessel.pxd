@@ -37,6 +37,9 @@ import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
                         sqrt, M_PI)
 
+cdef extern from "numpy/npy_math.h":
+    double M_EG "NPY_EULER"  # Euler Gamma aka Euler Mascheroni constant
+
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
@@ -46,8 +49,7 @@ from ._digamma cimport digamma
 from ._complexstuff cimport inf, nan
 from . cimport sf_error
 
-# Euler Gamma constant aka Euler Mascheroni constant
-DEF M_EG = 0.57721566490153286060
+
 # zeta(3)
 DEF M_Z3 = 1.2020569031595942854
 # rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
