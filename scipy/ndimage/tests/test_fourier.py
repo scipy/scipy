@@ -132,14 +132,14 @@ class TestNdimageFourier:
                 assert_array_almost_equal(a, b, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(0, ), (0, 10), (10, 0)])
-    @pytest.mark.parametrize('dtype, dec',
-                             [(numpy.float32, 5), (numpy.float64, 14),
-                              (numpy.complex64, 5), (numpy.complex128, 14)])
+    @pytest.mark.parametrize('dtype',
+                             [numpy.float32, numpy.float64,
+                              numpy.complex64, numpy.complex128])
     @pytest.mark.parametrize('test_func',
                              [ndimage.fourier_ellipsoid,
                               ndimage.fourier_gaussian,
                               ndimage.fourier_uniform])
-    def test_fourier_zero_length_dims(self, shape, dtype, dec, test_func):
+    def test_fourier_zero_length_dims(self, shape, dtype, test_func):
         a = numpy.ones(shape, dtype)
         b = test_func(a, 3)
         assert_equal(a, b)
