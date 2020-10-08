@@ -7486,11 +7486,12 @@ def _confint_lowerbound(n, quantile, confidence):
     .. versionadded:: 1.6.0
     """
 
-    # compute all probabilities from the binomial distribution for the quantile of interest
+    # compute all probabilities from the binomial distribution for
+    # the quantile of interest
     bd = binom(n, quantile)
 
-    # the lower bound is the last index before the invert survival function value for
-    # the target confidence level
+    # the lower bound is the last index before the invert survival
+    # function value for the target confidence level
     lb = bd.isf(confidence) - 1
 
     if lb < 0:  # isf returns -1 if there are no matching index
@@ -7503,18 +7504,18 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     r"""Compute non-parametric confidence intervals for any quantile.
 
     This function implements a non-parametric approach to compute
-    confidence intervals for quantiles. The approach is attributed to Thompson [1]_
-    and later proven to be applicable to any set of i.i.d. samples [2]_.
-    The computation is based on the observation that the probability of a quantile
-    :math:`q` to be larger than any sample :math:`x_m (1\leq m \leq N)`
-    can be computed as
+    confidence intervals for quantiles. The approach is attributed
+    to Thompson [1]_ and later proven to be applicable to any set
+    of i.i.d. samples [2]_. The computation is based on the observation
+    that the probability of a quantile :math:`q` to be larger than any
+    sample :math:`x_m (1\leq m \leq N)` can be computed as
 
     .. math::
 
         \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k} q^k(1-q)^{N-k}
 
-    Furthermore, these probabilities are symmetric, which allows to compute both
-    upper and lower bounds from the same computation:
+    Furthermore, these probabilities are symmetric, which allows to compute
+    both upper and lower bounds from the same computation:
 
     .. math::
 
@@ -7526,18 +7527,19 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     The confidence intervals are valid if and only if the samples are i.i.d.
 
     Both one-sided and two-sided confidence intervals can be obtained
-    (default is one-sided). The function returns two values: either the bounds for the two one-sided
-    confidence intervals, or the lower and upper bounds of a two-sided confidence interval.
-    The return values are either the indexes of the bounds (if `x` is an integer) or
-    sample values (if `x` is the set of samples).
-    `None` is returned when there are not enough samples to compute
-    the desired confidence interval.
+    (default is one-sided). The function returns two values: either the bounds
+    for the two one-sided confidence intervals, or the lower and upper bounds
+    of a two-sided confidence interval. The return values are either the
+    indexes of the bounds (if `x` is an integer) or sample values
+    (if `x` is the set of samples). `None` is returned when there are not
+    enough samples to compute the desired confidence interval.
 
-    There is no uniqueness of the two-sided confidence interval (see Notes below).
-    Without further assumption on the samples (eg, the nature of the underlying distribution),
+    There is no uniqueness of the two-sided confidence interval
+    (see Notes below). Without further assumption on the samples
+    (eg, the nature of the underlying distribution),
     the one-sided intervals are optimally tight.
 
-    A similar function is available in the QuantileNPCI R package [3].
+    A similar function is available in the QuantileNPCI R package [3]_.
     The fundation is the same but it computes the confidence interval
     bounds by doing interpolations between the sample values, which this
     function uses only sample values as bounds. This results in slightly
