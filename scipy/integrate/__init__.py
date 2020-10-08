@@ -32,7 +32,7 @@ Integrating functions, given fixed samples
 
    trapz         -- Use trapezoidal rule to compute integral.
    cumtrapz      -- Use trapezoidal rule to cumulatively compute integral.
-   simps         -- Use Simpson's rule to compute integral from samples.
+   simpson       -- Use Simpson's rule to compute integral from samples.
    romb          -- Use Romberg Integration to compute integral from
                  -- (2**k + 1) evenly-spaced samples.
 

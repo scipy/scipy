@@ -4,7 +4,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad, simps, fixed_quad,
+                             cumtrapz, quad, simpson, simps, fixed_quad,
                              AccuracyWarning)
 
 
@@ -141,17 +141,24 @@ class TestQuadrature(object):
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
-    def test_simps(self):
+    def test_simpson(self):
         y = np.arange(17)
-        assert_equal(simps(y), 128)
-        assert_equal(simps(y, dx=0.5), 64)
-        assert_equal(simps(y, x=np.linspace(0, 4, 17)), 32)
+        assert_equal(simpson(y), 128)
+        assert_equal(simpson(y, dx=0.5), 64)
+        assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
 
         y = np.arange(4)
         x = 2**y
-        assert_equal(simps(y, x=x, even='avg'), 13.875)
-        assert_equal(simps(y, x=x, even='first'), 13.75)
-        assert_equal(simps(y, x=x, even='last'), 14)
+        assert_equal(simpson(y, x=x, even='avg'), 13.875)
+        assert_equal(simpson(y, x=x, even='first'), 13.75)
+        assert_equal(simpson(y, x=x, even='last'), 14)
+
+    def test_simps(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(simpson(y, x=x, dx=0.5, even='first'),
+                     simps(y, x=x, dx=0.5, even='first'))
 
 
 class TestCumtrapz(object):

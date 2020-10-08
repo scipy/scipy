@@ -10,8 +10,8 @@ from numpy import trapz
 from scipy.special import roots_legendre
 from scipy.special import gammaln
 
-__all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
-           'cumtrapz', 'newton_cotes', 'AccuracyWarning']
+__all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'simpson',
+           'romb', 'cumtrapz', 'newton_cotes', 'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
@@ -86,7 +86,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
-    simps : integrators for sampled data
+    simpson : integrators for sampled data
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrator
     odeint : ODE integrator
@@ -208,7 +208,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrator for sampled data
-    simps: integrator for sampled data
+    simpson: integrator for sampled data
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
@@ -346,7 +346,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     return res
 
 
-def _basic_simps(y, start, stop, x, dx, axis):
+def _basic_simpson(y, start, stop, x, dx, axis):
     nd = len(y.shape)
     if start is None:
         start = 0
@@ -377,7 +377,18 @@ def _basic_simps(y, start, stop, x, dx, axis):
     return result
 
 
+# Note: alias kept for backwards compatibility. simps was renamed to simpson
+# because the former is a slur in colloquial English (see gh-12924).
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
+    """`An alias of `simpson`.
+
+    `simps` is kept for backwards compatibility. For new code, prefer
+    `simpson` instead.
+    """
+    return simpson(y, x=x, dx=dx, axis=axis, even=even)
+
+
+def simpson(y, x=None, dx=1, axis=-1, even='avg'):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -434,16 +445,16 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
-    >>> integrate.simps(y, x)
+    >>> integrate.simpson(y, x)
     40.5
 
     >>> y = np.power(x, 3)
-    >>> integrate.simps(y, x)
+    >>> integrate.simpson(y, x)
     1642.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
 
-    >>> integrate.simps(y, x, even='first')
+    >>> integrate.simpson(y, x, even='first')
     1644.5
 
     """
@@ -482,7 +493,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
-            result = _basic_simps(y, 0, N-3, x, dx, axis)
+            result = _basic_simpson(y, 0, N-3, x, dx, axis)
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
             slice1 = tupleset(slice1, axis, 0)
@@ -490,13 +501,13 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
-            result += _basic_simps(y, 1, N-2, x, dx, axis)
+            result += _basic_simpson(y, 1, N-2, x, dx, axis)
         if even == 'avg':
             val /= 2.0
             result /= 2.0
         result = result + val
     else:
-        result = _basic_simps(y, 0, N-2, x, dx, axis)
+        result = _basic_simpson(y, 0, N-2, x, dx, axis)
     if returnshape:
         x = x.reshape(saveshape)
     return result
@@ -532,7 +543,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
-    simps : integrators for sampled data
+    simpson : integrators for sampled data
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrators
     odeint : ODE integrators
@@ -731,7 +742,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     dblquad : Double integrals.
     tplquad : Triple integrals.
     romb : Integrators for sampled data.
-    simps : Integrators for sampled data.
+    simpson : Integrators for sampled data.
     cumtrapz : Cumulative integration for sampled data.
     ode : ODE integrator.
     odeint : ODE integrator.
