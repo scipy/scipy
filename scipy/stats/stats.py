@@ -185,6 +185,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp, cramervonmises
+from itertools import permutations
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -3691,25 +3692,50 @@ def f_oneway(*args, axis=0):
 
     return F_onewayResult(f, prob)
 
+class TukeyKramerResult():
+    def __init__(self):
+        self.comp = dict()
+        
+    def __repr__(self):
+        s =f"{'group' : <7}{'min' : ^10}{'mean' : ^10}{'max' : >5}{'sig' : >9}\n"
+        for key in self.comp.keys():
+            s = s + f"{key[0]} - {key[1]}  " \
+                f"{self.comp[key][0] :<10.3f}{self.comp[key][1] : ^10.3f}"\
+                f"{self.comp[key][2] : ^10.3f}{self.comp[key][3] : >5}\n"
+        return s
+    
 
-def tukeykramer(*args):
+def tukeykramer(*args, sig_level=.05):
     """
     Perform Tukey-Kramer. The order of the input arrays is
 
-    Under the assumption of a rejected null hypothesis that two or more groups
-    have the same population mean, the Tukey Kramer test can further illustrate
-    the differnece between groups on an individual basis. For inputs of differing
-    sample sizes, the Tukey Kramer method is used. 
+    Under the assumption of a rejected null hypothesis that two or more samples
+    have the same population mean, the Tukey Kramer test compares the absolute
+    mean difference between each input group to the Tukey criterion for
+    significance. For inputs of differing sample sizes, the Tukey Kramer
+    method is used, albeit with a higher confidence coefficient.
 
     Assumptions:
     1. There are equal variances between the samples.
     2. The samples are equally distributed
 
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group.  There must be at least
+        two arguments.
+    sig_level : float, optional
+        Significance level for which to determine the appropriate studentized
+        range distribution value.
+        Default is .05.
+
+
     SAS example, adapted from
     https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
     ```
-    DATA ACHE;
-    INPUT BRAND RELIEF;
+    DATA ACHE;
+    INPUT BRAND RELIEF;
     CARDS;
     1 24.5
     1 23.5
@@ -3727,13 +3753,15 @@ def tukeykramer(*args):
     3 26.2
     3 27.8
     ;
-    ODS RTF;ODS LISTING CLOSE;
-    PROC ANOVA DATA=ACHE;
-        CLASS BRAND;
-        MODEL RELIEF=BRAND;
-        MEANS BRAND/TUKEY CLDIFF;
-    TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+    ODS RTF;ODS LISTING CLOSE;
+    PROC ANOVA DATA=ACHE;
+        CLASS BRAND;
+        MODEL RELIEF=BRAND;
+        MEANS BRAND/TUKEY CLDIFF;
+    TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
     ```
+
+    Additional Info: the critical value of the Studentized Range is 3.77289.
 
     Yeilds the following results :
     (*** denotes significance at the .05 significance level)
@@ -3749,12 +3777,110 @@ def tukeykramer(*args):
     > group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
     > group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
     > group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
+    from https://www.youtube.com/watch?v=zQr190cacC0&t=124s
+    a = [77, 79, 87, 85, 78]
+    b = [83, 91, 94, 88, 85]
+    c = [80, 82,  86, 85, 80]
+
     """
-    # https: // stackoverflow.com / questions / 29678824 / studentized - range - statistic - q - in -python - scipy
-    def pairwise_conf_comp(x, y):
-
-
+    #%%
     args = [np.asarray(arg) for arg in args]
+    means = [np.mean(arg) for arg in args]
+
+    """
+    Critical Values of Studentized Range Distribution(q) for
+    Familywise ALPHA = .05.
+    Rows: DF (index 0 = 1 DF)
+    Cols: Number of Groups (a.k.a. Treatments) (index 0 = 3 groups)
+    source:
+    https://www.stat.purdue.edu/~lingsong/teaching/2018fall/q-table.pdf
+    """
+    studentized_range = [
+         [26.976, 32.819, 37.081, 40.407, 43.118, 45.397, 47.356, 49.07],
+         [8.331, 9.798, 10.881, 11.734, 12.434, 13.027, 13.538, 13.987],
+         [5.91, 6.825, 7.502, 8.037, 8.478, 8.852, 9.177, 9.462],
+         [5.04, 5.757, 6.287, 6.706, 7.053, 7.347, 7.602, 7.826],
+         [4.602, 5.218, 5.673, 6.033, 6.33, 6.582, 6.801, 6.995],
+         [4.339, 4.896, 5.305, 5.629, 5.895, 6.122, 6.319, 6.493],
+         [4.165, 4.681, 5.06, 5.359, 5.606, 5.815, 5.997, 6.158],
+         [4.041, 4.529, 4.886, 5.167, 5.399, 5.596, 5.767, 5.918],
+         [3.948, 4.415, 4.755, 5.024, 5.244, 5.432, 5.595, 5.738],
+         [3.877, 4.327, 4.654, 4.912, 5.124, 5.304, 5.46, 5.598],
+         [3.82, 4.256, 4.574, 4.823, 5.028, 5.202, 5.353, 5.486],
+         [3.773, 4.199, 4.508, 4.748, 4.947, 5.116, 5.262, 5.395],
+         [3.734, 4.151, 4.453, 4.69, 4.884, 5.049, 5.192, 5.318],
+         [3.701, 4.111, 4.407, 4.639, 4.829, 4.99, 5.13, 5.253],
+         [3.673, 4.076, 4.367, 4.595, 4.782, 4.94, 5.077, 5.198],
+         [3.649, 4.046, 4.333, 4.557, 4.741, 4.896, 5.031, 5.15],
+         [3.628, 4.02, 4.303, 4.524, 4.705, 4.858, 4.991, 5.108],
+         [3.609, 3.997, 4.276, 4.494, 4.673, 4.824, 4.955, 5.071],
+         [3.593, 3.977, 4.253, 4.468, 4.645, 4.794, 4.924, 5.037],
+         [3.578, 3.958, 4.232, 4.445, 4.62, 4.768, 4.895, 5.008],
+         [3.565, 3.942, 4.213, 4.424, 4.597, 4.743, 4.87, 4.981],
+         [3.553, 3.927, 4.196, 4.405, 4.577, 4.722, 4.847, 4.957],
+         [3.542, 3.914, 4.18, 4.388, 4.558, 4.702, 4.826, 4.935],
+         [3.532, 3.901, 4.166, 4.373, 4.541, 4.684, 4.807, 4.915],
+         [3.523, 3.89, 4.153, 4.358, 4.526, 4.667, 4.789, 4.897],
+         [3.514, 3.88, 4.141, 4.345, 4.511, 4.652, 4.773, 4.88],
+         [3.506, 3.87, 4.13, 4.333, 4.498, 4.638, 4.758, 4.864],
+         [3.499, 3.861, 4.12, 4.322, 4.486, 4.625, 4.745, 4.85],
+         [3.493, 3.853, 4.111, 4.311, 4.475, 4.613, 4.732, 4.837],
+         [3.487, 3.845, 4.102, 4.301, 4.464, 4.601, 4.72, 4.824],
+         [3.481, 3.838, 4.094, 4.292, 4.454, 4.591, 4.709, 4.813]
+         ]
+
+    # computation of the Tukey Criterion
+    def stud_range(sig_lev, num_treatments, ddof):
+        """
+        for studentized range distribution, we could try to do the integral,
+        or use table temporarily.
+
+        # -1 for row since it is zero indexed to get ddof = 1
+        # -3 for column since it starts at 3 groups
+        """
+        return studentized_range[ddof - 1][num_treatments - 3]
+
+    # determine the studentized range distribution value
+    # sig_level: always .05 right now.
+    # Number of treatments is number of args.
+    # DF: Number of datapoints minus number of treatments
+    srd = stud_range(sig_level, len(args),
+                     len(args[0]) * len(args) - len(args))
+
+    # determine mean square error
+    mse = np.mean([np.var(arg, ddof=1) for arg in args])
+
+    # also called maxmimum critical value, tukey criterion is the studentized
+    # range value * the square root of mean square error over the sample size.
+    # This only applies for treatments of equal sizes. The criterion must be
+    # calculated for each comparison when treatments differ in size. TODO.
+    tukey_criterion = srd * ((mse / len(args[0])) ** .5)
+
+    # create permutations of input group means along with keys to keep track
+    # of which is which
+    permutations_key = list(permutations(np.arange(1, len(means) + 1), 2))
+    permutations_means = list(permutations(means, 2))
+
+    # determine the mean difference
+    mean_differences = np.asarray([x[0] - x[1] for x in permutations_means])
+
+    # the confidence levels are determined by the mean diff +- tukey_criterion
+    conf_levels = (mean_differences - tukey_criterion,
+                   mean_differences + tukey_criterion)
+
+    # The simultaneous pairwise comparisons are not significantly different
+    # from 0 if their confidence intervals include 0. 
+    # ("Conclusions")[https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm]
+    is_significant = np.abs(mean_differences) > tukey_criterion
+
+    res = TukeyKramerResult()
+    for i in range(len(mean_differences)):
+        res.comp[permutations_key[i]] = [conf_levels[0][i],
+                                         mean_differences[i],
+                                         conf_levels[1][i], is_significant[i]]
+
+    #%%
 
 class PearsonRConstantInputWarning(RuntimeWarning):
     """Warning generated by `pearsonr` when an input is constant."""
