@@ -745,7 +745,7 @@ cdef class cKDTree:
             raise ValueError("x must consist of vectors of length %d but "
                              "has shape %s" % (int(self.m), xshape))
 
-        n = <np.intp_t> np.prod(xshape[:-1])
+        n = <np.intp_t> np.prod(xshape[:-1], dtype=np.intp)
         xx = np.ascontiguousarray(x, dtype=np.float64).reshape(n, self.m)
 
         if p < 1:
@@ -914,7 +914,7 @@ cdef class cKDTree:
         xndim = len(xshape)
 
         # allocate an array of std::vector<npy_intp>
-        n = np.prod(retshape)
+        n = np.prod(retshape, dtype=np.intp)
 
         if return_length:
             result = np.empty(retshape, dtype=np.intp)
