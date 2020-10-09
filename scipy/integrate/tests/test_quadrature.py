@@ -4,8 +4,8 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumulative_trapezoid, cumtrapz, quad, simpson,
-                             simps, fixed_quad, AccuracyWarning)
+                             cumulative_trapezoid, cumtrapz, trapz, trapezoid,
+                             quad, simpson, simps, fixed_quad, AccuracyWarning)
 
 
 class TestFixedQuad(object):
@@ -243,3 +243,25 @@ class TestCumulative_trapezoid(object):
         assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
                         cumtrapz(y, x, dx=0.5, axis=0, initial=0),
                         rtol=1e-14)
+
+
+class TestTrapezoid():
+    """This function is tested in NumPy more extensive, just do some
+    basic due diligence here."""
+    def test_trapezoid(self):
+        y = np.arange(17)
+        assert_equal(trapezoid(y), 128)
+        assert_equal(trapezoid(y, dx=0.5), 64)
+        assert_equal(trapezoid(y, x=np.linspace(0, 4, 17)), 32)
+
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.1), 13.5)
+
+    def test_trapz(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                     trapz(y, x=x, dx=0.5, axis=0))
+

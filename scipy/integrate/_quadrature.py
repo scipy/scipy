@@ -4,14 +4,14 @@ import math
 import types
 import warnings
 
-# trapz is a public function for scipy.integrate,
+# trapezoid is a public function for scipy.integrate,
 # even though it's actually a NumPy function.
-from numpy import trapz
+from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
 from scipy.special import gammaln
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
-           'trapz', 'simps', 'simpson',
+           'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
            'AccuracyWarning']
 
@@ -26,9 +26,20 @@ def _copy_func(f):
     return g
 
 
-trapz = _copy_func(trapz)
-if trapz.__doc__:
-    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+trapezoid = _copy_func(trapezoid)
+if trapezoid.__doc__:
+    trapezoid.__doc__ = trapezoid.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+
+
+# Note: alias kept for backwards compatibility. Rename was done
+# because trapz is a slur in colloquial English (see gh-12924).
+def trapz(y, x=None, dx=1.0, axis=-1):
+    """`An alias of `trapezoid`.
+
+    `trapz` is kept for backwards compatibility. For new code, prefer
+    `trapezoid` instead.
+    """
+    return trapezoid(y, x=x, dx=dx, axis=axis)
 
 
 class AccuracyWarning(Warning):
