@@ -1,6 +1,7 @@
 import numpy
 from numpy import fft
-from numpy.testing import (assert_almost_equal, assert_array_almost_equal)
+from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
+                           assert_equal)
 
 import pytest
 
@@ -9,7 +10,7 @@ from scipy import ndimage
 
 class TestNdimageFourier:
 
-    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 6), (numpy.float64, 14)])
     def test_fourier_gaussian_real01(self, shape, dtype, dec):
@@ -35,7 +36,7 @@ class TestNdimageFourier:
         a = fft.ifft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
-    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 6), (numpy.float64, 14)])
     def test_fourier_uniform_real01(self, shape, dtype, dec):
@@ -93,7 +94,7 @@ class TestNdimageFourier:
         assert_array_almost_equal(a.imag, numpy.zeros(shape),
                                   decimal=dec)
 
-    @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
+    @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec',
                              [(numpy.float32, 5), (numpy.float64, 14)])
     def test_fourier_ellipsoid_real01(self, shape, dtype, dec):
@@ -129,3 +130,16 @@ class TestNdimageFourier:
                 a = ndimage.fourier_ellipsoid(x, 5, -1, 0)
                 b = ndimage.fourier_uniform(x, 5, -1, 0)
                 assert_array_almost_equal(a, b, decimal=dec)
+
+    @pytest.mark.parametrize('shape', [(0, ), (0, 10), (10, 0)])
+    @pytest.mark.parametrize('dtype',
+                             [numpy.float32, numpy.float64,
+                              numpy.complex64, numpy.complex128])
+    @pytest.mark.parametrize('test_func',
+                             [ndimage.fourier_ellipsoid,
+                              ndimage.fourier_gaussian,
+                              ndimage.fourier_uniform])
+    def test_fourier_zero_length_dims(self, shape, dtype, test_func):
+        a = numpy.ones(shape, dtype)
+        b = test_func(a, 3)
+        assert_equal(a, b)
