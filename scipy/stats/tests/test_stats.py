@@ -5714,13 +5714,14 @@ class TestConfInt(object):
     confidence intervals for quantiles
     """
     X = array([2, 8, 3, 6, 4, 1, 5, 9, 7], float)
-    
+
     def test_index_equal_value(self):
         assert_equal(stats.confint_quantile(X, 0.5, 0.9), (3.0, 7.0))
         assert_equal(stats.confint_quantile(X.shape[0], 0.5, 0.9), (2, 6))
 
     def test_twosided(self):
-        assert_equal(stats.confint_quantile(X.shape[0], 0.5, 0.9, type='two-sided'), (1, 7))
+        assert_equal(stats.confint_quantile(
+            X.shape[0], 0.5, 0.9, type='two-sided'), (1, 7))
 
     def test_values(self):
         N, q, c = 100, 0.75, 0.95

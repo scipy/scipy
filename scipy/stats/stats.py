@@ -7512,7 +7512,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     .. math::
 
-        \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k} q^k(1-q)^{N-k}
+        \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k}
+        q^k(1-q)^{N-k}
 
     Furthermore, these probabilities are symmetric, which allows to compute
     both upper and lower bounds from the same computation:
@@ -7549,7 +7550,8 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     ----------
     x : array_like or int
         Array of samples, should be one-dimensional.
-        If integer, taken as the number of samples available (strictly positive)
+        If integer, taken as the number of samples available
+        (strictly positive)
     quantile : float
         The quantile for which we want to compute the confidence interval.
         Must be strictly between 0 and 1.
@@ -7560,24 +7562,32 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         Defines the type of confidence interval computed.
         Default is 'one-sided'.
 
-          * 'one-sided' : computes the best possible one-sided confidence intervals (both lower and upper bounds) for the given quantile.
-          * 'two-sided' : computes a two-sided confidence interval by combination of two one-sided intervals. E.g., a 90% two-sided interval is computed by combining two 95% one-sided intervals
+          * 'one-sided' :
+
+          computes the best possible one-sided confidence intervals
+          (both lower and upper bounds) for the given quantile.
+
+          * 'two-sided' :
+
+          computes a two-sided confidence interval by combination of
+          two one-sided intervals. E.g., a 90% two-sided interval is
+          computed by combining two 95% one-sided intervals.
 
     Returns
     -------
     LB : float or int or `None`
         value or index of the lower bound of
 
-        * the right-open one-sided confidence interval (default, ``type=one-sided``),
-        * a two-sided confidence interval (if ``type=two-sided``)
+        * the right-open one-sided confidence interval (default),
+        * a two-sided confidence interval
 
         `None` is returned when there are not enough samples to compute
         the confidence interval with the desired level of confidence.
     UB : float or int  or None
         value or index of the upper bound of
 
-        * the left-open one-sided confidence interval (default, ``type=one-sided``),
-        * a two-sided confidence interval (if ``type=two-sided``)
+        * the left-open one-sided confidence interval (default),
+        * a two-sided confidence interval
 
         `None` is returned when there are not enough samples to compute
         the confidence interval with the desired level of confidence.
@@ -7619,9 +7629,9 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     >>> confint_quantile(x, 0.5, 0.99, type='two-sided')
     (1, 9)
 
-    You can also pass the number of samples as argument (instead of the samples)
-    themselves. The returned values are then the indexes of the upper and lower
-    bounds for the confidence intervals.
+    You can also pass the number of samples as argument (instead of the
+    samples) themselves. The returned values are then the indexes of the
+    upper and lower bounds for the confidence intervals.
 
     >>> N = 20
     >>> confint_quantile(N, 0.75, 0.90)
@@ -7637,26 +7647,42 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     # x can be either an integer or a one-dimensional array-like
     if isinstance(x, int):
         if x < 1:
-            raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either a strictly positive integer or one-dimensional array-like.")
+            raise ValueError(
+                """Invalid data 'x': %s,
+            `x` must be either a strictly positive integer
+            or one-dimensional array-like.""" % repr(x))
         n = x
-        return_index = True  # The function will returns the confint indexes
+        # The function will returns the confint indexes
+        return_index = True
     else:
         x = np.asarray(x)
         if x.ndim != 1:
-            raise ValueError("Invalid parameter: "+repr(x)+", `x` must be either a strictly positive integer or one-dimensional array-like.")
+            raise ValueError(
+                """Invalid data 'x': %s,
+            `x` must be either a strictly positive integer
+            or one-dimensional array-like.""" % repr(x))
         x = np.sort(x, axis=0)
         n = x.shape[0]
-        return_index = False  # The function will returns the confint as values of x
+        # The function returns the confint as values of x
+        return_index = False
     #
     # `confidence` and `quantile` must be between 0 and 1
     if confidence >= 1 or confidence <= 0:
-        raise ValueError("Invalid `confidence`: "+repr(confidence)+". Provide a real number strictly between 0 and 1.")
+        raise ValueError(
+            """Invalid `confidence`: %s.
+            Provide a real number strictly between 0 and 1."""
+            % repr(confidence))
     if quantile >= 1 or quantile <= 0:
-        raise ValueError("Invalid `quantile`: "+repr(quantile)+". Provide a real number strictly between 0 and 1.")
+        raise ValueError(
+            """Invalid `quantile`: %s.
+            Provide a real number strictly between 0 and 1."""
+            % repr(quantile))
     #
     # `type` can be only `one-sided` or `two-sided`
     if not (type == 'one-sided' or type == 'two-sided'):
-        raise ValueError("Invalid parameter: "+repr(type)+". Valid 'type' values: 'one-sided' or 'two-sided'")
+        raise ValueError(
+            """Invalid parameter: %s.
+            Valid 'type' values: 'one-sided' or 'two-sided'""" % repr(type))
     ##
 
     # Handle the type of intervals (one- or two-sided)
