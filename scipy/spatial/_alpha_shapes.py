@@ -14,24 +14,26 @@ __all__ = ['AlphaShapes']
 
 
 def _calculate_circumspheres(points, simplices, rcond):
+    # circumcenter, c, satisfies:
+    # |p_i - c| = |p_j - c| for all i and j in [1 .. ndim+1]
+    # |p_i|^2 - 2.p_i.c + |c|^2 = |p_j|^2 - 2.p_j.c + |c|^2
+    # |p_i|^2 - 2.p_i.c = |p_j|^2 - 2.p_j.c
+    # |p_i|^2 - |p_j|^2 = 2.(p_i - p_j).c
+
+    # build overdetermined system of linear equations
     tetrahedra = points[simplices]
+    A = 2 * (tetrahedra - np.roll(tetrahedra, 1, axis=1))
 
-    # build overdetermined system of linear equations (Ax=b)
-    gramian = np.einsum('lij,lkj->lik', tetrahedra, tetrahedra)
-    A = 2 * (gramian - np.roll(gramian, 1, axis=1))
+    squared_norms = np.einsum('ij,ij->i', points, points)[simplices]
+    b = squared_norms - np.roll(squared_norms, 1, axis=1)
 
-    squared_norms = np.einsum('ij,ij->i', points, points)
-    squared_tet_norms = squared_norms[simplices]
-    b = squared_tet_norms - np.roll(squared_tet_norms, 1, axis=1)
-
-    # handle rank deficiencies with Moore-Penrose pseudoinverse
-    penrose = np.linalg.pinv(A, rcond=rcond)
-    tp = np.einsum('lji,ljk->lik', tetrahedra, penrose)
-    circumcenters = np.einsum('lij,lj->li', tp, b)
+    # solve stack of linear systems of equations with `pinv` (`rcond` handles
+    # rank-deficient simplices).
+    Ainv = np.linalg.pinv(A, rcond=rcond)
+    circumcenters = np.einsum('lij,lj->li', Ainv, b)
 
     # calculate circumradii of each tetrahedron
-    deltas = circumcenters - points[simplices[:, 0]]
-    radii = np.linalg.norm(deltas, axis=1)
+    radii = np.linalg.norm(circumcenters - tetrahedra[:, 0], axis=1)
     return circumcenters, radii
 
 
