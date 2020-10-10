@@ -89,7 +89,7 @@ class AlphaShapes:
     >>> from scipy.spatial import AlphaShapes
     >>> rng = np.random.RandomState(seed=0)
     >>> points = rng.normal(size=(12, 2))
-    >>> alpha = AlphaShapes(points)
+    >>> alpha_complex = AlphaShapes(points)
 
     The simplices are ordered by circumradius:
 
