@@ -134,6 +134,10 @@ else:
 
     # Allow distributors to run custom init code
     from . import _distributor_init
+    import warnings
+    # Filter out Cython harmless warnings
+    warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
     from scipy._lib import _pep440
     if _pep440.parse(__numpy_version__) < _pep440.Version('1.14.5'):

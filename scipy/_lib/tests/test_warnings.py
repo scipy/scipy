@@ -91,6 +91,10 @@ def test_warning_calls_filters(warning_calls):
     bad_filters = [item for item in bad_filters
                    if os.path.join('sparse', '__init__.py') not in item
                    and os.path.join('sparse', 'sputils.py') not in item]
+    # The filterwarnings calls in top-level
+    # __init__ are needed
+    bad_filters = [item for item in bad_filters
+                   if not item.startswith('__init__.py')]
 
     if bad_filters:
         raise AssertionError(
