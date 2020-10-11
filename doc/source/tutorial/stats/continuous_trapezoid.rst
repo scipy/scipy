@@ -1,5 +1,4 @@
-
-.. _continuous-trapz:
+.. _continuous-trapezoid:
 
 Trapezoidal Distribution
 ========================
@@ -39,4 +38,4 @@ portion. In standard form we have :math:`x\in\left[0,1\right].`
     \end{eqnarray*}
 
 
-Implementation: `scipy.stats.trapz`
+Implementation: `scipy.stats.trapezoid`

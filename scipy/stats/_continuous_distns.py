@@ -2561,7 +2561,7 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
-    
+
     Gamma distributions are sometimes parameterized with two variables,
     with a probability density function of:
 
@@ -2569,9 +2569,9 @@ class gamma_gen(rv_continuous):
 
         f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
 
-    Note that this parameterization is equivalent to the above, with 
+    Note that this parameterization is equivalent to the above, with
     ``scale = 1 / beta``.
-    
+
     %(after_notes)s
 
     %(example)s
@@ -6820,7 +6820,7 @@ class skew_norm_gen(rv_continuous):
 skewnorm = skew_norm_gen(name='skewnorm')
 
 
-class trapz_gen(rv_continuous):
+class trapezoid_gen(rv_continuous):
     r"""A trapezoidal continuous random variable.
 
     %(before_notes)s
@@ -6836,7 +6836,7 @@ class trapz_gen(rv_continuous):
     with the same values for `loc`, `scale` and `c`.
     The method of [1]_ is used for computing moments.
 
-    `trapz` takes :math:`c` and :math:`d` as shape parameters.
+    `trapezoid` takes :math:`c` and :math:`d` as shape parameters.
 
     %(after_notes)s
 
@@ -6921,7 +6921,12 @@ class trapz_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
-trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
+trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
+# Note: alias kept for backwards compatibility. Rename was done
+# because trapz is a slur in colloquial English (see gh-12924).
+trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
+if trapz.__doc__:
+    trapz.__doc__ = "trapz is an alias for `trapezoid`"
 
 
 class triang_gen(rv_continuous):
