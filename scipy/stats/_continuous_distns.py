@@ -5912,12 +5912,12 @@ class nct_gen(rv_continuous):
         #
         mu, mu2, g1, g2 = None, None, None, None
 
-        gfac = sc.gamma(df/2.-0.5) / sc.gamma(df/2.)
+        gfac = np.exp(sc.betaln(df/2-0.5, 0.5) - sc.gammaln(0.5))
         c11 = np.sqrt(df/2.) * gfac
-        c20 = df / (df-2.)
+        c20 = np.where(df > 2., df / (df-2.), np.nan)
         c22 = c20 - c11*c11
-        mu = np.where(df > 1, nc*c11, np.inf)
-        mu2 = np.where(df > 2, c22*nc*nc + c20, np.inf)
+        mu = np.where(df > 1, nc*c11, np.nan)
+        mu2 = np.where(df > 2, c22*nc*nc + c20, np.nan)
         if 's' in moments:
             c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
             c31t = 3.*df / (df-2.) / (df-3.)
