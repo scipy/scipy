@@ -24,7 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
+    _fit_determine_optimizer)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -2969,6 +2970,12 @@ class gumbel_r_gen(rv_continuous):
     def _ppf(self, q):
         return -np.log(-np.log(q))
 
+    def _sf(self, x):
+        return -sc.expm1(-np.exp(-x))
+
+    def _isf(self, p):
+        return -np.log(-np.log1p(-p))
+
     def _stats(self):
         return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
 
@@ -5197,7 +5204,7 @@ class kappa4_gen(rv_continuous):
     B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
     Site in the Chi River Basin, Thailand", Journal of Water Resource and
     Protection, vol. 4, 866-869, (2012).
-    https://doi.org/10.4236/jwarp.2012.410101
+    :doi:`10.4236/jwarp.2012.410101`
 
     C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
     Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
@@ -5398,11 +5405,11 @@ class kappa3_gen(rv_continuous):
     P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
     Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
     701-707, (September, 1973),
-    https://doi.org/10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2
+    :doi:`10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2`
 
     B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
     Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
-    415-419 (2012), https://doi.org/10.4236/ojs.2012.24050
+    415-419 (2012), :doi:`10.4236/ojs.2012.24050`
 
     %(after_notes)s
 
@@ -6432,6 +6439,61 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the scale parameter is fixed by using the `fscale` argument,
+        this function uses the default optimization method to determine
+        the MLE. If the location parameter is fixed by using the `floc`
+        argument, the analytical formula for the estimate of the scale
+        is used. If neither parameter is fixed, the analytical MLE for
+        `scale` is used as a function of `loc` in numerical optimization
+        of `loc`, injecting corresponding analytical optimum for
+        `scale`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def scale_mle(loc, data):
+            # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+            # and Peacock (2000), Page 175
+            return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
+
+        if floc is not None:
+            # `loc` is fixed, analytically determine `scale`.
+            if np.any(data - floc <= 0):
+                raise FitDataError("rayleigh", lower=1, upper=np.inf)
+            else:
+                return floc, scale_mle(floc, data)
+        if fscale is not None:
+            # `scale` is fixed, but we cannot analytically determine `loc`, so
+            # we use the superclass fit method.
+            return super(rayleigh_gen,
+                         self).fit(data, *args, **kwds)
+        else:
+            # `floc` and `fscale` are not fixed. Use the analytical MLE for
+            # `scale` as a function of `loc` in numerical optimization of
+            # `loc`, injecting corresponding analytical optimum for `scale`.
+
+            # account for user provided guesses
+            loc, scale = self._fitstart(data)  # rv_continuous provided guesses
+            loc = kwds.pop('loc', loc)  # only `loc` user guesses are relevant
+
+            # the second argument rv_continuous._reduce_func returns is the
+            # log-likelihood function. Its inputs are the initial guesses for
+            # `loc` and `scale`, but these are not modified in the scenario
+            # where neither `floc` or `fscale` is provided in kwds.
+            _, ll, _, _ = self._reduce_func((loc, scale), kwds)
+
+            optimizer = _fit_determine_optimizer(kwds.pop('optimizer',
+                                                          optimize.fmin))
+
+            # wrap log-likelihood function to optimize only over `loc`
+            def func(loc, data):
+                return ll([loc, scale_mle(loc, data)], data)
+
+            loc = optimizer(func, loc, args=(data,), disp=0)
+
+            return loc[0], scale_mle(loc, data)
+
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
@@ -6707,7 +6769,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        https://arxiv.org/abs/0911.2093
+        :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -6788,7 +6850,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
 
     """
@@ -7836,8 +7898,11 @@ class vonmises_gen(rv_continuous):
         return random_state.vonmises(0.0, kappa, size=size)
 
     def _pdf(self, x, kappa):
-        # vonmises.pdf(x, \kappa) = exp(\kappa * cos(x)) / (2*pi*I[0](\kappa))
-        return np.exp(kappa * np.cos(x)) / (2*np.pi*sc.i0(kappa))
+        # vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
+        #                        = exp(kappa * (cos(x) - 1)) /
+        #                          (2*pi*exp(-kappa)*I[0](kappa))
+        #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
+        return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
@@ -8545,7 +8610,7 @@ class rv_histogram(rv_continuous):
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().items())
+pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']
