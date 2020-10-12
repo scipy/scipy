@@ -1,285 +1,174 @@
-# coverage test for scipy autosolve ... about 99%
-import matplotlib.pyplot as plt
+# coverage test for scipy arls.py
 import numpy as np
 from scipy.linalg import hilbert
-from autosol import (autosolve, autosolve_nonneg,
-                     autosolve_rising,two_norm)
-# when autosol is online...
-# from scipy.autosol import (autosolve, autosolve_nonneg,
-#                   autosolve_rising, two_norm)
+from scipy.linalg.misc import norm
+from scipy.linalg.autosol import (arls, arlsusv, cull, prepeq, arlseq, arlsgt,
+                      arlsnn, splita, splitb, decide_width)
+from scipy.linalg import autosol
+from numpy.testing import assert_, assert_array_almost_equal_nulp
 
 
-# inconsistent arrays .. these crash the run
-# A=np.zeros((3,3))
-# b=np.zeros(5)
-# x=autosolve(A,b)[0]
-# x=autosolve_nonneg(A,b)[0]
-# x=autosolve_rising(A,b)[0]
+def hilb(m, n):
+    A = np.zeros((m, n))
+    for i in range(0, m):
+        for j in range(0, n):
+            A[i, j] = 1 / float(i + j + 1)
+    return A
 
-# 0-D
-print()
-print("Test 1")
-print("call autosolve with 0-dimensions")
-x = autosolve(2.0, 2.0)[0]
-print(x)
-print("call autosolve_nonneg with 0-dimensions")
-x = autosolve_nonneg(2.0, -2.0)[0]
-print(x)
-print("call autosolve_rising with 0-dimensions")
-x = autosolve_rising(2.0, 2.0)[0]
-print(x)
 
-# 1 row
-print()
-print("Test 2")
-print("test all three solvers for zero-dimensional matrix")
-print("call autosolve with 1 row")
-x = autosolve([[1.0, 2.0, 3.0]], 12.0)[0]
-print(x)
-print("call autosolve_nonneg with 1 row")
-x = autosolve_nonneg([[1.0, 2.0, 3.0]], -12.0)[0]
-print(x)
-print("call autosolve_rising with 1 row")
-x = autosolve_rising(2.0, -2.0)[0]
-print(x)
-
-# 1 column
-print()
-print("Test 3")
-print("call autosolve with 1-column")
-x = autosolve([[1.0], [2.0], [3.0]], [[3.0], [6.0], [9.0]])[0]
-print(x)
-print("call autosolveNN with 1-column")
-x = autosolve_nonneg([[1.0], [2.0], [3.0]], [[3.0], [6.0], [9.0]])[0]
-x = autosolve_nonneg([[1.0], [2.0], [3.0]], [[3.0], [6.0], [-9.0]])[0]
-print(x)
-print("call autosolve_rising with 1 column")
-x = autosolve_rising([[1.0], [2.0], [3.0]], [[3.0], [6.0], [9.0]])[0]
-print(x)
-
-print()
-print("Test 4")
-print("six tests to check all zeros input")
-A = np.zeros((3, 3))
-A1 = np.zeros((3, 3))
-A1[0, 1] = 1.0
+# test solvers with zero b
+A = np.eye(3)
+Z = A
 b = np.zeros(3)
-b1 = np.zeros(3)
-b1[1] = 1.0
-x = autosolve(A, b1)
-print(x)
-x = autosolve_nonneg(A, b1)
-print(x)
-x = autosolve_rising(A, b1)
-print(x)
-x = autosolve(A1, b)
-print(x)
-x = autosolve_nonneg(A1, b)
-print(x)
-x = autosolve_rising(A1, b)
-print(x)
+x = arlsusv(A, b, Z, Z, Z)
+assert_(norm(x) == 0.0, "Solution of arls() is incorrectly non-zero.")
+x = arls(A, b)
+assert_(norm(x) == 0.0, "Solution of arls() is incorrectly non-zero.")
+x = arlseq(A, b, A, b)
+assert_(norm(x) == 0.0, "Solution of arlseq() is incorrectly non-zero.")
+x = arlsgt(A, b, A, b)
+assert_(norm(x) == 0.0, "Solution of arlsgt() is incorrectly non-zero.")
+x = arlsnn(A, b)
+assert_(norm(x) == 0.0, "Solution of arlsnn() is incorrectly non-zero.")
 
-print()
-print("Test 5")
-print("test with real zero singular value.")
-A = np.zeros((3, 3))
-A[0, 0] = 1
-b = [1.0, 0.0, 0.0]
-x = autosolve(A, b)[0]
-print(x)
+# TEST ARLS UTILITIES
 
-print()
-print("Test 6")
-print("see if nonneg handles a problem that is trivially nonneg.")
-A = np.ones((2, 2))
-A[1, 1] = 2
-x = np.ones(2)
-x[1] = 2
+E = np.eye(4)
+f = np.ones(4)
+E[2, 2] = 0.0000001
+E[3, 3] = 0.0000001
+E, f = cull(E, f, 0.00001)
+assert_(E.shape[0] == 2, "cull is not deleting row properly.")
+
+# TEST ARLS
+
+# test arls() with mulriple columns
+A = np.eye(3)
+b = np.ones((3, 2))
+b[2, 1] = 0.0
+ans = np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 0.0]])
+x = arls(A, b)
+assert_array_almost_equal_nulp(x, ans, 10)
+
+# test arls() with ill-conditioned problem
+A = hilbert(12)
+xx = np.ones(12)
+b = A @ xx
+for i in range(0, 12):
+    b[i] += 0.00001 * np.sin(float(i + i))
+ans =np.array([0.998635, 1.013942, 0.980540, 0.986143,
+               1.000395, 1.011578, 1.016739, 1.015970,
+               1.010249, 1.000679, 0.988241, 0.973741])
+x = arls(A, b)
+d = norm(ans - x)
+assert_(d < 1.0e-5,
+"arls() residual too large in test of ill-conditioned problem.")
+
+# TEST ARLSEQ UTILITIES
+
+# assure splita is working inside arsleq
+n = 14
+E = np.eye(n)
+f = np.array([21., 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 
+                    0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 20.])
+EE, ff = prepeq(E, f, 0.0000001)
+assert_(EE.shape[0] < n, "splita failed inside prepeq.")
+
+# TEST ARLSEQ
+
+# test arlseq() row interchange
+A = np.eye(3)
+b = np.ones(3)
+E = np.array([[1.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+f = np.array([2.0, 1.0, 2.0])
+ans = np.array([1.0, 1.0, 2.0])
+x = arlseq(A, b, E, f)
+assert_array_almost_equal_nulp(x, ans, 10)
+
+# test arlseq() row deletion
+A = np.eye(3)
+b = np.ones(3)
+E = A.copy()
+E[2,2] = 0.0
+f = b.copy()
+f[2] = 0.0
+ans = np.array([1.0, 1.0, 1.0])
+x = arlseq(A, b, E, f)
+assert_array_almost_equal_nulp(x, ans, 10)
+
+# TEST ARLSGT
+
+# test of arlsgt
+x = np.array([6.0, 5.0, 4.0, 3.0])
+A = hilb(5, 4)
 b = A @ x
-x = autosolve_nonneg(A, b)[0]
-print(x)
-x = autosolve_rising(A, b)[0]
-print(x)
+G = np.array([0.0, 0.0, 0.0, 1.0])
+h = 5
+x = arlsgt(A, b, G, h)
+ans = [5.90761758, 6.18916743, 0.99658155, 5.0]
+d = norm(ans - x)
+assert_(d < 1.0e-6, "Residual too large in arlsgt hilbert test.")
 
-print()
-print("Test 7")
-print("demo autosolve on three different matix sizes")
-for m in (5, 7, 25):
-    n = m
-    # plot axis
-    ax = np.zeros(n)
-    for i in range(0, n):
-        ax[i] = float(i) / (float(n) - 1.0)
-    A = hilbert(n)
-    truex = np.zeros(n)
-    if n < 4:
-        for i in range(0, n):
-            truex[i] = float(i + 1)
-    else:
-        cut = int(float(n) * 1.26)
-        for i in range(0, n):
-            truex[i] = float(min(i + 1, cut - i))
-    b = np.matmul(A, truex)
-    # add extra noise
-    for i in range(0, m):
-        b[i] += 0.00005 * np.sin(1.2 + 4.0 * i)
-    x, ur, sigma, lambdah = autosolve(A, b)
-    print("autosolve solution for n= ", n)
-    print(x)
-    #plt.plot(truex)
-    #plt.show()
-    #plt.plot(x)
-    #plt.show()
+# force solution of arlsgt to be zero
+A = np.array([[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]])
+b = np.array([0.0, 1.0])
+G = np.eye(3)
+h = np.zeros(3)
+x = arlsgt(A, b, G, h)
+d = norm(x)
+assert_(norm(x) == 0.0, "Solution of arlsgt() should be zero.")
 
+# TEST ARLSNN
 
-print()
-print("Test 8")
-print("demo nonnegative with inverse heat problem.")
-for m in (5, 15):
-    n = m
-    A = np.zeros((m, n))
-    b = np.zeros(m)
-    truex = np.zeros(n)
-    for i in range(0, m):
-        s = 1.5 * float(i) / float(m - 1)
-        for j in range(0, n):
-            t = 1.5 * float(j) / float(n - 1)
-            A[i, j] = np.exp(-(s - t) * (s - t))
-    for i in range(0, n):
-        truex[i] = min(i, n + 1 - i) - 1
-    b = A @ truex
-    for i in range(0, m):
-        b[i] += 0.00005 * np.sin(1.4 + 4.2 * i)
-    x = autosolve_nonneg(A, b)[0]
-    print("autosolve_nonneg solution for n= ", n)
-    print(x)
-    #plt.plot(truex)
-    #plt.show()
-    #plt.plot(x)
-    #plt.show()
+# test too few columns
+A = np.ones((3, 1))
+b = [1.0, 1.0, 1.0]
+x = arlsnn(A, b)
+assert_(x[0] == 1.0, "arlsnn not handling single column right.")
 
+# test arlsnn with unnecessary call
+A = np.eye(4)
+b = np.ones(4)
+x = arlsnn(A, b)
+assert_(abs(norm(x) - 2.0) < 1.0e-8, "Solution of arls() is wrong.")
 
-print()
-print("Test 9")
-print("demo autosolve_rising with wiggly solution")
+# test arlsnn with impossible problem
+A = np.eye(3)
+b = np.ones(3)
+b = -b
+x = arlsnn(A, b)
+assert_(norm(x) == 0.0, "Solution of arls() is  incorrectly non-zero.")
 
-for m in (15, 25):
-    n = m
-    A = np.zeros((m, n))
-    b = np.zeros(m)
-    truex = np.zeros(n)
-    for i in range(0, m):
-        s = 1.5 * float(i) / float(m - 1)
-        for j in range(0, n):
-            t = 1.5 * float(j) / float(n - 1)
-            A[i, j] = np.exp(-(s - t) * (s - t))
-    for i in range(0, n):
-        truex[i] = 0.75 * float(i) + np.sin(float(i))
-    b = A @ truex
-    x = autosolve_rising(A, b)[0]
-    print("autosolve_rising solution")
-    print(x)
-    #plt.plot(truex)
-    #plt.show()
-    #plt.plot(x)
-    #plt.show()
+# TEST UTILITY ROUTINES
 
-print()
-print("Test 10")
-print("test two-norm for tiny arrays")
-b=np.ones(2)
-print(two_norm(b))
-b=np.ones(1)
-print(two_norm(b))
-b=np.ones(0)
-print(two_norm(b))
-#2345678901234567890123456789012345678901234567890123456789012345678901234567890
-'''
-Test 1
-call autosolve with 0-dimensions
-[1.]
-call autosolve_nonneg with 0-dimensions
-[0.]
-call autosolve_rising with 0-dimensions
-1.0
+# assure decide_width is working for large n
+k = decide_width(2)
+assert_(k == 1, "Algorithm in decide_width has changed.")
+k = decide_width(5)
+assert_(k == 2, "Algorithm in decide_width has changed.")
+k = decide_width(12)
+assert_(k == 4, "Algorithm in decide_width has changed.")
+k = decide_width(30)
+assert_(k == 6, "Algorithm in decide_width has changed.")
+k = decide_width(50)
+assert_(k == 8, "Algorithm in decide_width has changed.")
+k = decide_width(80)
+assert_(k == 10, "Algorithm in decide_width has changed.")
+k = decide_width(150)
+assert_(k == 14, "Algorithm in decide_width has changed.")
 
-Test 2
-test all three solvers for zero-dimensional matrix
-call autosolve with 1 row
-[0.85714286 1.71428571 2.57142857]
-call autosolve_nonneg with 1 row
-[0. 0. 0.]
-call autosolve_rising with 1 row
--1.0
+# test splita()
+g = np.array([1.0, 1.0, 0.0, 20.0])
+ans = np.array([1, 2, 3, 3])
+r = np.zeros(4)
+for i in range(1, 5):
+    r[i - 1] = splita(i, g)
+assert_array_almost_equal_nulp(r, ans, 10)
 
-Test 3
-call autosolve with 1-column
-[[3.]]
-call autosolveNN with 1-column
-[0.]
-call autosolve_rising with 1 column
-[3.]
-
-Test 4
-six tests to check all zeros input
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-(array([0., 0., 0.]), 0, 0.0, 0.0)
-
-Test 5
-test with real zero singular value.
-[1. 0. 0.]
-
-Test 6
-see if nonneg handles a problem that is trivially nonneg.
-1.0000000000000009
-1.0000000000000009
-
-Test 7
-demo autosolve on three different matix sizes
-autosolve solution for n=  5
-[1.0022663  1.96715913 3.1323387  2.80343516 2.09613139]
-autosolve solution for n=  7
-[1.01023617 1.8208179  3.56546253 3.79063197 3.44517575 2.94513422
- 2.44350035]
-autosolve solution for n=  25
-[ 1.02259448  1.58214106  4.38265186  3.64309312  3.77144851  4.95939886
-  6.67073887  8.46653312 10.09362302 11.43500288 12.45541031 13.16363538
- 13.58962851 13.77149077 13.7484734  13.55746903 13.23146872 12.79908993
- 12.28466072 11.70856972 11.08772108 10.43600845  9.7647646   9.08316711
-  8.39859361]
-
-Test 8
-demo nonnegative with inverse heat problem.
-autosolve_nonneg solution for n=  5
-[0.         0.         0.         1.67299927 1.90606466]
-autosolve_nonneg solution for n=  15
-[0.         0.         0.         0.         2.09213789 7.18369773
- 7.57157313 5.98075872 4.4569618  4.01516893 4.59550375 5.30308821
- 4.83678217 1.97247424 0.        ]
-
-Test 9
-demo autosolve_rising with wiggly solution
-autosolve_rising solution
-[-1.98734984e-03  1.60382527e+00  2.38381726e+00  2.38381726e+00
-  2.38381726e+00  2.47464790e+00  4.58972561e+00  5.66370084e+00
-  7.08571870e+00  7.08571870e+00  7.08571870e+00  7.11709151e+00
-  8.53944877e+00  1.01465884e+01  1.14937508e+01]
-autosolve_rising solution
-[7.01073301e-03 1.57132601e+00 2.40680970e+00 2.40680970e+00
- 2.40680970e+00 2.40680970e+00 4.36897617e+00 6.34754874e+00
- 6.34754874e+00 7.32014107e+00 7.32014107e+00 7.32014107e+00
- 7.32014107e+00 1.13513111e+01 1.13513111e+01 1.16445585e+01
- 1.16445585e+01 1.16445585e+01 1.35049269e+01 1.35049269e+01
- 1.64484244e+01 1.64484244e+01 1.64484244e+01 1.64484244e+01
- 1.70841648e+01]
-
-Test 10
-test two-norm for tiny arrays
-1.4142135623730951
-1.0
-0.0
-'''
+# test splitb()
+g = np.array([1.0, 0.1, 0.01, 0.1, 1.0, 10.0])
+ans = np.array([1, 2, 3, 4, 4, 4])
+r = np.zeros(6)
+for i in range(1, 7):
+    r[i - 1] = splitb(i, g)
+assert_array_almost_equal_nulp(r, ans, 10)
