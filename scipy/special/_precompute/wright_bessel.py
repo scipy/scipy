@@ -13,6 +13,7 @@ try:
     import sympy
     from sympy import EulerGamma, Rational, S, Sum, \
         factorial, gamma, gammasimp, pi, polygamma, symbols, zeta
+    from sympy.polys.polyfuncs import horner
 except ImportError:
     pass
 
@@ -39,8 +40,8 @@ def series_small_a():
         x_part *= (-1)**n
 
         A.append(a**n/factorial(n))
-        X.append(x_part)
-        B.append((term/x_part).simplify())
+        X.append(horner(x_part))
+        B.append(horner((term/x_part).simplify()))
 
     s = "Tylor series expansion of Phi(a, b, x) in a=0 up to order 5.\n"
     s += "Phi(a, b, x) = exp(x)/gamma(b) * sum(A[i] * X[i] * B[i], i=0..5)\n"
@@ -113,7 +114,7 @@ def series_small_a_small_b():
                        )
 
         A.append(a**n/factorial(n))
-        X.append(x_part)
+        X.append(horner(x_part))
         B.append(pg_part)
 
     # Calculate C and put in the k!

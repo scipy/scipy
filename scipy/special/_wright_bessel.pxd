@@ -22,6 +22,9 @@ from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
 
+cdef extern from "cephes/polevl.h":
+    double polevl(double x, const double coef[], int N) nogil
+
 cdef extern from "_c99compat.h":
     int sc_isnan(double x) nogil
     int sc_isinf(double x) nogil
@@ -115,21 +118,29 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
     """3. Taylor series in a=0 up to order 5, for tiny a and not too large x
 
     Phi(a, b, x) = exp(x)/Gamma(b)
-                   * (1 - a*x * Psi(b) + a^2/2*x*(1+x) * (Psi(b)^2 - Psi'(b))
-                   + O(a^3))
+                   * (1 - a*x * Psi(b) + a^2/2*x*(1+x) * (Psi(b)^2 - Psi'(b)
+                      + ... )
+                   + O(a^6))
 
     where Psi is the digamma function.
+
+    Parameter order takes effect only when b > 1e-3 and 2 <= order <= 5,
+    otherwise it defaults to 2 or, if b <= 1e-3, to 5. The lower order is, the
+    less polygamma functions have to be computed.
+
     Call: python _precompute/wright_bessel.py 1
 
-    For small b, cancellation of poles of digamma(b)/Gamma(b) and polygamma
-    needs to be carried out => series expansion in a and b around 0 to order 5.
+    For small b, i.e. b <= 1e-3, cancellation of poles of digamma(b)/Gamma(b)
+    and polygamma needs to be carried out => series expansion in a=0 to order 5
+    and in b=0 to order 4.
     Call: python _precompute/wright_bessel.py 2
     """
     cdef:
-        double dg, dg1, dg2, dg3, x2, x3, x4, res
-        double A[6]  # powers of a^k/k!
-        double B[5]  # powers of b^k/k!
-        double C[5]  # coefficients of a^k1 * b^k2
+        double dg, pg1, pg2, pg3, pg4, res
+        double A[6]  # coefficients of a^k  (1, -x * Psi(b), ...)
+        double B[6]  # powers of b^k/k! or terms in polygamma functions
+        double C[6]  # coefficients of a^k1 * b^k2
+        double X[6]  # polynomials in x
         int k
 
     if b <= 1e-3:
@@ -147,36 +158,66 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
         C[3] = -1.0080632408182857
         # C[4] = 5*M_EG**4 - 5*M_EG**2*M_PI**2 + 40*M_EG*M_Z3 + M_PI**4/12
         C[4] = 19.984633365874979
-        A[0] = 1.
+        X[0] = 1
+        X[1] = x
+        X[2] = x*(x + 1)
+        X[3] = x*(x*(x + 3) + 1)
+        X[4] = x*(x*(x*(x + 6) + 7) + 1)
+        X[5] = x*(x*(x*(x*(x + 10) + 25) + 15) + 1)
         B[0] = 1.
         for k in range(1, 5):
-            A[k] = a/k * A[k-1]
             B[k] = b/k * B[k-1]
-        A[5] = a/5*A[4]
-        x2 = x * x
-        x3 = x * x2
-        x4 = x * x3
-        res = rgamma(b)
-        res +=    a*x* (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
-        res += A[2]*x*(1+x) * (C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
-        res += A[3]*x*(x2 + 3*x + 1) * (C[2]      + C[3]*b    + C[4]*B[2])
-        res += A[4]*x*(x3 + 6*x2 + 7*x +1 ) *      (C[3]      + C[4]*b)
-        res += A[5]*x*(x4 + 10*x3 + 25*x2 + 15*x + 1) *         C[4]
-        res *= exp(x)
+        # Note that polevl assumes inverse ordering => A[5] = 0th term
+        A[5] = rgamma(b)
+        A[4] = x         * (C[0] + C[1]*b + C[2]*B[2] + C[3]*B[3] + C[4]*B[4])
+        A[3] = X[2]/2.   *        (C[1]   + C[2]*b    + C[3]*B[2] + C[4]*B[3])
+        A[2] = X[3]/6.   *                 (C[2]      + C[3]*b    + C[4]*B[2])
+        A[1] = X[4]/24.  *                             (C[3]      + C[4]*b)
+        A[0] = X[5]/120. *                                          C[4]
+        res = exp(x) * polevl(a, A, 5)
+        #res = exp(x) * (A[5] + A[4] * a + A[3] * a**2 + A[2] * a**3)
     else:
+        # Phi(a, b, x) = exp(x)/gamma(b) * sum(A[i] * X[i] * B[i], i=0..5)
+        # A[n] = a^n/n!
+        # But here, we repurpose A[n] = X[n] * B[n] / n!
+        # Note that polevl assumes inverse ordering => A[order] = 0th term
         dg = digamma(b)
-        # dg1 = polygamma(1, b)
-        dg1 = zeta(2, b)
-        res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - dg1))
-        if order >= 3:
-            # dg2 = polygamma(2, b)
-            dg2 = -2. * zeta(3, b)
-            res += -a**3/6. * x*(x**2 + 3*x + 1)*(dg**3 - 3*dg*dg1 + dg2)
-        if order >= 4:
-            # dg3 = polygamma(3, b)
-            dg3 =  6 * zeta(4, b)
-            res += a**4/24. * x*(x**3 + 6*x**2 + 7*x + 1) \
-                   *(dg**4 - 6*dg**2*dg1 + 4*dg*dg2 + 3*dg1**2 - dg3)
+        # pg1 = polygamma(1, b)
+        pg1 = zeta(2, b)
+        if order <= 2:
+            res = 1 + a*x*(-dg + 0.5*a*(1 + x)*(dg**2 - pg1))
+        else:
+            if order > 5:
+                order = 5
+            # pg2 = polygamma(2, b)
+            pg2 = -2 * zeta(3, b)
+            X[0] = 1
+            X[1] = x
+            X[2] = x*(x + 1)
+            X[3] = x*(x*(x + 3) + 1)
+            B[0] = 1
+            B[1] = -dg
+            B[2] = dg**2 - pg1
+            B[3] = (-dg**2 + 3*pg1)*dg - pg2
+            A[order] = 1
+            A[order-1] = X[1] * B[1]
+            A[order-2] = X[2] * B[2] / 2.
+            A[order-3] = X[3] * B[3] / 6.
+            if order >= 4:
+                # pg3 = polygamma(3, b)
+                pg3 =  6 * zeta(4, b)
+                X[4] = x*(x*(x*(x + 6) + 7) + 1)
+                B[4] = ((dg**2 - 6*pg1)*dg + 4*pg2)*dg + 3*pg1**2 - pg3
+                A[order-4] = X[4] * B[4] / 24.
+            if order >= 5:
+                # pg4 = polygamma(4, b)
+                pg4 = -24 * zeta(5, b)
+                X[5] = x*(x*(x*(x*(x + 10) + 25) + 15) + 1)
+                B[5] = ((((-dg**2 + 10*pg1)*dg - 10*pg2)*dg - 15*pg1**2
+                        + 5*pg3)*dg + 10*pg1*pg2 - pg4)
+                A[order-5] = X[5] * B[5] / 120.
+            res = polevl(a, A, order)
+
         # res *= exp(x) * rgamma(b)
         res *= _exp_rgamma(x, b)
     return res
@@ -791,24 +832,40 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
     elif a == 0:
         # return exp(x) * rgamma(b)
         return _exp_rgamma(x, b)
-    elif (a <= 1e-3 and x <= 1) \
-        or (a <= 1e-4 and x <= 10) \
-        or (a <= 1e-5 and x <= 100) \
-        or (a <= 1e-6 and x < exp_inf):
-        # Taylor Series expansion in 'a=0' to order=order => precision <~ 1e-13
-        # If beta is also small => precision <~ 2e-14.
-        # max order = 4
-        # a <= 1e-5 and x <= 1    : order = 2
-        # a <= 1e-4 and x <= 1    : order = 3
-        # a <= 1e-3 and x <= 1    : order = 4
-        # a <= 1e-6 and  x <= 10  : order = 2
-        # a <= 1e-5 and  x <= 10  : order = 3
-        # a <= 1e-6 and  x <= 10  : order = 4
-        # a <= 1e-7 and  x <= 100 : order = 2
-        # a <= 1e-7 and  x <= 100 : order = 2
-        # a <= 1e-6 and  x <= 100 : order = 3
-        # a <= 1e-5 and  x <= 100 : order = 4
-        order = int(7.5 + log10(a*x))
+    elif (a <= 1e-3 and b <= 50 and x <= 9) \
+        or (a <= 1e-4 and b <= 70 and x <= 100) \
+        or (a <= 1e-5 and b <= 170 and x < exp_inf):
+        # Taylor Series expansion in a=0 to order=order => precision <= 1e-11
+        # If beta is also small => precision <= 1e-11.
+        # max order = 5
+        if a <= 1e-5:
+            if x <= 1:
+                order = 2
+            elif x <= 10:
+                order = 3
+            elif x <= 100:
+                order = 4
+            else:  # x < exp_inf:
+                order = 5
+        elif a <= 1e-4:
+            if x <= 1e-2:
+                order = 2
+            elif x <= 1:
+                order = 3
+            elif x <= 10:
+                order = 4
+            else:  # x <= 100
+                order = 5
+        else:  # a <= 1e-3
+            if x <= 1e-5:
+                order = 2
+            elif x <= 1e-1:
+                order = 3
+            elif x <= 1:
+                order = 4
+            else:  # x <= 9
+                order = 5
+
         return _wb_small_a(a, b, x, order=order)
     elif x <= 1:
         # 18 term Taylor Series => error mostly smaller 5e-14

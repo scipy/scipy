@@ -55,6 +55,7 @@ def main():
     x_range = np.array([0, eps, 1 - eps, 1, 1 + eps,
                         1.5,
                         2 - eps, 2, 2 + eps,
+                        9 - eps, 9, 9 + eps,
                         10 * (1 - eps), 10, 10 * (1 + eps),
                         100 * (1 - eps), 100, 100 * (1 + eps),
                         500,
