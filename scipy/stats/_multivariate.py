@@ -4080,7 +4080,7 @@ class multivariate_t_gen(multi_rv_generic):
         if df == np.inf:
             return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
 
-        dev  = x - loc
+        dev = x - loc
         maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
 
         t = 0.5 * (df + dim)
