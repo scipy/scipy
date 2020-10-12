@@ -821,12 +821,9 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
             return inf
     elif sc_isinf(a) or sc_isinf(b):
         return nan  # or 0
-    elif b >= rgamma_zero:
+    elif a >= rgamma_zero or b >= rgamma_zero:
         sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)
-        return nan # or 0
-    elif a >= rgamma_zero:
-        # Use only first term k=0 of Taylor series.
-        return rgamma(b)
+        return nan
     elif x == 0:
         return rgamma(b)
     elif a == 0:
