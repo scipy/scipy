@@ -5330,22 +5330,29 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> result.pvalue
     array([[4.99613833e-01, 9.65686743e-01],
            [7.89094663e-03, 1.49986458e-04]])
-
-
     """
-    a, axis = _chk_asarray(a, axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
+    # Check if passed `a` is masked/contains nan and setup appropriately
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis)
+        n = a.count(axis)
+    elif isinstance(a, np.ma.MaskedArray):
+        a = ma.asanyarray(a)
+        n = a.count(axis)
+    else:
+        a, axis = _chk_asarray(a, axis)
+        n = a.shape[axis]
 
-    n = a.shape[axis]
     df = n - 1
 
-    d = np.mean(a, axis) - popmean
-    v = np.var(a, axis, ddof=1)
+    # a.mean and a.var throw warnings with empty arrays - ignore them.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        d = a.mean(axis=axis) - popmean
+        v = a.var(axis=axis, ddof=1)
+
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
