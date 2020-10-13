@@ -20,21 +20,12 @@ from scipy.stats._multivariate import (_PSD,
                                        _lnB, 
                                        _cho_inv_batch, 
                                        multivariate_normal_frozen)
-from scipy.stats import multivariate_normal
-from scipy.stats import multivariate_hypergeom
-from scipy.stats import matrix_normal
-from scipy.stats import special_ortho_group, ortho_group
-from scipy.stats import random_correlation
-from scipy.stats import unitary_group
-from scipy.stats import dirichlet, beta
-from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
-from scipy.stats import norm, uniform
-from scipy.stats import ks_2samp, kstest
-from scipy.stats import binom
-from scipy.stats import hypergeom
-from scipy.stats import multivariate_t
-from scipy.stats import cauchy
-from scipy.stats import normaltest
+from scipy.stats import (multivariate_normal, multivariate_hypergeom,
+                         matrix_normal, special_ortho_group, ortho_group,
+                         random_correlation, unitary_group, dirichlet,
+                         beta, wishart, multinomial, invwishart, chi2,
+                         invgamma, norm, uniform, ks_2samp, kstest, binom,
+                         hypergeom, multivariate_t, cauchy, normaltest)
 
 from scipy.integrate import romb
 from scipy.special import multigammaln
@@ -1877,48 +1868,35 @@ class TestMultivariateT:
 
 
 class TestMultivariateHypergeom(object):
-    def test_logpmf(self):
-        # Ground truth value from R dmvhyper
-        vals1 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=7)
-        assert_allclose(vals1, -1.119814, rtol=1e-6)
-
-        # test for `n=0`
-        vals2 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=0)
-        assert_equal(vals2, np.NINF)
-
-        # test for `x < 0`
-        vals3 = multivariate_hypergeom.logpmf(x=[-3, 4], m=[5, 10], n=7)
-        assert_equal(vals3, np.NINF)
-
-        # test for `m < 0` (RuntimeWarning issue)
-        vals4 = multivariate_hypergeom.logpmf(x=[3, 4], m=[-5, 10], n=7)
-        assert_equal(vals4, np.nan)
-
-        # test for all `m < 0` and `x.sum() != n`
-        vals5 = multivariate_hypergeom.logpmf(x=[[1, 2], [3, 4]],
-                                              m=[[-4, -6], [-5, -10]],
-                                              n=[3, 7])
-        assert_equal(vals5, [np.nan, np.nan])
-
-        # test for `x < 0` and `m < 0` (RuntimeWarning issue)
-        vals6 = multivariate_hypergeom.logpmf(x=[-3, 4], m=[-5, 10], n=1)
-        assert_equal(vals6, np.nan)
-
-        # test for `x > m`
-        vals7 = multivariate_hypergeom.logpmf(x=[1, 11], m=[10, 1], n=12)
-        assert_equal(vals7, np.nan)
-
-        # test for `m < 0` (RuntimeWarning issue)
-        vals8 = multivariate_hypergeom.logpmf(x=[1, 11], m=[10, -1], n=12)
-        assert_equal(vals8, np.nan)
-
-        # test for `n < 0`
-        vals9 = multivariate_hypergeom.logpmf(x=[3, 4], m=[5, 10], n=-7)
-        assert_equal(vals9, np.nan)
-
-        # test for `x.sum() != n`
-        vals10 = multivariate_hypergeom.logpmf(x=[3, 3], m=[5, 10], n=7)
-        assert_equal(vals10, np.NINF)
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            # Ground truth value from R dmvhyper
+            ([3, 4], [5, 10], 7, -1.119814),
+            # test for `n=0`
+            ([3, 4], [5, 10], 0, np.NINF),
+            # test for `x < 0`
+            ([-3, 4], [5, 10], 7, np.NINF),
+            # test for `m < 0` (RuntimeWarning issue)
+            ([3, 4], [-5, 10], 7, np.nan),
+            # test for all `m < 0` and `x.sum() != n`
+            ([[1, 2], [3, 4]], [[-4, -6], [-5, -10]],
+             [3, 7], [np.nan, np.nan]),
+            # test for `x < 0` and `m < 0` (RuntimeWarning issue)
+            ([-3, 4], [-5, 10], 1, np.nan),
+            # test for `x > m`
+            ([1, 11], [10, 1], 12, np.nan),
+            # test for `m < 0` (RuntimeWarning issue)
+            ([1, 11], [10, -1], 12, np.nan),
+            # test for `n < 0`
+            ([3, 4], [5, 10], -7, np.nan),
+            # test for `x.sum() != n`
+            ([3, 3], [5, 10], 7, np.NINF)
+        ]
+    )
+    def test_logpmf(self, x, m, n, expected):
+        vals = multivariate_hypergeom.logpmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-6)
 
     def test_reduces_hypergeom(self):
         # test that the multivariate_hypergeom pmf reduces to the
@@ -1954,46 +1932,39 @@ class TestMultivariateHypergeom(object):
         rvs_np = rng_np.multivariate_hypergeometric([3, 5], 4, size=100)
         assert_equal(rvs_sc, rvs_np)
 
-    def test_pmf(self):
-        vals0 = multivariate_hypergeom.pmf(x=[5], m=[5], n=5)
-        assert_allclose(vals0, 1, rtol=1e-8)
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            ([5], [5], 5, 1),
+            ([3, 4], [5, 10], 7, 0.3263403),
+            # Ground truth value from R dmvhyper
+            ([[[3, 5], [0, 8]], [[-1, 9], [1, 1]]],
+             [5, 10], [[8, 8], [8, 2]],
+             [[0.3916084, 0.006993007], [0, 0.4761905]]),
+            # test with empty arrays.
+            (np.empty((0, 2), dtype=np.float64),
+             [4], 0, np.empty([], dtype=np.float64)),
+            ([1, 2], [4, 5], 5, 0),
+            # Ground truth value from R dmvhyper
+            ([3, 3, 0], [5, 6, 7], 6, 0.01077354)
+        ]
+    )
+    def test_pmf(self, x, m, n, expected):
+        vals = multivariate_hypergeom.pmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-7)
 
-        vals1 = multivariate_hypergeom.pmf(x=[3, 4], m=[5, 10], n=7)
-        # Ground truth value from R dmvhyper
-        assert_allclose(vals1, 0.3263403, rtol=1e-7)
-
-        vals2 = multivariate_hypergeom.pmf(x=[[[3, 5], [0, 8]],
-                                              [[-1, 9], [1, 1]]],
-                                           m=[5, 10], n=[[8, 8], [8, 2]])
-        assert_allclose(vals2, [[0.3916084, 0.006993007], [0, 0.4761905]],
-                        rtol=1e-7)
-
-        x = np.empty((0, 2), dtype=np.float64)
-        vals3 = multivariate_hypergeom.pmf(x=x, m=[4], n=0)
-        assert_equal(vals3, np.empty([], dtype=np.float64))
-
-        vals4 = multivariate_hypergeom.pmf([1, 2], [4, 5], 5)
-        assert_allclose(vals4, 0, rtol=1e-8)
-
-        vals5 = multivariate_hypergeom.pmf(x=[3, 3, 0], m=[5, 6, 7], n=6)
-        assert_allclose(vals5, 0.01077354, rtol=1e-7)
-
-    def test_pmf_broadcasting(self):
-        vals0 = multivariate_hypergeom.pmf(x=[3, 4], m=[[5, 10], [10, 15]],
-                                           n=7)
-        assert_allclose(vals0, [0.3263403, 0.3407531], rtol=1e-7)
-
-        vals1 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[3], [4]],
-                                           n=[1, 3])
-        assert_allclose(vals1, [1., 0.], rtol=1e-8)
-
-        vals2 = multivariate_hypergeom.pmf(x=[[[1], [2]]], m=[[3], [4]],
-                                           n=[1, 3])
-        assert_allclose(vals2, [[1., 0.]], rtol=1e-8)
-
-        vals3 = multivariate_hypergeom.pmf(x=[[1], [2]], m=[[[[3]]]],
-                                           n=[1, 3])
-        assert_allclose(vals3, [[[1., 0.]]], rtol=1e-8)
+    @pytest.mark.parametrize(
+        "x, m, n, expected",
+        [
+            ([3, 4], [[5, 10], [10, 15]], 7, [0.3263403, 0.3407531]),
+            ([[1], [2]], [[3], [4]], [1, 3], [1., 0.]),
+            ([[[1], [2]]], [[3], [4]], [1, 3], [[1., 0.]]),
+            ([[1], [2]], [[[[3]]]], [1, 3], [[[1., 0.]]])
+        ]
+    )
+    def test_pmf_broadcasting(self, x, m, n, expected):
+        vals = multivariate_hypergeom.pmf(x, m, n)
+        assert_allclose(vals, expected, rtol=1e-7)
 
     def test_cov(self):
         cov1 = multivariate_hypergeom.cov(m=[3, 7, 10], n=12)

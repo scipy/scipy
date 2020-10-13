@@ -4495,8 +4495,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, n = M[~ncond], n[~ncond]
         num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))
         den[~ncond] = (betaln(M+1, 1) - betaln(n+1, M-n+1))
-        num[mxcond] = np.NAN
-        den[ncond] = np.NAN
+        num[mxcond] = np.nan
+        den[ncond] = np.nan
         num = num.sum(axis=-1)
         return num - den
 
@@ -4535,7 +4535,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # replace values bad for n or m; broadcast
         # mncond to the right shape
         mncond_ = mncond | np.zeros(xcond_reduced.shape, dtype=np.bool_)
-        return self._checkresult(result, mncond_, np.NAN)
+        return self._checkresult(result, mncond_, np.nan)
 
     def pmf(self, x, m, n):
         """
@@ -4575,7 +4575,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, _, _, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         mu = n*(m/M)
-        return self._checkresult(mu, mncond, np.NAN)
+        return self._checkresult(mu, mncond, np.nan)
 
     def var(self, m, n):
         """
@@ -4593,7 +4593,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         M, m, n, _, _, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
-        return self._checkresult(output, mncond, np.NAN)
+        return self._checkresult(output, mncond, np.nan)
 
     def cov(self, m, n):
         """
@@ -4622,7 +4622,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             output[..., i, i] = (n * (M-n)/(M-1) *
                                  m[..., i]*(M-m[..., i]) / (M**2))
 
-        return self._checkresult(output, mncond, np.NAN)
+        return self._checkresult(output, mncond, np.nan)
 
     def rvs(self, m, n, size=1, random_state=None):
         """
