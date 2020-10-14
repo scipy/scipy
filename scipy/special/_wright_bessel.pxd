@@ -733,27 +733,30 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
         double *A = [0.41037, 0.30833, 6.9952, 18.382, -2.8566, 2.1122]
 
     # We use the free choice of eps to make the integral better behaved.
-    # 1. Concern is int_0 K ~ int_0 (r+eps)^(-b) .. dr
-    #    This is difficult as r -> 0  for large b. It behaves better for larger
-    #    values of eps.
-    # 2. Concern is oscillatory behaviour of P. Therefore, we'd like to
+    # 1. Concern is oscillatory behaviour of P. Therefore, we'd like to
     #    make the change in the argument of cosine small, i.e. make arc length
     #    int_0^phi sqrt(1 + f'(phi)^2) dphi small, with
     #    f(phi) = eps * sin(phi) - x * eps^(-a) * sin(a*phi) + (1-b)*phi
     #    Proxy, make |f'(phi)| small.
+    # 2. Concern is int_0 K ~ int_0 (r+eps)^(-b) .. dr
+    #    This is difficult as r -> 0  for large b. It behaves better for larger
+    #    values of eps.
+
+    # Minimize oscillatory behaviour of P
+    eps = (A[0] * b * exp(-0.5 * a)
+           + exp(A[1] + 1 / (1 + a) * log(x) - A[2] * exp(-A[3] * a)
+                 + A[4] / (1 + exp(A[5] * a))))
+    if a >= 4 and x >= 100:
+        eps += 1  # This part is hard to fit.
+
+    # Large b
     if b >= 8:
         # Make P small compared to K by setting eps large enough.
         # int K ~ exp(-eps) and int P ~ eps^(1-b)
-        eps = pow(b, -b / (1. - b))
-    else:
-        # Minimize oscillatory behaviour of P.
-        eps = (A[0] * b * exp(-0.5 * a)
-               + exp(A[1] + 1 / (1 + a) * log(x) - A[2] * exp(-A[3] * a)
-                     + A[4] / (1 + exp(A[5] * a))))
-        if a >= 4 and x >= 100:
-            eps += 1  # This part is hard to fit.
+        eps = max(eps, pow(b, -b / (1. - b)) + 0.1 * b)
+
     # safeguard, higher better for larger a, lower better for tiny a.
-    eps = min(eps, 100.)
+    eps = min(eps, 150.)
     eps = max(eps, 3.)  # Note: 3 seems to be a pretty good choice in general.
 
     res1 = 0
@@ -889,7 +892,7 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
                 order = int(fmin(6 * log10(x) - 36, 100))
 
         return _wb_large_a(a, b, x, order)
-    elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (10 * (1 + a))):
+    elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (2 * (1 + a))):
         # Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
         # For 1/Z^k, the highest term in b is b^(2*k) * a0 / (2^k k! (1+a)^k).
         # As a0 is a common factor to all orders, this explains a bit the
