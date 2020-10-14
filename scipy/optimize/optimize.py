@@ -2936,6 +2936,8 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             if (fx2 - fval) > delta:
                 delta = fx2 - fval
                 bigind = i
+            if fcalls[0] >= maxfun:
+                break
         iter += 1
         if callback is not None:
             callback(x)
