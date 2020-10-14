@@ -892,6 +892,8 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
                 order = int(fmin(6 * log10(x) - 36, 100))
 
         return _wb_large_a(a, b, x, order)
+    elif (0.5 <= a) & (a <= 1.8) & (100 <= b) & (1e5 <= x):
+        return nan
     elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (2 * (1 + a))):
         # Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
         # For 1/Z^k, the highest term in b is b^(2*k) * a0 / (2^k k! (1+a)^k).
