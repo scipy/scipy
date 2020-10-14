@@ -49,20 +49,23 @@ def main():
     a_range = np.array([eps,
                         1e-4 * (1 - eps), 1e-4, 1e-4 * (1 + eps),
                         1e-3 * (1 - eps), 1e-3, 1e-3 * (1 + eps),
+                        0.1, 0.5,
                         1 * (1 - eps), 1, 1 * (1 + eps),
-                        2, 4.999, 5, 10])
-    b_range = np.array([0, eps, 1e-10, 1e-5, 0.1, 1, 2, 10, 100])
+                        1.5, 2, 4.999, 5, 10])
+    b_range = np.array([0, eps, 1e-10, 1e-5, 0.1, 1, 2, 10, 20, 100])
     x_range = np.array([0, eps, 1 - eps, 1, 1 + eps,
                         1.5,
                         2 - eps, 2, 2 + eps,
                         9 - eps, 9, 9 + eps,
                         10 * (1 - eps), 10, 10 * (1 + eps),
                         100 * (1 - eps), 100, 100 * (1 + eps),
-                        500,
-                        exp_inf,
-                        1e3, 1e5, 1e10, 1e20])
+                        500, exp_inf, 1e3, 1e5, 1e10, 1e20])
 
-    a_range, b_range, x_range = np.meshgrid(a_range, b_range, x_range)
+    a_range, b_range, x_range = np.meshgrid(a_range, b_range, x_range,
+                                            indexing='ij')
+    a_range = a_range.flatten()
+    b_range = b_range.flatten()
+    x_range = x_range.flatten()
 
     # filter out some values, especially too large x
     bool_filter = ~((a_range < 5e-3) & (x_range >= exp_inf))
@@ -90,30 +93,73 @@ def main():
 
     # filter out known values that do not meet the required numerical accuracy
     # see test test_wright_data_grid_failures
-    bool_filter = bool_filter & ~((np.abs(a_range - 1) <= 1e-3)
-                                  & (b_range == 10) & (x_range >= 500))
-    bool_filter = bool_filter & ~((a_range == 1) & (b_range == 100)
-                                  & (x_range >= 100000))
-    bool_filter = bool_filter & ~((a_range >= 1) & (a_range <= 2)
-                                  & (b_range == 100) & (x_range >= 100000))
+    failing = np.array([
+        [0.1, 10, 500],
+        [0.1, 10, 709.7827128933841],
+        [0.1, 100, 500],
+        [0.1, 100, 709.7827128933841],
+        [0.5, 10, 500],
+        [0.5, 10, 709.7827128933841],
+        [0.5, 10, 1000],
+        [0.5, 20, 709.7827128933841],
+        [0.5, 20, 1000],
+        [0.5, 100, 500],
+        [0.5, 100, 709.7827128933841],
+        [0.5, 100, 1000],
+        [0.9999999999999778, 10, 500],
+        [0.9999999999999778, 10, 709.7827128933841],
+        [0.9999999999999778, 10, 1000],
+        [1, 10, 500],
+        [1, 10, 709.7827128933841],
+        [1, 10, 1000],
+        [1, 20, 100000],
+        [1, 100, 100000],
+        [1.0000000000000222, 10, 500],
+        [1.0000000000000222, 10, 709.7827128933841],
+        [1.0000000000000222, 10, 1000],
+        [1.0000000000000222, 20, 100000],
+        [1.0000000000000222, 100, 100000],
+        [1.5, 0, 500],
+        [1.5, 2.220446049250313e-14, 500],
+        [1.5, 1.e-10, 500],
+        [1.5, 1.e-05, 500],
+        [1.5, 0.1, 500],
+        [1.5, 1, 500],
+        [1.5, 10, 1000],
+        [1.5, 20, 100000],
+        [1.5, 100, 100000],
+        [2, 20, 100000],
+        [2, 100, 100000]
+        ]).tolist()
 
-    # and flatten
-    a_range = a_range[bool_filter].flatten()
-    b_range = b_range[bool_filter].flatten()
-    x_range = x_range[bool_filter].flatten()
+    does_fail = np.full_like(a_range, False, dtype=bool)
+    for i in range(x_range.size):
+        if [a_range[i], b_range[i], x_range[i]] in failing:
+            does_fail[i] = True
+
+    # filter and flatten
+    a_range = a_range[bool_filter]
+    b_range = b_range[bool_filter]
+    x_range = x_range[bool_filter]
+    does_fail = does_fail[bool_filter]
 
     dataset = []
     print(f"Computing {x_range.size} single points.")
+    print("Tests will fail for the following data points:")
     for i in range(x_range.size):
-        a = a_range.flatten()[i]
-        b = b_range.flatten()[i]
-        x = x_range.flatten()[i]
+        a = a_range[i]
+        b = b_range[i]
+        x = x_range[i]
         # take care of difficult corner cases
         maxterms = 1000
         if a < 1e-6 and x >= exp_inf/10:
             maxterms = 2000
         f = mp_wright_bessel(a, b, x, maxterms=maxterms)
-        dataset.append((a, b, x, f))
+        if does_fail[i]:
+            print("failing data point a, b, x, value = "
+                  f"[{a}, {b}, {x}, {f}]")
+        else:
+            dataset.append((a, b, x, f))
     dataset = np.array(dataset)
 
     filename = os.path.join(pwd, '..', 'tests', 'data', 'local',

@@ -623,9 +623,9 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
                                + (1-b)*phi)
 
     Phi(a, b, x) = 1/pi * int_eps^inf K(a, b, x, r) * dr
-                 + eps^(1-b)/pi * int_0^pi    P(eps, a, b, x, phi) * dphi
+                 + eps^(1-b)/pi * int_0^pi P(eps, a, b, x, phi) * dphi
 
-                 for any eps > 0.
+    for any eps > 0.
 
     Note that P has a misprint in Luchko (2008).
     This integral representation introduced the free parameter eps (from the
@@ -890,10 +890,10 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
 
         return _wb_large_a(a, b, x, order)
     elif (pow(a * x, 1 / (1. + a)) >= 14 + b * b / (10 * (1 + a))):
-        # asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8
-        # for 1/Z^k, the highest term in b is: b^(2*k) * a0 / (2^k k! (1+a)^k)
-        # as a0 is a common factor to all orders, this explains the domain
-        # of good convergence set above.
+        # Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
+        # For 1/Z^k, the highest term in b is b^(2*k) * a0 / (2^k k! (1+a)^k).
+        # As a0 is a common factor to all orders, this explains a bit the
+        # domain of good convergence set above.
         # => precision ~ 1e-11 but can go down to ~1e-8 or 1e-7
         # Note: We ensured a <= 5 as this is a bad approximation for large a.
         return _wb_asymptotic(a, b, x)
