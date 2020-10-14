@@ -550,6 +550,9 @@ class TestExpM(object):
 
         assert_allclose(E1, E2)
 
+    def test_expm_on_matrix_sequence(self):
+        A = [matrix([[0.,0],[0,0]]) for _ in range(3)]
+        assert_array_almost_equal(expm(A), [[[1,0],[0,1]] for _ in range(3)])
 
 class TestOperators(object):
 
