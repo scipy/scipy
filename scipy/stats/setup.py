@@ -28,6 +28,18 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # add levy stable module
+    config.add_library(
+        'levyst',
+        sources=[join('_levy_stable/c_src', 'levyst.c')],
+        headers=[join('_levy_stable/c_src', 'levyst.h')]
+    )
+    config.add_data_files(join('_levy_stable', '*.pxd'))
+    config.add_extension(
+        '_levy_stable.levyst',
+        libraries=['levyst'],
+        sources=[join('_levy_stable', 'levyst.c')])
+
     return config
 
 
