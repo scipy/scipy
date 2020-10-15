@@ -221,8 +221,8 @@ before_install:
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
             # Install these only when not using Numpy prerelease
-            travis_retry pip install numba==0.49.1
-            travis_retry pip install --only-binary=:all: sparse
+            travis_retry pip install numba==0.47
+            travis_retry pip install --only-binary=:all: sparse==0.9.1
         fi
     fi
   - |

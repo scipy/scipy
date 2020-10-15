@@ -15,7 +15,9 @@ from numpy.polynomial.polynomial import polyval as npp_polyval
 from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
-from scipy.special import comb, factorial
+from scipy.special import comb
+from scipy._lib._util import float_factorial
+import math
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -4363,7 +4365,7 @@ def _bessel_poly(n, reverse=False):
     out = []
     for k in range(n + 1):
         num = _falling_factorial(2*n - k, n)
-        den = 2**(n - k) * factorial(k, exact=True)
+        den = 2**(n - k) * math.factorial(k)
         out.append(num // den)
 
     if reverse:
