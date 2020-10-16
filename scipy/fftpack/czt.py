@@ -29,7 +29,7 @@ import cmath
 import numpy as np
 from numpy import pi, arange
 from scipy.fftpack import fft, ifft
-from scipy.fftpack.helper import _next_opt_len
+from scipy.fftpack.helper import next_fast_len
 
 __all__ = ['czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
 
@@ -209,7 +209,7 @@ class CZT:
         self.w, self.a = w, a
         self.m, self.n = m, n
 
-        nfft = _next_opt_len(n + m - 1)
+        nfft = next_fast_len(n + m - 1)
         self._Awk2 = (a**-k * wk2)[:n]
         self._nfft = nfft
         self._Fwk2 = fft(1/np.hstack((wk2[n-1:0:-1], wk2[:m])), nfft)
@@ -328,7 +328,7 @@ class ZoomFFT(CZT):
         self.w, self.a = w, a
         self.m, self.n = m, n
 
-        nfft = _next_opt_len(n + m - 1)
+        nfft = next_fast_len(n + m - 1)
         self._Awk2 = (a**-k * wk2)[:n]
         self._nfft = nfft
         self._Fwk2 = fft(1/np.hstack((wk2[n-1:0:-1], wk2[:m])), nfft)
