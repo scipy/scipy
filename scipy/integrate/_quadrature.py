@@ -28,7 +28,8 @@ def _copy_func(f):
 
 trapezoid = _copy_func(trapezoid)
 if trapezoid.__doc__:
-    trapezoid.__doc__ = trapezoid.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+    trapezoid.__doc__ = trapezoid.__doc__.replace(
+        'sum, cumsum', 'numpy.cumsum')
 
 
 # Note: alias kept for backwards compatibility. Rename was done

@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 
 from scipy.integrate import quad_vec
 
-quadrature_params = pytest.mark.parametrize('quadrature',
-                                            [None, "gk15", "gk21", "trapezoid"])
+quadrature_params = pytest.mark.parametrize(
+    'quadrature', [None, "gk15", "gk21", "trapezoid"])
 
 
 @quadrature_params
