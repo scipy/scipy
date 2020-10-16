@@ -6053,7 +6053,9 @@ class pearson3_gen(rv_continuous):
             self._preprocess(x, skew))
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
-        ans[invmask] = np.log(abs(beta)) + gamma._logpdf(transx, alpha)
+        # use logpdf instead of _logpdf to fix bug mentioned in gh-12640
+        # (_logpdf does not return correct result for alpha = -1)
+        ans[invmask] = np.log(abs(beta)) + gamma.logpdf(transx, alpha)
         return ans
 
     def _cdf(self, x, skew):
@@ -6064,6 +6066,8 @@ class pearson3_gen(rv_continuous):
 
         invmask1a = np.logical_and(invmask, skew > 0)
         invmask1b = skew[invmask] > 0
+        # use cdf instead of _cdf to fix bug mentioned in gh-12640
+        # (_cdf produces NaNs for inputs outside support)
         ans[invmask1a] = gamma.cdf(transx[invmask1b], alpha[invmask1b])
 
         # The gamma._cdf approach wasn't working with negative skew.
