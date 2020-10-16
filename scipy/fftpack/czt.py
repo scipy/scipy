@@ -25,10 +25,7 @@ zoomfft : array
    compute the Fourier transform on a range of frequencies
 """
 
-from __future__ import division, absolute_import, print_function
-
 import cmath
-
 import numpy as np
 from numpy import pi, arange
 from scipy.fftpack import fft, ifft
@@ -110,7 +107,7 @@ def czt_points(m, w=None, a=1+0j):
         return a * w**-k
 
 
-class CZT(object):
+class CZT:
     """
     Create a chirp Z-transform function.
 
@@ -192,8 +189,8 @@ class CZT(object):
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(np.real(czt_7.points()), np.imag(czt_7.points()), 'o')
     >>> plt.show()
-
     """
+
     def __init__(self, n, m=None, w=None, a=1+0j):
         m = _validate_sizes(n, m)
 
@@ -307,8 +304,8 @@ class ZoomFFT(CZT):
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(f, 20*np.log10(np.abs(X)))
     >>> plt.show()
-
     """
+
     def __init__(self, n, fn, m=None, Fs=2):
         m = _validate_sizes(n, m)
 

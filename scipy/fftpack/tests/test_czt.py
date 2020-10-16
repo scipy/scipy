@@ -3,8 +3,6 @@
 '''
 A unit test module for czt.py
 '''
-from __future__ import division, absolute_import, print_function
-
 from numpy.testing import (run_module_suite, assert_, assert_allclose,
                            assert_raises, dec)
 from scipy.fftpack.czt import (czt, zoomfft, czt_points, CZT, ZoomFFT)
