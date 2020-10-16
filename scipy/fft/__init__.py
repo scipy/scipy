@@ -53,6 +53,26 @@ Fast Hankel Transforms
    fht - Fast Hankel transform
    ifht - Inverse of fht
 
+Chirp Z-transform (:mod:`scipy.fft.czt`)
+============================================
+
+.. module:: scipy.fft.czt
+
+.. autosummary::
+   :toctree: generated/
+
+   czt
+   zoomfft
+   scaledfft
+   CZT
+   ZoomFFT
+   ScaledFFT
+
+The functions are simpler to use, but less efficient, because they internally
+generate the same chirp signals with every call.  When using the same
+transform on multiple arrays of the same length, use the function-generating
+classes instead.
+
 Helper functions
 ================
 
@@ -92,6 +112,7 @@ from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 from ._pocketfft.helper import set_workers, get_workers
+from .czt import *
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',

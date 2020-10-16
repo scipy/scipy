@@ -28,8 +28,7 @@ zoomfft : array
 import cmath
 import numpy as np
 from numpy import pi, arange
-from scipy.fftpack import fft, ifft
-from scipy.fftpack.helper import next_fast_len
+from scipy.fft import fft, ifft, next_fast_len
 
 __all__ = ['czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
 
