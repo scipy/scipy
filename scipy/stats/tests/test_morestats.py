@@ -271,6 +271,9 @@ class TestAnderson(object):
         rs = RandomState(1234567890)
         x1 = rs.gumbel(size=100)
         x2 = np.ones(100)
+        # A constant array is a degenerate case and breaks gumbel_r.fit, so
+        # change one value in x2.
+        x2[0] = 0.996
         A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
         A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
 

@@ -955,7 +955,7 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
-class TestGumbel_r_l(object):
+class TestGumbel_r_l:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -968,8 +968,18 @@ class TestGumbel_r_l(object):
         args = [data, (dist._fitstart(data),)]
         func = dist._reduce_func(args, {})[1]
 
-        # test that gumbel_r fit method is better than super method
+        # test that the gumbel_* fit method is better than super method
         _assert_lessthan_loglike(dist, data, func)
+
+    @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
+                                           (stats.gumbel_l, -1)])
+    def test_fit(self, dist, sgn):
+        z = sgn*np.array([3, 3, 3, 3, 3, 3, 3, 3.00000001])
+        loc, scale = dist.fit(z)
+        # The expected values were computed with mpmath with 60 digits
+        # of precision.
+        assert_allclose(loc, sgn*3.0000000001667906)
+        assert_allclose(scale, 1.2495222465145514e-09, rtol=1e-6)
 
 
 class TestPareto(object):

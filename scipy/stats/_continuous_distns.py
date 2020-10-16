@@ -2927,6 +2927,14 @@ class gompertz_gen(rv_continuous):
 gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
+def _average_with_log_weights(x, logweights):
+    x = np.asarray(x)
+    logweights = np.asarray(logweights)
+    maxlogw = logweights.max()
+    weights = np.exp(logweights - maxlogw)
+    return np.average(x, weights=weights)
+
+
 class gumbel_r_gen(rv_continuous):
     r"""A right-skewed Gumbel continuous random variable.
 
@@ -2992,29 +3000,23 @@ class gumbel_r_gen(rv_continuous):
         loc = kwds.pop('loc', loc)
         scale = kwds.pop('scale', scale)
 
-        # By the method of maximum likelihood, the estimators `a` and `b` of
-        # the location and scale are the roots of the simultaneous
-        # equations described in `func`. Source: Statistical Distributions,
-        # 3rd Edition. Evans, Hastings, and Peacock (2000), Page 101
+        # By the method of maximum likelihood, the estimators of the
+        # location and scale are the roots of the equation defined in
+        # `func` and the value of the expression for `loc` that follows.
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 101
 
-        def func(vals, data):
-            a, b = vals
-            n = len(data)
-            exp_x_b = np.exp(-data / b)
-            sum_exp_x_b = np.sum(exp_x_b)
-            x1 = data.mean() - (np.dot(data, exp_x_b) / sum_exp_x_b) - b
-            x2 = - b * np.log(sum_exp_x_b / n) - a
-            return x1, x2
+        def func(scale, data):
+            sdata = -data / scale
+            wavg = _average_with_log_weights(data, logweights=sdata)
+            return data.mean() - wavg - scale
 
-        # some data with scale approaching zero cause invalid operations
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action='ignore',
-                                    category=RuntimeWarning)
-            soln = optimize.root(func, (loc, scale), args=(data,))
-            if soln.success:
-                return tuple(soln.x)
-            else:
-                return super(gumbel_r_gen, self).fit(data, *args, **kwds)
+        soln = optimize.root(func, scale, args=(data,),
+                             options={'xtol': 1e-14})
+        scale = soln.x[0]
+        loc = -scale * (sc.logsumexp(-data/scale) - np.log(len(data)))
+
+        return loc, scale
 
 
 gumbel_r = gumbel_r_gen(name='gumbel_r')
