@@ -1228,6 +1228,15 @@ def test_weightedtau():
     x = [12, 2, np.nan, 12, 2]
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
+    # NaNs when the dtype of x and y are all np.float64
+    x = [12.0, 2.0, 1.0, 12.0, 2.0]
+    y = [1.0, 4.0, 7.0, 1.0, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12.0, 2.0, np.nan, 12.0, 2.0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+
 
 def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
