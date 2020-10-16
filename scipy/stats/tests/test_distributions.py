@@ -3643,43 +3643,43 @@ class TestRdist(object):
                             stats.rdist(c).pdf(x))
 
 
-class TestTrapz(object):
+class TestTrapezoid(object):
     def test_reduces_to_triang(self):
         modes = [0, 0.3, 0.5, 1]
         for mode in modes:
             x = [0, mode, 1]
-            assert_almost_equal(stats.trapz.pdf(x, mode, mode),
+            assert_almost_equal(stats.trapezoid.pdf(x, mode, mode),
                                 stats.triang.pdf(x, mode))
-            assert_almost_equal(stats.trapz.cdf(x, mode, mode),
+            assert_almost_equal(stats.trapezoid.cdf(x, mode, mode),
                                 stats.triang.cdf(x, mode))
 
     def test_reduces_to_uniform(self):
         x = np.linspace(0, 1, 10)
-        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
-        assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
+        assert_almost_equal(stats.trapezoid.pdf(x, 0, 1), stats.uniform.pdf(x))
+        assert_almost_equal(stats.trapezoid.cdf(x, 0, 1), stats.uniform.cdf(x))
 
     def test_cases(self):
         # edge cases
-        assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-        assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8),
+        assert_almost_equal(stats.trapezoid.pdf(0, 0, 0), 2)
+        assert_almost_equal(stats.trapezoid.pdf(1, 1, 1), 2)
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0, 0.8),
                             1.11111111111111111)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0),
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0.2, 1.0),
                             1.11111111111111111)
 
         # straightforward case
-        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapezoid.pdf(0.1, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0.2, 0.8), 1.25)
+        assert_almost_equal(stats.trapezoid.pdf(0.9, 0.2, 0.8), 0.625)
 
-        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+        assert_almost_equal(stats.trapezoid.cdf(0.1, 0.2, 0.8), 0.03125)
+        assert_almost_equal(stats.trapezoid.cdf(0.2, 0.2, 0.8), 0.125)
+        assert_almost_equal(stats.trapezoid.cdf(0.5, 0.2, 0.8), 0.5)
+        assert_almost_equal(stats.trapezoid.cdf(0.9, 0.2, 0.8), 0.96875)
+        assert_almost_equal(stats.trapezoid.cdf(1.0, 0.2, 0.8), 1.0)
 
     def test_moments_and_entropy(self):
-        # issue #11795: improve precision of trapz stats
+        # issue #11795: improve precision of trapezoid stats
         # Apply formulas from Wikipedia for the following parameters:
         a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
         p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
@@ -3693,43 +3693,48 @@ class TestTrapz(object):
         mean = moment(1)
         var = moment(2) - mean**2
         entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
-        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.mean(p1, p2, loc, scale),
                             mean, decimal=13)
-        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.var(p1, p2, loc, scale),
                             var, decimal=13)
-        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.entropy(p1, p2, loc, scale),
                             entropy, decimal=13)
 
         # Check boundary cases where scipy d=0 or d=1.
-        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
-        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
-        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
+        assert_almost_equal(stats.trapezoid.mean(0, 0, -3, 6), -1, decimal=13)
+        assert_almost_equal(stats.trapezoid.mean(0, 1, -3, 6), 0, decimal=13)
+        assert_almost_equal(stats.trapezoid.var(0, 1, -3, 6), 3, decimal=13)
 
-    def test_trapz_vect(self):
+    def test_trapezoid_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
         d = np.array([0.5, 0.6])[:, None]
         x = np.array([0.15, 0.25, 0.9])
-        v = stats.trapz.pdf(x, c, d)
+        v = stats.trapezoid.pdf(x, c, d)
 
         cc, dd, xx = np.broadcast_arrays(c, d, x)
 
         res = np.empty(xx.size, dtype=xx.dtype)
         ind = np.arange(xx.size)
         for i, x1, c1, d1 in zip(ind, xx.ravel(), cc.ravel(), dd.ravel()):
-            res[i] = stats.trapz.pdf(x1, c1, d1)
+            res[i] = stats.trapezoid.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
         # Check that the stats() method supports vector arguments.
-        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
+        v = np.asarray(stats.trapezoid.stats(c, d, moments="mvsk"))
         cc, dd = np.broadcast_arrays(c, d)
         res = np.empty((cc.size, 4))  # 4 stats returned per value
         ind = np.arange(cc.size)
         for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
-            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
+            res[i] = stats.trapezoid.stats(c1, d1, moments="mvsk")
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
+
+    def test_trapz(self):
+        # Basic test for alias
+        x = np.linspace(0, 1, 10)
+        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
 
 
 class TestTriang(object):

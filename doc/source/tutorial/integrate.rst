@@ -264,7 +264,7 @@ trapezoid rule at step-sizes related by a power of two and then
 performs Richardson extrapolation on these estimates to approximate
 the integral with a higher degree of accuracy.
 
-In case of arbitrary spaced samples, the two functions :func:`~numpy.trapz`
+In case of arbitrary spaced samples, the two functions :obj:`trapezoid`
 and :obj:`simpson` are available. They are using Newton-Coates formulas
 of order 1 and 2 respectively to perform integration. The trapezoidal rule
 approximates the function as a straight line between adjacent points, while

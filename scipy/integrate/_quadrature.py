@@ -4,14 +4,16 @@ import math
 import types
 import warnings
 
-# trapz is a public function for scipy.integrate,
+# trapezoid is a public function for scipy.integrate,
 # even though it's actually a NumPy function.
-from numpy import trapz
+from numpy import trapz as trapezoid
 from scipy.special import roots_legendre
 from scipy.special import gammaln
 
-__all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'simpson',
-           'romb', 'cumtrapz', 'newton_cotes', 'AccuracyWarning']
+__all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
+           'trapezoid', 'trapz', 'simps', 'simpson',
+           'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
+           'AccuracyWarning']
 
 
 # Make See Also linking for our local copy work properly
@@ -24,9 +26,21 @@ def _copy_func(f):
     return g
 
 
-trapz = _copy_func(trapz)
-if trapz.__doc__:
-    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
+trapezoid = _copy_func(trapezoid)
+if trapezoid.__doc__:
+    trapezoid.__doc__ = trapezoid.__doc__.replace(
+        'sum, cumsum', 'numpy.cumsum')
+
+
+# Note: alias kept for backwards compatibility. Rename was done
+# because trapz is a slur in colloquial English (see gh-12924).
+def trapz(y, x=None, dx=1.0, axis=-1):
+    """`An alias of `trapezoid`.
+
+    `trapz` is kept for backwards compatibility. For new code, prefer
+    `trapezoid` instead.
+    """
+    return trapezoid(y, x=x, dx=dx, axis=axis)
 
 
 class AccuracyWarning(Warning):
@@ -87,7 +101,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
     simpson : integrators for sampled data
-    cumtrapz : cumulative integration for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
     ode : ODE integrator
     odeint : ODE integrator
 
@@ -209,7 +223,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     tplquad: triple integrals
     romb: integrator for sampled data
     simpson: integrator for sampled data
-    cumtrapz: cumulative integration for sampled data
+    cumulative_trapezoid: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
 
@@ -254,7 +268,18 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
+# Note: alias kept for backwards compatibility. Rename was done
+# because cumtrapz is a slur in colloquial English (see gh-12924).
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
+    """`An alias of `cumulative_trapezoid`.
+
+    `cumtrapz` is kept for backwards compatibility. For new code, prefer
+    `cumulative_trapezoid` instead.
+    """
+    return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
+
+
+def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
 
@@ -303,7 +328,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
     >>> x = np.linspace(-2, 2, num=20)
     >>> y = x
-    >>> y_int = integrate.cumtrapz(y, x, initial=0)
+    >>> y_int = integrate.cumulative_trapezoid(y, x, initial=0)
     >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
     >>> plt.show()
 
@@ -428,7 +453,7 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrators for sampled data
-    cumtrapz: cumulative integration for sampled data
+    cumulative_trapezoid: cumulative integration for sampled data
     ode: ODE integrators
     odeint: ODE integrators
 
@@ -544,7 +569,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     dblquad : double integrals
     tplquad : triple integrals
     simpson : integrators for sampled data
-    cumtrapz : cumulative integration for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
     ode : ODE integrators
     odeint : ODE integrators
 
@@ -743,7 +768,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     tplquad : Triple integrals.
     romb : Integrators for sampled data.
     simpson : Integrators for sampled data.
-    cumtrapz : Cumulative integration for sampled data.
+    cumulative_trapezoid : Cumulative integration for sampled data.
     ode : ODE integrator.
     odeint : ODE integrator.
 
