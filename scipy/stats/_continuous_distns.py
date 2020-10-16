@@ -6064,7 +6064,7 @@ class pearson3_gen(rv_continuous):
 
         invmask1a = np.logical_and(invmask, skew > 0)
         invmask1b = skew[invmask] > 0
-        ans[invmask1a] = gamma._cdf(transx[invmask1b], alpha[invmask1b])
+        ans[invmask1a] = gamma.cdf(transx[invmask1b], alpha[invmask1b])
 
         # The gamma._cdf approach wasn't working with negative skew.
         # Note that multiplying the skew by -1 reflects about x=0.
