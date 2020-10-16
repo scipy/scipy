@@ -65,8 +65,8 @@ def test_1D():
     np.append(lengths, 1)
     for length in lengths:
         x = np.random.random(length)
-        yield check_zoomfft, x
-        yield check_czt, x
+        check_zoomfft(x)
+        check_czt(x)
 
     # Gauss
     t = np.linspace(-2, 2, 128)
