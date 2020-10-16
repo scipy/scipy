@@ -5,7 +5,7 @@ SciPy 1.5.3 Release Notes
 .. contents::
 
 SciPy 1.5.3 is a bug-fix release with no new features
-compared to 1.5.2. In particular, ARM64 wheels are now
+compared to 1.5.2. In particular, Linux ARM64 wheels are now
 available and a compatibility issue with XCode 12 has
 been fixed.
 
@@ -17,6 +17,7 @@ Authors
 * Thomas Duvernay +
 * Gregory Lee
 * Eric Moore
+* odidev
 * Dima Pasechnik
 * Tyler Reddy
 * Simon Segerblom Rex +
@@ -24,7 +25,7 @@ Authors
 * Will Tirone +
 * Warren Weckesser
 
-A total of 11 people contributed to this release.
+A total of 12 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -53,6 +54,7 @@ Pull requests for 1.5.3
 * `#12623 <https://github.com/scipy/scipy/pull/12623>`__: MAINT: stats: Loosen some test tolerances.
 * `#12638 <https://github.com/scipy/scipy/pull/12638>`__: CI, MAINT: pin pytest for Azure win
 * `#12668 <https://github.com/scipy/scipy/pull/12668>`__: BUG: Ensure factorial is not too large in mstats.kendalltau
+* `#12705 <https://github.com/scipy/scipy/pull/12705>`__: MAINT: \`openblas_support\` added sha256 hash
 * `#12706 <https://github.com/scipy/scipy/pull/12706>`__: BUG: fix incorrect 1d case of the fourier_ellipsoid filter
 * `#12721 <https://github.com/scipy/scipy/pull/12721>`__: BUG: use special.sindg in ndimage.rotate
 * `#12724 <https://github.com/scipy/scipy/pull/12724>`__: BUG: per #12654 adjusted mudholkar_george method to combine p...
