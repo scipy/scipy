@@ -4952,6 +4952,45 @@ class TestArgus(object):
         assert_allclose(v, expected_var, rtol=rtol)
 
 
+class TestNakagami:
+
+    def test_logpdf(self):
+        # Test nakagami logpdf for an input where the PDF is smaller
+        # than can be represented with 64 bit floating point.
+        # The expected value of logpdf was computed with mpmath:
+        #
+        #   def logpdf(x, nu):
+        #       x = mpmath.mpf(x)
+        #       nu = mpmath.mpf(nu)
+        #       return (mpmath.log(2) + nu*mpmath.log(nu) -
+        #               mpmath.loggamma(nu) + (2*nu - 1)*mpmath.log(x) -
+        #               nu*x**2)
+        #
+        nu = 2.5
+        x = 25
+        logp = stats.nakagami.logpdf(x, nu)
+        assert_allclose(logp, -1546.9253055607549)
+
+    def test_sf_isf(self):
+        # Test nakagami sf and isf when the survival function
+        # value is very small.
+        # The expected value of the survival function was computed
+        # with mpmath:
+        #
+        #   def sf(x, nu):
+        #       x = mpmath.mpf(x)
+        #       nu = mpmath.mpf(nu)
+        #       return mpmath.gammainc(nu, nu*x*x, regularized=True)
+        #
+        nu = 2.5
+        x0 = 5.0
+        sf = stats.nakagami.sf(x0, nu)
+        assert_allclose(sf, 2.736273158588307e-25, rtol=1e-13)
+        # Check round trip back to x0.
+        x1 = stats.nakagami.isf(sf, nu)
+        assert_allclose(x1, x0, rtol=1e-13)
+
+
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):
         def _rvs(self):

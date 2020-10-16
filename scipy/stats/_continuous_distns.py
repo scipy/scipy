@@ -5550,15 +5550,25 @@ class nakagami_gen(rv_continuous):
 
     """
     def _pdf(self, x, nu):
+        return np.exp(self._logpdf(x, nu))
+
+    def _logpdf(self, x, nu):
         # nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
         #                       x**(2*nu-1) * exp(-nu*x**2)
-        return 2*nu**nu/sc.gamma(nu)*(x**(2*nu-1.0))*np.exp(-nu*x*x)
+        return (np.log(2) + nu*np.log(nu) - sc.gammaln(nu) +
+                (2*nu - 1)*np.log(x) - nu*x**2)
 
     def _cdf(self, x, nu):
         return sc.gammainc(nu, nu*x*x)
 
     def _ppf(self, q, nu):
         return np.sqrt(1.0/nu*sc.gammaincinv(nu, q))
+
+    def _sf(self, x, nu):
+        return sc.gammaincc(nu, nu*x*x)
+
+    def _isf(self, p, nu):
+        return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _stats(self, nu):
         mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
