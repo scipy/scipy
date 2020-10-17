@@ -387,7 +387,8 @@ def _quadratic_assignment_faq(A, B,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
            203-215, :doi:`10.1016/j.patcog.2018.09.014`
 
-    .. [3] https://en.wikipedia.org/wiki/Doubly_stochastic_matrix
+    .. [3] "Doubly stochastic Matrix," Wikipedia.
+           https://en.wikipedia.org/wiki/Doubly_stochastic_matrix
     """
 
     _check_unknown_options(unknown_options)
