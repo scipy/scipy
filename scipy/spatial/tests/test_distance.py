@@ -125,6 +125,10 @@ def load_testing_files():
 load_testing_files()
 
 
+def _is_32bit():
+    return np.intp(0).itemsize < 8
+
+
 def _chk_asarrays(arrays, axis=None):
     arrays = [np.asanyarray(a) for a in arrays]
     if axis is None:
@@ -1149,7 +1153,12 @@ class TestPdist(object):
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_jensenshannon_iris(self):
-        eps = 1e-12
+        if _is_32bit():
+            # Test failing on 32-bit Linux on Azure otherwise, see gh-12810
+            eps = 1.5e-10
+        else:
+            eps = 1e-12
+
         X = eo['iris']
         Y_right = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')

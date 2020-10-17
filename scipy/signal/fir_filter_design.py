@@ -1197,7 +1197,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
            complex minimum phase digital FIR filters," Acoustics, Speech,
            and Signal Processing, 1999. Proceedings., 1999 IEEE International
            Conference on, Phoenix, AZ, 1999, pp. 1145-1148 vol.3.
-           doi: 10.1109/ICASSP.1999.756179
+           :doi:`10.1109/ICASSP.1999.756179`
     .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
            filters by direct factorization," Signal Processing,
            vol. 10, no. 4, pp. 369-383, Jun. 1986.

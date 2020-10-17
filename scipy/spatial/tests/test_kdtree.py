@@ -491,9 +491,9 @@ def test_query_ball_point_multithreading():
     k = 2
     points = np.random.randn(n, k)
     T = cKDTree(points)
-    l1 = T.query_ball_point(points, 0.003, n_jobs=1)
-    l2 = T.query_ball_point(points, 0.003, n_jobs=64)
-    l3 = T.query_ball_point(points, 0.003, n_jobs=-1)
+    l1 = T.query_ball_point(points, 0.003, workers=1)
+    l2 = T.query_ball_point(points, 0.003, workers=64)
+    l3 = T.query_ball_point(points, 0.003, workers=-1)
 
     for i in range(n):
         if l1[i] or l2[i]:
@@ -502,6 +502,23 @@ def test_query_ball_point_multithreading():
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
+
+
+def test_n_jobs():
+    # Test for the deprecated argument name "n_jobs" aliasing "workers"
+    points = np.random.randn(50, 2)
+    T = cKDTree(points)
+    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
+        T.query_ball_point(points, 0.003, n_jobs=1)
+
+    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
+        T.query(points, 1, n_jobs=1)
+
+    with pytest.raises(TypeError, match="Unexpected keyword argument"):
+        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
+
+    with pytest.raises(TypeError, match="Unexpected keyword argument"):
+        T.query(points, 1, workers=1, n_jobs=1)
 
 
 class two_trees_consistency:
@@ -987,8 +1004,8 @@ def test_ckdtree_parallel():
     k = 4
     points = np.random.randn(n, k)
     T = cKDTree(points)
-    T1 = T.query(points, k=5, n_jobs=64)[-1]
-    T2 = T.query(points, k=5, n_jobs=-1)[-1]
+    T1 = T.query(points, k=5, workers=64)[-1]
+    T2 = T.query(points, k=5, workers=-1)[-1]
     T3 = T.query(points, k=5)[-1]
     assert_array_equal(T1, T2)
     assert_array_equal(T1, T3)

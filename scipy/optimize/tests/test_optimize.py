@@ -12,8 +12,8 @@ To run it in its simplest form::
 import itertools
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
-                           assert_,
-                           assert_almost_equal, assert_warns,
+                           assert_, assert_almost_equal,
+                           assert_no_warnings, assert_warns,
                            assert_array_less, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
@@ -2170,3 +2170,9 @@ def test_memoize_jac_with_bfgs(function_with_gradient):
 
     scalar_function.fun(x0 + 0.2)
     assert function_with_gradient.number_of_calls == 3
+
+def test_gh12696():
+    # Test that optimize doesn't throw warning gh-12696
+    with assert_no_warnings():
+        optimize.fminbound(
+            lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)

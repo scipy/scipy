@@ -378,6 +378,7 @@ class TestConstructUtils(object):
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
