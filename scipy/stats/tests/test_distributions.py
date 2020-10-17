@@ -999,7 +999,7 @@ class TestGumbel_r_l:
         func = dist._reduce_func(args, {})[1]
 
         # test that the gumbel_* fit method is better than super method
-        _assert_lessthan_loglike(dist, data, func)
+        _assert_less_or_close_loglike(dist, data, func)
 
     @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
                                            (stats.gumbel_l, -1)])
