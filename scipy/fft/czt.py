@@ -76,8 +76,9 @@ def czt_points(m, w=None, a=1+0j):
     --------
     Plot the points of a 16-point FFT:
 
-    >>> import matplotlib.pyplot as plt
+    >>> from scipy.fft import czt_points
     >>> points = czt_points(16)
+    >>> import matplotlib.pyplot as plt
     >>> plt.plot(np.real(points), np.imag(points), 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
@@ -170,6 +171,7 @@ class CZT:
     --------
     Compute multiple prime-length FFTs:
 
+    >>> from scipy.fft import CZT
     >>> a = np.random.rand(7)
     >>> b = np.random.rand(7)
     >>> c = np.random.rand(7)
@@ -294,6 +296,7 @@ class ZoomFFT(CZT):
     --------
     To plot the transform results use something like the following:
 
+    >>> from scipy.fft import ZoomFFT
     >>> t = np.linspace(0, 1, 1021)
     >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
