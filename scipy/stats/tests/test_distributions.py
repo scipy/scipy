@@ -21,7 +21,7 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning
+from scipy.integrate import IntegrationWarning, quad
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -1270,6 +1270,28 @@ class TestPearson3(object):
         vals = stats.pearson3.cdf([-3, -2, -1, 0, 1], 0.1)
         assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
                                5.06649130e-01, 8.41442111e-01], atol=1e-6)
+
+    def test_negative_cdf_bug_11186(self):
+        # incorrect CDFs for negative skews in gh-11186; fixed in gh-12640
+        # Also check vectorization w/ negative, zero, and positive skews
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        neg_inf = -30  # avoid RuntimeWarning caused by np.log(0)
+        cdfs = stats.pearson3.cdf(x_eval, skews)
+        int_pdfs = [quad(stats.pearson3(skew).pdf, neg_inf, x_eval)[0]
+                    for skew in skews]
+        assert_allclose(cdfs, int_pdfs)
+
+    def test_return_array_bug_11746(self):
+        # pearson3.moment was returning size 0 or 1 array instead of float
+        # The first moment is equal to the loc, which defaults to zero
+        moment = stats.pearson3.moment(1, 2)
+        assert_equal(moment, 0)
+        assert_equal(type(moment), float)
+
+        moment = stats.pearson3.moment(1, 0.000001)
+        assert_equal(moment, 0)
+        assert_equal(type(moment), float)
 
 
 class TestKappa4(object):

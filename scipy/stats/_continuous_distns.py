@@ -6052,20 +6052,23 @@ class pearson3_gen(rv_continuous):
 
     .. math::
 
-        f(x, skew) = \frac{|\beta|}{\Gamma(\alpha)}
-                     (\beta (x - \zeta))^{\alpha - 1}
-                     \exp(-\beta (x - \zeta))
+        f(x, \kappa) = \frac{|\beta|}{\Gamma(\alpha)}
+                       (\beta (x - \zeta))^{\alpha - 1}
+                       \exp(-\beta (x - \zeta))
 
     where:
 
     .. math::
 
-            \beta = \frac{2}{skew  stddev}
-            \alpha = (stddev \beta)^2
-            \zeta = loc - \frac{\alpha}{\beta}
+            \beta = \frac{2}{\kappa}
+
+            \alpha = \beta^2 = \frac{4}{\kappa^2}
+
+            \zeta = -\frac{\alpha}{\beta} = -\beta
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
-    `pearson3` takes ``skew`` as a shape parameter for :math:`skew`.
+    Pass the skew :math:`\kappa` into `pearson3` as the shape parameter
+    ``skew``.
 
     %(after_notes)s
 
@@ -6120,12 +6123,10 @@ class pearson3_gen(rv_continuous):
         return np.ones(np.shape(skew), dtype=bool)
 
     def _stats(self, skew):
-        _, _, _, _, _, beta, alpha, zeta = (
-            self._preprocess([1], skew))
-        m = zeta + alpha / beta
-        v = alpha / (beta**2)
-        s = 2.0 / (alpha**0.5) * np.sign(beta)
-        k = 6.0 / alpha
+        m = 0.0
+        v = 1.0
+        s = skew
+        k = 1.5*skew**2
         return m, v, s, k
 
     def _pdf(self, x, skew):
@@ -6151,7 +6152,9 @@ class pearson3_gen(rv_continuous):
             self._preprocess(x, skew))
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
-        ans[invmask] = np.log(abs(beta)) + gamma._logpdf(transx, alpha)
+        # use logpdf instead of _logpdf to fix issue mentioned in gh-12640
+        # (_logpdf does not return correct result for alpha = 1)
+        ans[invmask] = np.log(abs(beta)) + gamma.logpdf(transx, alpha)
         return ans
 
     def _cdf(self, x, skew):
@@ -6159,7 +6162,22 @@ class pearson3_gen(rv_continuous):
             self._preprocess(x, skew))
 
         ans[mask] = _norm_cdf(x[mask])
-        ans[invmask] = gamma._cdf(transx, alpha)
+
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        # use cdf instead of _cdf to fix issue mentioned in gh-12640
+        # (_cdf produces NaNs for inputs outside support)
+        ans[invmask1a] = gamma.cdf(transx[invmask1b], alpha[invmask1b])
+
+        # The gamma._cdf approach wasn't working with negative skew.
+        # Note that multiplying the skew by -1 reflects about x=0.
+        # So instead of evaluating the CDF with negative skew at x,
+        # evaluate the SF with positive skew at -x.
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        # gamma._sf produces NaNs when transx < 0, so use gamma.sf
+        ans[invmask2a] = gamma.sf(transx[invmask2b], alpha[invmask2b])
+
         return ans
 
     def _rvs(self, skew, size=None, random_state=None):
