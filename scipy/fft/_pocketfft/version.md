@@ -4,15 +4,17 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft] at:
 
-    commit 2147aaf37c6274cc77160f6b355ed9d120cfdc57
-    Merge: 80bb41a 99599e1
+    commit 8234f5c6adf74490e6bbf686d6c1a0041d772ac9
+    Merge: 7a39f78 c1e7bdf
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Sat Jan 11 17:09:17 2020 +0100
+    Date:   Fri Sep 4 18:41:04 2020 +0200
 
-        Merge branch 'more_clang_fixes' into 'master'
+        Merge branch 'threadpool-fixes' into 'master'
 
-        address more problems with clang (and follow its optimization hints)
+        Threadpool fixes
 
-        See merge request mtr/pypocketfft!35
+        Closes #14
+
+        See merge request mtr/pypocketfft!40
 
 pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft

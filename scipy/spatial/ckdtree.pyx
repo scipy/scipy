@@ -21,6 +21,8 @@ cimport cython
 
 from multiprocessing import cpu_count
 import threading
+import operator
+import warnings
 
 cdef extern from "<limits.h>":
     long LONG_MAX
@@ -379,6 +381,31 @@ cdef class cKDTreeNode:
             return self._indices[start:stop]
 
 
+cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
+    """Handle the workers argument, translating the old n_jobs name"""
+    if workers is None:
+        if 'n_jobs' in kwargs:
+            warnings.warn(
+                'The n_jobs argument has been renamed "workers". '
+                'The old name "n_jobs" will stop working in SciPy 1.8.0.',
+                DeprecationWarning)
+            workers = kwargs.pop('n_jobs')
+        else:
+            workers = 1
+
+    if len(kwargs) > 0:
+        raise TypeError(
+            f"Unexpected keyword argument{'s' if len(kwargs) > 1 else ''} "
+            f"{kwargs}")
+
+    cdef np.intp_t n = operator.index(workers)
+    if n == -1:
+        n = number_of_processors
+    elif n <= 0:
+        raise ValueError(f'Invalid number of workers {workers}, must be -1 or > 0')
+    return n
+
+
 # Main cKDTree class
 # ==================
 
@@ -394,7 +421,7 @@ cdef class cKDTree:
     point.
 
     The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary trie, each of whose
+    The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
     along that axis is greater than or less than a particular value.
@@ -633,9 +660,9 @@ cdef class cKDTree:
     @cython.boundscheck(False)
     def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
-              np.intp_t n_jobs=1):
+              object workers=None, **kwargs):
         """
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
+        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1)
 
         Query the kd-tree for nearest neighbors
 
@@ -662,9 +689,13 @@ cdef class cKDTree:
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
-        n_jobs : int, optional
-            Number of jobs to schedule for parallel processing. If -1 is given
-            all processors are used. Default: 1.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is given
+            all CPU threads are used. Default: 1.
+
+            .. versionchanged:: 1.6.0
+               The "n_jobs" argument was renamed "workers". The old name
+               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
 
         Returns
         -------
@@ -742,6 +773,7 @@ cdef class cKDTree:
             const np.float64_t [:, ::1] xx
             np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
             ckdtree *cself = self.cself
+            np.intp_t num_workers = get_num_workers(workers, kwargs)
 
         n = num_points(x_arr, cself.m)
         xx = x_arr.reshape(n, cself.m)
@@ -780,10 +812,7 @@ cdef class cKDTree:
                 query_knn(cself, pdd, pii,
                     pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
-        if (n_jobs == -1):
-            n_jobs = number_of_processors
-
-        _run_threads(_thread_func, n, n_jobs)
+        _run_threads(_thread_func, n, num_workers)
 
         ddret = np.reshape(dd, retshape + (len(k),))
         iiret = np.reshape(ii, retshape + (len(k),))
@@ -803,11 +832,12 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-                         np.float64_t p=2., np.float64_t eps=0, np.intp_t n_jobs=1,
+                         np.float64_t p=2., np.float64_t eps=0, object workers=None,
                          return_sorted=None,
-                         return_length=False):
+                         return_length=False, **kwargs):
         """
-        query_ball_point(self, x, r, p=2., eps=0)
+        query_ball_point(self, x, r, p=2., eps=0, workers=1, return_sorted=None,
+                         return_length=False)
 
         Find all points within distance r of point(s) x.
 
@@ -825,9 +855,14 @@ cdef class cKDTree:
             nearest points are further than ``r / (1 + eps)``, and branches are
             added in bulk if their furthest points are nearer than
             ``r * (1 + eps)``.
-        n_jobs : int, optional
+        workers : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
+
+            .. versionchanged:: 1.6.0
+               The "n_jobs" argument was renamed "workers". The old name
+               "n_jobs" is deprecated and will stop working in SciPy 1.8.0.
+
         return_sorted : bool, optional
             Sorts returned indicies if True and does not sort them if False. If
             None, does not sort single point queries, but does sort
@@ -874,6 +909,7 @@ cdef class cKDTree:
             bool sort_output = return_sorted or (
                 return_sorted is None and x_arr.ndim > 1)
 
+            np.intp_t num_workers = get_num_workers(workers, kwargs)
             np.intp_t n = num_points(x_arr, cself.m)
             tuple retshape = np.shape(x_arr)[:-1]
             np.ndarray r_arr = broadcast_contiguous(r, shape=retshape,
@@ -920,11 +956,7 @@ cdef class cKDTree:
                     tmp[j] = cur[j]
                 vout[start + i] = tmp
 
-        # multithreading logic is similar to cKDTree.query
-        if n_jobs == -1:
-            n_jobs = number_of_processors
-
-        _run_threads(_thread_func, n, n_jobs)
+        _run_threads(_thread_func, n, num_workers)
 
         if x_arr.ndim == 1: # scalar query, unpack result.
             result = result[()]
@@ -1241,24 +1273,21 @@ cdef class cKDTree:
 
         .. [1] Gray and Moore,
                "N-body problems in statistical learning",
-               Mining the sky, 2000,
-               https://arxiv.org/abs/astro-ph/0012333
+               Mining the sky, 2000, :arxiv:`astro-ph/0012333`
 
         .. [2] Landy and Szalay,
                "Bias and variance of angular correlation functions",
-               The Astrophysical Journal, 1993,
-               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+               The Astrophysical Journal, 1993, :doi:`10.1086/172900`
 
         .. [3] Sheth, Connolly and Skibba,
                "Marked correlations in galaxy formation models",
-               Arxiv e-print, 2005,
-               https://arxiv.org/abs/astro-ph/0511773
+               2005, :arxiv:`astro-ph/0511773`
 
         .. [4] Hawkins, et al.,
                "The 2dF Galaxy Redshift Survey: correlation functions,
                peculiar velocities and the matter density of the Universe",
                Monthly Notices of the Royal Astronomical Society, 2002,
-               http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
+               :doi:`10.1046/j.1365-2966.2003.07063.x`
 
         .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
 
