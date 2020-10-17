@@ -1606,7 +1606,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
 
 def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
-    enforce_square=True):
+                                    enforce_square=True):
     """Validate arguments and format inputs for toeplitz functions
 
     Parameters
@@ -1737,25 +1737,25 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
 
     References
     ----------
-    .. [1] : Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
+    .. [1] Jacob R Gardner, Geoff Pleiss, David Bindel, Kilian
        Q Weinberger, Andrew Gordon Wilson, "GPyTorch: Blackbox Matrix-Matrix
        Gaussian Process Inference with GPU Acceleration" with contributions
        from Max Balandat and Ruihan Wu. Available online:
        https://github.com/cornellius-gp/gpytorch
 
-    .. [2] : J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
+    .. [2] J. Demmel, P. Koev, and X. Li, "A Brief Survey of Direct Linear
        Solvers". In Z. Bai, J. Demmel, J. Dongarra, A. Ruhe, and H. van der
        Vorst, editors. Templates for the Solution of Algebraic Eigenvalue
        Problems: A Practical Guide. SIAM, Philadelphia, 2000. Available at:
        http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
 
-    .. [3] : R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
+    .. [3] R. Scheibler, E. Bezzam, I. Dokmanic, Pyroomacoustics: A Python
        package for audio room simulations and array processing algorithms,
        Proc. IEEE ICASSP, Calgary, CA, 2018.
        https://github.com/LCAV/pyroomacoustics/blob/pypi-release/
        pyroomacoustics/adaptive/util.py
 
-    .. [4] : Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
+    .. [4] Marano S, Edwards B, Ferrari G and Fah D (2017), "Fitting
        Earthquake Spectra: Colored Noise and Incomplete Data", Bulletin of
        the Seismological Society of America., January, 2017. Vol. 107(1),
        pp. 276-291.
@@ -1818,14 +1818,14 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
         fft_x = fft(x, n=p, axis=0, workers=workers)
 
         mat_times_x = ifft(fft_mat*fft_x, axis=0,
-            workers=workers)[:T_nrows, :]
+                           workers=workers)[:T_nrows, :]
     else:
         # Real inputs; using rfft is faster
         fft_mat = rfft(embedded_col, axis=0, workers=workers).reshape(-1, 1)
         fft_x = rfft(x, n=p, axis=0, workers=workers)
 
         mat_times_x = irfft(fft_mat*fft_x, axis=0,
-            workers=workers, n=p)[:T_nrows, :]
+                            workers=workers, n=p)[:T_nrows, :]
 
     return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
     return mat_times_x.reshape(*return_shape)
