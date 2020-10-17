@@ -6054,7 +6054,7 @@ class pearson3_gen(rv_continuous):
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
         # use logpdf instead of _logpdf to fix issue mentioned in gh-12640
-        # (_logpdf does not return correct result for alpha = -1)
+        # (_logpdf does not return correct result for alpha = 1)
         ans[invmask] = np.log(abs(beta)) + gamma.logpdf(transx, alpha)
         return ans
 
