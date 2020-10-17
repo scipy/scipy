@@ -370,37 +370,6 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     specialized transform function which can be reused without
     recomputing constants.
 
-    Examples
-    --------
-    `czt` can quickly compute a prime-length FFT:
-
-    >>> n = 30011  # prime
-    >>> a = np.ones(n)  # DC (spectrum is [n, 0, 0, 0, ...])
-    >>> f = fft(a)  # takes 1.4 seconds
-    >>> c = czt(a)  # takes 21 milliseconds
-    >>> np.allclose(f, c, atol=1e-6)
-    True
-
-    However, the CZT has more error:
-
-    >>> print(abs(np.amax(f[1:])))
-    1.59615876072e-10
-    >>> print(abs(np.amax(c[1:])))
-    2.25172229068e-09
-    >>> print(np.linalg.norm(f[1:]))
-    9.82334904574e-09
-    >>> print(np.linalg.norm(c[1:]))
-    1.08222546282e-07
-
-    With `scale` parameter, CZT can be used to calculate even-length rfft:
-
-    >>> from numpy.fft import rfft
-    >>> a = np.random.rand(1024)
-    >>> r = rfft(a)
-    >>> c = czt(a, m=513, scale=0.5*513/512)
-    >>> np.allclose(c, r)
-    True
-
     """
     x = np.asarray(x)
     transform = CZT(x.shape[axis], m=m, w=w, a=a)
