@@ -419,7 +419,7 @@ def _quadratic_assignment_faq(A, B,
         if P0.shape != (n_unseed, n_unseed):
             msg = "`P0` matrix must have shape m' x m', where m'=n-m"
         elif ((P0 < 0).any() or not np.allclose(np.sum(P0, axis=0), 1)
-            or not np.allclose(np.sum(P0, axis=1), 1)):
+              or not np.allclose(np.sum(P0, axis=1), 1)):
             msg = "`P0` matrix must be doubly stochastic"
         if msg is not None:
             raise ValueError(msg)
