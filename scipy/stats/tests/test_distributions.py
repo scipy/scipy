@@ -1150,6 +1150,7 @@ class TestPareto(object):
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
+
 class TestGenpareto(object):
     def test_ab(self):
         # c >= 0: a, b = [0, inf]
