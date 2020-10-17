@@ -4681,12 +4681,16 @@ class logistic_gen(rv_continuous):
         # Peacock (2000), Page 130
         def func(input, data):
             a, b = input
+            data = np.asarray(data)
             n = len(data)
-            x1 = np.sum(np.exp((data - a) / b) /
-                        (1 + np.exp((data - a) / b))) - n / 2
-            x2 = np.sum(((data - a) / b) *
-                        ((np.exp((data - a) / b) - 1) /
-                         (np.exp((data - a) / b) + 1))) - n
+
+            # use technique from `scipy.special.logsumexp` to avoid overflow
+            c = (data - a) / b
+            M = c.max()
+            exp_l = (np.exp(M) * np.exp(c - M))
+
+            x1 = np.sum(exp_l / (1 + exp_l)) - (n / 2)
+            x2 = np.sum((c * ((exp_l - 1) / (exp_l + 1)))) - n
             return x1, x2
 
         return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
