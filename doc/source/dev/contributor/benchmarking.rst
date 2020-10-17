@@ -119,30 +119,22 @@ as ``master``::
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future
 commits. For greater control, a graphical view, and to have results
-saved for future comparison, you can use |run-py|_
-to run the benchmarks.
-
-``run.py`` is a "wrapper" for the ``asv`` terminal command, the use of
-which is described in `Using airspeed velocity`_. ``run.py`` simply sets
-some environment variables for you, then sends all remaining command
-line arguments to ``asv``.
+saved for future comparison, you can use use the ``asv`` terminal command
+directly.
 
 To use it, navigate to ``scipy/benchmarks`` in the console and then
 execute::
 
-   python run.py run
+   asv run
 
-Just like ``asv run`` from the asv documentation, this command runs the
+This command runs the
 whole benchmark suite and saves the results for comparison against
 future commits.
 
 To run only a single benchmark, such as ``KleeMinty`` from
 ``optimize_linprog.py``::
 
-   python run.py run --bench optimize_linprog.KleeMinty
-
-(Note that the ``--bench`` option here is sent to ``asv``; its meaning
-is different than the ``--bench`` option for ``runtests.py``.)
+   asv run --bench optimize_linprog.KleeMinty
 
 One great feature of ``asv`` is that it can automatically run a
 benchmark not just for the current commit, but for every commit in a
@@ -151,7 +143,7 @@ with commit |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32|_, so let’s
 run the ``KleeMinty`` benchmark for 10 commits between then and now to
 track its performance over time::
 
-   python run.py run --bench optimize_linprog.KleeMinty --steps 10 7fa17f..
+   asv run --bench optimize_linprog.KleeMinty --steps 10 7fa17f..
 
 .. note::
 
@@ -162,15 +154,15 @@ track its performance over time::
 To "publish" the results (prepare them to be viewed) and "preview" them
 in an interactive console::
 
-   python run.py publish
-   python run.py preview
+   asv publish
+   asv preview
 
 ASV will report that it is running a server. Using any browser, you can
 review the results by navigating to http://127.0.0.1:8080 (local
 machine, port 8080).
 
-For much more information about the ``asv`` commands accessible via
-``run.py``, see the airspeed velocity `Commands`_ documentation. (Tip:
+For much more information about the ``asv`` commands,
+see the airspeed velocity `Commands`_ documentation. (Tip:
 check out the ``asv find`` command and the ``--quick``,
 ``--skip-existing-commits``, and ``--profile`` options for ``asv run``.)
 
@@ -187,9 +179,6 @@ check out the ``asv find`` command and the ``--quick``,
 
 .. |optimize-linprog-py| replace:: ``scipy/benchmarks/benchmarks/optimize_linprog.py``
 .. _optimize-linprog-py: https://github.com/scipy/scipy/blob/master/benchmarks/benchmarks/optimize_linprog.py
-
-.. |run-py| replace:: ``scipy/benchmarks/run.py``
-.. _run-py: https://github.com/scipy/scipy/blob/master/benchmarks/run.py
 
 .. |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32| replace:: ``7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32``
 .. _7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32: https://github.com/scipy/scipy/commit/7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32

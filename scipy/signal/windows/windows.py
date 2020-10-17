@@ -1634,7 +1634,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     M : int
         Window length.
     NW : float
-        Standardized half bandwidth corresponding to ``2*NW = BW/f0 = BW*N*dt``
+        Standardized half bandwidth corresponding to ``2*NW = BW/f0 = BW*M*dt``
         where ``dt`` is taken as 1.
     Kmax : int | None, optional
         Number of DPSS windows to return (orders ``0`` through ``Kmax-1``).
@@ -1657,7 +1657,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 
     Returns
     -------
-    v : ndarray, shape (Kmax, N) or (N,)
+    v : ndarray, shape (Kmax, M) or (M,)
         The DPSS windows. Will be 1D if `Kmax` is None.
     r : ndarray, shape (Kmax,) or float, optional
         The concentration ratios for the windows. Only returned if
@@ -1702,16 +1702,16 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import windows, freqz
-    >>> N = 51
+    >>> M = 51
     >>> fig, axes = plt.subplots(3, 2, figsize=(5, 7))
     >>> for ai, alpha in enumerate((1, 3, 5)):
-    ...     win_dpss = windows.dpss(N, alpha)
+    ...     win_dpss = windows.dpss(M, alpha)
     ...     beta = alpha*np.pi
-    ...     win_kaiser = windows.kaiser(N, beta)
+    ...     win_kaiser = windows.kaiser(M, beta)
     ...     for win, c in ((win_dpss, 'k'), (win_kaiser, 'r')):
     ...         win /= win.sum()
     ...         axes[ai, 0].plot(win, color=c, lw=1.)
-    ...         axes[ai, 0].set(xlim=[0, N-1], title=r'$\\alpha$ = %s' % alpha,
+    ...         axes[ai, 0].set(xlim=[0, M-1], title=r'$\\alpha$ = %s' % alpha,
     ...                         ylabel='Amplitude')
     ...         w, h = freqz(win)
     ...         axes[ai, 1].plot(w, 20 * np.log10(np.abs(h)), color=c, lw=1.)
@@ -1822,8 +1822,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # Here we set up an alternative symmetric tri-diagonal eigenvalue
     # problem such that
     # (B - (l2)I)v = 0, and v are our DPSS (but eigenvalues l2 != l1)
-    # the main diagonal = ([N-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,N-1]
-    # and the first off-diagonal = t(N-t)/2, t=[1,2,...,N-1]
+    # the main diagonal = ([M-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,M-1]
+    # and the first off-diagonal = t(M-t)/2, t=[1,2,...,M-1]
     # [see Percival and Walden, 1993]
     d = ((M - 1 - 2 * nidx) / 2.) ** 2 * np.cos(2 * np.pi * W)
     e = nidx[1:] * (M - nidx[1:]) / 2.
@@ -1971,7 +1971,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
-    - `~scipy.signal.windows.exponential` (needs decay scale)
+    - `~scipy.signal.windows.exponential` (needs center, decay scale)
     - `~scipy.signal.windows.tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
@@ -1995,6 +1995,9 @@ def get_window(window, Nx, fftbins=True):
     >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> signal.get_window(('exponential', None, 1.), 9)
+    array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
+            0.60653066,  0.22313016,  0.082085  ,  0.03019738])
     >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
