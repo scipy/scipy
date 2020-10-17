@@ -6066,7 +6066,7 @@ class pearson3_gen(rv_continuous):
 
         invmask1a = np.logical_and(invmask, skew > 0)
         invmask1b = skew[invmask] > 0
-        # use cdf instead of _cdf to fix bug mentioned in gh-12640
+        # use cdf instead of _cdf to fix issue mentioned in gh-12640
         # (_cdf produces NaNs for inputs outside support)
         ans[invmask1a] = gamma.cdf(transx[invmask1b], alpha[invmask1b])
 
