@@ -4,8 +4,11 @@ from scipy.linalg import hilbert
 from scipy.linalg.misc import norm
 from numpy.testing import assert_, assert_array_almost_equal_nulp
 
-from scipy.linalg.arls import (arls, arlsusv, cull, prepeq, arlseq,
+from scipy.linalg.arls import (arls, arlsusv, cull, prepeq, arlseq, 
            arlsgt, arlsnn, splita, splitb, decide_width)
+
+#from arls import (arls, arlsusv, cull, prepeq, arlseq, 
+#           arlsgt, arlsnn, splita, splitb, decide_width)
 
 
 # TEST LOW LEVEL UTILTIES
@@ -136,23 +139,22 @@ def test_row_deletion():
     return
 
 
-def test_arlseq_with_poor_E():
+def test_arlseq():
     n=14
-    x = np.ones(n)
-    x[1] = -1.0
-    x[5] = -1.0
-    x[9] = -1.0
     A = np.eye(n)
+    x = np.ones(n)
     b = A @ x
+    
     E = hilbert(n)
+    E[7,7] = 3.
+    x[7] = 5.0
     f = E @ x
+
     xx=arlseq(A,b,E,f)[0]
-    ans =np.array([ 1.00090446, -0.99817657,  1.00236951,  1.00279655,
-                    1.00221899, -0.99679898,  1.00738824,  0.9862784,
-                    1.02311775, -0.99162213,  0.95629113,  1.05844299,
-                     0.97236068,  1.0087402 ])
-    d = norm(xx-ans)
-    assert_(d < 1.0e-6,"Residual too large in arlseq.")
+    assert_(abs(xx[7] - 5.0) < 1.0e-4,"Constraint not obeyed in arlseq.")
+
+    d = norm(x-xx)
+    assert_(d < 0.01 , "Residual too large in arsleq.")
     return
 
 
@@ -169,6 +171,7 @@ def test_arlsgt():
     d = norm(ans - x)
     assert_(d < 1.0e-5,"Residual too large in arlsgt hilbert test.")
     return    
+
 
 def test_forced_zero_solution():
     A = np.array([[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]])
@@ -189,6 +192,7 @@ def test_arlsnn_single_column():
     assert_(x[0] == 1.0, "arlsnn not handling single column right.")
     return
 
+
 def test_arlsnn_with_impossible():
     A = np.eye(3)
     b = np.ones(3)
@@ -196,5 +200,4 @@ def test_arlsnn_with_impossible():
     x = arlsnn(A, b)[0]
     assert_(norm(x) == 0.0, "Solution of arlsnn is incorrectly non-zero.")
     return
-
 
