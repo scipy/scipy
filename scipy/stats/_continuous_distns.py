@@ -4707,6 +4707,36 @@ class logistic_gen(rv_continuous):
         # https://en.wikipedia.org/wiki/Logistic_distribution
         return 2.0
 
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # if user has provided `floc` or `fscale`, fall back on super fit
+        # method. This scenario is not suitable for solving a system of
+        # equations
+        if floc is not None or fscale is not None:
+            return super(logistic_gen, self).fit(data, *args, **kwds)
+
+        # rv_continuous provided guesses
+        loc, scale = self._fitstart(data)
+        # account for user provided guesses
+        loc = kwds.pop('loc', loc)
+        scale = kwds.pop('scale', scale)
+
+        # the maximum likelihood estimators `a` and `b` of the location and
+        # scale parameters are roots of the two equations described in `func`.
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
+        # Peacock (2000), Page 130
+        def func(params, data):
+            a, b = params
+            n = len(data)
+            c = (data - a) / b
+            x1 = np.sum(sc.expit(c)) - n/2
+            x2 = np.sum(c*np.tanh(c/2)) - n
+            return x1, x2
+
+        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
+
 
 logistic = logistic_gen(name='logistic')
 

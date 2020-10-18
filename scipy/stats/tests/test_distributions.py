@@ -29,6 +29,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
+from scipy.optimize import root
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -943,6 +944,39 @@ class TestLogistic(object):
         # For such large arguments, logpdf(x) = -abs(x) when computed
         # with 64 bit floating point.
         assert_equal(logp, [-800, -800])
+
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit(self, loc_rvs, scale_rvs):
+        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # test that result of fit method is the same as optimization
+        def func(input, data):
+            a, b = input
+            n = len(data)
+            x1 = np.sum(np.exp((data - a) / b) /
+                        (1 + np.exp((data - a) / b))) - n / 2
+            x2 = np.sum(((data - a) / b) *
+                        ((np.exp((data - a) / b) - 1) /
+                         (np.exp((data - a) / b) + 1))) - n
+            return x1, x2
+
+        expected_solution = root(func, stats.logistic._fitstart(data), args=(
+            data,)).x
+        fit_method = stats.logistic.fit(data)
+
+        # other than computational variances, the fit method and the solution
+        # to this system of equations are equal
+        assert_allclose(fit_method, expected_solution, atol=1e-30)
+
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
+        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # obtain objective function to compare results of the fit methods
+        args = [data, (stats.logistic._fitstart(data),)]
+        func = stats.logistic._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.logistic, data, func)
 
 
 class TestLogser(object):
