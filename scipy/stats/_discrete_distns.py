@@ -274,7 +274,7 @@ class nbinom_gen(rv_discrete):
         return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
-        return (n > 0) & (p >= 0) & (p <= 1)
+        return (n > 0) & (p > 0) & (p <= 1)
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
@@ -344,7 +344,7 @@ class geom_gen(rv_discrete):
         return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
-        return (p <= 1) & (p >= 0)
+        return (p <= 1) & (p > 0)
 
     def _pmf(self, k, p):
         return np.power(1-p, k-1) * p
