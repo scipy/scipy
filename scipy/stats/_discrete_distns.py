@@ -28,9 +28,11 @@ class binom_gen(rv_discrete):
 
        f(k) = \binom{n}{k} p^k (1-p)^{n-k}
 
-    for ``k`` in ``{0, 1,..., n}``.
+    for ``k`` in ``{0, 1,..., n}``, :math:`0 \leq p \leq 1`
 
-    `binom` takes ``n`` and ``p`` as shape parameters.
+    `binom` takes ``n`` and ``p`` as shape parameters,
+    where :math:`p` is the probability of a single success 
+    and :math:`1-p` is the probability of a single failure. 
 
     %(after_notes)s
 
@@ -108,9 +110,11 @@ class bernoulli_gen(binom_gen):
        f(k) = \begin{cases}1-p  &\text{if } k = 0\\
                            p    &\text{if } k = 1\end{cases}
 
-    for :math:`k` in :math:`\{0, 1\}`.
+    for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
-    `bernoulli` takes :math:`p` as shape parameter.
+    `bernoulli` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success 
+    and :math:`1-p` is the probability of a single failure. 
 
     %(after_notes)s
 
@@ -251,10 +255,11 @@ class nbinom_gen(rv_discrete):
 
        f(k) = \binom{k+n-1}{n-1} p^n (1-p)^k
 
-    for :math:`k \ge 0`.
+    for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, whereas p is the probability of a single success.
+    number of successes, :math:`p` is the probability of a single success, 
+    and :math:`1-p` is the probability of a single failure. 
 
     %(after_notes)s
 
@@ -269,7 +274,7 @@ class nbinom_gen(rv_discrete):
         return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
-        return (n > 0) & (p >= 0) & (p <= 1)
+        return (n > 0) & (p > 0) & (p <= 1)
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
@@ -320,9 +325,11 @@ class geom_gen(rv_discrete):
 
         f(k) = (1-p)^{k-1} p
 
-    for :math:`k \ge 1`.
+    for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter.
+    `geom` takes :math:`p` as shape parameter, 
+    where :math:`p` is the probability of a single success 
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -337,7 +344,7 @@ class geom_gen(rv_discrete):
         return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
-        return (p <= 1) & (p >= 0)
+        return (p <= 1) & (p > 0)
 
     def _pmf(self, k, p):
         return np.power(1-p, k-1) * p
@@ -678,9 +685,11 @@ class logser_gen(rv_discrete):
 
         f(k) = - \frac{p^k}{k \log(1-p)}
 
-    for :math:`k \ge 1`.
+    for :math:`k \ge 1`, :math:`0 < p < 1`
 
-    `logser` takes :math:`p` as shape parameter.
+    `logser` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
