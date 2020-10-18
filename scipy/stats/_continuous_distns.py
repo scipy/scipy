@@ -3092,7 +3092,7 @@ class gumbel_l_gen(rv_continuous):
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
-        loc_r, scale_r, = gumbel_r.fit(-data, *args, **kwds)
+        loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
         return (-loc_r, scale_r)
 
 
