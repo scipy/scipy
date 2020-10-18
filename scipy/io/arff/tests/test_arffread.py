@@ -58,7 +58,7 @@ class TestData(object):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
         
-    def test11(self):
+    def test4(self):
         # Parsing trivial file with class attribute that includes trailing and leading spaces in attribute declaration.
         self._test(test11)
 
