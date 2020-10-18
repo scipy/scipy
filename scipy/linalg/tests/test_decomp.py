@@ -1906,7 +1906,7 @@ class TestSchur(object):
         tc2, zc2 = rsf2csf(tc, zc)
         assert_array_almost_equal(zc2 @ tc2 @ zc2.conj().T, a)
 
-    def test_sort(self):
+    def test_sort_lhp(self):
         a = [[4., 3., 1., -1.],
              [-4.5, -3.5, -1., 1.],
              [9., 6., -4., 4.5],
@@ -1924,6 +1924,11 @@ class TestSchur(object):
                                   s, 3)
         assert_equal(2, sdim)
 
+    def test_sort_rhp(self):
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
         s, u, sdim = schur(a, sort='rhp')
         assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
                                    [-0.4862, 0.4930, -0.1434, -0.7071],
@@ -1937,6 +1942,11 @@ class TestSchur(object):
                                   s, 3)
         assert_equal(2, sdim)
 
+    def test_sort_iuc(self):
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
         s, u, sdim = schur(a, sort='iuc')
         assert_array_almost_equal([[0.5547, 0., -0.5721, -0.6042],
                                    [-0.8321, 0., -0.3814, -0.4028],
@@ -1950,6 +1960,11 @@ class TestSchur(object):
                                   s, 3)
         assert_equal(2, sdim)
 
+    def test_sort_ouc(self):
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
         s, u, sdim = schur(a, sort='ouc')
         assert_array_almost_equal([[0.4862, -0.5134, 0.7071, 0.],
                                    [-0.4862, 0.5134, 0.7071, 0.],
@@ -1963,6 +1978,11 @@ class TestSchur(object):
                                   s, 3)
         assert_equal(2, sdim)
 
+    def test_sort_lambda(self):
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
         s, u, sdim = schur(a, sort=lambda x: x >= 0.0)
         assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
                                    [-0.4862, 0.4930, -0.1434, -0.7071],
