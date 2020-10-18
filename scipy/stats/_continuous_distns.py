@@ -4727,18 +4727,12 @@ class logistic_gen(rv_continuous):
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
-        def func(input, data):
-            a, b = input
-            data = np.asarray(data)
+        def func(params, data):
+            a, b = params
             n = len(data)
-
-            # use technique from `scipy.special.logsumexp` to avoid overflow
             c = (data - a) / b
-            M = c.max()
-            exp_l = (np.exp(M) * np.exp(c - M))
-
-            x1 = np.sum(exp_l / (1 + exp_l)) - (n / 2)
-            x2 = np.sum((c * ((exp_l - 1) / (exp_l + 1)))) - n
+            x1 = np.sum(sc.expit(c)) - n/2
+            x2 = np.sum(c*np.tanh(c/2)) - n
             return x1, x2
 
         return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
