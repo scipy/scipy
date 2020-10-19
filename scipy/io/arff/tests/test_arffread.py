@@ -59,7 +59,7 @@ class TestData(object):
         self._test(test6)
         
     def test4(self):
-        # Parsing trivial file with class attribute that includes trailing and leading spaces in attribute declaration.
+        # Parsing trivial file with trailing spaces in attribute declaration.
         self._test(test11)
 
     def _test(self, test_file):
