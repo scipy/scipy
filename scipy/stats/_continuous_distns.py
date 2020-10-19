@@ -6488,14 +6488,13 @@ class rayleigh_gen(rv_continuous):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        When the scale parameter is fixed by using the `fscale` argument,
-        this function uses the default optimization method to determine
-        the MLE. If the location parameter is fixed by using the `floc`
-        argument, the analytical formula for the estimate of the scale
-        is used. If neither parameter is fixed, the analytical MLE for
-        `scale` is used as a function of `loc` in numerical optimization
-        of `loc`, injecting corresponding analytical optimum for
-        `scale`.\n\n""")
+        Notes specifically for rayleigh.fit: If the location is fixed with
+        the `floc` parameter, this method uses an analytical formula to find
+        the scale.  Otherwise, this function uses a numerical root finder on
+        the first order conditions of the log-likelihood function to find the
+        MLE.  Only the (optional) `loc` parameter is used as the initial guess
+        for the root finder; the `scale` parameter and any other parameters
+        for the optimizer are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
