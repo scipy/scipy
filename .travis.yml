@@ -38,7 +38,10 @@ matrix:
         # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
-        - tools/lint_diff.py
+        - |
+          if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+             python tools/lint_diff.py --branch $TRAVIS_BRANCH
+          fi
         - tools/unicode-check.py
     - python: 3.7
       name: "ARM - Test Group 1"
