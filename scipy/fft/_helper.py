@@ -47,7 +47,7 @@ def next_fast_len(target, real=False):
     Zero-padding to the next regular length reduces computation time to
     1.6 ms, a speedup of 7.3 times:
 
-    >>> fft.next_fast_len(min_len, True)
+    >>> fft.next_fast_len(min_len, real=True)
     93312
     >>> b = fft.fft(a, 93312)
 
