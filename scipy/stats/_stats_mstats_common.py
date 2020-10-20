@@ -9,7 +9,8 @@ __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
 LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'rvalue', 'pvalue',
-                                                   'stderr'))
+                                                   'slope_stderr',
+                                                   'intercept_stderr'))
 
 
 def linregress(x, y=None):
@@ -38,8 +39,12 @@ def linregress(x, y=None):
         Two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero, using Wald Test with t-distribution of
         the test statistic.
-    stderr : float
-        Standard error of the estimated gradient.
+    slope_stderr : float
+        Standard error of the estimated slope (gradient), under the assumption
+        of residual normality.
+    intercept_stderr : float
+        Standard error of the estimated intercept, under the assumption
+        of residual normality.
 
     See also
     --------
@@ -66,9 +71,11 @@ def linregress(x, y=None):
 
     Perform the linear regression:
 
-    >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-    >>> print("slope: %f    intercept: %f" % (slope, intercept))
-    slope: 1.944864    intercept: 0.268578
+    >>> slope, intercept, r_value, p_value, slope_err, intercept_err = stats.linregress(x, y)
+    >>> print("slope: %f +/- %f\nintercept: %f +/- %f"
+    ...     % (slope, slope_err, intercept, intercept_err))
+    slope: 1.944864 +/- ...
+    intercept: 0.268578 +/- ...
 
     To get coefficient of determination (R-squared):
 
@@ -135,13 +142,17 @@ def linregress(x, y=None):
             prob = 1.0
         else:
             prob = 0.0
-        sterrest = 0.0
+        slope_sterrest = 0.0
+        intercept_stderr = 0.0
     else:
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
-        sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        slope_sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        intercept_stderr = slope_sterrest * np.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return LinregressResult(
+        slope, intercept, r, prob,
+        slope_sterrest, intercept_stderr)
 
 
 def theilslopes(y, x=None, alpha=0.95):

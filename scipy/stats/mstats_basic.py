@@ -50,6 +50,7 @@ from scipy._lib._util import float_factorial
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
+        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -809,7 +810,8 @@ def pointbiserialr(x, y):
 
 LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                    'rvalue', 'pvalue',
-                                                   'stderr'))
+                                                   'slope_stderr',
+                                                   'intercept_stderr'))
 
 
 def linregress(x, y=None):
@@ -842,15 +844,14 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
-                                                                   y.data[~m])
+            result = stats_linregress(x.data[~m],y.data[~m])
         else:
             # All data is masked
-            return None, None, None, None, None
+            result = stats_LinregressResult(None, None, None, None, None, None)
     else:
-        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
-
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+        result = stats_linregress(x.data,y.data)
+    
+    return result
 
 
 def theilslopes(y, x=None, alpha=0.95):

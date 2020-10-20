@@ -691,15 +691,18 @@ def test_regress_simple():
     y = 0.2 * np.linspace(0, 100, 100) + 10
     y += np.sin(np.linspace(0, 20, 100))
 
-    slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    result = mstats.linregress(x, y)
 
-    # test for namedtuple attributes
-    res = mstats.linregress(x, y)
-    attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-    check_named_results(res, attributes, ma=True)
+    # Result is of a correct class and with correct fields
+    assert_(isinstance(result,stats._stats_mstats_common.LinregressResult))
+    attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'slope_stderr', 'intercept_stderr')
+    check_named_results(result, attributes, ma=True)
 
+    # Slope and intercept are estimated correctly
+    assert_almost_equal(result.slope, 0.19644990055858422)
+    assert_almost_equal(result.intercept, 10.211269918932341)
+    assert_almost_equal(result.slope_stderr, 0.002395781449783862)
+    assert_almost_equal(result.intercept_stderr, 0.13866936078570702)
 
 def test_theilslopes():
     # Test for basic slope and intercept.
@@ -740,7 +743,7 @@ def test_siegelslopes():
     # if there are no outliers, results should be comparble to linregress
     x = np.arange(10)
     y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
-    slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
+    slope_ols, intercept_ols, _, _, _, _ = stats.linregress(x, y)
 
     slope, intercept = mstats.siegelslopes(y, x)
     assert_allclose(slope, slope_ols, rtol=0.1)
@@ -1129,9 +1132,9 @@ class TestCompareWithStats(object):
     def test_linregress(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            res1 = stats.linregress(x, y)
-            res2 = stats.mstats.linregress(xm, ym)
-            assert_allclose(np.asarray(res1), np.asarray(res2))
+            result1 = stats.linregress(x, y)
+            result2 = stats.mstats.linregress(xm, ym)
+            assert_allclose(np.asarray(result1), np.asarray(result2))
 
     def test_pearsonr(self):
         for n in self.get_n():
