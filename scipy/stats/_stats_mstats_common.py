@@ -23,9 +23,7 @@ def linregress(x, y=None):
         Two sets of measurements.  Both arrays should have the same length.  If
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
-        are then found by splitting the array along the length-2 dimension.  In
-        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
-        equivalent to ``linregress(x[0], x[1])``.
+        are then found by splitting the array along the length-2 dimension.
 
     Returns
     -------
@@ -72,12 +70,8 @@ def linregress(x, y=None):
     Perform the linear regression:
 
     >>> slope, intercept, r_value, p_value, slope_err, intercept_err = stats.linregress(x, y)
-    >>> print("slope: %f +/- %f\nintercept: %f +/- %f"
-    ...     % (slope, slope_err, intercept, intercept_err))
-    slope: 1.944864 +/- ...
-    intercept: 0.268578 +/- ...
 
-    To get coefficient of determination (R-squared):
+    Coefficient of determination (R-squared):
 
     >>> print("R-squared: %f" % r_value**2)
     R-squared: 0.735498
@@ -89,12 +83,18 @@ def linregress(x, y=None):
     >>> plt.legend()
     >>> plt.show()
 
-    Example for the case where only x is provided as a 2x2 array:
+    Calculate 95% confidence interval on slope and intercept:
 
-    >>> x = np.array([[0, 1], [0, 2]])
-    >>> r = stats.linregress(x)
-    >>> r.slope, r.intercept
-    (2.0, 0.0)
+    >>> # Two-sided inverse Students t-distribution
+    >>> # p - probability, df - degrees of freedom
+    >>> from scipy.stats import t
+    >>> tinv = lambda p,df: abs(t.ppf(p/2,df))
+
+    >>> ts = tinv(0.05,len(x)-2)
+    >>> print("slope (95%%): %f +/- %f" % (slope, ts*slope_err))
+    slope (95%): 1.944864 +/- 0.950885
+    >>> print("intercept (95%%): %f +/- %f" % (intercept, ts*intercept_err))
+    intercept (95%): 0.268578 +/- 0.488822
 
     """
     TINY = 1.0e-20
