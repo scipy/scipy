@@ -1477,11 +1477,16 @@ class TestRegression(object):
         assert_almost_equal(result.slope_stderr, 0.00042979684820)
         assert_almost_equal(result.intercept_stderr, 0.23281823430153)
 
+    def test_compare_to_polyfit(self):
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
         result = stats.linregress(x, y)
+        poly = np.polyfit(x,y,1)  # Fit 1st degree polynomial
 
-        assert_almost_equal(result.slope, target_slope)
-        assert_almost_equal(result.intercept, target_intercept)
-        assert_almost_equal(result.rvalue**2, target_rsquared)
+        # Make sure linear regression slope and intercept match with results from numpy polyfit
+        assert_almost_equal(result.slope, poly[0])
+        assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])
