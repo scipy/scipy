@@ -74,8 +74,6 @@ class TestData(object):
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
-    @pytest.mark.skipif(sys.version_info < (3, 6),
-                        reason='Passing path-like objects to IO functions requires Python >= 3.6')
     def test_path(self):
         # Test reading from `pathlib.Path` object
         from pathlib import Path
