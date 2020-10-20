@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy.linalg.decomp import _asarray_validated
+from scipy.linalg import lstsq
 from scipy.linalg.misc import norm
 from scipy.linalg.misc import LinAlgError
 from math import sqrt
@@ -29,7 +30,7 @@ def myrms(x):
 
 def myepsilon():
     return 0.00000001
-  
+
 
 def decide_width(mg):
     if mg < 3:
@@ -47,6 +48,66 @@ def decide_width(mg):
     else:
         w = int(mg / 10)
         return 2 * int(w / 2)  # 10 spans
+
+
+def strange(A, b):
+    """determines whether the A*x=b may be ill-conditioned."""
+    A = atleast_2d(_asarray_validated(A, check_finite=True))
+    b = atleast_1d(_asarray_validated(b, check_finite=True))
+    checkAb(A, b, 1)
+    if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
+        return False, 0.0
+
+    m, n = A.shape
+    if m < 3:
+        return True, 0.0   # not to falsely reassure
+    AA = A.copy()
+    bb = b.copy()
+
+    epsilon = 10.0 * max(m, n) * np.spacing(bb.real.dtype.type(1))
+    small = 0.0
+    rn = np.zeros(m)
+    for i in range(0, 2):
+
+        # compute row norms
+        for k in range(0, m):
+            rn[k] = norm(AA[k, :])
+        if i == 0:
+            small = rn.mean() * epsilon
+
+        # find largest sense
+        sense = 0.0
+        kmax = -1
+        s = np.zeros(m)
+        for k in range(i, m):
+            if rn[k] < small:
+                return True, 0.0
+            s[k] = abs(b[k]) / rn[k]
+            if (s[k] >= sense):
+                sense = s[k]
+                kmax = k
+
+        # test norm rise
+        if i == 0:
+            sum0 = s.sum()
+        else:
+            sum1 = s.sum()
+            if sum1 > sum0 * 3.0:
+                return True, 0.0
+            else:
+                return False, max(sum0, sum1) * float(m) * 2.0
+
+        # promote highest sense row
+        rnx = rn[kmax]
+        AA[[i, kmax], :] = AA[[kmax, i], :]
+        bb[[i, kmax]] = bb[[kmax, i]]
+
+        # subtract projections onto A[i, :]
+        for k in range(i + 1, m):
+            d = np.dot(AA[k, :], AA[i, :]) / (rnx * rnx)
+            AA[k, :] -= d * AA[i, :]
+            bb[k] -= d * bb[i]
+    return True, 0.0  # failsafe; currently unreachable
 
 
 def splita(mg, g):
@@ -166,7 +227,7 @@ def arlsusv(A, b, U, S, Vt):
     sense = 0.0
     si = 0.0
     cond = max(A.shape) * np.spacing(A.real.dtype.type(1))
-    eps = S[0] * cond 
+    eps = S[0] * cond
     for i in range(0, mn):
         si = S[i]
         if si <= eps:
@@ -176,7 +237,7 @@ def arlsusv(A, b, U, S, Vt):
             sense = -sense
         g[i] = sense
         k = i + 1
-    nr = k  # traditional numeric rank    
+    nr = k  # traditional numeric rank
     if k <= 0:
         return np.zeros(n)  # failsave check
 
@@ -196,7 +257,7 @@ def arlsusv(A, b, U, S, Vt):
         # from sigma, determine lambda
         lambdah = discrep(A, b, U, S, Vt, ur, sigma)
         # from lambda, determine solution
-        x, check = rmslambdah(A, b, U, S, Vt, ur, lambdah)  
+        x, check = rmslambdah(A, b, U, S, Vt, ur, lambdah)
     return x, nr, ur, sigma, lambdah
 
 
@@ -233,8 +294,9 @@ def arls(A, b):
         The Numerical Rank of A.
     mur : float
         The Minimum Usable Rank seen in solving all the problems.
-        Note that "numerical rank" is an attribute of a matrix but the "usable rank"
-        that arls computes is an attribute of the problem, Ax=b.
+        Note that "numerical rank" is an attribute of a matrix
+        but the "usable rank" that arls computes is an attribute
+        of the problem, Ax=b.
     msigma : float
         The largest estimated right-hand-side root-mean-square error seen.
     mlambda : float
@@ -312,36 +374,37 @@ def arls(A, b):
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
         return np.zeros(A.shape[1])
-    AA = A.copy()
-    bb = b.copy()
-    checkAb(AA, bb, 2)
-    n = AA.shape[1]
+    checkAb(A, b, 2)
 
-    if len(bb.shape) == 2:
-        nrhs = bb.shape[1]
+    if len(b.shape) == 2:
+        nrhs = b.shape[1]
     else:
         nrhs = 1
+        stran, maxnorm = strange(A, b)
+        if not stran:
+            x = lstsq(A, b)[0]
+            if norm(x) < maxnorm:
+                nr = min(A.shape)
+                return x, nr, nr, 0.0, 0.0
 
-    U, S, Vt = np.linalg.svd(AA, full_matrices=False)
-    # for one RHS
+    # we either have multiple columns, or if just 1, then it is ill-conditioned
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
     if nrhs == 1:
-        return arlsusv(AA, bb, U, S, Vt)
-        
-    # for multiple RHSs    
+        return arlsusv(A, b, U, S, Vt)
+
+    # for multiple RHSs
+    n = A.shape[1]
     xx = np.zeros((n, nrhs))
-    nr = min(AA.shape)  # track minimum numeric rank
+    nr = min(A.shape)  # track minimum numeric rank
     mur = nr            # track minimum usable rank
     msigma = 0.0           # track maximum estimated RHS error
     mlamda = 0.0           # track maximum Tikhonov parameter
     for p in range(0, nrhs):
-        xx[:, p], nr, ur, sigma, lambdah = arlsusv(AA, bb[:, p], U, S, Vt)
-        mur = min(mur,ur)   
+        xx[:, p], nr, ur, sigma, lambdah = arlsusv(A, b[:, p], U, S, Vt)
+        mur = min(mur, ur)
         msigma = max(msigma, sigma)
-        mlamda = max(mlamda, lambdah) 
+        mlamda = max(mlamda, lambdah)
     return xx, nr, mur, msigma, mlamda
-
-
-# --------------------------------------
 
 
 def find_max_row_norm(A):
@@ -439,6 +502,7 @@ def prepeq(E, f, neglect):
 
     return EE, ff
 
+
 def arlseq(A, b, E, f):
     """Solves the double linear system of equations
 
@@ -448,25 +512,34 @@ def arlseq(A, b, E, f):
     Both Ax=b and Ex=f system can be underdetermined, square,
     or over-determined. Arguments b and f must be single columns.
 
-    Ax=b is handled as a least-squares problem, using arls() above,
-    after an appropriate othogonalization process removes the projection
-    of each row of Ax=b onto the set of equality constraints in Ex=f.
-    The solution to the equality constraints is then added back to the
-    solution of the reduced Ax=b system.
-
     Ex=f is treated as a set of equality constraints.
     These constraints are usually few in number and well behaved.
     But clearly the caller can easily provide equations in Ex=f that
-    are impossible to satisfy as a group... for example, by one equation
-    requiring x[0]=0, and another requiring x[0]=1.
+    are impossible to satisfy as a group. For example, there could be
+    one equation requiring x[0]=0, and another requiring x[0]=1.
+    And, the solver must deal with there being redundant or other
+    pathological situations within the E matrix.
     So the solution process will either solve each equation in Ex=f exactly
     (within roundoff) or if that is impossible, arlseq() will discard
-    one or more equations until the remaining equations are solvable.
-    In the event that Ex=f is actually ill-conditioned
-    in the manner that arls() is expected to handle, then arlseq() will delete
-    offending rows of Ex=f.
+    one or more equations until the remaining equations are solvable
+    exactly (within roundoff).
+    We will refer below to the solution of this reduced system as "xe".
 
-    If either A or b is all zeros then the solution will be all zeros.
+    After Ex=f is processed as above, the rows of Ax=b will have their
+    projections onto every row of Ex=f subtracted from them.
+    We will call this reduced set of equations A'x = b'.
+    (Thus, the rows of A' will all be orthogonal to the rows of E.)
+    This reduced problem A'x = b', will then be solved with arls().
+    We will refer to the solution of this system as "xt".
+
+    The final solution will be x = xe + xt.
+    (Since E and A' are mutually orthogonal matrices.)
+
+    If A'x = b' is NOT ill-conditioned (or singular) then x = xe + xt
+    will satisfy all the equality constraints that were not rejected.
+    However, if A'x = b' is ill-conditioned, then xt will be a regularized
+    solution, not an exact solution, and thus x = xe + xt will not in general
+    satisfy the equality constraints exactly.
 
     Parameters
     ----------
@@ -478,14 +551,15 @@ def arlseq(A, b, E, f):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float 
+    mnr : float
         The numerical rank of the matrix, A, after its projection onto the rows
         of E are subtracted.
     mur : float
-        The "usable" rank of the "reduced" problem, Ax=b, after its projection 
-        onto the rows of Ex=f are subtracted. 
-        Note that "numerical rank" is an attribute of a matrix but the "usable rank"
-        that arls computes is an attribute of the problem, Ax=b.
+        The "usable" rank of the "reduced" problem, Ax=b, after its projection
+        onto the rows of Ex=f are subtracted.
+        Note that "numerical rank" is an attribute of a matrix
+        but the "usable rank" that arls computes is an attribute
+        of the problem, Ax=b.
     msigma : float
         The estimated right-hand-side root-mean-square error.
     mlambda : float
@@ -596,16 +670,14 @@ def arlseq(A, b, E, f):
             AA[i, :] = AA[i, :] / nm
             bb[i] = bb[i] / nm
             i += 1
-            
+
     # final solution
     xe = np.transpose(EE) @ ff
     if AA.shape[0] > 0:
         xt, nr, ur, sigma, lambdah = arls(AA, bb)
         return xt + xe, nr, ur, sigma, lambdah
     else:
-        return xe , 0, 0, 0., 0.
-
-# --------------------------------------
+        return xe, 0, 0, 0., 0.
 
 
 def arlsgt(A, b, G, h):
@@ -633,12 +705,13 @@ def arlsgt(A, b, G, h):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float 
+    mnr : float
         The numerical rank of the matrix, A.
     mur : float
-        The usable rank of the problem, Ax=b. 
-        Note that "numerical rank" is an attribute of a matrix but the "usable rank"
-        that arls computes is an attribute of the problem, Ax=b.
+        The usable rank of the problem, Ax=b.
+        Note that "numerical rank" is an attribute of a matrix
+        but the "usable rank" that arls computes is an attribute
+        of the problem, Ax=b.
     msigma : float
         The estimated right-hand-side root-mean-square error.
     mlambda : float
@@ -719,7 +792,7 @@ def arlsgt(A, b, G, h):
     x, nr, ur, sigma, lambdah = arls(AA, bb)
     nx = norm(x)
     if nx <= 0.0:
-        return np.zeros(n) , 0, 0, 0., 0.
+        return np.zeros(n), 0, 0, 0., 0.
 
     # while constraints are not fully satisfied:
     while True:
@@ -760,16 +833,13 @@ def arlsgt(A, b, G, h):
             ff[me - 1] = rhs
         # re-solve modified system
         x = arlseq(AA, bb, EE, ff)[0]
-    return x, nr, ur, sigma, lambdah 
-
-
-# --------------------------------------
+    return x, nr, ur, sigma, lambdah
 
 
 def arlsnn(A, b):
     """Solves Ax = b in the least squares sense, with the solution
        constrained to be non-negative.
-       
+
        For a nonpositive solution, use
           x = -arlsnn(A,-b)
 
@@ -781,17 +851,18 @@ def arlsnn(A, b):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float 
+    mnr : float
         The numerical rank of the matrix, A.
     mur : float
-        The usable rank of the problem, Ax=b. 
-        Note that "numerical rank" is an attribute of a matrix but the "usable rank"
-        that arls computes is an attribute of the problem, Ax=b.
+        The usable rank of the problem, Ax=b.
+        Note that "numerical rank" is an attribute of a matrix
+        but the "usable rank" that arls computes is an attribute
+        of the problem, Ax=b.
     msigma : float
         The estimated right-hand-side root-mean-square error.
     mlambda : float
         The estimated Tikhonov regularization.
-        
+
     Raises
     ------
     LinAlgError
@@ -828,4 +899,3 @@ def arlsnn(A, b):
     G = np.eye(n)
     h = np.zeros(n)
     return arlsgt(AA, bb, G, h)
-
