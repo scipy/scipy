@@ -1417,7 +1417,6 @@ class TestRegression(object):
         assert_(not np.isnan(result.intercept_stderr))
 
     def test_linregress_result_attributes(self):
-
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
@@ -1469,10 +1468,14 @@ class TestRegression(object):
              998.0, 888.8, 119.6, 0.3, 0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
              10.2, 117.6, 228.9, 668.4, 449.2, 0.2]
 
-        # Target (expected) values
-        target_slope = 1.00211681802045
-        target_intercept = -0.262323073774029
-        target_rsquared = 0.999993745883712
+        result = stats.linregress(x, y)
+
+        assert_almost_equal(result.slope, 1.00211681802045)
+        assert_almost_equal(result.intercept, -0.262323073774029)
+        assert_almost_equal(result.rvalue**2, 0.999993745883712)
+        assert_almost_equal(result.pvalue, 0.0)
+        assert_almost_equal(result.slope_stderr, 0.00042979684820)
+        assert_almost_equal(result.intercept_stderr, 0.23281823430153)
 
         result = stats.linregress(x, y)
 
