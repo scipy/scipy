@@ -4,17 +4,15 @@ pypocketfft version
 
 SciPy currently vendors [pypocketfft] at:
 
-    commit 8234f5c6adf74490e6bbf686d6c1a0041d772ac9
-    Merge: 7a39f78 c1e7bdf
+    commit bf2c431c21213b7c5e23c2f542009b0bd3ec1445
+    Merge: 8234f5c 9c252b2
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Fri Sep 4 18:41:04 2020 +0200
+    Date:   Tue Oct 20 15:16:14 2020 +0200
 
-        Merge branch 'threadpool-fixes' into 'master'
+        Merge branch 'good_size_keywords' into 'master'
 
-        Threadpool fixes
+        Handle keyword args in good_size
 
-        Closes #14
-
-        See merge request mtr/pypocketfft!40
+        See merge request mtr/pypocketfft!41
 
 pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
