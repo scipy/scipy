@@ -276,6 +276,7 @@ def rosen(x):
     ----------
     x : array_like
         1-D array of points at which the Rosenbrock function is to be computed.
+        Higher-dimensional arrays broadcast using the first component as variables.
 
     Returns
     -------
