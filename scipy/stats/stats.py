@@ -3696,80 +3696,26 @@ def f_oneway(*args, axis=0):
 
 
 class TukeyKramerResult():
-    def __init__(self):
-        self.comp = dict()
+    def __init__(self, res, alpha, qcrit):
+        self.res = res
+        self.alpha = alpha
+        self.qcrit = qcrit
 
     def __repr__(self):
-        s = (f"{'group' : <7}{'min' : ^10}{'mean' : ^10}"
-             f"{'max' : >5}{'sig' : >9}\n")
-        for key in self.comp.keys():
-            s = s + f"{key[0]} - {key[1]}  " \
-                f"{self.comp[key][0] :<10.3f}{self.comp[key][1] : ^10.3f}"\
-                f"{self.comp[key][2] : ^10.3f}{self.comp[key][3] : >5}\n"
+        nargs = self.res.shape[0]
+        s = f"~~~~~~~~~~~~\n\tComparison between groups with Simultanious\n(with {100*(1-self.alpha):.0f}% Confidence Limits and significance at the {self.alpha} level)\n~~~~~~~~~~~~\n"
+        s += ("{'group' : <7}{'mean' : ^10}{'min' : ^10}"
+              "{'max' : >5}{'sig' : >9}\n")
+        for i in range(nargs):
+            for j in range(nargs):
+                if i == j:
+                    pass
+                else:
+                    paircomp = self.res[i,j]
+                    s += (f"{i+1} - {j+1}  "
+                          f"{paircomp[0] :>8.3f}{paircomp[1] :>10.3f}"
+                          f"{paircomp[2] :>8.3f}{paircomp[3] : >8}\n")
         return s
-
-import copy
-import math
-
-import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
-from scipy import stats, interpolate
-
-
-def get_tukeyQcrit(alpha, k, df):
-    '''
-    return critical values for Tukey's HSD (Q)
-    Parameters
-    ----------
-    k : int in {2, ..., 10}
-        number of tests
-    df : int
-        degrees of freedom of error term
-    alpha : {0.05, 0.01}
-        type 1 error, 1-confidence level
-    not enough error checking for limitations
-    '''
-    qcrit = '''
-      2     3     4     5     6     7     8     9     10
-    5   3.64 5.70   4.60 6.98   5.22 7.80   5.67 8.42   6.03 8.91   6.33 9.32   6.58 9.67   6.80 9.97   6.99 10.24
-    6   3.46 5.24   4.34 6.33   4.90 7.03   5.30 7.56   5.63 7.97   5.90 8.32   6.12 8.61   6.32 8.87   6.49 9.10
-    7   3.34 4.95   4.16 5.92   4.68 6.54   5.06 7.01   5.36 7.37   5.61 7.68   5.82 7.94   6.00 8.17   6.16 8.37
-    8   3.26 4.75   4.04 5.64   4.53 6.20   4.89 6.62   5.17 6.96   5.40 7.24       5.60 7.47   5.77 7.68   5.92 7.86
-    9   3.20 4.60   3.95 5.43   4.41 5.96   4.76 6.35   5.02 6.66   5.24 6.91       5.43 7.13   5.59 7.33   5.74 7.49
-    10  3.15 4.48   3.88 5.27   4.33 5.77   4.65 6.14   4.91 6.43   5.12 6.67       5.30 6.87   5.46 7.05   5.60 7.21
-    11  3.11 4.39   3.82 5.15   4.26 5.62   4.57 5.97   4.82 6.25   5.03 6.48 5.20 6.67   5.35 6.84   5.49 6.99
-    12  3.08 4.32   3.77 5.05   4.20 5.50   4.51 5.84   4.75 6.10   4.95 6.32 5.12 6.51   5.27 6.67   5.39 6.81
-    13  3.06 4.26   3.73 4.96   4.15 5.40   4.45 5.73   4.69 5.98   4.88 6.19 5.05 6.37   5.19 6.53   5.32 6.67
-    14  3.03 4.21   3.70 4.89   4.11 5.32   4.41 5.63   4.64 5.88   4.83 6.08 4.99 6.26   5.13 6.41   5.25 6.54
-    15  3.01 4.17   3.67 4.84   4.08 5.25   4.37 5.56   4.59 5.80   4.78 5.99 4.94 6.16   5.08 6.31   5.20 6.44
-    16  3.00 4.13   3.65 4.79   4.05 5.19   4.33 5.49   4.56 5.72   4.74 5.92 4.90 6.08   5.03 6.22   5.15 6.35
-    17  2.98 4.10   3.63 4.74   4.02 5.14   4.30 5.43   4.52 5.66   4.70 5.85 4.86 6.01   4.99 6.15   5.11 6.27
-    18  2.97 4.07   3.61 4.70   4.00 5.09   4.28 5.38   4.49 5.60   4.67 5.79 4.82 5.94   4.96 6.08   5.07 6.20
-    19  2.96 4.05   3.59 4.67   3.98 5.05   4.25 5.33   4.47 5.55   4.65 5.73 4.79 5.89   4.92 6.02   5.04 6.14
-    20  2.95 4.02   3.58 4.64   3.96 5.02   4.23 5.29   4.45 5.51   4.62 5.69 4.77 5.84   4.90 5.97   5.01 6.09
-    24  2.92 3.96   3.53 4.55   3.90 4.91   4.17 5.17   4.37 5.37   4.54 5.54 4.68 5.69   4.81 5.81   4.92 5.92
-    30  2.89 3.89   3.49 4.45   3.85 4.80   4.10 5.05   4.30 5.24   4.46 5.40 4.60 5.54   4.72 5.65   4.82 5.76
-    40  2.86 3.82   3.44 4.37   3.79 4.70   4.04 4.93   4.23 5.11   4.39 5.26 4.52 5.39   4.63 5.50   4.73 5.60
-    60  2.83 3.76   3.40 4.28   3.74 4.59   3.98 4.82   4.16 4.99   4.31 5.13 4.44 5.25   4.55 5.36   4.65 5.45
-    120   2.80 3.70   3.36 4.20   3.68 4.50   3.92 4.71   4.10 4.87   4.24 5.01 4.36 5.12   4.47 5.21   4.56 5.30
-    infinity  2.77 3.64   3.31 4.12   3.63 4.40   3.86 4.60   4.03 4.76   4.17 4.88   4.29 4.99   4.39 5.08   4.47 5.16
-    '''
-
-    res = [line.split() for line in qcrit.replace('infinity','9999').split('\n')]
-    c=np.array(res[2:-1]).astype(float)
-    #c[c==9999] = np.inf
-    ccols = np.arange(2,11)
-    crows = c[:,0]
-    cv005 = c[:, 1::2]
-    cv001 = c[:, 2::2]
-    if alpha == 0.05:
-        intp = interpolate.interp1d(crows, cv005[:,k-2])
-    elif alpha == 0.01:
-        intp = interpolate.interp1d(crows, cv001[:,k-2])
-    else:
-        raise ValueError('only implemented for alpha equal to 0.01 and 0.05')
-    return intp(df)
-
 
 def tukeykramer(*args, sig_level=.05):
     """
@@ -3843,14 +3789,15 @@ def tukeykramer(*args, sig_level=.05):
     group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
     group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
     group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
-
+    args=[group1,group2,group3]
+    
     from https://www.youtube.com/watch?v=zQr190cacC0&t=124s
     a = [77, 79, 87, 85, 78]
     b = [83, 91, 94, 88, 85]
     c = [80, 82,  86, 85, 80]
 
     """
-    #%%
+
     args = [np.asarray(arg) for arg in args]
     means = [np.mean(arg) for arg in args]
 
@@ -3862,50 +3809,6 @@ def tukeykramer(*args, sig_level=.05):
     source:
     https://www.stat.purdue.edu/~lingsong/teaching/2018fall/q-table.pdf
     """
-    studentized_range = [
-         [26.976, 32.819, 37.081, 40.407, 43.118, 45.397, 47.356, 49.07],
-         [8.331, 9.798, 10.881, 11.734, 12.434, 13.027, 13.538, 13.987],
-         [5.91, 6.825, 7.502, 8.037, 8.478, 8.852, 9.177, 9.462],
-         [5.04, 5.757, 6.287, 6.706, 7.053, 7.347, 7.602, 7.826],
-         [4.602, 5.218, 5.673, 6.033, 6.33, 6.582, 6.801, 6.995],
-         [4.339, 4.896, 5.305, 5.629, 5.895, 6.122, 6.319, 6.493],
-         [4.165, 4.681, 5.06, 5.359, 5.606, 5.815, 5.997, 6.158],
-         [4.041, 4.529, 4.886, 5.167, 5.399, 5.596, 5.767, 5.918],
-         [3.948, 4.415, 4.755, 5.024, 5.244, 5.432, 5.595, 5.738],
-         [3.877, 4.327, 4.654, 4.912, 5.124, 5.304, 5.46, 5.598],
-         [3.82, 4.256, 4.574, 4.823, 5.028, 5.202, 5.353, 5.486],
-         [3.773, 4.199, 4.508, 4.748, 4.947, 5.116, 5.262, 5.395],
-         [3.734, 4.151, 4.453, 4.69, 4.884, 5.049, 5.192, 5.318],
-         [3.701, 4.111, 4.407, 4.639, 4.829, 4.99, 5.13, 5.253],
-         [3.673, 4.076, 4.367, 4.595, 4.782, 4.94, 5.077, 5.198],
-         [3.649, 4.046, 4.333, 4.557, 4.741, 4.896, 5.031, 5.15],
-         [3.628, 4.02, 4.303, 4.524, 4.705, 4.858, 4.991, 5.108],
-         [3.609, 3.997, 4.276, 4.494, 4.673, 4.824, 4.955, 5.071],
-         [3.593, 3.977, 4.253, 4.468, 4.645, 4.794, 4.924, 5.037],
-         [3.578, 3.958, 4.232, 4.445, 4.62, 4.768, 4.895, 5.008],
-         [3.565, 3.942, 4.213, 4.424, 4.597, 4.743, 4.87, 4.981],
-         [3.553, 3.927, 4.196, 4.405, 4.577, 4.722, 4.847, 4.957],
-         [3.542, 3.914, 4.18, 4.388, 4.558, 4.702, 4.826, 4.935],
-         [3.532, 3.901, 4.166, 4.373, 4.541, 4.684, 4.807, 4.915],
-         [3.523, 3.89, 4.153, 4.358, 4.526, 4.667, 4.789, 4.897],
-         [3.514, 3.88, 4.141, 4.345, 4.511, 4.652, 4.773, 4.88],
-         [3.506, 3.87, 4.13, 4.333, 4.498, 4.638, 4.758, 4.864],
-         [3.499, 3.861, 4.12, 4.322, 4.486, 4.625, 4.745, 4.85],
-         [3.493, 3.853, 4.111, 4.311, 4.475, 4.613, 4.732, 4.837],
-         [3.487, 3.845, 4.102, 4.301, 4.464, 4.601, 4.72, 4.824],
-         [3.481, 3.838, 4.094, 4.292, 4.454, 4.591, 4.709, 4.813]
-         ]
-
-    # computation of the Tukey Criterion
-    def stud_range(sig_lev, num_treatments, ddof):
-        """
-        for studentized range distribution, we could try to do the integral,
-        or use table temporarily.
-
-        # -1 for row since it is zero indexed to get ddof = 1
-        # -3 for column since it starts at 3 groups
-        """
-        return studentized_range[ddof - 1][num_treatments - 3]
 
     def get_q(p, r, v, guess=3):
         def wrapper_cdf(q_crit, treatments, ddof, alpha):
@@ -3917,8 +3820,7 @@ def tukeykramer(*args, sig_level=.05):
         else:
             raise ValueError(res.message)
 
-    # determine the studentized range distribution value
-    # sig_level: always .05 right now.
+    # determine the studentized range distribution critical value
     # Number of treatments is number of args.
     # DF: Number of datapoints minus number of treatments
     srd = get_q(sig_level, len(args),
@@ -3950,13 +3852,16 @@ def tukeykramer(*args, sig_level=.05):
     # ("Conclusions")[https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm]
     is_significant = np.abs(mean_differences) > tukey_criterion
 
-    res = TukeyKramerResult()
-    for i in range(len(mean_differences)):
-        res.comp[permutations_key[i]] = [conf_levels[0][i],
-                                         mean_differences[i],
-                                         conf_levels[1][i], is_significant[i]]
+    res = np.zeros((len(args), len(args), 4))
+    
 
-    #%%
+    for i in range(len(mean_differences)):
+        m,n = permutations_key[i]
+        res[m-1, n-1] = [mean_differences[i], conf_levels[0][i],
+                         conf_levels[1][i], is_significant[i]]
+       
+    return TukeyKramerResult(res, sig_level, srd)
+    
 
 class PearsonRConstantInputWarning(RuntimeWarning):
     """Warning generated by `pearsonr` when an input is constant."""
