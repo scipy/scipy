@@ -570,7 +570,7 @@ class gaussian_kde(object):
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
         itemsize = self.covariance.dtype.itemsize
-        if itemsize == 16:
+        if itemsize in (12, 16):
             self.log_det = np.abs(np.log(linalg.det(2.0*pi*self.covariance)))
             self.log_sign = np.log(np.sign(self.log_det))
         else:
