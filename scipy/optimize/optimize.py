@@ -294,7 +294,7 @@ def rosen(x):
     >>> rosen(X)
     76.56
     
-    For higher-dimensional input, ``rosen`` broadcast.
+    For higher-dimensional input ``rosen`` broadcasts.
     In the following example, we use this to plot a 2D landscape.
     
     >>> import matplotlib.pyplot as plt
