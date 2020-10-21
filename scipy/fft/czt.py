@@ -152,12 +152,11 @@ class CZT:
     zero padding.  Try it with your own array sizes to see.
 
     However, the chirp z-transform is considerably less precise than the
-    equivalent zero-padded FFT, with differences on the order of 1e-7 from the
-    direct transform rather than 1e-15 as seen with zero-padding.
+    equivalent zero-padded FFT.
 
     As this CZT is implemented using the Bluestein algorithm, it can compute
     large prime-length Fourier transforms in O(N log N) time, rather than the
-    O(N**2) time required by the direct DFT calculation used in `fft`.
+    O(N**2) time required by the direct DFT calculation.
 
     References
     ----------
