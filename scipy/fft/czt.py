@@ -269,7 +269,7 @@ class ZoomFFT(CZT):
         for which the range [0, fn] is assumed.
     m : int, optional
         The number of output points desired.  The default is `n`.
-    Fs : float, optional
+    fs : float, optional
         The sampling frequency. (default=2)
 
     Returns
@@ -307,7 +307,7 @@ class ZoomFFT(CZT):
     >>> plt.show()
     """
 
-    def __init__(self, n, fn, m=None, Fs=2):
+    def __init__(self, n, fn, m=None, fs=2):
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -319,10 +319,10 @@ class ZoomFFT(CZT):
         else:
             raise ValueError('fn must be a scalar or 2-length sequence')
 
-        self.f1, self.f2, self.Fs = f1, f2, Fs
+        self.f1, self.f2, self.fs = f1, f2, fs
 
-        scale = ((f2 - f1) * m) / (Fs * (m - 1))
-        a = cmath.exp(2j * pi * f1/Fs)
+        scale = ((f2 - f1) * m) / (fs * (m - 1))
+        a = cmath.exp(2j * pi * f1/fs)
         w = cmath.exp(-2j*pi/m * scale)
         wk2 = np.exp(-(1j * pi * scale * k**2) / m)
 
@@ -378,7 +378,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoomfft(x, fn, m=None, Fs=2, axis=-1):
+def zoomfft(x, fn, m=None, fs=2, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.
 
@@ -391,7 +391,7 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
         for which the range [0, fn] is assumed.
     m : int, optional
         The number of points to evaluate.  The default is the length of `x`.
-    Fs : float, optional
+    fs : float, optional
         The sampling frequency.  With a sampling frequency of
         10kHz for example, the range f1 and f2 can be expressed in kHz.
         The default sampling frequency is 2, so f1 and f2 should be
@@ -420,5 +420,5 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
     recomputing constants.
     """
     x = np.asarray(x)
-    transform = ZoomFFT(x.shape[axis], fn, m=m, Fs=Fs)
+    transform = ZoomFFT(x.shape[axis], fn, m=m, fs=fs)
     return transform(x, axis=axis)
