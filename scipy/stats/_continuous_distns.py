@@ -5555,8 +5555,8 @@ class nakagami_gen(rv_continuous):
     def _logpdf(self, x, nu):
         # nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
         #                       x**(2*nu-1) * exp(-nu*x**2)
-        return (np.log(2) + nu*np.log(nu) - sc.gammaln(nu) +
-                (2*nu - 1)*np.log(x) - nu*x**2)
+        return (np.log(2) + sc.xlogy(nu, nu) - sc.gammaln(nu) +
+                sc.xlogy(2*nu - 1, x) - nu*x**2)
 
     def _cdf(self, x, nu):
         return sc.gammainc(nu, nu*x*x)
