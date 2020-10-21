@@ -773,7 +773,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         msg = _status_message['success']
         if disp:
             print(msg)
-            print(f"         Current function value: {fval:f}")
+            print("         Current function value: %f" % fval)
             print("         Iterations: %d" % iterations)
             print("         Function evaluations: %d" % fcalls[0])
 
@@ -1190,7 +1190,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if disp:
         print(f"{'Warning: ' if warnflag != 0 else ''}{msg}")
-        print(f"         Current function value: {fval:f}")
+        print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
@@ -1515,8 +1515,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         msg = _status_message['success']
 
     if disp:
-        print(f"{'Warning: ' if warnflag != 0 else ''}{msg}")
-        print(f"         Current function value: {fval:f}")
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
@@ -1687,7 +1687,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     def terminate(warnflag, msg):
         if disp:
             print(msg)
-            print(f"         Current function value: {old_fval:f}")
+            print("         Current function value: %f" % old_fval)
             print("         Iterations: %d" % k)
             print("         Function evaluations: %d" % sf.nfev)
             print("         Gradient evaluations: %d" % sf.ngev)
@@ -1933,7 +1933,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     if disp > 2:
         print(" ")
         print(header)
-        print(f"%5.0f   %12.6g %12.6g {fmin_data + (step,)}")
+        print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
     while (np.abs(xf - xm) > (tol2 - 0.5 * (b - a))):
         golden = 1
@@ -1977,7 +1977,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         num += 1
         fmin_data = (num, x, fu)
         if disp > 2:
-            print(f"%5.0f   %12.6g %12.6g {fmin_data + (step,)}")
+            print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
         if fu <= fx:
             if x >= xf:
@@ -3000,7 +3000,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         msg = _status_message['success']
         if disp:
             print(msg)
-            print(f"         Current function value: {fval:f}")
+            print("         Current function value: %f" % fval)
             print("         Iterations: %d" % iter)
             print("         Function evaluations: %d" % fcalls[0])
 
