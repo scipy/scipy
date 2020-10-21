@@ -277,9 +277,9 @@ class MpmathData(object):
 
     def __repr__(self):
         if self.is_complex:
-            return "<MpmathData: %s (complex)>" % (self.name,)
+            return f"<MpmathData: {self.name} (complex)>"
         else:
-            return "<MpmathData: %s>" % (self.name,)
+            return f"<MpmathData: {self.name}>"
 
 
 def assert_mpmath_equal(*a, **kw):
@@ -319,11 +319,11 @@ def trace_args(func):
             return float(x)
 
     def wrap(*a, **kw):
-        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
+        sys.stderr.write(f"{tuple(map(tofloat, a))!r}: ")
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
-            sys.stderr.write("-> %r" % r)
+            sys.stderr.write(f"-> {r!r}")
         finally:
             sys.stderr.write("\n")
             sys.stderr.flush()
@@ -449,6 +449,6 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
         else:
             rdiff = mpmath.fabs((res[k] - std[k])/std[k])
             rdiff = mpmath.nstr(rdiff, 3)
-        msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
+        msg.append(f"{k}: {resrep} != {stdrep} (rdiff {rdiff})")
     if failures:
         assert_(False, "\n".join(msg))

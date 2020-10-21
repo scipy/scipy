@@ -246,7 +246,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print(status_messages[warnflag])
         else:
             print('Warning: ' + status_messages[warnflag])
-        print("         Current function value: %f" % m.fun)
+        print(f"         Current function value: {m.fun:f}")
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)

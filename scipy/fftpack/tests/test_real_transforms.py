@@ -700,7 +700,7 @@ class TestOverwrite(object):
         sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
         if not overwrite_x:
-            assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+            assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, axis):
         np.random.seed(1234)

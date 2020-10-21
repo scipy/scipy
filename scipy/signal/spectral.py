@@ -1407,7 +1407,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
-            raise ValueError('window must have length of {0}'.format(nperseg))
+            raise ValueError(f'window must have length of {nperseg}')
 
     ifunc = sp_fft.irfft if input_onesided else sp_fft.ifft
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
@@ -1801,7 +1801,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     elif scaling == 'spectrum':
         scale = 1.0 / win.sum()**2
     else:
-        raise ValueError('Unknown scaling: %r' % scaling)
+        raise ValueError(f'Unknown scaling: {scaling!r}')
 
     if mode == 'stft':
         scale = np.sqrt(scale)

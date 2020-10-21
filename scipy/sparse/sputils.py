@@ -48,7 +48,7 @@ def upcast(*args):
             _upcast_memo[hash(args)] = t
             return t
 
-    raise TypeError('no supported conversion for types: %r' % (args,))
+    raise TypeError(f'no supported conversion for types: {args!r}')
 
 
 def upcast_char(*args):

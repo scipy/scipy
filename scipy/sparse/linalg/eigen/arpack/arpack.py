@@ -369,7 +369,7 @@ class _ArpackParams(object):
         try:
             ev, vec = self.extract(True)
         except ArpackError as err:
-            msg = "%s [%s]" % (msg, err)
+            msg = f"{msg} [{err}]"
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))
             k_ok = 0
@@ -504,8 +504,7 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("mode=%i not implemented" % mode)
 
         if which not in _SEUPD_WHICH:
-            raise ValueError("which must be one of %s"
-                             % ' '.join(_SEUPD_WHICH))
+            raise ValueError(f"which must be one of {' '.join(_SEUPD_WHICH)}")
         if k >= n:
             raise ValueError("k must be less than ndim(A), k=%d" % k)
 
@@ -513,7 +512,7 @@ class _SymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k:
-            raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -696,7 +695,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k + 1:
-            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -1248,7 +1247,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'
@@ -1575,7 +1574,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             return ret.real
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'
@@ -1679,7 +1678,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         # unrecognized mode
         else:
-            raise ValueError("unrecognized mode '%s'" % mode)
+            raise ValueError(f"unrecognized mode '{mode}'")
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,

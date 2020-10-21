@@ -43,7 +43,7 @@ def warn_extraneous(extraneous):
 def validate_tol(rtol, atol, n):
     """Validate tolerance values."""
     if rtol < 100 * EPS:
-        warn("`rtol` is too low, setting to {}".format(100 * EPS))
+        warn(f"`rtol` is too low, setting to {100 * EPS}")
         rtol = 100 * EPS
 
     atol = np.asarray(atol)

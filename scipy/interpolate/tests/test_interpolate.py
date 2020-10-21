@@ -293,7 +293,7 @@ class TestInterp1D(object):
                     for kind in spline_kinds:
                         f = interp1d(x, y, kind=kind, bounds_error=False)
                         assert_allclose(f(xnew), y, atol=1e-7,
-                                        err_msg="%s, %s %s" % (dtx, dty, dtn))
+                                        err_msg=f"{dtx}, {dty} {dtn}")
 
     def test_cubic(self):
         # Check the actual implementation of spline interpolation.
@@ -1416,7 +1416,7 @@ class TestPPoly(object):
                                 val = pp(rr, extrapolate=extrapolate)[:,i,j]
                                 cmpval = pp(rr, nu=1,
                                             extrapolate=extrapolate)[:,i,j]
-                                msg = "(%r) r = %s" % (extrapolate, repr(rr),)
+                                msg = f"({extrapolate!r}) r = {repr(rr)}"
                                 assert_allclose((val-y) / cmpval, 0, atol=1e-7,
                                                 err_msg=msg)
 

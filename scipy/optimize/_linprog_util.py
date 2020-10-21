@@ -1244,8 +1244,8 @@ def _display_summary(message, status, fun, iteration):
     """
     print(message)
     if status in (0, 1):
-        print("         Current function value: {0: <12.6f}".format(fun))
-    print("         Iterations: {0:d}".format(iteration))
+        print(f"         Current function value: {fun: <12.6f}")
+    print(f"         Iterations: {iteration:d}")
 
 
 def _postsolve(x, postsolve_args, complete=False):
@@ -1422,7 +1422,7 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if status == 0 and not is_feasible:
         status = 4
         message = ("The solution does not satisfy the constraints within the "
-                   "required tolerance of " + "{:.2E}".format(tol) + ", yet "
+                   "required tolerance of " + f"{tol:.2E}" + ", yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. This is known to occur "
                    "if the `presolve` option is False and the problem is "

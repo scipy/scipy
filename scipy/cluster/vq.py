@@ -430,14 +430,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if iter < 1:
-        raise ValueError("iter must be at least 1, got %s" % iter)
+        raise ValueError(f"iter must be at least 1, got {iter}")
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
     if not np.isscalar(k_or_guess):
         guess = _asarray_validated(k_or_guess, check_finite=check_finite)
         if guess.size < 1:
-            raise ValueError("Asked for 0 clusters. Initial book was %s" %
-                             guess)
+            raise ValueError(f"Asked for 0 clusters. Initial book was {guess}")
         return _kmeans(obs, guess, thresh=thresh)
 
     # k_or_guess is a scalar, now verify that it's an integer
@@ -701,12 +700,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     """
     if int(iter) < 1:
-        raise ValueError("Invalid iter (%s), "
-                         "must be a positive integer." % iter)
+        raise ValueError(f"Invalid iter ({iter}), must be a positive integer.")
     try:
         miss_meth = _valid_miss_meth[missing]
     except KeyError as e:
-        raise ValueError("Unknown missing method %r" % (missing,)) from e
+        raise ValueError(f"Unknown missing method {missing!r}") from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -739,7 +737,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         try:
             init_meth = _valid_init_meth[minit]
         except KeyError as e:
-            raise ValueError("Unknown init method %r" % (minit,)) from e
+            raise ValueError(f"Unknown init method {minit!r}") from e
         else:
             code_book = init_meth(data, k)
 

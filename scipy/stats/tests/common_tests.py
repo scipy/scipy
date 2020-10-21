@@ -47,14 +47,14 @@ def check_moment(distfn, arg, m, v, msg):
                             ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+               msg + f' - 1st moment -infinite, m1={str(m1)}')
 
     if not np.isinf(v):
         npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
                             ' - 2ndt moment')
     else:                     # or np.isnan(m2),
         npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+               msg + f' - 2nd moment -infinite, m2={str(m2)}')
 
 
 def check_mean_expect(distfn, arg, m, msg):
@@ -322,7 +322,7 @@ def check_freezing(distfn, args):
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
     sample = distfunc.rvs(*allargs)
-    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    assert_equal(sample.shape, shape, f"{distname}: rvs failed to broadcast")
     if not shape_only:
         rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
         np.random.seed(123)

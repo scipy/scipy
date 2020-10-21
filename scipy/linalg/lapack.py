@@ -868,7 +868,7 @@ def backtickrepl(m):
         return ('with bounds ``{}`` with ``{}`` storage\n'
                 ''.format(m.group('b'), m.group('s')))
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,

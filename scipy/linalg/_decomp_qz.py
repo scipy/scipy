@@ -123,7 +123,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument {} of gges".format(-info))
+        raise ValueError(f"Illegal value in argument {-info} of gges")
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
                       "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "

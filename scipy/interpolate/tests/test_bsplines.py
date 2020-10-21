@@ -439,7 +439,7 @@ def test_knots_multiplicity():
         x = np.unique(t)
         x = np.r_[t[0]-0.1, 0.5*(x[1:] + x[:1]), t[-1]+0.1]
         assert_allclose(splev(x, (t, c, k), der), b(x, der),
-                atol=atol, rtol=rtol, err_msg='der = %s  k = %s' % (der, b.k))
+                atol=atol, rtol=rtol, err_msg=f'der = {der}  k = {b.k}')
 
     # test loop itself
     # [the index `j` is for interpreting the traceback in case of a failure]
@@ -526,7 +526,7 @@ def B_0123(x, der=0):
                  lambda x: -2.,
                  lambda x: 1.]
     else:
-        raise ValueError('never be here: der=%s' % der)
+        raise ValueError(f'never be here: der={der}')
     pieces = np.piecewise(x, conds, funcs)
     return pieces
 

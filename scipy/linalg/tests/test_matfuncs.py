@@ -127,7 +127,7 @@ class TestLogM(object):
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+                err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
                 M_sqrtm, info = sqrtm(M, disp=False)

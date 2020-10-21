@@ -186,8 +186,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     raise ValueError("{} index values must be < {}"
                                      "".format(minor_name, minor_dim))
                 if self.indices.min() < 0:
-                    raise ValueError("{} index values must be >= 0"
-                                     "".format(minor_name))
+                    raise ValueError(f"{minor_name} index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                      "non-decreasing sequence")

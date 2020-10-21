@@ -98,8 +98,8 @@ class FunctionMaker(object):
                 elif self.kwonlyargs:
                     allargs.append('*')  # single star syntax
                 for a in self.kwonlyargs:
-                    allargs.append('%s=None' % a)
-                    allshortargs.append('%s=%s' % (a, a))
+                    allargs.append(f'{a}=None')
+                    allshortargs.append(f'{a}={a}')
                 if self.varkw:
                     allargs.append('**' + self.varkw)
                     allshortargs.append('**' + self.varkw)
@@ -122,7 +122,7 @@ class FunctionMaker(object):
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non-function: %s' % func)
+            raise TypeError(f'You are decorating a non-function: {func}')
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -147,13 +147,13 @@ class FunctionMaker(object):
         evaldict = evaldict or {}
         mo = DEF.match(src)
         if mo is None:
-            raise SyntaxError('not a valid function template\n%s' % src)
+            raise SyntaxError(f'not a valid function template\n{src}')
         name = mo.group(1)  # extract the function name
         names = set([name] + [arg.strip(' *') for arg in
                               self.shortsignature.split(',')])
         for n in names:
             if n in ('_func_', '_call_'):
-                raise NameError('%s is overridden in\n%s' % (n, src))
+                raise NameError(f'{n} is overridden in\n{src}')
         if not src.endswith('\n'):  # add a newline just for safety
             src += '\n'  # this is needed in old versions of Python
 
@@ -238,7 +238,7 @@ def decorator(caller, _func=None):
     evaldict['_call_'] = caller
     evaldict['_decorate_'] = decorate
     return FunctionMaker.create(
-        '%s(func)' % name, 'return _decorate_(func, _call_)',
+        f'{name}(func)', 'return _decorate_(func, _call_)',
         evaldict, doc=doc, module=caller.__module__,
         __wrapped__=caller)
 
@@ -315,7 +315,7 @@ def dispatch_on(*dispatch_args):
         # first check the dispatch arguments
         argset = set(getfullargspec(func).args)
         if not set(dispatch_args) <= argset:
-            raise NameError('Unknown dispatch arguments %s' % dispatch_str)
+            raise NameError(f'Unknown dispatch arguments {dispatch_str}')
 
         typemap = {}
 
@@ -341,7 +341,7 @@ def dispatch_on(*dispatch_args):
                 n_vas = len(vas)
                 if n_vas > 1:
                     raise RuntimeError(
-                        'Ambiguous dispatch for %s: %s' % (t, vas))
+                        f'Ambiguous dispatch for {t}: {vas}')
                 elif n_vas == 1:
                     va, = vas
                     mro = type('t', (t, va), {}).__mro__[1:]
@@ -390,7 +390,7 @@ def dispatch_on(*dispatch_args):
             return func(*args, **kw)
 
         return FunctionMaker.create(
-            func, 'return _f_(%s, %%(shortsignature)s)' % dispatch_str,
+            func, f"return _f_(%s, %{dispatch_str['shortsignature']})",
             dict(_f_=_dispatch), register=register, default=func,
             typemap=typemap, vancestors=vancestors, ancestors=ancestors,
             dispatch_info=dispatch_info, __wrapped__=func)

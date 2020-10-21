@@ -84,16 +84,16 @@ def linprog_verbose_callback(res):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float': lambda x: "{0: 12.4f}".format(x)})
+                        formatter={'float': lambda x: f"{x: 12.4f}"})
     if status:
         print('--------- Simplex Early Exit -------\n'.format(nit))
-        print('The simplex method exited early with status {0:d}'.format(status))
+        print(f'The simplex method exited early with status {status:d}')
         print(message)
     elif complete:
         print('--------- Simplex Complete --------\n')
-        print('Iterations required: {}'.format(nit))
+        print(f'Iterations required: {nit}')
     else:
-        print('--------- Iteration {0:d}  ---------\n'.format(nit))
+        print(f'--------- Iteration {nit:d}  ---------\n')
 
     if nit > 0:
         if phase == 1:
@@ -156,7 +156,7 @@ def linprog_terse_callback(res):
 
     if nit == 0:
         print("Iter:   X:")
-    print("{0: <5d}   ".format(nit), end="")
+    print(f"{nit: <5d}   ", end="")
     print(x)
 
 
@@ -552,7 +552,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 c, c0=c0, A=A, b=b, x0=x0, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
         else:
-            raise ValueError('Unknown solver %s' % method)
+            raise ValueError(f'Unknown solver {method}')
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
     disp = solver_options.get('disp', False)

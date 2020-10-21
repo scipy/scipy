@@ -691,7 +691,7 @@ class MMFile:
 
         else:
             if not isspmatrix(a):
-                raise ValueError('unknown matrix type: %s' % type(a))
+                raise ValueError(f'unknown matrix type: {type(a)}')
 
             rep = 'coordinate'
             rows, cols = a.shape
@@ -733,7 +733,7 @@ class MMFile:
 
         # write comments
         for line in comment.split('\n'):
-            stream.write(asbytes('%%%s\n' % (line)))
+            stream.write(asbytes(f'%{line}\n'))
 
         template = self._field_template(field, precision)
         # write dense format
@@ -776,7 +776,7 @@ class MMFile:
                 raise ValueError('pattern type inconsisted with dense format')
 
             else:
-                raise TypeError('Unknown field type %s' % field)
+                raise TypeError(f'Unknown field type {field}')
 
         # write sparse format
         else:
@@ -807,7 +807,7 @@ class MMFile:
                     stream.write(asbytes(("%i %i " % (r, c)) +
                                          (template % (d.real, d.imag))))
             else:
-                raise TypeError('Unknown field type %s' % field)
+                raise TypeError(f'Unknown field type {field}')
 
 
 def _is_fromfile_compatible(stream):
@@ -842,4 +842,4 @@ if __name__ == '__main__':
         sys.stdout.flush()
         t = time.time()
         mmread(filename)
-        print('took %s seconds' % (time.time() - t))
+        print(f'took {time.time() - t} seconds')

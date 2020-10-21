@@ -1435,8 +1435,7 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
-                raise TypeError('Cannot add {} and {}'.format(type(self),
-                                                              type(other)))
+                raise TypeError(f'Cannot add {type(self)} and {type(other)}')
 
             if self.dt != other.dt:
                 raise TypeError('Cannot add systems with different `dt`.')

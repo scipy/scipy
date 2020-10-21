@@ -293,7 +293,7 @@ def test_cython_api_completeness():
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
@@ -337,4 +337,4 @@ def test_cython_api(param):
                 sup.filter(DeprecationWarning)
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
-            assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
+            assert_allclose(cyval, pyval, err_msg=f"{pt} {typecodes} {signature}")

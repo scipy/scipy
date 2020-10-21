@@ -291,7 +291,7 @@ def parse_routine(name, args, types):
             elif t == 'l':
                 args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
-                raise ValueError("Invalid spec character %r" % (t,))
+                raise ValueError(f"Invalid spec character {t!r}")
             j += 1
         return ", ".join(args)
 
@@ -302,9 +302,9 @@ def parse_routine(name, args, types):
     for j, I_typenum, T_typenum, I_type, T_type in types:
         arglist = get_arglist(I_type, T_type)
         if T_type is None:
-            dispatch = "%s" % (I_type,)
+            dispatch = f"{I_type}"
         else:
-            dispatch = "%s,%s" % (I_type, T_type)
+            dispatch = f"{I_type},{T_type}"
         if 'B' in arg_spec:
             dispatch += ",npy_bool_wrapper"
 
@@ -362,7 +362,7 @@ def main():
             try:
                 name, args = line.split(None, 1)
             except ValueError as e:
-                raise ValueError("Malformed line: %r" % (line,)) from e
+                raise ValueError(f"Malformed line: {line!r}") from e
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:
@@ -371,7 +371,7 @@ def main():
                 thunk, method = parse_routine(name, args, i_types)
 
             if name in names:
-                raise ValueError("Duplicate routine %r" % (name,))
+                raise ValueError(f"Duplicate routine {name!r}")
 
             names.append(name)
             thunks.append(thunk)
@@ -382,7 +382,7 @@ def main():
                            'sparsetools',
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
-            print("[generate_sparsetools] generating %r" % (dst,))
+            print(f"[generate_sparsetools] generating {dst!r}")
             with open(dst, 'w') as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
@@ -391,12 +391,12 @@ def main():
                 for method in methods:
                     f.write(method)
         else:
-            print("[generate_sparsetools] %r already up-to-date" % (dst,))
+            print(f"[generate_sparsetools] {dst!r} already up-to-date")
 
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n" % (name,)
+        method_defs += f"NPY_VISIBILITY_HIDDEN PyObject *{name}_method(PyObject *, PyObject *);\n"
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
@@ -412,13 +412,13 @@ def main():
                        'sparsetools_impl.h')
 
     if newer(__file__, dst) or options.force:
-        print("[generate_sparsetools] generating %r" % (dst,))
+        print(f"[generate_sparsetools] generating {dst!r}")
         with open(dst, 'w') as f:
             write_autogen_blurb(f)
             f.write(method_defs)
             f.write(method_struct)
     else:
-        print("[generate_sparsetools] %r already up-to-date" % (dst,))
+        print(f"[generate_sparsetools] {dst!r} already up-to-date")
 
 
 def write_autogen_blurb(stream):

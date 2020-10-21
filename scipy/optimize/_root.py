@@ -155,7 +155,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         options = {}
 
     if callback is not None and meth in ('hybr', 'lm'):
-        warn('Method %s does not accept callback.' % method,
+        warn(f'Method {method} does not accept callback.',
              RuntimeWarning)
 
     # fun also returns the Jacobian
@@ -195,14 +195,14 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
                                  _method=meth, _callback=callback,
                                  **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return sol
 
 
 def _warn_jac_unused(jac, method):
     if jac is not None:
-        warn('Method %s does not use the jacobian (jac).' % (method,),
+        warn(f'Method {method} does not use the jacobian (jac).',
              RuntimeWarning)
 
 

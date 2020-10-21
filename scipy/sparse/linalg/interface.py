@@ -165,7 +165,7 @@ class LinearOperator(object):
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
+            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
 
         self.dtype = dtype
         self.shape = shape
@@ -607,8 +607,7 @@ class _SumLinearOperator(LinearOperator):
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape != B.shape:
-            raise ValueError('cannot add %r and %r: shape mismatch'
-                             % (A, B))
+            raise ValueError(f'cannot add {A!r} and {B!r}: shape mismatch')
         self.args = (A, B)
         super(_SumLinearOperator, self).__init__(_get_dtype([A, B]), A.shape)
 
@@ -690,7 +689,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
-            raise ValueError('square LinearOperator expected, got %r' % A)
+            raise ValueError(f'square LinearOperator expected, got {A!r}')
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 

@@ -44,7 +44,7 @@ def _int_overflow(x, msg=None):
     """
     if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
+            msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
         raise OverflowError(msg)
     return dfitpack_int.type(x)
 
@@ -587,7 +587,7 @@ def splev(x, tck, der=0, ext=0):
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der, k))
         if ext not in (0, 1, 2, 3):
-            raise ValueError("ext = %s not in (0, 1, 2, 3) " % ext)
+            raise ValueError(f"ext = {ext} not in (0, 1, 2, 3) ")
 
         x = asarray(x)
         shape = x.shape

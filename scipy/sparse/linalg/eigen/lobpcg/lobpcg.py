@@ -40,7 +40,7 @@ def _report_nonhermitian(M, name):
     if nmd > tol:
         print('matrix %s of the type %s is not sufficiently Hermitian:'
               % (name, M.dtype))
-        print('condition: %.e < %e' % (nmd, tol))
+        print(f'condition: {nmd:.e} < {tol:e}')
 
 
 def _as2d(ar):

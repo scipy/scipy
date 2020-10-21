@@ -75,7 +75,7 @@ class TestBasic(object):
             zero = r.root
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check(self, method, name):
         a = .5
@@ -87,7 +87,7 @@ class TestBasic(object):
                              full_output=True)
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg='method %s, function %s' % (name, fname))
+                            err_msg=f'method {name}, function {fname}')
 
     def run_check_lru_cached(self, method, name):
         # check that https://github.com/scipy/scipy/issues/10846 is fixed
@@ -96,7 +96,7 @@ class TestBasic(object):
         zero, r = method(f_lrucached, a, b, full_output=True)
         assert_(r.converged)
         assert_allclose(zero, 0,
-                        err_msg='method %s, function %s' % (name, 'f_lrucached'))
+                        err_msg=f"method {name}, function {'f_lrucached'}")
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -475,7 +475,7 @@ def test_gh_5555():
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
-                        err_msg='method %s' % method.__name__)
+                        err_msg=f'method {method.__name__}')
 
 
 def test_gh_5557():

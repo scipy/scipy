@@ -2424,7 +2424,7 @@ class RegularGridInterpolator(object):
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan):
         if method not in ["linear", "nearest"]:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
         self.method = method
         self.bounds_error = bounds_error
 
@@ -2478,7 +2478,7 @@ class RegularGridInterpolator(object):
         """
         method = self.method if method is None else method
         if method not in ["linear", "nearest"]:
-            raise ValueError("Method '%s' is not defined" % method)
+            raise ValueError(f"Method '{method}' is not defined")
 
         ndim = len(self.grid)
         xi = _ndim_coords_from_arrays(xi, ndim=ndim)

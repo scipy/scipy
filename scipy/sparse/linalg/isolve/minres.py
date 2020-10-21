@@ -341,7 +341,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     if show:
         print()
-        print(last + ' istop   =  %3g               itn   =%5g' % (istop,itn))
+        print(last + f' istop   =  {istop:3g}               itn   ={itn:5g}')
         print(last + ' Anorm   =  %12.4e      Acond =  %12.4e' % (Anorm,Acond))
         print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e' % (rnorm,ynorm))
         print(last + ' Arnorm  =  %12.4e' % (Arnorm,))

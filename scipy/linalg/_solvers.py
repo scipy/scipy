@@ -164,7 +164,7 @@ def solve_continuous_lyapunov(a, q):
             r_or_c = complex
 
         if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+            raise ValueError(f"Matrix {'aq'[ind]} should be square.")
 
     # Shape consistency check
     if a.shape != q.shape:
@@ -317,7 +317,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     elif meth == 'bilinear':
         x = _solve_discrete_lyapunov_bilinear(a, q)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return x
 
@@ -791,7 +791,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             r_or_c = complex
 
         if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+            raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
     # Shape consistency checks
     m, n = b.shape

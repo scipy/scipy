@@ -88,7 +88,7 @@ class LowLevelCallable(tuple):
         return tuple.__new__(cls, (item, function, user_data))
 
     def __repr__(self):
-        return "LowLevelCallable({!r}, {!r})".format(self.function, self.user_data)
+        return f"LowLevelCallable({self.function!r}, {self.user_data!r})"
 
     @property
     def function(self):
@@ -127,7 +127,7 @@ class LowLevelCallable(tuple):
         except AttributeError as e:
             raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute") from e
         except KeyError as e:
-            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name)) from e
+            raise ValueError(f"No function {name!r} found in __pyx_capi__ of the module") from e
         return cls(function, user_data, signature)
 
     @classmethod

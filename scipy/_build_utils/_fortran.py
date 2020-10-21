@@ -233,15 +233,15 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
 
         text = ""
         for symbol in get_blas_lapack_symbols():
-            text += '#define {} {}{}_{}\n'.format(symbol, prefix, symbol, suffix)
-            text += '#define {} {}{}_{}\n'.format(symbol.upper(), prefix, symbol, suffix)
+            text += f'#define {symbol} {prefix}{symbol}_{suffix}\n'
+            text += f'#define {symbol.upper()} {prefix}{symbol}_{suffix}\n'
 
             # Code generation may give source codes with mixed-case names
             for j in (1, 2):
                 s = symbol[:j].lower() + symbol[j:].upper()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += f'#define {s} {prefix}{symbol}_{suffix}\n'
                 s = symbol[:j].upper() + symbol[j:].lower()
-                text += '#define {} {}{}_{}\n'.format(s, prefix, symbol, suffix)
+                text += f'#define {s} {prefix}{symbol}_{suffix}\n'
 
         write_file_content(include_fn_f, text)
 
@@ -250,7 +250,7 @@ def _blas_ilp64_pre_build_hook(cmd, ext, blas_info):
 
         # Patch sources to include it
         def patch_source(filename, old_text):
-            text = '#include "{}"\n'.format(include_name_f)
+            text = f'#include "{include_name_f}\"\n'
             text += old_text
             return text
     else:

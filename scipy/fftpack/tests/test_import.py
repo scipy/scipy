@@ -28,4 +28,4 @@ class TestFFTPackImport(object):
             with tokenize.open(str(path)) as file:
                 assert_(all(not re.fullmatch(regexp, line)
                             for line in file),
-                        "{0} contains an import from fftpack".format(path))
+                        f"{path} contains an import from fftpack")

@@ -264,7 +264,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
-                raise ValueError("Unknown constraint type '%s'." % con['type'])
+                raise ValueError(f"Unknown constraint type '{con['type']}'.")
 
         # check function
         if 'fun' not in con:

@@ -1736,12 +1736,12 @@ def _select_weighted_metric(mstr, kwargs, out):
     elif "w" in kwargs:
         if (mstr in _METRICS['seuclidean'].aka or
                 mstr in _METRICS['mahalanobis'].aka):
-            raise ValueError("metric %s incompatible with weights" % mstr)
+            raise ValueError(f"metric {mstr} incompatible with weights")
 
         # XXX: C-versions do not support weights
         # need to use python version for weighting
         kwargs['out'] = out
-        mstr = "test_%s" % mstr
+        mstr = f"test_{mstr}"
 
     return mstr, kwargs
 
@@ -2082,7 +2082,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
             # get pdist wrapper
             pdist_fn = getattr(_distance_wrap,
-                               "pdist_%s_%s_wrap" % (metric_name, typ))
+                               f"pdist_{metric_name}_{typ}_wrap")
             pdist_fn(X, dm, **kwargs)
             return dm
 
@@ -2105,9 +2105,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
             if mstr in _TEST_METRICS:
                 dm = pdist(X, _TEST_METRICS[mstr], **kwargs)
             else:
-                raise ValueError('Unknown "Test" Distance Metric: %s' % mstr[5:])
+                raise ValueError(f'Unknown "Test" Distance Metric: {mstr[5:]}')
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')
@@ -2803,7 +2803,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
             # get cdist wrapper
             cdist_fn = getattr(_distance_wrap,
-                               "cdist_%s_%s_wrap" % (metric_name, typ))
+                               f"cdist_{metric_name}_{typ}_wrap")
             cdist_fn(XA, XB, dm, **kwargs)
             return dm
 
@@ -2811,9 +2811,9 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
             if mstr in _TEST_METRICS:
                 dm = cdist(XA, XB, _TEST_METRICS[mstr], **kwargs)
             else:
-                raise ValueError('Unknown "Test" Distance Metric: %s' % mstr[5:])
+                raise ValueError(f'Unknown "Test" Distance Metric: {mstr[5:]}')
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')

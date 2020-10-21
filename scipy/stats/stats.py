@@ -2105,8 +2105,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s"
-                      % extrapoints)
+        warnings.warn(f"Points outside given histogram range = {extrapoints}")
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
@@ -2822,7 +2821,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
-            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+            raise ValueError(f"{scale} not a valid scale for `iqr`")
         if scale_key == 'raw':
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
@@ -4168,7 +4167,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     """
     if axis is not None and axis > 1:
-        raise ValueError("spearmanr only handles 1-D or 2-D arrays, supplied axis argument {}, please use only values 0, 1 or None for axis".format(axis))
+        raise ValueError(f"spearmanr only handles 1-D or 2-D arrays, supplied axis argument {axis}, please use only values 0, 1 or None for axis")
 
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 2:
@@ -5028,13 +5027,11 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     if x.ndim == 1:
         x = x[:, np.newaxis]
     elif x.ndim != 2:
-        raise ValueError("Expected a 2-D array `x`, found shape "
-                         "{}".format(x.shape))
+        raise ValueError(f"Expected a 2-D array `x`, found shape {x.shape}")
     if y.ndim == 1:
         y = y[:, np.newaxis]
     elif y.ndim != 2:
-        raise ValueError("Expected a 2-D array `y`, found shape "
-                         "{}".format(y.shape))
+        raise ValueError(f"Expected a 2-D array `y`, found shape {y.shape}")
 
     nx, px = x.shape
     ny, py = y.shape
@@ -6288,7 +6285,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected alternative {alternative}")
     if np.ma.is_masked(x):
         x = x.compressed()
 
@@ -6919,7 +6916,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected alternative {alternative}")
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative, mode=mode)
@@ -8042,7 +8039,7 @@ def rankdata(a, method='average', *, axis=None):
            [2. , 1. , 3. ]])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0}"'.format(method))
+        raise ValueError(f'unknown method "{method}"')
 
     if axis is not None:
         a = np.asarray(a)

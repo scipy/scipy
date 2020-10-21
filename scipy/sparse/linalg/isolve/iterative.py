@@ -545,7 +545,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         callback_type = 'legacy'
 
     if callback_type not in ('x', 'pr_norm', 'legacy'):
-        raise ValueError("Unknown callback_type: {!r}".format(callback_type))
+        raise ValueError(f"Unknown callback_type: {callback_type!r}")
 
     if callback is None:
         callback_type = 'none'

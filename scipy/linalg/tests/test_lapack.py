@@ -2177,7 +2177,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
-    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrf: info = {info}, should be 0")
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
@@ -2193,7 +2193,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e.conj(), b)
-    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrs: info = {info}, should be 0")
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, atol=atol)
@@ -2324,7 +2324,7 @@ def test_pteqr(dtype, realtype, compute_z):
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
 
     d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
-    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+    assert_equal(info, 0, f"info = {info}, should be 0.")
 
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
@@ -2492,8 +2492,7 @@ def test_standard_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, lower=1)
         _compute_lwork(dz_dlw, n, lower=1)
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx + driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("driver", ['gv', 'gvx'])
@@ -2508,8 +2507,7 @@ def test_generalized_eigh_lworks(pfx, driver):
         _compute_lwork(sc_dlw, n, uplo="L")
         _compute_lwork(dz_dlw, n, uplo="L")
     except Exception as e:
-        pytest.fail("{}_lwork raised unexpected exception: {}"
-                    "".format(pfx+driver, e))
+        pytest.fail(f"{pfx + driver}_lwork raised unexpected exception: {e}")
 
 
 @pytest.mark.parametrize("dtype_", DTYPES)
@@ -2611,7 +2609,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+    assert_(info == 0, f"?gtsvx info = {info}, should be zero")
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2625,7 +2623,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert_(hasattr(rcond, "__len__") is not True,
-            "rcond should be scalar but is {}".format(rcond))
+            f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
     assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
             .format(ferr.shape[0], b.shape[1]))
@@ -2806,7 +2804,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
     assert_array_equal(b, diag_cpy[2])
-    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_(info == 0, f"info should be 0 but is {info}.")
     assert_array_almost_equal(x_soln, x)
 
     # test that the factors from ptsvx can be recombined to make A
@@ -2817,7 +2815,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert not hasattr(rcond, "__len__"), \
-        "rcond should be scalar but is {}".format(rcond)
+        f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
     assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
             .format(ferr.shape, x_soln.shape[1]))

@@ -283,9 +283,9 @@ class gaussian_kde(object):
         cov = atleast_2d(cov)
 
         if mean.shape != (self.d,):
-            raise ValueError("mean does not have dimension %s" % self.d)
+            raise ValueError(f"mean does not have dimension {self.d}")
         if cov.shape != (self.d, self.d):
-            raise ValueError("covariance does not have dimension %s" % self.d)
+            raise ValueError(f"covariance does not have dimension {self.d}")
 
         # make mean a column vector
         mean = mean[:, newaxis]

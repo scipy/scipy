@@ -967,7 +967,7 @@ class TestOptimizeSimple(CheckOptimize):
             sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
             assert_(func(sol1.x) < func(sol2.x),
-                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}")
 
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
@@ -1199,9 +1199,7 @@ class TestOptimizeSimple(CheckOptimize):
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
 
-            err_msg = "{0} {1}: {2}: {3}".format(method, scale,
-                                                 first_step_size,
-                                                 res)
+            err_msg = f"{method} {scale}: {first_step_size}: {res}"
 
             assert_(res.success, err_msg)
             assert_allclose(res.x, [1.0], err_msg=err_msg)
@@ -1293,7 +1291,7 @@ class TestOptimizeSimple(CheckOptimize):
         for i in range(1, len(self.trace)):
             if np.array_equal(self.trace[i - 1], self.trace[i]):
                 raise RuntimeError(
-                    "Duplicate evaluations made by {}".format(method))
+                    f"Duplicate evaluations made by {method}")
 
 
 class TestLBFGSBBounds(object):

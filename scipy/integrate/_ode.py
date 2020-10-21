@@ -869,7 +869,7 @@ class vode(IntegratorBase):
         elif re.match(method, r'bdf', re.I):
             self.meth = 2
         else:
-            raise ValueError('Unknown integration method %s' % method)
+            raise ValueError(f'Unknown integration method {method}')
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
@@ -963,7 +963,7 @@ class vode(IntegratorBase):
         elif mf in [24, 25]:
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
-            raise ValueError('Unexpected mf=%s' % mf)
+            raise ValueError(f'Unexpected mf={mf}')
 
         if mf % 10 in [0, 3]:
             liw = 30
@@ -1009,7 +1009,7 @@ class vode(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1177,7 +1177,7 @@ class dopri5(IntegratorBase):
                                           tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1313,7 +1313,7 @@ class lsoda(IntegratorBase):
         elif jt in [4, 5]:
             lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
         else:
-            raise ValueError('Unexpected jt=%s' % jt)
+            raise ValueError(f'Unexpected jt={jt}')
         lrw = max(lrn, lrs)
         liw = 20 + n
         rwork = zeros((lrw,), float)
@@ -1348,7 +1348,7 @@ class lsoda(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0

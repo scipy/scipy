@@ -760,7 +760,7 @@ def write(filename, rate, data):
         dkind = data.dtype.kind
         if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
                                                  data.dtype.itemsize == 1)):
-            raise ValueError("Unsupported data type '%s'" % data.dtype)
+            raise ValueError(f"Unsupported data type '{data.dtype}'")
 
         header_data = b''
 

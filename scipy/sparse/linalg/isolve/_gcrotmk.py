@@ -267,7 +267,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         raise ValueError("RHS must contain only finite numbers")
 
     if truncate not in ('oldest', 'smallest'):
-        raise ValueError("Invalid value for 'truncate': %r" % (truncate,))
+        raise ValueError(f"Invalid value for 'truncate': {truncate!r}")
 
     if atol is None:
         warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "

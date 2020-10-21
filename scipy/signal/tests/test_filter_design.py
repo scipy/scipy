@@ -31,7 +31,7 @@ except ImportError:
 def mpmath_check(min_ver):
     return pytest.mark.skipif(mpmath is None or
                               LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
-                              reason="mpmath version >= %s required" % min_ver)
+                              reason=f"mpmath version >= {min_ver} required")
 
 
 class TestCplxPair(object):
@@ -635,7 +635,7 @@ class TestFreqz(object):
             a = as_[ii]
             expected_w = np.linspace(0, 2 * np.pi, len(b), endpoint=False)
             w, h = freqz(b, a, worN=expected_w, whole=True)  # polyval
-            err_msg = 'b = %s, a=%s' % (b, a)
+            err_msg = f'b = {b}, a={a}'
             assert_array_almost_equal(w, expected_w, err_msg=err_msg)
             assert_array_almost_equal(h, hs_whole[ii], err_msg=err_msg)
             w, h = freqz(b, a, worN=len(b), whole=True)  # FFT
@@ -3415,15 +3415,15 @@ def test_sos_consistency():
 
         b, a = func(2, *args, output='ba')
         sos = func(2, *args, output='sos')
-        assert_allclose(sos, [np.hstack((b, a))], err_msg="%s(2,...)" % name)
+        assert_allclose(sos, [np.hstack((b, a))], err_msg=f"{name}(2,...)")
 
         zpk = func(3, *args, output='zpk')
         sos = func(3, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(3,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(3,...)")
 
         zpk = func(4, *args, output='zpk')
         sos = func(4, *args, output='sos')
-        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
+        assert_allclose(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
 class TestIIRNotch(object):

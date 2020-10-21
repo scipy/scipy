@@ -898,7 +898,7 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = ma.asarray(x).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -952,7 +952,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = ma.asarray(x).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -1468,10 +1468,10 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -1748,10 +1748,10 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
     if (axis is None):
@@ -2145,10 +2145,10 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 

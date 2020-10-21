@@ -62,7 +62,7 @@ def test_cont_fit(distname, arg):
         except Exception:
             xfail = True
         if xfail:
-            msg = "Fitting %s doesn't work reliably yet" % distname
+            msg = f"Fitting {distname} doesn't work reliably yet"
             msg += " [Set environment variable SCIPY_XFAIL=1 to run this test nevertheless.]"
             pytest.xfail(msg)
 
@@ -93,17 +93,17 @@ def test_cont_fit(distname, arg):
             if np.all(np.abs(diff) <= diffthreshold):
                 break
     else:
-        txt = 'parameter: %s\n' % str(truearg)
-        txt += 'estimated: %s\n' % str(est)
-        txt += 'diff     : %s\n' % str(diff)
-        raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
+        txt = f'parameter: {str(truearg)}\n'
+        txt += f'estimated: {str(est)}\n'
+        txt += f'diff     : {str(diff)}\n'
+        raise AssertionError(f'fit not very good in {distfn.name}\n' + txt)
 
 
 def _check_loc_scale_mle_fit(name, data, desired, atol=None):
     d = getattr(stats, name)
     actual = d.fit(data)[-2:]
     assert_allclose(actual, desired, atol=atol,
-                    err_msg='poor mle fit of (loc, scale) in %s' % name)
+                    err_msg=f'poor mle fit of (loc, scale) in {name}')
 
 
 def test_non_default_loc_scale_mle_fit():

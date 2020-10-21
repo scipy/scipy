@@ -4502,10 +4502,10 @@ def test_binomtest():
 
     for p, res in zip(pp,results):
         assert_approx_equal(stats.binom_test(x, n, p), res,
-                            significant=12, err_msg='fail forp=%f' % p)
+                            significant=12, err_msg=f'fail forp={p:f}')
 
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
-                            significant=12, err_msg='fail forp=%f' % p)
+                            significant=12, err_msg=f'fail forp={p:f}')
 
 
 def test_binomtest2():
@@ -4807,7 +4807,7 @@ class TestFOneWay(object):
                 rtol = 1e-4
 
             assert_allclose(res[0], f, rtol=rtol,
-                            err_msg='Failing testcase: %s' % test_case)
+                            err_msg=f'Failing testcase: {test_case}')
 
     @pytest.mark.parametrize("a, b, expected", [
         (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),

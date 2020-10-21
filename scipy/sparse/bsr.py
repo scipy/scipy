@@ -137,7 +137,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     blocksize = (1,1)
                 else:
                     if not isshape(blocksize):
-                        raise ValueError('invalid blocksize=%s' % blocksize)
+                        raise ValueError(f'invalid blocksize={blocksize}')
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
 

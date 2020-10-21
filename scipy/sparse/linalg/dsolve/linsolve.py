@@ -162,7 +162,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     # validate input shapes
     M, N = A.shape
     if (M != N):
-        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+        raise ValueError(f"matrix must be square (has shape {M, N})")
 
     if M != b.shape[0]:
         raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
@@ -558,7 +558,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if A.shape[0] != A.shape[1]:
         raise ValueError(
-            'A must be a square matrix but its shape is {}.'.format(A.shape))
+            f'A must be a square matrix but its shape is {A.shape}.')
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -567,7 +567,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if b.ndim not in [1, 2]:
         raise ValueError(
-            'b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
+            f'b must have 1 or 2 dims but its shape is {b.shape}.')
     if A.shape[0] != b.shape[0]:
         raise ValueError(
             'The size of the dimensions of A must be equal to '
@@ -609,7 +609,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         if not unit_diagonal and (indptr_stop <= indptr_start
                                   or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
-                'A is singular: diagonal {} is zero.'.format(i))
+                f'A is singular: diagonal {i} is zero.')
         if A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
                 'A is not triangular: A[{}, {}] is nonzero.'

@@ -67,7 +67,7 @@ def parse_ipp_file(filename):
         if m:
             d = int(m.group(1))
             n = int(m.group(2))
-            print("d = {0}, n = {1}".format(d, n))
+            print(f"d = {d}, n = {n}")
             cdata = []
             i += 1
             line = lines[i]
@@ -96,14 +96,14 @@ def dump_dataset(filename, data):
     fid = open(filename, 'w')
     try:
         for line in data:
-            fid.write("%s\n" % " ".join(line))
+            fid.write(f"{' '.join(line)}\n")
     finally:
         fid.close()
 
 
 def dump_datasets(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
-    base += '_%s' % ext[1:]
+    base += f'_{ext[1:]}'
     datadir = os.path.join(DATA_DIR, base)
     os.makedirs(datadir)
     datasets = parse_ipp_file(filename)
@@ -121,5 +121,5 @@ if __name__ == '__main__':
                 continue
 
             path = os.path.join(BOOST_SRC, filename)
-            print("================= %s ===============" % path)
+            print(f"================= {path} ===============")
             dump_datasets(path)

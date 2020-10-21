@@ -88,8 +88,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     if n is None:
         n = (tmp.shape[axis] - 1) * 2
         if n < 1:
-            raise ValueError("Invalid number of data points ({0}) specified"
-                             .format(n))
+            raise ValueError(f"Invalid number of data points ({n}) specified")
     else:
         tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
 

@@ -246,7 +246,7 @@ class netcdf_file(object):
         else:  # maybe it's a string
             self.filename = filename
             omode = 'r+' if mode == 'a' else mode
-            self.fp = open(self.filename, '%sb' % omode)
+            self.fp = open(self.filename, f'{omode}b')
             if mmap is None:
                 # Mmapped files on PyPy cannot be usually closed
                 # before the GC runs, so it's better to use mmap=False
@@ -385,7 +385,7 @@ class netcdf_file(object):
         type = dtype(type)
         typecode, size = type.char, type.itemsize
         if (typecode, size) not in REVERSE:
-            raise ValueError("NetCDF 3 does not support type %s" % type)
+            raise ValueError(f"NetCDF 3 does not support type {type}")
 
         data = empty(shape_, dtype=type.newbyteorder("B"))  # convert to big endian always for NetCDF 3
         self.variables[name] = netcdf_variable(
@@ -574,7 +574,7 @@ class netcdf_file(object):
                     break
 
         typecode, size = TYPEMAP[nc_type]
-        dtype_ = '>%s' % typecode
+        dtype_ = f'>{typecode}'
         # asarray() dies with bytes and '>c' in py3k. Change to 'S'
         dtype_ = 'S' if dtype_ == '>c' else dtype_
 
@@ -747,7 +747,7 @@ class netcdf_file(object):
         begin = [self._unpack_int, self._unpack_int64][self.version_byte-1]()
 
         typecode, size = TYPEMAP[nc_type]
-        dtype_ = '>%s' % typecode
+        dtype_ = f'>{typecode}'
 
         return name, dimensions, shape, attributes, typecode, size, dtype_, begin, vsize
 
@@ -762,7 +762,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode != 'c':
-            values = frombuffer(values, dtype='>%s' % typecode).copy()
+            values = frombuffer(values, dtype=f'>{typecode}').copy()
             if values.shape == (1,):
                 values = values[0]
         else:

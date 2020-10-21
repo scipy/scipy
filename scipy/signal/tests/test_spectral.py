@@ -462,7 +462,7 @@ class TestWelch(object):
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
-                'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
+                f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self):
         x = np.zeros(12)
@@ -827,7 +827,7 @@ class TestCSD:
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
-                'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
+                f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self):
         x = np.zeros(12)
@@ -1220,7 +1220,7 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
@@ -1235,7 +1235,7 @@ class TestSTFT(object):
         ]
 
         for window, N, nperseg, noverlap in settings:
-            msg = '{0}, {1}, {2}, {3}'.format(window, N, nperseg, noverlap)
+            msg = f'{window}, {N}, {nperseg}, {noverlap}'
             assert not check_NOLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
@@ -1263,7 +1263,7 @@ class TestSTFT(object):
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            msg = f'{window}, {nperseg}, {noverlap}'
             assert check_NOLA(window, nperseg, noverlap), msg
             assert not check_COLA(window, nperseg, noverlap), msg
 
@@ -1277,7 +1277,7 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window, boundary=True)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr[:len(t)], err_msg=msg)
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
@@ -1297,7 +1297,7 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, t, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
@@ -1325,7 +1325,7 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window, input_onesided=False)
 
-            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            msg = f'{window}, {nperseg}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
@@ -1340,7 +1340,7 @@ class TestSTFT(object):
         tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                        window=window, input_onesided=False)
 
-        msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+        msg = f'{window}, {nperseg}, {noverlap}'
         assert_allclose(t, tr, err_msg=msg)
         assert_allclose(x, xr, err_msg=msg)
 
@@ -1373,7 +1373,7 @@ class TestSTFT(object):
                 _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
                                 boundary=True)
 
-                msg = '{0}, {1}, {2}'.format(window, noverlap, boundary)
+                msg = f'{window}, {noverlap}, {boundary}'
                 assert_allclose(x, xr, err_msg=msg)
                 assert_allclose(x, xr_ext, err_msg=msg)
 
@@ -1394,7 +1394,7 @@ class TestSTFT(object):
 
             tr, xr = istft(zz, noverlap=noverlap, window=window)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             # Account for possible zero-padding at the end
             assert_allclose(t, tr[:t.size], err_msg=msg)
             assert_allclose(x, xr[:x.size], err_msg=msg)
@@ -1429,7 +1429,7 @@ class TestSTFT(object):
             tr, xcr = istft(zc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
                             window=window, input_onesided=False)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
             assert_allclose(xc, xcr, err_msg=msg)

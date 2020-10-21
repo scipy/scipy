@@ -23,7 +23,7 @@ class ReportBase(object):
         args = list(args)
         args[3] = float(args[3])
 
-        iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
+        iteration_format = [f"{{:{x}}}" for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
         print(fmt.format(*args))
 

@@ -54,7 +54,7 @@ IS_COLAB = ('google.colab' in sys.modules)
 
 
 def assert_in(member, collection, msg=None):
-    assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
+    assert_(member in collection, msg=msg if msg is not None else f"{member!r} not found in {collection!r}")
 
 
 def assert_array_equal_dtype(x, y, **kwargs):
@@ -2246,7 +2246,7 @@ class _TestGetSet(object):
         n, m = (5, 10)
 
         def _test_set(i, j, nitems):
-            msg = "%r ; %r ; %r" % (i, j, nitems)
+            msg = f"{i!r} ; {j!r} ; {nitems!r}"
             A = self.spmatrix((n, m))
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -2515,7 +2515,7 @@ class _TestSlicingAssign(object):
         n, m = (5, 10)
 
         def _test_set(i, j):
-            msg = "i=%r; j=%r" % (i, j)
+            msg = f"i={i!r}; j={j!r}"
             A = self.spmatrix((n, m))
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -3998,7 +3998,7 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         for op, (other, expected) in data.items():
             result = A.copy()
-            getattr(result, '__i%s__' % op)(other)
+            getattr(result, f'__i{op}__')(other)
 
             assert_array_equal(result.todense(), expected.todense())
 
@@ -4693,7 +4693,7 @@ class Test64Bit(object):
         elif isinstance(m, dia_matrix):
             return (m.offsets.dtype == dtype)
         else:
-            raise ValueError("matrix %r has no integer indices" % (m,))
+            raise ValueError(f"matrix {m!r} has no integer indices")
 
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works

@@ -85,7 +85,7 @@ class HBInfo(object):
             elif values.dtype.kind in np.typecodes["AllInteger"]:
                 values_fmt = IntFormat.from_number(-np.max(np.abs(values)))
             else:
-                raise NotImplementedError("type %s not implemented yet" % values.dtype.kind)
+                raise NotImplementedError(f"type {values.dtype.kind} not implemented yet")
         else:
             raise NotImplementedError("fmt argument not supported yet.")
 
@@ -183,7 +183,7 @@ class HBInfo(object):
             raise ValueError("Only assembled matrices supported for now")
 
         if not line[3:14] == " " * 11:
-            raise ValueError("Malformed data for third line: %s" % line)
+            raise ValueError(f"Malformed data for third line: {line}")
 
         nrows = _expect_int(line[14:28])
         ncols = _expect_int(line[28:42])
@@ -198,7 +198,7 @@ class HBInfo(object):
 
         ct = line.split()
         if not len(ct) == 3:
-            raise ValueError("Expected 3 formats, got %s" % ct)
+            raise ValueError(f"Expected 3 formats, got {ct}")
 
         return cls(title, key,
                    total_nlines, pointer_nlines, indices_nlines, values_nlines,
@@ -222,7 +222,7 @@ class HBInfo(object):
         if key is None:
             key = "|No Key"
         if len(key) > 8:
-            warnings.warn("key is > 8 characters (key is %s)" % key, LineOverflow)
+            warnings.warn(f"key is > 8 characters (key is {key})", LineOverflow)
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines
@@ -253,7 +253,7 @@ class HBInfo(object):
             # XXX: fortran int -> dtype association ?
             values_dtype = int
         else:
-            raise ValueError("Unsupported format for values %r" % (values_format,))
+            raise ValueError(f"Unsupported format for values {values_format!r}")
 
         self.pointer_format = pointer_format
         self.indices_format = indices_format
@@ -395,7 +395,7 @@ class HBMatrixType(object):
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
         except KeyError as e:
-            raise ValueError("Unrecognized format %s" % fmt) from e
+            raise ValueError(f"Unrecognized format {fmt}") from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type
@@ -403,11 +403,11 @@ class HBMatrixType(object):
         self.storage = storage
 
         if value_type not in self._q2f_type:
-            raise ValueError("Unrecognized type %s" % value_type)
+            raise ValueError(f"Unrecognized type {value_type}")
         if structure not in self._q2f_structure:
-            raise ValueError("Unrecognized structure %s" % structure)
+            raise ValueError(f"Unrecognized structure {structure}")
         if storage not in self._q2f_storage:
-            raise ValueError("Unrecognized storage %s" % storage)
+            raise ValueError(f"Unrecognized storage {storage}")
 
     @property
     def fortran_format(self):

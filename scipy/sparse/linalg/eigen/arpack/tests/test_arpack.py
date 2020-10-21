@@ -155,7 +155,7 @@ def argsort_which(eigenvalues, typ, k, which,
         elif mode == 'buckling':
             reval = eigenvalues / (eigenvalues - sigma)
         else:
-            raise ValueError("mode='%s' not recognized" % mode)
+            raise ValueError(f"mode='{mode}' not recognized")
 
         reval = np.round(reval, decimals=_ndigits[typ])
 
@@ -170,7 +170,7 @@ def argsort_which(eigenvalues, typ, k, which,
         else:
             ind = np.argsort(np.imag(reval))
     else:
-        raise ValueError("which='%s' is unrecognized" % which)
+        raise ValueError(f"which='{which}' is unrecognized")
 
     if which in ['LM', 'LA', 'LR', 'LI']:
         return ind[-k:]
@@ -277,7 +277,7 @@ class DictWithRepr(dict):
         self.name = name
 
     def __repr__(self):
-        return "<%s>" % self.name
+        return f"<{self.name}>"
 
 
 class SymmetricParams:
@@ -558,7 +558,7 @@ def sorted_svd(m, k, which='LM'):
     elif which == 'SM':
         ii = np.argsort(s)[:k]
     else:
-        raise ValueError("unknown which=%r" % (which,))
+        raise ValueError(f"unknown which={which!r}")
 
     return u[:, ii], s[ii], vh[ii]
 

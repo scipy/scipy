@@ -106,7 +106,7 @@ class _Interpolator1D(object):
         if check and yi.shape[1:] != self._y_extra_shape:
             ok_shape = "%r + (N,) + %r" % (self._y_extra_shape[-self._y_axis:],
                                            self._y_extra_shape[:-self._y_axis])
-            raise ValueError("Data must be of shape %s" % ok_shape)
+            raise ValueError(f"Data must be of shape {ok_shape}")
         return yi.reshape((yi.shape[0], -1))
 
     def _set_yi(self, yi, xi=None, axis=None):

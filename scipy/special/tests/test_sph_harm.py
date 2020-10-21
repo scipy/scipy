@@ -34,4 +34,4 @@ def test_first_harmonics():
         assert_allclose(sc.sph_harm(m, n, theta, phi),
                         harm(theta, phi),
                         rtol=1e-15, atol=1e-15,
-                        err_msg="Y^{}_{} incorrect".format(m, n))
+                        err_msg=f"Y^{m}_{n} incorrect")

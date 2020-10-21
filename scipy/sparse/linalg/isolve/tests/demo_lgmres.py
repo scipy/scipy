@@ -9,11 +9,11 @@ problem = "SPARSKIT/drivcav/e05r0200"
 #problem = "misc/hamm/add32"
 
 mm = np.lib._datasource.Repository('ftp://math.nist.gov/pub/MatrixMarket2/')
-f = mm.open('%s.mtx.gz' % problem)
+f = mm.open(f'{problem}.mtx.gz')
 Am = io.mmread(f).tocsr()
 f.close()
 
-f = mm.open('%s_rhs1.mtx.gz' % problem)
+f = mm.open(f'{problem}_rhs1.mtx.gz')
 b = np.array(io.mmread(f)).ravel()
 f.close()
 
@@ -30,7 +30,7 @@ A = la.LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 M = 100
 
-print("MatrixMarket problem %s" % problem)
+print(f"MatrixMarket problem {problem}")
 print("Invert %d x %d matrix; nnz = %d" % (Am.shape[0], Am.shape[1], Am.nnz))
 
 count[0] = 0

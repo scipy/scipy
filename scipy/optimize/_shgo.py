@@ -824,9 +824,9 @@ class SHGO(object):
                 # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
                 if abs(pe) >= 2 * self.f_tol:
                     warnings.warn("A much lower value than expected f* =" +
-                                  " {} than".format(self.f_min_true) +
+                                  f" {self.f_min_true} than" +
                                   " the was found f_lowest =" +
-                                  "{} ".format(self.f_lowest))
+                                  f"{self.f_lowest} ")
             if pe <= self.f_tol:
                 self.stop_global = True
 
@@ -919,8 +919,8 @@ class SHGO(object):
                 if self.disp:
                     logging.info('=' * 60)
                     logging.info(
-                        'v.x = {} is minimizer'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is minimizer'.format(self.HC.V[x].f))
+                        f'v.x = {self.HC.V[x].x_a} is minimizer')
+                    logging.info(f'v.f = {self.HC.V[x].f} is minimizer')
                     logging.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
@@ -930,7 +930,7 @@ class SHGO(object):
                     logging.info('Neighbors:')
                     logging.info('=' * 30)
                     for vn in self.HC.V[x].nn:
-                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
+                        logging.info(f'x = {vn.x} || f = {vn.f}')
 
                     logging.info('=' * 60)
 
@@ -1078,8 +1078,8 @@ class SHGO(object):
                     cbounds[i][1] = x_i
 
         if self.disp:
-            logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
-            logging.info('cbounds = {}'.format(cbounds))
+            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a}')
+            logging.info(f'cbounds = {cbounds}')
 
         return cbounds
 
@@ -1120,7 +1120,7 @@ class SHGO(object):
         """
         # Use minima maps if vertex was already run
         if self.disp:
-            logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
+            logging.info(f'Vertex minimiser maps = {self.LMC.v_maps}')
 
         if self.LMC[x_min].lres is not None:
             return self.LMC[x_min].lres
@@ -1128,12 +1128,10 @@ class SHGO(object):
         # TODO: Check discarded bound rules
 
         if self.callback is not None:
-            print('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
+            print(f'Callback for minimizer starting at {x_min}:')
 
         if self.disp:
-            print('Starting '
-                  'minimization at {}...'.format(x_min))
+            print(f'Starting minimization at {x_min}...')
 
         if self.sampling_method == 'simplicial':
             x_min_t = tuple(x_min)
@@ -1159,7 +1157,7 @@ class SHGO(object):
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
         if self.disp:
-            print('lres = {}'.format(lres))
+            print(f'lres = {lres}')
 
         # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
@@ -1268,7 +1266,7 @@ class SHGO(object):
 
             if self.disp:
                 logging.info(
-                    "Minimizer pool = SHGO.X_min = {}".format(self.X_min))
+                    f"Minimizer pool = SHGO.X_min = {self.X_min}")
         else:
             if self.disp:
                 print(
@@ -1572,10 +1570,9 @@ class SHGO(object):
         self.minimizer_pool = []
         # Note: Can easily be parralized
         if self.disp:
-            logging.info('self.fn = {}'.format(self.fn))
-            logging.info('self.nc = {}'.format(self.nc))
-            logging.info('np.shape(self.C)'
-                         ' = {}'.format(np.shape(self.C)))
+            logging.info(f'self.fn = {self.fn}')
+            logging.info(f'self.nc = {self.nc}')
+            logging.info(f'np.shape(self.C) = {np.shape(self.C)}')
         for ind in range(self.fn):
             min_bool = self.sample_delaunay_topo(ind)
             if min_bool:
@@ -1586,7 +1583,7 @@ class SHGO(object):
         # Sort to find minimum func value in min_pool
         self.sort_min_pool()
         if self.disp:
-            logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+            logging.info(f'self.minimizer_pool = {self.minimizer_pool}')
         if not len(self.minimizer_pool) == 0:
             self.X_min = self.C[self.minimizer_pool]
         else:

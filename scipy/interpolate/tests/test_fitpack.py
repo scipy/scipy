@@ -160,7 +160,7 @@ class TestSmokeTests(object):
                 err = abs(1-dr/f(dx,d))
                 tol = err_est(k, d)
                 assert_(err < tol, (k, d))
-                put(" %.1e %.1e" % (err, tol))
+                put(f" {err:.1e} {tol:.1e}")
                 d = d+1
             put("\n")
             k = k+1
@@ -195,7 +195,7 @@ class TestSmokeTests(object):
         x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
         v, _ = f(x),f(x1)
         put(" u = %s   N = %d" % (repr(round(dx,3)),N))
-        put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep " % (f(0,None)))
+        put(f"  k  :  [x(u), {f(0, None)}(x(u))]  Error of splprep  Error of splrep ")
         for k in range(1,6):
             tckp,u = splprep([x,v],s=s,per=per,k=k,nest=-1)
             tck = splrep(x,v,s=s,per=per,k=k)
@@ -213,7 +213,7 @@ class TestSmokeTests(object):
         tckp,u = splprep([x,v],s=s,per=per,k=k,nest=-1)
         for d in range(1,k+1):
             uv = splev(dx,tckp,d)
-            put(" %s " % (repr(uv[0])))
+            put(f" {repr(uv[0])} ")
 
     def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
         x = xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)

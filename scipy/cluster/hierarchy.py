@@ -156,7 +156,7 @@ class ClusterWarning(UserWarning):
 
 
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
+    warnings.warn(f'scipy.cluster: {s}', ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -1041,7 +1041,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     >>> plt.show()
     """
     if method not in _LINKAGE_METHODS:
-        raise ValueError("Invalid method: {0}".format(method))
+        raise ValueError(f"Invalid method: {method}")
 
     y = _convert_to_double(np.asarray(y, order='c'))
 
@@ -1135,20 +1135,17 @@ class ClusterNode(object):
 
     def __lt__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError(f"Can't compare ClusterNode to type {type(node)}")
         return self.dist < node.dist
 
     def __gt__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError(f"Can't compare ClusterNode to type {type(node)}")
         return self.dist > node.dist
 
     def __eq__(self, node):
         if not isinstance(node, ClusterNode):
-            raise ValueError("Can't compare ClusterNode "
-                             "to type {}".format(type(node)))
+            raise ValueError(f"Can't compare ClusterNode to type {type(node)}")
         return self.dist == node.dist
 
     def get_id(self):
@@ -2133,7 +2130,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     """
     R = np.asarray(R, order='c')
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if type(R) != np.ndarray:
             raise TypeError('Variable %spassed as inconsistency matrix is not '
@@ -2252,18 +2249,18 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
     Z = np.asarray(Z, order='c')
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if type(Z) != np.ndarray:
             raise TypeError('Passed linkage argument %sis not a valid array.' %
                             name_str)
         if Z.dtype != np.double:
-            raise TypeError('Linkage matrix %smust contain doubles.' % name_str)
+            raise TypeError(f'Linkage matrix {name_str}must contain doubles.')
         if len(Z.shape) != 2:
             raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
                              'two-dimensional).' % name_str)
         if Z.shape[1] != 4:
-            raise ValueError('Linkage matrix %smust have 4 columns.' % name_str)
+            raise ValueError(f'Linkage matrix {name_str}must have 4 columns.')
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')

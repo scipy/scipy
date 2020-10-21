@@ -139,7 +139,7 @@ class VarReader4(object):
             # no current processing (below) makes sense for sparse
             return self.read_sparse_array(hdr)
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
@@ -290,7 +290,7 @@ class VarReader4(object):
 
             shape = (int(rows), int(cols))
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
 
         if self.squeeze_me:
             shape = tuple([x for x in shape if x != 1])

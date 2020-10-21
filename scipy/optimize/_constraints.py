@@ -186,9 +186,9 @@ class Bounds(object):
 
     def __repr__(self):
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            return f"{type(self).__name__}({self.lb!r}, {self.ub!r}, keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            return f"{type(self).__name__}({self.lb!r}, {self.ub!r})"
 
 
 class PreparedConstraint(object):
@@ -453,7 +453,7 @@ def old_constraint_to_new(ic, con):
         raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
-            raise ValueError("Unknown constraint type '%s'." % con['type'])
+            raise ValueError(f"Unknown constraint type '{con['type']}'.")
     if 'fun' not in con:
         raise ValueError('Constraint %d has no function defined.' % ic)
 

@@ -34,7 +34,7 @@ SMALL_PRIME_SIZES = [
 
 def _assert_close_in_norm(x, y, rtol, size, rdt):
     # helper function for testing
-    err_msg = "size: %s  rdt: %s" % (size, rdt)
+    err_msg = f"size: {size}  rdt: {rdt}"
     assert_array_less(np.linalg.norm(x - y), rtol*np.linalg.norm(x), err_msg)
 
 
@@ -766,7 +766,7 @@ class TestOverwrite(object):
             sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
                 routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
             if not overwrite_x:
-                assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+                assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes,
                   fftsize, overwrite_x):

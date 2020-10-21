@@ -39,7 +39,7 @@ class Case(object):
             self.nonconvergence = nonconvergence
 
     def __repr__(self):
-        return "<%s>" % self.name
+        return f"<{self.name}>"
 
 
 class IterativeParams(object):
@@ -197,7 +197,7 @@ def test_maxiter():
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
     tolerance = tol*norm(b)
-    msg = "residual (%g) not smaller than tolerance %g" % (residual, tolerance)
+    msg = f"residual ({residual:g}) not smaller than tolerance {tolerance:g}"
     assert_(residual < tolerance, msg=msg)
 
 

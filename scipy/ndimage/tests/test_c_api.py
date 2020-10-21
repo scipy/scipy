@@ -46,7 +46,7 @@ def test_generic_filter():
                                      footprint=footprint)
         std = ndimage.generic_filter(im, filter2d, footprint=footprint,
                                      extra_arguments=(weights,))
-        assert_allclose(res, std, err_msg="#{} failed".format(j))
+        assert_allclose(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(FILTER2D_FUNCTIONS):
         check(j)
@@ -70,7 +70,7 @@ def test_generic_filter1d():
                                        filter_size)
         std = ndimage.generic_filter1d(im, filter1d, filter_size,
                                        extra_arguments=(filter_size,))
-        assert_allclose(res, std, err_msg="#{} failed".format(j))
+        assert_allclose(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(FILTER1D_FUNCTIONS):
         check(j)
@@ -88,7 +88,7 @@ def test_geometric_transform():
 
         res = ndimage.geometric_transform(im, func(shift))
         std = ndimage.geometric_transform(im, transform, extra_arguments=(shift,))
-        assert_allclose(res, std, err_msg="#{} failed".format(j))
+        assert_allclose(res, std, err_msg=f"#{j} failed")
 
     for j, func in enumerate(TRANSFORM_FUNCTIONS):
         check(j)

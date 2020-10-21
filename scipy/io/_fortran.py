@@ -119,7 +119,7 @@ class FortranFile(object):
         if hasattr(filename, 'seek'):
             self._fp = filename
         else:
-            self._fp = open(filename, '%sb' % mode)
+            self._fp = open(filename, f'{mode}b')
 
         self._header_dtype = header_dtype
 
@@ -242,7 +242,7 @@ class FortranFile(object):
         """
         dtype = kwargs.pop('dtype', None)
         if kwargs:
-            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
+            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
 
         if dtype is not None:
             dtypes = dtypes + (dtype,)

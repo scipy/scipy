@@ -441,7 +441,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         try:
             dist = getattr(distributions, dist)
         except AttributeError as e:
-            raise ValueError("%s is not a valid distribution name" % dist) from e
+            raise ValueError(f"{dist} is not a valid distribution name") from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -805,7 +805,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
         plot.plot(svals, ppcc, 'x')
         _add_axis_labels_title(plot, xlabel='Shape Values',
                                ylabel='Prob Plot Corr. Coef.',
-                               title='(%s) PPCC Plot' % dist)
+                               title=f'({dist}) PPCC Plot')
 
     return svals, ppcc
 
@@ -1157,7 +1157,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
                'mle': _mle,
                'all': _all}
     if method not in methods.keys():
-        raise ValueError("Method %s not recognized." % method)
+        raise ValueError(f"Method {method} not recognized.")
 
     optimfunc = methods[method]
     return optimfunc(x, brack)
@@ -2061,11 +2061,11 @@ def anderson_ksamp(samples, midrank=True):
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
     if A2 < critical.min():
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
+        warnings.warn(f"p-value capped: true value larger than {p}",
                       stacklevel=2)
     elif A2 > critical.max():
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
+        warnings.warn(f"p-value floored: true value smaller than {p}",
                       stacklevel=2)
     else:
         # interpolation of probit of significance level

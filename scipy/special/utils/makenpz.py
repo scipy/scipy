@@ -24,7 +24,7 @@ def main():
 
     # Skip rebuilding if no sources
     if os.path.isfile(outp) and not os.path.isdir(inp):
-        print("[makenpz] {} not rebuilt".format(outp))
+        print(f"[makenpz] {outp} not rebuilt")
         return
 
     # Find source files
@@ -51,14 +51,14 @@ def main():
         changed = changed or any(newer(fn, outp) for key, fn in files)
         changed = changed or newer(__file__, outp)
         if not changed:
-            print("[makenpz] {} is already up to date".format(outp))
+            print(f"[makenpz] {outp} is already up to date")
             return
 
     data = {}
     for key, fn in files:
         data[key] = np.loadtxt(fn)
 
-    print("[makenpz] generating {}".format(outp))
+    print(f"[makenpz] generating {outp}")
     np.savez_compressed(outp, **data)
 
 

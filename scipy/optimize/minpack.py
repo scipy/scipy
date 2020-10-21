@@ -31,10 +31,10 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                   "shape of the '%s' argument" % (checker, argname)
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
-                msg += " '%s'." % func_name
+                msg += f" '{func_name}'."
             else:
                 msg += "."
-            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
+            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -411,7 +411,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+        raise TypeError(f'Improper input: N={n} must not exceed M={m}')
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps

@@ -83,11 +83,11 @@ def test_permutations():
         # Test whether permutations lead to a triangular array
         u, d, p = ldl(x, lower=0)
         # lower part should be zero
-        assert_(not any(u[p, :][l_ind]), 'Spin {} failed'.format(_))
+        assert_(not any(u[p, :][l_ind]), f'Spin {_} failed')
 
         l, d, p = ldl(x, lower=1)
         # upper part should be zero
-        assert_(not any(l[p, :][u_ind]), 'Spin {} failed'.format(_))
+        assert_(not any(l[p, :][u_ind]), f'Spin {_} failed')
 
 
 def test_ldl_type_size_combinations():
@@ -97,7 +97,7 @@ def test_ldl_type_size_combinations():
     complex_dtypes = [complex64, complex128]
 
     for n, dtype in itertools.product(sizes, real_dtypes):
-        msg = ("Failed for size: {}, dtype: {}".format(n, dtype))
+        msg = f"Failed for size: {n}, dtype: {dtype}"
 
         x = rand(n, n).astype(dtype)
         x = x + x.T
@@ -110,8 +110,8 @@ def test_ldl_type_size_combinations():
         assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg)
 
     for n, dtype in itertools.product(sizes, complex_dtypes):
-        msg1 = ("Her failed for size: {}, dtype: {}".format(n, dtype))
-        msg2 = ("Sym failed for size: {}, dtype: {}".format(n, dtype))
+        msg1 = f"Her failed for size: {n}, dtype: {dtype}"
+        msg2 = f"Sym failed for size: {n}, dtype: {dtype}"
 
         # Complex hermitian upper/lower
         x = (rand(n, n)+1j*rand(n, n)).astype(dtype)

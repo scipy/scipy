@@ -420,7 +420,7 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
 
@@ -777,7 +777,7 @@ class rv_generic(object):
             tempdict['shapes_'] += ','
 
         if self.shapes:
-            tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
+            tempdict['set_vals_stmt'] = f'>>> {self.shapes} = {vals}'
         else:
             tempdict['set_vals_stmt'] = ''
 
@@ -2390,7 +2390,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
         if restore is not None:
@@ -3559,7 +3559,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)

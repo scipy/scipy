@@ -122,8 +122,8 @@ if __name__ == "__main__":
 
     print('LSQR')
     print("Is linear operator symmetric? " + sym)
-    print("n: %3g  iterations:   %3g" % (n, k))
-    print("Norms computed in %.2fs by LSQR" % (time() - tic))
+    print(f"n: {n:3g}  iterations:   {k:3g}")
+    print(f"Norms computed in {time() - tic:.2f}s by LSQR")
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % (chio, phio, psio))
     print("Residual norms computed directly:")
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),

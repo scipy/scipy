@@ -262,7 +262,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     """
     if tol <= 0:
-        raise ValueError("tol too small (%g <= 0)" % tol)
+        raise ValueError(f"tol too small ({tol:g} <= 0)")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
@@ -332,7 +332,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached." % (p1 - p0)
+                    msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
                         msg += (
                             " Failed to converge after %d iterations, value is %s."
@@ -443,11 +443,11 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
                 warnings.warn(
-                    'RMS of {:g} reached'.format(rms), RuntimeWarning)
+                    f'RMS of {rms:g} reached', RuntimeWarning)
         # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
-            msg = '{:s} derivatives were zero'.format(all_or_some)
+            msg = f'{all_or_some:s} derivatives were zero'
             warnings.warn(msg, RuntimeWarning)
     elif failures.any():
         all_or_some = 'all' if failures.all() else 'some'
@@ -543,9 +543,9 @@ def bisect(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -640,9 +640,9 @@ def ridder(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -770,9 +770,9 @@ def brentq(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -875,9 +875,9 @@ def brenth(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
@@ -1077,7 +1077,7 @@ class TOMS748Solver(object):
         fx = self.f(x, *self.args)
         self.function_calls += 1
         if not np.isfinite(fx) and error:
-            raise ValueError("Invalid function value: f(%f) -> %s " % (x, fx))
+            raise ValueError(f"Invalid function value: f({x:f}) -> {fx} ")
         return fx
 
     def get_result(self, x, flag=_ECONVERGED):
@@ -1096,18 +1096,18 @@ class TOMS748Solver(object):
         self.args = args
         self.ab[:] = [a, b]
         if not np.isfinite(a) or np.imag(a) != 0:
-            raise ValueError("Invalid x value: %s " % (a))
+            raise ValueError(f"Invalid x value: {a} ")
         if not np.isfinite(b) or np.imag(b) != 0:
-            raise ValueError("Invalid x value: %s " % (b))
+            raise ValueError(f"Invalid x value: {b} ")
 
         fa = self._callf(a)
         if not np.isfinite(fa) or np.imag(fa) != 0:
-            raise ValueError("Invalid function value: f(%f) -> %s " % (a, fa))
+            raise ValueError(f"Invalid function value: f({a:f}) -> {fa} ")
         if fa == 0:
             return _ECONVERGED, a
         fb = self._callf(b)
         if not np.isfinite(fb) or np.imag(fb) != 0:
-            raise ValueError("Invalid function value: f(%f) -> %s " % (b, fb))
+            raise ValueError(f"Invalid function value: f({b:f}) -> {fb} ")
         if fb == 0:
             return _ECONVERGED, b
 
@@ -1347,20 +1347,20 @@ def toms748(f, a, b, args=(), k=1,
                root: 1.0
     """
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol / 4:
-        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isfinite(a):
-        raise ValueError("a is not finite %s" % a)
+        raise ValueError(f"a is not finite {a}")
     if not np.isfinite(b):
-        raise ValueError("b is not finite %s" % b)
+        raise ValueError(f"b is not finite {b}")
     if a >= b:
-        raise ValueError("a and b are not an interval [{}, {}]".format(a, b))
+        raise ValueError(f"a and b are not an interval [{a}, {b}]")
     if not k >= 1:
-        raise ValueError("k too small (%s < 1)" % k)
+        raise ValueError(f"k too small ({k} < 1)")
 
     if not isinstance(args, tuple):
         args = (args,)

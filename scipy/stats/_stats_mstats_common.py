@@ -235,7 +235,7 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -379,7 +379,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y

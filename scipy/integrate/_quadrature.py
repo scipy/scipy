@@ -711,7 +711,7 @@ def _printresmat(function, interval, resmat):
     for i in range(len(resmat)):
         print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
         for j in range(i+1):
-            print('%9f' % (resmat[i][j]), end=' ')
+            print(f'{resmat[i][j]:9f}', end=' ')
         print('')
     print('')
     print('The final result is', resmat[i][j], end=' ')

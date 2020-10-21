@@ -570,7 +570,7 @@ def _not_a_knot(x, k):
     cf de Boor, XIII(12)."""
     x = np.asarray(x)
     if k % 2 != 1:
-        raise ValueError("Odd degree for now only. Got %s." % k)
+        raise ValueError(f"Odd degree for now only. Got {k}.")
 
     m = (k - 1) // 2
     t = x[m+1:-m-1]
@@ -590,7 +590,7 @@ def _convert_string_aliases(deriv, target_shape):
         elif deriv == "natural":
             deriv = [(2, np.zeros(target_shape))]
         else:
-            raise ValueError("Unknown boundary condition : %s" % deriv)
+            raise ValueError(f"Unknown boundary condition : {deriv}")
     return deriv
 
 
@@ -730,7 +730,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         try:
             deriv_l, deriv_r = bc_type
         except TypeError as e:
-            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
+            raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
     y = np.asarray(y)
 
@@ -797,7 +797,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
@@ -981,7 +981,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         raise ValueError('Shapes of x {} and y {} are incompatible'
                          .format(x.shape, y.shape))
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError('Shapes of x {} and w {} are incompatible'
                          .format(x.shape, w.shape))

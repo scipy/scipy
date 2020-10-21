@@ -136,7 +136,7 @@ class TestConstructUtils(object):
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
             assert_equal(construct.diags(d, o, shape=shape).todense(),
                          result, err_msg=err_msg)
 

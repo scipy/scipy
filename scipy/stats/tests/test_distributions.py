@@ -37,7 +37,7 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
-        msg = '%s does not have attribute %s' % (a, b)
+        msg = f'{a} does not have attribute {b}'
     assert_(hasattr(a, b), msg=msg)
 
 
@@ -2792,7 +2792,7 @@ class TestFitMethod(object):
     def test_fit_w_non_finite_data_values(self, dist, args):
         """gh-10300"""
         if dist in self.fitSkipNonFinite:
-            pytest.skip("%s fit known to fail or deprecated" % dist)
+            pytest.skip(f"{dist} fit known to fail or deprecated")
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)

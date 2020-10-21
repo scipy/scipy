@@ -59,7 +59,7 @@ def pickle_function(func):
 
     if test is not func:
         raise pickle.PicklingError(
-            "Can't pickle {}: it's not the same object as {}".format(func, test)
+            f"Can't pickle {func}: it's not the same object as {test}"
         )
 
     return unpickle_function, (mod_name, qname)

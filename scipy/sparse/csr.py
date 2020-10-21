@@ -210,7 +210,7 @@ class csr_matrix(_cs_matrix):
             M,N = self.shape
 
             if R < 1 or C < 1 or M % R != 0 or N % C != 0:
-                raise ValueError('invalid blocksize %s' % blocksize)
+                raise ValueError(f'invalid blocksize {blocksize}')
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 

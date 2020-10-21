@@ -254,8 +254,7 @@ def _check_level(label, expected, actual):
         return
     # Check types are as expected
     assert_(types_compatible(expected, actual),
-            "Expected type %s, got %s at %s" %
-            (type(expected), type(actual), label))
+            f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -277,7 +276,7 @@ def _check_level(label, expected, actual):
         return
     if ex_dtype.fields:  # probably recarray
         for fn in ex_dtype.fields:
-            level_label = "%s, field %s, " % (label, fn)
+            level_label = f"{label}, field {fn}, "
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
@@ -293,16 +292,16 @@ def _check_level(label, expected, actual):
 def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
         for k, expected in case.items():
-            k_label = "%s, variable %s" % (label, k)
-            assert_(k in matdict, "Missing key at %s" % k_label)
+            k_label = f"{label}, variable {k}"
+            assert_(k in matdict, f"Missing key at {k_label}")
             _check_level(k_label, expected, matdict[k])
 
 
 def _whos_check_case(name, files, case, classes):
     for file_name in files:
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
 
         whos = whosmat(file_name)
 
@@ -312,7 +311,7 @@ def _whos_check_case(name, files, case, classes):
         whos.sort()
         expected_whos.sort()
         assert_equal(whos, expected_whos,
-                     "%s: %r != %r" % (label, whos, expected_whos)
+                     f"{label}: {whos!r} != {expected_whos!r}"
                      )
 
 
@@ -329,10 +328,10 @@ def test_load():
     for case in case_table4 + case_table5:
         name = case['name']
         expected = case['expected']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
+        filt = pjoin(test_data_path, f'test{name}_*.mat')
         files = glob(filt)
         assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
+                f"No files for test {name} using filter {filt}")
         _load_check_case(name, files, expected)
 
 
@@ -342,10 +341,10 @@ def test_whos():
         name = case['name']
         expected = case['expected']
         classes = case['classes']
-        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
+        filt = pjoin(test_data_path, f'test{name}_*.mat')
         files = glob(filt)
         assert_(len(files) > 0,
-                "No files for test %s using filter %s" % (name, filt))
+                f"No files for test {name} using filter {filt}")
         _whos_check_case(name, files, expected, classes)
 
 

@@ -116,11 +116,9 @@ def cossin(X, p=None, q=None, separate=False,
                              " matrices, got {}".format(X.shape))
         m = X.shape[0]
         if p >= m or p <= 0:
-            raise ValueError("invalid p={}, 0<p<{} must hold"
-                             .format(p, X.shape[0]))
+            raise ValueError(f"invalid p={p}, 0<p<{X.shape[0]} must hold")
         if q >= m or q <= 0:
-            raise ValueError("invalid q={}, 0<q<{} must hold"
-                             .format(q, X.shape[0]))
+            raise ValueError(f"invalid q={q}, 0<q<{X.shape[0]} must hold")
 
         x11, x12, x21, x22 = X[:p, :q], X[:p, q:], X[p:, :q], X[p:, q:]
     elif not isinstance(X, Iterable):
@@ -135,7 +133,7 @@ def cossin(X, p=None, q=None, separate=False,
         for name, block in zip(["x11", "x12", "x21", "x22"],
                                [x11, x12, x21, x22]):
             if block.shape[1] == 0:
-                raise ValueError("{} can't be empty".format(name))
+                raise ValueError(f"{name} can't be empty")
         p, q = x11.shape
         mmp, mmq = x22.shape
 
@@ -175,7 +173,7 @@ def cossin(X, p=None, q=None, separate=False,
         raise ValueError('illegal value in argument {} of internal {}'
                          .format(-info, method_name))
     if info > 0:
-        raise LinAlgError("{} did not converge: {}".format(method_name, info))
+        raise LinAlgError(f"{method_name} did not converge: {info}")
 
     if separate:
         return (u1, u2), theta, (v1h, v2h)

@@ -94,7 +94,7 @@ def assert_dtype_equal(act, des):
         des = dtype(des)
 
     assert_(act == des,
-            'dtype mismatch: "{}" (should be "{}")'.format(act, des))
+            f'dtype mismatch: "{act}" (should be "{des}")')
 
 
 # XXX: This function should not be defined here, but somewhere in
@@ -224,7 +224,7 @@ class TestEig(object):
             A = asarray(A)
             B0 = B
             B = np.eye(*A.shape)
-        msg = "\n%r\n%r" % (A, B)
+        msg = f"\n{A!r}\n{B!r}"
 
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
