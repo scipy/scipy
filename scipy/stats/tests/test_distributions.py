@@ -35,6 +35,11 @@ from scipy.stats._continuous_distns import FitDataError, _argus_phi
 from scipy.optimize import root, fmin
 from itertools import product
 
+try:
+    from numpy.random import default_rng
+except ImportError:
+    pass
+
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
@@ -5780,19 +5785,29 @@ class TestArgus:
         x = stats.argus.rvs(50, size=500, random_state=325)
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
-    def test_rvs_small_chi(self):
-        # chi < 1: rejection method
-        x = stats.argus.rvs(0.1, size=500, random_state=325)
-        _, p = stats.kstest(x, "argus", (0.1, ))
+    @pytest.mark.parametrize('chi, random_state', [
+            [0.1, 325],   # chi < 1: rejection method case 1
+            [1.3, 155],   # 1 <= chi <= 1.825: rejection method case 2
+            [3.5, 135]    # chi > 1.825: transform conditional Gamma distr.
+        ])
+    def test_rvs_randomstate(self, chi, random_state):
+        x = stats.argus.rvs(chi, size=500, random_state=random_state)
+        _, p = stats.kstest(x, "argus", (chi, ))
         assert_(p > 0.05)
 
-    @pytest.mark.parametrize('chi, random_state', [
-            [0.1, 325],   # chi < 1: rejection method
-            [3.5, 135]    # for chi > 1.825, transform conditional Gamma distr.
+    @pytest.mark.parametrize('chi, generator', [
+            [0.1, default_rng(325)],   # chi < 1.15: rejection case 1
+            [1.2, default_rng(125)],   # 1.15 <= chi <= 1.3: rejection case 2
+            [1.5, default_rng(625)],   # 1.3 < chi <= 2.1: RoU shifted Maxwell
+            [2.5, default_rng(251)],   # 2.1 < chi < 5: RoU Gamma
+            [5.5, default_rng(258)]    # chi < 5: transform conditional Gamma
         ])
-    def test_rvs_conditional_gamma(self, chi, random_state):
-        # for chi > 1.825, rvs transforms a conditional Gamma distribution
-        x = stats.argus.rvs(chi, size=500, random_state=random_state)
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.19.0'),
+                        reason='Generator Cython API not available for numpy,'
+                               ' < 1.19.0')
+    # see https://github.com/numpy/numpy/pull/15463
+    def test_rvs_generator(self, chi, generator):
+        x = stats.argus.rvs(chi, size=500, random_state=generator)
         _, p = stats.kstest(x, "argus", (chi, ))
         assert_(p > 0.05)
 

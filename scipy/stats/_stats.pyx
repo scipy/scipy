@@ -1,4 +1,5 @@
 from cpython cimport bool
+from cpython.pycapsule cimport PyCapsule_IsValid, PyCapsule_GetPointer
 from libc cimport math
 cimport cython
 cimport numpy as np
@@ -6,6 +7,11 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
+try:
+    from numpy.random cimport bitgen_t
+    from numpy.random import PCG64
+except ImportError:
+    pass
 
 import warnings
 import numpy as np
@@ -754,3 +760,177 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
                 estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _rvs_argus_rejection_beta(double chi, Py_ssize_t n, rand_state):
+    cdef Py_ssize_t i
+    cdef bitgen_t *rng
+    cdef const char *capsule_name = "BitGenerator"
+    cdef double u, v, z, d
+    cdef double[::1] random_values
+
+    if chi < 0:
+        raise ValueError('chi must be >= 0')
+
+    random_values = np.empty(n, dtype='float64')
+    d = -0.5 * chi * chi
+
+    x = rand_state.bit_generator
+    capsule = x.capsule
+    if not PyCapsule_IsValid(capsule, capsule_name):
+        raise ValueError("Invalid pointer to anon_func_state")
+    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+
+    with x.lock, nogil:
+        for i in range(n):
+            while (1):
+                u = rng.next_double(rng.state)
+                v = rng.next_double(rng.state)
+                z = v**(2/3)
+                if math.log(u) <= d * z:
+                    break
+            random_values[i] = math.sqrt(1 - z)
+
+    return np.asarray(random_values)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True) # division by zero not possible since chi > 0
+def _rvs_argus_rejection_xexp(double chi, Py_ssize_t n, rand_state):
+    cdef Py_ssize_t i
+    cdef bitgen_t *rng
+    cdef const char *capsule_name = "BitGenerator"
+    cdef double u, v, z, chi2, echi
+    cdef double[::1] random_values
+
+    if chi <= 0:
+        raise ValueError('chi must be > 0')
+
+    echi = math.exp(-0.5 * chi * chi)
+    chi2 = chi * chi
+    random_values = np.empty(n, dtype='float64')
+
+    x = rand_state.bit_generator
+    capsule = x.capsule
+    if not PyCapsule_IsValid(capsule, capsule_name):
+        raise ValueError("Invalid pointer to anon_func_state")
+    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+
+    with x.lock, nogil:
+        for i in range(n):
+            while (1):
+                u = rng.next_double(rng.state)
+                v = rng.next_double(rng.state)
+                z = 2 * math.log(echi * (1 - v) + v) / chi2
+                if u*u + z <= 0:
+                    break
+            random_values[i] = math.sqrt(1 + z)
+
+    return np.asarray(random_values)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True) # division by zero not possible since chi > 0
+def _rvs_argus_rou_shifted_maxwell(double chi, Py_ssize_t n, rand_state):
+    cdef Py_ssize_t i
+    cdef bitgen_t *rng
+    cdef const char *capsule_name = "BitGenerator"
+    cdef double u, v, u2, v2, vmin, vmax, umax, z, m, chi2, x0, x1, p, q, c1, c2
+    cdef double[::1] random_values
+
+    if chi <= 0:
+        raise ValueError('chi must be > 0')
+
+    random_values = np.empty(n, dtype='float64')
+    chi2 = chi * chi
+    if chi2 <= 2:
+        m = chi
+    else:
+        m = math.sqrt(2)
+
+    p = -4 - m**2 / 3
+    q = -2*m**3/27 - 4*m/3 + 2*m
+    c1 = math.sqrt(-p / 3)
+    # note: c1 > sqrt(4/3), p < -4, so division by 0 cannot occur
+    c2 = math.acos(1.5*q/p/c1)/3
+    x1 = 2*c1*math.cos(c2 - 2*PI/3) + m/3
+
+    if chi2 <= 2:
+        vmax = 0
+    else:
+        x0 = 2*c1*math.cos(c2) + m/3
+        if x0 < chi:
+            vmax = (x0 - m) * x0 * math.exp(-x0*x0 / 4)
+        else:
+            vmax = (chi - m) * chi * math.exp(-chi2 / 4)
+
+    umax = m * math.exp(-m*m / 4)
+    vmin = (x1 - m) * x1 * math.exp(-x1**2 / 4)
+
+    x = rand_state.bit_generator
+    capsule = x.capsule
+    if not PyCapsule_IsValid(capsule, capsule_name):
+        raise ValueError("Invalid pointer to anon_func_state")
+    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+
+    with x.lock, nogil:
+        for i in range(n):
+            while (1):
+                u = rng.next_double(rng.state) * umax
+                v = vmin + rng.next_double(rng.state) * (vmax - vmin)
+                z = v / u + m
+                if 0 < z < chi:
+                    if u <= z * math.exp(-0.25 * z * z):
+                        break
+            random_values[i] = math.sqrt(1 - z * z / chi2)
+
+    return np.asarray(random_values)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def _rvs_argus_rou_gamma(double chi, Py_ssize_t n, rand_state):
+    cdef Py_ssize_t i
+    cdef bitgen_t *rng
+    cdef const char *capsule_name = "BitGenerator"
+    cdef double u, v, vmax, umax, z, chi2, m
+    cdef double[::1] random_values
+
+    if chi <= 0:
+        raise ValueError('chi must be > 0')
+
+    random_values = np.empty(n, dtype='float64')
+    chi2 = chi * chi
+    if chi <= 1:
+        m = chi2 / 2
+    else:
+        m = 0.5
+    if chi2 >= 5:
+        vmax = 2.5**(1.25) * math.exp(-1.25)
+    else:
+        vmax = chi**2.5 * math.exp(-0.25 * chi2) / 2**1.25
+    umax = m**(0.25) * math.exp(-m / 2)
+
+    x = rand_state.bit_generator
+    capsule = x.capsule
+    if not PyCapsule_IsValid(capsule, capsule_name):
+        raise ValueError("Invalid pointer to anon_func_state")
+    rng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
+
+    with x.lock, nogil:
+        for i in range(n):
+            while (1):
+                u = rng.next_double(rng.state) * umax
+                v = rng.next_double(rng.state) * vmax
+                z = v / u
+                if z < chi2 / 2:
+                    if u * u <= math.sqrt(z) * math.exp(-z):
+                        break
+            random_values[i] = math.sqrt(1 - 2 * z / chi2)
+
+    return np.asarray(random_values)
