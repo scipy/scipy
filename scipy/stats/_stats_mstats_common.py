@@ -14,7 +14,7 @@ LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
 
 
 def linregress(x, y=None):
-    """
+    r"""
     Calculate a linear least-squares regression for two sets of measurements.
 
     Parameters
@@ -60,6 +60,7 @@ def linregress(x, y=None):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> import numpy as np
 
     Generate some data:
 
@@ -73,7 +74,7 @@ def linregress(x, y=None):
 
     Coefficient of determination (R-squared):
 
-    >>> print("R-squared: %f" % r_value**2)
+    >>> print(f"R-squared: {r_value**2:.6f}")
     R-squared: 0.735498
 
     Plot the data along with the fitted line:
@@ -91,9 +92,9 @@ def linregress(x, y=None):
     >>> tinv = lambda p,df: abs(t.ppf(p/2,df))
 
     >>> ts = tinv(0.05,len(x)-2)
-    >>> print("slope (95%%): %f +/- %f" % (slope, ts*slope_err))
+    >>> print(f"slope (95%%): {slope:.6f} +/- {ts*slope_err:.6f}")
     slope (95%): 1.944864 +/- 0.950885
-    >>> print("intercept (95%%): %f +/- %f" % (intercept, ts*intercept_err))
+    >>> print(f"intercept (95%%): {intercept:.6f} +/- {ts*intercept_err:.6f}")
     intercept (95%): 0.268578 +/- 0.488822
 
     """
@@ -105,9 +106,7 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError(f"If only `x` is given as input, it has to be of shape (2, N) or (N, 2), provided shape was {x.shape}.")
     else:
         x = np.asarray(x)
         y = np.asarray(y)

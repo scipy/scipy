@@ -807,15 +807,8 @@ def pointbiserialr(x, y):
 
     return PointbiserialrResult(rpb, prob)
 
-
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'slope_stderr',
-                                                   'intercept_stderr'))
-
-
 def linregress(x, y=None):
-    """
+    r"""
     Linear regression calculation
 
     Note that the non-masked version is used, and that this docstring is
@@ -829,9 +822,7 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError(f"If only `x` is given as input, it has to be of shape (2, N) or (N, 2), provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
