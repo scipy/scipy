@@ -60,7 +60,6 @@ def linregress(x, y=None):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> import numpy as np
 
     Generate some data:
 
