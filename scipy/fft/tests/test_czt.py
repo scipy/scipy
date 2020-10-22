@@ -3,56 +3,49 @@
 '''
 A unit test module for czt.py
 '''
-from numpy.testing import (run_module_suite, assert_, assert_allclose,
+from numpy.testing import (run_module_suite, assert_allclose,
                            assert_raises, dec)
 from scipy.fft.czt import (czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
 fft = np.fft.fft
 fftshift = np.fft.fftshift
-norm = np.linalg.norm
 
 
 def check_czt(x):
     # Check that czt is the equivalent of normal fft
     y = fft(x)
     y1 = czt(x)
-    err = norm(y-y1)/norm(y)
-    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
+    assert_allclose(y1, y, rtol=1e-11, atol=1e-30)
 
     # Check that interpolated czt is the equivalent of normal fft
     y = fft(x, 100*len(x))
     y1 = czt(x, 100*len(x))
-    err = norm(y-y1)/norm(y)
-    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
+    assert_allclose(y1, y, rtol=1e-8, atol=1e-30)
 
 
 def check_zoomfft(x):
     # Check that zoomfft is the equivalent of normal fft
     y = fft(x)
     y1 = zoomfft(x, [0, 2-2./len(y)])
-    err = norm(y-y1)/norm(y)
-    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
+    assert_allclose(y1, y, rtol=1e-11, atol=1e-14)
 
     # Test fn scalar
     y1 = zoomfft(x, 2-2./len(y))
-    err = norm(y-y1)/norm(y)
-    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
+    assert_allclose(y1, y, rtol=1e-11, atol=1e-14)
 
     # Check that zoomfft with oversampling is equivalent to zero padding
     over = 10
     yover = fft(x, over*len(x))
     y2 = zoomfft(x, [0, 2-2./len(yover)], m=len(yover))
-    err = norm(yover-y2)/norm(yover)
-    assert_(err < 1e-10, "error for oversampling is %g" % (err,))
+    assert_allclose(y2, yover, rtol=1e-10, atol=1e-12)
 
     # Check that zoomfft works on a subrange
     w = np.linspace(0, 2-2./len(x), len(x))
     f1, f2 = w[3], w[6]
     y3 = zoomfft(x, [f1, f2], m=3*over+1)
     idx3 = slice(3*over, 6*over+1)
-    err = norm(yover[idx3]-y3)/norm(yover[idx3])
-    assert_(err < 1e-10, "error for subrange is %g" % (err,))
+    assert_allclose(y3, yover[idx3], rtol=1e-13, atol=1e-30)
 
 
 def test_1D():
@@ -88,8 +81,7 @@ def test_1D():
     x = np.reshape(np.arange(3*2*28), (3, 2, 28))
     y1 = zoomfft(x, [0, 2-2./28])
     y2 = zoomfft(x[2, 0, :], [0, 2-2./28])
-    err = np.linalg.norm(y2-y1[2, 0])
-    assert err < 1e-15, "error for n-D array is %g" % (err,)
+    assert_allclose(y1[2, 0], y2, rtol=1e-30, atol=1e-30)
 
     # Random (not a test condition)
     x = np.random.rand(101)
@@ -125,7 +117,7 @@ def test_czt_vs_fft():
     random_lengths = np.random.exponential(100000, size=10).astype('int')
     for n in random_lengths:
         a = np.random.randn(n)
-        assert_allclose(czt(a), fft(a), rtol=1e-7, atol=1e-8)
+        assert_allclose(czt(a), fft(a), rtol=1e-7, atol=1e-30)
 
 
 def test_empty_input():
