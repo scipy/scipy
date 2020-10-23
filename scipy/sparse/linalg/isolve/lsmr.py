@@ -91,6 +91,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         Initial guess of ``x``, if None zeros are used.
 
         .. versionadded:: 1.0.0
+        
     Returns
     -------
     x : ndarray of float
