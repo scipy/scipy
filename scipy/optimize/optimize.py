@@ -276,7 +276,6 @@ def rosen(x):
     ----------
     x : array_like
         1-D array of points at which the Rosenbrock function is to be computed.
-        n-dimensional arrays broadcast using the first component as variables.
 
     Returns
     -------
@@ -296,6 +295,7 @@ def rosen(x):
     
     For higher-dimensional input ``rosen`` broadcasts.
     In the following example, we use this to plot a 2D landscape.
+    Note that ``rosen_hess`` does not broadcast in this manner.
     
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
@@ -304,9 +304,6 @@ def rosen(x):
     >>> ax = plt.subplot(111, projection='3d')
     >>> ax.plot_surface(X, Y, rosen([X, Y]))
     >>> plt.show()
-    
-    Note that ``rosen_hess`` does not broadcast in this manner.
-
     """
     x = asarray(x)
     r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
