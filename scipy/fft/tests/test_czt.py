@@ -16,12 +16,12 @@ def check_czt(x):
     # Check that czt is the equivalent of normal fft
     y = fft(x)
     y1 = czt(x)
-    assert_allclose(y1, y, rtol=1e-11, atol=1e-30)
+    assert_allclose(y1, y, rtol=1e-13)
 
     # Check that interpolated czt is the equivalent of normal fft
     y = fft(x, 100*len(x))
     y1 = czt(x, 100*len(x))
-    assert_allclose(y1, y, rtol=1e-8, atol=1e-30)
+    assert_allclose(y1, y, rtol=1e-12)
 
 
 def check_zoomfft(x):
@@ -38,14 +38,14 @@ def check_zoomfft(x):
     over = 10
     yover = fft(x, over*len(x))
     y2 = zoomfft(x, [0, 2-2./len(yover)], m=len(yover))
-    assert_allclose(y2, yover, rtol=1e-10, atol=1e-10)
+    assert_allclose(y2, yover, rtol=1e-12, atol=1e-10)
 
     # Check that zoomfft works on a subrange
     w = np.linspace(0, 2-2./len(x), len(x))
     f1, f2 = w[3], w[6]
     y3 = zoomfft(x, [f1, f2], m=3*over+1)
     idx3 = slice(3*over, 6*over+1)
-    assert_allclose(y3, yover[idx3], rtol=1e-13, atol=1e-30)
+    assert_allclose(y3, yover[idx3], rtol=1e-13)
 
 
 def test_1D():
@@ -81,7 +81,7 @@ def test_1D():
     x = np.reshape(np.arange(3*2*28), (3, 2, 28))
     y1 = zoomfft(x, [0, 2-2./28])
     y2 = zoomfft(x[2, 0, :], [0, 2-2./28])
-    assert_allclose(y1[2, 0], y2, rtol=1e-13, atol=1e-12)
+    assert_allclose(y1[2, 0], y2, rtol=1e-30)
 
     # Random (not a test condition)
     x = np.random.rand(101)
@@ -108,7 +108,7 @@ def test_large_prime_lengths():
         x = np.random.rand(N)
         y = fft(x)
         y1 = czt(x)
-        assert_allclose(y, y1, rtol=1e-9)
+        assert_allclose(y, y1, rtol=1e-12)
 
 
 @dec.slow
@@ -117,7 +117,7 @@ def test_czt_vs_fft():
     random_lengths = np.random.exponential(100000, size=10).astype('int')
     for n in random_lengths:
         a = np.random.randn(n)
-        assert_allclose(czt(a), fft(a), rtol=1e-7, atol=1e-30)
+        assert_allclose(czt(a), fft(a), rtol=1e-12)
 
 
 def test_empty_input():
@@ -139,32 +139,33 @@ def test_czt_math():
                 for w in (None, 0.7+0.7j):
                     # z-transform of an impulse is 1 everywhere
                     assert_allclose(czt(impulse[2:], m=m, a=a),
-                                    np.ones(m))
+                                    np.ones(m), rtol=1e-14)
 
                     # z-transform of a delayed impulse is z**-1
                     assert_allclose(czt(impulse[1:], m=m, a=a),
-                                    czt_points(m=m, a=a)**-1)
+                                    czt_points(m=m, a=a)**-1, rtol=1e-14)
 
                     # z-transform of a 2-delayed impulse is z**-2
                     assert_allclose(czt(impulse, m=m, a=a),
-                                    czt_points(m=m, a=a)**-2)
+                                    czt_points(m=m, a=a)**-2, rtol=1e-14)
 
 
 def test_int_args():
     # Integer argument `a` was producing all 0s
-    assert_allclose(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10))
-    assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)))
+    assert_allclose(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10), rtol=1e-15)
+    assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)), rtol=1e-30)
 
 
 def test_czt_points():
     for N in (1, 2, 3, 8, 11, 100, 101, 10007):
-        assert_allclose(czt_points(N), np.exp(2j*np.pi*np.arange(N)/N))
+        assert_allclose(czt_points(N), np.exp(2j*np.pi*np.arange(N)/N),
+                        rtol=1e-30)
 
-    assert_allclose(czt_points(7, w=1), np.ones(7))
-    assert_allclose(czt_points(11, w=2.), 1/(2**np.arange(11)))
+    assert_allclose(czt_points(7, w=1), np.ones(7), rtol=1e-30)
+    assert_allclose(czt_points(11, w=2.), 1/(2**np.arange(11)), rtol=1e-30)
 
     func = CZT(12, m=11, w=2., a=1)
-    assert_allclose(func.points(), 1/(2**np.arange(11)))
+    assert_allclose(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
 
 
 def test_czt_points_errors():
