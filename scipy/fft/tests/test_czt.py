@@ -81,7 +81,7 @@ def test_1D():
     x = np.reshape(np.arange(3*2*28), (3, 2, 28))
     y1 = zoomfft(x, [0, 2-2./28])
     y2 = zoomfft(x[2, 0, :], [0, 2-2./28])
-    assert_allclose(y1[2, 0], y2, rtol=1e-30)
+    assert_allclose(y1[2, 0], y2, rtol=1e-13, atol=1e-12)
 
     # Random (not a test condition)
     x = np.random.rand(101)
