@@ -329,7 +329,9 @@ class ZoomFFT(CZT):
         self.a = a
         self.m, self.n = m, n
 
-        self._Awk2 = a**-k[:n] * wk2[:n]
+        ak = np.exp(-2j * pi * f1/fs * k[:n])
+        self._Awk2 = ak * wk2[:n]
+
         nfft = next_fast_len(n + m - 1)
         self._nfft = nfft
         self._Fwk2 = fft(1/np.hstack((wk2[n-1:0:-1], wk2[:m])), nfft)
