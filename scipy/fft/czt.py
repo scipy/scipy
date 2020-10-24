@@ -323,10 +323,10 @@ class ZoomFFT(CZT):
 
         scale = ((f2 - f1) * m) / (fs * (m - 1))
         a = cmath.exp(2j * pi * f1/fs)
-        w = cmath.exp(-2j*pi/m * scale)
         wk2 = np.exp(-(1j * pi * scale * k**2) / m)
 
-        self.w, self.a = w, a
+        self.w = cmath.exp(-2j*pi/m * scale)
+        self.a = a
         self.m, self.n = m, n
 
         self._Awk2 = a**-k[:n] * wk2[:n]
