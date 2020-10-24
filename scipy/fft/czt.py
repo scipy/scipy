@@ -395,7 +395,7 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
         The sampling frequency.  With a sampling frequency of
         10kHz for example, the range f1 and f2 can be expressed in kHz.
         The default sampling frequency is 2, so f1 and f2 should be
-        in the range 0, 1 to keep the transform below the Nyquist
+        in the range [0, 1] to keep the transform below the Nyquist
         frequency.
     axis : int, optional
         The array dimension the transform operates over.  The default is the
