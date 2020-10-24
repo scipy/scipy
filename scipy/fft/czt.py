@@ -199,7 +199,7 @@ class CZT:
         if w is None:
             # Nothing specified, default to FFT-like
             w = cmath.exp(-2j*pi/m)
-            wk2 = np.exp(-(1j * pi * k**2) / m)
+            wk2 = np.exp(-(1j * pi * ((k**2) % (2*m))) / m)
         else:
             # w specified
             wk2 = w**(k**2/2.)
