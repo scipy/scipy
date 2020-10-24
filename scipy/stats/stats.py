@@ -212,7 +212,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises']
+           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
+           'tukeykramer']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -3703,23 +3704,26 @@ class TukeyKramerResult():
 
     def __repr__(self):
         nargs = self.res.shape[0]
-        s = f"~~~~~~~~~~~~\n\tComparison between groups with Simultanious\n(with {100*(1-self.alpha):.0f}% Confidence Limits and significance at the {self.alpha} level)\n~~~~~~~~~~~~\n"
-        s += ("{'group' : <7}{'mean' : ^10}{'min' : ^10}"
-              "{'max' : >5}{'sig' : >9}\n")
+        s = ("~~~~~~~~~~~~\n\tComparison between groups with  Simultanious"
+             f"\n(with {100*(1-self.alpha):.0f}% Confidence Limits and "
+             f"significance at the {self.alpha} level)\n~~~~~~~~~~~~\n")
+        s += (f"{'group' : <7}{'mean' : ^10}{'min' : ^10}"
+              f"{'max' : >5}{'sig' : >9}\n")
         for i in range(nargs):
             for j in range(nargs):
                 if i == j:
                     pass
                 else:
-                    paircomp = self.res[i,j]
+                    paircomp = self.res[i, j]
                     s += (f"{i+1} - {j+1}  "
                           f"{paircomp[0] :>8.3f}{paircomp[1] :>10.3f}"
                           f"{paircomp[2] :>8.3f}{paircomp[3] : >8}\n")
         return s
 
+
 def tukeykramer(*args, sig_level=.05):
     """
-    Perform Tukey-Kramer. The order of the input arrays is
+    Perform Tukey-Kramer.
 
     Under the assumption of a rejected null hypothesis that two or more samples
     have the same population mean, the Tukey Kramer test compares the absolute
@@ -3790,25 +3794,50 @@ def tukeykramer(*args, sig_level=.05):
     group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
     group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
     args=[group1,group2,group3]
-    
-    from https://www.youtube.com/watch?v=zQr190cacC0&t=124s
-    a = [77, 79, 87, 85, 78]
-    b = [83, 91, 94, 88, 85]
-    c = [80, 82,  86, 85, 80]
+    tukeykramer(*args)
+    ~~~~~~~~~~~~
+    Comparison between groups with Simultanious
+    with 95% Confidence Limits and significance at the 0.05 level)
+    ~~~~~~~~~~~~
+    group     mean      min      max      sig
+    1 - 2    -4.600    -8.249  -0.951     1.0
+    1 - 3    -0.260    -3.909   3.389     0.0
+    2 - 1     4.600     0.951   8.249     1.0
+    2 - 3     4.340     0.691   7.989     1.0
+    3 - 1     0.260    -3.389   3.909     0.0
+    3 - 2    -4.340    -7.989  -0.691     1.0
+
+    # second just different sizes
+    group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
+    group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    tukeykramer(group1, group2, group3)
+
+    expected from SAS:
+    Brand Comparison    Mean Difference     Simultanious 95% Confidence Limits
+    2 - 3               3.645               0.268        	7.022   ***
+    2 - 1               4.34                0.593        	8.087   ***
+    3 - 2              -3.645              -7.022      	   -0.268   ***
+    3 - 1               0.695              -2.682         	4.072
+    1 - 2              -4.34               -8.087	       -0.593   ***
+    1 - 3              -0.695              -4.072	        2.682
+
+    actual:
+    ~~~~~~~~~~~~
+    Comparison between groups with Simultanious
+    (with 95% Confidence Limits and significance at the 0.05 level)
+    ~~~~~~~~~~~~
+    group     mean      min      max      sig
+    1 - 2    -3.645    -7.022  -0.268     1.0
+    1 - 3     0.695    -2.682   4.072     0.0
+    2 - 1     3.645     0.268   7.022     1.0
+    2 - 3     4.340     0.593   8.087     1.0
+    3 - 1    -0.695    -4.072   2.682     0.0
+    3 - 2    -4.340    -8.087  -0.593     1.0
 
     """
-
     args = [np.asarray(arg) for arg in args]
     means = [np.mean(arg) for arg in args]
-
-    """
-    Critical Values of Studentized Range Distribution(q) for
-    Familywise ALPHA = .05.
-    Rows: DF (index 0 = 1 DF)
-    Cols: Number of Groups (a.k.a. Treatments) (index 0 = 3 groups)
-    source:
-    https://www.stat.purdue.edu/~lingsong/teaching/2018fall/q-table.pdf
-    """
 
     def get_q(p, r, v, guess=3):
         def wrapper_cdf(q_crit, treatments, ddof, alpha):
@@ -3823,45 +3852,54 @@ def tukeykramer(*args, sig_level=.05):
     # determine the studentized range distribution critical value
     # Number of treatments is number of args.
     # DF: Number of datapoints minus number of treatments
-    srd = get_q(sig_level, len(args),
-                len(args[0]) * len(args) - len(args))
+    nsamples = np.sum([a.shape[0] for a in args])
+    srd = get_q(sig_level, len(args), nsamples - len(args))
 
     # determine mean square error
-    mse = np.mean([np.var(arg, ddof=1) for arg in args])
-
-    # also called maxmimum critical value, tukey criterion is the studentized
-    # range value * the square root of mean square error over the sample size.
-    # This only applies for treatments of equal sizes. The criterion must be
-    # calculated for each comparison when treatments differ in size. TODO.
-    tukey_criterion = srd * ((mse / len(args[0])) ** .5)
+    mse = np.sum([(np.var(arg, ddof=1) *
+                   (len(arg) - 1)) for arg in args]) / (nsamples - len(args))
 
     # create permutations of input group means along with keys to keep track
     # of which is which
-    permutations_key = list(permutations(np.arange(1, len(means) + 1), 2))
+    permutations_key = list(permutations(np.arange(1, len(args) + 1), 2))
     permutations_means = list(permutations(means, 2))
+    permutations_lengths = list(permutations([len(x) for x in args], 2))
 
-    # determine the mean difference
+    # also called maxmimum critical value, tukey criterion is the studentized
+    # range value * the square root of mean square error over the sample size.
+    # This only applies for treatments of equal sizes. The criterion is
+    # calculated for each comparison when treatments differ in size.
+    if len(set(permutations_lengths)) > 1:
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison
+        normalize = np.asarray([1/x + 1/y for (x, y) in permutations_lengths])
+    else:
+        # all input groups are the same length, so only one value needs to be
+        # calculated
+        normalize = 2 / len(args[0])
+
+    tukey_criterions = srd * np.sqrt(normalize * mse / 2)
+
+    # determine the mean difference for each pairwaise
     mean_differences = np.asarray([x[0] - x[1] for x in permutations_means])
 
     # the confidence levels are determined by the mean diff +- tukey_criterion
-    conf_levels = (mean_differences - tukey_criterion,
-                   mean_differences + tukey_criterion)
+    conf_levels = (mean_differences - tukey_criterions,
+                   mean_differences + tukey_criterions)
 
     # The simultaneous pairwise comparisons are not significantly different
-    # from 0 if their confidence intervals include 0. 
+    # from 0 if their confidence intervals include 0.
     # ("Conclusions")[https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm]
-    is_significant = np.abs(mean_differences) > tukey_criterion
+    is_significant = np.abs(mean_differences) > tukey_criterions
 
+    # form 2d output array
     res = np.zeros((len(args), len(args), 4))
-    
-
     for i in range(len(mean_differences)):
-        m,n = permutations_key[i]
+        m, n = permutations_key[i]
         res[m-1, n-1] = [mean_differences[i], conf_levels[0][i],
                          conf_levels[1][i], is_significant[i]]
-       
     return TukeyKramerResult(res, sig_level, srd)
-    
+
 
 class PearsonRConstantInputWarning(RuntimeWarning):
     """Warning generated by `pearsonr` when an input is constant."""
