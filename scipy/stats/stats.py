@@ -3720,6 +3720,26 @@ class TukeyKramerResult():
                           f"{paircomp[2] :>8.3f}{paircomp[3] : >8}\n")
         return s
 
+    def __getitem__(self, key):
+        return self.res[key]
+    
+    def get_pairwise(self, n, m):
+        '''
+        Parameters
+        ----------
+        n : int
+            first group for comparison.
+        m : int
+            second group for comparison.
+
+        Returns
+        -------
+        ndarray
+            array of mean, min, max, sig for the comparison.
+
+        '''
+        return self.res[n - 1, m - 1]
+
 
 def tukeykramer(*args, sig_level=.05):
     """
