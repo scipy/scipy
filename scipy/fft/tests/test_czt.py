@@ -117,7 +117,7 @@ def test_czt_vs_fft():
     random_lengths = np.random.exponential(100000, size=10).astype('int')
     for n in random_lengths:
         a = np.random.randn(n)
-        assert_allclose(czt(a), fft(a), rtol=1e-12)
+        assert_allclose(czt(a), fft(a), rtol=1e-11)
 
 
 def test_empty_input():
