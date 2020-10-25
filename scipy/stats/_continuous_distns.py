@@ -8401,15 +8401,14 @@ class argus_gen(rv_continuous):
 
     `argus` takes :math:`\chi` as shape a parameter.
 
-    References
-    ----------
-
-    .. [1] "ARGUS distribution",
-           https://en.wikipedia.org/wiki/ARGUS_distribution
-
     %(after_notes)s
 
     .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(example)s
     """
