@@ -96,7 +96,7 @@ def _eps_for_method(f0, method):
 
     Parameters
     ----------
-    f0: np.ndarray or scalar
+    f0: np.ndarray
 
     method: {'2-point', '3-point', 'cs'}
     """

@@ -47,29 +47,29 @@ def test_correct_eps():
                     "3-point": EPS**(1/3),
                      "cs": EPS**0.5}
     for method in ['2-point', '3-point', 'cs']:
-        assert_equal(
-            _eps_for_method(0.1, method),
+        assert_allclose(
+            _eps_for_method(np.array(0.1), method),
             relative_step[method]
         )
-        assert_equal(
+        assert_allclose(
             _eps_for_method(np.array([0.1], dtype=np.float64), method),
             relative_step[method]
         )
-        assert_equal(
+        assert_allclose(
             _eps_for_method(np.empty((1,), dtype=np.complex128), method),
             relative_step[method]
         )
 
     # check another FP size
-    assert_equal(
+    assert_allclose(
         _eps_for_method(np.zeros((1,), dtype=np.float32), "2-point"),
         np.sqrt(np.finfo(np.float32).eps)
     )
-    assert_equal(
+    assert_allclose(
         _eps_for_method(np.zeros((1,), dtype=np.float32), "3-point"),
-        (np.finfo(np.float32).eps)**1/3
+        (np.finfo(np.float32).eps)**(1/3)
     )
-    assert_equal(
+    assert_allclose(
         _eps_for_method(np.zeros((1,), dtype=np.float32), "cs"),
         np.sqrt(np.finfo(np.float32).eps)
     )
