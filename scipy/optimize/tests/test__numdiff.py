@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
-    group_columns)
+    group_columns, _eps_for_method)
 
 
 def test_group_columns():
@@ -38,6 +38,41 @@ def test_group_columns():
     groups_1 = group_columns(A)
     groups_2 = group_columns(A)
     assert_equal(groups_1, groups_2)
+
+
+def test_correct_eps():
+    # check that relative step size is correct for FP size
+    EPS = np.finfo(np.float64).eps
+    relative_step = {"2-point": EPS**0.5,
+                    "3-point": EPS**(1/3),
+                     "cs": EPS**0.5}
+    for method in ['2-point', '3-point', 'cs']:
+        assert_equal(
+            _eps_for_method(0.1, method),
+            relative_step[method]
+        )
+        assert_equal(
+            _eps_for_method(np.array([0.1], dtype=np.float64), method),
+            relative_step[method]
+        )
+        assert_equal(
+            _eps_for_method(np.empty((1,), dtype=np.complex128), method),
+            relative_step[method]
+        )
+
+    # check another FP size
+    assert_equal(
+        _eps_for_method(np.zeros((1,), dtype=np.float32), "2-point"),
+        np.sqrt(np.finfo(np.float32).eps)
+    )
+    assert_equal(
+        _eps_for_method(np.zeros((1,), dtype=np.float32), "3-point"),
+        (np.finfo(np.float32).eps)**1/3
+    )
+    assert_equal(
+        _eps_for_method(np.zeros((1,), dtype=np.float32), "cs"),
+        np.sqrt(np.finfo(np.float32).eps)
+    )
 
 
 class TestAdjustSchemeToBounds(object):
@@ -388,6 +423,28 @@ class TestApproxDerivativesDense(object):
         # math.exp cannot handle complex arguments, hence this raises
         assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
                       **dict(method='cs'))
+
+    def test_fp(self):
+        # checks that approx_derivative works for FP size other than 64.
+        # Example is derived from the minimal working example in gh12991.
+        np.random.seed(1)
+
+        def func(p, x):
+            return p[0] + p[1] * x
+
+        def err(p, x, y):
+            return func(p, x) - y
+
+        x = np.linspace(0, 1, 100, dtype=np.float64)
+        y = np.random.random(100).astype(np.float64)
+        x0 = [-1.0, -1.0]
+
+        jac_fp64 = approx_derivative(err, x0, method='2-point', args=(x, y))
+
+        x32 = x.astype(np.float32)
+        y32 = y.astype(np.float32)
+        jac_fp = approx_derivative(err, x0, method='2-point', args=(x32, y32))
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])

@@ -7,8 +7,6 @@ from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
 
-EPS = np.finfo(np.float64).eps
-
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     """Adjust final difference scheme to the presence of bounds.
@@ -89,12 +87,34 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-relative_step = {"2-point": EPS**0.5,
-                 "3-point": EPS**(1/3),
-                 "cs": EPS**0.5}
+def _eps_for_method(f0, method):
+    """
+    Calculates relative EPS step to use for a given data type
+    and numdiff step method.
+
+    Progressively smaller steps are used for larger floating point types.
+
+    Parameters
+    ----------
+    f0: np.ndarray or scalar
+
+    method: {'2-point', '3-point', 'cs'}
+    """
+    if np.issubdtype(f0.dtype, np.inexact):
+        EPS = np.finfo(f0.dtype).eps
+    else:
+        EPS = np.finfo(np.float64).eps
+
+    if method in ["2-point", "cs"]:
+        return EPS**0.5
+    elif method in ["3-point"]:
+        return EPS**(1/3)
+    else:
+        raise RuntimeError("Unknown step method, should be one of "
+                           "{'2-point', '3-point', 'cs'}")
 
 
-def _compute_absolute_step(rel_step, x0, method):
+def _compute_absolute_step(rel_step, x0, f0, method):
     """
     Computes an absolute step from a relative step for finite difference
     calculation.
@@ -105,10 +125,11 @@ def _compute_absolute_step(rel_step, x0, method):
         Relative step for the finite difference calculation
     x0 : np.ndarray
         Parameter vector
+    f0 : np.ndarray or scalar
     method : {'2-point', '3-point', 'cs'}
     """
     if rel_step is None:
-        rel_step = relative_step[method]
+        rel_step = _eps_for_method(f0, method)
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
     return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
 
@@ -296,9 +317,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     Notes
     -----
     If `rel_step` is not provided, it assigned to ``EPS**(1/s)``, where EPS is
-    machine epsilon for float64 numbers, s=2 for '2-point' method and s=3 for
-    '3-point' method. Such relative step approximately minimizes a sum of
-    truncation and round-off errors, see [1]_. Relative steps are used by
+    ``np.finfo(fun(x0).dtype).eps``, s=2 for '2-point' method and
+    s=3 for '3-point' method. If the output of fun is not floating point, then
+    float64 is used instead. Such relative step approximately minimizes a sum
+    of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
     If any of the absolute steps produces an indistinguishable difference from
     the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
@@ -392,14 +414,14 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     if as_linear_operator:
         if rel_step is None:
-            rel_step = relative_step[method]
+            rel_step = _eps_for_method(f0, method)
 
         return _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
     else:
         # by default we use rel_step
         if abs_step is None:
-            h = _compute_absolute_step(rel_step, x0, method)
+            h = _compute_absolute_step(rel_step, x0, f0, method)
         else:
             # user specifies an absolute step
             sign_x0 = (x0 >= 0).astype(float) * 2 - 1
@@ -409,7 +431,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             # or small. In which case fall back to relative step.
             dx = ((x0 + h) - x0)
             h = np.where(dx == 0,
-                         relative_step[method] * sign_x0 *
+                         _eps_for_method(f0, method) * sign_x0 *
                          np.maximum(1.0, np.abs(x0)),
                          h)
 
