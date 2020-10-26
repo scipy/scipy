@@ -401,7 +401,7 @@ def test_logpdf_overflow():
     # very high dimensionality kde
     np.random.seed(1)
     n_dimensions = 2500
-    n_samples = 1000
+    n_samples = 1500
     xn = np.array([np.random.randn(n_samples) + (n) for n in range(
         0, n_dimensions)])
 
