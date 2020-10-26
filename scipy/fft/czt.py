@@ -3,7 +3,7 @@
 """
 Chirp z-transform.
 
-We provide two interfaces to the chirp z transform: an object interface
+We provide two interfaces to the chirp z-transform: an object interface
 which precalculates part of the transform and can be applied efficiently
 to many different data sets, and a functional interface which is applied
 only to the given data set.
@@ -12,17 +12,17 @@ Transforms
 ----------
 
 CZT : callable (x, axis=-1) -> array
-   define a chirp z-transform that can be applied to different signals
+   Define a chirp z-transform that can be applied to different signals.
 ZoomFFT : callable (x, axis=-1) -> array
-   define a Fourier transform on a range of frequencies
+   Define a Fourier transform on a range of frequencies.
 
 Functions
 ---------
 
 czt : array
-   compute the chirp z-transform for a signal
+   Compute the chirp z-transform for a signal.
 zoomfft : array
-   compute the Fourier transform on a range of frequencies
+   Compute the Fourier transform on a range of frequencies.
 """
 
 import cmath
@@ -54,8 +54,7 @@ def _validate_sizes(n, m):
 
 def czt_points(m, w=None, a=1+0j):
     """
-    The points at which the Z-transform is computed when doing a `CZT`
-    with the same arguments.
+    Return the points at which the chirp z-transform is computed.
 
     Parameters
     ----------
@@ -64,13 +63,13 @@ def czt_points(m, w=None, a=1+0j):
     w : complex, optional
         The ratio between points in each step.
     a : complex, optional
-        The starting point in the complex plane.  The default is 1.
+        The starting point in the complex plane.  Default is 1+0j.
 
     Returns
     -------
     out : ndarray
-        The points in the Z plane at which the CZT samples the Z-transform,
-        as complex numbers.
+        The points in the Z plane at which `CZT` samples the z-transform,
+        when called with arguments `m`, `w`, and `a`, as complex numbers.
 
     Examples
     --------
@@ -83,14 +82,13 @@ def czt_points(m, w=None, a=1+0j):
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
 
-    and a 91-point logarithmic spiral:
+    and a 91-point logarithmic spiral that crosses the unit circle:
 
     >>> m, w, a = 91, 0.995*np.exp(-1j*np.pi*.05), 0.8*np.exp(1j*np.pi/6)
     >>> points = czt_points(m, w, a)
     >>> plt.plot(np.real(points), np.imag(points), 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
-
     """
     m = _validate_sizes(1, m)
 
@@ -109,11 +107,11 @@ def czt_points(m, w=None, a=1+0j):
 
 class CZT:
     """
-    Create a chirp Z-transform function.
+    Create a chirp z-transform function.
 
     Transform to compute the frequency response around a spiral.
     Objects of this class are callables which can compute the
-    chirp Z-transform on their inputs.  This object precalculates the constant
+    chirp z-transform on their inputs.  This object precalculates the constant
     chirps used in the given transform.
 
     Parameters
@@ -121,22 +119,22 @@ class CZT:
     n : int
         The size of the signal.
     m : int, optional
-        The number of output points desired.  The default is `n`.
+        The number of output points desired.  Default is `n`.
     w : complex, optional
         The ratio between points in each step.  This must be precise or the
         accumulated error will degrade the tail of the output sequence.
     a : complex, optional
-        The starting point in the complex plane.  The default is 1+0j.
+        The starting point in the complex plane.  Default is 1+0j.
 
     Returns
     -------
     f : CZT
-        callable object ``f(x, axis=-1)`` for computing the chirp z-transform
-        on `x`
+        Callable object ``f(x, axis=-1)`` for computing the chirp z-transform
+        on `x`.
 
     See Also
     --------
-    ZoomFFT : for a friendly interface to partial FFT calculations
+    ZoomFFT : for a friendlier interface to partial FFT calculations.
 
     Notes
     -----
@@ -218,12 +216,14 @@ class CZT:
 
     def __call__(self, x, axis=-1):
         """
+        Calculate the chirp z-transform of a signal.
+
         Parameters
         ----------
         x : array
             The signal to transform.
         axis : int, optional
-            Array dimension to operate over.  The default is the final
+            Array dimension to operate over.  Default is the final
             dimension.
 
         Returns
@@ -247,8 +247,7 @@ class CZT:
 
     def points(self):
         """
-        The points at which the Z-transform is computed when calling this
-        `CZT`.
+        Return the points at which the chirp z-transform is computed.
         """
         return czt_points(self.m, self.w, self.a)
 
@@ -257,8 +256,10 @@ class ZoomFFT(CZT):
     """
     Create a zoom FFT transform function.
 
-    This is a specialization of the chirp Z-transform (`CZT`) for a set of
-    equally-spaced frequencies around the unit circle.
+    This is a specialization of the chirp z-transform (`CZT`) for a set of
+    equally-spaced frequencies around the unit circle, used to calculate a
+    section of the FFT more efficiently than calculating the entire FFT and
+    truncating.
 
     Parameters
     ----------
@@ -268,14 +269,14 @@ class ZoomFFT(CZT):
         A length-2 sequence [f1, f2] giving the frequency range, or a scalar,
         for which the range [0, fn] is assumed.
     m : int, optional
-        The number of output points desired.  The default is `n`.
+        The number of output points desired.  Default is `n`.
     fs : float, optional
-        The sampling frequency. (default=2)
+        The sampling frequency. (Default=2)
 
     Returns
     -------
     f : ZoomFFT
-        A callable object ``f(x, axis=-1)`` for computing the zoom FFT on `x`.
+        Callable object ``f(x, axis=-1)`` for computing the zoom FFT on `x`.
 
     Notes
     -----
@@ -346,15 +347,18 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     Parameters
     ----------
     x : array
-        The set of data to transform.
+        The signal to transform.
     m : int, optional
-        The number of points desired. Default is the length of the input data.
+        The number of output points desired.  Default is the length of the
+        input data.
     w : complex, optional
-        The ratio between points in each step.
+        The ratio between points in each step.  This must be precise or the
+        accumulated error will degrade the tail of the output sequence.
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
     axis : int, optional
-        Array dimension to operate over.  Default is the final dimension.
+        Array dimension to operate over.  Default is the final
+        dimension.
 
     Returns
     -------
@@ -373,7 +377,6 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     If the transform needs to be repeated, use `CZT` to construct a
     specialized transform function which can be reused without
     recomputing constants.
-
     """
     x = np.asarray(x)
     transform = CZT(x.shape[axis], m=m, w=w, a=a)
@@ -403,7 +406,7 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
         The array dimension the transform operates over.  The default is the
         final dimension.
 
-    Returns:
+    Returns
     -------
     out : ndarray
         The transformed signal.  The Fourier transform will be calculated
@@ -411,7 +414,7 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
 
     Notes
     -----
-    ``zoomfft(x, [0, 2-2./len(x)])`` is equivalent to ``fft(x)``.
+    ``zoomfft(x, 2-2./len(x))`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
