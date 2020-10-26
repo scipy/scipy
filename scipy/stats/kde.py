@@ -569,13 +569,8 @@ class gaussian_kde(object):
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
-        itemsize = self.covariance.dtype.itemsize
-        if itemsize in (12, 16):
-            self.log_det = np.abs(np.log(linalg.det(2.0*pi*self.covariance)))
-            self.log_sign = np.log(np.sign(self.log_det))
-        else:
-            sign, self.log_det = np.linalg.slogdet(2.0*pi*self.covariance)
-            self.log_sign = np.log(sign)
+        L = linalg.cholesky(self.covariance*2*pi)
+        self.log_det = 2*np.log(np.diag(L)).sum()
 
     def pdf(self, x):
         """
@@ -614,8 +609,7 @@ class gaussian_kde(object):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy[i] = sum(diff*tdiff, axis=0)
-            log_to_sum = 2.0 * np.log(
-                self.weights) - self.log_det - energy.T - self.log_sign
+            log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy.T
             result = logsumexp(0.5 * log_to_sum, axis=1)
         else:
             # loop over points
@@ -624,8 +618,7 @@ class gaussian_kde(object):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0)
-                log_to_sum = 2.0 * np.log(
-                    self.weights) - self.log_det - energy - self.log_sign
+                log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy
                 result[i] = logsumexp(0.5 * log_to_sum)
 
         return result
