@@ -763,6 +763,7 @@ def test_fp32_gh12991():
 
     x = np.linspace(0, 1, 100).astype("float32")
     y = np.random.random(100).astype("float32")
+
     def func(p, x):
         return p[0] + p[1] * x
 
@@ -777,4 +778,4 @@ def test_fp32_gh12991():
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
     assert res.nfev > 3
-    assert_allclose(res.x, np.array([0.4082241 , 0.15530563]), atol=5e-5)
+    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
