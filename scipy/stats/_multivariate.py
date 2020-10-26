@@ -4364,7 +4364,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     Examples
     --------
-
     To evaluate the probability mass function of the multivariate
     hypergeometric distribution, with a dichotomous population of size
     :math:`10` and :math:`20`, at a sample of size :math:`12` with
@@ -4390,10 +4389,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     The functions ``pmf``, ``logpmf``, ``mean``, ``var``, ``cov``, and ``rvs``
     support broadcasting, under the convention that the vector parameters
     (``x``, ``m``, and ``n``) are interpreted as if each row along the last
-    axis is a single object. For instance, we can combine the previous two calls 
-    to `multivariate_hypergeom` as
+    axis is a single object. For instance, we can combine the previous two
+    calls to `multivariate_hypergeom` as
 
-    >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]], n=[12, 4])
+    >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]],
+                                   n=[12, 4])
     array([0.00252072, 0.43956044])
 
     This broadcasting also works for ``cov``, where the output objects are
@@ -4405,8 +4405,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            [[ 1.56, -1.56],
             [-1.56,  1.56]]])
 
-    That is, ``result[0]`` is equal to ``multivariate_hypergeom.cov(m=[7, 9], n=8)``
-    and ``result[1]`` is equal to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
+    That is, ``result[0]`` is equal to
+    ``multivariate_hypergeom.cov(m=[7, 9], n=8)`` and ``result[1]`` is equal
+    to ``multivariate_hypergeom.cov(m=[10, 15], n=12)``.
 
     Alternatively, the object may be called (as a function) to fix the `m`
     and `n` parameters, returning a "frozen" multivariate hypergeometric
@@ -4416,7 +4417,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     >>> rv.pmf(x=[8, 4])
     0.0025207176631464523
 
-    See also
+    See Also
     --------
     scipy.stats.hypergeom : The hypergeometric distribution.
     numpy.random.Generator.multivariate_hypergeometric : The multivariate hypergeometric distribution sampler in NumPy.
@@ -4426,7 +4427,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     ----------
     .. [1] The Multivariate Hypergeometric Distribution,
            http://www.randomservices.org/random/urn/MultiHypergeometric.html
-
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
@@ -4587,8 +4587,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
         Returns
         -------
-        cov : array_like
-            The covariance matrix of the distribution
+        array_like
+            The variances of the components of the distribution.  This is
+            the diagonal of the covariance matrix of the distribution
         """
         M, m, n, _, _, mncond = self._process_parameters(m, n)
         M, n = M[..., np.newaxis], n[..., np.newaxis]
@@ -4644,7 +4645,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        M, m, n, _, _, mncond = self._process_parameters(m, n)
+        M, m, n, _, _, _ = self._process_parameters(m, n)
 
         random_state = self._get_random_state(random_state)
         # Generator is only available in numpy >= 1.17 while
@@ -4666,9 +4667,9 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
             rvs[..., c] = ((n != 0) *
-                            random_state.hypergeometric(m[..., c], rem,
-                                                        n + (n == 0),
-                                                        size=size))
+                           random_state.hypergeometric(m[..., c], rem,
+                                                       n + (n == 0),
+                                                       size=size))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
 
