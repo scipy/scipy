@@ -1,4 +1,4 @@
-from cpython.mem cimport PyMem_Free
+from libc.stdlib cimport free
 
 cdef extern from "./c_src/levyst.h":
     struct nolan_precanned:
@@ -49,4 +49,4 @@ cdef class Nolan:
         return self.p.c3
 
     def __dealloc__(self):
-        PyMem_Free(self.p)
+        free(self.p)
