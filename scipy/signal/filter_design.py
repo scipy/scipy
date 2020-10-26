@@ -2111,12 +2111,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
-        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba' for backwards compatibility. 
-        In general 'sos' is recommended because inferring the 'ba' coëfficients 
-        suffers from numerical instabilities. Using the 'sos' filter is sometimes 
-        associated with additional computational costs, for data-intense use cases 
-        it is therefore recommended to also investigate the 'ba'-filter format.
+        Type of output:  numerator/denominator ('ba'), pole-zero
+        ('zpk'), or second-order sections ('sos'). Default is 'ba' for
+        backwards compatibility. In general 'sos' is recommended
+        because inferring the 'ba' coefficients suffers from numerical
+        instabilities. Using the 'sos' filter is sometimes associated
+        with additional computational costs, for data-intense use cases
+        it is therefore recommended to also investigate the 'ba'-filter
+        format.
     fs : float, optional
         The sampling frequency of the digital system.
 
