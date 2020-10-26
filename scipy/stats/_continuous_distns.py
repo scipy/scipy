@@ -6428,6 +6428,12 @@ class rdist_gen(rv_continuous):
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
+def _rayleigh_fit_check_error(ier, msg):
+    if ier != 1:
+        raise RuntimeError('rayleigh.fit failed to find the root of the MLE '
+                           f'equation: {msg} (ier={ier})')
+
+
 class rayleigh_gen(rv_continuous):
     r"""A Rayleigh continuous random variable.
 
@@ -6534,13 +6540,17 @@ class rayleigh_gen(rv_continuous):
 
         if fscale is not None:
             # `scale` is fixed
-            loc = optimize.fsolve(loc_mle_scale_fixed, x0=loc0,
-                                  args=(fscale, data,), xtol=1e-10)
-            return loc[0], fscale
+            x, info, ier, msg = optimize.fsolve(loc_mle_scale_fixed, x0=loc0,
+                                                args=(fscale, data,),
+                                                xtol=1e-10, full_output=True)
+            _rayleigh_fit_check_error(ier, msg)
+            return x[0], fscale
         else:
             # Neither `loc` nor `scale` are fixed.
-            loc = optimize.fsolve(loc_mle, x0=loc0, args=(data,), xtol=1e-10)
-            return loc[0], scale_mle(loc, data)
+            x, info, ier, msg = optimize.fsolve(loc_mle, x0=loc0, args=(data,),
+                                                xtol=1e-10, full_output=True)
+            _rayleigh_fit_check_error(ier, msg)
+            return x[0], scale_mle(x[0], data)
 
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
