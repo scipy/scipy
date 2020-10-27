@@ -271,6 +271,9 @@ class ZoomFFT(CZT):
         The number of output points desired.  Default is `n`.
     fs : float, optional
         The sampling frequency. (Default=2)
+    endpoint : bool, optional
+        If True, `f2` is the last sample. Otherwise, it is not included.
+        Default is True.
 
     Returns
     -------
@@ -307,7 +310,7 @@ class ZoomFFT(CZT):
     >>> plt.show()
     """
 
-    def __init__(self, n, fn, m=None, fs=2):
+    def __init__(self, n, fn, m=None, fs=2, endpoint=True):
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -321,7 +324,10 @@ class ZoomFFT(CZT):
 
         self.f1, self.f2, self.fs = f1, f2, fs
 
-        scale = ((f2 - f1) * m) / (fs * (m - 1))
+        if endpoint:
+            scale = ((f2 - f1) * m) / (fs * (m - 1))
+        else:
+            scale = (f2 - f1) / fs
         a = cmath.exp(2j * pi * f1/fs)
         wk2 = np.exp(-(1j * pi * scale * k**2) / m)
 
@@ -380,7 +386,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoomfft(x, fn, m=None, fs=2, axis=-1):
+def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.
 
@@ -399,6 +405,9 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
         The default sampling frequency is 2, so f1 and f2 should be
         in the range [0, 1] to keep the transform below the Nyquist
         frequency.
+    endpoint : bool, optional
+        If True, `f2` is the last sample. Otherwise, it is not included.
+        Default is True.
     axis : int, optional
         The array dimension the transform operates over.  The default is the
         final dimension.
@@ -411,7 +420,7 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
 
     Notes
     -----
-    ``zoomfft(x, 2-2./len(x))`` is equivalent to ``fft(x)``.
+    ``zoomfft(x, 2, endpoint=False)`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
@@ -422,5 +431,5 @@ def zoomfft(x, fn, m=None, fs=2, axis=-1):
     recomputing constants.
     """
     x = np.asarray(x)
-    transform = ZoomFFT(x.shape[axis], fn, m=m, fs=fs)
+    transform = ZoomFFT(x.shape[axis], fn, m=m, fs=fs, endpoint=endpoint)
     return transform(x, axis=axis)
