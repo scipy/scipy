@@ -22,8 +22,8 @@ c
      #    vmax,zero,fifth,half,one,two,cv1,cv2,cvmax,cv(4)
       double precision g, gmid, r1, c, h, v2, gstep, pk1, pk2, gk, pk
       double precision w0, pz, x, hj, ehj, pj
-      data pcutj, pcutk, step, vmax /0.0000000001d0, 0.0000000001d0, 0.45d0,
-     #   120.0d0/, zero, fifth, half, one, two /0.0d0, 0.2d0, 0.5d0,
+      data pcutj, pcutk, step, vmax /0.001d-6, 0.01d-6, 0.45d0, 120.0d0/
+     #   zero, fifth, half, one, two /0.0d0, 0.2d0, 0.5d0,
      #   1.0d0, 2.0d0/, cv1, cv2, cvmax /0.193064705d0, 0.293525326d0,
      #   0.39894228d0/, cv(1), cv(2), cv(3), cv(4) /0.318309886d0,
      #   -0.268132716d-2, 0.347222222d-2, 0.833333333d-1/

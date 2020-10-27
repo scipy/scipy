@@ -3902,7 +3902,6 @@ def tukeykramer(*args, sig_level=.05):
 
     # determine the mean difference for each pairwaise
     mean_differences = np.asarray([x[0] - x[1] for x in permutations_means])
-
     # the confidence levels are determined by the mean diff +- tukey_criterion
     conf_levels = (mean_differences - tukey_criterions,
                    mean_differences + tukey_criterions)
