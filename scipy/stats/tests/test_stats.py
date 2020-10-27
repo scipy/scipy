@@ -4924,43 +4924,102 @@ class TestFOneWay(object):
             stats.f_oneway(a, b, axis=1)
 
 
-class testTukeykramer(object):
-    @pytest.mark.parametrize("groups,raw_sas",
-                             ([[24.5, 23.5, 26.4, 27.1, 29.9],
-                               [28.4, 34.2, 29.5, 32.2, 30.1],
-                               [26.1, 28.3, 24.3, 26.2, 27.8]],
-                              '''
-    Brand Comparison    Mean Difference     Simultanious 95% Confidence Limits
-    2 - 3                 4.340               0.691           7.989   1
-    2 - 1                 4.600               0.951           8.249   1
-    3 - 2                -4.340              -7.989          -0.691   1
-    3 - 1                 0.260              -3.389           3.909   0
-    1 - 2                -4.600              -8.249          -0.951   1
-    1 - 3                -0.260              -3.909           3.389   0
-    '''), (
-                                [[24.5, 23.5, 26.28, 26.4, 27.1, 29.9,
-                                  30.1, 30.1],
-                                [28.4, 34.2, 29.5, 32.2, 30.1],
-                                [26.1, 28.3, 24.3, 26.2, 27.8]],
+class TestTukeykramer(object):
+    def test_SAS_same_size_treatments(self):
         '''
-    Brand Comparison    Mean Difference     Simultanious 95% Confidence Limits
-    2 - 3               3.645               0.268        	7.022   1
-    2 - 1               4.34                0.593        	8.087   1
-    3 - 2              -3.645              -7.022      	   -0.268   1
-    3 - 1               0.695              -2.682         	4.072   0
-    1 - 2              -4.34               -8.087	       -0.593   1
-    1 - 3              -0.695              -4.072	        2.682 0
-    '''))
-    @pytest.mark.parametrize("permutations",
-                             [permutations(np.arange(1, 4), 2)])
-    def test_SAS(self, groups, raw_sas, permutations):
-        # build result from SAS string
-        res = stats.tukeykramer(*groups)
-        arr = [line.split() for line in raw_sas.replace("- ", "").split('\n')]
-        x = [x for x in np.asarray(arr[2:8]).astype(float)
-             if x[0] == permutations[0] and x[1] == permutations[1]]
-        assert_array_almost_equal(x[0][2:], res.get_pairwise(*permutations),
-                                  decimal=3)
+        Testing against these results from SAS:
+
+        Brand Comparison    Mean Difference  Simultanious 95% Confidence Limits
+        2 - 3                 4.340               0.691           7.989   1
+        2 - 1                 4.600               0.951           8.249   1
+        3 - 2                -4.340              -7.989          -0.691   1
+        3 - 1                 0.260              -3.389           3.909   0
+        1 - 2                -4.600              -8.249          -0.951   1
+        1 - 3                -0.260              -3.909           3.389   0
+        '''
+        res = stats.tukeykramer([24.5, 23.5, 26.4, 27.1, 29.9],
+                                [28.4, 34.2, 29.5, 32.2, 30.1],
+                                [26.1, 28.3, 24.3, 26.2, 27.8])
+        SAS_res = [['Brand', 'Comparison', 'Mean', 'Difference',
+                    'Simultanious', '95%', 'Confidence', 'Limits'],
+                   ['2', '3', '4.340', '0.691', '7.989', '1'],
+                   ['2', '1', '4.600', '0.951', '8.249', '1'],
+                   ['3', '2', '-4.340', '-7.989', '-0.691', '1'],
+                   ['3', '1', '0.260', '-3.389', '3.909', '0'],
+                   ['1', '2', '-4.600', '-8.249', '-0.951', '1'],
+                   ['1', '3', '-0.260', '-3.909', '3.389', '0']]
+        for comp in SAS_res[1:]:
+            comp = np.asarray(comp, dtype=float)
+            assert_array_almost_equal(comp[2:],
+                                      res.get_pairwise(int(comp[0]),
+                                                       int(comp[1])),
+                                      decimal=3)
+
+    def est_SAS_diff_size_treatments(self):
+        '''
+        Testing against these results from SAS:
+
+        DATA ACHE;
+           INPUT BRAND RELIEF;
+           CARDS;
+           1 24.5
+           1 23.5
+           1 26.28
+           1 26.4
+           1 27.1
+           1 29.9
+           1 30.1
+           1 30.1
+           2 28.4
+           2 34.2
+           2 29.5
+           2 32.2
+           2 30.1
+           3 26.1
+           3 28.3
+           3 24.3
+           3 26.2
+           3 27.8
+           ;
+           ODS RTF;ODS LISTING CLOSE;
+           PROC ANOVA DATA=ACHE;
+           CLASS BRAND;
+           MODEL RELIEF=BRAND;
+           MEANS BRAND/TUKEY CLDIFF;
+           TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+        RUN;
+        QUIT;
+        ODS RTF close;
+        ODS LISTING;
+
+
+        Brand Comparison    Mean Difference  Simultanious 95% Confidence Limits
+        2 - 1               3.645               0.268           7.022   1
+        2 - 3               4.340               0.593           8.087   1
+        1 - 2              -3.645              -7.022          -0.268   1
+        1 - 3               0.695              -2.682           4.072   0
+        3 - 2              -4.340              -8.087          -0.593   1
+        3 - 1              -0.695              -4.072           2.682   0
+
+        '''
+
+        res = stats.tukeykramer([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1,
+                                 30.1], [28.4, 34.2, 29.5, 32.2, 30.1],
+                                [26.1, 28.3, 24.3, 26.2, 27.8])
+        SAS_res = [['Brand', 'Comparison', 'Mean', 'Difference',
+                    'Simultanious', '95%', 'Confidence', 'Limits'],
+                   ['2', '1', '3.645', '0.268', '7.022', '1'],
+                   ['2', '3', '4.340', '0.593', '8.087', '1'],
+                   ['1', '2', '-3.645', '-7.022', '-0.268', '1'],
+                   ['1', '3', '0.695', '-2.682', '4.072', '0'],
+                   ['3', '2', '-4.340', '-8.087', '-0.593', '1'],
+                   ['3', '1', '-0.695', '-4.072', '2.682', '0']]
+        for comp in SAS_res[1:]:
+            comp = np.asarray(comp, dtype=float)
+            assert_array_almost_equal(comp[2:],
+                                      res.get_pairwise(int(comp[0]),
+                                                       int(comp[1])),
+                                      decimal=3)
 
 
 class TestKruskal(object):
