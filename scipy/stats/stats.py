@@ -1450,7 +1450,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-def skewtest(a, axis=0, nan_policy='propagate'):
+def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     """
     Test whether the skew is different from the normal distribution.
 
@@ -1472,6 +1472,13 @@ def skewtest(a, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -1529,7 +1536,17 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
-    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    if alternative == 'less':
+        prob = distributions.norm.cdf(Z)
+    elif alternative == 'greater':
+        prob = distributions.norm.sf(Z)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.norm.sf(np.abs(Z))
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
+
+    return SkewtestResult(Z, prob)
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
