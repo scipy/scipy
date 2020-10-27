@@ -396,6 +396,23 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
+def test_logpdf_overflow():
+    # regression test for gh-12988; testing against linalg instability for
+    # very high dimensionality kde
+    np.random.seed(1)
+    n_dimensions = 2500
+    n_samples = 5000
+    xn = np.array([np.random.randn(n_samples) + (n) for n in range(
+        0, n_dimensions)])
+
+    # Default
+    gkde = stats.gaussian_kde(xn)
+
+    logpdf = gkde.logpdf(np.arange(0, n_dimensions))
+    np.testing.assert_equal(np.isneginf(logpdf[0]), False)
+    np.testing.assert_equal(np.isnan(logpdf[0]), False)
+
+
 def test_weights_intact():
     # regression test for gh-9709: weights are not modified
     np.random.seed(12345)
