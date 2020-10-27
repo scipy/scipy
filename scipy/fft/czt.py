@@ -230,8 +230,7 @@ class CZT:
         -------
         out : ndarray
             An array of the same dimensions as `x`, but with the length of the
-            transformed axis set to `m`.  Note that this is a view on a much
-            larger array.
+            transformed axis set to `m`.
         """
         x = np.asarray(x)
         if x.shape[axis] != self.n:
@@ -364,9 +363,7 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     -------
     out : ndarray
         An array of the same dimensions as `x`, but with the length of the
-        transformed axis set to `m`.  Note that this is a view on a much
-        larger array.  To save space, you may want to call it as
-        ``y = ascontiguousarray(czt(x))``
+        transformed axis set to `m`.
 
     See Also
     --------
