@@ -87,7 +87,7 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-@functools.lru_cache
+@functools.lru_cache()
 def _eps_for_method(x0_dtype, f0_dtype, method):
     """
     Calculates relative EPS step to use for a given data type
