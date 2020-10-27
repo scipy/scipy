@@ -3941,6 +3941,24 @@ class TestRankSums(object):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_ranksums_alternative(self):
+        # No exisiting ranksums value test exists (...?)
+        # Based on test_ranksums_result_attributes
+        x, y = np.arange(5), np.arange(25)
+        res_expected = stats.ranksums(x, y)
+
+        assert_raises(ValueError, stats.ranksums, x, y,
+                      alternative='error')
+
+        res = stats.ranksums(x, y, alternative="less")
+        assert_approx_equal(res.statistic, res_expected.statistic)
+        assert_approx_equal(res.pvalue, res_expected.pvalue / 2)
+
+        res = stats.ranksums(x, y, alternative="greater")
+        assert_approx_equal(res.statistic, res_expected.statistic)
+        assert_approx_equal(res.pvalue, 1 - (res_expected.pvalue / 2))
+
+
 
 class TestJarqueBera(object):
     def test_jarque_bera_stats(self):
