@@ -810,7 +810,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_almost_equal(res.fun, c.fun)
         assert_equal(res.status, 1)
         assert_(res.success is False)
-        assert_equal(res.message.decode(),
+        assert_equal(res.message,
                      'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
