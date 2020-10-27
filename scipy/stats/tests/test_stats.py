@@ -3934,6 +3934,22 @@ def test_normalitytests():
     x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
     assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
+def test_skewtest_alternative():
+    # Based on test_normalitytests
+    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
+    res_expected = stats.skewtest(x)
+
+    assert_raises(ValueError, stats.skewtest, x,
+                  alternative='error')
+
+    res = stats.skewtest(x, alternative="greater")
+    assert_allclose(res.statistic, res_expected.statistic)
+    assert_allclose(res.pvalue, res_expected.pvalue / 2)
+
+    res = stats.skewtest(x, alternative="less")
+    assert_allclose(res.statistic, res_expected.statistic)
+    assert_allclose(res.pvalue, 1 - res_expected.pvalue / 2)
+
 
 class TestRankSums(object):
     def test_ranksums_result_attributes(self):
