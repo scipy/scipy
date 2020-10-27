@@ -23,6 +23,7 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_zdefs.h"
 
+extern void dcopy_(int *, double [], int *, double [], int *);
 extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
 extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
 extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
