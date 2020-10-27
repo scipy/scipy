@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
-    group_columns, _eps_for_method)
+    group_columns, _eps_for_method, _compute_absolute_step)
 
 
 def test_group_columns():
@@ -449,6 +449,29 @@ class TestApproxDerivativesDense(object):
                                    method='2-point')
         assert err_fp32(p0).dtype == np.float32
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # check upper bound of error on the derivative for 2-point
+        f = lambda x: np.sin(x)
+        g = lambda x: np.cos(x)
+        hess = lambda x: -np.sin(x)
+
+        def calc_atol(h, x0, f, hess, EPS):
+            # truncation error
+            t0 = h / 2 * max(np.abs(hess(x0)), np.abs(hess(x0 + h)))
+            # roundoff error. There may be a divisor (>1) missing from
+            # the following line, so this contribution is possibly
+            # overestimated
+            t1 = EPS / h * max(np.abs(f(x0)), np.abs(f(x0 + h)))
+            return t0 + t1
+
+        for dtype in [np.float16, np.float32, np.float64]:
+            EPS = np.finfo(dtype).eps
+            x0 = np.array(1.0).astype(dtype)
+            h = _compute_absolute_step(None, x0, f(x0), '2-point')
+            atol = calc_atol(h, x0, f, hess, EPS)
+            err = approx_derivative(f, x0, method='2-point',
+                                    abs_step=h) - g(x0)
+            assert abs(err) < atol
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])
