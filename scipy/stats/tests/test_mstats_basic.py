@@ -1037,40 +1037,36 @@ class TestTtest_1samp():
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
-    @pytest.mark.parametrize("func", [mstats.ttest_1samp, stats.ttest_1samp])
-    def test_fully_masked(self, func):
+    def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
         expected = (np.nan, np.nan)
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
             for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
-                t, p = func(*pair)
+                t, p = mstats.ttest_1samp(*pair)
                 assert_array_equal(p, expected)
                 assert_array_equal(t, expected)
 
-    @pytest.mark.parametrize("func", [mstats.ttest_1samp, stats.ttest_1samp])
-    def test_result_attributes(self, func):
+    def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
 
-        res = func(outcome[:, 0], 1)
+        res = mstats.ttest_1samp(outcome[:, 0], 1)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
-    @pytest.mark.parametrize("func", [mstats.ttest_1samp, stats.ttest_1samp])
-    def test_empty(self, func):
-        res1 = func([], 1)
+    def test_empty(self):
+        res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
 
-    @pytest.mark.parametrize("func", [mstats.ttest_1samp, stats.ttest_1samp])
-    def test_zero_division(self, func):
-        t, p = func([0, 0, 0], 1)
+    def test_zero_division(self):
+        t, p = mstats.ttest_1samp([0, 0, 0], 1)
         assert_equal((np.abs(t), p), (np.inf, 0))
 
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            t, p = func([0, 0, 0], 0)
+            t, p = mstats.ttest_1samp([0, 0, 0], 0)
             assert_(np.isnan(t))
             assert_array_equal(p, (np.nan, np.nan))
 
