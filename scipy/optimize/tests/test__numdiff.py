@@ -437,13 +437,21 @@ class TestApproxDerivativesDense(object):
 
         x = np.linspace(0, 1, 100, dtype=np.float64)
         y = np.random.random(100).astype(np.float64)
-        x0 = [-1.0, -1.0]
+        p0 = np.array([-1.0, -1.0])
 
-        jac_fp64 = approx_derivative(err, x0, method='2-point', args=(x, y))
+        jac_fp64 = approx_derivative(err, p0, method='2-point', args=(x, y))
 
-        x32 = x.astype(np.float32)
-        y32 = y.astype(np.float32)
-        jac_fp = approx_derivative(err, x0, method='2-point', args=(x32, y32))
+        # parameter vector is float32, func output is float64
+        jac_fp = approx_derivative(err, p0.astype(np.float32),
+                                   method='2-point', args=(x, y))
+        assert err(p0, x, y).dtype == np.float64
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # parameter vector is float64, func output is float32
+        err_fp32 = lambda p: err(p, x, y).astype(np.float32)
+        jac_fp = approx_derivative(err_fp32, p0,
+                                   method='2-point')
+        assert err_fp32(p0).dtype == np.float32
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
 
     def test_check_derivative(self):

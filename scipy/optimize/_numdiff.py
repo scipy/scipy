@@ -1,5 +1,5 @@
 """Routines for numerical differentiation."""
-
+from functools import lru_cache
 import numpy as np
 from numpy.linalg import norm
 
@@ -87,7 +87,8 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-def _eps_for_method(f0, method):
+@lru_cache
+def _eps_for_method(x0_dtype, f0_dtype, method):
     """
     Calculates relative EPS step to use for a given data type
     and numdiff step method.
@@ -96,14 +97,40 @@ def _eps_for_method(f0, method):
 
     Parameters
     ----------
-    f0: np.ndarray
+    f0_dtype: np.dtype
+        dtype of function evaluation
+
+    x0_dtype: np.dtype
+        dtype of parameter vector
 
     method: {'2-point', '3-point', 'cs'}
+
+    Returns
+    -------
+    EPS: float
+        relative step size. May be np.float16, np.float32, np.float64
+
+    Notes
+    -----
+    The default relative step will be np.float64. However, if x0 or f0 are
+    smaller floating point types (np.float16, np.float32), then the smallest
+    floating point type is chosen.
     """
-    if np.issubdtype(f0.dtype, np.inexact):
-        EPS = np.finfo(f0.dtype).eps
-    else:
-        EPS = np.finfo(np.float64).eps
+    # the default EPS value
+    EPS = np.finfo(np.float64).eps
+
+    x0_is_fp = False
+    if np.issubdtype(x0_dtype, np.inexact):
+        # if you're a floating point type then over-ride the default EPS
+        EPS = np.finfo(x0_dtype).eps
+        x0_itemsize = np.dtype(x0_dtype).itemsize
+        x0_is_fp = True
+
+    if np.issubdtype(f0_dtype, np.inexact):
+        f0_itemsize = np.dtype(f0_dtype).itemsize
+        # choose the smallest itemsize between x0 and f0
+        if x0_is_fp and f0_itemsize < x0_itemsize:
+            EPS = np.finfo(f0_dtype).eps
 
     if method in ["2-point", "cs"]:
         return EPS**0.5
@@ -127,9 +154,20 @@ def _compute_absolute_step(rel_step, x0, f0, method):
         Parameter vector
     f0 : np.ndarray or scalar
     method : {'2-point', '3-point', 'cs'}
+
+    Returns
+    -------
+    h : float
+        The absolute step size
+
+    Notes
+    -----
+    `h` will always be np.float64. However, if `x0` or `f0` are
+    smaller floating point dtypes (e.g. np.float32), then the absolute
+    step size will be calculated from the smallest floating point size.
     """
     if rel_step is None:
-        rel_step = _eps_for_method(f0, method)
+        rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
     return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
 
@@ -316,10 +354,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Notes
     -----
-    If `rel_step` is not provided, it assigned to ``EPS**(1/s)``, where EPS is
-    ``np.finfo(fun(x0).dtype).eps``, s=2 for '2-point' method and
-    s=3 for '3-point' method. If the output of fun is not floating point, then
-    float64 is used instead. Such relative step approximately minimizes a sum
+    If `rel_step` is not provided, it assigned as ``EPS**(1/s)``, where EPS is
+    determined from the smallest floating point dtype of `x0` or `fun(x0)`,
+    ``np.finfo(x0.dtype).eps``, s=2 for '2-point' method and
+    s=3 for '3-point' method. Such relative step approximately minimizes a sum
     of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
     If any of the absolute steps produces an indistinguishable difference from
@@ -414,7 +452,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     if as_linear_operator:
         if rel_step is None:
-            rel_step = _eps_for_method(f0, method)
+            rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
 
         return _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
@@ -431,8 +469,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             # or small. In which case fall back to relative step.
             dx = ((x0 + h) - x0)
             h = np.where(dx == 0,
-                         _eps_for_method(f0, method) * sign_x0 *
-                         np.maximum(1.0, np.abs(x0)),
+                         _eps_for_method(x0.dtype, f0.dtype, method) *
+                         sign_x0 * np.maximum(1.0, np.abs(x0)),
                          h)
 
         if method == '2-point':
