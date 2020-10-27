@@ -7102,6 +7102,13 @@ def ranksums(x, y, alternative="two-sided"):
         rank sum statistic is normally distributed.
     pvalue : float
         The two-sided p-value of the test.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+        .. versionadded:: 1.6.0
 
     References
     ----------
