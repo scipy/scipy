@@ -4394,7 +4394,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     calls to `multivariate_hypergeom` as
 
     >>> multivariate_hypergeom.pmf(x=[[8, 4], [3, 1]], m=[[10, 20], [10, 5]],
-                                   n=[12, 4])
+    ...                            n=[12, 4])
     array([0.00252072, 0.43956044])
 
     This broadcasting also works for ``cov``, where the output objects are
@@ -4657,10 +4657,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             out = random_state.multivariate_hypergeometric(m, n, size)
             return _squeeze_output(out)
 
+        size_ = size
         if isinstance(size, int):
-            size = (size, )
+            size_ = (size, )
 
-        rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
+        rvs = np.empty(size_ + (m.shape[-1], ), dtype=m.dtype)
         rem = M
 
         # This sampler has been taken from numpy gh-13794
@@ -4670,11 +4671,13 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             rvs[..., c] = ((n != 0) *
                            random_state.hypergeometric(m[..., c], rem,
                                                        n + (n == 0),
-                                                       size=size))
+                                                       size=size_))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
 
-        return _squeeze_output(rvs)
+        if size == 1:
+            return rvs.squeeze(-1)
+        return rvs
 
 
 multivariate_hypergeom = multivariate_hypergeom_gen()
