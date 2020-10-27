@@ -107,6 +107,13 @@ matrix:
         - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
+    - python: 3.9
+      name: "Pre-release Deps, 64-bit BLAS"
+      env:
+        - TESTMODE=full
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+        - OTHERSPEC="--pre --upgrade --timeout=60"
+        - NPY_USE_BLAS_ILP64=1
     - python: 3.6
       name: "Refguide-check, Latest NumPy"
       env:
