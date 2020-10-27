@@ -7076,7 +7076,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-def ranksums(x, y):
+def ranksums(x, y, alternative="two-sided"):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7132,7 +7132,16 @@ def ranksums(x, y):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    prob = 2 * distributions.norm.sf(abs(z))
+
+    if alternative == 'less':
+        prob = distributions.norm.cdf(z)
+    elif alternative == 'greater':
+        prob = distributions.norm.sf(z)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.norm.sf(abs(z))
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
 
     return RanksumsResult(z, prob)
 
