@@ -1891,8 +1891,11 @@ class TestOptimizeResultAttributes(object):
                 if method in skip and attribute in skip[method]:
                     continue
 
-                assert_(hasattr(res, attribute))
+                assert hasattr(res, attribute)
                 assert_(attribute in dir(res))
+
+            # gh13001, OptimizeResult.message should be a str
+            assert isinstance(res.message, str)
 
 
 def f1(z, *params):
