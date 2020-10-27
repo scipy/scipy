@@ -1,5 +1,7 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
+os: linux
+dist: xenial
 language: python
 
 addons:
@@ -23,7 +25,7 @@ env:
    - OPENBLAS_NUM_THREADS=1
    - OTHERSPEC=""
 
-matrix:
+jobs:
   include:
     - python: 3.6
       name: "Lint"
@@ -101,14 +103,14 @@ matrix:
             - python3.7-dbg
             - python3.7-dev
     - python: 3.8
-      name: "Pre-release Deps, 64-bit BLAS"
+      name: "Py38, Pre-release Deps, 64-bit BLAS"
       env:
         - TESTMODE=full
         - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
     - python: 3.9
-      name: "Pre-release Deps, 64-bit BLAS"
+      name: "Py39, Pre-release Deps, 64-bit BLAS"
       env:
         - TESTMODE=full
         - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
