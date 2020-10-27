@@ -1552,7 +1552,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-def kurtosistest(a, axis=0, nan_policy='propagate'):
+def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     """
     Test whether a dataset has normal kurtosis.
 
@@ -1574,6 +1574,13 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -1642,8 +1649,17 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     if Z.ndim == 0:
         Z = Z[()]
 
-    # zprob uses upper tail, so Z needs to be positive
-    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    if alternative == 'less':
+        prob = distributions.norm.cdf(Z)
+    elif alternative == 'greater':
+        prob = distributions.norm.sf(Z)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.norm.sf(np.abs(Z))
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
+
+    return KurtosistestResult(Z, prob)
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
