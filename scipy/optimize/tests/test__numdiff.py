@@ -48,31 +48,27 @@ def test_correct_eps():
                      "cs": EPS**0.5}
     for method in ['2-point', '3-point', 'cs']:
         assert_allclose(
-            _eps_for_method(np.array(0.1), method),
-            relative_step[method]
-        )
+            _eps_for_method(np.float64, np.float64, method),
+            relative_step[method])
         assert_allclose(
-            _eps_for_method(np.array([0.1], dtype=np.float64), method),
-            relative_step[method]
-        )
-        assert_allclose(
-            _eps_for_method(np.empty((1,), dtype=np.complex128), method),
+            _eps_for_method(np.complex128, np.complex128, method),
             relative_step[method]
         )
 
     # check another FP size
-    assert_allclose(
-        _eps_for_method(np.zeros((1,), dtype=np.float32), "2-point"),
-        np.sqrt(np.finfo(np.float32).eps)
-    )
-    assert_allclose(
-        _eps_for_method(np.zeros((1,), dtype=np.float32), "3-point"),
-        (np.finfo(np.float32).eps)**(1/3)
-    )
-    assert_allclose(
-        _eps_for_method(np.zeros((1,), dtype=np.float32), "cs"),
-        np.sqrt(np.finfo(np.float32).eps)
-    )
+    for method in ['2-point', '3-point', 'cs']:
+        assert_allclose(
+            _eps_for_method(np.float64, np.float32, method),
+            np.sqrt(np.finfo(np.float32).eps)
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float64, method),
+            np.sqrt(np.finfo(np.float32).eps)
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float32, method),
+            np.sqrt(np.finfo(np.float32).eps)
+        )
 
 
 class TestAdjustSchemeToBounds(object):
