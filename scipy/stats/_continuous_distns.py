@@ -6430,8 +6430,9 @@ rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 def _rayleigh_fit_check_error(ier, msg):
     if ier != 1:
-        raise RuntimeError('rayleigh.fit failed to find the root of the MLE '
-                           f'equation: {msg} (ier={ier})')
+        raise RuntimeError('rayleigh.fit: fsolve failed to find the root of '
+                           'the first-order conditions of the log-likelihood '
+                           f'function: {msg} (ier={ier})')
 
 
 class rayleigh_gen(rv_continuous):
@@ -6494,7 +6495,7 @@ class rayleigh_gen(rv_continuous):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        Notes specifically for rayleigh.fit: If the location is fixed with
+        Notes specifically for ``rayleigh.fit``: If the location is fixed with
         the `floc` parameter, this method uses an analytical formula to find
         the scale.  Otherwise, this function uses a numerical root finder on
         the first order conditions of the log-likelihood function to find the
