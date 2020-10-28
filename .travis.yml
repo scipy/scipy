@@ -1,7 +1,7 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 os: linux
-dist: xenial
+dist: focal
 language: python
 
 addons:
