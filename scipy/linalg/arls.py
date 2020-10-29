@@ -59,61 +59,33 @@ def strange(A, b):
         return False, 0.0
 
     m, n = A.shape
-    if m < 3:
-        return True, 0.0   # not to falsely reassure
     AA = A.copy()
     bb = b.copy()
-
     epsilon = 10.0 * max(m, n) * np.spacing(bb.real.dtype.type(1))
-    small = 0.0
+
     rn = np.zeros(m)
-    for i in range(0, 2):
+    # scale to unit norms
+    for k in range(0, m):
+        rn[k] = norm(AA[k, :])
+    small = max(rn) * epsilon
+    for k in range(0, m):
+        if rn[k] < small:
+            return np.zeros(n), True
+        d = 1.0/rn[k]
+        AA[k, :] = d * AA[k, :]
+        bb[k] = d * bb[k]
 
-        # compute row norms
-        for k in range(0, m):
-            rn[k] = norm(AA[k, :])
-        if i == 0:
-            small = rn.mean() * epsilon
+    maxnorm = sum(abs(bb)) * 3.0
+    x = lstsq(AA, bb)[0]
+    nx = norm(x)
 
-        # find largest sense
-        sense = 0.0
-        kmax = -1
-        s = np.zeros(m)
-        for k in range(i, m):
-            if rn[k] < small:
-                return True, 0.0
-            s[k] = abs(b[k]) / rn[k]
-            if (s[k] >= sense):
-                sense = s[k]
-                kmax = k
-
-        # test norm rise
-        if i == 0:
-            sum0 = s.sum()
-        else:
-            sum1 = s.sum()
-            if sum1 > sum0 * 3.0:
-                return True, 0.0
-            else:
-                return False, max(sum0, sum1) * float(m) * 2.0
-
-        # promote highest sense row
-        rnx = rn[kmax]
-        AA[[i, kmax], :] = AA[[kmax, i], :]
-        bb[[i, kmax]] = bb[[kmax, i]]
-
-        # subtract projections onto A[i, :]
-        for k in range(i + 1, m):
-            d = np.dot(AA[k, :], AA[i, :]) / (rnx * rnx)
-            AA[k, :] -= d * AA[i, :]
-            bb[k] -= d * bb[i]
-    return True, 0.0  # failsafe; currently unreachable
+    return x, (nx > maxnorm)
 
 
 def splita(mg, g):
     """ Determines a usable rank based on large rise in Picard Vector"""
     # initialize
-    if mg < 3:
+    if mg < 2:
         return mg
     w = decide_width(mg)
     sensitivity = g[0]
@@ -290,9 +262,9 @@ def arls(A, b):
     -------
     x : (n, p) array_like set of columns, type float.
         Each column will be the solution corresponding to a column of b.
-    nr : float
+    nr : int
         The Numerical Rank of A.
-    mur : float
+    mur : int
         The Minimum Usable Rank seen in solving all the problems.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
@@ -375,25 +347,24 @@ def arls(A, b):
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
         return np.zeros(A.shape[1])
     checkAb(A, b, 2)
+    m, n = A.shape
 
     if len(b.shape) == 2:
         nrhs = b.shape[1]
     else:
         nrhs = 1
-        stran, maxnorm = strange(A, b)
-        if not stran:
-            x = lstsq(A, b)[0]
-            if norm(x) < maxnorm:
-                nr = min(A.shape)
-                return x, nr, nr, 0.0, 0.0
+        x, odd = strange(A, b)
+        if not odd:
+            nr = min(m, n)
+            return x, nr, nr, 0.0, 0.0
 
-    # we either have multiple columns, or if just 1, then it is ill-conditioned
+    # we either have multiple columns,
+    # or if just 1, then it is likely ill-conditioned
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     if nrhs == 1:
         return arlsusv(A, b, U, S, Vt)
 
     # for multiple RHSs
-    n = A.shape[1]
     xx = np.zeros((n, nrhs))
     nr = min(A.shape)  # track minimum numeric rank
     mur = nr            # track minimum usable rank
@@ -551,10 +522,10 @@ def arlseq(A, b, E, f):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float
+    mnr : int
         The numerical rank of the matrix, A, after its projection onto the rows
         of E are subtracted.
-    mur : float
+    mur : int
         The "usable" rank of the "reduced" problem, Ax=b, after its projection
         onto the rows of Ex=f are subtracted.
         Note that "numerical rank" is an attribute of a matrix
@@ -594,7 +565,7 @@ def arlseq(A, b, E, f):
        A = array([[ 1.,  2.0],
                   [ 2.,  3.0]])
        b = array([5.3, 7.8])
-       E = array([[ 1.,  1.0]])
+       E = array([[ 1.0,  1.0]])
        f = array([3.0])
 
     Without using the equality constraint we are given here,
@@ -602,10 +573,10 @@ def arlseq(A, b, E, f):
     Even arls() will return the same [x,y] = [-.3 , 2.8].
 
     Arlsnn() could help here by disallowing presumably unacceptable
-    negative values, producing [x,y] = [0. , 2.615].
+    negative values, producing [x,y] = [0. , 2.625].
 
-    If we solve with arlseq(A,b,E,f) then we get [x,y] = [1.00401 1.99598].
-    This answer is very close to the correct answer of [x,y] = [1.0 , 2.0]
+    If we solve with arlseq(A,b,E,f) then we get [x,y] = [0.95,  2.05].
+    This answer is close to the correct answer of [x,y] = [1.0 , 2.0]
     if the right hand side had been the correct [5.,8.] instead of [5.3,7.8].
 
     It is constructive to look at residuals to understand more about
@@ -614,16 +585,15 @@ def arlseq(A, b, E, f):
     For [x,y] = [-.3 , 2.8], the residual is [0.0 , 0.0] (exact).
     But of course x + y = 2.5, not the 3.0 we really want.
 
-    For [x,y] = [0. , 2.615], the residual is [0.07 , 0.045],
+    For [x,y] = [0. , 2.625], the residual is [-0.05 , 0.075]
     which is of course an increase from zero, but this is natural since we
     have forced the solution away from being the "exact" result,
-    for good reason. Note that x + y = 2.615, which is a little better.
+    for good reason. Note that x + y = 2.625, which is a little better.
 
-    For [x,y] = [1.00401 1.99598], the residual is [0.004 , 0.196] which
+    For [x,y] = [0.95,  2.05], the residual is [-0.25 , 0.25] which
     is even larger. Again, by adding extra information to the problem
     the residual typically increases, but the solution becomes
-    more acceptable. Note the arlseq() achieved x + y = 3 within
-    output format limits.
+    more acceptable. Note the arlseq() achieved x + y = 3 exactly.
 
     Notes:
     -----
@@ -705,9 +675,9 @@ def arlsgt(A, b, G, h):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float
+    mnr : int
         The numerical rank of the matrix, A.
-    mur : float
+    mur : int
         The usable rank of the problem, Ax=b.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
@@ -739,6 +709,7 @@ def arlsgt(A, b, G, h):
     and b = [5.9, 5.0, 3.9]
 
     Then any least-squares solver would produce x = [0.9, 2., 3.]
+    The residual for this solution is zero within roungoff.
 
     But if we happen to know that all the answers should be at least 1.0
     then we can add inequalites to insure that:
@@ -750,14 +721,14 @@ def arlsgt(A, b, G, h):
         G = [[1,0,0],
              [0,1,0],
              [0,0,1]]
-        h = [1,1,1]
+        h =  [1,1,1]
 
-    Then arlsgt(A,b,G,h) produces x = [1., 2.0375, 2.8508].
-    The residual vector and its norm would be
-       res = [-0.011, -0.112 -0.049]
-       norm(res) = 0.122
+    Then arlsgt(A,b,G,h) produces x = [1., 2.05, 2.9].
+    The residual vector and its norm are then:
+       res = [-0.05, 0.05, 0.0]
+       norm(res) = 0.0707
 
-    If the user had just forced the least-squares answer of [0.9, 2., 3.]
+    If the user had just adjusted the least-squares answer of [0.9, 2., 3.]
     to [1., 2., 3.] without re-solving then the residual vector
     and its norm would be
        res = [0.1, 0, 0.1]
@@ -851,9 +822,9 @@ def arlsnn(A, b):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : float
+    mnr : int
         The numerical rank of the matrix, A.
-    mur : float
+    mur : int
         The usable rank of the problem, Ax=b.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
