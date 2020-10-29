@@ -7,9 +7,6 @@ from numpy.testing import assert_, assert_array_almost_equal_nulp
 from scipy.linalg.arls import (arls, arlsusv, cull, prepeq, arlseq, 
            arlsgt, arlsnn, splita, splitb, decide_width)
 
-#from arls import (arls, arlsusv, cull, prepeq, arlseq, 
-#           arlsgt, arlsnn, splita, splitb, decide_width)
-
 
 # TEST LOW LEVEL UTILTIES
 def test_decide_width():
@@ -167,9 +164,8 @@ def test_arlsgt():
     G = np.array([0.0, 0.0, 0.0, 1.0])
     h = 5
     x = arlsgt(A, b, G, h)[0]
-    ans = [5.90761758, 6.18916743, 0.99658155, 5.0]
-    d = norm(ans - x)
-    assert_(d < 1.0e-5,"Residual too large in arlsgt hilbert test.")
+    res = A @ x - b
+    assert_(norm(res) < 0.002,"Residual too large in arlsgt hilbert test.")
     return    
 
 
@@ -200,4 +196,3 @@ def test_arlsnn_with_impossible():
     x = arlsnn(A, b)[0]
     assert_(norm(x) == 0.0, "Solution of arlsnn is incorrectly non-zero.")
     return
-
