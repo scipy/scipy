@@ -7,6 +7,8 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
+from numpy.lib import NumpyVersion
+
 import pytest
 from pytest import raises as assert_raises
 
@@ -1921,10 +1923,10 @@ class TestMultivariateHypergeom(object):
         rvs = rv.rvs(size=(1000, 2), random_state=123)
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.18.0',
+                        reason="Multivariate Hypergeometric distribution "
+                               "only present in numpy>=1.18")
     def test_rvs_numpy(self):
-        if np.__version__ < '1.18':
-            pytest.skip("Multivariate Hypergeometric distribution "
-                        "only present in numpy>=1.18")
         rng_sc = np.random.Generator(np.random.PCG64(123))
         rv = multivariate_hypergeom(m=[3, 5], n=4)
         rvs_sc = rv.rvs(size=100, random_state=rng_sc)

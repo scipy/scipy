@@ -4,6 +4,7 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
+from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
@@ -4652,7 +4653,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # Generator is only available in numpy >= 1.17 while
         # `multivariate_hypergeometric` distribution is only
         # available in numpy >= 1.18
-        if (np.__version__ >= '1.18' and
+        if (NumpyVersion(np.__version__) >= '1.18.0' and
             isinstance(random_state, np.random.Generator)):  # noqa: E129
             out = random_state.multivariate_hypergeometric(m, n, size)
             return _squeeze_output(out)
