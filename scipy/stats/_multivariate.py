@@ -4627,7 +4627,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
         return self._checkresult(output, mncond, np.nan)
 
-    def rvs(self, m, n, size=1, random_state=None):
+    def rvs(self, m, n, size=None, random_state=None):
         """
         Draw random samples from a Multivariate Hypergeometric distribution.
 
@@ -4656,11 +4656,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if (NumpyVersion(np.__version__) >= '1.18.0' and
             isinstance(random_state, np.random.Generator)):  # noqa: E129
             out = random_state.multivariate_hypergeometric(m, n, size)
-            return _squeeze_output(out)
+            return out
 
-        size_ = size
-        if isinstance(size, int):
-            size_ = (size, )
+        size_ = size if size is not None else 1
+        if isinstance(size_, int):
+            size_ = (size_, )
 
         rvs = np.empty(size_ + (m.shape[-1], ), dtype=m.dtype)
         rem = M
@@ -4676,8 +4676,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
 
-        if size == 1:
-            return rvs.squeeze(-1)
+        if size is None:
+            return rvs.squeeze(0)
         return rvs
 
 
