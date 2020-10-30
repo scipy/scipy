@@ -441,7 +441,8 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
+         full_output=0, disp=1, retall=0, callback=None, initial_simplex=None,
+         adaptive=False, ):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -485,6 +486,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         ``initial_simplex[j,:]`` should contain the coordinates of
         the jth vertex of the ``N+1`` vertices in the simplex, where
         ``N`` is the dimension.
+    adaptive : bool, optional
+        Adapt algorithm parameters to dimensionality of problem. Useful for
+        high-dimensional minimization [3]_.
 
     Returns
     -------
@@ -547,6 +551,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
            Harlow, UK, pp. 191-208.
 
+    .. [3] Gao, F. and Han, L. (2012), "Implementing the Nelder-Mead simplex
+           algorithm with adaptive parameters", Computational Optimization and
+           Applications, 51:1, pp. 259-277
+
     """
     opts = {'xatol': xtol,
             'fatol': ftol,
@@ -554,19 +562,16 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'maxfev': maxfun,
             'disp': disp,
             'return_all': retall,
-            'initial_simplex': initial_simplex}
+            'initial_simplex': initial_simplex,
+            'adaptive': adaptive, }
 
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
+    retlist = res['x'],
     if full_output:
-        retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
-        if retall:
-            retlist += (res['allvecs'], )
-        return retlist
-    else:
-        if retall:
-            return res['x'], res['allvecs']
-        else:
-            return res['x']
+        retlist += res['fun'], res['nit'], res['nfev'], res['status'],
+    if retall:
+        retlist += res['allvecs'],
+    return retlist
 
 
 def _minimize_neldermead(func, x0, args=(), callback=None,

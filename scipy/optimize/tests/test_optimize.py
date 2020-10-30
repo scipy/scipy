@@ -500,6 +500,12 @@ def test_neldermead_adaptive():
                             options={'adaptive': True})
     assert_equal(res.success, True)
 
+    res_list = optimize.fmin(func, p0, full_output=True)
+    assert_equal(res_list[-1], 1)
+
+    res_list = optimize.fmin(func, p0, full_output=True, adaptive=True)
+    assert_equal(res_list[-1], 0)
+
 
 def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
