@@ -46,7 +46,7 @@ def lombscargle(x,
     freqs : array_like
         Angular frequencies for output periodogram.
     precenter : bool, optional
-        Pre-center amplitudes by subtracting the mean.
+        Pre-center measurement values by subtracting the mean.
     normalize : bool, optional
         Compute normalized periodogram.
 
@@ -1701,8 +1701,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         youter.pop(axis)
         try:
             outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError:
-            raise ValueError('x and y cannot be broadcast together.')
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
 
     if same_data:
         if x.size == 0:
@@ -1983,7 +1983,7 @@ def _median_bias(n):
     Returns the bias of the median of a set of periodograms relative to
     the mean.
 
-    See arXiv:gr-qc/0509116 Appendix B for details.
+    See Appendix B from [1]_ for details.
 
     Parameters
     ----------
@@ -1994,6 +1994,13 @@ def _median_bias(n):
     -------
     bias : float
         Calculated bias.
+
+    References
+    ----------
+    .. [1] B. Allen, W.G. Anderson, P.R. Brady, D.A. Brown, J.D.E. Creighton.
+           "FINDCHIRP: an algorithm for detection of gravitational waves from
+           inspiraling compact binaries", Physical Review D 85, 2012,
+           :arxiv:`gr-qc/0509116`
     """
     ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
     return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)

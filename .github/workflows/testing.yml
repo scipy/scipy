@@ -2,14 +2,19 @@ name: macOS tests
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - maintenance/**
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - maintenance/**
 
 
 jobs:
   test_macos:
 
+    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     runs-on: macos-latest
     strategy:
       max-parallel: 3

@@ -70,7 +70,9 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_distance_wrap',
                          sources=[join('src', 'distance_wrap.c')],
                          depends=[join('src', 'distance_impl.h')],
-                         include_dirs=[get_numpy_include_dirs()],
+                         include_dirs=[
+                             get_numpy_include_dirs(),
+                             join(dirname(dirname(__file__)), '_lib')],
                          extra_info=get_misc_info("npymath"))
 
     config.add_extension('_voronoi',

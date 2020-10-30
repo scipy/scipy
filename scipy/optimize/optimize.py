@@ -120,8 +120,8 @@ class OptimizeResult(dict):
     def __getattr__(self, name):
         try:
             return self[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as e:
+            raise AttributeError(name) from e
 
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
@@ -292,7 +292,18 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-
+    
+    For higher-dimensional input ``rosen`` broadcasts.
+    In the following example, we use this to plot a 2D landscape.
+    Note that ``rosen_hess`` does not broadcast in this manner.
+    
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import Axes3D
+    >>> x = np.linspace(-1, 1, 50)
+    >>> X, Y = np.meshgrid(x, x)
+    >>> ax = plt.subplot(111, projection='3d')
+    >>> ax.plot_surface(X, Y, rosen([X, Y]))
+    >>> plt.show()
     """
     x = asarray(x)
     r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
@@ -645,7 +656,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if initial_simplex is None:
         N = len(x0)
 
-        sim = np.zeros((N + 1, N), dtype=x0.dtype)
+        sim = np.empty((N + 1, N), dtype=x0.dtype)
         sim[0] = x0
         for k in range(N):
             y = np.array(x0, copy=True)
@@ -683,7 +694,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.zeros((N + 1,), float)
+    fsim = np.empty((N + 1,), float)
 
     for k in range(N + 1):
         fsim[k] = func(sim[k])
@@ -846,10 +857,10 @@ def approx_fprime(xk, f, epsilon, *args):
     if not np.isscalar(f0):
         try:
             f0 = f0.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     return approx_derivative(f, xk, method='2-point', abs_step=epsilon,
                              args=args, f0=f0)
@@ -1110,10 +1121,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if not np.isscalar(old_fval):
         try:
             old_fval = old_fval.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     k = 0
     N = len(x0)
@@ -1162,16 +1173,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (np.dot(yk, sk))
-        except ZeroDivisionError:
+        rhok_inv = np.dot(yk, sk)
+        # this was handled in numeric, let it remaines for more safety
+        if rhok_inv == 0.:
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-        if isinf(rhok):  # this is patch for NumPy
-            rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+        else:
+            rhok = 1. / rhok_inv
+
         A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
         A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
         Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
@@ -1432,10 +1442,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if not np.isscalar(old_fval):
         try:
             old_fval = old_fval.item()
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
             raise ValueError("The user-provided "
                              "objective function must "
-                             "return a scalar value.")
+                             "return a scalar value.") from e
 
     k = 0
     xk = x0
@@ -1974,7 +1984,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = np.sign(rat) + (rat == 0)
-        x = xf + si * np.max([np.abs(rat), tol1])
+        x = xf + si * np.maximum(np.abs(rat), tol1)
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
@@ -2578,7 +2588,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
 
     Parameters
     ----------
-    x0 : np.array. 
+    x0 : np.array.
         The vector representing the current location.
         Note ``np.shape(x0) == (n,)``.
     alpha : np.array.
@@ -2623,7 +2633,7 @@ def _line_for_search(x0, alpha, lower_bound, upper_bound):
     lmin = np.max(lmin_pos + lmin_neg)
     lmax = np.min(lmax_pos + lmax_neg)
 
-    # if x0 is outside the bounds, then it is possible that there is 
+    # if x0 is outside the bounds, then it is possible that there is
     # no way to get back in the bounds for the parameters being updated
     # with the current direction alpha.
     # when this happens, lmax < lmin.
@@ -3237,8 +3247,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     Nshape = shape(Jout)
 
     indx = argmin(Jout.ravel(), axis=-1)
-    Nindx = zeros(N, int)
-    xmin = zeros(N, float)
+    Nindx = np.empty(N, int)
+    xmin = np.empty(N, float)
     for k in range(N - 1, -1, -1):
         thisN = Nshape[k]
         Nindx[k] = indx % Nshape[k]
@@ -3367,6 +3377,12 @@ def show_options(solver=None, method=None, disp=True):
 
     - :ref:`simplex         <optimize.linprog-simplex>`
     - :ref:`interior-point  <optimize.linprog-interior-point>`
+    - :ref:`revised-simplex <optimize.linprog-revised_simplex>`
+
+    `scipy.optimize.quadratic_assignment`
+
+    - :ref:`faq             <optimize.qap-faq>`
+    - :ref:`2opt            <optimize.qap-2opt>`
 
     Examples
     --------
@@ -3428,6 +3444,11 @@ def show_options(solver=None, method=None, disp=True):
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
             ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
+        ),
+        'quadratic_assignment': (
+            ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),
+            ('2opt', 'scipy.optimize._qap._quadratic_assignment_2opt'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),

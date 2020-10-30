@@ -256,14 +256,14 @@ class StrategyChain(object):
 
     def accept_reject(self, j, e, x_visit):
         r = self._rand_gen.uniform()
-        pqv_temp = (self.acceptance_param - 1.0) * (
-            e - self.energy_state.current_energy) / (
-                self.temperature_step + 1.)
+        pqv_temp = 1.0 - ((1.0 - self.acceptance_param) *
+            (e - self.energy_state.current_energy) / self.temperature_step)
         if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
                 1. - self.acceptance_param))
+
         if r <= pqv:
             # We accept the new location and update state
             self.energy_state.update_current(e, x_visit)
@@ -383,11 +383,11 @@ class LocalSearchWrapper(object):
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.minimizer = minimize
-        bounds_list = list(zip(*bounds))
+        bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
         self.upper = np.array(bounds_list[1])
 
@@ -407,9 +407,9 @@ class LocalSearchWrapper(object):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
-        if 'njev' in mres.keys():
+        if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
-        if 'nhev' in mres.keys():
+        if 'nhev' in mres:
             self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
@@ -578,7 +578,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Simulated Annealing for Efficient Global Optimization: the GenSA
         Package for R. The R Journal, Volume 5/1 (2013).
     .. [6] Mullen, K. Continuous Global Optimization in R. Journal of
-        Statistical Software, 60(6), 1 - 45, (2014). DOI:10.18637/jss.v060.i06
+        Statistical Software, 60(6), 1 - 45, (2014).
+        :doi:`10.18637/jss.v060.i06`
 
     Examples
     --------

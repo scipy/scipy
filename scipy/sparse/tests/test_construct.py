@@ -378,6 +378,7 @@ class TestConstructUtils(object):
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
@@ -422,6 +423,21 @@ class TestConstructUtils(object):
         # just on scalar
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
+
+    def test_block_diag_sparse_matrices(self):
+        """ block_diag with sparse matrices """
+
+        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
+                               coo_matrix(([[4, 5]]), shape=(1, 2))]
+        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
+        assert_equal(block_sparse_cols_matrices.todense(),
+                     matrix([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
+
+        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
+                               coo_matrix(([[4], [5]]), shape=(2, 1))]
+        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
+        assert_equal(block_sparse_row_matrices.todense(),
+                     matrix([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
