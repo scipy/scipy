@@ -100,10 +100,12 @@ slacon2_(int *n, float *v, float *x, int *isgn, float *est, int *kase, int isave
     float temp;
 #ifdef _CRAY
     extern int ISAMAX(int *, float *, int *);
+    extern int IDAMAX(int *, float *, int *);
     extern float SASUM(int *, float *, int *);
     extern int SCOPY(int *, float *, int *, float *, int *);
 #else
     extern int isamax_(int *, float *, int *);
+    extern int idamax_(int *, float *, int *);
     extern float sasum_(int *, float *, int *);
     extern int scopy_(int *, float *, int *, float *, int *);
 #endif

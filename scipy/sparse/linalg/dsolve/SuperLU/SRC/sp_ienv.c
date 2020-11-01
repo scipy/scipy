@@ -68,6 +68,7 @@ at the top-level directory.
 int
 sp_ienv(int ispec)
 {
+    extern int input_error(char *, int *);
     int i;
 
     switch (ispec) {
