@@ -114,6 +114,7 @@ import numpy as np
 from functools import partial
 from collections import namedtuple
 from scipy._lib._util import _asarray_validated
+from scipy._lib.deprecation import _deprecated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -283,6 +284,9 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is not None:
+        kwargs['w'] = _validate_weights(w)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     else:
@@ -344,6 +348,9 @@ def _validate_weights(w, dtype=np.double):
     return w
 
 
+@_deprecated(
+    msg="'wminkowski' metric is deprecated and will be removed in"
+        " SciPy 1.8.0, use 'minkowski' instead.")
 def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     w = kwargs.pop('w', None)
     if w is None:
@@ -524,10 +531,6 @@ def minkowski(u, v, p=2, w=None):
     return dist
 
 
-# `minkowski` gained weights in scipy 1.0.  Once we're at say version 1.3,
-# deprecated `wminkowski`.  Not done at once because it would be annoying for
-# downstream libraries that used `wminkowski` and support multiple scipy
-# versions.
 def wminkowski(u, v, p, w):
     """
     Compute the weighted Minkowski distance between two 1-D arrays.
@@ -556,9 +559,8 @@ def wminkowski(u, v, p, w):
 
     Notes
     -----
-    `wminkowski` is DEPRECATED. It implements a definition where weights
-    are powered. It is recommended to use the weighted version of `minkowski`
-    instead. This function will be removed in a future version of scipy.
+    `wminkowski` is deprecated and will be removed in SciPy 1.8.0.
+    Use `minkowski` with the ``w`` argument instead.
 
     Examples
     --------
@@ -577,6 +579,10 @@ def wminkowski(u, v, p, w):
     1.0
 
     """
+    warnings.warn(
+        message="scipy.distance.wminkowski is deprecated and will be removed "
+                "in SciPy 1.8.0, use scipy.distance.minkowski instead.",
+        category=DeprecationWarning)
     w = _validate_weights(w)
     return minkowski(u, v, p=p, w=w**p)
 
@@ -866,7 +872,7 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Jaccard_index
     .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
-       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+       distance", 2016, :arxiv:`1612.02696`
 
     Examples
     --------
@@ -1706,6 +1712,13 @@ _METRICS_NAMES = list(_METRICS.keys())
 
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
 
+# C implementations with weighted versions
+_C_WEIGHTED_METRICS = {
+    'chebyshev': 'weighted_chebyshev',
+    'minkowski': 'weighted_minkowski',
+    'wminkowski': 'old_weighted_minkowski',
+}
+
 
 def _select_weighted_metric(mstr, kwargs, out):
     kwargs = dict(kwargs)
@@ -1714,7 +1727,10 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka + _METRICS['hamming'].aka:
+    if mstr.startswith("test_") or mstr in (
+            _METRICS['hamming'].aka +
+            _METRICS['wminkowski'].aka +
+            _METRICS['minkowski'].aka):
         # These support weights
         pass
     elif "w" in kwargs:
@@ -1783,7 +1799,8 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry ``ij``.
+        is computed and stored in entry 
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
     --------
@@ -1956,6 +1973,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
        Computes the weighted Minkowski distance between each pair of
        vectors. (see wminkowski function documentation)
 
+       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
+       Use 'minkowski' instead.
+
     23. ``Y = pdist(X, f)``
 
        Computes the distance between all pairs of vectors in X
@@ -2056,6 +2076,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         if metric_name is not None:
             X, typ, kwargs = _validate_pdist_input(X, m, n,
                                                    metric_name, **kwargs)
+
+            if 'w' in kwargs:
+                metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
 
             # get pdist wrapper
             pdist_fn = getattr(_distance_wrap,
@@ -2635,6 +2658,9 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
        Computes the weighted Minkowski distance between the
        vectors. (see `wminkowski` function documentation)
 
+       'wminkowski' is deprecated and will be removed in SciPy 1.8.0.
+       Use 'minkowski' instead.
+
     23. ``Y = cdist(XA, XB, f)``
 
        Computes the distance between all pairs of vectors in X
@@ -2771,6 +2797,10 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         if metric_name is not None:
             XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
                                                         metric_name, **kwargs)
+
+            if 'w' in kwargs:
+                metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
+
             # get cdist wrapper
             cdist_fn = getattr(_distance_wrap,
                                "cdist_%s_%s_wrap" % (metric_name, typ))

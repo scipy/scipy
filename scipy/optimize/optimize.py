@@ -292,7 +292,18 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-
+    
+    For higher-dimensional input ``rosen`` broadcasts.
+    In the following example, we use this to plot a 2D landscape.
+    Note that ``rosen_hess`` does not broadcast in this manner.
+    
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import Axes3D
+    >>> x = np.linspace(-1, 1, 50)
+    >>> X, Y = np.meshgrid(x, x)
+    >>> ax = plt.subplot(111, projection='3d')
+    >>> ax.plot_surface(X, Y, rosen([X, Y]))
+    >>> plt.show()
     """
     x = asarray(x)
     r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
@@ -1973,7 +1984,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = np.sign(rat) + (rat == 0)
-        x = xf + si * np.max([np.abs(rat), tol1])
+        x = xf + si * np.maximum(np.abs(rat), tol1)
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
@@ -3366,6 +3377,12 @@ def show_options(solver=None, method=None, disp=True):
 
     - :ref:`simplex         <optimize.linprog-simplex>`
     - :ref:`interior-point  <optimize.linprog-interior-point>`
+    - :ref:`revised-simplex <optimize.linprog-revised_simplex>`
+
+    `scipy.optimize.quadratic_assignment`
+
+    - :ref:`faq             <optimize.qap-faq>`
+    - :ref:`2opt            <optimize.qap-2opt>`
 
     Examples
     --------
@@ -3427,6 +3444,11 @@ def show_options(solver=None, method=None, disp=True):
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
             ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
+        ),
+        'quadratic_assignment': (
+            ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),
+            ('2opt', 'scipy.optimize._qap._quadratic_assignment_2opt'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),

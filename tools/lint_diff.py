@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+from argparse import ArgumentParser
 
 CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
@@ -31,8 +32,8 @@ def rev_list(branch, num_commits):
     return res.stdout.rstrip('\n').split('\n')
 
 
-def find_branch_point():
-    """Find when the current branch split off master.
+def find_branch_point(branch):
+    """Find when the current branch split off from the given branch.
 
     It is based off of this Stackoverflow post:
 
@@ -40,7 +41,7 @@ def find_branch_point():
 
     """
     branch_commits = rev_list('HEAD', 1000)
-    master_commits = set(rev_list('master', 1000))
+    master_commits = set(rev_list(branch, 1000))
     for branch_commit in branch_commits:
         if branch_commit in master_commits:
             return branch_commit
@@ -74,7 +75,12 @@ def run_pycodestyle(diff):
 
 
 def main():
-    branch_point = find_branch_point()
+    parser = ArgumentParser()
+    parser.add_argument("--branch", type=str, default='master',
+                        help="The branch to diff against")
+    args = parser.parse_args()
+
+    branch_point = find_branch_point(args.branch)
     diff = find_diff(branch_point)
     rc, errors = run_pycodestyle(diff)
     if errors:

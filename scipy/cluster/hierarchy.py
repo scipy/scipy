@@ -82,6 +82,13 @@ Utility routines for plotting:
 
    set_link_color_palette
 
+Utility classes:
+
+.. autosummary::
+   :toctree: generated/
+
+   DisjointSet -- data structure for incremental connectivity queries
+
 """
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
@@ -127,18 +134,19 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
+from scipy._lib._disjoint_set import DisjointSet
 
 
 _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-__all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
-           'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
-           'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
-           'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
-           'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
-           'median', 'num_obs_linkage', 'optimal_leaf_ordering',
+__all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
+           'cophenet', 'correspond', 'cut_tree', 'dendrogram', 'fcluster',
+           'fclusterdata', 'from_mlab_linkage', 'inconsistent',
+           'is_isomorphic', 'is_monotonic', 'is_valid_im', 'is_valid_linkage',
+           'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
+           'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
            'ward', 'weighted', 'distance']
 
@@ -3540,7 +3548,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # Actual indices of a and b
     aa = int(Z[i - n, 0])
     ab = int(Z[i - n, 1])
-    if aa > n:
+    if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
         # The distance between a's two direct children.
@@ -3548,14 +3556,14 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     else:
         na = 1
         da = 0.0
-    if ab > n:
+    if ab >= n:
         nb = Z[ab - n, 3]
         db = Z[ab - n, 2]
     else:
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort:
+    if count_sort == 'ascending' or count_sort == True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3576,7 +3584,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort:
+    elif distance_sort == 'ascending' or distance_sort == True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:

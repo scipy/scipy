@@ -582,6 +582,19 @@ class TestCorrSpearmanr(object):
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
+    def test_nan_policy_bug_12458(self):
+        np.random.seed(5)
+        x = np.random.rand(5, 10)
+        k = 6
+        x[:, k] = np.nan
+        y = np.delete(x, k, axis=1)
+        corx, px = stats.spearmanr(x, nan_policy='omit')
+        cory, py = stats.spearmanr(y)
+        corx = np.delete(np.delete(corx, k, axis=1), k, axis=0)
+        px = np.delete(np.delete(px, k, axis=1), k, axis=0)
+        assert_allclose(corx, cory, atol=1e-14)
+        assert_allclose(px, py, atol=1e-14)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -1215,6 +1228,26 @@ def test_weightedtau():
     x = [12, 2, np.nan, 12, 2]
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
+    # NaNs when the dtype of x and y are all np.float64
+    x = [12.0, 2.0, 1.0, 12.0, 2.0]
+    y = [1.0, 4.0, 7.0, 1.0, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12.0, 2.0, np.nan, 12.0, 2.0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    # NaNs when there are more than one NaN in x or y
+    x = [12.0, 2.0, 1.0, 12.0, 1.0]
+    y = [1.0, 4.0, 7.0, 1.0, 1.0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+    x = [12.0, 2.0, np.nan, 12.0, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+    y = [np.nan, 4.0, 7.0, np.nan, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+
 
 def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
@@ -1225,8 +1258,9 @@ def test_segfault_issue_9710():
     # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
+
 def test_kendall_tau_large():
-    n = 172.
+    n = 172
     x = np.arange(n)
     y = np.arange(n)
     _, pval = stats.kendalltau(x, y, method='exact')
@@ -1236,6 +1270,13 @@ def test_kendall_tau_large():
     assert_equal(pval, 0.0)
     y[-3], y[-4] = y[-4], y[-3]
     _, pval = stats.kendalltau(x, y, method='exact')
+    assert_equal(pval, 0.0)
+
+    # Test omit policy
+    x = np.arange(n + 1).astype(float)
+    y = np.arange(n + 1).astype(float)
+    y[-1] = np.nan
+    _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
     assert_equal(pval, 0.0)
 
 
@@ -5021,8 +5062,8 @@ class TestCombinePvalues(object):
         assert_approx_equal(p, 0.970299, significant=4)
 
     def test_mudholkar_george(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
-        assert_approx_equal(p, 3.7191571041915e-07, significant=4)
+        Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
+        assert_approx_equal(p, 0.019462, significant=4)
 
     def test_mudholkar_george_equal_fisher_minus_pearson(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
@@ -5456,62 +5497,6 @@ class TestRatioUniforms(object):
                       stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
-
-
-class TestEppsSingleton(object):
-    def test_statistic_1(self):
-        # first example in Goerg & Kaiser, also in original paper of
-        # Epps & Singleton. Note: values do not match exactly, the
-        # value of the interquartile range varies depending on how
-        # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35, 2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71, 4.29, 5.00, 7.74, 8.38, 8.60])
-        w, p = stats.epps_singleton_2samp(x, y)
-        assert_almost_equal(w, 15.14, decimal=1)
-        assert_almost_equal(p, 0.00442, decimal=3)
-
-    def test_statistic_2(self):
-        # second example in Goerg & Kaiser, again not a perfect match
-        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
-                      10, 10, 10))
-        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
-                      5, 8, 10))
-        w, p = stats.epps_singleton_2samp(x, y)
-        assert_allclose(w, 8.900, atol=0.001)
-        assert_almost_equal(p, 0.06364, decimal=3)
-
-    def test_epps_singleton_array_like(self):
-        np.random.seed(1234)
-        x, y = np.arange(30), np.arange(28)
-
-        w1, p1 = stats.epps_singleton_2samp(list(x), list(y))
-        w2, p2 = stats.epps_singleton_2samp(tuple(x), tuple(y))
-        w3, p3 = stats.epps_singleton_2samp(x, y)
-
-        assert_(w1 == w2 == w3)
-        assert_(p1 == p2 == p3)
-
-    def test_epps_singleton_size(self):
-        # raise error if less than 5 elements
-        x, y = (1, 2, 3, 4), np.arange(10)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_nonfinite(self):
-        # raise error if there are non-finite values
-        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_1d_input(self):
-        x = np.arange(100).reshape(-1, 1)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, x)
-
-    def test_names(self):
-        x, y = np.arange(20), np.arange(30)
-        res = stats.epps_singleton_2samp(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
 
 
 class TestMGCErrorWarnings(object):
