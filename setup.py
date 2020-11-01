@@ -376,8 +376,9 @@ def parse_setuppy_commands():
     # useful messages to the user
     if 'install' in args:
         print(textwrap.dedent("""
-            Note: for reliable dependency installation and uninstallation
-            behaviour, please use pip instead of using `setup.py install`:
+            Note: for reliable uninstall behaviour and dependency installation
+            and uninstallation, please use pip instead of using
+            `setup.py install`:
 
               - `pip install .`       (from a git repo or downloaded source
                                        release)
@@ -468,7 +469,6 @@ def check_setuppy_command():
     if run_build:
         try:
             import numpy
-            import cython
             import pybind11
         except ImportError as exc:  # We do not have our build deps installed
             print(textwrap.dedent(
@@ -540,7 +540,7 @@ def setup_package():
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
         install_requires=[
-            'numpy>=1.14.5',
+            'numpy>=1.16.5',
         ],
         python_requires='>=3.6',
     )
