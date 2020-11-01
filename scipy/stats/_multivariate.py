@@ -4422,7 +4422,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     See Also
     --------
     scipy.stats.hypergeom : The hypergeometric distribution.
-    numpy.random.Generator.multivariate_hypergeometric : The multivariate hypergeometric distribution sampler in NumPy.
+    numpy.random.Generator.multivariate_hypergeometric :
+        The multivariate hypergeometric distribution sampler in NumPy.
     scipy.stats.multinomial : The multinomial distribution.
 
     References
@@ -4432,7 +4433,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
-    """  # noqa: E501
+    """
     def __init__(self, seed=None):
         super(multivariate_hypergeom_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
@@ -4465,7 +4466,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         if xx.ndim == 0:
             raise ValueError("x must be an array.")
         if xx.size != 0 and not xx.shape[-1] == m.shape[-1]:
-            raise ValueError(f"Size of each quantile should be size of 'm': "
+            raise ValueError(f"Size of each quantile must be size of 'm': "
                              f"received {xx.shape[-1]}, "
                              f"but expected {m.shape[-1]}.")
 
@@ -4504,7 +4505,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def logpmf(self, x, m, n):
         """
-        Log of the Multivariate Hypergeometric probability mass function.
+        Log of the multivariate hypergeometric probability mass function.
 
         Parameters
         ----------
@@ -4541,7 +4542,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def pmf(self, x, m, n):
         """
-        Multivariate Hypergeometric probability mass function.
+        Multivariate hypergeometric probability mass function.
 
         Parameters
         ----------
@@ -4563,7 +4564,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def mean(self, m, n):
         """
-        Mean of the Multivariate Hypergeometric distribution
+        Mean of the multivariate hypergeometric distribution
 
         Parameters
         ----------
@@ -4581,7 +4582,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def var(self, m, n):
         """
-        Variance of the Multivariate Hypergeometric distribution.
+        Variance of the multivariate hypergeometric distribution.
 
         Parameters
         ----------
@@ -4600,7 +4601,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def cov(self, m, n):
         """
-        Covariance matrix of the Multivariate Hypergeometric distribution.
+        Covariance matrix of the multivariate hypergeometric distribution.
 
         Parameters
         ----------
@@ -4629,7 +4630,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     def rvs(self, m, n, size=None, random_state=None):
         """
-        Draw random samples from a Multivariate Hypergeometric distribution.
+        Draw random samples from a multivariate hypergeometric distribution.
 
         Parameters
         ----------

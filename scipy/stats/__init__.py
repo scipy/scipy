@@ -142,7 +142,7 @@ Multivariate distributions
    unitary_group          -- U(N) group
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
-   multivariate_hypergeom -- Multivariate Hypergeometric Distribution
+   multivariate_hypergeom -- Multivariate hypergeometric distribution
 
 Discrete distributions
 ======================

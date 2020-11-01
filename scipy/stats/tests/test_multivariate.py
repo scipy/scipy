@@ -1869,7 +1869,7 @@ class TestMultivariateT:
         assert_raises(np.linalg.LinAlgError, multivariate_t, **args)
 
 
-class TestMultivariateHypergeom(object):
+class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
         "x, m, n, expected",
         [
