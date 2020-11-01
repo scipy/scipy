@@ -211,7 +211,7 @@ before_install:
   # Miniforge / conda-forge), so skip arm64 here
   - |
     if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+         travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
          travis_retry pip install --upgrade $NUMPYSPEC
     fi
   - |
