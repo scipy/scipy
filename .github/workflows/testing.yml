@@ -19,13 +19,13 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
         numpy-version: ['--upgrade numpy']
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -86,7 +86,7 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools wheel cython gmpy2 pytest pytest-xdist pybind11 pytest-xdist mpmath scikit-umfpack scikit-sparse
+        pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2
 
     - name: Test SciPy
       run: |
