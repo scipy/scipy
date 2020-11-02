@@ -343,7 +343,11 @@ class TestScalarFunction(TestCase):
     def test_non_scalar_func(self):
         # Use of a non-scalar function should raise an error when using
         # ScalarFunction
-        with assert_raises(ValueError):
+        with pytest.raises(
+                ValueError,
+                match="The user-provided objective function must return a "
+                      "scalar value."
+        ):
             ScalarFunction(lambda x: [0, 1], [1, 2, 3], (), '2-point',
                            lambda x: x, None, (-np.inf, np.inf))
 
