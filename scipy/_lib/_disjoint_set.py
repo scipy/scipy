@@ -86,6 +86,7 @@ class DisjointSet:
         self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
+        # _nbrs is a circular linked list which links connected elements.
         self._nbrs = {}
         # _indices tracks the element insertion order - OrderedDict is used to
         # ensure correct ordering in `__iter__`.
