@@ -678,6 +678,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
                             accept_tests, disp=disp)
 
+    # The wrapped minimizer is called once during construction of
+    # BasinHoppingRunner, so run the callback
+    if callable(callback):
+        callback(bh.storage.minres.x, bh.storage.minres.fun, True)
+
     # start main iteration loop
     count, i = 0, 0
     message = ["requested number of basinhopping iterations completed"
