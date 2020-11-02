@@ -230,8 +230,9 @@ def _common_input_validation(A, B, partial_match):
 
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
-                              P0="barycenter", shuffle_input=False, maxiter=30,
-                              tol=0.03, **unknown_options
+                              P0="barycenter", padding='adopted',
+                              shuffle_input=False, maxiter=30, tol=0.03,
+                              **unknown_options
                               ):
     r"""
     Solve the quadratic assignment problem (approximately).
@@ -306,6 +307,16 @@ def _quadratic_assignment_faq(A, B,
         If ``"randomized"`` the initial search position is
         :math:`P_0 = (J + K) / 2`, where :math:`J` is the barycenter and
         :math:`K` is a random doubly stochastic matrix.
+
+    padding : string (default = 'adopted')
+        Allows user to specify padding scheme if `A` and `B` are not of equal
+        size.
+
+        "adopted" : matches `A` to the best fitting induced subgraph of `B`.
+        Reduces the affinity between isolated vertices added to `A` through
+        padding and low-density subgraphs of `B`.
+
+        "naive" : matches `A` to the best fitting subgraph of `B`.
 
     shuffle_input : bool (default: False)
         Set to `True` to resolve degenerate gradients randomly. For
@@ -397,6 +408,9 @@ def _quadratic_assignment_faq(A, B,
 
     # ValueError check
     A, B, partial_match = _common_input_validation(A, B, partial_match)
+    # pads A and B according to section 2.5 of [2]
+    if A.shape[0] != B.shape[0]:
+        A, B = _adj_pad(A, B, padding)
 
     msg = None
     if isinstance(P0, str) and P0 not in {'barycenter', 'randomized'}:
@@ -505,6 +519,28 @@ def _quadratic_assignment_faq(A, B,
     score = _calc_score(A, B, unshuffled_perm)
     res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
     return OptimizeResult(res)
+
+
+def _adj_pad(A, B, method):
+    # pads the matrix with less nodes such that A & B are same size
+    def pad(X, n):
+        X_pad = np.zeros((n[1], n[1]))
+        X_pad[: n[0], : n[0]] = X
+        return X_pad
+
+    A_n = A.shape[0]
+    B_n = B.shape[0]
+    n = np.sort([A_n, B_n])
+    if method == "adopted":
+        A = 2 * A - np.ones((A_n, A_n))
+        B = 2 * B - np.ones((B_n, B_n))
+
+    if A.shape[0] == n[0]:
+        A = pad(A, n)
+    else:
+        B = pad(B, n)
+
+    return A, B
 
 
 def _split_matrix(X, n):
