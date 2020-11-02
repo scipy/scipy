@@ -307,10 +307,10 @@ class CheckOptimizeParameterized(CheckOptimize):
                                                            res['status'])
             assert_allclose(res['allvecs'][0], simplex[0])
         else:
-            retval = optimize.fmin(self.func, self.startparams,
+            retval = optimize.fmin(self.func, simplex,
                                    args=(), maxiter=self.maxiter,
                                    full_output=True, disp=False, retall=False,
-                                   initial_simplex=simplex)
+                                   )
 
             (params, fopt, numiter, func_calls, warnflag) = retval
 
@@ -354,10 +354,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                               options=opts)
             else:
                 assert_raises(ValueError, optimize.fmin,
-                              self.func, self.startparams,
+                              self.func, simplex,
                               args=(), maxiter=self.maxiter,
-                              full_output=True, disp=False, retall=False,
-                              initial_simplex=simplex)
+                              full_output=True, disp=False, retall=False, )
 
     def test_ncg_negative_maxiter(self):
         # Regression test for gh-8241

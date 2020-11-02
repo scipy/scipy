@@ -452,8 +452,13 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     ----------
     func : callable func(x,*args)
         The objective function to be minimized.
-    x0 : ndarray
-        Initial guess.
+    x0 : array_like, shape (n,) or (n + 1, n)
+        Initial simplex (shape (n + 1, n)) or initial guess (shape (n, )).
+        If initial simplex, ``x0[j,:]`` should contain the coordinates of the
+        jth vertex of the ``n+1`` vertices in the simplex, where ``n`` is the
+        dimension. Providing an initial simplex determines the initial scale of
+        the search, and can be used to reduce the risk of getting stuck in a
+        local minimum.
     args : tuple, optional
         Extra arguments passed to func, i.e., ``f(x,*args)``.
     xtol : float, optional
@@ -651,27 +656,32 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     nonzdelt = 0.05
     zdelt = 0.00025
 
-    x0 = asfarray(x0).flatten()
-
-    if initial_simplex is None:
-        N = len(x0)
-
-        sim = np.empty((N + 1, N), dtype=x0.dtype)
-        sim[0] = x0
-        for k in range(N):
-            y = np.array(x0, copy=True)
-            if y[k] != 0:
-                y[k] = (1 + nonzdelt)*y[k]
-            else:
-                y[k] = zdelt
-            sim[k + 1] = y
-    else:
+    if initial_simplex is not None:
         sim = np.asfarray(initial_simplex).copy()
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
-        if len(x0) != sim.shape[1]:
-            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
         N = sim.shape[1]
+    else:
+        x0 = asfarray(x0)
+        if x0.ndim > 2 or (x0.ndim == 2 and x0.shape[0] != x0.shape[1] + 1):
+            raise ValueError("`x0` should be an array of shape (N) or (N + 1, N)")
+        if x0.ndim == 2:
+            # x0 is initial simplex
+            sim = x0.copy()
+            N = sim.shape[1]
+        else:
+            # x0 is initial guess
+            N = len(x0)
+
+            sim = np.empty((N + 1, N), dtype=x0.dtype)
+            sim[0] = x0
+            for k in range(N):
+                y = np.array(x0, copy=True)
+                if y[k] != 0:
+                    y[k] = (1 + nonzdelt)*y[k]
+                else:
+                    y[k] = zdelt
+                sim[k + 1] = y
 
     if retall:
         allvecs = [sim[0]]
