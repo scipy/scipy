@@ -2112,9 +2112,25 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
-        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba' for backwards
-        compatibility, but 'sos' should be used for general-purpose filtering.
+        Filter form of the output:
+
+            - second-order sections (recommended): 'sos'
+            - numerator/denominator (default)    : 'ba'
+            - pole-zero                          : 'zpk'
+
+        In general the second-order sections ('sos') form  is
+        recommended because inferring the coefficients for the
+        numerator/denominator form ('ba') suffers from numerical
+        instabilities. For reasons of backward compatibility the default
+        form is the numerator/denominator form ('ba'), where the 'b'
+        and the 'a' in 'ba' refer to the commonly used names of the
+        coefficients used.
+
+        Note: Using the second-order sections form ('sos') is sometimes
+        associated with additional computational costs: for
+        data-intense use cases it is therefore recommended to also
+        investigate the numerator/denominator form ('ba').
+
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2258,9 +2274,25 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
-        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba' for backwards
-        compatibility, but 'sos' should be used for general-purpose filtering.
+        Filter form of the output:
+
+            - second-order sections (recommended): 'sos'
+            - numerator/denominator (default)    : 'ba'
+            - pole-zero                          : 'zpk'
+
+        In general the second-order sections ('sos') form  is
+        recommended because inferring the coefficients for the
+        numerator/denominator form ('ba') suffers from numerical
+        instabilities. For reasons of backward compatibility the default
+        form is the numerator/denominator form ('ba'), where the 'b'
+        and the 'a' in 'ba' refer to the commonly used names of the
+        coefficients used.
+
+        Note: Using the second-order sections form ('sos') is sometimes
+        associated with additional computational costs: for
+        data-intense use cases it is therefore recommended to also
+        investigate the numerator/denominator form ('ba').
+
     fs : float, optional
         The sampling frequency of the digital system.
 
