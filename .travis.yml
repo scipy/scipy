@@ -40,7 +40,10 @@ matrix:
         - pycodestyle scipy benchmarks/benchmarks
         - |
           if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-             python tools/lint_diff.py --branch $TRAVIS_BRANCH
+             git fetch --unshallow
+             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+             git fetch origin
+             python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
           fi
         - |
           grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
