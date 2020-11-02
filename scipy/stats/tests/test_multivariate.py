@@ -1944,8 +1944,7 @@ class TestMultivariateHypergeom:
              [5, 10], [[8, 8], [8, 2]],
              [[0.3916084, 0.006993007], [0, 0.4761905]]),
             # test with empty arrays.
-            (np.empty((0, 2), dtype=np.float64),
-             [4], 0, np.empty([], dtype=np.float64)),
+            (np.array([], np.int_), np.array([], np.int_), 0, []),
             ([1, 2], [4, 5], 5, 0),
             # Ground truth value from R dmvhyper
             ([3, 3, 0], [5, 6, 7], 6, 0.01077354)
@@ -2026,6 +2025,50 @@ class TestMultivariateHypergeom:
         mean1 = [[3.*4./8., 5.*4./8.], [10.*8./15., 5.*8./15.]]
         assert_allclose(mean0, mean1, rtol=1e-8)
 
+    def test_mean_edge_cases(self):
+        mean0 = multivariate_hypergeom.mean(m=[0, 0, 0], n=0)
+        assert_allclose(mean0, [0., 0., 0.], rtol=1e-17)
+
+        mean1 = multivariate_hypergeom.mean(m=[1, 0, 0], n=2)
+        assert_equal(mean1, [np.nan, np.nan, np.nan])
+
+        mean2 = multivariate_hypergeom.mean(m=[[1, 0, 0], [1, 0, 1]], n=2)
+        assert_allclose(mean2, [[np.nan, np.nan, np.nan], [1., 0., 1.]],
+                        rtol=1e-17)
+
+        mean3 = multivariate_hypergeom.mean(m=np.array([], np.int_), n=0)
+        assert_equal(mean3, [])
+        assert_(mean3.shape == (0, ))
+
+    def test_var_edge_cases(self):
+        var0 = multivariate_hypergeom.var(m=[0, 0, 0], n=0)
+        assert_allclose(var0, [0., 0., 0.], rtol=1e-16)
+
+        var1 = multivariate_hypergeom.var(m=[1, 0, 0], n=2)
+        assert_equal(var1, [np.nan, np.nan, np.nan])
+
+        var2 = multivariate_hypergeom.var(m=[[1, 0, 0], [1, 0, 1]], n=2)
+        assert_allclose(var2, [[np.nan, np.nan, np.nan], [0., 0., 0.]],
+                        rtol=1e-17)
+
+        var3 = multivariate_hypergeom.var(m=np.array([], np.int_), n=0)
+        assert_equal(var3, [])
+        assert_(var3.shape == (0, ))
+
+    def test_cov_edge_cases(self):
+        cov0 = multivariate_hypergeom.cov(m=[1, 0, 0], n=1)
+        cov1 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+        assert_allclose(cov0, cov1, rtol=1e-17)
+
+        cov3 = multivariate_hypergeom.cov(m=[0, 0, 0], n=0)
+        cov4 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+        assert_allclose(cov3, cov4, rtol=1e-17)
+
+        cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
+        cov6 = np.array([], dtype=np.float_).reshape(0, 0)
+        assert_allclose(cov5, cov6, rtol=1e-17)
+        assert_(cov5.shape == (0, 0))
+
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
         np.random.seed(1234)
@@ -2033,7 +2076,7 @@ class TestMultivariateHypergeom:
         m = [7, 9, 11, 13]
         x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],
              [1, 1, 1, 9], [1, 1, 2, 8]]
-        x = np.asarray(x, dtype=np.float64)
+        x = np.asarray(x, dtype=np.int_)
         mhg_frozen = multivariate_hypergeom(m, n)
         assert_allclose(mhg_frozen.pmf(x),
                         multivariate_hypergeom.pmf(x, m, n))
@@ -2046,6 +2089,9 @@ class TestMultivariateHypergeom:
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, 10, 5)
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, [10], 5)
         assert_raises(ValueError, multivariate_hypergeom.pmf, [5, 4], [10], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5.5, 4.5], [10, 15], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4], [10.5, 15.5], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4], [10, 15], 5.5)
 
 
 def check_pickling(distfn, args):

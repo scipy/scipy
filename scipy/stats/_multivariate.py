@@ -4447,13 +4447,25 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return multivariate_hypergeom_frozen(m, n, seed=seed)
 
     def _process_parameters(self, m, n):
-        m = np.asarray(m, dtype=np.int_)
-        n = np.asarray(n, dtype=np.int_)
+        m = np.asarray(m)
+        n = np.asarray(n)
+        if not np.issubdtype(m.dtype, np.integer):
+            raise TypeError("'m' must an array of integers.")
+        if not np.issubdtype(n.dtype, np.integer):
+            raise TypeError("'n' must an array of integers.")
         if m.ndim == 0:
             raise ValueError("'m' must be an array!")
 
-        m, n = np.broadcast_arrays(m, n[..., np.newaxis])
-        n = n[..., 0]
+        # check for empty arrays
+        if m.size != 0:
+            n = n[..., np.newaxis]
+
+        m, n = np.broadcast_arrays(m, n)
+
+        # check for empty arrays
+        if m.size != 0:
+            n = n[..., 0]
+
         mcond = m < 0
 
         M = m.sum(axis=-1)
@@ -4462,22 +4474,30 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return M, m, n, mcond, ncond, np.any(mcond, axis=-1) | ncond
 
     def _process_quantiles(self, x, M, m, n):
-        xx = np.asarray(x, dtype=np.int_)
-        if xx.ndim == 0:
+        x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.integer):
+            raise TypeError("'m' must an array of integers.")
+        if x.ndim == 0:
             raise ValueError("x must be an array.")
-        if xx.size != 0 and not xx.shape[-1] == m.shape[-1]:
+        if not x.shape[-1] == m.shape[-1]:
             raise ValueError(f"Size of each quantile must be size of 'm': "
-                             f"received {xx.shape[-1]}, "
+                             f"received {x.shape[-1]}, "
                              f"but expected {m.shape[-1]}.")
 
-        xx, m, n, M = np.broadcast_arrays(xx, m,
-                                          n[..., np.newaxis],
-                                          M[..., np.newaxis])
-        n, M = n[..., 0], M[..., 0]
+        # check for empty arrays
+        if m.size != 0:
+            n = n[..., np.newaxis]
+            M = M[..., np.newaxis]
 
-        xcond = (xx != x) | (xx < 0) | (xx > m)
-        return (xx, M, m, n, xcond,
-                np.any(xcond, axis=-1) | (xx.sum(axis=-1) != n))
+        x, m, n, M = np.broadcast_arrays(x, m, n, M)
+
+        # check for empty arrays
+        if m.size != 0:
+            n, M = n[..., 0], M[..., 0]
+
+        xcond = (x < 0) | (x > m)
+        return (x, M, m, n, xcond,
+                np.any(xcond, axis=-1) | (x.sum(axis=-1) != n))
 
     def _checkresult(self, result, cond, bad_value):
         result = np.asarray(result)
@@ -4576,8 +4596,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             The mean of the distribution
         """
         M, m, n, _, _, mncond = self._process_parameters(m, n)
-        M, n = M[..., np.newaxis], n[..., np.newaxis]
+        # check for empty arrays
+        if m.size != 0:
+            M, n = M[..., np.newaxis], n[..., np.newaxis]
+        cond = (M == 0)
+        M = np.ma.masked_array(M, mask=cond)
         mu = n*(m/M)
+        if m.size != 0:
+            mncond = (mncond[..., np.newaxis] |
+                    np.zeros(mu.shape, dtype=np.bool_))
         return self._checkresult(mu, mncond, np.nan)
 
     def var(self, m, n):
@@ -4595,8 +4622,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             the diagonal of the covariance matrix of the distribution
         """
         M, m, n, _, _, mncond = self._process_parameters(m, n)
-        M, n = M[..., np.newaxis], n[..., np.newaxis]
+        # check for empty arrays
+        if m.size != 0:
+            M, n = M[..., np.newaxis], n[..., np.newaxis]
+        cond = (M == 0) & (M-1 == 0)
+        M = np.ma.masked_array(M, mask=cond)
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
+        if m.size != 0:
+            mncond = (mncond[..., np.newaxis] |
+                    np.zeros(output.shape, dtype=np.bool_))
         return self._checkresult(output, mncond, np.nan)
 
     def cov(self, m, n):
@@ -4615,17 +4649,27 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # see [1]_ for the formula and [2]_ for implementation
         # cov( x_i,x_j ) = -n * (M-n)/(M-1) * (K_i*K_j) / (M**2)
         M, m, n, _, _, mncond = self._process_parameters(m, n)
-        M = M[..., np.newaxis, np.newaxis]
-        n = n[..., np.newaxis, np.newaxis]
-        output = (-n * (M-n)/(M-1) / (M**2) *
-                  np.einsum("...i,...j->...ij", m, m))
+        # check for empty arrays
+        if m.size != 0:
+            M = M[..., np.newaxis, np.newaxis]
+            n = n[..., np.newaxis, np.newaxis]
+        cond = (M == 0) & (M-1 == 0)
+        M = np.ma.masked_array(M, mask=cond)
+        output = (-n * (M-n)/(M-1) *
+                  np.einsum("...i,...j->...ij", m, m) / (M**2))
+        # check for empty arrays
+        if m.size != 0:
+            M, n = M[..., 0, 0], n[..., 0, 0]
+            cond = cond[..., 0, 0]
         dim = m.shape[-1]
-        M, n = M[..., 0, 0], n[..., 0, 0]
         # diagonal entries need to be computed differently
         for i in range(dim):
-            output[..., i, i] = (n * (M-n)/(M-1) *
-                                 m[..., i]*(M-m[..., i]) / (M**2))
-
+            output[..., i, i] = (n * (M-n) * m[..., i]*(M-m[..., i]))
+            output[..., i, i] = output[..., i, i] / (M-1)
+            output[..., i, i] = output[..., i, i] / (M**2)
+        if m.size != 0:
+            mncond = (mncond[..., np.newaxis, np.newaxis] |
+                    np.zeros(output.shape, dtype=np.bool_))
         return self._checkresult(output, mncond, np.nan)
 
     def rvs(self, m, n, size=None, random_state=None):
