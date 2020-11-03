@@ -1668,7 +1668,7 @@ def taylor(M, nbar=4, level=-30, norm=True, sym=True):
     M, needs_trunc = _extend(M, sym)
 
     B = 10**(-level / 20)
-    A = np.log(B + np.sqrt(B**2 - 1)) / np.pi
+    A = np.arccosh(B) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = np.arange(1, nbar)
 
