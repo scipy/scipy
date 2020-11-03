@@ -3747,7 +3747,7 @@ def alexandergovern(*args):
         >>> houston = [14.0, 14.0, 13.51, 13.5, 13.5, 13.25, 13.0, 12.5, 12.5]
         >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
         ...           11.89]
-        >>> alexandergovern(young, middle, old)
+        >>> alexandergovern(atlanta, chicago, houston, memphis)
         AlexanderGovernResult(statistic=6.941146076872535,
                               pvalue=0.03109920451449096)
     """
