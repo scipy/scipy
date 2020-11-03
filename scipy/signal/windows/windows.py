@@ -1633,7 +1633,7 @@ def taylor(M, nbar=4, level=-30, norm=True, sym=True):
         Number of points in the output window. If zero or less, an
         empty array is returned.
     nbar : int
-        Number of nearly constant level sidelobes adjacent to the mainlobe.
+        Number of nearly constant-level sidelobes adjacent to the mainlobe.
     level : float
         Desired peak sidelobe level in decibels (db) relative to the mainlobe.
     norm : boolean
