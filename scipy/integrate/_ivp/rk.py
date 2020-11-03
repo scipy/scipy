@@ -137,8 +137,6 @@ class RungeKutta(OdeSolver):
 
             if self.direction * (t_new - self.t_bound) > 0:
                 t_new = self.t_bound
-            elif abs(t_new - self.t_bound) <= min_step:
-                t_new = t + h/2
 
             h = t_new - t
             h_abs = np.abs(h)
