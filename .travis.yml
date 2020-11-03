@@ -38,7 +38,13 @@ matrix:
         # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
-        - tools/lint_diff.py
+        - |
+          if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+             git fetch --unshallow
+             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+             git fetch origin
+             python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
+          fi
         - |
           grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
@@ -208,7 +214,7 @@ before_install:
   # Miniforge / conda-forge), so skip arm64 here
   - |
     if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
+         travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
          travis_retry pip install --upgrade $NUMPYSPEC
     fi
   - |
