@@ -379,9 +379,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     s=3 for '3-point' method. Such relative step approximately minimizes a sum
     of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
-    If any of the absolute steps produces an indistinguishable difference from
-    the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
-    substituted for that particular entry.
+    If any of the absolute or relative steps produces an indistinguishable
+    difference from the original `x0`, ``(x0 + dx) - x0 == 0``, then a
+    automatic step size is substituted for that particular entry.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
