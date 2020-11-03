@@ -2678,7 +2678,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
-def mood(x, y, axis=0):
+def mood(x, y, axis=0, alternative="two-sided"):
     """
     Perform Mood's test for equal scale parameters.
 
@@ -2695,6 +2695,13 @@ def mood(x, y, axis=0):
         different length along `axis`.
         If `axis` is None, `x` and `y` are flattened and the test is done on
         all values in the flattened arrays.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -2786,11 +2793,16 @@ def mood(x, y, axis=0):
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     z = (M - mnM) / sqrt(varM)
 
-    # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
-    z_pos = z > 0
-    pval = np.zeros_like(z)
-    pval[z_pos] = 2 * distributions.norm.sf(z[z_pos])
-    pval[~z_pos] = 2 * distributions.norm.cdf(z[~z_pos])
+    # Calculate p-values with alternative
+    if alternative == 'less':
+        pval = distributions.norm.cdf(z)
+    elif alternative == 'greater':
+        pval = distributions.norm.sf(z)
+    elif alternative == 'two-sided':
+        pval = 2 * distributions.norm.sf(abs(z))
+    else:
+        raise ValueError("alternative should be "
+                         "'less', 'greater' or 'two-sided'")
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
