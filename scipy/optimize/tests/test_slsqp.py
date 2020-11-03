@@ -214,14 +214,11 @@ class TestSLSQP(object):
         # jacobian doesn't try to exceed that bound using a finite difference.
         # gh11403
         def c(x):
-            if x[0] < 0 or x[1] < 0 or x[0] > 1 or x[1] > 1:
-                assert False
-
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <=1, x
             return x[0] ** 0.5 + x[1]
 
         def f(x):
-            if x[0] < 0 or x[1] < 0 or x[0] > 1 or x[1] > 1:
-                assert False
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <=1, x
             return -x[0] ** 2 + x[1] ** 2
 
         cns = [NonlinearConstraint(c, 0, 1.5)]
@@ -602,6 +599,6 @@ class TestSLSQP(object):
             assert (x >= bounds.lb).all()
             return np.linalg.norm(x)
 
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
             res = minimize(f, x0, method='SLSQP', bounds=bounds)
             assert res.success

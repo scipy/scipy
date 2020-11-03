@@ -21,7 +21,8 @@ from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function, clip_x_for_func)
+                       _prepare_scalar_function, clip_x_for_func,
+                       _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -291,11 +292,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
-                    if (x < new_bounds[0]).any() or (x > new_bounds[1]).any():
-                        warnings.warn("Values in x were outside bounds during"
-                                      " an SLSQP step, clipping to bounds",
-                                      RuntimeWarning)
-                        x = np.clip(x, new_bounds[0], new_bounds[1])
+                    x = _check_clip_x(x, new_bounds)
 
                     if jac in ['2-point', '3-point', 'cs']:
                         return approx_derivative(fun, x, method=jac, args=args,

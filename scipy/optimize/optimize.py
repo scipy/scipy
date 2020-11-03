@@ -271,12 +271,21 @@ def clip_x_for_func(func, bounds):
     # suggest a move that is outside the limits by 1 or 2 ULP. This
     # unclean fix makes sure x is strictly within bounds.
     def eval(x):
-        if (x < bounds[0]).any() or (x > bounds[1]).any():
-            warnings.warn("Values in x were outside bounds during an "
-                          "SLSQP step, clipping to bounds", RuntimeWarning)
-            x = np.clip(x, bounds[0], bounds[1])
+        x = _check_clip_x(x, bounds)
         return func(x)
+
     return eval
+
+
+def _check_clip_x(x, bounds):
+    if (x < bounds[0]).any() or (x > bounds[1]).any():
+        warnings.warn("Values in x were outside bounds during a "
+                      "minimize step, clipping to bounds", RuntimeWarning)
+        x = np.clip(x, bounds[0], bounds[1])
+        return x
+
+    return x
+
 
 def rosen(x):
     """
