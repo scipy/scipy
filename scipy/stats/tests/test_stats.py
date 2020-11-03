@@ -3993,7 +3993,6 @@ class TestRankSums(object):
         assert_approx_equal(res.pvalue, 1 - (res_expected.pvalue / 2))
 
 
-
 class TestJarqueBera(object):
     def test_jarque_bera_stats(self):
         np.random.seed(987654321)

@@ -823,6 +823,22 @@ class TestMood(object):
         # less than 3
         assert_raises(ValueError, stats.mood, [1], [])
 
+    def test_mood_alternative(self):
+        # Based on above test_mood method
+        x1 = np.arange(5)
+        res_expected_l = (-1.3830857299399906, 0.16663858066771478 / 2)
+        res_expected_g = (-1.3830857299399906, 1 - 0.16663858066771478 / 2)
+
+        assert_raises(ValueError, stats.mood, x1, x1**2,
+                      alternative='error')
+
+        res = stats.mood(x1, x1**2, alternative="less")
+        assert_allclose(res, res_expected_l)
+
+        res = stats.mood(x1, x1**2, alternative="greater")
+        assert_allclose(res, res_expected_g)
+
+
 
 class TestProbplot(object):
 
