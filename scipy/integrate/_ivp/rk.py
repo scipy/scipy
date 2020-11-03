@@ -164,7 +164,7 @@ class RungeKutta(OdeSolver):
                              SAFETY * error_norm ** self.error_exponent)
                 step_rejected = True
 
-        self.h_previous = h
+        self.h_previous = h_abs * self.direction
         self.y_old = y
 
         self.t = t_new
