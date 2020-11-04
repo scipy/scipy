@@ -1567,8 +1567,8 @@ def exponential(M, center=None, tau=1., sym=True):
 
     References
     ----------
-    S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
-    Technical Review 3, Bruel & Kjaer, 1987.
+    .. [1] S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
+           Technical Review 3, Bruel & Kjaer, 1987.
 
     Examples
     --------
@@ -1620,12 +1620,17 @@ def exponential(M, center=None, tau=1., sym=True):
     return _truncate(w, needs_trunc)
 
 
-def taylor(M, nbar=4, level=-30, norm=True, sym=True):
+def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     """
-    Return the Taylor window.
+    Return a Taylor window.
 
-    The Taylor window allows for a selectable sidelobe suppression with a
-    minimum broadening. This window is commonly used in radar processing [1]_.
+    The Taylor window taper function approximates the Dolph-Chebyshev window’s
+    constant sidelobe level for a parameterized number of near-in sidelobes,
+    but then allows a taper beyond [2]_.
+
+    The SAR (synthetic aperature radar) community commonly uses Taylor weighting
+    for image formation processing because it provides strong, selectable sidelobe
+    suppression with minimum broadening of the mainlobe [1]_.
 
     Parameters
     ----------
@@ -1634,8 +1639,9 @@ def taylor(M, nbar=4, level=-30, norm=True, sym=True):
         empty array is returned.
     nbar : int
         Number of nearly constant level sidelobes adjacent to the mainlobe.
-    level : float
-        Desired peak sidelobe level in decibels (db) relative to the mainlobe.
+    sll : float
+        Desired peak sidelobe level in decibels (dB) relative to the mainlobe. This
+        should be a positive number.
     norm : boolean
         When True (default), normalizes the window such that all values are
         less than or equal to 1.
@@ -1647,12 +1653,13 @@ def taylor(M, nbar=4, level=-30, norm=True, sym=True):
     Returns
     -------
     out : array
-        The window, with the center value normalized to one (the value
-        one appears only if the number of samples is odd).
+        The window. When `norm` is True (default), the maximum value is
+        normalized to 1 (though the value 1 does not appear if `M` is
+        even and `sym` is True).
 
     See Also
     --------
-    kaiser, bartlett, blackman, hamming, hanning
+    chebwin, kaiser, bartlett, blackman, hamming, hanning
 
     References
     ----------
@@ -1662,18 +1669,48 @@ def taylor(M, nbar=4, level=-30, norm=True, sym=True):
     .. [2] Armin Doerry, "Catalog of Window Taper Functions for
            Sidelobe Control", 2017.
            https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.taylor(51, nbar=20, sll=100, norm=False)
+    >>> plt.plot(window)
+    >>> plt.title("Taylor window (100 dB)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Taylor window (100 dB)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """  # noqa: E501
     if _len_guards(M):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    B = 10**(-level / 20)
+    # Original text uses a negative sidelobe level parameter and then negates it
+    # in the calculation of B. To keep consistent with other methods we assume
+    # the sidelobe level parameter to be positive.
+    B = 10**(sll / 20)
     A = np.log(B + np.sqrt(B**2 - 1)) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = np.arange(1, nbar)
 
     Fm = np.empty(nbar-1)
-    signs = np.where(ma % 2, 1, -1)
+    signs = np.empty_like(ma)
+    signs[::2] = 1
+    signs[1::2] = -1
     m2 = ma*ma
     for mi, m in enumerate(ma):
         numer = signs[mi] * np.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
