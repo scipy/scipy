@@ -1638,10 +1638,16 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
         Number of points in the output window. If zero or less, an
         empty array is returned.
     nbar : int
+<<<<<<< HEAD
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     sll : float
         Desired peak sidelobe level in decibels (dB) relative to the mainlobe. This
         should be a positive number.
+=======
+        Number of nearly constant-level sidelobes adjacent to the mainlobe.
+    level : float
+        Desired peak sidelobe level in decibels (db) relative to the mainlobe.
+>>>>>>> cb4bc20b673fa8a95436ab51e8fe5e6f7115c67c
     norm : boolean
         When True (default), normalizes the window such that all values are
         less than or equal to 1.
@@ -1703,7 +1709,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     # in the calculation of B. To keep consistent with other methods we assume
     # the sidelobe level parameter to be positive.
     B = 10**(sll / 20)
-    A = np.log(B + np.sqrt(B**2 - 1)) / np.pi
+    A = np.arccosh(B) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = np.arange(1, nbar)
 
