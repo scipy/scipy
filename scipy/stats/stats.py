@@ -3719,6 +3719,7 @@ def alexandergovern(*args):
     Notes
     -----
     The use of this test relies on several assumptions.
+    
     1. The samples are independent.
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
