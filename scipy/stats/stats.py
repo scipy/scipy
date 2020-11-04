@@ -3722,7 +3722,7 @@ def alexandergovern(*args):
     1. The samples are independent.
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
-     instead relaxing the assumption of equal variances.
+       instead relaxing the assumption of equal variances.
 
     See Also
     --------
