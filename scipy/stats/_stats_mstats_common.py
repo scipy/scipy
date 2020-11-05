@@ -126,7 +126,7 @@ def linregress(x, y=None):
 
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
-    if ssxm == 0.0 or ssym == 0:
+    if ssxm == 0.0 or ssym == 0.0:
         # If the denominator was going to be 0
         r = 0.0
     else:
