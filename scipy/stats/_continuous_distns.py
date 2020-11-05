@@ -6570,7 +6570,9 @@ class reciprocal_gen(rv_continuous):
         f(x, a, b) = \frac{1}{x \log(b/a)}
 
     for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
-    :math:`a` and :math:`b` as shape parameters. %(after_notes)s
+    :math:`a` and :math:`b` as shape parameters.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -8401,15 +8403,14 @@ class argus_gen(rv_continuous):
 
     `argus` takes :math:`\chi` as shape a parameter.
 
-    References
-    ----------
-
-    .. [1] "ARGUS distribution",
-           https://en.wikipedia.org/wiki/ARGUS_distribution
-
     %(after_notes)s
 
     .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(example)s
     """

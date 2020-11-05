@@ -264,6 +264,29 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     return sf
 
 
+def clip_x_for_func(func, bounds):
+    # ensures that x values sent to func are clipped to bounds
+
+    # this is used as a mitigation for gh11403, slsqp/tnc sometimes
+    # suggest a move that is outside the limits by 1 or 2 ULP. This
+    # unclean fix makes sure x is strictly within bounds.
+    def eval(x):
+        x = _check_clip_x(x, bounds)
+        return func(x)
+
+    return eval
+
+
+def _check_clip_x(x, bounds):
+    if (x < bounds[0]).any() or (x > bounds[1]).any():
+        warnings.warn("Values in x were outside bounds during a "
+                      "minimize step, clipping to bounds", RuntimeWarning)
+        x = np.clip(x, bounds[0], bounds[1])
+        return x
+
+    return x
+
+
 def rosen(x):
     """
     The Rosenbrock function.
@@ -292,7 +315,18 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-
+    
+    For higher-dimensional input ``rosen`` broadcasts.
+    In the following example, we use this to plot a 2D landscape.
+    Note that ``rosen_hess`` does not broadcast in this manner.
+    
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import Axes3D
+    >>> x = np.linspace(-1, 1, 50)
+    >>> X, Y = np.meshgrid(x, x)
+    >>> ax = plt.subplot(111, projection='3d')
+    >>> ax.plot_surface(X, Y, rosen([X, Y]))
+    >>> plt.show()
     """
     x = asarray(x)
     r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,

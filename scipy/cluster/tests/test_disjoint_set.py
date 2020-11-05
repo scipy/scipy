@@ -1,6 +1,7 @@
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
+import collections
 from scipy.cluster.hierarchy import DisjointSet
 import string
 
@@ -23,12 +24,14 @@ def generate_random_token():
 
 
 def get_elements(n):
-    elements = set()
+    # OrderedDict is deterministic without difficulty of comparing numpy ints
+    elements = collections.OrderedDict()
     for element in generate_random_token():
-        elements.add(element)
-        if len(elements) >= n:
-            break
-    return list(elements)
+        if element not in elements:
+            elements[element] = len(elements)
+            if len(elements) >= n:
+                break
+    return list(elements.keys())
 
 
 def test_init():
@@ -173,3 +176,26 @@ def test_binary_tree(kmax):
         expected_indices = np.arange(n) - np.arange(n) % (2 * k)
         expected = [elements[i] for i in expected_indices]
         assert roots == expected
+
+
+@pytest.mark.parametrize("n", [10, 100])
+def test_subsets(n):
+    elements = get_elements(n)
+    dis = DisjointSet(elements)
+
+    rng = np.random.RandomState(seed=0)
+    for i, j in rng.randint(0, n, (n, 2)):
+        x = elements[i]
+        y = elements[j]
+
+        expected = {element for element in dis if {dis[element]} == {dis[x]}}
+        assert expected == dis.subset(x)
+
+        expected = {dis[element]: set() for element in dis}
+        for element in dis:
+            expected[dis[element]].add(element)
+        expected = list(expected.values())
+        assert expected == dis.subsets()
+
+        dis.merge(x, y)
+        assert dis.subset(x) == dis.subset(y)

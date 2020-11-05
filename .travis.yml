@@ -196,9 +196,8 @@ before_install:
     fi
   - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  - |
-    travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
-    travis_retry pip install --upgrade $NUMPYSPEC
+  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+  - travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
