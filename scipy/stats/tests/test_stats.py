@@ -1323,7 +1323,7 @@ class TestRegression(object):
         assert_almost_equal(result.intercept,99999990)
         assert_almost_equal(result.rvalue,1.0)
         # The uncertainty ought to be almost zero since all points lie on a line
-        assert_almost_equal(result.slope_stderr,0.0)
+        assert_almost_equal(result.stderr,0.0)
         assert_almost_equal(result.intercept_stderr,0.0)
 
     def test_regressXX(self):
@@ -1334,7 +1334,7 @@ class TestRegression(object):
         assert_almost_equal(result.intercept,0.0)
         assert_almost_equal(result.rvalue,1.0)
         # The uncertainly on regression through two points ought to be 0
-        assert_almost_equal(result.slope_stderr,0.0)
+        assert_almost_equal(result.stderr,0.0)
         assert_almost_equal(result.intercept_stderr,0.0)
 
         #     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
@@ -1361,7 +1361,7 @@ class TestRegression(object):
 
         result = stats.linregress(x, y)
         assert_(isinstance(result,stats._stats_mstats_common.LinregressResult))
-        assert_almost_equal(result.slope_stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise, with a single input of shape (2, N)
@@ -1371,7 +1371,7 @@ class TestRegression(object):
         rows = np.vstack((x, y))
 
         result = stats.linregress(rows)
-        assert_almost_equal(result.slope_stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_simple_onearg_cols(self):
@@ -1381,7 +1381,7 @@ class TestRegression(object):
         columns = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
         result = stats.linregress(columns)
-        assert_almost_equal(result.slope_stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_shape_error(self):
@@ -1397,8 +1397,15 @@ class TestRegression(object):
         y[[(0),(-1)]] += 1
 
         result = stats.linregress(x,y)
-        target = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733,0.37605071654517686)
-        assert_array_almost_equal(result,target,decimal=14)
+
+        # This test used to use 'assert_array_almost_equal' but its formualtion got confusing since LinregressResult became _lib._bunch._make_tuple_bunch instead of namedtuple (for backwards compatibility, see PR #12983)
+        assert_ae = lambda x,y: assert_almost_equal(x,y,decimal=14)
+        assert_ae(result.slope, 1.0)
+        assert_ae(result.intercept, 5.0)
+        assert_ae(result.rvalue, 0.98229948625750)
+        assert_ae(result.pvalue, 7.45259691e-008)
+        assert_ae(result.stderr, 0.063564172616372733)
+        assert_ae(result.intercept_stderr, 0.37605071654517686)
 
     def test_regress_simple_negative_cor(self):
         # If the slope of the regression is negative the factor R tend to -1 not 1.
@@ -1413,7 +1420,7 @@ class TestRegression(object):
         assert_almost_equal(result.rvalue, -1)
 
         # slope and intercept stderror should stay numeric
-        assert_(not np.isnan(result.slope_stderr))
+        assert_(not np.isnan(result.stderr))
         assert_(not np.isnan(result.intercept_stderr))
 
     def test_linregress_result_attributes(self):
@@ -1426,10 +1433,11 @@ class TestRegression(object):
         lr = stats._stats_mstats_common.LinregressResult
         assert_(isinstance(result,lr))
 
-        # LinregressResult elements ahve correct names
-        attributes = ('slope', 'intercept', 'rvalue', 'pvalue',
-                      'slope_stderr', 'intercept_stderr')
+        # LinregressResult elements have correct names
+        attributes = ('slope', 'intercept', 'rvalue', 'pvalue','stderr')
         check_named_results(result, attributes)
+        # Also check that the extra attribute (intercept_stderr) is also present
+        assert 'intercept_stderr' in dir(result);
 
     def test_regress_two_inputs(self):
         # Regress a simple line formed by two points.
@@ -1441,7 +1449,7 @@ class TestRegression(object):
         assert_almost_equal(result.pvalue, 0.0)
 
         # Zero error through two points
-        assert_almost_equal(result.slope_stderr, 0.0)
+        assert_almost_equal(result.stderr, 0.0)
         assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_regress_two_inputs_horizontal_line(self):
@@ -1454,7 +1462,7 @@ class TestRegression(object):
         assert_almost_equal(result.pvalue, 1.0)
         
         # Zero error through two points
-        assert_almost_equal(result.slope_stderr, 0.0)
+        assert_almost_equal(result.stderr, 0.0)
         assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_nist_norris(self):
@@ -1474,7 +1482,7 @@ class TestRegression(object):
         assert_almost_equal(result.intercept, -0.262323073774029)
         assert_almost_equal(result.rvalue**2, 0.999993745883712)
         assert_almost_equal(result.pvalue, 0.0)
-        assert_almost_equal(result.slope_stderr, 0.00042979684820)
+        assert_almost_equal(result.stderr, 0.00042979684820)
         assert_almost_equal(result.intercept_stderr, 0.23281823430153)
 
     def test_compare_to_polyfit(self):
@@ -1501,7 +1509,8 @@ class TestRegression(object):
         # Make sure the resut still comes back as `LinregressResult`
         lr = stats._stats_mstats_common.LinregressResult
         assert_(isinstance(result,lr))
-        assert_array_equal(result,(np.nan,)*6)
+        assert_array_equal(result,(np.nan,)*5)
+        assert_equal(result.intercept_stderr,np.nan)
 
 
 def test_theilslopes():

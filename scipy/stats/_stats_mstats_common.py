@@ -4,17 +4,19 @@ import numpy as np
 
 from . import distributions
 
+from .._lib._bunch import _make_tuple_bunch
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'slope_stderr',
-                                                   'intercept_stderr'))
+# This is not a namedtuple for backwards compatibility. See PR #12983
+LinregressResult = _make_tuple_bunch('LinregressResult',
+                                     ['slope', 'intercept', 'rvalue',
+                                      'pvalue', 'stderr'],
+                                     extra_field_names=['intercept_stderr'])
 
 
 def linregress(x, y=None):
-    r"""
+    """
     Calculate a linear least-squares regression for two sets of measurements.
 
     Parameters
@@ -69,17 +71,17 @@ def linregress(x, y=None):
 
     Perform the linear regression:
 
-    >>> slope, intercept, r_value, p_value, slope_err, intercept_err = stats.linregress(x, y)
+    >>> res = stats.linregress(x, y)
 
     Coefficient of determination (R-squared):
 
-    >>> print(f"R-squared: {r_value**2:.6f}")
+    >>> print(f"R-squared: {res.rvalue**2:.6f}")
     R-squared: 0.735498
 
     Plot the data along with the fitted line:
 
     >>> plt.plot(x, y, 'o', label='original data')
-    >>> plt.plot(x, intercept + slope*x, 'r', label='fitted line')
+    >>> plt.plot(x, res.intercept + res.slope*x, 'r', label='fitted line')
     >>> plt.legend()
     >>> plt.show()
 
@@ -91,9 +93,9 @@ def linregress(x, y=None):
     >>> tinv = lambda p,df: abs(t.ppf(p/2,df))
 
     >>> ts = tinv(0.05,len(x)-2)
-    >>> print(f"slope (95%%): {slope:.6f} +/- {ts*slope_err:.6f}")
+    >>> print(f"slope (95%%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
     slope (95%): 1.944864 +/- 0.950885
-    >>> print(f"intercept (95%%): {intercept:.6f} +/- {ts*intercept_err:.6f}")
+    >>> print(f"intercept (95%%): {res.intercept:.6f} +/- {ts*res.intercept_stderr:.6f}")
     intercept (95%): 0.268578 +/- 0.488822
 
     """
@@ -117,22 +119,25 @@ def linregress(x, y=None):
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
 
-    # average sum of squares:
-    ssxm, ssxym, ssyxm, ssym = np.cov(x, y, bias=1).flat
-    r_num = ssxym
-    r_den = np.sqrt(ssxm * ssym)
-    if r_den == 0.0:
+    # Average sums of square differences from the mean
+    #   ssxm = mean( (x-mean(x))^2 )
+    #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
+    ssxm, ssxym, _, ssym = np.cov(x, y, bias=1).flat
+
+    # R-value
+    #   r = ssxym / sqrt( ssxm * ssym )
+    if ssxm == 0.0 or ssym == 0:
+        # If the denominator was going to be 0
         r = 0.0
     else:
-        r = r_num / r_den
-        # test for numerical error propagation
+        r = ssxym / np.sqrt(ssxm * ssym)
+        # Test for numerical error propagation (make sure -1 < r < 1)
         if r > 1.0:
             r = 1.0
         elif r < -1.0:
             r = -1.0
 
-    df = n - 2
-    slope = r_num / ssxm
+    slope = ssxym / ssxm
     intercept = ymean - slope*xmean
     if n == 2:
         # handle case when only two points are passed in
@@ -143,14 +148,21 @@ def linregress(x, y=None):
         slope_sterrest = 0.0
         intercept_stderr = 0.0
     else:
+        df = n - 2 # Number of degrees of freedom 
+        # n-2 because 2 have been used to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
         slope_sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        
+        # Also calculate the standard error of the intercept
+        # The following relationship is used:
+        #   ssxm = mean( (x-mean(x))^2 )
+        #        = ssx - sx*sx
+        #        = mean( x^2 ) - mean(x)^2
         intercept_stderr = slope_sterrest * np.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(
-        slope, intercept, r, prob,
-        slope_sterrest, intercept_stderr)
+    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
+        pvalue=prob, stderr=slope_sterrest, intercept_stderr=intercept_stderr)
 
 
 def theilslopes(y, x=None, alpha=0.95):

@@ -838,7 +838,9 @@ def linregress(x, y=None):
             result = stats_linregress(x.data[~m],y.data[~m])
         else:
             # All data is masked
-            result = stats_LinregressResult(None, None, None, None, None, None)
+            result = stats_LinregressResult(slope=None, intercept=None,
+                rvalue=None, pvalue=None, stderr=None,
+                intercept_stderr=None)
     else:
         result = stats_linregress(x.data,y.data)
     
