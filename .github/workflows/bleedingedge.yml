@@ -18,23 +18,28 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
 
-    - name: Install Python 3.9
-      if: matrix.python-version == '3.9'
-      run: |
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
-        python3.9 -m pip install --upgrade pip setuptools
+#    - name: Install Python 3.9
+#      if: matrix.python-version == '3.9'
+#      run: |
+#        sudo add-apt-repository ppa:deadsnakes/ppa
+#        sudo apt-get update
+#        sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
+#        python3.9 -m pip install --upgrade pip setuptools
 
     - name: Install other build dependencies
       run: |
+        python -m pip install --upgrade pip setuptools
         sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install packages
       run: |
-        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist
+        python -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist
 
     - name: Test SciPy
       run: |
-        python3.9 -u runtests.py -m fast
+        python -u runtests.py -m fast
