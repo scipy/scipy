@@ -2221,7 +2221,11 @@ add_newdoc("elliprd",
 
     The function RD is defined as [1]_
 
-    .. math:: R_{\mathrm{D}}(x, y, z) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2} dt
+    .. math::
+
+        R_{\mathrm{D}}(x, y, z) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y)]^{-1/2} (t + z)^{-3/2}
+           dt
 
     Parameters
     ----------
@@ -2270,7 +2274,10 @@ add_newdoc("elliprf",
 
     The function RF is defined as [1]_
 
-    .. math:: R_{\mathrm{F}}(x, y, z) = \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
+    .. math::
+
+        R_{\mathrm{F}}(x, y, z) =
+           \frac{1}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} dt
 
     Parameters
     ----------
@@ -2318,7 +2325,12 @@ add_newdoc("elliprg",
 
     The function RG is defined as [1]_
 
-    .. math:: R_{\mathrm{G}}(x, y, z) = \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t dt
+    .. math::
+
+        R_{\mathrm{G}}(x, y, z) =
+           \frac{1}{4} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           \left(\frac{x}{t + x} + \frac{y}{t + y} + \frac{z}{t + z}\right) t
+           dt
 
     Parameters
     ----------
@@ -2336,7 +2348,12 @@ add_newdoc("elliprg",
     -----
     The implementation uses the relation [1]_
 
-    .. math:: 2 R_{\mathrm{G}}(x, y, z) = z R_{\mathrm{F}}(x, y, z) - \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) + \sqrt{\frac{x y}{z}}
+    .. math::
+
+        2 R_{\mathrm{G}}(x, y, z) =
+           z R_{\mathrm{F}}(x, y, z) -
+           \frac{1}{3} (x - z) (y - z) R_{\mathrm{D}}(x, y, z) +
+           \sqrt{\frac{x y}{z}}
 
     and the symmetry of `x`, `y`, `z` when at least one non-zero parameter can
     be chosen as the pivot. When one of the arguments is close to zero, the AGM
@@ -2364,7 +2381,11 @@ add_newdoc("elliprg",
     Examples
     --------
     The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
-    ``c`` is given by :math:`S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1     / c^2)`.
+    ``c`` is given by
+
+    .. math::
+
+        S = 4 \pi a b c R_{\mathrm{G}}(1 / a^2, 1 / b^2, 1 / c^2).
 
     >>> from scipy.special import elliprg
     >>> def ellipsoid_area(a, b, c):
@@ -2382,7 +2403,11 @@ add_newdoc("elliprj",
 
     The function RJ is defined as [1]_
 
-    .. math:: R_{\mathrm{J}}(x, y, z, p) = \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2} (t + p)^{-1} dt
+    .. math::
+
+        R_{\mathrm{J}}(x, y, z, p) =
+           \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
+           (t + p)^{-1} dt
 
     Parameters
     ----------
