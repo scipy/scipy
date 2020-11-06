@@ -2171,7 +2171,11 @@ add_newdoc("elliprc",
 
     The function RC is defined as [1]_
 
-    .. math:: R_{\mathrm{C}}(x, y) = \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt = R_{\mathrm{F}}(x, y, y)
+    .. math::
+
+        R_{\mathrm{C}}(x, y) =
+           \frac{1}{2} \int_0^{+\infty} (t + x)^{-1/2} (t + y)^{-1} dt
+           = R_{\mathrm{F}}(x, y, y)
 
     Parameters
     ----------
