@@ -214,11 +214,11 @@ class TestSLSQP(object):
         # jacobian doesn't try to exceed that bound using a finite difference.
         # gh11403
         def c(x):
-            assert 0 <= x[0] <= 1 and 0 <= x[1] <=1, x
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
             return x[0] ** 0.5 + x[1]
 
         def f(x):
-            assert 0 <= x[0] <= 1 and 0 <= x[1] <=1, x
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
             return -x[0] ** 2 + x[1] ** 2
 
         cns = [NonlinearConstraint(c, 0, 1.5)]
