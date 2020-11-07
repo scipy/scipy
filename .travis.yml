@@ -41,8 +41,8 @@ matrix:
         - |
           if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
              git fetch --unshallow
-             git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-             git fetch origin
+             git config remote.origin.fetch "+refs/heads/maintenance/*:refs/remotes/origin/maintenance/*"
+             git fetch origin --no-tags
              python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
           fi
         - tools/unicode-check.py
