@@ -4017,6 +4017,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
+_POW10M1 = np.log(10)
+
+def _pow10m1(x):
+    """10 ** x - 1 for x near 0"""
+    return np.expm1(_POW10M1 * x)
+
+
 def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Elliptic (Cauer) filter order selection.
 
@@ -4137,9 +4144,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     nat = min(abs(nat))
 
-    GSTOP = 10 ** (0.1 * gstop)
-    GPASS = 10 ** (0.1 * gpass)
-    arg1_sq = (GPASS - 1.0) / (GSTOP - 1.0)
+    arg1_sq = _pow10m1(0.1 * gpass) / _pow10m1(0.1 * gstop)
     arg0 = 1.0 / nat
     d0 = special.ellipk(arg0 ** 2), special.ellipkm1(arg0 ** 2)
     d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
@@ -4306,8 +4311,7 @@ def _f_kratio(m, krat):
 
 def _solve_kratio(krat):
     """Solve for m in krat = ellipk(m) / ellipk(1-m)"""
-    # ellipkm1(0) is inf, so move one step up
-    lo = np.finfo(np.float64).tiny
+    lo = 0
     # ellipk(1) is inf, so move one step down
     hi = np.nextafter(1, -np.inf)
     klo = _f_kratio(lo, 0)
@@ -4355,14 +4359,15 @@ def ellipap(N, rp, rs):
         # Even order filters have DC gain of -rp dB
         return numpy.array([]), numpy.array([]), 10**(-rp/20)
     elif N == 1:
-        p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
+        p = -sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
         z = []
         return asarray(z), asarray(p), k
 
-    eps_sq = 10 ** (0.1 * rp) - 1
+    eps_sq = _pow10m1(0.1 * rp)
+
     eps = np.sqrt(eps_sq)
-    ck1_sq = eps_sq / (10 ** (0.1 * rs) - 1)
+    ck1_sq = eps_sq / _pow10m1(0.1 * rs)
     if ck1_sq == 0:
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
