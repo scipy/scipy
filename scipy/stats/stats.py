@@ -5312,7 +5312,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Examples using axis and non-scalar dimension for population mean.
 
-    >>> result = stats.ttest_1samp(rvs,[5.0,0.0])
+    >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
     >>> result.statistic
     array([-0.68014479,  4.11038784]),
     >>> result.pvalue
