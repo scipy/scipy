@@ -3510,7 +3510,7 @@ def test_ttest_ind():
     # ttest_ind
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
     args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
-    assert_array_almost_equal(
+    assert_allclose(
         stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
 
     t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="greater")
