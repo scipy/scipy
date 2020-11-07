@@ -5368,7 +5368,7 @@ def _ttest_finish(df, t, alternative):
     elif alternative == 'two-sided':
         prob = 2 * distributions.t.sf(np.abs(t), df)
     else:
-        raise ValueError("alternative should be "
+        raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
 
     if t.ndim == 0:
