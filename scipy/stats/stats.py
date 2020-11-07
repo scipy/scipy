@@ -5322,7 +5322,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> result.statistic
     array([-0.68014479,  4.11038784])
     >>> result.pvalue
-    array([  4.99613833e-01, 1.49986458e-04])
+    array([4.99613833e-01, 1.49986458e-04])
 
     >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
     >>> result.statistic
