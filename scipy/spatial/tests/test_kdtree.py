@@ -678,41 +678,15 @@ def test_distance_vectorization():
 
 class TestRemove:
 
-    def plot_tree(self, plot, tree_node, minim=[0, 0], maxim=[1, 1]):
-        if tree_node is None:
-            return
-        p1 = minim.copy()
-        p2 = maxim.copy()
-        p1[tree_node.split_dim] = tree_node.split
-        p2[tree_node.split_dim] = tree_node.split
-        plot.plot([p1[0], p2[0]], [p1[1], p2[1]], "-")
-        self.plot_tree(plot, tree_node.lesser, minim, p2)
-        self.plot_tree(plot, tree_node.greater, p1, maxim)
-
-
     def test_size(self):
-        import matplotlib.pyplot as plt
-
-        n = 8
-        shape = (n, 2)
+        n = 1000
+        shape = (n, 10)
         dataset = np.random.random(shape)
-        ckdtree = cKDTree(dataset, leafsize=1)
-
-        f = plt.figure(figsize=(27, 9))
-        ax1 = plt.subplot(1, 2, 1)
-        ax2 = plt.subplot(1, 2, 2)
-
-        self.plot_tree(ax1, ckdtree.tree)
-        ax1.plot(ckdtree.data[:, 0], ckdtree.data[:, 1], "o")
-
+        ckdtree = cKDTree(dataset)
         contained = ckdtree.remove(dataset[0])
+        assert_equal(n - 1*contained, ckdtree.n)
 
-        self.plot_tree(ax2, ckdtree.tree)
-        ax2.plot(ckdtree.data[1:, 0], ckdtree.data[1:, 1], "o")
-        plt.show()
-        #assert_equal(n - 1*contained, ckdtree.n)
-
-    '''def test_node_size(self):
+    def test_node_size(self):
         shape = (100, 10)
         dataset = np.random.random(shape)
         ckdtree = cKDTree(dataset, leafsize=1)
@@ -738,7 +712,7 @@ class TestRemove:
         ckdtree = cKDTree(dataset)
         center = np.random.random(d)
         query_ball1 = ckdtree.query_ball_point(center, r=0.5)
-        ckdtree.remove(dataset[query_ball1[0:2]])
+        ckdtree.remove(dataset[query_ball1[0]])
         query_ball2 = ckdtree.query_ball_point(center, r=0.5)
         assert_equal(len(query_ball1)-1, len(query_ball2))
 
@@ -749,7 +723,7 @@ class TestRemove:
         for point in dataset:
             ckdtree.remove(point)
         assert_equal(ckdtree.n, 0)
-        assert_equal(ckdtree.size, 1)'''
+        assert_equal(ckdtree.size, 1)
 
 
 class count_neighbors_consistency:
