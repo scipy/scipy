@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 import numpy as np
 
 from . import distributions
@@ -25,7 +23,8 @@ def linregress(x, y=None):
         Two sets of measurements.  Both arrays should have the same length.  If
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
-        are then found by splitting the array along the length-2 dimension.
+        are then found by splitting the array along the length-2 dimension. In
+        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is equivalent to ``linregress(x[0], x[1])``.
 
     Returns
     -------
@@ -39,7 +38,7 @@ def linregress(x, y=None):
         Two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero, using Wald Test with t-distribution of
         the test statistic.
-    slope_stderr : float
+    stderr : float
         Standard error of the estimated slope (gradient), under the assumption
         of residual normality.
     intercept_stderr : float
@@ -93,9 +92,10 @@ def linregress(x, y=None):
     >>> tinv = lambda p,df: abs(t.ppf(p/2,df))
 
     >>> ts = tinv(0.05,len(x)-2)
-    >>> print(f"slope (95%%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
+    >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
     slope (95%): 1.944864 +/- 0.950885
-    >>> print(f"intercept (95%%): {res.intercept:.6f} +/- {ts*res.intercept_stderr:.6f}")
+    >>> print(f"intercept (95%): {res.intercept:.6f}"
+    ...       f" +/- {ts*res.intercept_stderr:.6f}")
     intercept (95%): 0.268578 +/- 0.488822
 
     """
@@ -107,7 +107,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            raise ValueError(f"If only `x` is given as input, it has to be of shape (2, N) or (N, 2), provided shape was {x.shape}.")
+            raise ValueError("If only `x` is given as input, it has to "
+                             "be of shape (2, N) or (N, 2); provided shape "
+                             f"was {x.shape}.")
     else:
         x = np.asarray(x)
         y = np.asarray(y)
@@ -145,24 +147,25 @@ def linregress(x, y=None):
             prob = 1.0
         else:
             prob = 0.0
-        slope_sterrest = 0.0
+        slope_stderr = 0.0
         intercept_stderr = 0.0
     else:
-        df = n - 2 # Number of degrees of freedom 
+        df = n - 2  # Number of degrees of freedom 
         # n-2 because 2 have been used to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
-        slope_sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
         
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )
         #        = ssx - sx*sx
         #        = mean( x^2 ) - mean(x)^2
-        intercept_stderr = slope_sterrest * np.sqrt(ssxm + xmean**2)
+        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
 
     return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
-        pvalue=prob, stderr=slope_sterrest, intercept_stderr=intercept_stderr)
+                            pvalue=prob, stderr=slope_stderr,
+                            intercept_stderr=intercept_stderr)
 
 
 def theilslopes(y, x=None, alpha=0.95):
