@@ -1,10 +1,9 @@
+from math import sqrt
 import numpy as np
 from numpy import atleast_1d, atleast_2d
+from scipy.linalg import qr, solve_triangular
 from scipy.linalg.decomp import _asarray_validated
-from scipy.linalg import lstsq
-from scipy.linalg.misc import norm
 from scipy.linalg.misc import LinAlgError
-from math import sqrt
 
 # Author : Rondall E. Jones, October 2020
 
@@ -24,12 +23,12 @@ def checkAb(A, b, maxcols):
     return
 
 
+def mynorm(x):
+    return sqrt(np.dot(x, x))
+
+
 def myrms(x):
-    return norm(x) / sqrt(len(x))
-
-
-def myepsilon():
-    return 0.00000001
+    return sqrt(np.dot(x, x)) / sqrt(len(x))
 
 
 def decide_width(mg):
@@ -48,38 +47,6 @@ def decide_width(mg):
     else:
         w = int(mg / 10)
         return 2 * int(w / 2)  # 10 spans
-
-
-def strange(A, b):
-    """determines whether the A*x=b may be ill-conditioned."""
-    A = atleast_2d(_asarray_validated(A, check_finite=True))
-    b = atleast_1d(_asarray_validated(b, check_finite=True))
-    checkAb(A, b, 1)
-    if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return False, 0.0
-
-    m, n = A.shape
-    AA = A.copy()
-    bb = b.copy()
-    epsilon = 10.0 * max(m, n) * np.spacing(bb.real.dtype.type(1))
-
-    rn = np.zeros(m)
-    # scale to unit norms
-    for k in range(0, m):
-        rn[k] = norm(AA[k, :])
-    small = max(rn) * epsilon
-    for k in range(0, m):
-        if rn[k] < small:
-            return np.zeros(n), True
-        d = 1.0/rn[k]
-        AA[k, :] = d * AA[k, :]
-        bb[k] = d * bb[k]
-
-    maxnorm = sum(abs(bb)) * 3.0
-    x = lstsq(AA, bb)[0]
-    nx = norm(x)
-
-    return x, (nx > maxnorm)
 
 
 def splita(mg, g):
@@ -233,7 +200,7 @@ def arlsusv(A, b, U, S, Vt):
     return x, nr, ur, sigma, lambdah
 
 
-def arls(A, b):
+def arls(A, b):             # arlst???  arlsq ??  ARLSV  ARLSS print
     """Solves the linear system of equation, Ax = b, for any shape matrix.
 
     The system can be underdetermined, square, or over-determined.
@@ -327,20 +294,45 @@ def arls(A, b):
 
     References
     ----------
-    About the Picard Condition: "The discrete picard condition for discrete
-    ill-posed problems", Per Christian Hansen, 1990.
-    https://link.springer.com/article/10.1007/BF01933214
+    The auto-regularization algorithm in this software arose from the research
+    for my dissertation, "Solving Linear Algebraic Systems Arising in the
+    Solution of Integral Equations of the First Kind", University of
+    New Mexico, Albuquerque, NM, 1985.
 
-    About Nonnegative solutions: "Solving Least Squares Problems",
-    by Charles L. Lawson and Richard J. Hanson. Prentice-Hall 1974
+    Many thanks to Cleve B. Moler, MatLab creater and co-founder of MathWorks
+    for his energy and insights in guiding my dissertation research.
 
-    About our algorithm: "Solving Linear Algebraic Systems Arising in the
-    Solution of Integral Equations of the First Kind",
-    Dissertation by Rondall E. Jones, 1985, U. of N.M.
-    Advisor: Cleve B. Moler, creator of MatLab and co-founder of MathWorks.
+    My thanks also to Richard Hanson (deceased), co-author of the classic
+    "Solving Least Squares Problems", co-creater of BLAS, and co-advisor
+    for the last year of my dissertation work.
 
-    For further information on the Picard Condition please see
-    http://www.rejones7.net/autorej/What_Is_The_Picard_Condition.htm
+    My thanks also to Per Christian Hansen for reviewing an early version
+    of this software which resulted in my creating the crucial two-phase
+    matrix "split" process.
+
+    And my thanks to the central computing department at Sandia National Labs
+    where I had the opportunity to contribute to the "MATHLIB" Fortran library
+    in the 1960's and 1970's. MATLIB evolved into part of the
+    Fortran "SLATEC" library.
+    See http://www.netlib.org/slatec/src/
+
+    For for a short presentation on the Picard Condition which is at the heart
+    of this package's algorithms, please see
+    See www.rejones7.net/Arls/What_Is_The_Picard_Condition.htm
+
+    For a complete description, see "The Discrete Picard Condition for Discrete
+    Ill-posed Problems", Per Christian Hansen, 1990.
+    See link.springer.com/article/10.1007/BF01933214
+
+    For discussion of incorporating equality and inequality constraints
+    (including nonnegativity) in solving linear algebraic problems, see
+    "Solving Least Squares Problems", by Charles L. Lawson and
+    Richard J. Hanson, Prentice-Hall 1974.
+    My implementation of these features has evolved somewhat
+    from that fine book, but is based on those algorithms.
+
+    Rondall E. Jones, Ph.D.
+    rejones7@msn.com
     """
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
@@ -348,23 +340,17 @@ def arls(A, b):
         return np.zeros(A.shape[1])
     checkAb(A, b, 2)
     m, n = A.shape
-
+    nrhs = 1
     if len(b.shape) == 2:
         nrhs = b.shape[1]
-    else:
-        nrhs = 1
-        x, odd = strange(A, b)
-        if not odd:
-            nr = min(m, n)
-            return x, nr, nr, 0.0, 0.0
 
-    # we either have multiple columns,
-    # or if just 1, then it is likely ill-conditioned
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
+
+    # one right hand side
     if nrhs == 1:
         return arlsusv(A, b, U, S, Vt)
 
-    # for multiple RHSs
+    # multiple right hand sides
     xx = np.zeros((n, nrhs))
     nr = min(A.shape)  # track minimum numeric rank
     mur = nr            # track minimum usable rank
@@ -378,15 +364,66 @@ def arls(A, b):
     return xx, nr, mur, msigma, mlamda
 
 
-def find_max_row_norm(A):
-    """ determine max row norm of A """
-    m = A.shape[0]
-    rnmax = 0.0
-    for i in range(0, m):
-        rn = norm(A[i, :])
-        if rn > rnmax:
-            rnmax = rn
-    return rnmax
+def strange(A, b):
+    """determines whether the A*x=b is likely ill-conditioned."""
+    m, n = A.shape
+    epsilon = 10.0 * max(m, n) * np.spacing(b.real.dtype.type(1))
+    rn = np.zeros(m)
+    for k in range(0, m):
+        rn[k] = mynorm(A[k, :])
+    if min(rn) < max(rn) * epsilon:
+        return True, 0.0
+    bb = b/rn
+    maxnorm = mynorm(bb) * 1.5
+    return False, maxnorm
+
+
+def arlsqr(A, b):
+    """Solves the linear system of equation, Ax = b, for any shape matrix.
+
+    Arlsqr() is called exactly like arls() above, and the returns are
+    exactly the same.
+
+    The difference is that if b is only one column then arlsqr()
+    first performs a quick assessment of the system to see if it appears
+    to be ill-conditioned. If not, qr() is called for a solution.
+    If the resulting solution from qr() appears to be good, then it
+    is returned. Otherwise, arls() continues itself to to get a solution
+    based on the SVD.
+
+    The purpose of this difference is to execute signficantly faster than
+    arlsqr() does if the problems given to it are usually well behaved.
+    """
+    A = atleast_2d(_asarray_validated(A, check_finite=True))
+    b = atleast_1d(_asarray_validated(b, check_finite=True))
+    if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
+        return np.zeros(A.shape[1])
+    checkAb(A, b, 2)
+    m, n = A.shape
+    nr = min(m, n)
+    # is b a single column?
+    if len(b.shape) < 2:
+        odd, maxnorm = strange(A, b)
+        if not odd:
+            if (m >= n):
+                Q, R = qr(A, mode='economic')
+                Qb = Q.T @ b
+                try:
+                    x = solve_triangular(R, Qb)
+                except LinAlgError:
+                    return arls(A, b)
+                if mynorm(x) < maxnorm:
+                    return x, nr, nr, 0.0, 0.0
+            else:
+                Q, R = qr(A.T, mode='economic')
+                try:
+                    y = solve_triangular(R, b, 'T')
+                except LinAlgError:
+                    return arls(A, b)
+                x = Q @ y
+                if mynorm(x) < maxnorm:
+                    return x, nr, nr, 0.0, 0.0
+    return arls(A, b)
 
 
 def cull(E, f, neglect):
@@ -396,7 +433,7 @@ def cull(E, f, neglect):
     m = EE.shape[0]
     i = 0
     while i < m:
-        if norm(EE[i, :]) < neglect:
+        if mynorm(EE[i, :]) < neglect:
             EE = np.delete(EE, i, 0)
             ff = np.delete(ff, i, 0)
             m = EE.shape[0]
@@ -405,14 +442,25 @@ def cull(E, f, neglect):
     return EE, ff
 
 
+def find_max_row_norm(A):
+    """ determine max row norm of A """
+    m = A.shape[0]
+    rnmax = 0.0
+    for i in range(0, m):
+        rn = mynorm(A[i, :])
+        if rn > rnmax:
+            rnmax = rn
+    return rnmax
+
+
 def find_max_sense(E, f):
     """ find the row of Ex=f which his the highest ratio of f[i]
-        to the norm of the row. """
+    to the norm of the row. """
     snmax = -1.0
     ibest = 0  # default
     m = E.shape[0]
     for i in range(0, m):
-        rn = norm(E[i, :])
+        rn = mynorm(E[i, :])
         if rn > 0.0:
             s = abs(f[i]) / rn
             if s > snmax:
@@ -429,7 +477,6 @@ def prepeq(E, f, neglect):
     EE = E.copy()
     ff = f.copy()
     m, n = EE.shape
-
     for i in range(0, m):
         # determine new best row and put it next
         if i == 0:
@@ -438,15 +485,15 @@ def prepeq(E, f, neglect):
             rnmax = -1.0
             imax = -1
             for k in range(i, m):
-                rn = norm(EE[k, :])
-                if imax < 0 or rn > rnmax:
+                rn = mynorm(EE[k, :])
+                if rn > rnmax:
                     rnmax = rn
                     imax = k
         EE[[i, imax], :] = EE[[imax, i], :]
         ff[[i, imax]] = ff[[imax, i]]
 
         # normalize
-        rin = norm(EE[i, :])
+        rin = mynorm(EE[i, :])
         if rin > 0.0:
             EE[i, :] /= rin
             ff[i] /= rin
@@ -470,7 +517,6 @@ def prepeq(E, f, neglect):
         if mm < m:
             EE = np.resize(EE, (mm, n))
             ff = np.resize(ff, mm)
-
     return EE, ff
 
 
@@ -522,18 +568,18 @@ def arlseq(A, b, E, f):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : int
+    nr : int
         The numerical rank of the matrix, A, after its projection onto the rows
         of E are subtracted.
-    mur : int
+    ur : int
         The "usable" rank of the "reduced" problem, Ax=b, after its projection
         onto the rows of Ex=f are subtracted.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
         of the problem, Ax=b.
-    msigma : float
+    sigma : float
         The estimated right-hand-side root-mean-square error.
-    mlambda : float
+    lambda : float
         The estimated Tikhonov regularization.
 
     Raises
@@ -571,29 +617,23 @@ def arlseq(A, b, E, f):
     Without using the equality constraint we are given here,
     standard solvers will return [x,y] = [-.3 , 2.8].
     Even arls() will return the same [x,y] = [-.3 , 2.8].
-
-    Arlsnn() could help here by disallowing presumably unacceptable
-    negative values, producing [x,y] = [0. , 2.625].
-
-    If we solve with arlseq(A,b,E,f) then we get [x,y] = [0.95,  2.05].
-    This answer is close to the correct answer of [x,y] = [1.0 , 2.0]
-    if the right hand side had been the correct [5.,8.] instead of [5.3,7.8].
-
-    It is constructive to look at residuals to understand more about
-    the problem:
-
-    For [x,y] = [-.3 , 2.8], the residual is [0.0 , 0.0] (exact).
+    The residual for this solution is [0.0 , 0.0] (within roundoff).
     But of course x + y = 2.5, not the 3.0 we really want.
 
-    For [x,y] = [0. , 2.625], the residual is [-0.05 , 0.075]
-    which is of course an increase from zero, but this is natural since we
-    have forced the solution away from being the "exact" result,
-    for good reason. Note that x + y = 2.625, which is a little better.
+    Arlsnn() could help here by disallowing presumably unacceptable
+    negative values, producing [x,y] = [0. , 2.6].
+    The residual for this solution is [-0.1 , 0.] which is of course
+    an increase from zero, but this is natural since we have forced
+    the solution away from being the "exact" result, for good reason.
+    Note that x + y = 2.6, which is a little better.
 
-    For [x,y] = [0.95,  2.05], the residual is [-0.25 , 0.25] which
-    is even larger. Again, by adding extra information to the problem
-    the residual typically increases, but the solution becomes
-    more acceptable. Note the arlseq() achieved x + y = 3 exactly.
+    If we solve with arlseq(A,b,E,f) then we get [x,y] = [1.004, 1.996].
+    This answer is close to the "correct" answer of [x,y] = [1.0 , 2.0]
+    if the right hand side had been the correct [5.,8.] instead of [5.3,7.8].
+    The residual for this solution is [-0.3 , 0.2] which is yet larger.
+    Again, when adding constraints to the problem the residual
+    typically increases, but the solution becomes more acceptable.
+    Note that x + y = 3 exactly.
 
     Notes:
     -----
@@ -608,7 +648,7 @@ def arlseq(A, b, E, f):
     checkAb(AA, bb, 1)
     m, n = AA.shape
     rnmax = find_max_row_norm(AA)
-    neglect = rnmax * myepsilon()
+    neglect = rnmax * 0.00000001  # see Note 6. for arls()
 
     E = atleast_2d(_asarray_validated(E, check_finite=True))
     f = atleast_1d(_asarray_validated(f, check_finite=True))
@@ -631,7 +671,7 @@ def arlseq(A, b, E, f):
             d = np.dot(AA[i, :], EE[j, :])
             AA[i, :] -= d * EE[j, :]
             bb[i] -= d * ff[j]
-        nm = norm(AA[i, :])
+        nm = mynorm(AA[i, :])
         if nm < neglect:
             AA = np.delete(AA, i, 0)
             bb = np.delete(bb, i, 0)
@@ -675,16 +715,16 @@ def arlsgt(A, b, G, h):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : int
+    nr : int
         The numerical rank of the matrix, A.
-    mur : int
+    ur : int
         The usable rank of the problem, Ax=b.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
         of the problem, Ax=b.
-    msigma : float
+    sigma : float
         The estimated right-hand-side root-mean-square error.
-    mlambda : float
+    lambda : float
         The estimated Tikhonov regularization.
 
     Raises
@@ -739,10 +779,8 @@ def arlsgt(A, b, G, h):
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
         return np.zeros(A.shape[1])
-    AA = A.copy()
-    bb = b.copy()
-    checkAb(AA, bb, 1)
-    m, n = AA.shape
+    checkAb(A, b, 1)
+    m, n = A.shape
 
     G = atleast_2d(_asarray_validated(G, check_finite=True))
     h = atleast_1d(_asarray_validated(h, check_finite=True))
@@ -760,8 +798,8 @@ def arlsgt(A, b, G, h):
     ne = 0
 
     # get initial solution... it might actually be right
-    x, nr, ur, sigma, lambdah = arls(AA, bb)
-    nx = norm(x)
+    x, nr, ur, sigma, lambdah = arls(A, b)
+    nx = mynorm(x)
     if nx <= 0.0:
         return np.zeros(n), 0, 0, 0., 0.
 
@@ -798,12 +836,11 @@ def arlsgt(A, b, G, h):
         else:
             me += 1
             EE = np.resize(EE, (me, ne))
-            for j in range(0, ne):
-                EE[me - 1, j] = row[j]
+            EE[me - 1, :] = row[:]
             ff = np.resize(ff, me)
             ff[me - 1] = rhs
         # re-solve modified system
-        x = arlseq(AA, bb, EE, ff)[0]
+        x = arlseq(A, b, EE, ff)[0]
     return x, nr, ur, sigma, lambdah
 
 
@@ -822,16 +859,16 @@ def arlsnn(A, b):
     Returns
     -------
     x : (n) array_like column, type float.
-    mnr : int
+    nr : int
         The numerical rank of the matrix, A.
-    mur : int
+    ur : int
         The usable rank of the problem, Ax=b.
         Note that "numerical rank" is an attribute of a matrix
         but the "usable rank" that arls computes is an attribute
         of the problem, Ax=b.
-    msigma : float
+    sigma : float
         The estimated right-hand-side root-mean-square error.
-    mlambda : float
+    lambda : float
         The estimated Tikhonov regularization.
 
     Raises
@@ -865,8 +902,6 @@ def arlsnn(A, b):
         return np.zeros(A.shape[1])
     checkAb(A, b, 1)
     n = A.shape[1]
-    AA = A.copy()
-    bb = b.copy()
     G = np.eye(n)
     h = np.zeros(n)
-    return arlsgt(AA, bb, G, h)
+    return arlsgt(A, b, G, h)
