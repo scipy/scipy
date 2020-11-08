@@ -117,7 +117,7 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     Notes
     -----
     The R package epitools has the function `riskratio`, which accepts
-    a table with the following layout
+    a table with the following layout::
 
                         disease=0   disease=1
         exposed=0 (ref)    n00         n01
@@ -132,7 +132,7 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     correspond to "is a smoker" and the "disease" category would
     correspond to "has or had lung cancer".
 
-    To pass the same data to ``relative_risk``, use
+    To pass the same data to ``relative_risk``, use::
 
         relative_risk(n11, n10 + n11, n01, n00 + n01)
 
