@@ -694,10 +694,11 @@ def test_regress_simple():
     result = mstats.linregress(x, y)
 
     # Result is of a correct class and with correct fields
-    assert_(isinstance(result,stats._stats_mstats_common.LinregressResult))
+    lr = stats._stats_mstats_common.LinregressResult
+    assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
     check_named_results(result, attributes, ma=True)
-    assert 'intercept_stderr' in dir(result);
+    assert 'intercept_stderr' in dir(result)
 
     # Slope and intercept are estimated correctly
     assert_almost_equal(result.slope, 0.19644990055858422)
