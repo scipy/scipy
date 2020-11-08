@@ -141,6 +141,8 @@ cdef extern from "ckdtree_decl.h":
                                   const np.float64_t max_distance,
                                   vector[coo_entry] *results) nogil except +
 
+    int remove(ckdtree *self, const double *point) nogil except +
+
 
 # C++ helper functions
 # ====================
@@ -488,9 +490,9 @@ cdef class cKDTree:
     mins : ndarray, shape (m,)
         The minimum value in each dimension of the n data points.
     tree : object, class cKDTreeNode
-        This attribute exposes a Python view of the root node in the cKDTree 
-        object. A full Python view of the kd-tree is created dynamically 
-        on the first access. This attribute allows you to create your own 
+        This attribute exposes a Python view of the root node in the cKDTree
+        object. A full Python view of the kd-tree is created dynamically
+        on the first access. This attribute allows you to create your own
         query functions in Python.
     size : int
         The number of nodes in the tree.
@@ -512,13 +514,13 @@ cdef class cKDTree:
 
     property n:
         def __get__(self): return self.cself.n
-    
+
     property m:
         def __get__(self): return self.cself.m
-    
+
     property leafsize:
         def __get__(self): return self.cself.leafsize
-    
+
     property size:
         def __get__(self): return self.cself.size
 
@@ -1517,6 +1519,59 @@ cdef class cKDTree:
             return res.dok_matrix(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
+
+    # -----
+    # remove
+    # -----
+
+    def remove(self, object point):
+        """
+        remove(self, point)
+
+        Remove a point from the tree
+
+        Parameters
+        ----------
+        point : array_like, last dimension self.m
+            The point to remove.
+
+        Returns
+        -------
+        removed_idx : bool
+            True if the tree contained the point and it has been removed.
+            False if the tree did not contain the point.
+
+        Examples
+        --------
+        You can count neighbors number between two kd-trees within a distance:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> shape = (100, 10)
+        >>> points = np.random.random(shape)
+        >>> tree = cKDTree(points)
+        >>> contained = tree.remove(points[0, :])
+        True
+
+        >>> not_contained_anymore = tree.remove(points[0, :])
+        False
+
+        """
+
+        cdef:
+            ckdtree *cself = self.cself
+            np.ndarray[np.float64_t] x = np.ascontiguousarray(point, dtype=np.float64)
+
+        with nogil:
+            removed_idx = remove(cself, &x[0])
+
+        if removed_idx != -1:
+            self._python_tree = None
+            self.indices = self.indices[:self.n]
+            return True
+
+        return False
 
 
     # ----------------------

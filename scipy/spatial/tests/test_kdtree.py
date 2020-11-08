@@ -14,6 +14,7 @@ from scipy.spatial import minkowski_distance
 
 import itertools
 
+
 def distance_box(a, b, p, boxsize):
     diff = a - b
     diff[diff > 0.5 * boxsize] -= boxsize
@@ -673,6 +674,56 @@ def test_distance_vectorization():
     x = np.random.randn(10, 1, 3)
     y = np.random.randn(1, 7, 3)
     assert_equal(minkowski_distance(x, y).shape, (10, 7))
+
+
+class TestRemove:
+
+    def test_size(self):
+        n = 1000
+        shape = (n, 10)
+        dataset = np.random.random(shape)
+        ckdtree = cKDTree(dataset)
+        contained = ckdtree.remove(dataset[0])
+        assert_equal(n - 1*contained, ckdtree.n)
+
+    def test_node_size(self):
+        shape = (100, 10)
+        dataset = np.random.random(shape)
+        ckdtree = cKDTree(dataset, leafsize=1)
+        size1 = ckdtree.size
+        ckdtree.remove(dataset[0])
+        assert_equal(size1 - 2, ckdtree.size)
+
+    def test_query(self):
+        shape = (1000, 10)
+        dataset = np.random.random(shape)
+        ckdtree = cKDTree(dataset)
+        point = dataset[0]
+        _, ii = ckdtree.query(point, k=2)
+        nearest_point = dataset[ii[1]]
+        ckdtree.remove(point)
+        _, ii2 = ckdtree.query(point, k=1)
+        assert_array_equal(nearest_point, dataset[ii2])
+
+    def test_query_ball(self):
+        d = 5
+        shape = (1000, d)
+        dataset = np.random.random(shape)
+        ckdtree = cKDTree(dataset)
+        center = np.random.random(d)
+        query_ball1 = ckdtree.query_ball_point(center, r=0.5)
+        ckdtree.remove(dataset[query_ball1[0]])
+        query_ball2 = ckdtree.query_ball_point(center, r=0.5)
+        assert_equal(len(query_ball1)-1, len(query_ball2))
+
+    def test_remove_all(self):
+        shape = (50, 5)
+        dataset = np.random.random(shape)
+        ckdtree = cKDTree(dataset)
+        for point in dataset:
+            ckdtree.remove(point)
+        assert_equal(ckdtree.n, 0)
+        assert_equal(ckdtree.size, 1)
 
 
 class count_neighbors_consistency:
