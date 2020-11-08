@@ -156,7 +156,7 @@ class BaseMixin(object):
                       [-19., -32., -8.],
                       [-13., 10., 69.]])
         b = np.array([-41., -90., 47.])
-        bounds = np.array([[31., -44., 26.]
+        bounds = np.array([[31., -44., 26.],
                            [54., -32., 28.]])
 
         x2 = lsq_linear(A, b, bounds=bounds, method='bvls').x
