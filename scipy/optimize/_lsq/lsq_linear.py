@@ -105,7 +105,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Cut-off ratio for small singular values of `A`. For rank determination,
         singular values are treated as zero if they are smaller than `rcond`
         times the largest singular value of `A`. The default uses the machine
-        precision times `max(m, n)`.
+        precision times `max(m, n)`. See `numpy.linalg.lstsq`.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
