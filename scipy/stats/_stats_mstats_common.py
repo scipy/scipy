@@ -24,7 +24,8 @@ def linregress(x, y=None):
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
         are then found by splitting the array along the length-2 dimension. In
-        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is equivalent to ``linregress(x[0], x[1])``.
+        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
+        equivalent to ``linregress(x[0], x[1])``.
 
     Returns
     -------
@@ -150,12 +151,13 @@ def linregress(x, y=None):
         slope_stderr = 0.0
         intercept_stderr = 0.0
     else:
-        df = n - 2  # Number of degrees of freedom 
-        # n-2 because 2 have been used to estimate the mean and standard deviation
+        df = n - 2  # Number of degrees of freedom
+        # n-2 degrees of freedom because 2 has been used up up
+        # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
-        
+
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )

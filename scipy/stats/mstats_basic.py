@@ -807,6 +807,7 @@ def pointbiserialr(x, y):
 
     return PointbiserialrResult(rpb, prob)
 
+
 def linregress(x, y=None):
     r"""
     Linear regression calculation
@@ -822,7 +823,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            raise ValueError(f"If only `x` is given as input, it has to be of shape (2, N) or (N, 2), provided shape was {x.shape}")
+            raise ValueError("If only `x` is given as input, "
+                             "it has to be of shape (2, N) or (N, 2), "
+                             f"provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
@@ -835,15 +838,16 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            result = stats_linregress(x.data[~m],y.data[~m])
+            result = stats_linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
             result = stats_LinregressResult(slope=None, intercept=None,
-                rvalue=None, pvalue=None, stderr=None,
-                intercept_stderr=None)
+                                            rvalue=None, pvalue=None,
+                                            stderr=None,
+                                            intercept_stderr=None)
     else:
-        result = stats_linregress(x.data,y.data)
-    
+        result = stats_linregress(x.data, y.data)
+
     return result
 
 
