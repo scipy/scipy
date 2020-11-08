@@ -277,9 +277,10 @@ script:
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${REFGUIDE_CHECK}" == "1" ]; then
       python runtests.py -g --refguide-check
     fi
+  # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${ASV_CHECK}" == "1" ]; then
-      (cd benchmarks && python -masv check -E existing)
+      (cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null)
     fi
   # Check dynamic symbol hiding works on Linux
   - |
