@@ -38,8 +38,7 @@ class TestFisherExact:
     def test_results_from_r(self, parameters, rresult):
         alternative = parameters.alternative.replace('.', '-')
         result = fisher_exact(parameters.table,
-                              alternative=alternative,
-                              confidence_level=parameters.confidence_level)
+                              alternative=alternative)
         assert_allclose(result.pvalue, rresult.pvalue, rtol=1e-11)
         if result.conditional_odds_ratio < 400:
             or_rtol = 5e-4
@@ -49,8 +48,8 @@ class TestFisherExact:
             ci_rtol = 1e-1
         assert_allclose(result.conditional_odds_ratio,
                         rresult.conditional_odds_ratio, rtol=or_rtol)
-        assert_allclose(result.conditional_odds_ratio_ci,
-                        rresult.conditional_odds_ratio_ci, rtol=ci_rtol)
+        ci = result.conditional_odds_ratio_ci(parameters.confidence_level)
+        assert_allclose(ci, rresult.conditional_odds_ratio_ci, rtol=ci_rtol)
         # Also do a self-check for the conditional odds ratio.
         # With the computed conditional odds ratio as the noncentrality
         # parameter of the noncentral hypergeometric distribution with
@@ -94,7 +93,8 @@ class TestFisherExact:
         assert_equal(result.pvalue, 1.0)
         assert_equal(result.sample_odds_ratio, np.nan)
         assert_equal(result.conditional_odds_ratio, np.nan)
-        assert_equal(result.conditional_odds_ratio_ci, (0, np.inf))
+        ci = result.conditional_odds_ratio_ci()
+        assert_equal(ci, (0, np.inf))
 
     @pytest.mark.parametrize(
         'table, exact_p_less, exact_p_greater',

@@ -262,14 +262,69 @@ def _conditional_oddsratio_ci(table, confidence_level=0.95,
     return lower, upper
 
 
-FisherExactResult = _make_tuple_bunch('FisherExactResult',
-                                      ['sample_odds_ratio', 'pvalue'],
-                                      ['conditional_odds_ratio',
-                                       'conditional_odds_ratio_ci'])
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 
-def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
+FisherExactBaseResult = _make_tuple_bunch('FisherExactBaseResult',
+                                          ['sample_odds_ratio', 'pvalue'],
+                                          ['table', 'alternative',
+                                           'conditional_odds_ratio'])
+
+
+class FisherExactResult(FisherExactBaseResult):
+
+    def conditional_odds_ratio_ci(self, confidence_level=0.95):
+        """
+        Confidence interval for the conditional odds ratio.
+
+        The limits of the confidence interval are the conditional "exact
+        confidence limits" as defined in section 2 of Cornfield [2]_, and
+        originally described by Fisher [1]_.  The conditional odds ratio
+        and confidence interval are also discussed in Section 4.1.2 of the
+        text by Sahai and Khurshid [3]_.
+
+        Parameters
+        ----------
+        confidence_level: float
+            Desired confidence level for the confidence interval.
+            The value must be given as a fraction between 0 and 1.
+            Default is 0.95 (meaning 95%).
+
+        Returns
+        -------
+        ci : namedtuple
+            The confidence interval, represented as a namedtuple with
+            fields ``low`` and ``high``.
+
+        References
+        ----------
+        .. [1] R. A. Fisher (1935), The logic of inductive inference,
+               Journal of the Royal Statistical Society, Vol. 98, No. 1,
+               pp. 39-82.
+        .. [2] J. Cornfield (1956), A statistical problem arising from
+               retrospective studies. In Neyman, J. (ed.), Proceedings of
+               the Third Berkeley Symposium on Mathematical Statistics
+               and Probability 4, pp. 135-148.
+        .. [3] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
+               Methods, Techniques, and Applications, CRC Press LLC, Boca
+               Raton, Florida.
+        """
+        if confidence_level < 0 or confidence_level > 1:
+            raise ValueError('confidence_level must be between 0 and 1')
+
+        table = self.table
+        if 0 in table.sum(axis=0) or 0 in table.sum(axis=1):
+            # If both values in a row or column are zero, the p-value is 1,
+            # the odds ratio is NaN and the confidence interval is (0, inf).
+            ci = (0, np.inf)
+        else:
+            ci = _conditional_oddsratio_ci(table,
+                                           confidence_level=confidence_level,
+                                           alternative=self.alternative)
+        return ConfidenceInterval(*ci)
+
+
+def fisher_exact(table, alternative='two-sided'):
     r"""
     Perform a Fisher exact test on a 2x2 contingency table.
 
@@ -285,16 +340,10 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
         * 'less': one-sided
         * 'greater': one-sided
 
-    confidence_level: float
-        Desired confidence level for the confidence interval that is stored
-        as the ``conditional_odds_ratio_ci`` attribute of the return value.
-        The value must be given as a fraction between 0 and 1.
-        Default is 0.95 (meaning 95%).
-
     Returns
     -------
     result : object
-        The returned object has four attributes:
+        The returned object has three computed attributes:
 
         * ``sample_odds_ratio``, float, is
           ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
@@ -308,8 +357,16 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
           the noncentrality parameter of Fisher's noncentral
           hypergeometric distribution with the same hypergeometric
           parameters as ``table`` and whose mean is ``table[0, 0]``.
-        * ``conditional_odds_ratio_ci``, tuple of float, is the
-          conditional exact confidence interval of the odds ratio.
+
+        The object also has these parameters that were passed in to
+        the function:
+
+        * ``table``
+        * ``alternative``
+
+        The object has the method ``conditional_odds_ratio_ci``
+        to compute the confidence interval of the conditional
+        odds ratio.
 
     See Also
     --------
@@ -334,12 +391,6 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
 
         result = fisher_exact(table)
         print(result.pvalue, result.conditional_odds_ratio)
-
-    The limits of the confidence interval are the conditional "exact
-    confidence limits" as defined in section 2 of Cornfield [2]_, and
-    originally described by Fisher [1]_.  The conditional odds ratio
-    and confidence interval are also discussed in Section 4.1.2 of the
-    text by Sahai and Khurshid [3]_.
 
     References
     ----------
@@ -438,9 +489,6 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
     is approximately (1.25, 10.4), which is strong evidence that the
     odds ratio is greater than 1.
     """
-    if confidence_level < 0 or confidence_level > 1:
-        raise ValueError('confidence_level must be between 0 and 1')
-
     c = np.asarray(table)
 
     if c.shape != (2, 2):
@@ -458,9 +506,9 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is 1 and
         # the odds ratio is NaN.
-        result = FisherExactResult(sample_odds_ratio=np.nan, pvalue=1.0,
-                                   conditional_odds_ratio=np.nan,
-                                   conditional_odds_ratio_ci=(0, np.inf))
+        result = FisherExactResult(table=c, alternative=alternative,
+                                   sample_odds_ratio=np.nan, pvalue=1.0,
+                                   conditional_odds_ratio=np.nan)
         return result
 
     n1 = c[0, 0] + c[0, 1]
@@ -543,12 +591,7 @@ def fisher_exact(table, alternative='two-sided', confidence_level=0.95):
 
     oddsratio = _sample_odds_ratio(c)
     cond_odds = _conditional_oddsratio(c)
-    cond_odds_ci = _conditional_oddsratio_ci(c,
-                                             confidence_level=confidence_level,
-                                             alternative=alternative)
-
-    ci = ConfidenceInterval(*cond_odds_ci)
-    result = FisherExactResult(sample_odds_ratio=oddsratio, pvalue=pvalue,
-                               conditional_odds_ratio=cond_odds,
-                               conditional_odds_ratio_ci=ci)
+    result = FisherExactResult(table=c, alternative=alternative,
+                               sample_odds_ratio=oddsratio, pvalue=pvalue,
+                               conditional_odds_ratio=cond_odds)
     return result
