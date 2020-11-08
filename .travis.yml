@@ -40,7 +40,10 @@ matrix:
         - pycodestyle scipy benchmarks/benchmarks
         - |
           if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-             python tools/lint_diff.py --branch $TRAVIS_BRANCH
+             git fetch --unshallow
+             git config remote.origin.fetch "+refs/heads/maintenance/*:refs/remotes/origin/maintenance/*"
+             git fetch origin --no-tags
+             python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
           fi
         - tools/unicode-check.py
     - python: 3.7
