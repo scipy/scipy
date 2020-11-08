@@ -1527,7 +1527,6 @@ cdef class cKDTree:
     def remove(self, object point):
         """
         remove(self, point)
-        .. versionadded:: 1.6.0
 
         Remove a point from the tree
 
