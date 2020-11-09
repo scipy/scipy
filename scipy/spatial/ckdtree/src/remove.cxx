@@ -1,6 +1,9 @@
 #include <vector>
+#include <limits>
 #include "ckdtree_decl.h"
 #include <math.h>
+
+#define EPSILON std::numeric_limits<double>::epsilon()
 
 int
 find(ckdtree *self, ckdtreenode *actual_node, const double *point, std::vector<ckdtreenode *> *node_path){
@@ -20,7 +23,7 @@ find(ckdtree *self, ckdtreenode *actual_node, const double *point, std::vector<c
 
         for(int point_dimension=0; point_dimension<self->m; point_dimension++){
             double *value_of_p = self->raw_data + idx_data*self->m + point_dimension;
-            if(*value_of_p != *(point+point_dimension)){
+            if(abs(*value_of_p - *(point+point_dimension)) > EPSILON){
                 equal = false;
                 break;
             }
