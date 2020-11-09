@@ -141,7 +141,7 @@ cdef extern from "ckdtree_decl.h":
                                   const np.float64_t max_distance,
                                   vector[coo_entry] *results) nogil except +
 
-    int remove(ckdtree *self, const double *point) nogil except +
+    bool remove(ckdtree *self, const np.intp_t data_index) nogil except +
 
 
 # C++ helper functions
@@ -1524,26 +1524,27 @@ cdef class cKDTree:
     # remove
     # -----
 
-    def remove(self, object point):
+    def remove(self, np.intp_t index):
         """
-        remove(self, point)
+        remove(self, index)
+        .. versionadded:: 1.6.0
 
         Remove a point from the tree
 
         Parameters
         ----------
-        point : array_like, last dimension self.m
-            The point to remove.
+        index : integer
+            The index in self.data of the point to remove.
 
         Returns
         -------
-        removed_idx : bool
+        found : bool
             True if the tree contained the point and it has been removed.
             False if the tree did not contain the point.
 
         Examples
         --------
-        You can count neighbors number between two kd-trees within a distance:
+        You can try to remove a point twice:
 
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
@@ -1551,27 +1552,25 @@ cdef class cKDTree:
         >>> shape = (100, 10)
         >>> points = np.random.random(shape)
         >>> tree = cKDTree(points)
-        >>> tree.remove(points[0, :])  # contained
+        >>> tree.remove(0)  # contained
         True
 
-        >>> tree.remove(points[0, :])  # not contained anymore
+        >>> tree.remove(0)  # not contained anymore
         False
 
         """
 
         cdef:
             ckdtree *cself = self.cself
-            np.ndarray[np.float64_t] x = np.ascontiguousarray(point, dtype=np.float64)
 
         with nogil:
-            removed_idx = remove(cself, &x[0])
+            found = remove(cself, index)
 
-        if removed_idx != -1:
+        if found:
             self._python_tree = None
             self.indices = self.indices[:self.n]
-            return True
 
-        return False
+        return found
 
 
     # ----------------------

@@ -683,7 +683,7 @@ class TestRemove:
         shape = (n, 10)
         dataset = np.random.random(shape)
         ckdtree = cKDTree(dataset)
-        contained = ckdtree.remove(dataset[0])
+        contained = ckdtree.remove(0)
         assert_equal(n - 1*contained, ckdtree.n)
 
     def test_node_size(self):
@@ -691,8 +691,8 @@ class TestRemove:
         dataset = np.random.random(shape)
         ckdtree = cKDTree(dataset, leafsize=1)
         size1 = ckdtree.size
-        ckdtree.remove(ckdtree.data[0])
-        assert_equal(size1 - 2, ckdtree.size)
+        ckdtree.remove(0)
+        assert_equal(ckdtree.size, size1 - 2)
 
     def test_query(self):
         shape = (1000, 10)
@@ -701,7 +701,7 @@ class TestRemove:
         point = dataset[0]
         _, ii = ckdtree.query(point, k=2)
         nearest_point = dataset[ii[1]]
-        ckdtree.remove(point)
+        ckdtree.remove(0)
         _, ii2 = ckdtree.query(point, k=1)
         assert_array_equal(nearest_point, dataset[ii2])
 
@@ -712,16 +712,17 @@ class TestRemove:
         ckdtree = cKDTree(dataset)
         center = np.random.random(d)
         query_ball1 = ckdtree.query_ball_point(center, r=0.5)
-        ckdtree.remove(dataset[query_ball1[0]])
+        ckdtree.remove(query_ball1[0])
         query_ball2 = ckdtree.query_ball_point(center, r=0.5)
         assert_equal(len(query_ball1)-1, len(query_ball2))
 
     def test_remove_all(self):
-        shape = (50, 5)
+        n = 50
+        shape = (n, 5)
         dataset = np.random.random(shape)
         ckdtree = cKDTree(dataset)
-        for point in dataset:
-            ckdtree.remove(point)
+        for index in range(0, n):
+            ckdtree.remove(index)
         assert_equal(ckdtree.n, 0)
         assert_equal(ckdtree.size, 1)
 
