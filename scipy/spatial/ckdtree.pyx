@@ -1551,10 +1551,10 @@ cdef class cKDTree:
         >>> shape = (100, 10)
         >>> points = np.random.random(shape)
         >>> tree = cKDTree(points)
-        >>> contained = tree.remove(points[0, :])
+        >>> tree.remove(points[0, :])  # contained
         True
 
-        >>> not_contained_anymore = tree.remove(points[0, :])
+        >>> tree.remove(points[0, :])  # not contained anymore
         False
 
         """
