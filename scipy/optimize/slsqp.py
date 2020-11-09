@@ -22,7 +22,7 @@ from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function, _clip_x_for_func,
-                       _check_clip_x)
+                       _check_clip_x, _grad_filter_nan)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -254,7 +254,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
     # ScalarFunction
     if bounds is None or len(bounds) == 0:
-        new_bounds = (-np.inf, np.inf)
+        new_bounds = np.full_like(x0, -np.inf), np.full_like(x0, np.inf)
     else:
         new_bounds = old_bound_to_new(bounds)
 
@@ -377,8 +377,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                                   bounds=new_bounds)
     # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
     # doesn't get sent to the func/grad evaluator.
-    wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
-    wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
+    wrapped_fun = clip_x_for_func(sf.fun, new_bounds)
+    wrapped_grad = _grad_filter_nan(
+        _clip_x_for_func(sf.grad, new_bounds), new_bounds
+    )
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)

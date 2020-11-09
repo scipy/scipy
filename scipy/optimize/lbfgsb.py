@@ -37,7 +37,8 @@ import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, _prepare_scalar_function)
+                       _check_unknown_options, _prepare_scalar_function,
+                       _func_grad_filter_nan)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -307,7 +308,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                                   bounds=new_bounds,
                                   finite_diff_rel_step=finite_diff_rel_step)
 
-    func_and_grad = sf.fun_and_grad
+    func_and_grad = _func_grad_filter_nan(sf.fun_and_grad, new_bounds)
 
     fortran_int = _lbfgsb.types.intvar.dtype
 

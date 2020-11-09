@@ -581,13 +581,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
         else:
             raise RuntimeError("Never be here.")
 
-        with np.errstate(invalid='ignore'):
-            # filter warning for 0 / 0
-            # However a 1.0 / 0.0 will still raise a
-            # RuntimeWarning: divide by zero encountered in true_divide
-            g = np.asarray(df / dx)
-
-        J_transposed[i] = g
+        J_transposed[i] = np.asarray(df / dx)
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)

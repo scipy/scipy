@@ -258,8 +258,10 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.
-    sf = ScalarFunction(fun, x0, args, grad, hess,
-                        finite_diff_rel_step, bounds, epsilon=epsilon)
+    with np.errstate(invalid='ignore'):
+        # filter the RuntimeWarning caused by equal lower and upper bounds
+        sf = ScalarFunction(fun, x0, args, grad, hess,
+                            finite_diff_rel_step, bounds, epsilon=epsilon)
 
     return sf
 
@@ -275,6 +277,42 @@ def _clip_x_for_func(func, bounds):
         return func(x)
 
     return eval
+
+
+def _func_grad_filter_nan(func_and_grad, bounds):
+    # replaces values in gradient returned by func_and_grad(x)
+    # which correspond to lb[i] == ub[i], these values are typically nan.
+    equal_bounds = bounds[0] == bounds[1]
+    def filter_nan(x):
+        with np.errstate(invalid='ignore'):
+            # ignore  warning for 0 / 0, which can happen if
+            # lb[i] == ub[i] when calculating df/dx in approx_derivative.
+            # However a 1.0 / 0.0 will still raise a
+            # RuntimeWarning: divide by zero encountered in true_divide
+            f, g = func_and_grad(x)
+            if equal_bounds.any():
+                # replace nan by 0
+                g[equal_bounds] = 0.0
+            return f, g
+    return filter_nan
+
+
+def _grad_filter_nan(grad, bounds):
+    # replaces values in grad(x) which correspond to lb[i] == ub[i]
+    # these values are typically nan.
+    equal_bounds = bounds[0] == bounds[1]
+    def filter_nan(x):
+        with np.errstate(invalid='ignore'):
+            # ignore  warning for 0 / 0, which can happen if
+            # lb[i] == ub[i] when calculating df/dx in approx_derivative.
+            # However a 1.0 / 0.0 will still raise a
+            # RuntimeWarning: divide by zero encountered in true_divide
+            g = grad(x)
+            if equal_bounds.any():
+                # replace nan by 0
+                g[equal_bounds] = 0.0
+            return g
+    return filter_nan
 
 
 def _check_clip_x(x, bounds):
