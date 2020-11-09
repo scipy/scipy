@@ -72,7 +72,9 @@ for (alternative in alternatives) {
             cat(s, fill=TRUE)
             s = sprintf("              conditional_odds_ratio=%.16g,", result$estimate)
             cat(s, fill=TRUE)
-            s = sprintf("              conditional_odds_ratio_ci=(%.16g, %.16g))),", result$conf.int[1], result$conf.int[2])
+            s = sprintf("              conditional_odds_ratio_ci=(%.16g,", result$conf.int[1])
+            cat(s, fill=TRUE)
+            s = sprintf("                                         %.16g))),", result$conf.int[2])
             cat(s, fill=TRUE)
         }
     }
