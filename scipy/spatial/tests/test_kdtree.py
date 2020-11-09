@@ -691,7 +691,7 @@ class TestRemove:
         dataset = np.random.random(shape)
         ckdtree = cKDTree(dataset, leafsize=1)
         size1 = ckdtree.size
-        ckdtree.remove(dataset[0])
+        ckdtree.remove(ckdtree.data[0])
         assert_equal(size1 - 2, ckdtree.size)
 
     def test_query(self):
