@@ -3398,14 +3398,14 @@ def show_options(solver=None, method=None, disp=True):
 
     `scipy.optimize.root_scalar`
 
-    - :ref:'bisect  <optimize.root_scalar-bisect>`
-    - :ref:'brentq  <optimize.root_scalar-brentq>`
-    - :ref:'brenth  <optimize.root_scalar-brenth>`
-    - :ref:'ridder  <optimize.root_scalar-ridder>`
-    - :ref:'toms748 <optimize.root_scalar-toms748>`
-    - :ref:'newton  <optimize.root_scalar-newton>`
-    - :ref:'secant  <optimize.root_scalar-secant>`
-    - :ref:'halley  <optimize.root_scalar-halley>`
+    - :ref:`bisect  <optimize.root_scalar-bisect>`
+    - :ref:`brentq  <optimize.root_scalar-brentq>`
+    - :ref:`brenth  <optimize.root_scalar-brenth>`
+    - :ref:`ridder  <optimize.root_scalar-ridder>`
+    - :ref:`toms748 <optimize.root_scalar-toms748>`
+    - :ref:`newton  <optimize.root_scalar-newton>`
+    - :ref:`secant  <optimize.root_scalar-secant>`
+    - :ref:`halley  <optimize.root_scalar-halley>`
 
     `scipy.optimize.linprog`
 
