@@ -3454,9 +3454,11 @@ def show_options(solver=None, method=None, disp=True):
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
-            ('trust-ncg', 'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('trust-ncg',
+             'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
             ('trust-constr',
-             'scipy.optimize._trustregion_constr._minimize_trustregion_constr'),
+             'scipy.optimize._trustregion_constr.'
+             '_minimize_trustregion_constr'),
             ('trust-exact',
              'scipy.optimize._trustregion_exact._minimize_trustregion_exact'),
             ('trust-krylov',
