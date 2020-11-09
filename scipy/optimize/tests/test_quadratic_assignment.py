@@ -197,6 +197,16 @@ class TestFAQ(QAPCommonTests):
                                    options={'P0': K})
         assert_(11156 <= res.fun < 21000)
 
+        # test padded qap
+        n = 50
+        p = 0.4
+        G1 = _er_matrix(n, p)
+        G2 = G1[: (n - 1), : (n - 1)]  # remove two nodes
+        res = quadratic_assignment(G1, G2,
+                                   options={'maximize': True})
+
+        assert 1.0 == (sum(res.col_ind == np.arange(n)) / n)
+
     def test_specific_input_validation(self):
 
         A = np.identity(2)
@@ -356,6 +366,7 @@ class TestQAPOnce():
             quadratic_assignment(
                 np.random.random((3, 3)),
                 np.random.random((4, 4)),
+                method='2opt'
             )
         # can't have more seed nodes than cost/dist nodes
         _rm = _range_matrix
@@ -429,3 +440,10 @@ def _doubly_stochastic(P, tol=1e-3):
         P_eps = r[:, None] * P * c
 
     return P_eps
+
+
+def _er_matrix(n, p):
+    x = np.triu(np.random.rand(n, n))
+    m = x + x.T
+    m[range(n), range(n)] = 0
+    return (m < p).astype(int)

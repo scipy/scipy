@@ -206,8 +206,6 @@ def _common_input_validation(A, B, partial_match):
         msg = "`B` must be square"
     elif A.ndim != 2 or B.ndim != 2:
         msg = "`A` and `B` must have exactly two dimensions"
-    elif A.shape != B.shape:
-        msg = "`A` and `B` matrices must be of equal size"
     elif partial_match.shape[0] > A.shape[0]:
         msg = "`partial_match` can have only as many seeds as there are nodes"
     elif partial_match.shape[1] != 2:
@@ -523,6 +521,7 @@ def _quadratic_assignment_faq(A, B,
 
 def _adj_pad(A, B, method):
     # pads the matrix with less nodes such that A & B are same size
+    # schemes according to section 2.5 of [2]
     def pad(X, n):
         X_pad = np.zeros((n[1], n[1]))
         X_pad[: n[0], : n[0]] = X
@@ -691,7 +690,9 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     partial_guess = np.atleast_2d(partial_guess).astype(int)
 
     msg = None
-    if partial_guess.shape[0] > A.shape[0]:
+    if A.shape != B.shape:
+        msg = "`A` and `B` matrices must be of equal size"
+    elif partial_guess.shape[0] > A.shape[0]:
         msg = ("`partial_guess` can have only as "
                "many entries as there are nodes")
     elif partial_guess.shape[1] != 2:
