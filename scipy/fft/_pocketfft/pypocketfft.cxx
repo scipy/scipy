@@ -378,9 +378,9 @@ PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
   {
   Py_ssize_t n_ = -1;
   int real = false;
-  char * keywords[] = {"target", "real", nullptr};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:good_size", keywords,
-                                   &n_, &real))
+  const char * keywords[] = {"target", "real", nullptr};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:good_size",
+                                   (char **) keywords, &n_, &real))
     return nullptr;
 
   if (n_<0)
