@@ -1800,24 +1800,24 @@ class TestLaplace(object):
 
 
 class TestPowerlaw(object):
-    @pytest.mark.parametrize("shape,rvs_scale,rvs_loc", [(1, 10, 5),
-                                                         (7, 5, 10),
-                                                         (.5, .2, .5)])
-    def test_fit_MLE_comp_optimzer(self, shape, rvs_loc, rvs_scale):
-        data = stats.powerlaw.rvs(size=1000, a=shape, loc=rvs_loc,
-                                  scale=rvs_scale)
-
+    @pytest.mark.parametrize("shape_f,loc_f,scale_f", (
+        [2, 3, None], [2, None, None], [None, None, None],
+        [2, None, 4.5], [None, None, 4.5], [None, 3, 4.5]))
+    def test_fit_MLE_comp_optimzer_combinations(self, shape_f, loc_f, scale_f):
+        data = stats.powerlaw.rvs(size=1000, a=2, loc=3,
+                                  scale=4.5)
         args = [data, (stats.powerlaw._fitstart(data), )]
         ll = stats.powerlaw._reduce_func(args, {})[1]
 
-        # test that the objective function result of the analytical MLEs is
-        # less than or equal to that of the numerically optimized estimate
-        mle = stats.powerlaw.fit(data)
-        opt = super(type(stats.powerlaw), stats.powerlaw).fit(data)
-        ll_mle = ll(mle, data)
-        ll_opt = ll(opt, data)
-        assert ll_mle < ll_opt or np.allclose(ll_mle, ll_opt,
-                                              atol=1e-15, rtol=1e-15)
+        # build kwds based on which arguments are indicated to be fixed
+        kwds = dict()
+        if shape_f:
+            kwds['f0'] = shape_f
+        if loc_f:
+            kwds['floc'] = loc_f
+        if scale_f:
+            kwds['fscale'] = scale_f
+        _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
 
 
 class TestInvGamma(object):

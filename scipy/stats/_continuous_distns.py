@@ -6295,15 +6295,60 @@ class powerlaw_gen(rv_continuous):
         return 1 - 1.0/a - np.log(a)
 
     def fit(self, data, *args, **kwds):
+        data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                 args, kwds)
+        if floc is not None:
+            # `floc` is fixed, `fshape` and `fscale` may be deterermined
+            # through analytical equations
+            if fscale is None:
+                fscale = np.max(data) - floc
+            if fshape is None:
+                fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
+            return fshape, floc, fscale
 
-        shape = kwds.pop('fix_a', kwds.pop('f0', None))
+        elif fscale is not None:
+            # `floc` can be determined by reording the equation for `fscale`
+            floc = np.max(data) - fscale
+            if fshape is None:
+                fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
+            return fshape, floc, fscale
 
-        if shape is None:
-            data = np.asarray(data)
-            shape =  len(data) / np.sum(np.log(data))
-            kwds['fix_a'] = shape
+        elif fshape is not None:
+            # only fshape is fixed, optimize over `floc` using dependent
+            # `fscale` equation and compare resulting calculation of `fshape`
+            # to actual `fshape`
+            def func(floc):
+                fscale = np.max(data) - floc
+                # subtract actual `fshape` to calculated `fshape`
+                return (- len(data) / (np.sum(np.log((data - floc) /
+                                                     fscale)))) - fshape
+            s_max = np.max(data) - np.min(data)
+            u_min = np.min(data) - s_max
+            u_max = np.min(data) - 0.0000001  # epsilon less than np.min(data)
+            floc = optimize.root_scalar(func, bracket=[u_min, u_max]).root
+            fscale = np.max(data) - floc
+            return fshape, floc, fscale
 
-        return super(powerlaw_gen, self).fit(data, *args, **kwds)
+        else:
+            # all parameters free, optimize over floc using dependent equations
+            # for fscale and fshape with the log-likelihood equation
+            def func(floc):
+                ndata = len(data)
+                # according to arguments above
+                fscale = np.max(data) - floc
+                fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
+                # partial derivative of LL w.r.t. loc and scale must be equal
+                res = ((fshape - 1) * np.sum(1 / (floc - data)) +
+                       ndata * fshape / fscale)
+                return res
+
+            s_max = np.max(data) - np.min(data)
+            u_min = np.min(data) - s_max
+            u_max = np.min(data) - 0.0000001  # epsilon less than np.min(data)
+            floc = optimize.root_scalar(func, bracket=[u_min, u_max]).root
+            fscale = np.max(data) - floc
+            fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
+            return fshape, floc, fscale
 
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
