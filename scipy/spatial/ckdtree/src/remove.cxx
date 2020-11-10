@@ -8,7 +8,7 @@ find(ckdtree *self, ckdtreenode *actual_node, const ckdtree_intp_t data_index, s
     const double *point = self->raw_data + self->m*data_index;
 
     while(actual_node->split_dim != -1){
-         if(*(point + actual_node->split_dim) < actual_node->split)
+         if(point[actual_node->split_dim] < actual_node->split)
              actual_node = actual_node->less;
          else
              actual_node = actual_node->greater;
