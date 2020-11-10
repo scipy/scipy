@@ -346,7 +346,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def gmean(a, axis=0, dtype=None):
+def gmean(a, axis=0, dtype=None, weights=None):
     """
     Compute the geometric mean along the specified axis.
 
@@ -366,6 +366,9 @@ def gmean(a, axis=0, dtype=None):
         dtype of a, unless a has an integer dtype with a precision less than
         that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -408,7 +411,21 @@ def gmean(a, axis=0, dtype=None):
             log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
-    return np.exp(log_a.mean(axis=axis))
+
+    if weights:
+        if not isinstance(weights, np.ndarray):
+            # if not an ndarray object attempt to convert it
+            weights = np.array(weights, dtype=dtype)
+        elif dtype:
+            # Must change the default dtype allowing array type
+            if isinstance(a, np.ma.MaskedArray):
+                weights = np.ma.asarray(weights, dtype=dtype)
+            else:
+                weights = np.asarray(weights, dtype=dtype)
+
+        assert weights.shape == log_a.shape, "Shape of a and weights must be identical."
+
+    return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
 def hmean(a, axis=0, dtype=None):
