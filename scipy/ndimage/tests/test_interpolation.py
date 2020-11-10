@@ -1,4 +1,3 @@
-import math
 import sys
 
 import numpy
@@ -19,8 +18,9 @@ class TestNdimageInterpolation:
         'mode, expected_value',
         [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
          ('wrap', [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5]),
-         # ('reflect', TODO),
+         ('grid-wrap', [1.5, 2.5, 3.5, 2.5, 1.5, 2.5, 3.5]),
          ('mirror', [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5]),
+         ('reflect', [1.5, 2.5, 3.5, 4, 3.5, 2.5, 1.5]),
          ('constant', [1.5, 2.5, 3.5, -1, -1, -1, -1])]
     )
     def test_boundaries(self, mode, expected_value):
@@ -37,8 +37,9 @@ class TestNdimageInterpolation:
         'mode, expected_value',
         [('nearest', [1, 1, 2, 3]),
          ('wrap', [3, 1, 2, 3]),
-         # ('reflect', TODO),
+         ('grid-wrap', [4, 1, 2, 3]),
          ('mirror', [2, 1, 2, 3]),
+         ('reflect', [1, 1, 2, 3]),
          ('constant', [-1, 1, 2, 3])]
     )
     def test_boundaries2(self, mode, expected_value):
@@ -50,6 +51,32 @@ class TestNdimageInterpolation:
             expected_value,
             ndimage.geometric_transform(data, shift, cval=-1, mode=mode,
                                         output_shape=(4,)))
+
+    @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
+                                      'grid-wrap'])
+    @pytest.mark.parametrize('order', range(6))
+    def test_boundary_spline_accuracy(self, mode, order):
+        """Tests based on examples from gh-2640"""
+        data = numpy.array([-2, -1, 0, 1, 2], float)
+        x = numpy.linspace(-6, 10, num=1000)
+        y = ndimage.map_coordinates(data, [x], order=order, mode=mode)
+
+        # compute expected value using explicit padding via numpy.pad
+        npad = 100
+        pad_mode = {
+            'mirror': 'reflect',
+            'reflect': 'symmetric',
+            'grid-mirror': 'symmetric',
+            'grid-wrap': 'wrap',
+        }.get(mode)
+        padded = numpy.pad(data, npad, mode=pad_mode)
+        expected = ndimage.map_coordinates(padded, [npad + x], order=order,
+                                           mode=mode)
+
+        if mode in ['reflect', 'grid-mirror'] and order > 1:
+            numpy.testing.assert_allclose(y, expected, rtol=1e-4, atol=1e-13)
+        else:
+            numpy.testing.assert_allclose(y, expected, atol=1e-13)
 
     @pytest.mark.parametrize('order', range(2, 6))
     @pytest.mark.parametrize('dtype', types)
@@ -767,6 +794,34 @@ class TestNdimageInterpolation:
         assert_(out.dtype is numpy.dtype('f'))
         assert_array_almost_equal(out, [1])
 
+    @pytest.mark.parametrize('shift',
+                             [(1, 0), (0, 1), (-1, 1), (3, -5), (2, 7)])
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform_shift_via_grid_wrap(self, shift, order):
+        # For mode 'grid-wrap', integer shifts should match numpy.roll
+        x = numpy.array([[0, 1],
+                         [2, 3]])
+        affine = numpy.zeros((2, 3))
+        affine[:2, :2] = numpy.eye(2)
+        affine[:, 2] = shift
+        assert_array_almost_equal(
+            ndimage.affine_transform(x, affine, mode='grid-wrap', order=order),
+            numpy.roll(x, shift, axis=(0, 1)),
+        )
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_affine_transform_shift_reflect(self, order):
+        # shift by x.shape results in reflection
+        x = numpy.array([[0, 1, 2],
+                         [3, 4, 5]])
+        affine = numpy.zeros((2, 3))
+        affine[:2, :2] = numpy.eye(2)
+        affine[:, 2] = x.shape
+        assert_array_almost_equal(
+            ndimage.affine_transform(x, affine, mode='reflect', order=order),
+            x[::-1, ::-1],
+        )
+
     @pytest.mark.parametrize('order', range(0, 6))
     def test_shift01(self, order):
         data = numpy.array([1])
@@ -845,6 +900,28 @@ class TestNdimageInterpolation:
                                         [0, 4, 1, 3],
                                         [0, 7, 6, 8]])
 
+    @pytest.mark.parametrize('shift',
+                             [(1, 0), (0, 1), (-1, 1), (3, -5), (2, 7)])
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift_grid_wrap(self, shift, order):
+        # For mode 'grid-wrap', integer shifts should match numpy.roll
+        x = numpy.array([[0, 1],
+                         [2, 3]])
+        assert_array_almost_equal(
+            ndimage.shift(x, shift, mode='grid-wrap', order=order),
+            numpy.roll(x, shift, axis=(0, 1)),
+        )
+
+    @pytest.mark.parametrize('order', range(0, 6))
+    def test_shift_reflect(self, order):
+        # shift by x.shape results in reflection
+        x = numpy.array([[0, 1, 2],
+                         [3, 4, 5]])
+        assert_array_almost_equal(
+            ndimage.shift(x, x.shape, mode='reflect', order=order),
+            x[::-1, ::-1],
+        )
+
     @pytest.mark.parametrize('order', range(0, 6))
     def test_zoom1(self, order):
         for z in [2, [2, 2]]:
@@ -902,6 +979,18 @@ class TestNdimageInterpolation:
         zoom = (4.0 / 3, 15.0 / 11, 29.0 / 25)
         out = ndimage.zoom(arr, zoom)
         assert_array_equal(out.shape, (4, 15, 29))
+
+    @pytest.mark.parametrize('zoom', [(1, 1), (8, 2), (8, 8)])
+    @pytest.mark.parametrize('mode', ['nearest', 'constant', 'wrap', 'reflect',
+                                      'mirror', 'grid-wrap', 'grid-mirror'])
+    def test_zoom_by_int_order0(self, zoom, mode):
+        # order 0 zoom should be the same as replication via numpy.kron
+        x = numpy.array([[0, 1],
+                         [2, 3]], dtype=float)
+        assert_array_almost_equal(
+            ndimage.zoom(x, zoom, order=0, mode=mode),
+            numpy.kron(x, numpy.ones(zoom))
+        )
 
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate01(self, order):

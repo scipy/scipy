@@ -37,7 +37,8 @@ _mode_reflect_doc = (
 
     'reflect' (`d c b a | a b c d | d c b a`)
         The input is extended by reflecting about the edge of the last
-        pixel.
+        pixel. This mode is also sometimes referred to as half-sample
+        symmetric.
 
     'constant' (`k k k k | a b c d | k k k k`)
         The input is extended by filling all values beyond the edge with
@@ -48,15 +49,63 @@ _mode_reflect_doc = (
 
     'mirror' (`d c b | a b c d | c b a`)
         The input is extended by reflecting about the center of the last
-        pixel.
+        pixel. This mode is also sometimes referred to as whole-sample
+        symmetric.
 
     'wrap' (`a b c d | a b c d | a b c d`)
-        The input is extended by wrapping around to the opposite edge.""")
-_mode_constant_doc = (
-    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'constant'"))
-_mode_mirror_doc = (
-    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'mirror'"))
-assert _mode_reflect_doc != _mode_constant_doc, 'Default not replaced'
+        The input is extended by wrapping around to the opposite edge.
+
+    For consistency with the interpolation functions, the following mode
+    names can also be used:
+
+    'grid-mirror'
+        This is a synonym for 'reflect'.
+
+    'grid-wrap'
+        This is a synonym for 'wrap'.""")
+
+_mode_interp_constant_doc = (
+"""mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
+    The `mode` parameter determines how the input array is extended
+    beyond its boundaries. Default is 'constant'. Behavior for each valid
+    value is as follows (see additional plots and details on
+    :ref:`boundary modes <ndimage-interpolation-modes>`):
+
+    'reflect' (`d c b a | a b c d | d c b a`)
+        The input is extended by reflecting about the edge of the last
+        pixel. This mode is also sometimes referred to as half-sample
+        symmetric.
+
+    'grid-mirror'
+        This is a synonym for 'reflect'.
+
+    'constant' (`k k k k | a b c d | k k k k`)
+        The input is extended by filling all values beyond the edge with
+        the same constant value, defined by the `cval` parameter. No
+        interpolation is performed beyond the edges of the input.
+
+    'nearest' (`a a a a | a b c d | d d d d`)
+        The input is extended by replicating the last pixel.
+
+    'mirror' (`d c b | a b c d | c b a`)
+        The input is extended by reflecting about the center of the last
+        pixel. This mode is also sometimes referred to as whole-sample
+        symmetric.
+
+    'grid-wrap' (`a b c d | a b c d | a b c d`)
+        The input is extended by wrapping around to the opposite edge.
+
+    'wrap' (`d b c d | a b c d | b c a b`)
+        The input is extended by wrapping around to the opposite edge, but in a
+        way such that the last point and initial point exactly overlap. In this
+        case it is not well defined which sample will be chosen at the point of
+        overlap.""")
+_mode_interp_mirror_doc = (
+    _mode_interp_constant_doc.replace("Default is 'constant'",
+                                      "Default is 'mirror'")
+)
+assert _mode_interp_mirror_doc != _mode_interp_constant_doc, \
+    'Default not replaced'
 
 _mode_multiple_doc = (
 """mode : str or sequence, optional
@@ -68,7 +117,8 @@ _mode_multiple_doc = (
 
     'reflect' (`d c b a | a b c d | d c b a`)
         The input is extended by reflecting about the edge of the last
-        pixel.
+        pixel. This mode is also sometimes referred to as half-sample
+        symmetric.
 
     'constant' (`k k k k | a b c d | k k k k`)
         The input is extended by filling all values beyond the edge with
@@ -79,10 +129,20 @@ _mode_multiple_doc = (
 
     'mirror' (`d c b | a b c d | c b a`)
         The input is extended by reflecting about the center of the last
-        pixel.
+        pixel. This mode is also sometimes referred to as whole-sample
+        symmetric.
 
     'wrap' (`a b c d | a b c d | a b c d`)
-        The input is extended by wrapping around to the opposite edge.""")
+        The input is extended by wrapping around to the opposite edge.
+
+    For consistency with the interpolation functions, the following mode
+    names can also be used:
+
+    'grid-mirror'
+        This is a synonym for 'reflect'.
+
+    'grid-wrap'
+        This is a synonym for 'wrap'.""")
 _cval_doc = (
 """cval : scalar, optional
     Value to fill past edges of input if `mode` is 'constant'. Default
@@ -121,8 +181,8 @@ docdict = {
     'axis': _axis_doc,
     'output': _output_doc,
     'size_foot': _size_foot_doc,
-    'mode_constant': _mode_constant_doc,
-    'mode_mirror': _mode_mirror_doc,
+    'mode_interp_constant': _mode_interp_constant_doc,
+    'mode_interp_mirror': _mode_interp_mirror_doc,
     'mode_reflect': _mode_reflect_doc,
     'mode_multiple': _mode_multiple_doc,
     'cval': _cval_doc,
