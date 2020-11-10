@@ -200,8 +200,8 @@ class TestFAQ(QAPCommonTests):
         # test padded qap
         n = 50
         p = 0.4
-        G1 = _er_matrix(n, p)
-        G2 = G1[: (n - 1), : (n - 1)]  # remove two nodes
+        G1 = _er_matrix(n, p)  # generate an Erdos-Renyi graph
+        G2 = G1[: -1, : -1]  # remove one node
         res = quadratic_assignment(G1, G2,
                                    options={'maximize': True})
 
@@ -443,7 +443,10 @@ def _doubly_stochastic(P, tol=1e-3):
 
 
 def _er_matrix(n, p):
+    # generate an undirected Erdos-Renyi graph
+    # n specifies number of nodes
+    # p specifies the probability an edge exists between any two nodes
     x = np.triu(np.random.rand(n, n))
     m = x + x.T
-    m[range(n), range(n)] = 0
+    np.fill_diagonal(m, 0)
     return (m < p).astype(int)

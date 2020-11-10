@@ -520,12 +520,8 @@ def _quadratic_assignment_faq(A, B,
 
 
 def _adj_pad(A, B, method):
-    # pads the matrix with less nodes such that A & B are same size
-    # schemes according to section 2.5 of [2]
-    def pad(X, n):
-        X_pad = np.zeros((n[1], n[1]))
-        X_pad[: n[0], : n[0]] = X
-        return X_pad
+    # pads the smaller of A and B to be the same size as the larger
+    # padding schemes according to section 2.5 of [2]
 
     A_n = A.shape[0]
     B_n = B.shape[0]
@@ -535,9 +531,9 @@ def _adj_pad(A, B, method):
         B = 2 * B - np.ones((B_n, B_n))
 
     if A.shape[0] == n[0]:
-        A = pad(A, n)
+        A = np.pad(A, (0, n[1]-n[0]))
     else:
-        B = pad(B, n)
+        B = np.pad(B, (0, n[1]-n[0]))
 
     return A, B
 
