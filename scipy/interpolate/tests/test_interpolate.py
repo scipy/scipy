@@ -300,6 +300,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10(1.5), np.array([1.5]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]),)
 
@@ -308,6 +309,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='nearest')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 6., 6.]),)
 
@@ -327,8 +329,9 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='nearest-up')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
-                                np.array([2., 6., 6.]),)
+                                  np.array([2., 6., 6.]),)
 
         # test fill_value="extrapolate"
         extrapolator = interp1d(self.x10, self.y10, kind='nearest-up',
@@ -346,6 +349,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='previous')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]),)
 
@@ -365,6 +369,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='next')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(2.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([3., 6., 6.]),)
 
@@ -384,6 +389,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]))
 
