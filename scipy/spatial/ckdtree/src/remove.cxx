@@ -52,10 +52,9 @@ remove(ckdtree *self, const ckdtree_intp_t data_index){
             }
         }
 
-        std::vector<ckdtreenode>::iterator it = self->tree_buffer->begin();
-        for (ckdtreenode &node : self->tree_buffer) {
-            it->start_idx -= (it->start_idx > found_idx);
-            it->end_idx -= (it->end_idx > found_idx);
+        for (ckdtreenode &node : *(self->tree_buffer)) {
+            node.start_idx -= (node.start_idx > found_idx);
+            node.end_idx -= (node.end_idx > found_idx);
         }
     }
 
