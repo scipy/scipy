@@ -971,7 +971,6 @@ class TestNdimageInterpolation:
         )
 
     def test_shift_grid_constant_order1(self):
-        # shift by x.shape results in reflection
         x = numpy.array([[1, 2, 3],
                          [4, 5, 6]], dtype=float)
         expected_result = numpy.array([[0.25, 0.75, 1.25],
