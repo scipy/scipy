@@ -29,34 +29,46 @@ def linregress(x, y=None):
 
     Returns
     -------
-    slope : float
-        Slope of the regression line.
-    intercept : float
-        Intercept of the regression line.
-    rvalue : float
-        Correlation coefficient.
-    pvalue : float
-        Two-sided p-value for a hypothesis test whose null hypothesis is
-        that the slope is zero, using Wald Test with t-distribution of
-        the test statistic.
-    stderr : float
-        Standard error of the estimated slope (gradient), under the assumption
-        of residual normality.
-    intercept_stderr : float
-        Standard error of the estimated intercept, under the assumption
-        of residual normality.
+    result : ``LinregressResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Slope of the regression line.
+        intercept : float
+            Intercept of the regression line.
+        rvalue : float
+            Correlation coefficient.
+        pvalue : float
+            Two-sided p-value for a hypothesis test whose null hypothesis is
+            that the slope is zero, using Wald Test with t-distribution of
+            the test statistic.
+        stderr : float
+            Standard error of the estimated slope (gradient), under the
+            assumption of residual normality.
+        intercept_stderr : float
+            Standard error of the estimated intercept, under the assumption
+            of residual normality.
+
+    See Also
     --------
-    :func:`scipy.optimize.curve_fit` : Use non-linear
-     least squares to fit a function to data.
-    :func:`scipy.optimize.leastsq` : Minimize the sum of
-     squares of a set of equations.
+    scipy.optimize.curve_fit :
+        Use non-linear least squares to fit a function to data.
+    scipy.optimize.leastsq :
+        Minimize the sum of squares of a set of equations.
 
     Notes
     -----
     Missing values are considered pair-wise: if a value is missing in `x`,
     the corresponding value in `y` is masked.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
+    ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
+
+        slope, intercept, r, p, se = linregress(x, y)
+
+    With that style, however, the standard error of the intercept is not
+    available.
 
     Examples
     --------
