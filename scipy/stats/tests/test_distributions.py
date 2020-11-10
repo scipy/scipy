@@ -3460,7 +3460,7 @@ class TestNct(object):
         # These expected values were computed with mpmath.
         expected_stats = [2.0000150001562518, 1.0000400011500288]
         assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
-        assert_allclose(nct_stats, expected_stats, rtol=1e-10)
+        assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
 
 class TestRice(object):
