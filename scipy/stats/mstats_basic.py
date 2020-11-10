@@ -50,6 +50,7 @@ from scipy._lib._util import float_factorial
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
+        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -807,13 +808,8 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'stderr'))
-
-
 def linregress(x, y=None):
-    """
+    r"""
     Linear regression calculation
 
     Note that the non-masked version is used, and that this docstring is
@@ -827,9 +823,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError("If only `x` is given as input, "
+                             "it has to be of shape (2, N) or (N, 2), "
+                             f"provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
@@ -842,15 +838,17 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
-                                                                   y.data[~m])
+            result = stats_linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            return None, None, None, None, None
+            result = stats_LinregressResult(slope=None, intercept=None,
+                                            rvalue=None, pvalue=None,
+                                            stderr=None,
+                                            intercept_stderr=None)
     else:
-        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
+        result = stats_linregress(x.data, y.data)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return result
 
 
 def theilslopes(y, x=None, alpha=0.95):
