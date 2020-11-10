@@ -1,14 +1,52 @@
 
+import operator
 from collections import namedtuple
 import numpy as np
 from scipy.special import ndtri
+
+
+def _validate_int(n, bound, name):
+    msg = f'{name} must be an integer not less than {bound}, but got {n!r}'
+    try:
+        n = operator.index(n)
+    except TypeError:
+        raise TypeError(msg) from None
+    if n < bound:
+        raise ValueError(msg)
+    return n
 
 
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 
 class RelativeRiskResult:
+    """
+    Result of scipy.stats.relative_risk.
 
+    Attributes
+    ----------
+    exposed_cases : int
+        The number of "cases" (i.e. occurrence of disease or other event
+        of interest) among the sample of "exposed" individuals.
+    exposed_total : int
+        The total number of "exposed" individuals in the sample.
+    control_cases : int
+        The number of "cases" among the sample of "control" or non-exposed
+        individuals.
+    control_total : int
+        The total number of "control" individuals in the sample.
+    relative_risk : float
+        This is::
+
+            (exposed_cases/exposed_total) / (control_cases/control_total)
+
+    Methods
+    -------
+    confidence_interval(confidence_level=0.95)
+        Compute the confidence interval of the relative risk for a given
+        confidence level.
+
+    """
     def __init__(self, exposed_cases, exposed_total,
                  control_cases, control_total,
                  relative_risk):
@@ -62,9 +100,23 @@ class RelativeRiskResult:
             raise ValueError('confidence_level must be in the interval '
                              '[0, 1].')
 
+        # Handle edge cases where either exposed_cases or control_cases
+        # is zero.  We follow the convention of the R function riskratio
+        # from the epitools library.
+        if self.exposed_cases == 0 and self.control_cases == 0:
+            # relative risk is nan.
+            return ConfidenceInterval(low=np.nan, high=np.nan)
+        elif self.exposed_cases == 0:
+            # relative risk is 0.
+            return ConfidenceInterval(low=0.0, high=np.nan)
+        elif self.control_cases == 0:
+            # relative risk is inf
+            return ConfidenceInterval(low=np.nan, high=np.inf)
+
         alpha = 1 - confidence_level
         z = ndtri(1 - alpha/2)
         rr = self.relative_risk
+
         # Estimate of the variance of log(rr) is
         # var(log(rr)) = 1/exposed_cases - 1/exposed_total +
         #                1/control_cases - 1/control_total
@@ -92,15 +144,15 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
 
     Parameters
     ----------
-    exposed_cases : int
+    exposed_cases : nonnegative int
         The number of "cases" (i.e. occurrence of disease or other event
         of interest) among the sample of "exposed" individuals.
-    exposed_total : int
+    exposed_total : positive int
         The total number of "exposed" individuals in the sample.
-    control_cases : int
+    control_cases : nonnegative int
         The number of "cases" among the sample of "control" or non-exposed
         individuals.
-    control_total : int
+    control_total : positive int
         The total number of "control" individuals in the sample.
 
     Returns
@@ -177,21 +229,32 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     The interval does not contain 1, so the data supports the statement
     that high CAT is associated with greater risk of CHD.
     """
-    # This is a trivial calculation.  The nontrivial part is in the
+    # Relative risk is a trivial calculation.  The nontrivial part is in the
     # `confidence_interval` method of the RelativeRiskResult class.
-    if ((exposed_cases == 0 and exposed_total == 0) or
-            (control_cases == 0 and control_total == 0) or
-            (exposed_cases == 0 and control_cases == 0)):
+
+    exposed_cases = _validate_int(exposed_cases, 0, "exposed_cases")
+    exposed_total = _validate_int(exposed_total, 1, "exposed_total")
+    control_cases = _validate_int(control_cases, 0, "control_cases")
+    control_total = _validate_int(control_total, 1, "control_total")
+
+    if exposed_cases > exposed_total:
+        raise ValueError('exposed_cases must not exceed exposed_total.')
+    if control_cases > control_total:
+        raise ValueError('control_cases must not exceed control_total.')
+
+    if exposed_cases == 0 and control_cases == 0:
+        # relative risk is 0/0.
         rr = np.nan
+    elif exposed_cases == 0:
+        # relative risk is 0/nonzero
+        rr = 0.0
+    elif control_cases == 0:
+        # relative risk is nonzero/0.
+        rr = np.inf
     else:
-        if exposed_cases == 0 and control_cases > 0:
-            rr = 0.0
-        elif exposed_cases > 0 and control_cases == 0:
-            rr = np.inf
-        else:
-            p1 = exposed_cases / exposed_total
-            p2 = control_cases / control_total
-            rr = p1 / p2
+        p1 = exposed_cases / exposed_total
+        p2 = control_cases / control_total
+        rr = p1 / p2
     return RelativeRiskResult(exposed_cases, exposed_total,
                               control_cases, control_total,
                               relative_risk=rr)
