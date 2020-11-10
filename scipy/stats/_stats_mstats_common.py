@@ -226,8 +226,8 @@ def theilslopes(y, x=None, alpha=0.95):
 
     References
     ----------
-    .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
-           J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on
+           Kendall's tau", J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
     .. [2] H. Theil, "A rank-invariant method of linear and polynomial
            regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
@@ -273,7 +273,8 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -417,7 +418,8 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
 
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y
