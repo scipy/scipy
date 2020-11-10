@@ -531,9 +531,9 @@ def _adj_pad(A, B, method):
         B = 2 * B - np.ones((B_n, B_n))
 
     if A.shape[0] == n[0]:
-        A = np.pad(A, (0, n[1]-n[0]))
+        A = np.pad(A, (0, n[1]-n[0]), 'constant')
     else:
-        B = np.pad(B, (0, n[1]-n[0]))
+        B = np.pad(B, (0, n[1]-n[0]), 'constant')
 
     return A, B
 
