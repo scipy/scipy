@@ -145,7 +145,7 @@ def boxcar(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.boxcar(51)
+    >>> window = signal.windows.boxcar(51)
     >>> plt.plot(window)
     >>> plt.title("Boxcar window")
     >>> plt.ylabel("Amplitude")
@@ -202,7 +202,7 @@ def triang(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.triang(51)
+    >>> window = signal.windows.triang(51)
     >>> plt.plot(window)
     >>> plt.title("Triangular window")
     >>> plt.ylabel("Amplitude")
@@ -267,7 +267,7 @@ def parzen(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.parzen(51)
+    >>> window = signal.windows.parzen(51)
     >>> plt.plot(window)
     >>> plt.title("Parzen window")
     >>> plt.ylabel("Amplitude")
@@ -326,7 +326,7 @@ def bohman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bohman(51)
+    >>> window = signal.windows.bohman(51)
     >>> plt.plot(window)
     >>> plt.title("Bohman window")
     >>> plt.ylabel("Amplitude")
@@ -417,7 +417,7 @@ def blackman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackman(51)
+    >>> window = signal.windows.blackman(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman window")
     >>> plt.ylabel("Amplitude")
@@ -478,7 +478,7 @@ def nuttall(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.nuttall(51)
+    >>> window = signal.windows.nuttall(51)
     >>> plt.plot(window)
     >>> plt.title("Nuttall window")
     >>> plt.ylabel("Amplitude")
@@ -525,7 +525,7 @@ def blackmanharris(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackmanharris(51)
+    >>> window = signal.windows.blackmanharris(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman-Harris window")
     >>> plt.ylabel("Amplitude")
@@ -586,7 +586,7 @@ def flattop(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.flattop(51)
+    >>> window = signal.windows.flattop(51)
     >>> plt.plot(window)
     >>> plt.title("Flat top window")
     >>> plt.ylabel("Amplitude")
@@ -676,7 +676,7 @@ def bartlett(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bartlett(51)
+    >>> window = signal.windows.bartlett(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett window")
     >>> plt.ylabel("Amplitude")
@@ -765,7 +765,7 @@ def hann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hann(51)
+    >>> window = signal.windows.hann(51)
     >>> plt.plot(window)
     >>> plt.title("Hann window")
     >>> plt.ylabel("Amplitude")
@@ -832,7 +832,7 @@ def tukey(M, alpha=0.5, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.tukey(51)
+    >>> window = signal.windows.tukey(51)
     >>> plt.plot(window)
     >>> plt.title("Tukey window")
     >>> plt.ylabel("Amplitude")
@@ -902,7 +902,7 @@ def barthann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.barthann(51)
+    >>> window = signal.windows.barthann(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett-Hann window")
     >>> plt.ylabel("Amplitude")
@@ -1074,7 +1074,7 @@ def hamming(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hamming(51)
+    >>> window = signal.windows.hamming(51)
     >>> plt.plot(window)
     >>> plt.title("Hamming window")
     >>> plt.ylabel("Amplitude")
@@ -1183,7 +1183,7 @@ def kaiser(M, beta, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.kaiser(51, beta=14)
+    >>> window = signal.windows.kaiser(51, beta=14)
     >>> plt.plot(window)
     >>> plt.title(r"Kaiser window ($\beta$=14)")
     >>> plt.ylabel("Amplitude")
@@ -1248,7 +1248,7 @@ def gaussian(M, std, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.gaussian(51, std=7)
+    >>> window = signal.windows.gaussian(51, std=7)
     >>> plt.plot(window)
     >>> plt.title(r"Gaussian window ($\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1318,7 +1318,7 @@ def general_gaussian(M, p, sig, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.general_gaussian(51, p=1.5, sig=7)
+    >>> window = signal.windows.general_gaussian(51, p=1.5, sig=7)
     >>> plt.plot(window)
     >>> plt.title(r"Generalized Gaussian window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1415,7 +1415,7 @@ def chebwin(M, at, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.chebwin(51, at=100)
+    >>> window = signal.windows.chebwin(51, at=100)
     >>> plt.plot(window)
     >>> plt.title("Dolph-Chebyshev window (100 dB)")
     >>> plt.ylabel("Amplitude")
@@ -1505,7 +1505,7 @@ def cosine(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.cosine(51)
+    >>> window = signal.windows.cosine(51)
     >>> plt.plot(window)
     >>> plt.title("Cosine window")
     >>> plt.ylabel("Amplitude")
@@ -1580,7 +1580,7 @@ def exponential(M, center=None, tau=1., sym=True):
 
     >>> M = 51
     >>> tau = 3.0
-    >>> window = signal.exponential(M, tau=tau)
+    >>> window = signal.windows.exponential(M, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential Window (tau=3.0)")
     >>> plt.ylabel("Amplitude")
@@ -1599,7 +1599,7 @@ def exponential(M, center=None, tau=1., sym=True):
     This function can also generate non-symmetric windows:
 
     >>> tau2 = -(M-1) / np.log(0.01)
-    >>> window2 = signal.exponential(M, 0, tau2, False)
+    >>> window2 = signal.windows.exponential(M, 0, tau2, False)
     >>> plt.figure()
     >>> plt.plot(window2)
     >>> plt.ylabel("Amplitude")

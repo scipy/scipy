@@ -837,29 +837,29 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     Confirm COLA condition for rectangular window of 75% (3/4) overlap:
 
-    >>> signal.check_COLA(signal.boxcar(100), 100, 75)
+    >>> signal.check_COLA(signal.windows.boxcar(100), 100, 75)
     True
 
     COLA is not true for 25% (1/4) overlap, though:
 
-    >>> signal.check_COLA(signal.boxcar(100), 100, 25)
+    >>> signal.check_COLA(signal.windows.boxcar(100), 100, 25)
     False
 
     "Symmetrical" Hann window (for filter design) is not COLA:
 
-    >>> signal.check_COLA(signal.hann(120, sym=True), 120, 60)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=True), 120, 60)
     False
 
     "Periodic" or "DFT-even" Hann window (for FFT analysis) is COLA for
     overlap of 1/2, 2/3, 3/4, etc.:
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 60)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 60)
     True
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 80)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 80)
     True
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 90)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 90)
     True
 
     """
@@ -958,17 +958,17 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
     Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
 
-    >>> signal.check_NOLA(signal.boxcar(100), 100, 75)
+    >>> signal.check_NOLA(signal.windows.boxcar(100), 100, 75)
     True
 
     NOLA is also true for 25% (1/4) overlap:
 
-    >>> signal.check_NOLA(signal.boxcar(100), 100, 25)
+    >>> signal.check_NOLA(signal.windows.boxcar(100), 100, 25)
     True
 
     "Symmetrical" Hann window (for filter design) is also NOLA:
 
-    >>> signal.check_NOLA(signal.hann(120, sym=True), 120, 60)
+    >>> signal.check_NOLA(signal.windows.hann(120, sym=True), 120, 60)
     True
 
     As long as there is overlap, it takes quite a pathological window to fail
@@ -982,11 +982,11 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     If there is not enough overlap, a window with zeros at the ends will not
     work:
 
-    >>> signal.check_NOLA(signal.hann(64), 64, 0)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 0)
     False
-    >>> signal.check_NOLA(signal.hann(64), 64, 1)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 1)
     False
-    >>> signal.check_NOLA(signal.hann(64), 64, 2)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 2)
     True
     """
 
