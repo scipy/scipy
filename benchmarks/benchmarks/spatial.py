@@ -294,9 +294,9 @@ class CNeighbors(Benchmark):
 class Remove(Benchmark):
     params = [
         [
-          (2, 10000),
-          (8, 10000),
-          (16, 10000)
+          (2, 20000),
+          (8, 20000),
+          (16, 20000)
         ],
         BOX_SIZES, LEAF_SIZES
     ]
