@@ -310,7 +310,7 @@ class Remove(Benchmark):
         """
         Time to remove one point from cKDTree.
         """
-        self.T.remove(self.T.data[0, :])
+        self.T.remove(0)
 
 
 def generate_spherical_points(num_points):
