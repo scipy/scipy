@@ -27,7 +27,7 @@ for mode, (ax0, ax1, ax2) in zip(modes, axes):
     y3 = ndimage.map_coordinates(img, [x], order=3, mode=mode)
     ax2.scatter(np.arange(img.size), img)
     ax2.plot(x, y3, '-')
-    ax2.set_title(f'mode={mode}, order=03')
+    ax2.set_title(f'mode={mode}, order=3')
 
     sz = len(img)
     for ax in (ax0, ax1, ax2):
