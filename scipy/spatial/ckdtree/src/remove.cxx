@@ -25,6 +25,12 @@ find(ckdtree *self, ckdtreenode *actual_node, const ckdtree_intp_t data_index, s
     return -1;
 }
 
+int subtree_size(ckdtreenode *root){
+    if(root==0)
+        return 0;
+    return 1 + subtree_size(root->greater) + subtree_size(root->less);
+}
+
 bool
 remove(ckdtree *self, const ckdtree_intp_t data_index){
     std::vector<ckdtreenode *> node_path;
@@ -43,11 +49,12 @@ remove(ckdtree *self, const ckdtree_intp_t data_index){
             (*path_it)->children--;
 
             if((*path_it)->children <= self->leafsize){ //subtree removal
+                 self->size -= subtree_size(*path_it) - 1;
+
                 (*path_it)->split_dim = -1;
                 (*path_it)->split = 0;
                 (*path_it)->less = 0;
                 (*path_it)->greater = 0;
-                self->size -= pow(2, node_path.end()-path_it) - 2;
                 break;
             }
         }
