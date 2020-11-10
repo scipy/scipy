@@ -68,7 +68,12 @@ def linregress(x, y=None):
         slope, intercept, r, p, se = linregress(x, y)
 
     With that style, however, the standard error of the intercept is not
-    available.
+    available.  To have access to all the computed values, including the
+    standard error of the intercept, use the return value as an object
+    with attributes, e.g.::
+
+        result = linregress(x, y)
+        print(result.intercept, result.intercept_stderr)
 
     Examples
     --------
