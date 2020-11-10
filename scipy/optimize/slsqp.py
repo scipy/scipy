@@ -21,7 +21,7 @@ from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function, clip_x_for_func,
+                       _prepare_scalar_function, _clip_x_for_func,
                        _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
@@ -377,8 +377,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                                   bounds=new_bounds)
     # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
     # doesn't get sent to the func/grad evaluator.
-    wrapped_fun = clip_x_for_func(sf.fun, new_bounds)
-    wrapped_grad = clip_x_for_func(sf.grad, new_bounds)
+    wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
+    wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)
