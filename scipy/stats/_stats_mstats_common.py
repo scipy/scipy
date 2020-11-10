@@ -90,9 +90,9 @@ def linregress(x, y=None):
     >>> # Two-sided inverse Students t-distribution
     >>> # p - probability, df - degrees of freedom
     >>> from scipy.stats import t
-    >>> tinv = lambda p,df: abs(t.ppf(p/2,df))
+    >>> tinv = lambda p, df: abs(t.ppf(p/2, df))
 
-    >>> ts = tinv(0.05,len(x)-2)
+    >>> ts = tinv(0.05, len(x)-2)
     >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
     slope (95%): 1.944864 +/- 0.950885
     >>> print(f"intercept (95%): {res.intercept:.6f}"
@@ -152,7 +152,7 @@ def linregress(x, y=None):
         intercept_stderr = 0.0
     else:
         df = n - 2  # Number of degrees of freedom
-        # n-2 degrees of freedom because 2 has been used up up
+        # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
