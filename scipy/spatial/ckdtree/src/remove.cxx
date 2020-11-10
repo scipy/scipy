@@ -18,7 +18,7 @@ find(ckdtree *self, ckdtreenode *actual_node, const ckdtree_intp_t data_index, s
      //now actual_node is the node that can contain the point
 
     for(int idx_indices=actual_node->start_idx; idx_indices<actual_node->end_idx; idx_indices++){
-        if(data_index == *(self->raw_indices + idx_indices))
+        if(data_index == self->raw_indices[idx_indices])
             return idx_indices;
     }
 
