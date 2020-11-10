@@ -366,11 +366,19 @@ class ObjectiveFunWrapper(object):
         self.ngev = 0
         # Number of hessian of the objective function if used
         self.nhev = 0
+        # Max number of function evalutation
         self.maxfun = maxfun
+        # Jac function if used
+        self.jac = None
 
     def fun(self, x):
         self.nfev += 1
         return self.func(x, *self.args)
+
+    def get_jac(self):
+        def jac_wrapper(x):
+            return self.jac(x, *self.args)
+        return jac_wrapper
 
 
 class LocalSearchWrapper(object):
@@ -402,6 +410,10 @@ class LocalSearchWrapper(object):
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
+        if 'jac' in self.kwargs:
+            # Make sure jac wrapper is used so that args are passed.
+            func_wrapper.jac = self.kwargs['jac']
+            self.kwargs['jac'] = func_wrapper.get_jac()
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e

@@ -38,6 +38,7 @@ class TestDualAnnealing:
         self.rs = check_random_state(self.seed)
         self.nb_fun_call = 0
         self.ngev = 0
+        self.jac_arg = None
 
     def callback(self, x, f, context):
         # For testing callback mechanism. Should stop for e <= 1 as
@@ -56,9 +57,14 @@ class TestDualAnnealing:
         self.nb_fun_call += 1
         return y
 
+    def rosen_with_args(self, x, args=()):
+        # Wrapping Rosenbrock to take arguments for jac args test
+        return rosen(x)
+
     def rosen_der_wrapper(self, x, args=()):
         self.ngev += 1
-        return rosen_der(x, *args)
+        self.jac_arg = args
+        return rosen_der(x)
 
     def test_visiting_stepping(self):
         lu = list(zip(*self.ld_bounds))
@@ -321,3 +327,13 @@ class TestDualAnnealing:
         rate = 0 if pqv <= 0 else np.exp(np.log(pqv) / (1 - accept_param))
 
         assert_allclose(rate, accept_rate)
+
+    def test_args_passed_to_jac(self):
+        test_args = ((2., ))
+        minimizer_opts = {
+            'jac': self.rosen_der_wrapper,
+        }
+        dual_annealing(self.rosen_with_args, self.ld_bounds,
+            local_search_options=minimizer_opts,
+            seed=self.seed, args=test_args)
+        assert self.jac_arg == test_args[0]
