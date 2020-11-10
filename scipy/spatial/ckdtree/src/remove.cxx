@@ -36,7 +36,7 @@ remove(ckdtree *self, const ckdtree_intp_t data_index){
         self->n--;
 
         for(int i=found_idx; i<self->n; i++)
-            *(self->raw_indices+i) = *(self->raw_indices+i+1);
+            self->raw_indices[i] = self->raw_indices[i+1];
 
         std::vector<ckdtreenode *>::iterator path_it = node_path.begin();
         for(;path_it != node_path.end(); ++path_it){
