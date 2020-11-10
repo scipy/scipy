@@ -12,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import coo_matrix, csc_matrix
+from scipy.sparse import coo_matrix, csc_matrix, diags
 
 
 def fun_zero(t, y):
@@ -1291,3 +1291,136 @@ def test_inital_maxstep():
                                             method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+
+@pytest.mark.parametrize('method', ['Radau'])
+def test_mass_matrix_ODE(method):
+    """ The idea is to test the "mass" option with a simple vector ODE
+    on the array y=(y0,y1,y2,...,yn), which reads:
+      d(y[k])/dt = eigvals[k]*y, with eigvals[k] the k-th system eigenvalue
+      <=> dy/dt = diag(eigvals)*y
+    This simple ODE (no mass matrix) can also be reformulated as a:
+      M*dy/dt = y,  with M=diag(1/eigvals).
+    This allows to verify that the mass matrix implementation is coherent."""
+
+    rtol = atol = 1e-10
+    n = 7  # number of variables
+    eigvals = np.array([float(i)*(-1)**(i) for i in range(1, n+1)])
+    mass = diags(diagonals=(1/eigvals,), offsets=(0,), format='csc')
+
+    # solve both ODEs
+    tf = 1.0  # final time
+    y0 = np.ones((n,))
+    true_solution = y0*np.exp(eigvals*tf)
+    sol_with_mass = solve_ivp(fun=lambda t, x: x, t_span=(0., tf),
+                              y0=y0, max_step=np.inf, rtol=rtol, atol=atol,
+                              jac=None, jac_sparsity=None, method=method,
+                              vectorized=False, first_step=None, mass=mass)
+    sol_without_mass = solve_ivp(fun=lambda t, x: eigvals*x, t_span=(0., tf),
+                                 y0=y0, max_step=np.inf, rtol=rtol, atol=atol,
+                                 jac=None, jac_sparsity=None, method=method,
+                                 vectorized=False, first_step=None, mass=None)
+
+    assert_(sol_without_mass.success,
+            msg=f'solver {method} failed without mass matrix')
+    assert_(sol_with_mass.success,
+            msg=f'solver {method} failed with mass matrix')
+    assert_allclose(sol_without_mass.y[:, -1], true_solution,
+                    rtol=10*max((atol, rtol)),
+                    err_msg='result without option "mass" is wrong')
+    assert_allclose(sol_with_mass.y[:, -1],    true_solution,
+                    rtol=10*max((atol, rtol)),
+                    err_msg='result with option "mass" is wrong')
+    assert_allclose(sol_without_mass.t.size,  sol_with_mass.t.size, rtol=0.05,
+                    err_msg='option "mass" affect number of steps too much')
+
+
+@pytest.mark.parametrize('method', ['Radau'])
+def test_DAE_pendulum(method):
+    """ Test the pendulum system, formulated as a DAE of index 0 to 3.
+    COmpare with the true solution.
+    """
+    import scipy.optimize._numdiff
+    # 1 - setup the model
+    m, r0, g = 1., 1., 9.81  # rod length, mass, gravity
+    theta_0 = np.pi/4  # initial angle
+    theta_dot0 = 0.  # initial angular speed
+    rtol = atol = 1e-6
+    tf = 0.5  # final time
+
+    # 2 - compute true solution (ODE on the angle in polar coordinates)
+    def fun_ode(t, X):
+        theta, theta_dot = X[0], X[1]
+        return np.array([theta_dot,
+                         -g / r0 * np.sin(theta)])
+
+    Xini_ode = np.array([theta_0, theta_dot0])
+    sol_ode = solve_ivp(fun=fun_ode, t_span=(0., tf), y0=Xini_ode,
+                        rtol=1e-12, atol=1e-12, method='DOP853')
+    theta_ode = sol_ode.y[0, :]
+    theta_dot = sol_ode.y[1, :]
+    x_ode = r0 * np.sin(theta_ode)
+    y_ode = -r0 * np.cos(theta_ode)
+    vx_ode = r0 * theta_dot * np.cos(theta_ode)
+    vy_ode = r0 * theta_dot * np.sin(theta_ode)
+    lbda_ode = m * r0 * theta_dot ** 2 + m * g * np.cos(theta_ode)
+    yfinal_ode = np.array([x_ode[-1], y_ode[-1], vx_ode[-1],
+                           vy_ode[-1], lbda_ode[-1]])
+
+    assert_(sol_ode.success,
+            msg='the pendulum ODE solution failed')
+    # 3 - compute DAE solutions
+    x0 = r0 * np.sin(theta_0)
+    y0 = -r0 * np.cos(theta_0)
+    vx0 = r0 * theta_dot0 * np.cos(theta_0)
+    vy0 = r0 * theta_dot0 * np.sin(theta_0)
+    lbda_0 = (m * r0 * theta_dot0 ** 2 + m * g * np.cos(theta_0)) / r0
+    Xini = np.array([x0, y0, vx0, vy0, lbda_0])
+    for chosen_index in range(4):
+        def dae_fun(t, X):
+            x, y, vx, vy, lbda = X[0], X[1], X[2], X[3], X[4]
+            if chosen_index == 3:
+                constraint = x ** 2 + y ** 2 - r0 ** 2
+            elif chosen_index == 2:
+                constraint = x * vx + y * vy
+            elif chosen_index == 1:
+                constraint = lbda * (x ** 2 + y ** 2) / m  \
+                              + g * y - (vx ** 2 + vy ** 2)
+            elif chosen_index == 0:
+                rsq = x ** 2 + y ** 2
+                dvx = -lbda * x / m
+                dvy = -lbda * y / m - g
+                constraint = (1 / m) * (- g * vy / rsq
+                                        + 2 * (vx * dvx + vy * dvy) / rsq
+                                        + (vx ** 2 + vy ** 2 - g * y) *
+                                        (2 * x * vx + 2 * y * vy) / (rsq ** 2))
+            return np.array([vx,
+                             vy,
+                             -x*lbda/m,
+                             -g-(y*lbda)/m,
+                             constraint])
+        mass = np.eye(5)  # mass matrix M
+        if chosen_index > 0:
+            mass[-1, -1] = 0
+        if chosen_index == 3:
+            # test sparse mass matrix
+            mass = csc_matrix(mass)
+
+        # the jacobian is computed via finite-differences
+        def jac_dae(t, x):
+            return scipy.optimize._numdiff.approx_derivative(
+                                    fun=lambda x: dae_fun(t, x),
+                                    x0=x, method='cs',
+                                    rel_step=1e-50)
+
+        sol = solve_ivp(fun=dae_fun, t_span=(0., tf), y0=Xini, max_step=tf/10,
+                        rtol=rtol, atol=atol, jac=jac_dae, jac_sparsity=None,
+                        method=method, vectorized=False, first_step=1e-3,
+                        dense_output=False, mass=mass)
+        assert_(sol.success,
+                msg=f'solver {method} failed for the index-{chosen_index} DAE')
+        assert_(np.linalg.norm((yfinal_ode[:-1] - sol.y[:-1, -1]) /
+                               yfinal_ode[:-1]) < 100 * max((rtol, atol)),
+                msg='The index-{} DAE does not yield correct results'.format(
+                  chosen_index))
+
