@@ -264,7 +264,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     return sf
 
 
-def clip_x_for_func(func, bounds):
+def _clip_x_for_func(func, bounds):
     # ensures that x values sent to func are clipped to bounds
 
     # this is used as a mitigation for gh11403, slsqp/tnc sometimes
