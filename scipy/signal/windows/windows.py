@@ -1699,9 +1699,9 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    # Original text uses a negative sidelobe level parameter and then negates it
-    # in the calculation of B. To keep consistent with other methods we assume
-    # the sidelobe level parameter to be positive.
+    # Original text uses a negative sidelobe level parameter and then negates
+    # it in the calculation of B. To keep consistent with other methods we
+    # assume the sidelobe level parameter to be positive.
     B = 10**(sll / 20)
     A = np.arccosh(B) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
