@@ -1678,7 +1678,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.taylor(51, nbar=20, sll=100, norm=False)
+    >>> window = signal.windows.taylor(51, nbar=20, sll=100, norm=False)
     >>> plt.plot(window)
     >>> plt.title("Taylor window (100 dB)")
     >>> plt.ylabel("Amplitude")
