@@ -6315,16 +6315,17 @@ class powerlaw_gen(rv_continuous):
 
         elif fshape is not None:
             # only fshape is fixed, optimize over `floc` using dependent
-            # `fscale` equation and compare resulting calculation of `fshape`
-            # to actual `fshape`
+            # equation for `fscale` and the fixed shape with the log-likelihood
+            # equation
+            ndata = len(data)
             def func(floc):
                 fscale = np.max(data) - floc
-                # subtract actual `fshape` to calculated `fshape`
-                return (- len(data) / (np.sum(np.log((data - floc) /
-                                                     fscale)))) - fshape
+                return ((fshape - 1) * np.sum(1 / (floc - data)) +
+                              ndata * fshape / fscale)
             s_max = np.max(data) - np.min(data)
             u_min = np.min(data) - s_max
-            u_max = np.min(data) - 0.0000001  # epsilon less than np.min(data)
+            # epsilon less than np.min(data)
+            u_max = (1-np.finfo(float).eps)*np.min(data)
             floc = optimize.root_scalar(func, bracket=[u_min, u_max]).root
             fscale = np.max(data) - floc
             return fshape, floc, fscale
@@ -6332,8 +6333,9 @@ class powerlaw_gen(rv_continuous):
         else:
             # all parameters free, optimize over floc using dependent equations
             # for fscale and fshape with the log-likelihood equation
+            ndata = len(data)
+
             def func(floc):
-                ndata = len(data)
                 # according to arguments above
                 fscale = np.max(data) - floc
                 fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
@@ -6341,10 +6343,10 @@ class powerlaw_gen(rv_continuous):
                 res = ((fshape - 1) * np.sum(1 / (floc - data)) +
                        ndata * fshape / fscale)
                 return res
-
             s_max = np.max(data) - np.min(data)
             u_min = np.min(data) - s_max
-            u_max = np.min(data) - 0.0000001  # epsilon less than np.min(data)
+            # epsilon less than np.min(data)
+            u_max = (1-np.finfo(float).eps)*np.min(data)
             floc = optimize.root_scalar(func, bracket=[u_min, u_max]).root
             fscale = np.max(data) - floc
             fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
