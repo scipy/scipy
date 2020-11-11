@@ -22,12 +22,8 @@ def test_relative_risk(exposed_cases, exposed_total,
 
 
 def test_relative_risk_confidence_interval():
-    exposed_cases = 16
-    exposed_total = 128
-    control_cases = 24
-    control_total = 256
-    result = relative_risk(exposed_cases, exposed_total,
-                           control_cases, control_total)
+    result = relative_risk(exposed_cases=16, exposed_total=128,
+                           control_cases=24, control_total=256)
     rr = result.relative_risk
     ci = result.confidence_interval(confidence_level=0.95)
     # The corresponding calculation in R using the epitools package.
