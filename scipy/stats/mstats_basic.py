@@ -4,9 +4,6 @@ An extension of scipy.stats.stats to support masked arrays
 """
 # Original author (2007): Pierre GF Gerard-Marchant
 
-# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-# TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-
 
 __all__ = ['argstoarray',
            'count_tied_groups',
