@@ -401,11 +401,11 @@ void csr_sort_indices(const I n_row,
  *
  * Output Arguments:
  *   I  Bp[n_col+1] - column pointer
- *   I  Bj[nnz(A)]  - row indices
+ *   I  Bi[nnz(A)]  - row indices
  *   T  Bx[nnz(A)]  - nonzeros
  *
  * Note:
- *   Output arrays Bp, Bj, Bx must be preallocated
+ *   Output arrays Bp, Bi, Bx must be preallocated
  *
  * Note:
  *   Input:  column indices *are not* assumed to be in sorted order
