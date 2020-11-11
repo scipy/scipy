@@ -146,13 +146,17 @@ supported:
 The following synonyms are also supported for consistency with the
 interpolation routines:
 
- ===============   ========================
+ ===============   =========================
      **mode**           **description**
- ===============   ========================
- "grid-constant"   equivalent to "constant"
+ ===============   =========================
+ "grid-constant"   equivalent to "constant"*
  "grid-mirror"     equivalent to "reflect"
  "grid-wrap"       equivalent to "wrap"
- ===============   ========================
+ ===============   =========================
+
+\* "grid-constant" and "constant" are equivalent for filtering operations, but
+have different behavior in interpolation functions. For API consistency, the
+filtering functions accept either name.
 
 The "constant" mode is special since it needs an additional parameter to
 specify the constant value that should be used.
