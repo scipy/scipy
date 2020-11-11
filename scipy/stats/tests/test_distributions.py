@@ -3429,13 +3429,38 @@ class TestNct(object):
 
     def test_nct_inf_moments(self):
         # n-th moment of nct only exists for df > n
+        m, v, s, k = stats.nct.stats(df=0.9, nc=0.3, moments='mvsk')
+        assert_equal([m, v, s, k], [np.nan, np.nan, np.nan, np.nan])
+
         m, v, s, k = stats.nct.stats(df=1.9, nc=0.3, moments='mvsk')
         assert_(np.isfinite(m))
-        assert_equal([v, s, k], [np.inf, np.nan, np.nan])
+        assert_equal([v, s, k], [np.nan, np.nan, np.nan])
 
         m, v, s, k = stats.nct.stats(df=3.1, nc=0.3, moments='mvsk')
         assert_(np.isfinite([m, v, s]).all())
         assert_equal(k, np.nan)
+
+    def test_nct_stats_large_df_values(self):
+        # previously gamma function was used which lost precision at df=345
+        # cf. https://github.com/scipy/scipy/issues/12919 for details
+        nct_mean_df_1000 = stats.nct.mean(1000, 2)
+        nct_stats_df_1000 = stats.nct.stats(1000, 2)
+        # These expected values were computed with mpmath. They were also
+        # verified with the Wolfram Alpha expressions:
+        #     Mean[NoncentralStudentTDistribution[1000, 2]]
+        #     Var[NoncentralStudentTDistribution[1000, 2]]
+        expected_stats_df_1000 = [2.0015015641422464, 1.0040115288163005]
+        assert_allclose(nct_mean_df_1000, expected_stats_df_1000[0],
+                        rtol=1e-10)
+        assert_allclose(nct_stats_df_1000, expected_stats_df_1000,
+                        rtol=1e-10)
+        # and a bigger df value
+        nct_mean = stats.nct.mean(100000, 2)
+        nct_stats = stats.nct.stats(100000, 2)
+        # These expected values were computed with mpmath.
+        expected_stats = [2.0000150001562518, 1.0000400011500288]
+        assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
+        assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
 
 class TestRice(object):
