@@ -407,7 +407,13 @@ def _quadratic_assignment_faq(A, B,
     # ValueError check
     A, B, partial_match = _common_input_validation(A, B, partial_match)
     # pads A and B according to section 2.5 of [2]
+    adopted = False
     if A.shape[0] != B.shape[0]:
+        # store the adjacency matrices to calculate score later
+        if padding == 'adopted':
+            As, Bs = _adj_pad(A, B, 'naive')
+            adopted = True
+
         A, B = _adj_pad(A, B, padding)
 
     msg = None
@@ -514,7 +520,11 @@ def _quadratic_assignment_faq(A, B,
     unshuffled_perm = np.zeros(n, dtype=int)
     unshuffled_perm[perm_A] = perm_B[perm]
 
-    score = _calc_score(A, B, unshuffled_perm)
+    if adopted:
+        score = _calc_score(As, Bs, unshuffled_perm)
+    else:
+        score = _calc_score(A, B, unshuffled_perm)
+
     res = {"col_ind": unshuffled_perm, "fun": score, "nit": n_iter}
     return OptimizeResult(res)
 

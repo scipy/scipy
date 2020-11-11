@@ -446,7 +446,6 @@ def _er_matrix(n, p):
     # generate an undirected Erdos-Renyi graph
     # n specifies number of nodes
     # p specifies the probability an edge exists between any two nodes
-    x = np.triu(np.random.rand(n, n))
+    x = np.triu(np.random.rand(n, n), k=1)
     m = x + x.T
-    np.fill_diagonal(m, 0)
     return (m < p).astype(int)
