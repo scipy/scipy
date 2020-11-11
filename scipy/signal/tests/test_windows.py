@@ -108,22 +108,27 @@ class TestTaylor(object):
         assert_allclose(
             windows.taylor(6, 2, 15),
             np.array([
-                0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416, 0.7504082
+                0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
+                0.7504082
             ])
         )
 
     def test_non_normalized(self):
-        """Test windows of small length that are not normalized to 1. See the
-        documentation for the Taylor window for more information on
+        """Test windows of small length that are not normalized to 1. See
+        the documentation for the Taylor window for more information on
         normalization.
         """
         assert_allclose(
             windows.taylor(5, 2, 15, norm=False),
-            np.array([0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054])
+            np.array([
+                0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
+            ])
         )
         assert_allclose(
             windows.taylor(6, 2, 15, norm=False),
-            np.array([0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793])
+            np.array([
+                0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
+            ])
         )
 
     def test_correctness(self):
@@ -143,9 +148,9 @@ class TestTaylor(object):
         """
         M_win = 1024
         N_fft = 131072
-        # Set norm=False for correctness as the values obtained from the scientific
-        # publication do not normalize the values. Normalizing changes the sidelobe
-        # level from the desired value.
+        # Set norm=False for correctness as the values obtained from the
+        # scientific publication do not normalize the values. Normalizing
+        # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=-35, norm=False, sym=False)
         f = fft(w, N_fft)
         spec = 20 * np.log10(np.abs(f / np.amax(f)))
