@@ -271,12 +271,6 @@ class Radau(OdeSolver):
         Defined the constant mass matrix of the system, with shape (n,n).
         It may be singular, thus defining a problem of the differential-
         algebraic type (DAE), see [1]. The default value is None.
-    newton_tol: float, optional
-        Overrides the Newton tolerance. This parameter should be left to None,
-        as it might strongly affect the performance and/or convergence.
-    constant_dt: boolean, optional
-        If True, the algorithm does not adapt the time step and tries to
-        maintain h = max_step.
 
     Attributes
     ----------
