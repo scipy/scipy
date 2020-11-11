@@ -151,7 +151,7 @@ class TestTaylor(object):
         # Set norm=False for correctness as the values obtained from the
         # scientific publication do not normalize the values. Normalizing
         # changes the sidelobe level from the desired value.
-        w = windows.taylor(M_win, nbar=4, sll=-35, norm=False, sym=False)
+        w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False)
         f = fft(w, N_fft)
         spec = 20 * np.log10(np.abs(f / np.amax(f)))
 
