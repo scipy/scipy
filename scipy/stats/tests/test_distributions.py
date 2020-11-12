@@ -3521,7 +3521,7 @@ class TestErlang(object):
 
 class TestRayleigh(object):
     def setup_method(self):
-        np.random.seed(1234)
+        np.random.seed(987654321)
 
     # gh-6227
     def test_logpdf(self):
@@ -3556,7 +3556,8 @@ class TestRayleigh(object):
         # test that `scale` is defined by its relation to `loc`
         assert_equal(scale, scale_mle(data, loc))
 
-    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [[0.74, 0.01],
+                                                   np.random.rand(2)])
     def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
