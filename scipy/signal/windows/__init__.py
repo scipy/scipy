@@ -32,8 +32,8 @@ The suite of window functions for filtering and spectral estimation.
    kaiser            -- Kaiser window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
-   triang            -- Triangular window
    taylor            -- Taylor window
+   triang            -- Triangular window
    tukey             -- Tukey window
 
 """

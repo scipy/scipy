@@ -1628,9 +1628,10 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     constant sidelobe level for a parameterized number of near-in sidelobes,
     but then allows a taper beyond [2]_.
 
-    The SAR (synthetic aperature radar) community commonly uses Taylor weighting
-    for image formation processing because it provides strong, selectable sidelobe
-    suppression with minimum broadening of the mainlobe [1]_.
+    The SAR (synthetic aperature radar) community commonly uses Taylor
+    weighting for image formation processing because it provides strong,
+    selectable sidelobe suppression with minimum broadening of the
+    mainlobe [1]_.
 
     Parameters
     ----------
@@ -1640,11 +1641,14 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     nbar : int, optional
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     sll : float, optional
-        Desired peak sidelobe level in decibels (dB) relative to the mainlobe. This
-        should be a positive number.
+        Desired suppression of sidelobe level in decibels (dB) relative to the
+        DC gain of the mainlobe. This should be a positive number.
     norm : bool, optional
-        When True (default), normalizes the window such that all values are
-        less than or equal to 1.
+        When True (default), divides the window by the largest (middle) value
+        for odd-length windows or the value that would occur between the two
+        repeated middle values for even-length windows such that all values
+        are less than or equal to 1. When False the DC gain will remain at 1
+        (0 dB) and the sidelobes will be `sll` dB down.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
