@@ -1639,7 +1639,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
         empty array is returned.
     nbar : int, optional
         Number of nearly constant level sidelobes adjacent to the mainlobe.
-    sll : float
+    sll : float, optional
         Desired peak sidelobe level in decibels (dB) relative to the mainlobe. This
         should be a positive number.
     norm : boolean
