@@ -1642,7 +1642,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     sll : float, optional
         Desired peak sidelobe level in decibels (dB) relative to the mainlobe. This
         should be a positive number.
-    norm : boolean
+    norm : bool, optional
         When True (default), normalizes the window such that all values are
         less than or equal to 1.
     sym : bool, optional
