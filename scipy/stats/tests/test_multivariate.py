@@ -1923,17 +1923,6 @@ class TestMultivariateHypergeom:
         rvs = rv.rvs(size=(1000, 2), random_state=123)
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.18.0',
-                        reason="Multivariate Hypergeometric distribution "
-                               "only present in numpy>=1.18")
-    def test_rvs_numpy(self):
-        rng_sc = np.random.Generator(np.random.PCG64(123))
-        rv = multivariate_hypergeom(m=[3, 5], n=4)
-        rvs_sc = rv.rvs(size=100, random_state=rng_sc)
-        rng_np = np.random.Generator(np.random.PCG64(123))
-        rvs_np = rng_np.multivariate_hypergeometric([3, 5], 4, size=100)
-        assert_equal(rvs_sc, rvs_np)
-
     @pytest.mark.parametrize(
         "x, m, n, expected",
         [
@@ -2027,7 +2016,7 @@ class TestMultivariateHypergeom:
 
     def test_mean_edge_cases(self):
         mean0 = multivariate_hypergeom.mean(m=[0, 0, 0], n=0)
-        assert_allclose(mean0, [0., 0., 0.], rtol=1e-17)
+        assert_equal(mean0, [0., 0., 0.])
 
         mean1 = multivariate_hypergeom.mean(m=[1, 0, 0], n=2)
         assert_equal(mean1, [np.nan, np.nan, np.nan])
@@ -2062,7 +2051,7 @@ class TestMultivariateHypergeom:
 
         cov3 = multivariate_hypergeom.cov(m=[0, 0, 0], n=0)
         cov4 = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
-        assert_allclose(cov3, cov4, rtol=1e-17)
+        assert_equal(cov3, cov4)
 
         cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
         cov6 = np.array([], dtype=np.float_).reshape(0, 0)
@@ -2089,9 +2078,12 @@ class TestMultivariateHypergeom:
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, 10, 5)
         assert_raises(ValueError, multivariate_hypergeom.pmf, 5, [10], 5)
         assert_raises(ValueError, multivariate_hypergeom.pmf, [5, 4], [10], 5)
-        assert_raises(TypeError, multivariate_hypergeom.pmf, [5.5, 4.5], [10, 15], 5)
-        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4], [10.5, 15.5], 5)
-        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4], [10, 15], 5.5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5.5, 4.5],
+                      [10, 15], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
+                      [10.5, 15.5], 5)
+        assert_raises(TypeError, multivariate_hypergeom.pmf, [5, 4],
+                      [10, 15], 5.5)
 
 
 def check_pickling(distfn, args):

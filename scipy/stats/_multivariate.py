@@ -4422,8 +4422,6 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     See Also
     --------
     scipy.stats.hypergeom : The hypergeometric distribution.
-    numpy.random.Generator.multivariate_hypergeometric :
-        The multivariate hypergeometric distribution sampler in NumPy.
     scipy.stats.multinomial : The multinomial distribution.
 
     References
@@ -4449,12 +4447,17 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _process_parameters(self, m, n):
         m = np.asarray(m)
         n = np.asarray(n)
+        if m.size == 0:
+            m = m.astype(int)
+        if n.size == 0:
+            n = n.astype(int)
         if not np.issubdtype(m.dtype, np.integer):
             raise TypeError("'m' must an array of integers.")
         if not np.issubdtype(n.dtype, np.integer):
             raise TypeError("'n' must an array of integers.")
         if m.ndim == 0:
-            raise ValueError("'m' must be an array!")
+            raise ValueError("'m' must be an array with"
+                             " at least one dimension.")
 
         # check for empty arrays
         if m.size != 0:
@@ -4476,9 +4479,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _process_quantiles(self, x, M, m, n):
         x = np.asarray(x)
         if not np.issubdtype(x.dtype, np.integer):
-            raise TypeError("'m' must an array of integers.")
+            raise TypeError("'x' must an array of integers.")
         if x.ndim == 0:
-            raise ValueError("x must be an array.")
+            raise ValueError("'x' must be an array with"
+                             " at least one dimension.")
         if not x.shape[-1] == m.shape[-1]:
             raise ValueError(f"Size of each quantile must be size of 'm': "
                              f"received {x.shape[-1]}, "
@@ -4691,23 +4695,21 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         Notes
         -----
         %(_doc_callparams_note)s
+
+        Also note that NumPy's `multivariate_hypergeometric` sampler is not
+        used as it doesn't support broadcasting.
         """
         M, m, n, _, _, _ = self._process_parameters(m, n)
 
         random_state = self._get_random_state(random_state)
-        # Generator is only available in numpy >= 1.17 while
-        # `multivariate_hypergeometric` distribution is only
-        # available in numpy >= 1.18
-        if (NumpyVersion(np.__version__) >= '1.18.0' and
-            isinstance(random_state, np.random.Generator)):  # noqa: E129
-            out = random_state.multivariate_hypergeometric(m, n, size)
-            return out
 
-        size_ = size if size is not None else 1
-        if isinstance(size_, int):
-            size_ = (size_, )
+        if size is not None and isinstance(size, int):
+            size = (size, )
 
-        rvs = np.empty(size_ + (m.shape[-1], ), dtype=m.dtype)
+        if size is None:
+            rvs = np.empty(m.shape, dtype=m.dtype)
+        else:
+            rvs = np.empty(size + (m.shape[-1], ), dtype=m.dtype)
         rem = M
 
         # This sampler has been taken from numpy gh-13794
@@ -4717,12 +4719,10 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             rvs[..., c] = ((n != 0) *
                            random_state.hypergeometric(m[..., c], rem,
                                                        n + (n == 0),
-                                                       size=size_))
+                                                       size=size))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
 
-        if size is None:
-            return rvs.squeeze(0)
         return rvs
 
 
