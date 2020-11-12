@@ -1624,7 +1624,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     """
     Return a Taylor window.
 
-    The Taylor window taper function approximates the Dolph-Chebyshev window’s
+    The Taylor window taper function approximates the Dolph-Chebyshev window's
     constant sidelobe level for a parameterized number of near-in sidelobes,
     but then allows a taper beyond [2]_.
 
