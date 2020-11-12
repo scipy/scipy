@@ -108,7 +108,6 @@ class TestNdimageFilters:
         with assert_raises(RuntimeError):
             convolve(array, kernel, output=output_real)
 
-
     def test_correlate01(self):
         array = numpy.array([1, 2])
         weights = numpy.array([2])
@@ -485,7 +484,6 @@ class TestNdimageFilters:
 
         y = ndimage.correlate1d(numpy.ones(1), numpy.ones(5), mode='mirror')
         assert_array_equal(y, numpy.array(5.))
-
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
