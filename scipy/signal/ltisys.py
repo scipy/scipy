@@ -3462,9 +3462,10 @@ def dlsim(system, u, t=None, x0=None):
         out_samples = int(np.floor(stoptime / system.dt)) + 1
 
     # Pre-build output arrays
-    xout = np.zeros((out_samples, system.A.shape[0]))
-    yout = np.zeros((out_samples, system.C.shape[0]))
-    tout = np.linspace(0.0, stoptime, num=out_samples)
+    out_type = system.A.dtype
+    xout = np.zeros((out_samples, system.A.shape[0]), dtype=out_type)
+    yout = np.zeros((out_samples, system.C.shape[0]), dtype=out_type)
+    tout = np.linspace(0.0, stoptime, num=out_samples, dtype=out_type)
 
     # Check initial condition
     if x0 is None:
