@@ -160,6 +160,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     origin = -origin
     if not len(weights) & 1:
         origin -= 1
+    weights = numpy.asarray(weights)
     if weights.dtype.kind == 'c':
         # pre-conjugate here to counteract the conjugation in correlate1d
         weights = weights.conj()
