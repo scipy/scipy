@@ -401,11 +401,11 @@ void csr_sort_indices(const I n_row,
  *
  * Output Arguments:
  *   I  Bp[n_col+1] - column pointer
- *   I  Bj[nnz(A)]  - row indices
+ *   I  Bi[nnz(A)]  - row indices
  *   T  Bx[nnz(A)]  - nonzeros
  *
  * Note:
- *   Output arrays Bp, Bj, Bx must be preallocated
+ *   Output arrays Bp, Bi, Bx must be preallocated
  *
  * Note:
  *   Input:  column indices *are not* assumed to be in sorted order
@@ -1625,10 +1625,42 @@ int csr_sample_offsets(const I n_row,
 /*
  * A test function checking the error handling
  */
-template <class T>
-int test_throw_error() {
+inline int test_throw_error() {
     throw std::bad_alloc();
     return 1;
 }
+
+#define SPTOOLS_CSR_EXTERN_TEMPLATE(I, T) \
+  extern template void csr_diagonal(const I k, const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Yx[]); \
+  extern template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
+  extern template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
+  extern template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
+  extern template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
+  extern template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
+  extern template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
+  extern template void csr_matmat(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[]); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::not_equal_to<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::less_equal<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::greater_equal<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::multiplies<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const safe_divides<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::plus<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const std::minus<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const maximum<T>& op); \
+  extern template void csr_binop_csr(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I Bp[], const I Bj[], const T Bx[], I Cp[], I Cj[], T Cx[], const minimum<T>& op); \
+  extern template void csr_sum_duplicates(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_eliminate_zeros(const I n_row, const I n_col, I Ap[], I Aj[], T Ax[]); \
+  extern template void csr_matvec(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
+  extern template void csr_matvecs(const I n_row, const I n_col, const I n_vecs, const I Ap[], const I Aj[], const T Ax[], const T Xx[], T Yx[]); \
+  extern template void get_csr_submatrix(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I ir0, const I ir1, const I ic0, const I ic1, std::vector<I>* Bp, std::vector<I>* Bj, std::vector<T>* Bx); \
+  extern template void csr_row_index(const I n_row_idx, const I rows[], const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_row_slice(const I start, const I stop, const I step, const I Ap[], const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_column_index2(const I col_order[], const I col_offsets[], const I nnz, const I Aj[], const T Ax[], I Bj[], T Bx[]); \
+  extern template void csr_sample_values(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I n_samples, const I Bi[], const I Bj[], T Bx[]);
+
+SPTOOLS_FOR_EACH_INDEX_DATA_TYPE_COMBINATION(SPTOOLS_CSR_EXTERN_TEMPLATE)
+#undef SPTOOLS_CSR_EXTERN_TEMPLATE
 
 #endif

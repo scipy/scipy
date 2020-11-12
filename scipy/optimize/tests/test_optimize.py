@@ -810,7 +810,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_almost_equal(res.fun, c.fun)
         assert_equal(res.status, 1)
         assert_(res.success is False)
-        assert_equal(res.message.decode(),
+        assert_equal(res.message,
                      'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
@@ -1891,8 +1891,11 @@ class TestOptimizeResultAttributes(object):
                 if method in skip and attribute in skip[method]:
                     continue
 
-                assert_(hasattr(res, attribute))
+                assert hasattr(res, attribute)
                 assert_(attribute in dir(res))
+
+            # gh13001, OptimizeResult.message should be a str
+            assert isinstance(res.message, str)
 
 
 def f1(z, *params):

@@ -19,6 +19,8 @@ class DisjointSet:
     add
     merge
     connected
+    subset
+    subsets
     __getitem__
 
     Notes
@@ -69,11 +71,23 @@ class DisjointSet:
 
     >>> list(disjoint_set)
     [1, 2, 3, 'a', 'b']
+
+    Get the subset containing 'a':
+
+    >>> disjoint_set.subset('a')
+    {'a', 3, 'b'}
+
+    Get all subsets in the disjoint set:
+
+    >>> disjoint_set.subsets()
+    [{1, 2}, {'a', 3, 'b'}]
     """
     def __init__(self, elements=None):
         self.n_subsets = 0
         self._sizes = {}
         self._parents = {}
+        # _nbrs is a circular linked list which links connected elements.
+        self._nbrs = {}
         # _indices tracks the element insertion order - OrderedDict is used to
         # ensure correct ordering in `__iter__`.
         self._indices = collections.OrderedDict()
@@ -125,6 +139,7 @@ class DisjointSet:
 
         self._sizes[x] = 1
         self._parents[x] = x
+        self._nbrs[x] = x
         self._indices[x] = len(self._indices)
         self.n_subsets += 1
 
@@ -155,6 +170,7 @@ class DisjointSet:
             xr, yr = yr, xr
         self._parents[yr] = xr
         self._sizes[xr] += self._sizes[yr]
+        self._nbrs[xr], self._nbrs[yr] = self._nbrs[yr], self._nbrs[xr]
         self.n_subsets -= 1
         return True
 
@@ -172,3 +188,43 @@ class DisjointSet:
             True if `x` and `y` are in the same set, False otherwise.
         """
         return self._indices[self[x]] == self._indices[self[y]]
+
+    def subset(self, x):
+        """Get the subset containing `x`.
+
+        Parameters
+        ----------
+        x : hashable object
+            Input element.
+
+        Returns
+        -------
+        result : set
+            Subset containing `x`.
+        """
+        if x not in self._indices:
+            raise KeyError(x)
+
+        result = [x]
+        nxt = self._nbrs[x]
+        while self._indices[nxt] != self._indices[x]:
+            result.append(nxt)
+            nxt = self._nbrs[nxt]
+        return set(result)
+
+    def subsets(self):
+        """Get all the subsets in the disjoint set.
+
+        Returns
+        -------
+        result : set
+            Subsets in the disjoint set.
+        """
+        result = []
+        visited = set()
+        for x in self:
+            if x not in visited:
+                xset = self.subset(x)
+                visited.update(xset)
+                result.append(xset)
+        return result
