@@ -4,7 +4,6 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
-from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
@@ -4290,8 +4289,8 @@ n : array_like
     The number of samples taken from the population.
 """
 
-_mhg_doc_callparams_note = \
-"""`m` must be an array of positive integers. If the quantile
+_mhg_doc_callparams_note = """\
+`m` must be an array of positive integers. If the quantile
 :math:`i` contains values out of the range :math:`[0, m_i]`
 where :math:`m_i` is the number of objects of type :math:`i`
 in the population or if the parameters are inconsistent with one
@@ -4608,7 +4607,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         mu = n*(m/M)
         if m.size != 0:
             mncond = (mncond[..., np.newaxis] |
-                    np.zeros(mu.shape, dtype=np.bool_))
+                      np.zeros(mu.shape, dtype=np.bool_))
         return self._checkresult(mu, mncond, np.nan)
 
     def var(self, m, n):
@@ -4634,7 +4633,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         output = n * m/M * (M-m)/M * (M-n)/(M-1)
         if m.size != 0:
             mncond = (mncond[..., np.newaxis] |
-                    np.zeros(output.shape, dtype=np.bool_))
+                      np.zeros(output.shape, dtype=np.bool_))
         return self._checkresult(output, mncond, np.nan)
 
     def cov(self, m, n):
@@ -4673,7 +4672,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
             output[..., i, i] = output[..., i, i] / (M**2)
         if m.size != 0:
             mncond = (mncond[..., np.newaxis, np.newaxis] |
-                    np.zeros(output.shape, dtype=np.bool_))
+                      np.zeros(output.shape, dtype=np.bool_))
         return self._checkresult(output, mncond, np.nan)
 
     def rvs(self, m, n, size=None, random_state=None):

@@ -7,8 +7,6 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
-from numpy.lib import NumpyVersion
-
 import pytest
 from pytest import raises as assert_raises
 
