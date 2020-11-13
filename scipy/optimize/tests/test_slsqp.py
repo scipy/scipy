@@ -4,9 +4,10 @@ Unit test for SLSQP optimization.
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
 from pytest import raises as assert_raises
+import pytest
 import numpy as np
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds
+from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
 
 class MyCallBack(object):
@@ -206,6 +207,24 @@ class TestSLSQP(object):
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
+
+    def test_minimize_bounded_constraint(self):
+        # when the constraint makes the solver go up against a parameter
+        # bound make sure that the numerical differentiation of the
+        # jacobian doesn't try to exceed that bound using a finite difference.
+        # gh11403
+        def c(x):
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
+            return x[0] ** 0.5 + x[1]
+
+        def f(x):
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
+            return -x[0] ** 2 + x[1] ** 2
+
+        cns = [NonlinearConstraint(c, 0, 1.5)]
+        x0 = np.asarray([0.9, 0.5])
+        bnd = Bounds([0., 0.], [1.0, 1.0])
+        minimize(f, x0, method='SLSQP', bounds=bnd, constraints=cns)
 
     def test_minimize_bound_equality_given2(self):
         # Minimize with method='SLSQP': bounds, eq. const., given jac. for
@@ -564,3 +583,22 @@ class TestSLSQP(object):
 
         # The problem is infeasible, so it cannot succeed
         assert not res.success
+
+    def test_parameters_stay_within_bounds(self):
+        # gh11403. For some problems the SLSQP Fortran code suggests a step
+        # outside one of the lower/upper bounds. When this happens
+        # approx_derivative complains because it's being asked to evaluate
+        # a gradient outside its domain.
+        np.random.seed(1)
+        bounds = Bounds(np.array([0.1]), np.array([1.0]))
+        n_inputs = len(bounds.lb)
+        x0 = np.array(bounds.lb + (bounds.ub - bounds.lb) *
+                      np.random.random(n_inputs))
+
+        def f(x):
+            assert (x >= bounds.lb).all()
+            return np.linalg.norm(x)
+
+        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
+            res = minimize(f, x0, method='SLSQP', bounds=bounds)
+            assert res.success

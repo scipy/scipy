@@ -18,8 +18,7 @@ from libcpp.algorithm cimport sort
 from libcpp cimport bool
 
 cimport cython
-
-from multiprocessing import cpu_count
+import os
 import threading
 import operator
 import warnings
@@ -27,7 +26,6 @@ import warnings
 cdef extern from "<limits.h>":
     long LONG_MAX
 
-cdef int number_of_processors = cpu_count()
 
 __all__ = ['cKDTree']
 
@@ -400,7 +398,12 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 
     cdef np.intp_t n = operator.index(workers)
     if n == -1:
-        n = number_of_processors
+        num = os.cpu_count()
+        if num is None:
+            raise NotImplementedError(
+                'Cannot determine the number of cpus using os.cpu_count(), '
+                'cannot use -1 for the number of workers')
+        n = num
     elif n <= 0:
         raise ValueError(f'Invalid number of workers {workers}, must be -1 or > 0')
     return n
@@ -488,9 +491,9 @@ cdef class cKDTree:
     mins : ndarray, shape (m,)
         The minimum value in each dimension of the n data points.
     tree : object, class cKDTreeNode
-        This attribute exposes a Python view of the root node in the cKDTree 
-        object. A full Python view of the kd-tree is created dynamically 
-        on the first access. This attribute allows you to create your own 
+        This attribute exposes a Python view of the root node in the cKDTree
+        object. A full Python view of the kd-tree is created dynamically
+        on the first access. This attribute allows you to create your own
         query functions in Python.
     size : int
         The number of nodes in the tree.
@@ -512,13 +515,13 @@ cdef class cKDTree:
 
     property n:
         def __get__(self): return self.cself.n
-    
+
     property m:
         def __get__(self): return self.cself.m
-    
+
     property leafsize:
         def __get__(self): return self.cself.leafsize
-    
+
     property size:
         def __get__(self): return self.cself.size
 
@@ -1273,24 +1276,21 @@ cdef class cKDTree:
 
         .. [1] Gray and Moore,
                "N-body problems in statistical learning",
-               Mining the sky, 2000,
-               https://arxiv.org/abs/astro-ph/0012333
+               Mining the sky, 2000, :arxiv:`astro-ph/0012333`
 
         .. [2] Landy and Szalay,
                "Bias and variance of angular correlation functions",
-               The Astrophysical Journal, 1993,
-               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+               The Astrophysical Journal, 1993, :doi:`10.1086/172900`
 
         .. [3] Sheth, Connolly and Skibba,
                "Marked correlations in galaxy formation models",
-               Arxiv e-print, 2005,
-               https://arxiv.org/abs/astro-ph/0511773
+               2005, :arxiv:`astro-ph/0511773`
 
         .. [4] Hawkins, et al.,
                "The 2dF Galaxy Redshift Survey: correlation functions,
                peculiar velocities and the matter density of the Universe",
                Monthly Notices of the Royal Astronomical Society, 2002,
-               http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
+               :doi:`10.1046/j.1365-2966.2003.07063.x`
 
         .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
 
