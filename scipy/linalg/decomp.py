@@ -460,8 +460,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             raise ValueError("wrong b dimensions {}, should "
                              "be {}".format(b1.shape, a1.shape))
 
+        if type not in [1, 2, 3]:
+            raise ValueError('"type" keyword only accepts 1, 2, and 3.')
+
         cplx = True if iscomplexobj(b1) else (cplx or False)
-        drv_args.update({'overwrite_b': overwrite_b})
+        drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
     # backwards-compatibility handling
     subset_by_index = subset_by_index if (eigvals is None) else eigvals

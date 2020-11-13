@@ -1,6 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
+import os
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose)
@@ -213,7 +214,8 @@ class Test_vectorization:
     def test_single_query_all_neighbors(self, r):
         np.random.seed(1234)
         point = np.random.rand(self.kdtree.m)
-        d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
+        with pytest.warns(DeprecationWarning, match="k=None"):
+            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
         assert isinstance(d, list)
         assert isinstance(i, list)
 
@@ -232,7 +234,8 @@ class Test_vectorization:
         r = 1.1
         np.random.seed(1234)
         points = np.random.rand(*query_shape, self.kdtree.m)
-        d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
+        with pytest.warns(DeprecationWarning, match="k=None"):
+            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
         assert_equal(np.shape(d), query_shape)
         assert_equal(np.shape(i), query_shape)
 
@@ -489,9 +492,9 @@ def test_query_ball_point_multithreading():
     k = 2
     points = np.random.randn(n, k)
     T = cKDTree(points)
-    l1 = T.query_ball_point(points, 0.003, n_jobs=1)
-    l2 = T.query_ball_point(points, 0.003, n_jobs=64)
-    l3 = T.query_ball_point(points, 0.003, n_jobs=-1)
+    l1 = T.query_ball_point(points, 0.003, workers=1)
+    l2 = T.query_ball_point(points, 0.003, workers=64)
+    l3 = T.query_ball_point(points, 0.003, workers=-1)
 
     for i in range(n):
         if l1[i] or l2[i]:
@@ -500,6 +503,23 @@ def test_query_ball_point_multithreading():
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
+
+
+def test_n_jobs():
+    # Test for the deprecated argument name "n_jobs" aliasing "workers"
+    points = np.random.randn(50, 2)
+    T = cKDTree(points)
+    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
+        T.query_ball_point(points, 0.003, n_jobs=1)
+
+    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
+        T.query(points, 1, n_jobs=1)
+
+    with pytest.raises(TypeError, match="Unexpected keyword argument"):
+        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
+
+    with pytest.raises(TypeError, match="Unexpected keyword argument"):
+        T.query(points, 1, workers=1, n_jobs=1)
 
 
 class two_trees_consistency:
@@ -977,7 +997,8 @@ def test_ckdtree_copy_data():
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
-def test_ckdtree_parallel():
+
+def test_ckdtree_parallel(monkeypatch):
     # check if parallel=True also generates correct
     # query results
     np.random.seed(0)
@@ -985,11 +1006,16 @@ def test_ckdtree_parallel():
     k = 4
     points = np.random.randn(n, k)
     T = cKDTree(points)
-    T1 = T.query(points, k=5, n_jobs=64)[-1]
-    T2 = T.query(points, k=5, n_jobs=-1)[-1]
+    T1 = T.query(points, k=5, workers=64)[-1]
+    T2 = T.query(points, k=5, workers=-1)[-1]
     T3 = T.query(points, k=5)[-1]
     assert_array_equal(T1, T2)
     assert_array_equal(T1, T3)
+
+    monkeypatch.setattr(os, 'cpu_count', lambda: None)
+    with pytest.raises(NotImplementedError, match="Cannot determine the"):
+        T.query(points, 1, workers=-1)
+
 
 def test_ckdtree_view():
     # Check that the nodes can be correctly viewed from Python.
@@ -1480,3 +1506,53 @@ def test_kdtree_complex_data():
 
     with pytest.raises(TypeError, match="complex data"):
         t.query_ball_point(points, r=1)
+
+
+def test_kdtree_tree_access():
+    # Test KDTree.tree can be used to traverse the KDTree
+    np.random.seed(1234)
+    points = np.random.rand(100, 4)
+    t = KDTree(points)
+    root = t.tree
+
+    assert isinstance(root, KDTree.innernode)
+    assert root.children == points.shape[0]
+
+    # Visit the tree and assert some basic properties for each node
+    nodes = [root]
+    while nodes:
+        n = nodes.pop(-1)
+
+        if isinstance(n, KDTree.leafnode):
+            assert isinstance(n.children, int)
+            assert n.children == len(n.idx)
+            assert_array_equal(points[n.idx], n._node.data_points)
+        else:
+            assert isinstance(n, KDTree.innernode)
+            assert isinstance(n.split_dim, int)
+            assert 0 <= n.split_dim < t.m
+            assert isinstance(n.split, float)
+            assert isinstance(n.children, int)
+            assert n.children == n.less.children + n.greater.children
+            nodes.append(n.greater)
+            nodes.append(n.less)
+
+
+def test_kdtree_attributes():
+    # Test KDTree's attributes are available
+    np.random.seed(1234)
+    points = np.random.rand(100, 4)
+    t = KDTree(points)
+
+    assert isinstance(t.m, int)
+    assert t.n == points.shape[0]
+
+    assert isinstance(t.n, int)
+    assert t.m == points.shape[1]
+
+    assert isinstance(t.leafsize, int)
+    assert t.leafsize == 10
+
+    assert_array_equal(t.maxes, np.amax(points, axis=0))
+    assert_array_equal(t.mins, np.amin(points, axis=0))
+    assert t.data is points

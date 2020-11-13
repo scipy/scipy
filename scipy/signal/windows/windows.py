@@ -9,7 +9,7 @@ from scipy import linalg, special, fft as sp_fft
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
-           'general_hamming', 'chebwin', 'slepian', 'cosine', 'hann',
+           'general_hamming', 'chebwin', 'cosine', 'hann',
            'exponential', 'tukey', 'dpss', 'get_window']
 
 
@@ -145,7 +145,7 @@ def boxcar(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.boxcar(51)
+    >>> window = signal.windows.boxcar(51)
     >>> plt.plot(window)
     >>> plt.title("Boxcar window")
     >>> plt.ylabel("Amplitude")
@@ -202,7 +202,7 @@ def triang(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.triang(51)
+    >>> window = signal.windows.triang(51)
     >>> plt.plot(window)
     >>> plt.title("Triangular window")
     >>> plt.ylabel("Amplitude")
@@ -267,7 +267,7 @@ def parzen(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.parzen(51)
+    >>> window = signal.windows.parzen(51)
     >>> plt.plot(window)
     >>> plt.title("Parzen window")
     >>> plt.ylabel("Amplitude")
@@ -326,7 +326,7 @@ def bohman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bohman(51)
+    >>> window = signal.windows.bohman(51)
     >>> plt.plot(window)
     >>> plt.title("Bohman window")
     >>> plt.ylabel("Amplitude")
@@ -417,7 +417,7 @@ def blackman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackman(51)
+    >>> window = signal.windows.blackman(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman window")
     >>> plt.ylabel("Amplitude")
@@ -478,7 +478,7 @@ def nuttall(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.nuttall(51)
+    >>> window = signal.windows.nuttall(51)
     >>> plt.plot(window)
     >>> plt.title("Nuttall window")
     >>> plt.ylabel("Amplitude")
@@ -525,7 +525,7 @@ def blackmanharris(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackmanharris(51)
+    >>> window = signal.windows.blackmanharris(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman-Harris window")
     >>> plt.ylabel("Amplitude")
@@ -586,7 +586,7 @@ def flattop(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.flattop(51)
+    >>> window = signal.windows.flattop(51)
     >>> plt.plot(window)
     >>> plt.title("Flat top window")
     >>> plt.ylabel("Amplitude")
@@ -676,7 +676,7 @@ def bartlett(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bartlett(51)
+    >>> window = signal.windows.bartlett(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett window")
     >>> plt.ylabel("Amplitude")
@@ -765,7 +765,7 @@ def hann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hann(51)
+    >>> window = signal.windows.hann(51)
     >>> plt.plot(window)
     >>> plt.title("Hann window")
     >>> plt.ylabel("Amplitude")
@@ -832,7 +832,7 @@ def tukey(M, alpha=0.5, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.tukey(51)
+    >>> window = signal.windows.tukey(51)
     >>> plt.plot(window)
     >>> plt.title("Tukey window")
     >>> plt.ylabel("Amplitude")
@@ -902,7 +902,7 @@ def barthann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.barthann(51)
+    >>> window = signal.windows.barthann(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett-Hann window")
     >>> plt.ylabel("Amplitude")
@@ -1074,7 +1074,7 @@ def hamming(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hamming(51)
+    >>> window = signal.windows.hamming(51)
     >>> plt.plot(window)
     >>> plt.title("Hamming window")
     >>> plt.ylabel("Amplitude")
@@ -1183,7 +1183,7 @@ def kaiser(M, beta, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.kaiser(51, beta=14)
+    >>> window = signal.windows.kaiser(51, beta=14)
     >>> plt.plot(window)
     >>> plt.title(r"Kaiser window ($\beta$=14)")
     >>> plt.ylabel("Amplitude")
@@ -1248,7 +1248,7 @@ def gaussian(M, std, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.gaussian(51, std=7)
+    >>> window = signal.windows.gaussian(51, std=7)
     >>> plt.plot(window)
     >>> plt.title(r"Gaussian window ($\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1318,7 +1318,7 @@ def general_gaussian(M, p, sig, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.general_gaussian(51, p=1.5, sig=7)
+    >>> window = signal.windows.general_gaussian(51, p=1.5, sig=7)
     >>> plt.plot(window)
     >>> plt.title(r"Generalized Gaussian window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1415,7 +1415,7 @@ def chebwin(M, at, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.chebwin(51, at=100)
+    >>> window = signal.windows.chebwin(51, at=100)
     >>> plt.plot(window)
     >>> plt.title("Dolph-Chebyshev window (100 dB)")
     >>> plt.ylabel("Amplitude")
@@ -1473,93 +1473,6 @@ def chebwin(M, at, sym=True):
     return _truncate(w, needs_trunc)
 
 
-def slepian(M, width, sym=True):
-    """Return a digital Slepian (DPSS) window.
-
-    Used to maximize the energy concentration in the main lobe.  Also called
-    the digital prolate spheroidal sequence (DPSS).
-
-    .. note:: Deprecated in SciPy 1.1.
-              `slepian` will be removed in a future version of SciPy, it is
-              replaced by `dpss`, which uses the standard definition of a
-              digital Slepian window.
-
-    Parameters
-    ----------
-    M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
-    width : float
-        Bandwidth
-    sym : bool, optional
-        When True (default), generates a symmetric window, for use in filter
-        design.
-        When False, generates a periodic window, for use in spectral analysis.
-
-    Returns
-    -------
-    w : ndarray
-        The window, with the maximum value always normalized to 1
-
-    See Also
-    --------
-    dpss
-
-    References
-    ----------
-    .. [1] D. Slepian & H. O. Pollak: "Prolate spheroidal wave functions,
-           Fourier analysis and uncertainty-I," Bell Syst. Tech. J., vol.40,
-           pp.43-63, 1961. https://archive.org/details/bstj40-1-43
-    .. [2] H. J. Landau & H. O. Pollak: "Prolate spheroidal wave functions,
-           Fourier analysis and uncertainty-II," Bell Syst. Tech. J. , vol.40,
-           pp.65-83, 1961. https://archive.org/details/bstj40-1-65
-
-    Examples
-    --------
-    Plot the window and its frequency response:
-
-    >>> from scipy import signal
-    >>> from scipy.fft import fft, fftshift
-    >>> import matplotlib.pyplot as plt
-
-    >>> window = signal.slepian(51, width=0.3)
-    >>> plt.plot(window)
-    >>> plt.title("Slepian (DPSS) window (BW=0.3)")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
-
-    >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
-    >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
-    >>> plt.plot(freq, response)
-    >>> plt.axis([-0.5, 0.5, -120, 0])
-    >>> plt.title("Frequency response of the Slepian window (BW=0.3)")
-    >>> plt.ylabel("Normalized magnitude [dB]")
-    >>> plt.xlabel("Normalized frequency [cycles per sample]")
-
-    """
-    warnings.warn('slepian is deprecated and will be removed in a future '
-                  'version, use dpss instead', DeprecationWarning)
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    # our width is the full bandwidth
-    width = width / 2
-    # to match the old version
-    width = width / 2
-    m = np.arange(M, dtype='d')
-    H = np.zeros((2, M))
-    H[0, 1:] = m[1:] * (M - m[1:]) / 2
-    H[1, :] = ((M - 1 - 2 * m) / 2)**2 * np.cos(2 * np.pi * width)
-
-    _, win = linalg.eig_banded(H, select='i', select_range=(M-1, M-1))
-    win = win.ravel() / win.max()
-
-    return _truncate(win, needs_trunc)
-
-
 def cosine(M, sym=True):
     """Return a window with a simple cosine shape.
 
@@ -1592,7 +1505,7 @@ def cosine(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.cosine(51)
+    >>> window = signal.windows.cosine(51)
     >>> plt.plot(window)
     >>> plt.title("Cosine window")
     >>> plt.ylabel("Amplitude")
@@ -1667,7 +1580,7 @@ def exponential(M, center=None, tau=1., sym=True):
 
     >>> M = 51
     >>> tau = 3.0
-    >>> window = signal.exponential(M, tau=tau)
+    >>> window = signal.windows.exponential(M, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential Window (tau=3.0)")
     >>> plt.ylabel("Amplitude")
@@ -1686,7 +1599,7 @@ def exponential(M, center=None, tau=1., sym=True):
     This function can also generate non-symmetric windows:
 
     >>> tau2 = -(M-1) / np.log(0.01)
-    >>> window2 = signal.exponential(M, 0, tau2, False)
+    >>> window2 = signal.windows.exponential(M, 0, tau2, False)
     >>> plt.figure()
     >>> plt.plot(window2)
     >>> plt.ylabel("Amplitude")
@@ -1721,7 +1634,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     M : int
         Window length.
     NW : float
-        Standardized half bandwidth corresponding to ``2*NW = BW/f0 = BW*N*dt``
+        Standardized half bandwidth corresponding to ``2*NW = BW/f0 = BW*M*dt``
         where ``dt`` is taken as 1.
     Kmax : int | None, optional
         Number of DPSS windows to return (orders ``0`` through ``Kmax-1``).
@@ -1744,7 +1657,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
 
     Returns
     -------
-    v : ndarray, shape (Kmax, N) or (N,)
+    v : ndarray, shape (Kmax, M) or (M,)
         The DPSS windows. Will be 1D if `Kmax` is None.
     r : ndarray, shape (Kmax,) or float, optional
         The concentration ratios for the windows. Only returned if
@@ -1789,16 +1702,16 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import windows, freqz
-    >>> N = 51
+    >>> M = 51
     >>> fig, axes = plt.subplots(3, 2, figsize=(5, 7))
     >>> for ai, alpha in enumerate((1, 3, 5)):
-    ...     win_dpss = windows.dpss(N, alpha)
+    ...     win_dpss = windows.dpss(M, alpha)
     ...     beta = alpha*np.pi
-    ...     win_kaiser = windows.kaiser(N, beta)
+    ...     win_kaiser = windows.kaiser(M, beta)
     ...     for win, c in ((win_dpss, 'k'), (win_kaiser, 'r')):
     ...         win /= win.sum()
     ...         axes[ai, 0].plot(win, color=c, lw=1.)
-    ...         axes[ai, 0].set(xlim=[0, N-1], title=r'$\\alpha$ = %s' % alpha,
+    ...         axes[ai, 0].set(xlim=[0, M-1], title=r'$\\alpha$ = %s' % alpha,
     ...                         ylabel='Amplitude')
     ...         w, h = freqz(win)
     ...         axes[ai, 1].plot(w, 20 * np.log10(np.abs(h)), color=c, lw=1.)
@@ -1909,8 +1822,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # Here we set up an alternative symmetric tri-diagonal eigenvalue
     # problem such that
     # (B - (l2)I)v = 0, and v are our DPSS (but eigenvalues l2 != l1)
-    # the main diagonal = ([N-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,N-1]
-    # and the first off-diagonal = t(N-t)/2, t=[1,2,...,N-1]
+    # the main diagonal = ([M-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,M-1]
+    # and the first off-diagonal = t(M-t)/2, t=[1,2,...,M-1]
     # [see Percival and Walden, 1993]
     d = ((M - 1 - 2 * nidx) / 2.) ** 2 * np.cos(2 * np.pi * W)
     e = nidx[1:] * (M - nidx[1:]) / 2.
@@ -1999,7 +1912,6 @@ _win_equiv_raw = {
     ('kaiser', 'ksr'): (kaiser, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
-    ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
 }
@@ -2057,10 +1969,9 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
-    - `~scipy.signal.windows.slepian` (needs width)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
-    - `~scipy.signal.windows.exponential` (needs decay scale)
+    - `~scipy.signal.windows.exponential` (needs center, decay scale)
     - `~scipy.signal.windows.tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
@@ -2084,6 +1995,9 @@ def get_window(window, Nx, fftbins=True):
     >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> signal.get_window(('exponential', None, 1.), 9)
+    array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
+            0.60653066,  0.22313016,  0.082085  ,  0.03019738])
     >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])

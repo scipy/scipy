@@ -4,9 +4,6 @@ An extension of scipy.stats.stats to support masked arrays
 """
 # Original author (2007): Pierre GF Gerard-Marchant
 
-# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-# TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-
 
 __all__ = ['argstoarray',
            'count_tied_groups',
@@ -45,10 +42,12 @@ from collections import namedtuple
 from . import distributions
 import scipy.special as special
 import scipy.stats.stats
+from scipy._lib._util import float_factorial
 
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
+        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -503,6 +502,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
 
+        # If either column is entirely NaN or Inf
+        if not np.any(x.data):
+            return SpearmanrResult(np.nan, np.nan)
+
         m = ma.getmask(x)
         n_obs = x.shape[0]
         dof = n_obs - 2 - int(m.sum(axis=0)[0])
@@ -626,7 +629,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods"
+        # (4th Edition), Charles Griffin & Co., 1970.
         c = int(min(C, (n*(n-1))/2-C))
         if n <= 0:
             raise ValueError
@@ -637,9 +641,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         elif n == 2:
             prob = 1.0
         elif c == 0:
-            prob = 2.0/np.math.factorial(n)
+            prob = 2.0/float_factorial(n)
         elif c == 1:
-            prob = 2.0/np.math.factorial(n-1)
+            prob = 2.0/float_factorial(n-1)
         elif 2*c == (n*(n-1))//2:
             prob = 1.0
         else:
@@ -653,7 +657,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
                     new[k] += new[k-1]
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/np.math.factorial(n)
+            prob = 2.0*sum(new)/float_factorial(n)
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
@@ -678,7 +682,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         z = (C-D)/np.sqrt(var_s)
         prob = special.erfc(abs(z)/np.sqrt(2))
     else:
-        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+        raise ValueError("Unknown method "+str(method)+" specified, please "
+                         "use auto, exact or asymptotic.")
 
     return KendalltauResult(tau, prob)
 
@@ -802,13 +807,8 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'stderr'))
-
-
 def linregress(x, y=None):
-    """
+    r"""
     Linear regression calculation
 
     Note that the non-masked version is used, and that this docstring is
@@ -822,9 +822,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError("If only `x` is given as input, "
+                             "it has to be of shape (2, N) or (N, 2), "
+                             f"provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
@@ -837,15 +837,17 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
-                                                                   y.data[~m])
+            result = stats_linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            return None, None, None, None, None
+            result = stats_LinregressResult(slope=None, intercept=None,
+                                            rvalue=None, pvalue=None,
+                                            stderr=None,
+                                            intercept_stderr=None)
     else:
-        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
+        result = stats_linregress(x.data, y.data)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return result
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -1326,7 +1328,8 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
     # but the circular dependencies between mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative, mode=mode)
+    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative,
+                                      mode=mode)
 
 
 ks_twosamp = ks_2samp
@@ -1349,7 +1352,8 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     tuple of (K-S statistic, probability)
 
     """
-    return scipy.stats.stats.kstest(data1, data2, args, alternative=alternative, mode=mode)
+    return scipy.stats.stats.kstest(data1, data2, args,
+                                    alternative=alternative, mode=mode)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -1753,7 +1757,8 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
-            raise ValueError("Array 'a' must be at most two dimensional, but got a.ndim = %d" % a.ndim)
+            raise ValueError("Array 'a' must be at most two dimensional, "
+                             "but got a.ndim = %d" % a.ndim)
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 

@@ -601,7 +601,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if _perform_fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
@@ -981,7 +981,7 @@ def boxcox(x, lmbda=None, alpha=None):
     -----
     The Box-Cox transform is given by::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda > 0
+        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
             log(x),                  for lmbda = 0
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
@@ -2312,7 +2312,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, **kwds):
+def levene(*args, center='median', proportiontocut=0.05):
     """
     Perform Levene test for equal variances.
 
@@ -2386,17 +2386,8 @@ def levene(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("levene() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(args)
     if k < 2:
@@ -2408,10 +2399,6 @@ def levene(*args, **kwds):
 
     Ni = np.empty(k)
     Yci = np.empty(k, 'd')
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2561,7 +2548,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, **kwds):
+def fligner(*args, center='median', proportiontocut=0.05):
     """
     Perform Fligner-Killeen test for equality of variance.
 
@@ -2648,30 +2635,17 @@ def fligner(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
+
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
-
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2845,21 +2819,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        Either the first set of measurements (in which case `y` is the second
+        Either the first set of measurements (in which case ``y`` is the second
         set of measurements), or the differences between two sets of
-        measurements (in which case `y` is not to be specified.)  Must be
+        measurements (in which case ``y`` is not to be specified.)  Must be
         one-dimensional.
     y : array_like, optional
-        Either the second set of measurements (if `x` is the first set of
-        measurements), or not specified (if `x` is the differences between
+        Either the second set of measurements (if ``x`` is the first set of
+        measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
-        The following options are available (default is 'wilcox'):
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+        The following options are available (default is "wilcox"):
      
-          * 'pratt': Includes zero-differences in the ranking process,
+          * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
-          * 'wilcox': Discards all zero-differences, the default.
-          * 'zsplit': Includes zero-differences in the ranking process and 
+          * "wilcox": Discards all zero-differences, the default.
+          * "zsplit": Includes zero-differences in the ranking process and
             split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2874,11 +2848,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Returns
     -------
     statistic : float
-        If `alternative` is "two-sided", the sum of the ranks of the
+        If ``alternative`` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative` and `mode`.
+        The p-value for the test depending on ``alternative`` and ``mode``.
 
     See Also
     --------
@@ -3085,7 +3059,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, **kwds):
+def median_test(*args, ties='below', correction=True, lambda_=1,
+                nan_policy='propagate'):
     """
     Perform a Mood's median test.
 
@@ -3224,16 +3199,6 @@ def median_test(*args, **kwds):
     choice of `ties`.
 
     """
-    ties = kwds.pop('ties', 'below')
-    correction = kwds.pop('correction', True)
-    lambda_ = kwds.pop('lambda_', None)
-    nan_policy = kwds.pop('nan_policy', 'propagate')
-
-    if len(kwds) > 0:
-        bad_kwd = kwds.keys()[0]
-        raise TypeError("median_test() got an unexpected keyword "
-                        "argument %r" % bad_kwd)
-
     if len(args) < 2:
         raise ValueError('median_test requires two or more samples.')
 
@@ -3449,9 +3414,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    return ((high - low)/2.0/pi)**2 * -2 * log(R)
 
 
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3503,6 +3470,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))

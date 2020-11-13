@@ -159,6 +159,7 @@ Matlab-style IIR filter design
    bessel -- Bessel (no order selection available -- try butterod)
    iirnotch      -- Design second-order IIR notch digital filter.
    iirpeak       -- Design second-order IIR peak (resonant) digital filter.
+   iircomb       -- Design IIR comb filter.
 
 Continuous-time linear systems
 ==============================
@@ -314,7 +315,7 @@ from .windows import get_window  # keep this one in signal namespace
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'general_gaussian', 'chebwin', 'cosine',
                       'hann', 'exponential', 'tukey')
 
 # backward compatibility imports for actually deprecated windows not

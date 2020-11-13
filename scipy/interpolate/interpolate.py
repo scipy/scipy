@@ -273,8 +273,8 @@ class interp2d(object):
             raise ValueError("x and y should both be 1-D arrays")
 
         if not assume_sorted:
-            x = np.sort(x)
-            y = np.sort(y)
+            x = np.sort(x, kind="mergesort")
+            y = np.sort(y, kind="mergesort")
 
         if self.bounds_error or self.fill_value is not None:
             out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
@@ -333,9 +333,6 @@ class interp1d(_Interpolator1D):
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
-
-    Note that calling `interp1d` with NaNs present in input values results in
-    undefined behaviour.
 
     Parameters
     ----------
@@ -400,6 +397,15 @@ class interp1d(_Interpolator1D):
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
     interp2d : 2-D interpolation
 
+    Notes
+    -----
+    Calling `interp1d` with NaNs present in input values results in
+    undefined behaviour.
+
+    Input values `x` and `y` must be convertible to `float` values like 
+    `int` or `float`.
+
+
     Examples
     --------
     >>> import matplotlib.pyplot as plt
@@ -437,7 +443,7 @@ class interp1d(_Interpolator1D):
         y = array(y, copy=self.copy)
 
         if not assume_sorted:
-            ind = np.argsort(x)
+            ind = np.argsort(x, kind="mergesort")
             x = x[ind]
             y = np.take(y, ind, axis=axis)
 
@@ -2665,11 +2671,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                          "%d, but this RegularGridInterpolator has "
                          "dimension %d" % (xi.shape[1], len(grid)))
 
-    for i, p in enumerate(xi.T):
-        if bounds_error and not np.logical_and(np.all(grid[i][0] <= p),
-                                               np.all(p <= grid[i][-1])):
-            raise ValueError("One of the requested xi is out of bounds "
-                             "in dimension %d" % i)
+    if bounds_error:
+        for i, p in enumerate(xi.T):
+            if not np.logical_and(np.all(grid[i][0] <= p),
+                                                np.all(p <= grid[i][-1])):
+                raise ValueError("One of the requested xi is out of bounds "
+                                "in dimension %d" % i)
 
     # perform interpolation
     if method == "linear":

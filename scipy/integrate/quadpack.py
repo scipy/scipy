@@ -146,7 +146,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     quadrature : adaptive Gaussian quadrature
     odeint : ODE integrator
     ode : ODE integrator
-    simps : integrator for sampled data
+    simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
@@ -577,7 +577,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     quadrature : adaptive Gaussian quadrature
     odeint : ODE integrator
     ode : ODE integrator
-    simps : integrator for sampled data
+    simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
@@ -652,7 +652,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     dblquad: Double integrals
     nquad : N-dimensional integrals
     romb: Integrators for sampled data
-    simps: Integrators for sampled data
+    simpson: Integrators for sampled data
     ode: ODE integrators
     odeint: ODE integrators
     scipy.special: For coefficients and roots of orthogonal polynomials

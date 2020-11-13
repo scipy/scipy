@@ -38,7 +38,13 @@ matrix:
         # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
         - pycodestyle scipy benchmarks/benchmarks
-        - tools/lint_diff.py
+        - |
+          if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+             git fetch --unshallow
+             git config remote.origin.fetch "+refs/heads/maintenance/*:refs/remotes/origin/maintenance/*"
+             git fetch origin --no-tags
+             python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
+          fi
         - tools/unicode-check.py
     - python: 3.7
       name: "ARM - Test Group 1"
@@ -80,7 +86,7 @@ matrix:
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="numpy==1.15.4"
+        - NUMPYSPEC="numpy==1.18.5"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
     # so we must install python3.6-dbg using apt.
@@ -121,12 +127,23 @@ matrix:
         - NUMPYSPEC="numpy==1.17.4"
         - USE_SDIST=1
     - python: 3.6
-      name: "Wheel, Optimised"
+      name: "Wheel, Optimised, GCC 4.8"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *common_packages
+            - g++-4.8
+            - gcc-4.8
       env:
+        # GCC 4.8 is used by manylinux1 wheel builds
+        - CC="gcc-4.8"
+        - CXX="g++-4.8"
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
-        - NUMPYSPEC="numpy==1.14.6"
+        - NUMPYSPEC="numpy==1.16.5"
         # The following is needed for optimized "-OO" test run but since we use
         # pytest-xdist plugin for load scheduling its workers don't pick up the
         # flag. This environment variable starts all Py instances in -OO mode.
@@ -164,23 +181,14 @@ before_install:
       echo "runtime_library_dirs = $target/lib" >> site.cfg
     fi
   - export CCACHE_COMPRESS=1
+  - if [ -n "$CC" ]; then ln -s `which ccache` "/usr/lib/ccache/$CC" || true; fi
+  - if [ -n "$CXX" ]; then ln -s `which ccache` "/usr/lib/ccache/$CXX" || true; fi
   - python --version # just to check
   - export NPY_NUM_BUILD_JOBS=2
   - uname -a
   - df -h
   - ulimit -a
-  - set -o pipefail
-  - if [[ "${TRAVIS_CPU_ARCH}" == "arm64" ]]; then
-      wget -q "https://github.com/conda-forge/miniforge/releases/download/4.8.2-1/Miniforge3-4.8.2-1-Linux-aarch64.sh"  -O miniconda.sh;
-      chmod +x miniconda.sh;
-      ./miniconda.sh -b -p $HOME/miniconda3;
-      export PATH=$HOME/miniconda3/bin:$PATH;
-      conda config --set always_yes yes --set auto_update_conda false;
-      conda install pip conda;
-      conda update -n base conda;
-      conda info -a;
-      conda install pytest pytest-xdist $NUMPYSPEC mpmath gmpy2 Cython pybind11;
-    fi
+  - set -e -o pipefail
   - mkdir builds
   - cd builds
   - |
@@ -189,21 +197,10 @@ before_install:
         virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V -V
+  - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  # arm64 build uses conda (there aren't any arm64 wheels on PyPI, need
-  # Miniforge / conda-forge), so skip arm64 here
-  - |
-    if [[ "$TRAVIS_CPU_ARCH" != "arm64" ]]; then
-         travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse Pillow codecov gmpy2 pybind11
-         travis_retry pip install --upgrade $NUMPYSPEC
-    fi
-  - |
-    if [ -n "${USE_DEBUG}" ]; then
-        # see gh-10676; need to pin pytest version with debug
-        # Python 3.6
-        travis_retry pip install pytest
-    fi
+  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+  - travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
@@ -219,7 +216,11 @@ before_install:
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib scikit-umfpack scikit-sparse
+        travis_retry pip install matplotlib scikit-umfpack scikit-sparse
+    fi
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        travis_retry pip install pytest-cov coverage codecov
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
@@ -229,10 +230,7 @@ before_install:
     if [ "${ASV_CHECK}" == "1" ]; then
         travis_retry pip install "asv>=0.4.1"
     fi
-  - |
-    if [ "${TRAVIS_CPU_ARCH}" != "arm64" ]; then
-         pip uninstall -y nose
-    fi
+  - pip uninstall -y nose
   - ccache -s
   - cd ..
 
@@ -268,7 +266,7 @@ script:
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -j2 --build-only $USE_WHEEL_BUILD
+  - python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD
   # Only run tests against pull-requests
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
@@ -279,9 +277,10 @@ script:
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${REFGUIDE_CHECK}" == "1" ]; then
       python runtests.py -g --refguide-check
     fi
+  # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${ASV_CHECK}" == "1" ]; then
-      (cd benchmarks && python -masv check -E existing)
+      (cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null)
     fi
   # Check dynamic symbol hiding works on Linux
   - |

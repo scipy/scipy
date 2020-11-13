@@ -2630,7 +2630,21 @@ class _TestSlicingAssign(object):
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
+        assert_raises(ValueError, A.__setitem__, (slice(4), 0),
+                      [[1, 2], [3, 4]])
 
+    def test_assign_empty_spmatrix(self):
+        A = self.spmatrix(np.ones((2, 3)))
+        B = self.spmatrix((1, 2))
+        A[1, :2] = B
+        assert_array_equal(A.todense(), [[1, 1, 1], [0, 0, 1]])
+
+    def test_assign_1d_slice(self):
+        A = self.spmatrix(np.ones((3, 3)))
+        x = np.zeros(3)
+        A[:, 0] = x
+        A[1, :] = x
+        assert_array_equal(A.todense(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
 class _TestFancyIndexing(object):
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -3499,23 +3513,6 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(bsp.indptr,[0,1,2,3])
         assert_array_almost_equal(bsp.todense(),b)
 
-### currently disabled
-##    def test_constructor4(self):
-##        """try using int64 indices"""
-##        data = arange( 6 ) + 1
-##        col = array( [1, 2, 1, 0, 0, 2], dtype='int64' )
-##        ptr = array( [0, 2, 4, 6], dtype='int64' )
-##
-##        a = csr_matrix( (data, col, ptr), shape = (3,3) )
-##
-##        b = matrix([[0,1,2],
-##                    [4,3,0],
-##                    [5,0,6]],'d')
-##
-##        assert_equal(a.indptr.dtype,numpy.dtype('int64'))
-##        assert_equal(a.indices.dtype,numpy.dtype('int64'))
-##        assert_array_equal(a.todense(),b)
-
     def test_constructor4(self):
         # using (data, ij) format
         row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
@@ -3543,6 +3540,35 @@ class TestCSR(sparse_test_class()):
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape, (3,6))
         assert_(np.issubdtype(csr.dtype, np.signedinteger))
+
+    def test_constructor_smallcol(self):
+        # int64 indices not required
+        data = arange(6) + 1
+        col = array([1, 2, 1, 0, 0, 2], dtype=np.int64)
+        ptr = array([0, 2, 4, 6], dtype=np.int64)
+
+        a = csr_matrix((data, col, ptr), shape=(3, 3))
+
+        b = matrix([[0, 1, 2],
+                    [4, 3, 0],
+                    [5, 0, 6]], 'd')
+
+        assert_equal(a.indptr.dtype, np.dtype(np.int32))
+        assert_equal(a.indices.dtype, np.dtype(np.int32))
+        assert_array_equal(a.todense(), b)
+
+    def test_constructor_largecol(self):
+        # int64 indices required
+        data = arange(6) + 1
+        large = np.iinfo(np.int32).max + 100
+        col = array([0, 1, 2, large, large+1, large+2], dtype=np.int64)
+        ptr = array([0, 2, 4, 6], dtype=np.int64)
+
+        a = csr_matrix((data, col, ptr))
+
+        assert_equal(a.indptr.dtype, np.dtype(np.int64))
+        assert_equal(a.indices.dtype, np.dtype(np.int64))
+        assert_array_equal(a.shape, (3, max(col)+1))
 
     def test_sort_indices(self):
         data = arange(5)
@@ -4633,6 +4659,8 @@ def cases_64bit():
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
         'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
+        'test_constructor_smallcol': 'test verifies int32 indexes',
+        'test_constructor_largecol': 'test verifies int64 indexes',
     }
 
     for cls in TEST_CLASSES:

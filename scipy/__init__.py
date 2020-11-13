@@ -81,14 +81,8 @@ _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.random.{0} instead')
 rand = _deprecated(_msg.format('rand'))(rand)
 randn = _deprecated(_msg.format('randn'))(randn)
-from numpy.fft import fft, ifft
-# fft is especially problematic, so we deprecate it with a shorter window
-fft_msg = ('Using scipy.fft as a function is deprecated and will be '
-           'removed in SciPy 1.5.0, use scipy.fft.fft instead.')
-# for wrapping in scipy.fft.__call__, so the stacklevel is one off from the
-# usual (2)
-_dep_fft = _deprecated(fft_msg, stacklevel=3)(fft)
-fft = _deprecated(fft_msg)(fft)
+# fft is especially problematic, so was removed in SciPy 1.6.0
+from numpy.fft import ifft
 ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
                    '2.0.0, use scipy.fft.ifft instead')(ifft)
 import numpy.lib.scimath as _sci
@@ -101,7 +95,7 @@ for _key in _sci.__all__:
     globals()[_key] = _fun
 
 __all__ += _num.__all__
-__all__ += ['randn', 'rand', 'fft', 'ifft']
+__all__ += ['randn', 'rand', 'ifft']
 
 del _num
 # Remove the linalg imported from NumPy so that the scipy.linalg package can be
@@ -152,4 +146,3 @@ else:
 
     # This makes "from scipy import fft" return scipy.fft, not np.fft
     del fft
-    from . import fft

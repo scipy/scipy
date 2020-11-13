@@ -98,9 +98,9 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 101
+    number of continuous distributions: 100
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
-    number of discrete distributions:   15
+    number of discrete distributions:   16
 
 
 Common methods
@@ -915,7 +915,7 @@ is called a rug plot):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    >>> x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    >>> x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float64)
     >>> kde1 = stats.gaussian_kde(x1)
     >>> kde2 = stats.gaussian_kde(x1, bw_method='silverman')
 

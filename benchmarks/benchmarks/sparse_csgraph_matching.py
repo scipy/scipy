@@ -1,14 +1,13 @@
 import numpy as np
 import scipy.sparse
+from scipy.spatial.distance import cdist
 
-try:
+from .common import Benchmark, safe_import
+
+
+with safe_import():
     from scipy.sparse.csgraph import maximum_bipartite_matching,\
         min_weight_full_bipartite_matching
-    from scipy.spatial.distance import cdist
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class MaximumBipartiteMatching(Benchmark):
