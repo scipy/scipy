@@ -1606,7 +1606,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
-def shapiro(x, axis=None, nan_policy="propagate"):
+def shapiro(x, axis=0, nan_policy="propagate"):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -1620,7 +1620,7 @@ def shapiro(x, axis=None, nan_policy="propagate"):
     axis: int or None, optional
         Axis along which to compute test.
         If None, input is flattened into 1d array.
-        Default is None.
+        Default is 0.
     nan_policy: {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):

@@ -155,21 +155,43 @@ class TestShapiro(object):
         assert_almost_equal(shapiro_test.pvalue, p_expected, decimal=5)
 
     def test_2d(self):
-        x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
-              4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
-              0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
-        w, pw = stats.shapiro(x1)
-        shapiro_test = stats.shapiro(x1)
+        x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46, 4.43, 0.21, 4.75],
+              [0.71, 1.52, 3.24, 0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
+
+        x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11, 3.48, 1.10],
+              [0.88, -0.51, 1.46, 0.52, 6.20, 1.69, 0.08, 3.67, 2.81, 3.49]]
+
+        # `axis == 0` [Default]
+        # verify against R
+        expected_w1 = [0.91938411862063074, 0.87539493317108474]
+        expected_pw1 = [0.35184684100656749, 0.11547995299080738]
+        w, pw = stats.shapiro(np.asarray(x1).T)
+        shapiro_test = stats.shapiro(np.asarray(x1).T)
+        assert_almost_equal(w, expected_w1, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, expected_w1, decimal=6)
+        assert_almost_equal(pw, expected_pw1, decimal=6)
+        assert_almost_equal(shapiro_test.pvalue, expected_pw1, decimal=6)
+
+        # verify against R
+        expected_w2 = [0.94241143292741636, 0.94215958869940897]
+        expected_pw2 = [0.58014490927435836, 0.57728464675493796]
+        w, pw = stats.shapiro(np.asarray(x2).T)
+        shapiro_test = stats.shapiro(np.asarray(x2).T)
+        assert_almost_equal(w, expected_w2, decimal=6)
+        assert_almost_equal(shapiro_test.statistic, expected_w2, decimal=6)
+        assert_almost_equal(pw, expected_pw2, decimal=3)
+        assert_almost_equal(shapiro_test.pvalue, expected_pw2, decimal=3)
+
+        # `axis == None`, input will be flattened
+        w, pw = stats.shapiro(x1, axis=None)
+        shapiro_test = stats.shapiro(x1, axis=None)
         assert_almost_equal(w, 0.90047299861907959, decimal=6)
         assert_almost_equal(shapiro_test.statistic, 0.90047299861907959, decimal=6)
         assert_almost_equal(pw, 0.042089745402336121, decimal=6)
         assert_almost_equal(shapiro_test.pvalue, 0.042089745402336121, decimal=6)
 
-        x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
-              3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
-              0.08, 3.67, 2.81, 3.49]]
-        w, pw = stats.shapiro(x2)
-        shapiro_test = stats.shapiro(x2)
+        w, pw = stats.shapiro(x2, axis=None)
+        shapiro_test = stats.shapiro(x2, axis=None)
         assert_almost_equal(w, 0.9590270, decimal=6)
         assert_almost_equal(shapiro_test.statistic, 0.9590270, decimal=6)
         assert_almost_equal(pw, 0.52460, decimal=3)
