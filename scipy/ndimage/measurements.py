@@ -893,7 +893,12 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         step = (hi - lo) // 2
         lo += step
         hi -= step
-        result += [(input[lo] + input[hi]) / 2.0]
+        if (np.issubdtype(input.dtype, np.integer)
+                or np.issubdtype(input.dtype, np.bool_)):
+            # avoid integer overflow or boolean addition (gh-12836)
+            result += [(input[lo].astype('d') + input[hi].astype('d')) / 2.0]
+        else:
+            result += [(input[lo] + input[hi]) / 2.0]
 
     return result
 

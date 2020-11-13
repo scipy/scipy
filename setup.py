@@ -44,6 +44,7 @@ Programming Language :: Python :: 3
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
+Programming Language :: Python :: 3.9
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -375,8 +376,9 @@ def parse_setuppy_commands():
     # useful messages to the user
     if 'install' in args:
         print(textwrap.dedent("""
-            Note: if you need reliable uninstall behavior, then install
-            with pip instead of using `setup.py install`:
+            Note: for reliable uninstall behaviour and dependency installation
+            and uninstallation, please use pip instead of using
+            `setup.py install`:
 
               - `pip install .`       (from a git repo or downloaded source
                                        release)
@@ -462,6 +464,20 @@ def parse_setuppy_commands():
                   ' '.join(sys.argv[1:])))
     return True
 
+def check_setuppy_command():
+    run_build = parse_setuppy_commands()
+    if run_build:
+        try:
+            import numpy
+            import pybind11
+        except ImportError as exc:  # We do not have our build deps installed
+            print(textwrap.dedent(
+                    """Error: '%s' must be installed before running the build.
+                    """
+                    % (exc.name,)))
+            sys.exit(1)
+
+    return run_build
 
 def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
@@ -505,24 +521,6 @@ def setup_package():
     if HAVE_SPHINX:
         cmdclass['build_sphinx'] = ScipyBuildDoc
 
-    # Figure out whether to add ``*_requires = ['numpy']``.
-    # We don't want to do that unconditionally, because we risk updating
-    # an installed numpy which fails too often.  Just if it's not installed, we
-    # may give it a try.  See gh-3379.
-    try:
-        import numpy
-    except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.14.5']
-    else:
-        # If we're building a wheel, assume there already exist numpy wheels
-        # for this platform, so it is safe to add numpy to build requirements.
-        # See gh-5184.
-        build_requires = (['numpy>=1.14.5'] if 'bdist_wheel' in sys.argv[1:]
-                          else [])
-
-    install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.4.3']
-
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -541,8 +539,9 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=setup_requires,
-        install_requires=install_requires,
+        install_requires=[
+            'numpy>=1.16.5',
+        ],
         python_requires='>=3.6',
     )
 
@@ -551,7 +550,7 @@ def setup_package():
         sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
-        run_build = parse_setuppy_commands()
+        run_build = check_setuppy_command()
 
     # Disable OSX Accelerate, it has too old LAPACK
     os.environ['ACCELERATE'] = 'None'

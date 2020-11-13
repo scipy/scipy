@@ -132,11 +132,11 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         This evaluation is carried out as ``workers(func, iterable)``.
     points : list, optional
         List of additional breakpoints.
-    quadrature : {'gk21', 'gk15', 'trapz'}, optional
+    quadrature : {'gk21', 'gk15', 'trapezoid'}, optional
         Quadrature rule to use on subintervals.
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'gk15' (Gauss-Kronrod 15-point rule),
-        'trapz' (composite trapezoid rule).
+        'trapezoid' (composite trapezoid rule).
         Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
     full_output : bool, optional
         Return an additional ``info`` dictionary.
@@ -276,7 +276,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         _quadrature = {None: _quadrature_gk21,
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
-                       'trapz': _quadrature_trapz}[quadrature]
+                       'trapz': _quadrature_trapezoid,  # alias for backcompat
+                       'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
         raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
 
@@ -442,7 +443,7 @@ def _subdivide_interval(args):
     return dint, derr, dround_err, subintervals, dneval
 
 
-def _quadrature_trapz(x1, x2, f, norm_func):
+def _quadrature_trapezoid(x1, x2, f, norm_func):
     """
     Composite trapezoid quadrature
     """
@@ -462,8 +463,8 @@ def _quadrature_trapz(x1, x2, f, norm_func):
     return s2, err, round_err
 
 
-_quadrature_trapz.cache_size = 3 * 3
-_quadrature_trapz.num_eval = 3
+_quadrature_trapezoid.cache_size = 3 * 3
+_quadrature_trapezoid.num_eval = 3
 
 
 def _quadrature_gk(a, b, f, norm_func, x, w, v):

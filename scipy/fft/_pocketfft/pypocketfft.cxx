@@ -374,11 +374,13 @@ py::array genuine_hartley(const py::array &in, const py::object &axes_,
   }
 
 // Export good_size in raw C-API to reduce overhead (~4x faster)
-PyObject * good_size(PyObject * /*self*/, PyObject * args)
+PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
   {
   Py_ssize_t n_ = -1;
   int real = false;
-  if (!PyArg_ParseTuple(args, "n|p:good_size", &n_, &real))
+  const char * keywords[] = {"target", "real", nullptr};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:good_size",
+                                   (char **) keywords, &n_, &real))
     return nullptr;
 
   if (n_<0)
@@ -687,7 +689,7 @@ const char * good_size_DS = R"""(Returns a good length to pad an FFT to.
 
 Parameters
 ----------
-n : int
+target : int
     Minimum transform length
 real : bool, optional
     True if either input or output of FFT should be fully real.
@@ -724,6 +726,7 @@ PYBIND11_MODULE(pypocketfft, m)
     "out"_a=None, "nthreads"_a=1);
 
   static PyMethodDef good_size_meth[] =
-    {{"good_size", good_size, METH_VARARGS, good_size_DS}, {0}};
+    {{"good_size", (PyCFunction)good_size,
+      METH_VARARGS | METH_KEYWORDS, good_size_DS}, {0}};
   PyModule_AddFunctions(m.ptr(), good_size_meth);
   }

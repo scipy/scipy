@@ -601,7 +601,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if _perform_fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
@@ -2819,21 +2819,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        Either the first set of measurements (in which case `y` is the second
+        Either the first set of measurements (in which case ``y`` is the second
         set of measurements), or the differences between two sets of
-        measurements (in which case `y` is not to be specified.)  Must be
+        measurements (in which case ``y`` is not to be specified.)  Must be
         one-dimensional.
     y : array_like, optional
-        Either the second set of measurements (if `x` is the first set of
-        measurements), or not specified (if `x` is the differences between
+        Either the second set of measurements (if ``x`` is the first set of
+        measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
-        The following options are available (default is 'wilcox'):
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+        The following options are available (default is "wilcox"):
      
-          * 'pratt': Includes zero-differences in the ranking process,
+          * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
-          * 'wilcox': Discards all zero-differences, the default.
-          * 'zsplit': Includes zero-differences in the ranking process and 
+          * "wilcox": Discards all zero-differences, the default.
+          * "zsplit": Includes zero-differences in the ranking process and
             split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2848,11 +2848,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Returns
     -------
     statistic : float
-        If `alternative` is "two-sided", the sum of the ranks of the
+        If ``alternative`` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative` and `mode`.
+        The p-value for the test depending on ``alternative`` and ``mode``.
 
     See Also
     --------
@@ -3414,9 +3414,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    return ((high - low)/2.0/pi)**2 * -2 * log(R)
 
 
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3468,6 +3470,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
