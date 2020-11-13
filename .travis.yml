@@ -25,27 +25,6 @@ env:
 
 matrix:
   include:
-    - python: 3.6
-      name: "Lint"
-      env:
-        - PYFLAKES=1
-        - PEP8=1
-        - NUMPYSPEC="--upgrade numpy"
-      before_install:
-        - pip install pycodestyle==2.5.0
-        - pip install pyflakes==2.1.1
-      script:
-        # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
-        - pycodestyle scipy benchmarks/benchmarks
-        - |
-          if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-             git fetch --unshallow
-             git config remote.origin.fetch "+refs/heads/maintenance/*:refs/remotes/origin/maintenance/*"
-             git fetch origin --no-tags
-             python tools/lint_diff.py --branch origin/$TRAVIS_BRANCH
-          fi
-        - tools/unicode-check.py
     - python: 3.7
       name: "ARM - Test Group 1"
       arch: arm64
