@@ -37,6 +37,7 @@ try:
 except AttributeError:
     float_power = np.power
 
+
 def _remove_optimizer_parameters(kwds):
     """
     Remove the optimizer-related keyword arguments 'loc', 'scale' and
@@ -603,6 +604,18 @@ class beta_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return sc.btdtri(a, b, q)
+
+    def _sf(self, x, a, b):
+        return _lazywhere(x < 0.5,
+                          (x, a, b),
+                          lambda x, a, b: 1 - sc.btdtr(a, b, x),
+                          f2=lambda x, a, b: sc.btdtr(b, a, 1 - x))
+
+    def _isf(self, p, a, b):
+        return _lazywhere(p < 0.5,
+                          (p, a, b),
+                          lambda p, a, b: 1 - sc.btdtri(b, a, p),
+                          f2=lambda p, a, b: sc.btdtri(a, b, 1 - p))
 
     def _stats(self, a, b):
         mn = a*1.0 / (a + b)

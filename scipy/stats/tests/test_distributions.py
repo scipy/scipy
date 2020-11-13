@@ -2381,6 +2381,34 @@ class TestLognorm(object):
                         stats.norm.logsf(np.log(x2-mu)/sigma))
 
 
+# Columns are x, a, b, cdf, sf.
+# The values of cdf and sf were computed using mpmath.
+_beta_cdf_sf = np.array([
+    [1e-20, 3.0, 0.5, 3.1249999999999994e-61, 1.0],
+    [1e-20, 0.5, 3.0, 1.875e-10, 0.9999999998125],
+    [0.999, 2, 10, 1.0, 1.0990000000000097e-29],
+    [0.9999999999999994, 3.0, 0.5, 0.9999999558234914, 4.417650858175538e-08],
+    [0.9999999999999994, 0.5, 3.0, 1.0, 5.345529420184392e-47],
+])
+
+# Columns are p, a, b, ppf.
+# The p column was computed using mpmath.
+_beta_ppf = np.array([
+    [2.5e-21, 3.0, 0.5, 1.999999949999998e-7],
+    [0.9999999407309943, 3.0, 0.5, 0.999999999999999],
+    [2.6516504294495528e-08, 0.5, 3.0, 2e-16],
+])
+
+# Columns are p, a, b, isf.
+# The p column was computed using mpmath.
+_beta_isf = np.array([
+    [0.99981250000125, 0.5, 3.0, 1.0e-8],
+    [2.0000030000132007e-17, 0.5, 3.0, 0.999996],
+    [5.930192380246625e-07, 3.0, 0.5, 0.9999999999999],
+    [0.9996750253207289, 3.0, 0.5, 0.1],
+])
+
+
 class TestBeta(object):
     def test_logpdf(self):
         # Regression test for Ticket #1326: avoid nan with 0*log(0) situation
@@ -2406,6 +2434,26 @@ class TestBeta(object):
         # More than one raises a ValueError.
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
+
+    @pytest.mark.parametrize('x, a, b, cdf, sf', _beta_cdf_sf)
+    def test_cdf(self, x, a, b, cdf, sf):
+        p = stats.beta.cdf(x, a, b)
+        assert_allclose(p, cdf, rtol=5e-15)
+
+    @pytest.mark.parametrize('x, a, b, cdf, sf', _beta_cdf_sf)
+    def test_sf(self, x, a, b, cdf, sf):
+        p = stats.beta.sf(x, a, b)
+        assert_allclose(p, sf, rtol=5e-15)
+
+    @pytest.mark.parametrize('p, a, b, ppf', _beta_ppf)
+    def test_ppf(self, p, a, b, ppf):
+        x = stats.beta.ppf(p, a, b)
+        assert_allclose(x, ppf, rtol=5e-15)
+
+    @pytest.mark.parametrize('p, a, b, isf', _beta_isf)
+    def test_isf(self, p, a, b, isf):
+        x = stats.beta.isf(p, a, b)
+        assert_allclose(x, isf, rtol=1e-13)
 
 
 class TestBetaPrime(object):
