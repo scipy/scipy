@@ -52,7 +52,7 @@ jobs:
       tools/unicode-check.py
     displayName: 'Run Lint Checks'
     failOnStderr: true
-- job: Linux_Python_36_32bit_full
+- job: Linux_Python_37_32bit_full
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
@@ -61,28 +61,28 @@ jobs:
            docker pull i386/ubuntu:bionic
            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
            apt-get -y update && \
-           apt-get -y install curl python3.6-dev python3.6 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+           apt-get -y install curl python3.7-dev python3.7 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-           python3.6 get-pip.py && \
+           python3.7 get-pip.py && \
            pip3 --version && \
            pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
            apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
-           target=\$(python3.6 ../scipy/tools/openblas_support.py) && \
+           target=\$(python3.7 ../scipy/tools/openblas_support.py) && \
            cp -r \$target/lib/* /usr/lib && \
            cp \$target/include/* /usr/include && \
            cd ../scipy && \
-           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
-           python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
-           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 setup.py install && \
+           python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: '**/test-*.xml'
       failTaskOnFailedTests: true
-      testRunTitle: 'Publish test results for Python 3.6-32 bit full Linux'
+      testRunTitle: 'Publish test results for Python 3.7-32 bit full Linux'
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
@@ -99,16 +99,11 @@ jobs:
   strategy:
     maxParallel: 4
     matrix:
-        Python36-32bit-fast:
-          PYTHON_VERSION: '3.6'
+        Python37-32bit-fast:
+          PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x86'
           TEST_MODE: fast
           BITS: 32
-        Python36-64bit-full:
-          PYTHON_VERSION: '3.6'
-          PYTHON_ARCH: 'x64'
-          TEST_MODE: full
-          BITS: 64
         Python37-64bit-full:
           PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x64'
