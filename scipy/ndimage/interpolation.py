@@ -198,7 +198,7 @@ def _prepad_for_spline_filter(input, mode, cval):
         npad = 12
         if mode == 'grid-constant':
             padded = numpy.pad(input, npad, mode='constant',
-                              constant_values=cval)
+                               constant_values=cval)
         elif mode == 'nearest':
             padded = numpy.pad(input, npad, mode='edge')
     else:
