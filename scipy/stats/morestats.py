@@ -1690,7 +1690,7 @@ def shapiro(x, axis=None, nan_policy="propagate"):
     if contains_nan and nan_policy == "omit":
         x = np.ma.masked_invalid(x)
 
-    result = np.apply_along_axis(_apply_sharipo_1d, axis, x)
+    result = np.apply_along_axis(_apply_shapiro_1d, axis, x)
     result = np.moveaxis(result, axis, 0)
 
     w = result[0]
@@ -1699,7 +1699,7 @@ def shapiro(x, axis=None, nan_policy="propagate"):
     return ShapiroResult(w, pw)
 
 
-def _apply_sharipo_1d(x: np.ma.MaskedArray):
+def _apply_shapiro_1d(x: np.ma.MaskedArray):
     """
    Perform the Shapiro-Wilk test for normality of 1d array.
 

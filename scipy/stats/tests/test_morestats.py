@@ -215,11 +215,11 @@ class TestShapiro(object):
 
         # multi dimensions case
         n1 = self.nd.copy()
-        n1[0, 0, 0] = np.NaN
+        n1[0, 0, 0] = np.nan
         w1, pw1 = stats.shapiro(n1, axis=1)
         shapiro_test = stats.shapiro(n1, axis=1)
 
-        expect_w1 = [[np.NaN, 0.92373675927168242]]
+        expect_w1 = [[np.nan, 0.92373675927168242]]
         expect_pw1 = [[1, 0.38917735845393642]]
 
         assert_almost_equal(w1, expect_w1, decimal=6)
@@ -229,7 +229,7 @@ class TestShapiro(object):
 
     def test_nan_policies(self):
         n1 = self.nd.copy()
-        n1[0, 0, 0] = np.NaN
+        n1[0, 0, 0] = np.nan
 
         # [propagate]
         # already tested as default setting
