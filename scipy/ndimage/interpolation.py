@@ -173,6 +173,22 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     return output
 
 
+def _prepad_for_spline_filter(input, mode, cval):
+    if mode in ['nearest', 'grid-constant']:
+        npad = 12
+        if mode == 'grid-constant':
+            padded = numpy.pad(input, npad, mode='constant',
+                              constant_values=cval)
+        elif mode == 'nearest':
+            padded = numpy.pad(input, npad, mode='edge')
+    else:
+        # other modes have exact boundary conditions implemented so
+        # no prepadding is needed
+        npad = 0
+        padded = input
+    return padded, npad
+
+
 @docfiller
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
@@ -286,14 +302,16 @@ def geometric_transform(input, mapping, output_shape=None,
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64,
+        padded, npad = _prepad_for_spline_filter(input, mode, cval)
+        filtered = spline_filter(padded, order, output=numpy.float64,
                                  mode=mode)
     else:
+        npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input, shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
-                                  order, mode, cval, extra_arguments,
+                                  order, mode, cval, npad, extra_arguments,
                                   extra_keywords)
     return output
 
@@ -375,15 +393,17 @@ def map_coordinates(input, coordinates, output=None, order=3,
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError('invalid shape for coordinate array')
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64,
+        padded, npad = _prepad_for_spline_filter(input, mode, cval)
+        filtered = spline_filter(padded, order, output=numpy.float64,
                                  mode=mode)
     else:
+        npad = 0
         filtered = input
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
-                                  output, order, mode, cval, None, None)
+                                  output, order, mode, cval, npad, None, None)
     return output
 
 
@@ -476,9 +496,11 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64,
+        padded, npad = _prepad_for_spline_filter(input, mode, cval)
+        filtered = spline_filter(padded, order, output=numpy.float64,
                                  mode=mode)
     else:
+        npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input,
@@ -517,10 +539,11 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             "SciPy 0.18.0."
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
-                             mode, cval)
+                             mode, cval, npad)
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
-                                      output, order, mode, cval, None, None)
+                                      output, order, mode, cval, npad, None,
+                                      None)
     return output
 
 
@@ -562,9 +585,11 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64,
+        padded, npad = _prepad_for_spline_filter(input, mode, cval)
+        filtered = spline_filter(padded, order, output=numpy.float64,
                                  mode=mode)
     else:
+        npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
     output = _ni_support._get_output(output, input)
@@ -573,7 +598,8 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift = numpy.asarray(shift, dtype=numpy.float64)
     if not shift.flags.contiguous:
         shift = shift.copy()
-    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval)
+    _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval,
+                         npad)
     return output
 
 
@@ -632,9 +658,11 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
     if prefilter and order > 1:
-        filtered = spline_filter(input, order, output=numpy.float64,
+        padded, npad = _prepad_for_spline_filter(input, mode, cval)
+        filtered = spline_filter(padded, order, output=numpy.float64,
                                  mode=mode)
     else:
+        npad = 0
         filtered = input
     mode = _ni_support._extend_mode_to_code(mode)
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
@@ -651,7 +679,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     output = _ni_support._get_output(output, input,
                                      shape=output_shape)
     zoom = numpy.ascontiguousarray(zoom)
-    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
+    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval, npad)
     return output
 
 
