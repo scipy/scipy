@@ -94,13 +94,16 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
         assert_equal(output.dtype.type, type2)
 
-        # output cannot be real
-        with assert_raises(RuntimeError):
+        # warns if the output is not a complex dtype
+        with pytest.warns(UserWarning,
+                          match="promoting specified output dtype to complex"):
             correlate(array, kernel, output=real_dtype)
 
-        with assert_raises(RuntimeError):
+        with pytest.warns(UserWarning,
+                          match="promoting specified output dtype to complex"):
             convolve(array, kernel, output=real_dtype)
 
+        # raises if output array is provided, but is not complex-valued
         output_real = numpy.zeros_like(array, dtype=real_dtype)
         with assert_raises(RuntimeError):
             correlate(array, kernel, output=output_real)
