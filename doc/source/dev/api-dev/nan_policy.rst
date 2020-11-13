@@ -103,7 +103,7 @@ not unusual to find that the function doesn't already handle this case
 in a well-defined manner, and some thought and design may have to be
 applied to ensure that it works.  The correct behavior (whether that be
 to return ``nan``, return some other value, raise an exception, or something
-else) will be determined case-by-case.
+else) will be determined on a case-by-case basis.
 
 
 Why doesn't ``nan_policy`` also apply to ``inf``?
