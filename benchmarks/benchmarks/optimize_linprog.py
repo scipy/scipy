@@ -3,14 +3,12 @@ import os
 import numpy as np
 from numpy.testing import suppress_warnings
 
-from .common import Benchmark, is_xslow
+from .common import Benchmark, is_xslow, safe_import
 
-try:
+with safe_import():
     from scipy.optimize import linprog, OptimizeWarning
-except ImportError:
-    pass
 
-try:
+with safe_import() as exc:
     from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
     from scipy.optimize._remove_redundancy import (
         _remove_redundancy_svd,
@@ -23,19 +21,17 @@ try:
         _clean_inputs,
         _LPProblem
     )
-except ImportError:
-    pass
+if exc.error:
+    _remove_redundancy_svd = None
+    _remove_redundancy_pivot_sparse = None
+    _remove_redundancy_pivot_dense = None
+    _remove_redundancy_id = None
 
-try:
+with safe_import():
     from scipy.linalg import toeplitz
-except ImportError:
-    pass
 
-try:
-    from scipy.sparse import csc_matrix, csr_matrix
-except ImportError:
-    pass
-
+with safe_import():
+    from scipy.sparse import csc_matrix, csr_matrix, issparse
 
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),

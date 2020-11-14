@@ -392,6 +392,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_corrs = min(n_bfgs_updates, maxcor)
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
+    task_str = task_str.decode()
     return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
                           njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,

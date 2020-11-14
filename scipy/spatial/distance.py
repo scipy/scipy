@@ -872,7 +872,7 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Jaccard_index
     .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
-       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+       distance", 2016, :arxiv:`1612.02696`
 
     Examples
     --------
@@ -1799,7 +1799,8 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry ``ij``.
+        is computed and stored in entry 
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
     --------

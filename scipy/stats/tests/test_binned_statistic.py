@@ -487,3 +487,26 @@ class TestBinnedStatistic(object):
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
+    
+    def test_dd_range_errors(self):
+        # Test that descriptive exceptions are raised as appropriate for bad
+        # values of the `range` argument. (See gh-12996)
+        with assert_raises(ValueError,
+                           match='In range, start must be <= stop'):
+            binned_statistic_dd([self.y], self.v,
+                                range=[[1, 0]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 1 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[1, 0], [0, 1]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 2 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1], [1, 0]])
+        with assert_raises(
+                ValueError,
+                match='range given for 1 dimensions; 2 required'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1]])
