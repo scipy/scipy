@@ -21,7 +21,8 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
-from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
+from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve, \
+                                          solve_triangular
 
 try:
     from scipy.linalg import _cblas as cblas
