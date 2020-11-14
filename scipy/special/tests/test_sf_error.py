@@ -1,8 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
-from numpy.testing import assert_, assert_equal, assert_raises
+from numpy.testing import assert_, assert_equal
+import pytest
+from pytest import raises as assert_raises
 
 import scipy.special as sc
 from scipy.special._ufuncs import _sf_error_test_function
@@ -29,9 +29,8 @@ _sf_error_actions = [
 
 def _check_action(fun, args, action):
     if action == 'warn':
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
     elif action == 'raise':
         with assert_raises(sc.SpecialFunctionError):
             fun(*args)
@@ -45,14 +44,14 @@ def _check_action(fun, args, action):
 def test_geterr():
     err = sc.geterr()
     for key, value in err.items():
-        assert_(key in _sf_error_code_map.keys())
+        assert_(key in _sf_error_code_map)
         assert_(value in _sf_error_actions)
 
 
 def test_seterr():
     entry_err = sc.geterr()
     try:
-        for category in _sf_error_code_map.keys():
+        for category, error_code in _sf_error_code_map.items():
             for action in _sf_error_actions:
                 geterr_olderr = sc.geterr()
                 seterr_olderr = sc.seterr(**{category: action})
@@ -62,9 +61,7 @@ def test_seterr():
                 geterr_olderr.pop(category)
                 newerr.pop(category)
                 assert_(geterr_olderr == newerr)
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                               action)
+                _check_action(_sf_error_test_function, (error_code,), action)
     finally:
         sc.seterr(**entry_err)
 
@@ -94,13 +91,11 @@ def test_errstate_cpp_basic():
 
 
 def test_errstate():
-    for category in _sf_error_code_map.keys():
+    for category, error_code in _sf_error_code_map.items():
         for action in _sf_error_actions:
             olderr = sc.geterr()
             with sc.errstate(**{category: action}):
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                              action)
+                _check_action(_sf_error_test_function, (error_code,), action)
             assert_equal(olderr, sc.geterr())
 
 
@@ -111,18 +106,3 @@ def test_errstate_all_but_one():
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)
     assert_equal(olderr, sc.geterr())
-
-
-def test_errprint():
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        flag = sc.errprint(True)
-    try:
-        assert_(isinstance(flag, bool))
-        with warnings.catch_warnings(record=True) as w:
-            sc.loggamma(0)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
-    finally:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            sc.errprint(flag)

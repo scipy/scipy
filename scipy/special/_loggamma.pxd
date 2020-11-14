@@ -15,18 +15,21 @@
 #     https://github.com/JuliaLang/julia/blob/master/base/special/gamma.jl
 #
 cimport cython
-cimport sf_error
+from . cimport sf_error
 from libc.math cimport M_PI, floor, fabs
 
-from _complexstuff cimport (
-    nan, zisnan, zabs, zlog, zlog1, zexp, zdiv, zpack 
+from ._complexstuff cimport (
+    nan, zisnan, zabs, zlog, zlog1, zexp, zpack
 )
-from _trig cimport sinpi
-from _evalpoly cimport cevalpoly
+from ._trig cimport sinpi
+from ._evalpoly cimport cevalpoly
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil
     int npy_signbit(double x) nogil
+
+cdef extern from "cephes.h":
+    double lgam(double x) nogil
 
 DEF TWOPI = 6.2831853071795864769252842 # 2*pi
 DEF LOGPI = 1.1447298858494001741434262 # log(pi)
@@ -34,6 +37,13 @@ DEF HLOG2PI = 0.918938533204672742 # log(2*pi)/2
 DEF SMALLX = 7
 DEF SMALLY = 7
 DEF TAYLOR_RADIUS = 0.2
+
+
+cdef inline double loggamma_real(double x) nogil:
+    if x < 0.0:
+        return nan
+
+    return lgam(x)
 
 
 @cython.cdivision(True)
@@ -62,7 +72,7 @@ cdef inline double complex loggamma(double complex z) nogil:
         return loggamma_recurrence(z)
     else:
         return loggamma_recurrence(z.conjugate()).conjugate()
-        
+
 
 @cython.cdivision(True)
 cdef inline double complex loggamma_recurrence(double complex z) nogil:
@@ -79,7 +89,7 @@ cdef inline double complex loggamma_recurrence(double complex z) nogil:
 
     z.real += 1
     while z.real <= SMALLX:
-        shiftprod *= z 
+        shiftprod *= z
         nsb = npy_signbit(shiftprod.imag)
         signflips += 1 if nsb != 0 and sb == 0 else 0
         sb = nsb
@@ -90,7 +100,7 @@ cdef inline double complex loggamma_recurrence(double complex z) nogil:
 @cython.cdivision(True)
 cdef inline double complex loggamma_stirling(double complex z) nogil:
     """Stirling series for log-Gamma.
-    
+
     The coefficients are B[2*n]/(2*n*(2*n - 1)) where B[2*n] is the
     (2*n)th Bernoulli number. See (1.1) in [1].
 
@@ -102,8 +112,8 @@ cdef inline double complex loggamma_stirling(double complex z) nogil:
             -5.952380952380952381e-4, 7.9365079365079365079e-4,
             -2.7777777777777777778e-3, 8.3333333333333333333e-2
         ]
-        double complex rz = zdiv(1.0, z)
-        double complex rzz = zdiv(rz, z)
+        double complex rz = 1.0/z
+        double complex rzz = rz/z
 
     return (z - 0.5)*zlog(z) - z + HLOG2PI + rz*cevalpoly(coeffs, 7, rzz)
 

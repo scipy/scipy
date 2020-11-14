@@ -5,8 +5,7 @@
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
-#include <numpy/noprefix.h>
-
+#include "numpy/ndarrayobject.h"
 #include "sigtools.h"
 
 enum {
@@ -107,10 +106,10 @@ clean_ax:
  */
 
 /**begin repeat
- * #fsuf = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
- *         longlong, float, double, longdouble#
- * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
- *         longlong, float, double, npy_longdouble#
+ * #fsuf = ubyte, byte, ushort, short, uint, int, ulong,
+ *         long, ulonglong, longlong, float, double, longdouble#
+ * #type = npy_ubyte, npy_byte, npy_ushort, short, npy_uint, int, npy_ulong,
+ *         long, npy_ulonglong, npy_longlong, float, double, npy_longdouble#
  */
 
 static int _imp_correlate_nd_@fsuf@(PyArrayNeighborhoodIterObject *curx,
@@ -201,7 +200,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
             /*
              * compute tmp2 = acc + x * y. Not all objects supporting the
              * number protocol support inplace operations, so we do it the most
-             * straightfoward way.
+             * straightforward way.
              */
             tmp = PyNumber_Multiply(*((PyObject**)curneighx->dataptr),
                                     *((PyObject**)ity->dataptr));
@@ -240,7 +239,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
      * innerproduct of y with the neighborhood around curx */
     switch(mode) {
         case CORR_MODE_VALID:
-            /* Only walk through the input points such as the correponding
+            /* Only walk through the input points such as the corresponding
              * output will not depend on 0 padding */
             for(i = 0; i < PyArray_NDIM(itx->ao); ++i) {
                 bounds[2*i] = PyArray_DIMS(ity->ao)[i] - 1;

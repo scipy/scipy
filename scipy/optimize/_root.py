@@ -5,13 +5,10 @@ Functions
 ---------
 - root : find a root of a vector function.
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['root']
 
 import numpy as np
 
-from scipy._lib.six import callable
 
 from warnings import warn
 
@@ -35,7 +32,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     args : tuple, optional
         Extra arguments passed to the objective function and its Jacobian.
     method : str, optional
-        Type of solver.  Should be one of
+        Type of solver. Should be one of
 
             - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
             - 'lm'               :ref:`(see here) <optimize.root-lm>`
@@ -62,7 +59,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         ``callback(x, f)`` where `x` is the current solution and `f`
         the corresponding residual. For all methods but 'hybr' and 'lm'.
     options : dict, optional
-        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
+        A dictionary of solver options. E.g., `xtol` or `maxiter`, see
         :obj:`show_options()` for details.
 
     Returns
@@ -123,8 +120,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     .. [1] More, Jorge J., Burton S. Garbow, and Kenneth E. Hillstrom.
        1980. User Guide for MINPACK-1.
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
-        Equations. Society for Industrial and Applied Mathematics.
-        <http://www.siam.org/books/kelley/>
+       Equations. Society for Industrial and Applied Mathematics.
+       <https://archive.siam.org/books/kelley/fr16/>
     .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
 
     Examples
@@ -148,6 +145,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol = optimize.root(fun, [0, 0], jac=jac, method='hybr')
     >>> sol.x
     array([ 0.8411639,  0.1588361])
+
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -160,7 +158,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         warn('Method %s does not accept callback.' % method,
              RuntimeWarning)
 
-    # fun also returns the jacobian
+    # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
         if bool(jac):
             fun = MemoizeJac(fun)
@@ -208,7 +206,7 @@ def _warn_jac_unused(jac, method):
              RuntimeWarning)
 
 
-def _root_leastsq(func, x0, args=(), jac=None,
+def _root_leastsq(fun, x0, args=(), jac=None,
                   col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
                   gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
                   **unknown_options):
@@ -243,7 +241,7 @@ def _root_leastsq(func, x0, args=(), jac=None,
     """
 
     _check_unknown_options(unknown_options)
-    x, cov_x, info, msg, ier = leastsq(func, x0, args=args, Dfun=jac,
+    x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
                                        full_output=True,
                                        col_deriv=col_deriv, xtol=xtol,
                                        ftol=ftol, gtol=gtol,
@@ -256,7 +254,7 @@ def _root_leastsq(func, x0, args=(), jac=None,
     return sol
 
 
-def _root_nonlin_solve(func, x0, args=(), jac=None,
+def _root_nonlin_solve(fun, x0, args=(), jac=None,
                        _callback=None, _method=None,
                        nit=None, disp=False, maxiter=None,
                        ftol=None, fatol=None, xtol=None, xatol=None,
@@ -284,12 +282,12 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
     if args:
         if jac:
             def f(x):
-                return func(x, *args)[0]
+                return fun(x, *args)[0]
         else:
             def f(x):
-                return func(x, *args)
+                return fun(x, *args)
     else:
-        f = func
+        f = fun
 
     x, info = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_options),
                                   iter=nit, verbose=verbose,
@@ -344,19 +342,26 @@ def _root_broyden1_doc():
                 method and values for additional parameters.
 
                 Methods available:
-                    - ``restart``: drop all matrix columns. Has no
+
+                    - ``restart``
+                        Drop all matrix columns. Has no
                         extra parameters.
-                    - ``simple``: drop oldest matrix column. Has no
+                    - ``simple``
+                        Drop oldest matrix column. Has no
                         extra parameters.
-                    - ``svd``: keep only the most significant SVD
+                    - ``svd``
+                        Keep only the most significant SVD
                         components.
-                      Extra parameters:
-                          - ``to_retain``: number of SVD components to
-                              retain when rank reduction is done.
-                              Default is ``max_rank - 2``.
+
+                        Extra parameters:
+
+                            - ``to_retain``
+                                Number of SVD components to
+                                retain when rank reduction is done.
+                                Default is ``max_rank - 2``.
             max_rank : int, optional
                 Maximum rank for the Broyden matrix.
-                Default is infinity (ie., no rank reduction).
+                Default is infinity (i.e., no rank reduction).
     """
     pass
 
@@ -402,19 +407,26 @@ def _root_broyden2_doc():
             method and values for additional parameters.
 
             Methods available:
-                - ``restart``: drop all matrix columns. Has no
+
+                - ``restart``
+                    Drop all matrix columns. Has no
                     extra parameters.
-                - ``simple``: drop oldest matrix column. Has no
+                - ``simple``
+                    Drop oldest matrix column. Has no
                     extra parameters.
-                - ``svd``: keep only the most significant SVD
+                - ``svd``
+                    Keep only the most significant SVD
                     components.
-                  Extra parameters:
-                      - ``to_retain``: number of SVD components to
-                          retain when rank reduction is done.
-                          Default is ``max_rank - 2``.
+
+                    Extra parameters:
+
+                        - ``to_retain``
+                            Number of SVD components to
+                            retain when rank reduction is done.
+                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
-            Default is infinity (ie., no rank reduction).
+            Default is infinity (i.e., no rank reduction).
     """
     pass
 

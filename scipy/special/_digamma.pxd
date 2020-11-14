@@ -12,13 +12,10 @@
 
 import cython
 from libc.math cimport ceil, fabs, M_PI
-from _complexstuff cimport number_t, nan, zlog, zabs, zdiv
-from _trig cimport sinpi, cospi
-cimport sf_error
-
-cdef extern from "cephes.h":
-    double zeta(double x, double q) nogil
-    double psi(double x) nogil
+from ._complexstuff cimport number_t, nan, zlog, zabs
+from ._trig cimport sinpi, cospi
+from ._cephes cimport zeta, psi
+from . cimport sf_error
 
 # Use the asymptotic series for z away from the negative real axis
 # with abs(z) > smallabsz.
@@ -40,14 +37,11 @@ DEF negrootval = 7.2897639029768949e-17
 
 
 cdef inline double digamma(double z) nogil:
-    """
-    Wrap Cephes' psi to take advantage of the series expansions
-    around the two smallest zeros.
+    """Wrap Cephes' psi to take advantage of the series expansion around
+    the smallest negative zero.
 
     """
-    if zabs(z - posroot) < 0.5:
-        return zeta_series(z, posroot, posrootval)
-    elif zabs(z - negroot) < 0.3:
+    if zabs(z - negroot) < 0.3:
         return zeta_series(z, negroot, negrootval)
     else:
         return psi(z)
@@ -87,7 +81,7 @@ cdef inline double complex cdigamma(double complex z) nogil:
     if z.real < 0 and fabs(z.imag) < smallabsz:
         # Reflection formula for digamma. See
         #
-        # http://dlmf.nist.gov/5.5#E4
+        # https://dlmf.nist.gov/5.5#E4
         #
         res -= M_PI*cospi(z)/sinpi(z)
         z = 1 - z
@@ -126,7 +120,7 @@ cdef inline double complex forward_recurrence(double complex z,
 
     digamma(z + 1) = digamma(z) + 1/z.
 
-    See http://dlmf.nist.gov/5.5#E2
+    See https://dlmf.nist.gov/5.5#E2
 
     """
     cdef:
@@ -150,7 +144,7 @@ cdef inline double complex backward_recurrence(double complex z,
     cdef:
         int k
         double complex res = psiz
-        
+
     for k in range(1, n + 1):
         res -= 1/(z - k)
     return res
@@ -161,7 +155,7 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
     """
     Evaluate digamma using an asymptotic series. See
 
-    http://dlmf.nist.gov/5.11#E2
+    https://dlmf.nist.gov/5.11#E2
 
     """
     cdef:
@@ -169,19 +163,19 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
         # The Bernoulli numbers B_2k for 1 <= k <= 16.
         double *bernoulli2k = [
             0.166666666666666667, -0.0333333333333333333,
-            0.0238095238095238095, -0.0333333333333333333, 
+            0.0238095238095238095, -0.0333333333333333333,
             0.0757575757575757576, -0.253113553113553114,
             1.16666666666666667, -7.09215686274509804,
             54.9711779448621554, -529.124242424242424,
             6192.12318840579710, -86580.2531135531136,
             1425517.16666666667, -27298231.0678160920,
             601580873.900642368, -15116315767.0921569]
-        double complex rzz = zdiv(zdiv(1, z), z)
+        double complex rzz = 1/z/z
         double complex zfac = 1
         double complex term
         double complex res
 
-    res = zlog(z) - zdiv(1.0, 2*z)
+    res = zlog(z) - 0.5/z
     for k in range(1, 17):
         zfac *= rzz
         term = -bernoulli2k[k-1]*zfac/(2*k)

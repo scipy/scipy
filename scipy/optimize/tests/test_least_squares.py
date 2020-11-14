@@ -1,13 +1,10 @@
-from __future__ import division
-
 from itertools import product
-import warnings
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (run_module_suite, assert_, assert_allclose,
-                           assert_raises, assert_equal)
-
+from numpy.testing import (assert_, assert_allclose,
+                           assert_equal, suppress_warnings)
+from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
@@ -59,7 +56,7 @@ def jac_rosenbrock_cropped(x):
     return jac_rosenbrock(x)[0]
 
 
-# When x is 1-d array, return is 2-d array.
+# When x is 1-D array, return is 2-D array.
 def fun_wrong_dimensions(x):
     return np.array([x, x**2, x**3])
 
@@ -184,27 +181,29 @@ class BaseMixin(object):
         # Test that args and kwargs are passed correctly to the functions.
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
+            with suppress_warnings() as sup:
+                sup.filter(UserWarning,
+                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
-                assert_allclose(res.x, a, rtol=1e-4)
-
-                assert_raises(TypeError, least_squares, fun_trivial, 2.0,
-                              args=(3, 4,), method=self.method)
-
-                res = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
+                res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
                                     method=self.method)
-                assert_allclose(res.x, a, rtol=1e-4)
-                assert_raises(TypeError, least_squares, fun_trivial, 2.0,
-                              kwargs={'kaboom': 3}, method=self.method)
+
+            assert_allclose(res.x, a, rtol=1e-4)
+            assert_allclose(res1.x, a, rtol=1e-4)
+
+            assert_raises(TypeError, least_squares, fun_trivial, 2.0,
+                          args=(3, 4,), method=self.method)
+            assert_raises(TypeError, least_squares, fun_trivial, 2.0,
+                          kwargs={'kaboom': 3}, method=self.method)
 
     def test_jac_options(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            for jac in ['2-point', '3-point', 'cs', jac_trivial]:
+        for jac in ['2-point', '3-point', 'cs', jac_trivial]:
+            with suppress_warnings() as sup:
+                sup.filter(UserWarning,
+                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
-                assert_allclose(res.x, 0, atol=1e-4)
+            assert_allclose(res.x, 0, atol=1e-4)
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0, jac='oops',
                       method=self.method)
@@ -293,15 +292,16 @@ class BaseMixin(object):
     def test_rosenbrock(self):
         x0 = [-2, 1]
         x_opt = [1, 1]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            for jac, x_scale, tr_solver in product(
-                    ['2-point', '3-point', 'cs', jac_rosenbrock],
-                    [1.0, np.array([1.0, 0.2]), 'jac'],
-                    ['exact', 'lsmr']):
+        for jac, x_scale, tr_solver in product(
+                ['2-point', '3-point', 'cs', jac_rosenbrock],
+                [1.0, np.array([1.0, 0.2]), 'jac'],
+                ['exact', 'lsmr']):
+            with suppress_warnings() as sup:
+                sup.filter(UserWarning,
+                           "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'")
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
-                assert_allclose(res.x, x_opt)
+            assert_allclose(res.x, x_opt)
 
     def test_rosenbrock_cropped(self):
         x0 = [-2, 1]
@@ -362,6 +362,24 @@ class BaseMixin(object):
 
         assert_(res.nfev < max_nfev)
         assert_(res.cost < 0.5)
+
+    def test_error_raised_when_all_tolerances_below_eps(self):
+        # Test that all 0 tolerances are not allowed.
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0,
+                      method=self.method, ftol=None, xtol=None, gtol=None)
+
+    def test_convergence_with_only_one_tolerance_enabled(self):
+        if self.method == 'lm':
+            return  # should not do test
+        x0 = [-2, 1]
+        x_opt = [1, 1]
+        for ftol, xtol, gtol in [(1e-8, None, None),
+                                  (None, 1e-8, None),
+                                  (None, None, 1e-8)]:
+            res = least_squares(fun_rosenbrock, x0, jac=jac_rosenbrock,
+                                ftol=ftol, gtol=gtol, xtol=xtol,
+                                method=self.method)
+            assert_allclose(res.x, x_opt)
 
 
 class BoundsMixin(object):
@@ -450,18 +468,16 @@ class SparseMixin(object):
     def test_equivalence(self):
         sparse = BroydenTridiagonal(mode='sparse')
         dense = BroydenTridiagonal(mode='dense')
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            res_sparse = least_squares(
-                sparse.fun, sparse.x0, jac=sparse.jac,
-                method=self.method)
-            res_dense = least_squares(
-                dense.fun, dense.x0, jac=sparse.jac,
-                method=self.method)
-            assert_equal(res_sparse.nfev, res_dense.nfev)
-            assert_allclose(res_sparse.x, res_dense.x, atol=1e-20)
-            assert_allclose(res_sparse.cost, 0, atol=1e-20)
-            assert_allclose(res_dense.cost, 0, atol=1e-20)
+        res_sparse = least_squares(
+            sparse.fun, sparse.x0, jac=sparse.jac,
+            method=self.method)
+        res_dense = least_squares(
+            dense.fun, dense.x0, jac=sparse.jac,
+            method=self.method)
+        assert_equal(res_sparse.nfev, res_dense.nfev)
+        assert_allclose(res_sparse.x, res_dense.x, atol=1e-20)
+        assert_allclose(res_sparse.cost, 0, atol=1e-20)
+        assert_allclose(res_dense.cost, 0, atol=1e-20)
 
     def test_tr_options(self):
         p = BroydenTridiagonal()
@@ -490,36 +506,32 @@ class SparseMixin(object):
 
     def test_numerical_jac(self):
         p = BroydenTridiagonal()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            for jac in ['2-point', '3-point', 'cs']:
-                res_dense = least_squares(p.fun, p.x0, jac, method=self.method)
-                res_sparse = least_squares(
-                    p.fun, p.x0, jac,method=self.method,
-                    jac_sparsity=p.sparsity)
-                assert_equal(res_dense.nfev, res_sparse.nfev)
-                assert_allclose(res_dense.x, res_sparse.x, atol=1e-20)
-                assert_allclose(res_dense.cost, 0, atol=1e-20)
-                assert_allclose(res_sparse.cost, 0, atol=1e-20)
+        for jac in ['2-point', '3-point', 'cs']:
+            res_dense = least_squares(p.fun, p.x0, jac, method=self.method)
+            res_sparse = least_squares(
+                p.fun, p.x0, jac,method=self.method,
+                jac_sparsity=p.sparsity)
+            assert_equal(res_dense.nfev, res_sparse.nfev)
+            assert_allclose(res_dense.x, res_sparse.x, atol=1e-20)
+            assert_allclose(res_dense.cost, 0, atol=1e-20)
+            assert_allclose(res_sparse.cost, 0, atol=1e-20)
 
     def test_with_bounds(self):
         p = BroydenTridiagonal()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            for jac, jac_sparsity in product(
-                    [p.jac, '2-point', '3-point', 'cs'], [None, p.sparsity]):
-                res_1 = least_squares(
-                    p.fun, p.x0, jac, bounds=(p.lb, np.inf),
-                    method=self.method,jac_sparsity=jac_sparsity)
-                res_2 = least_squares(
-                    p.fun, p.x0, jac, bounds=(-np.inf, p.ub),
-                    method=self.method, jac_sparsity=jac_sparsity)
-                res_3 = least_squares(
-                    p.fun, p.x0, jac, bounds=(p.lb, p.ub),
-                    method=self.method, jac_sparsity=jac_sparsity)
-                assert_allclose(res_1.optimality, 0, atol=1e-10)
-                assert_allclose(res_2.optimality, 0, atol=1e-10)
-                assert_allclose(res_3.optimality, 0, atol=1e-10)
+        for jac, jac_sparsity in product(
+                [p.jac, '2-point', '3-point', 'cs'], [None, p.sparsity]):
+            res_1 = least_squares(
+                p.fun, p.x0, jac, bounds=(p.lb, np.inf),
+                method=self.method,jac_sparsity=jac_sparsity)
+            res_2 = least_squares(
+                p.fun, p.x0, jac, bounds=(-np.inf, p.ub),
+                method=self.method, jac_sparsity=jac_sparsity)
+            res_3 = least_squares(
+                p.fun, p.x0, jac, bounds=(p.lb, p.ub),
+                method=self.method, jac_sparsity=jac_sparsity)
+            assert_allclose(res_1.optimality, 0, atol=1e-10)
+            assert_allclose(res_2.optimality, 0, atol=1e-10)
+            assert_allclose(res_3.optimality, 0, atol=1e-10)
 
     def test_wrong_jac_sparsity(self):
         p = BroydenTridiagonal()
@@ -600,7 +612,7 @@ class LossFunctionMixin(object):
         # the cost function and dropping the part containing second derivative
         # of f. For a scalar function it is computed as
         # H = (rho' + 2 * rho'' * f**2) * f'**2, if the expression inside the
-        # brackets is less than EPS it is replaced by EPS. Here we check
+        # brackets is less than EPS it is replaced by EPS. Here, we check
         # against the root of H.
 
         x = 2.0  # res.x will be this.
@@ -616,7 +628,7 @@ class LossFunctionMixin(object):
                             max_nfev=1, method=self.method)
         assert_equal(res.jac, 2 * x * EPS**0.5)
 
-        # Now let's apply `loss_scale` to turn the residual into an inlier.
+        # Now, let's apply `loss_scale` to turn the residual into an inlier.
         # The loss function becomes linear.
         res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
                             f_scale=10, max_nfev=1)
@@ -736,5 +748,34 @@ def test_basic():
     assert_allclose(res.x, 0, atol=1e-10)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_small_tolerances_for_lm():
+    for ftol, xtol, gtol in [(None, 1e-13, 1e-13),
+                             (1e-13, None, 1e-13),
+                             (1e-13, 1e-13, None)]:
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0, xtol=xtol,
+                      ftol=ftol, gtol=gtol, method='lm')
+
+
+def test_fp32_gh12991():
+    # checks that smaller FP sizes can be used in least_squares
+    # this is the minimum working example reported for gh12991
+    np.random.seed(1)
+
+    x = np.linspace(0, 1, 100).astype("float32")
+    y = np.random.random(100).astype("float32")
+
+    def func(p, x):
+        return p[0] + p[1] * x
+
+    def err(p, x, y):
+        return func(p, x) - y
+
+    res = least_squares(err, [-1.0, -1.0], args=(x, y))
+    # previously the initial jacobian calculated for this would be all 0
+    # and the minimize would terminate immediately, with nfev=1, would
+    # report a successful minimization (it shouldn't have done), but be
+    # unchanged from the initial solution.
+    # It was terminating early because the underlying approx_derivative
+    # used a step size for FP64 when the working space was FP32.
+    assert res.nfev > 3
+    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)

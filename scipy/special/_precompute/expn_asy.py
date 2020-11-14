@@ -4,22 +4,15 @@ generalized exponential integral.
 Sources
 -------
 [1] NIST, Digital Library of Mathematical Functions,
-    http://dlmf.nist.gov/8.20#ii
+    https://dlmf.nist.gov/8.20#ii
 
 """
-from __future__ import division, print_function, absolute_import
-
 import os
-import warnings
 
 try:
-    # Can remove when sympy #11255 is resolved; see
-    # https://github.com/sympy/sympy/issues/11255
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        import sympy
-        from sympy import Poly
-        x = sympy.symbols('x')
+    import sympy  # type: ignore[import]
+    from sympy import Poly
+    x = sympy.symbols('x')
 except ImportError:
     pass
 
@@ -49,11 +42,11 @@ def main():
         f.write("#define nA {}\n".format(len(A)))
         for k, Ak in enumerate(A):
             tmp = ', '.join([str(x.evalf(18)) for x in Ak.coeffs()])
-            f.write("double A{}[] = {{{}}};\n".format(k, tmp))
+            f.write("static const double A{}[] = {{{}}};\n".format(k, tmp))
         tmp = ", ".join(["A{}".format(k) for k in range(K + 1)])
-        f.write("double *A[] = {{{}}};\n".format(tmp))
+        f.write("static const double *A[] = {{{}}};\n".format(tmp))
         tmp = ", ".join([str(Ak.degree()) for Ak in A])
-        f.write("int Adegs[] = {{{}}};\n".format(tmp))
+        f.write("static const int Adegs[] = {{{}}};\n".format(tmp))
     os.rename(fn + '.new', fn)
 
 

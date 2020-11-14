@@ -4,8 +4,6 @@ Matrix square root for general matrices and for upper triangular matrices.
 This module exists to avoid cyclic imports.
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['sqrtm']
 
 import numpy as np
@@ -21,6 +19,9 @@ from .decomp_schur import schur, rsf2csf
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
+
+
+from ._matfuncs_sqrtm_triu import within_block_loop
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -51,8 +52,15 @@ def _sqrtm_triu(T, blocksize=64):
     """
     T_diag = np.diag(T)
     keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+
+    # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
-        T_diag = T_diag.astype(complex)
+        T = np.asarray(T, dtype=np.complex128, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.complex128)
+    else:
+        T = np.asarray(T, dtype=np.float64, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.float64)
+
     R = np.diag(np.sqrt(T_diag))
 
     # Compute the number of blocks to use; use at least one block.
@@ -75,19 +83,10 @@ def _sqrtm_triu(T, blocksize=64):
             start_stop_pairs.append((start, start + size))
             start += size
 
-    # Within-block interactions.
-    for start, stop in start_stop_pairs:
-        for j in range(start, stop):
-            for i in range(j-1, start-1, -1):
-                s = 0
-                if j - i > 1:
-                    s = R[i, i+1:j].dot(R[i+1:j, j])
-                denom = R[i, i] + R[j, j]
-                if not denom:
-                    raise SqrtmError('failed to find the matrix square root')
-                R[i, j] = (T[i, j] - s) / denom
+    # Within-block interactions (Cythonized)
+    within_block_loop(R, T, start_stop_pairs, nblocks)
 
-    # Between-block interactions.
+    # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):
         jstart, jstop = start_stop_pairs[j]
         for i in range(j-1, -1, -1):
@@ -179,10 +178,7 @@ def sqrtm(A, disp=True, blocksize=64):
         X.fill(np.nan)
 
     if disp:
-        nzeig = np.any(np.diag(T) == 0)
-        if nzeig:
-            print("Matrix is singular and may not have a square root.")
-        elif failflag:
+        if failflag:
             print("Failed to find a square root.")
         return X
     else:

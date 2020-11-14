@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file sutil.c
  * \brief Matrix utility functions
@@ -460,7 +470,7 @@ sPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 
-
+int
 print_float_vec(char *what, int n, float *vec)
 {
     int i;
@@ -468,4 +478,3 @@ print_float_vec(char *what, int n, float *vec)
     for (i = 0; i < n; ++i) printf("%d\t%f\n", i, vec[i]);
     return 0;
 }
-

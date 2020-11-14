@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ilu_zdrop_row.c
  * \brief Drop small rows from L
@@ -19,6 +29,7 @@ extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
 extern double dzasum_(int *, doublecomplex *, int *);
 extern double dznrm2_(int *, doublecomplex *, int *);
 extern double dnrm2_(int *, double [], int *);
+extern void dcopy_(int *, double [], int *, double [], int *);
 extern int izamax_(int *, doublecomplex [], int *);
 
 static double *A;  /* used in _compare_ only */

@@ -40,7 +40,7 @@ c   kwrk  : integer, specifying the dimension of iwrk. kwrk >= mx+my.
 c
 c  output parameters:
 c   z     : real array of dimension (mx*my).
-c           on succesful exit z(my*(i-1)+j) contains the value of the
+c           on successful exit z(my*(i-1)+j) contains the value of the
 c           specified partial derivative of s(x,y) at the point
 c           (x(i),y(j)),i=1,...,mx;j=1,...,my.
 c   ier   : integer error flag

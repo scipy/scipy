@@ -29,7 +29,7 @@ cdef public int wrap_PyUFunc_getfperr() nogil:
 
 cimport libc
 
-cimport sf_error
+from . cimport sf_error
 
 np.import_array()
 np.import_ufunc()

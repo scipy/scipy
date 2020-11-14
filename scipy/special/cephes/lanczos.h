@@ -1,7 +1,7 @@
 /*  (C) Copyright John Maddock 2006.
  *  Use, modification and distribution are subject to the
  *  Boost Software License, Version 1.0. (See accompanying file
- *  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 
 /* Both lanczos.h and lanczos.c were formed from Boost's lanczos.hpp
@@ -14,17 +14,17 @@
 
 /*
  * Optimal values for G for each N are taken from
- * http://web.mala.bc.ca/pughg/phdThesis/phdThesis.pdf,
+ * https://web.viu.ca/pughg/phdThesis/phdThesis.pdf,
  * as are the theoretical error bounds.
  *
  * Constants calculated using the method described by Godfrey
- * http://my.fit.edu/~gabdo/gamma.txt and elaborated by Toth at
- * http://www.rskey.org/gamma.htm using NTL::RR at 1000 bit precision.
+ * https://my.fit.edu/~gabdo/gamma.txt and elaborated by Toth at
+ * https://www.rskey.org/gamma.htm using NTL::RR at 1000 bit precision.
  */
 
 /*
  * Lanczos Coefficients for N=13 G=6.024680040776729583740234375
- * Max experimental error (with arbitary precision arithmetic) 1.196214e-17
+ * Max experimental error (with arbitrary precision arithmetic) 1.196214e-17
  * Generated with compiler: Microsoft Visual C++ version 8.0 on Win32 at Mar 23 2006
  *
  * Use for double precision.
@@ -34,7 +34,7 @@
 #define LANCZOS_H
 
 
-static double lanczos_num[13] = {
+static const double lanczos_num[13] = {
     2.506628274631000270164908177133837338626,
     210.8242777515793458725097339207133627117,
     8071.672002365816210638002902272250613822,
@@ -50,7 +50,7 @@ static double lanczos_num[13] = {
     23531376880.41075968857200767445163675473
 };
 
-static double lanczos_denom[13] = {
+static const double lanczos_denom[13] = {
     1,
     66,
     1925,
@@ -66,7 +66,7 @@ static double lanczos_denom[13] = {
     0
 };
 
-static double lanczos_sum_expg_scaled_num[13] = {
+static const double lanczos_sum_expg_scaled_num[13] = {
     0.006061842346248906525783753964555936883222,
     0.5098416655656676188125178644804694509993,
     19.51992788247617482847860966235652136208,
@@ -82,7 +82,7 @@ static double lanczos_sum_expg_scaled_num[13] = {
     56906521.91347156388090791033559122686859
 };
 
-static double lanczos_sum_expg_scaled_denom[13] = {
+static const double lanczos_sum_expg_scaled_denom[13] = {
     1,
     66,
     1925,
@@ -98,7 +98,7 @@ static double lanczos_sum_expg_scaled_denom[13] = {
     0
 };
 
-static double lanczos_sum_near_1_d[12] = {
+static const double lanczos_sum_near_1_d[12] = {
     0.3394643171893132535170101292240837927725e-9,
     -0.2499505151487868335680273909354071938387e-8,
     0.8690926181038057039526127422002498960172e-8,
@@ -113,7 +113,7 @@ static double lanczos_sum_near_1_d[12] = {
     2.208709979316623790862569924861841433016
 };
 
-static double lanczos_sum_near_2_d[12] = {
+static const double lanczos_sum_near_2_d[12] = {
     0.1009141566987569892221439918230042368112e-8,
     -0.7430396708998719707642735577238449585822e-8,
     0.2583592566524439230844378948704262291927e-7,
@@ -128,6 +128,6 @@ static double lanczos_sum_near_2_d[12] = {
     6.565936202082889535528455955485877361223
 };
 
-static double lanczos_g = 6.024680040776729583740234375;
+static const double lanczos_g = 6.024680040776729583740234375;
 
 #endif

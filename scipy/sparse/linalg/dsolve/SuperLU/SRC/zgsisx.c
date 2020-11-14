@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file zgsisx.c
  * \brief Computes an approximate solutions of linear equations A*X=B or A'*X=B
@@ -24,7 +34,7 @@
  *
  *   1. If A is stored column-wise (A->Stype = SLU_NC):
  *  
- *	1.1. If options->Equil = YES or options->RowPerm = LargeDiag, scaling
+ *	1.1. If options->Equil = YES or options->RowPerm = LargeDiag_MC64, scaling
  *	     factors are computed to equilibrate the system:
  *	     options->Trans = NOTRANS:
  *		 diag(R)*A*diag(C) *inv(diag(C))*X = diag(R)*B
@@ -68,12 +78,12 @@
  *	     original system before equilibration.
  *
  *	1.9. options for ILU only
- *	     1) If options->RowPerm = LargeDiag, MC64 is used to scale and
+ *	     1) If options->RowPerm = LargeDiag_MC64, MC64 is used to scale and
  *		permute the matrix to an I-matrix, that is Pr*Dr*A*Dc has
  *		entries of modulus 1 on the diagonal and off-diagonal entries
  *		of modulus at most 1. If MC64 fails, dgsequ() is used to
  *		equilibrate the system.
- *              ( Default: LargeDiag )
+ *              ( Default: LargeDiag_MC64 )
  *	     2) options->ILU_DropTol = tau is the threshold for dropping.
  *		For L, it is used directly (for the whole row in a supernode);
  *		For U, ||A(:,i)||_oo * tau is used as the threshold
@@ -135,7 +145,7 @@
  *   2. If A is stored row-wise (A->Stype = SLU_NR), apply the above algorithm
  *	to the transpose of A:
  *
- *	2.1. If options->Equil = YES or options->RowPerm = LargeDiag, scaling
+ *	2.1. If options->Equil = YES or options->RowPerm = LargeDiag_MC64, scaling
  *	     factors are computed to equilibrate the system:
  *	     options->Trans = NOTRANS:
  *		 diag(R)*A*diag(C) *inv(diag(C))*X = diag(R)*B
@@ -214,7 +224,7 @@
  *	     equed = 'C':  transpose(A) := transpose(A) * diag(C)
  *	     equed = 'B':  transpose(A) := diag(R) * transpose(A) * diag(C).
  *
- *         If options->RowPerm = LargeDiag, MC64 is used to scale and permute
+ *         If options->RowPerm = LargeDiag_MC64, MC64 is used to scale and permute
  *            the matrix to an I-matrix, that is A is modified as follows:
  *            P*Dr*A*Dc has entries of modulus 1 on the diagonal and 
  *            off-diagonal entries of modulus at most 1. P is a permutation
@@ -432,7 +442,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     nofact = (options->Fact != FACTORED);
     equil = (options->Equil == YES);
     notran = (options->Trans == NOTRANS);
-    mc64 = (options->RowPerm == LargeDiag);
+    mc64 = (options->RowPerm == LargeDiag_MC64);
     if ( nofact ) {
 	*(unsigned char *)equed = 'N';
 	rowequ = FALSE;

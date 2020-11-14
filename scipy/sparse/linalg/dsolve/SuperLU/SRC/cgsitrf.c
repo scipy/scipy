@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file cgsitrf.c
  * \brief Computes an ILU factorization of a general sparse matrix
@@ -280,9 +290,9 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     for (k = 0; k < n; k++) swap[k] = iperm_c[k];
     iswap = (int *)intMalloc(n);
     for (k = 0; k < n; k++) iswap[k] = perm_c[k];
-    amax = (float *) floatMalloc(panel_size);
+    amax = (float *) SUPERLU_MALLOC(panel_size * sizeof(float));
     if (drop_rule & DROP_SECONDARY)
-	swork2 = (float *)floatMalloc(n);
+	swork2 = SUPERLU_MALLOC(n * sizeof(float));
     else
 	swork2 = NULL;
 

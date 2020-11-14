@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file slacon2.c
  * \brief Estimates the 1-norm
@@ -147,7 +157,7 @@ L40:
 #ifdef _CRAY
     isave[1] = ISAMAX(n, &x[0], &c__1);   /* j */
 #else
-    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
+    isave[1] = isamax_(n, &x[0], &c__1);  /* j */
 #endif
     --isave[1];  /* --j; */
     isave[2] = 2;  /* iter = 2; */

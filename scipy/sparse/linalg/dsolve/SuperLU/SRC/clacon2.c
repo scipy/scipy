@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file clacon2.c
  * \brief Estimates the 1-norm
@@ -96,6 +106,11 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
     extern float smach(char *);
     extern int icmax1_slu(int *, complex *, int *);
     extern double scsum1_slu(int *, complex *, int *);
+#ifdef _CRAY
+    extern int CCOPY(int *, complex *, int *, complex [], int *);
+#else
+    extern int ccopy_(int *, complex *, int *, complex [], int *);
+#endif
 
     safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */
     if ( *kase == 0 ) {

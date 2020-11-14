@@ -1,7 +1,7 @@
 # -*-cython-*-
 
-from _complexstuff cimport zlog, npy_log1p, zisnan, number_t
-from _cunity cimport clog1p
+from ._complexstuff cimport zlog, npy_log1p, zisnan, number_t
+from ._cunity cimport clog1p
 
 cdef inline number_t xlogy(number_t x, number_t y) nogil:
     if x == 0 and not zisnan(y):

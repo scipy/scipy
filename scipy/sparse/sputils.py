@@ -1,18 +1,18 @@
 """ Utility functions for sparse matrix module
 """
 
-from __future__ import division, print_function, absolute_import
-
+import sys
+import operator
 import warnings
 import numpy as np
+from scipy._lib._util import prod
 
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
-supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
-                    'uintc', 'longlong', 'ulonglong', 'single', 'double',
-                    'longdouble', 'csingle', 'cdouble', 'clongdouble']
-supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
 
@@ -93,9 +93,9 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing.  If 'dtype' is not
+    """Function used to simplify argument processing. If 'dtype' is not
     specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument.  If 'dtype' and 'a'
+    object created from the specified dtype argument. If 'dtype' and 'a'
     are both None, construct a data type out of the 'default' parameter.
     Furthermore, 'dtype' must be in 'allowed' set.
     """
@@ -103,11 +103,11 @@ def getdtype(dtype, a=None, default=None):
     if dtype is None:
         try:
             newdtype = a.dtype
-        except AttributeError:
+        except AttributeError as e:
             if default is not None:
                 newdtype = np.dtype(default)
             else:
-                raise TypeError("could not interpret data type")
+                raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
@@ -138,6 +138,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
+    int32min = np.iinfo(np.int32).min
     int32max = np.iinfo(np.int32).max
 
     dtype = np.intc
@@ -150,7 +151,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     for arr in arrays:
         arr = np.asarray(arr)
-        if arr.dtype > np.int32:
+        if not np.can_cast(arr.dtype, np.int32):
             if check_contents:
                 if arr.size == 0:
                     # a bigger type not needed
@@ -158,8 +159,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
                 elif np.issubdtype(arr.dtype, np.integer):
                     maxval = arr.max()
                     minval = arr.min()
-                    if (minval >= np.iinfo(np.int32).min and
-                            maxval <= np.iinfo(np.int32).max):
+                    if minval >= int32min and maxval <= int32max:
                         # a bigger type not needed
                         continue
 
@@ -171,8 +171,6 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
 def get_sum_dtype(dtype):
     """Mimic numpy's casting for np.sum"""
-    if np.issubdtype(dtype, np.float_):
-        return np.float_
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
     if np.can_cast(dtype, np.int_):
@@ -189,26 +187,39 @@ def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
     if it can be cast safely to a machine int.
     """
-    if not isscalarlike(x):
+    # Fast-path check to eliminate non-scalar values. operator.index would
+    # catch this case too, but the exception catching is slow.
+    if np.ndim(x) != 0:
         return False
     try:
-        return bool(int(x) == x)
+        operator.index(x)
     except (TypeError, ValueError):
-        return False
+        try:
+            loose_int = bool(int(x) == x)
+        except (TypeError, ValueError):
+            return False
+        if loose_int:
+            warnings.warn("Inexact indices into sparse matrices are deprecated",
+                          DeprecationWarning)
+        return loose_int
+    return True
 
 
-def isshape(x):
+def isshape(x, nonneg=False):
     """Is x a valid 2-tuple of dimensions?
+
+    If nonneg, also checks that the dimensions are non-negative.
     """
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
         (M, N) = x
-    except:
+    except Exception:
         return False
     else:
         if isintlike(M) and isintlike(N):
             if np.ndim(M) == 0 and np.ndim(N) == 0:
-                return True
+                if not nonneg or (M >= 0 and N >= 0):
+                    return True
         return False
 
 
@@ -251,138 +262,93 @@ def validateaxis(axis):
             raise ValueError("axis out of range")
 
 
-class IndexMixin(object):
+def check_shape(args, current_shape=None):
+    """Imitate numpy.matrix handling of shape arguments"""
+    if len(args) == 0:
+        raise TypeError("function missing 1 required positional argument: "
+                        "'shape'")
+    elif len(args) == 1:
+        try:
+            shape_iter = iter(args[0])
+        except TypeError:
+            new_shape = (operator.index(args[0]), )
+        else:
+            new_shape = tuple(operator.index(arg) for arg in shape_iter)
+    else:
+        new_shape = tuple(operator.index(arg) for arg in args)
+
+    if current_shape is None:
+        if len(new_shape) != 2:
+            raise ValueError('shape must be a 2-tuple of positive integers')
+        elif new_shape[0] < 0 or new_shape[1] < 0:
+            raise ValueError("'shape' elements cannot be negative")
+
+    else:
+        # Check the current size only if needed
+        current_size = prod(current_shape)
+
+        # Check for negatives
+        negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
+        if len(negative_indexes) == 0:
+            new_size = prod(new_shape)
+            if new_size != current_size:
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 .format(current_size, new_shape))
+        elif len(negative_indexes) == 1:
+            skip = negative_indexes[0]
+            specified = prod(new_shape[0:skip] + new_shape[skip+1:])
+            unspecified, remainder = divmod(current_size, specified)
+            if remainder != 0:
+                err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 ''.format(current_size, err_shape))
+            new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
+        else:
+            raise ValueError('can only specify one unknown dimension')
+
+    if len(new_shape) != 2:
+        raise ValueError('matrix shape must be two-dimensional')
+
+    return new_shape
+
+
+def check_reshape_kwargs(kwargs):
+    """Unpack keyword arguments for reshape function.
+
+    This is useful because keyword arguments after star arguments are not
+    allowed in Python 2, but star keyword arguments are. This function unpacks
+    'order' and 'copy' from the star keyword arguments (with defaults) and
+    throws an error for any remaining.
     """
-    This class simply exists to hold the methods necessary for fancy indexing.
+
+    order = kwargs.pop('order', 'C')
+    copy = kwargs.pop('copy', False)
+    if kwargs:  # Some unused kwargs remain
+        raise TypeError('reshape() got unexpected keywords arguments: {}'
+                        .format(', '.join(kwargs.keys())))
+    return order, copy
+
+
+def is_pydata_spmatrix(m):
     """
-    def _slicetoarange(self, j, shape):
-        """ Given a slice object, use numpy arange to change it to a 1D
-        array.
-        """
-        start, stop, step = j.indices(shape)
-        return np.arange(start, stop, step)
+    Check whether object is pydata/sparse matrix, avoiding importing the module.
+    """
+    base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
+    return base_cls is not None and isinstance(m, base_cls)
 
-    def _unpack_index(self, index):
-        """ Parse index. Always return a tuple of the form (row, col).
-        Where row/col is a integer, slice, or array of integers.
-        """
-        # First, check if indexing with single boolean matrix.
-        from .base import spmatrix  # This feels dirty but...
-        if (isinstance(index, (spmatrix, np.ndarray)) and
-           (index.ndim == 2) and index.dtype.kind == 'b'):
-                return index.nonzero()
 
-        # Parse any ellipses.
-        index = self._check_ellipsis(index)
+###############################################################################
+# Wrappers for NumPy types that are deprecated
 
-        # Next, parse the tuple or object
-        if isinstance(index, tuple):
-            if len(index) == 2:
-                row, col = index
-            elif len(index) == 1:
-                row, col = index[0], slice(None)
-            else:
-                raise IndexError('invalid number of indices')
-        else:
-            row, col = index, slice(None)
+# Numpy versions of these functions raise deprecation warnings, the
+# ones below do not.
 
-        # Next, check for validity, or transform the index as needed.
-        row, col = self._check_boolean(row, col)
-        return row, col
 
-    def _check_ellipsis(self, index):
-        """Process indices with Ellipsis. Returns modified index."""
-        if index is Ellipsis:
-            return (slice(None), slice(None))
-        elif isinstance(index, tuple):
-            # Find first ellipsis
-            for j, v in enumerate(index):
-                if v is Ellipsis:
-                    first_ellipsis = j
-                    break
-            else:
-                first_ellipsis = None
+def matrix(*args, **kwargs):
+    return np.array(*args, **kwargs).view(np.matrix)
 
-            # Expand the first one
-            if first_ellipsis is not None:
-                # Shortcuts
-                if len(index) == 1:
-                    return (slice(None), slice(None))
-                elif len(index) == 2:
-                    if first_ellipsis == 0:
-                        if index[1] is Ellipsis:
-                            return (slice(None), slice(None))
-                        else:
-                            return (slice(None), index[1])
-                    else:
-                        return (index[0], slice(None))
 
-                # General case
-                tail = ()
-                for v in index[first_ellipsis+1:]:
-                    if v is not Ellipsis:
-                        tail = tail + (v,)
-                nd = first_ellipsis + len(tail)
-                nslice = max(0, 2 - nd)
-                return index[:first_ellipsis] + (slice(None),)*nslice + tail
-
-        return index
-
-    def _check_boolean(self, row, col):
-        from .base import isspmatrix  # ew...
-        # Supporting sparse boolean indexing with both row and col does
-        # not work because spmatrix.ndim is always 2.
-        if isspmatrix(row) or isspmatrix(col):
-            raise IndexError(
-                "Indexing with sparse matrices is not supported "
-                "except boolean indexing where matrix and index "
-                "are equal shapes.")
-        if isinstance(row, np.ndarray) and row.dtype.kind == 'b':
-            row = self._boolean_index_to_array(row)
-        if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
-            col = self._boolean_index_to_array(col)
-        return row, col
-
-    def _boolean_index_to_array(self, i):
-        if i.ndim > 1:
-            raise IndexError('invalid index shape')
-        return i.nonzero()[0]
-
-    def _index_to_arrays(self, i, j):
-        i, j = self._check_boolean(i, j)
-
-        i_slice = isinstance(i, slice)
-        if i_slice:
-            i = self._slicetoarange(i, self.shape[0])[:, None]
-        else:
-            i = np.atleast_1d(i)
-
-        if isinstance(j, slice):
-            j = self._slicetoarange(j, self.shape[1])[None, :]
-            if i.ndim == 1:
-                i = i[:, None]
-            elif not i_slice:
-                raise IndexError('index returns 3-dim structure')
-        elif isscalarlike(j):
-            # row vector special case
-            j = np.atleast_1d(j)
-            if i.ndim == 1:
-                i, j = np.broadcast_arrays(i, j)
-                i = i[:, None]
-                j = j[:, None]
-                return i, j
-        else:
-            j = np.atleast_1d(j)
-            if i_slice and j.ndim > 1:
-                raise IndexError('index returns 3-dim structure')
-
-        i, j = np.broadcast_arrays(i, j)
-
-        if i.ndim == 1:
-            # return column vectors for 1-D indexing
-            i = i[None, :]
-            j = j[None, :]
-        elif i.ndim > 2:
-            raise IndexError("Index dimension must be <= 2")
-
-        return i, j
+def asmatrix(data, dtype=None):
+    if isinstance(data, np.matrix) and (dtype is None or data.dtype == dtype):
+        return data
+    return np.asarray(data, dtype=dtype).view(np.matrix)

@@ -1,0 +1,51 @@
+==========================
+SciPy 0.19.1 Release Notes
+==========================
+
+SciPy 0.19.1 is a bug-fix release with no new features compared to 0.19.0.
+The most important change is a fix for a severe memory leak in
+``integrate.quad``.
+
+
+Authors
+=======
+
+* Evgeni Burovski
+* Patrick Callier +
+* Yu Feng
+* Ralf Gommers
+* Ilhan Polat
+* Eric Quintero
+* Scott Sievert
+* Pauli Virtanen
+* Warren Weckesser
+
+A total of 9 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 0.19.1
+------------------------
+
+- `#7214 <https://github.com/scipy/scipy/issues/7214>`__: Memory use in integrate.quad in scipy-0.19.0
+- `#7258 <https://github.com/scipy/scipy/issues/7258>`__: ``linalg.matrix_balance`` gives wrong transformation matrix
+- `#7262 <https://github.com/scipy/scipy/issues/7262>`__: Segfault in daily testing
+- `#7273 <https://github.com/scipy/scipy/issues/7273>`__: ``scipy.interpolate._bspl.evaluate_spline`` gets wrong type
+- `#7335 <https://github.com/scipy/scipy/issues/7335>`__: scipy.signal.dlti(A,B,C,D).freqresp() fails
+
+
+Pull requests for 0.19.1
+------------------------
+
+- `#7211 <https://github.com/scipy/scipy/pull/7211>`__: BUG: convolve may yield inconsistent dtypes with method changed
+- `#7216 <https://github.com/scipy/scipy/pull/7216>`__: BUG: integrate: fix refcounting bug in quad()
+- `#7229 <https://github.com/scipy/scipy/pull/7229>`__: MAINT: special: Rewrite a test of wrightomega
+- `#7261 <https://github.com/scipy/scipy/pull/7261>`__: FIX: Corrected the transformation matrix permutation
+- `#7265 <https://github.com/scipy/scipy/pull/7265>`__: BUG: Fix broken axis handling in spectral functions
+- `#7266 <https://github.com/scipy/scipy/pull/7266>`__: FIX 7262: ckdtree crashes in query_knn.
+- `#7279 <https://github.com/scipy/scipy/pull/7279>`__: Upcast half- and single-precision floats to doubles in BSpline...
+- `#7336 <https://github.com/scipy/scipy/pull/7336>`__: BUG: Fix signal.dfreqresp for StateSpace systems
+- `#7419 <https://github.com/scipy/scipy/pull/7419>`__: Fix several issues in ``sparse.load_npz``, ``save_npz``
+- `#7420 <https://github.com/scipy/scipy/pull/7420>`__: BUG: stats: allow integers as kappa4 shape parameters
+

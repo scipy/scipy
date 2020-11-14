@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file slu_zdefs.h
  * \brief Header file for real operations
@@ -80,7 +90,11 @@ typedef int int_t; /* default */
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && (_MSC_VER < 1900)
+#include "msc_stdint.h"
+#else
 #include <stdint.h>
+#endif
 #include <string.h>
 #include "slu_Cnames.h"
 #include "supermatrix.h"
@@ -240,6 +254,7 @@ extern int     ilu_zQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern void    zreadhb(FILE *, int *, int *, int *, doublecomplex **, int **, int **);
 extern void    zreadrb(int *, int *, int *, doublecomplex **, int **, int **);
 extern void    zreadtriple(int *, int *, int *, doublecomplex **, int **, int **);
+extern void    zreadMM(FILE *, int *, int *, int *, doublecomplex **, int **, int **);
 extern void    zCompRow_to_CompCol(int, int, int, doublecomplex*, int*, int*,
 		                   doublecomplex **, int **, int **);
 extern void    zfill (doublecomplex *, int, doublecomplex);

@@ -26,7 +26,7 @@ extern double MACHEP;
  * 1/sqrt(2) <= x < sqrt(2)
  * Theoretical peak relative error = 2.32e-20
  */
-static double LP[] = {
+static const double LP[] = {
     4.5270000862445199635215E-5,
     4.9854102823193375972212E-1,
     6.5787325942061044846969E0,
@@ -36,7 +36,7 @@ static double LP[] = {
     2.0039553499201281259648E1,
 };
 
-static double LQ[] = {
+static const double LQ[] = {
     /* 1.0000000000000000000000E0, */
     1.5062909083469192043167E1,
     8.3047565967967209469434E1,
@@ -154,7 +154,7 @@ double cosm1(double x)
 
 
 /* Compute lgam(x + 1) around x = 0 using its Taylor series. */
-double lgam1p_taylor(double x)
+static double lgam1p_taylor(double x)
 {
     int n;
     double xfac, coeff, res;

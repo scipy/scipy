@@ -93,7 +93,7 @@ c\Routines called:
 c     ivout   ARPACK utility routine that prints integers. 
 c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
-c     wslamch  LAPACK routine that determines machine constants.
+c     slamch  LAPACK routine that determines machine constants.
 c     slartg  LAPACK Givens rotation construction routine.
 c     slacpy  LAPACK matrix copy routine.
 c     slaset  LAPACK matrix initialization routine.
@@ -183,8 +183,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wslamch
-      external   wslamch
+     &           slamch
+      external   slamch
 c
 c     %----------------------%
 c     | Intrinsics Functions |
@@ -203,7 +203,7 @@ c     | Executable Statements |
 c     %-----------------------%
 c
       if (first) then
-         epsmch = wslamch('Epsilon-Machine')
+         epsmch = slamch('Epsilon-Machine')
          first = .false.
       end if
       itop = 1

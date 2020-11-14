@@ -1,17 +1,12 @@
 """benchmarks for the scipy.sparse.linalg._expm_multiply module"""
-from __future__ import division, print_function, absolute_import
-
 import math
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.linalg
     from scipy.sparse.linalg import expm_multiply
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse_csr(m, n, nnz_per_row):
@@ -35,28 +30,19 @@ def random_sparse_csc(m, n, nnz_per_row):
 
 
 class ExpmMultiply(Benchmark):
-    params = [['sparse', 'full']]
-    param_names = ['run format']
-
-    def setup(self, *args):
+    def setup(self):
         self.n = 2000
         self.i = 100
         self.j = 200
         nnz_per_row = 25
         self.A = random_sparse_csr(self.n, self.n, nnz_per_row)
-        self.A_dense = self.A.toarray()
 
-    def time_expm_multiply(self, format):
-        if format == 'full':
-            # computing full expm of the dense array...
-            A_expm = scipy.linalg.expm(self.A_dense)
-            A_expm[self.i, self.j]
-        else:
-            # computing only column', j, 'of expm of the sparse matrix...
-            v = np.zeros(self.n, dtype=float)
-            v[self.j] = 1
-            A_expm_col_j = expm_multiply(self.A, v)
-            A_expm_col_j[self.i]
+    def time_expm_multiply(self):
+        # computing only column', j, 'of expm of the sparse matrix
+        v = np.zeros(self.n, dtype=float)
+        v[self.j] = 1
+        A_expm_col_j = expm_multiply(self.A, v)
+        A_expm_col_j[self.i]
 
 
 class Expm(Benchmark):

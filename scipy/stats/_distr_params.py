@@ -16,6 +16,7 @@ distcont = [
     ['chi', (78,)],
     ['chi2', (55,)],
     ['cosine', ()],
+    ['crystalball', (2.0, 3.0)],
     ['dgamma', (1.1023326088288166,)],
     ['dweibull', (2.0685080649914673,)],
     ['erlang', (10,)],
@@ -28,8 +29,6 @@ distcont = [
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
-    ['frechet_l', (3.6279911255583239,)],
-    ['frechet_r', (1.8928171603534227,)],
     ['gamma', (1.9932305483800778,)],
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
                     2.5145980350183019, 5.1811649903971615)],  # veryslow
@@ -38,6 +37,7 @@ distcont = [
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
     ['gengamma', (4.4162385429431925, -3.1193091679242761)],
     ['genhalflogistic', (0.77274727809929322,)],
+    ['geninvgauss', (2.3, 1.5)],
     ['genlogistic', (0.41192440799679475,)],
     ['gennorm', (1.2988442399460265,)],
     ['halfgennorm', (0.6748054997000371,)],
@@ -61,39 +61,41 @@ distcont = [
     ['kappa4', (0.1, 0.0)],
     ['kappa3', (1.0,)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
+    ['kstwo', (10,)],
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
     ['levy_l', ()],
-    ['levy_stable', (0.35667405469844993,
-                     -0.67450531578494011)],  # NotImplementedError
-    #           rvs not tested
+    ['levy_stable', (1.8, -0.5)],
     ['loggamma', (0.41411931826052117,)],
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
+    ['loguniform', (0.01, 1)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
-    ['mielke', (10.4, 3.6)],
+    ['mielke', (10.4, 4.6)],
+    ['moyal', ()],
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
     ['nct', (14, 0.24045031331198066)],
     ['ncx2', (21, 1.0560465975116415)],
     ['norm', ()],
+    ['norminvgauss', (1., 0.5)],
     ['pareto', (2.621716532144454,)],
     ['pearson3', (0.1,)],
     ['powerlaw', (1.6591133289905851,)],
     ['powerlognorm', (2.1413923530064087, 0.44639540782048337)],
     ['powernorm', (4.4453652254590779,)],
     ['rayleigh', ()],
-    ['rdist', (0.9,)],   # feels also slow
+    ['rdist', (1.6,)],
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
+    ['reciprocal', (0.01, 1)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
     ['t', (2.7433514990818093,)],
-    ['trapz', (0.2, 0.8)],
+    ['trapezoid', (0.2, 0.8)],
     ['triang', (0.15785029824528218,)],
     ['truncexpon', (4.6907725456810478,)],
     ['truncnorm', (-1.0978730080013919, 2.7306754109031979)],
@@ -110,6 +112,7 @@ distcont = [
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
+    ['betabinom', (5, 2.3, 0.63)],
     ['binom', (5, 0.4)],
     ['boltzmann',(1.4, 19)],
     ['dlaplace', (0.8,)],  # 0.5
@@ -117,12 +120,14 @@ distdiscrete = [
     ['hypergeom',(30, 12, 6)],
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
-    ['logser', (0.6,)],  # reenabled, numpy ticket:921
+    ['logser', (0.6,)],  # re-enabled, numpy ticket:921
     ['nbinom', (5, 0.5)],
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
-    ['zipf', (6.5,)]
+    ['zipf', (6.5,)],
+    ['yulesimon', (11.0,)],
+    ['nhypergeom', (20, 7, 1)]
 ]

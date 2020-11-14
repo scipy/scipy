@@ -1,33 +1,27 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
-from .common import Benchmark
+from .common import Benchmark, safe_import
 
 from scipy.integrate import quad
 
-try:
+with safe_import():
     import ctypes
     import scipy.integrate._test_multivariate as clib_test
-    from scipy._lib import _test_ccallback_cython
-except ImportError:
-    _test_ccallback_cython = None
+    from scipy._lib import _ccallback_c
 
-try:
+with safe_import() as exc:
     from scipy import LowLevelCallable
     from_cython = LowLevelCallable.from_cython
-except ImportError:
+if exc.error:
     LowLevelCallable = lambda func, data: (func, data)
     from_cython = lambda *a: a
 
-try:
+with safe_import() as exc:
     import cffi
-except ImportError:
+if exc.error:
     cffi = None
 
-try:
+with safe_import():
     from scipy.integrate import solve_bvp
-except ImportError:
-    pass
 
 
 class SolveBVP(Benchmark):
@@ -89,13 +83,17 @@ class Quad(Benchmark):
         from math import sin
 
         self.f_python = lambda x: sin(x)
-        self.f_cython = from_cython(_test_ccallback_cython, "sine")
+        self.f_cython = from_cython(_ccallback_c, "sine")
 
-        lib = ctypes.CDLL(clib_test.__file__)
-
-        self.f_ctypes = lib._multivariate_sin
-        self.f_ctypes.restype = ctypes.c_double
-        self.f_ctypes.argtypes = (ctypes.c_int, ctypes.c_double)  # sic -- for backward compat
+        try:
+            from scipy.integrate.tests.test_quadpack import get_clib_test_routine
+            self.f_ctypes = get_clib_test_routine('_multivariate_sin', ctypes.c_double,
+                                                  ctypes.c_int, ctypes.c_double)
+        except ImportError:
+            lib = ctypes.CDLL(clib_test.__file__)
+            self.f_ctypes = lib._multivariate_sin
+            self.f_ctypes.restype = ctypes.c_double
+            self.f_ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
         if cffi is not None:
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)

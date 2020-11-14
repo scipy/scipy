@@ -1,8 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import (assert_equal, assert_array_equal, assert_allclose,
-        run_module_suite, assert_raises)
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose
+from pytest import raises as assert_raises
 
 from scipy.interpolate import griddata, NearestNDInterpolator
 
@@ -162,7 +160,7 @@ class TestGriddata(object):
                           method=method)
             assert_raises(ValueError, griddata, x, y, xi3,
                           method=method)
-        
+
 
 def test_nearest_options():
     # smoke test that NearestNDInterpolator accept cKDTree options
@@ -176,5 +174,16 @@ def test_nearest_options():
     assert_allclose(nndi(x), nndi_o(x), atol=1e-14)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_nearest_list_argument():
+    nd = np.array([[0, 0, 0, 0, 1, 0, 1],
+                   [0, 0, 0, 0, 0, 1, 1],
+                   [0, 0, 0, 0, 1, 1, 2]])
+    d = nd[:, 3:]
+
+    # z is np.array
+    NI = NearestNDInterpolator((d[0], d[1]), d[2])
+    assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
+
+    # z is list
+    NI = NearestNDInterpolator((d[0], d[1]), list(d[2]))
+    assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])

@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file zlacon2.c
  * \brief Estimates the 1-norm
@@ -96,6 +106,11 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
     extern double dmach(char *);
     extern int izmax1_slu(int *, doublecomplex *, int *);
     extern double dzsum1_slu(int *, doublecomplex *, int *);
+#ifdef _CRAY
+    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
+#else
+    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+#endif
 
     safmin = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
     if ( *kase == 0 ) {
