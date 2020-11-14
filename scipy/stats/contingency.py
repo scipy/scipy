@@ -272,7 +272,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     return chi2, p, dof, expected
 
-def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
+def association(arr, chi2_stat, stat="cramer"):
     """Calculates degree of association between variables
     that are nominal or greater.
 
@@ -281,12 +281,8 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
 
     Parameters
     ----------
-    n_obs : int or float
+    arr : ndarray
         The total number of observations
-    n_rows : int or float
-        The total number of rows
-    n_cols : int or float
-        The total number of columns
     chi2_stat : float
         The chi-squared statistic.
     stat : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
@@ -338,38 +334,29 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
 
     >>> from scipy.stats.contingency import association, chi2_contingency
     >>> obs = np.array([[100, 150], [203, 322], [42, 7], [32, 21]])
-    >>> num_obs = sum(obs.flatten())
-    >>> num_rows = obs.shape[0]
-    >>> num_cols = obs.shape[1]
-    >>> chi2 = tuple(chi2_contingency(obs))[0]
+    >>> chi2 = chi2_contingency(obs)[0]
 
     Pearson's contingency coefficient
 
-    >>> association(num_obs, num_rows, num_cols, chi2, stat="C")
+    >>> association(obs, chi2, stat="C")
     0.22768
 
     Cramer's V
 
-    >>> association(num_obs, num_rows, num_cols, chi2, stat="V")
+    >>> association(obs, chi2, stat="V")
     0.23382
 
     Tschuprow's T
 
-    >>> association(num_obs, num_rows, num_cols, chi2, stat="T")
+    >>> association(obs, chi2, stat="T")
     0.17766
 
     Phi
 
-    >>> association(num_obs, num_rows, num_cols, chi2, stat="phi")
+    >>> association(obs, chi2, stat="phi")
     0.23382
     """
-
-    try:
-        n_obs = int(n_obs)
-        n_cols = int(n_cols)
-        n_rows = int(n_rows)
-    except ValueError:
-        raise ValueError("n_obs, n_cols, n_rows must be int or float")
+    arr = np.asarray(arr)
 
     if stat.lower() not in ['tschuprow', "pearson", 'cramer', 'phi',
                             't', 'c', 'v']:
@@ -378,23 +365,29 @@ def association(n_obs, n_rows, n_cols, chi2_stat, stat="cramer"):
     else:
         stat_str = stat.lower()
 
-    try:
-        chi2_stat = float(chi2_stat)
-    except ValueError:
-        raise ValueError("Invalid chi2_stat, must be float or int")
-    else:
-        phi2 = chi2_stat / n_obs
+    if len(arr.shape) != 2:
+        raise ValueError("currently method only accepts 2d arrays")
 
-    if stat_str == "cramer" or stat_str == 'v':
-        value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
-    elif stat_str == "tschuprow" or stat_str == 't':
-        value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
-    elif stat_str == 'pearson' or stat_str == 'c':
-        value = math.sqrt(phi2 / (1 + phi2))
-    elif stat_str == "phi":
-        value = math.sqrt(phi2)
     else:
-        raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+        try:
+            chi2_stat = float(chi2_stat)
+        except ValueError:
+            raise ValueError("Invalid chi2_stat, must be float or int")
+        else:
+            phi2 = chi2_stat / sum(arr)
 
-    return value
+            n_rows, n_cols = arr.shape
+
+            if stat_str == "cramer" or stat_str == 'v':
+                value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
+            elif stat_str == "tschuprow" or stat_str == 't':
+                value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
+            elif stat_str == 'pearson' or stat_str == 'c':
+                value = math.sqrt(phi2 / (1 + phi2))
+            elif stat_str == "phi":
+                value = math.sqrt(phi2)
+            else:
+                raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+
+            return value
 
