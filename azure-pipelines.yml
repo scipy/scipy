@@ -93,6 +93,11 @@ jobs:
           NPY_USE_BLAS_ILP64: 1
           BITS: 64
           OPENBLAS64_: $(OPENBLAS)
+        Python39-64bit-full:
+          PYTHON_VERSION: '3.9'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
+          BITS: 64
   steps:
   - task: UsePythonVersion@0
     inputs:

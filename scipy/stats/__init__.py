@@ -112,7 +112,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz             -- Trapezoidal
+   trapezoid         -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -141,6 +141,7 @@ Multivariate distributions
    ortho_group           -- O(N) group
    unitary_group         -- U(N) group
    random_correlation    -- random correlation matrices
+   multivariate_t        -- Multivariate t-distribution
 
 Discrete distributions
 ======================

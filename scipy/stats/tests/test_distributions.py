@@ -21,7 +21,7 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning
+from scipy.integrate import IntegrationWarning, quad
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -29,6 +29,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
+from scipy.optimize import root
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -944,6 +945,39 @@ class TestLogistic(object):
         # with 64 bit floating point.
         assert_equal(logp, [-800, -800])
 
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit(self, loc_rvs, scale_rvs):
+        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # test that result of fit method is the same as optimization
+        def func(input, data):
+            a, b = input
+            n = len(data)
+            x1 = np.sum(np.exp((data - a) / b) /
+                        (1 + np.exp((data - a) / b))) - n / 2
+            x2 = np.sum(((data - a) / b) *
+                        ((np.exp((data - a) / b) - 1) /
+                         (np.exp((data - a) / b) + 1))) - n
+            return x1, x2
+
+        expected_solution = root(func, stats.logistic._fitstart(data), args=(
+            data,)).x
+        fit_method = stats.logistic.fit(data)
+
+        # other than computational variances, the fit method and the solution
+        # to this system of equations are equal
+        assert_allclose(fit_method, expected_solution, atol=1e-30)
+
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
+    def test_fit_comp_optimizer(self, loc_rvs, scale_rvs):
+        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # obtain objective function to compare results of the fit methods
+        args = [data, (stats.logistic._fitstart(data),)]
+        func = stats.logistic._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.logistic, data, func)
+
 
 class TestLogser(object):
     def setup_method(self):
@@ -1270,6 +1304,28 @@ class TestPearson3(object):
         vals = stats.pearson3.cdf([-3, -2, -1, 0, 1], 0.1)
         assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
                                5.06649130e-01, 8.41442111e-01], atol=1e-6)
+
+    def test_negative_cdf_bug_11186(self):
+        # incorrect CDFs for negative skews in gh-11186; fixed in gh-12640
+        # Also check vectorization w/ negative, zero, and positive skews
+        skews = [-3, -1, 0, 0.5]
+        x_eval = 0.5
+        neg_inf = -30  # avoid RuntimeWarning caused by np.log(0)
+        cdfs = stats.pearson3.cdf(x_eval, skews)
+        int_pdfs = [quad(stats.pearson3(skew).pdf, neg_inf, x_eval)[0]
+                    for skew in skews]
+        assert_allclose(cdfs, int_pdfs)
+
+    def test_return_array_bug_11746(self):
+        # pearson3.moment was returning size 0 or 1 array instead of float
+        # The first moment is equal to the loc, which defaults to zero
+        moment = stats.pearson3.moment(1, 2)
+        assert_equal(moment, 0)
+        assert_equal(type(moment), float)
+
+        moment = stats.pearson3.moment(1, 0.000001)
+        assert_equal(moment, 0)
+        assert_equal(type(moment), float)
 
 
 class TestKappa4(object):
@@ -3373,13 +3429,38 @@ class TestNct(object):
 
     def test_nct_inf_moments(self):
         # n-th moment of nct only exists for df > n
+        m, v, s, k = stats.nct.stats(df=0.9, nc=0.3, moments='mvsk')
+        assert_equal([m, v, s, k], [np.nan, np.nan, np.nan, np.nan])
+
         m, v, s, k = stats.nct.stats(df=1.9, nc=0.3, moments='mvsk')
         assert_(np.isfinite(m))
-        assert_equal([v, s, k], [np.inf, np.nan, np.nan])
+        assert_equal([v, s, k], [np.nan, np.nan, np.nan])
 
         m, v, s, k = stats.nct.stats(df=3.1, nc=0.3, moments='mvsk')
         assert_(np.isfinite([m, v, s]).all())
         assert_equal(k, np.nan)
+
+    def test_nct_stats_large_df_values(self):
+        # previously gamma function was used which lost precision at df=345
+        # cf. https://github.com/scipy/scipy/issues/12919 for details
+        nct_mean_df_1000 = stats.nct.mean(1000, 2)
+        nct_stats_df_1000 = stats.nct.stats(1000, 2)
+        # These expected values were computed with mpmath. They were also
+        # verified with the Wolfram Alpha expressions:
+        #     Mean[NoncentralStudentTDistribution[1000, 2]]
+        #     Var[NoncentralStudentTDistribution[1000, 2]]
+        expected_stats_df_1000 = [2.0015015641422464, 1.0040115288163005]
+        assert_allclose(nct_mean_df_1000, expected_stats_df_1000[0],
+                        rtol=1e-10)
+        assert_allclose(nct_stats_df_1000, expected_stats_df_1000,
+                        rtol=1e-10)
+        # and a bigger df value
+        nct_mean = stats.nct.mean(100000, 2)
+        nct_stats = stats.nct.stats(100000, 2)
+        # These expected values were computed with mpmath.
+        expected_stats = [2.0000150001562518, 1.0000400011500288]
+        assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
+        assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
 
 class TestRice(object):
@@ -3440,7 +3521,7 @@ class TestErlang(object):
 
 class TestRayleigh(object):
     def setup_method(self):
-        np.random.seed(1234)
+        np.random.seed(987654321)
 
     # gh-6227
     def test_logpdf(self):
@@ -3475,7 +3556,8 @@ class TestRayleigh(object):
         # test that `scale` is defined by its relation to `loc`
         assert_equal(scale, scale_mle(data, loc))
 
-    @pytest.mark.parametrize("rvs_loc,rvs_scale", [np.random.rand(2)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [[0.74, 0.01],
+                                                   np.random.rand(2)])
     def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
@@ -3643,43 +3725,43 @@ class TestRdist(object):
                             stats.rdist(c).pdf(x))
 
 
-class TestTrapz(object):
+class TestTrapezoid(object):
     def test_reduces_to_triang(self):
         modes = [0, 0.3, 0.5, 1]
         for mode in modes:
             x = [0, mode, 1]
-            assert_almost_equal(stats.trapz.pdf(x, mode, mode),
+            assert_almost_equal(stats.trapezoid.pdf(x, mode, mode),
                                 stats.triang.pdf(x, mode))
-            assert_almost_equal(stats.trapz.cdf(x, mode, mode),
+            assert_almost_equal(stats.trapezoid.cdf(x, mode, mode),
                                 stats.triang.cdf(x, mode))
 
     def test_reduces_to_uniform(self):
         x = np.linspace(0, 1, 10)
-        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
-        assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
+        assert_almost_equal(stats.trapezoid.pdf(x, 0, 1), stats.uniform.pdf(x))
+        assert_almost_equal(stats.trapezoid.cdf(x, 0, 1), stats.uniform.cdf(x))
 
     def test_cases(self):
         # edge cases
-        assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-        assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8),
+        assert_almost_equal(stats.trapezoid.pdf(0, 0, 0), 2)
+        assert_almost_equal(stats.trapezoid.pdf(1, 1, 1), 2)
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0, 0.8),
                             1.11111111111111111)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0),
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0.2, 1.0),
                             1.11111111111111111)
 
         # straightforward case
-        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapezoid.pdf(0.1, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapezoid.pdf(0.5, 0.2, 0.8), 1.25)
+        assert_almost_equal(stats.trapezoid.pdf(0.9, 0.2, 0.8), 0.625)
 
-        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+        assert_almost_equal(stats.trapezoid.cdf(0.1, 0.2, 0.8), 0.03125)
+        assert_almost_equal(stats.trapezoid.cdf(0.2, 0.2, 0.8), 0.125)
+        assert_almost_equal(stats.trapezoid.cdf(0.5, 0.2, 0.8), 0.5)
+        assert_almost_equal(stats.trapezoid.cdf(0.9, 0.2, 0.8), 0.96875)
+        assert_almost_equal(stats.trapezoid.cdf(1.0, 0.2, 0.8), 1.0)
 
     def test_moments_and_entropy(self):
-        # issue #11795: improve precision of trapz stats
+        # issue #11795: improve precision of trapezoid stats
         # Apply formulas from Wikipedia for the following parameters:
         a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
         p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
@@ -3693,43 +3775,48 @@ class TestTrapz(object):
         mean = moment(1)
         var = moment(2) - mean**2
         entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
-        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.mean(p1, p2, loc, scale),
                             mean, decimal=13)
-        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.var(p1, p2, loc, scale),
                             var, decimal=13)
-        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
+        assert_almost_equal(stats.trapezoid.entropy(p1, p2, loc, scale),
                             entropy, decimal=13)
 
         # Check boundary cases where scipy d=0 or d=1.
-        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
-        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
-        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
+        assert_almost_equal(stats.trapezoid.mean(0, 0, -3, 6), -1, decimal=13)
+        assert_almost_equal(stats.trapezoid.mean(0, 1, -3, 6), 0, decimal=13)
+        assert_almost_equal(stats.trapezoid.var(0, 1, -3, 6), 3, decimal=13)
 
-    def test_trapz_vect(self):
+    def test_trapezoid_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
         d = np.array([0.5, 0.6])[:, None]
         x = np.array([0.15, 0.25, 0.9])
-        v = stats.trapz.pdf(x, c, d)
+        v = stats.trapezoid.pdf(x, c, d)
 
         cc, dd, xx = np.broadcast_arrays(c, d, x)
 
         res = np.empty(xx.size, dtype=xx.dtype)
         ind = np.arange(xx.size)
         for i, x1, c1, d1 in zip(ind, xx.ravel(), cc.ravel(), dd.ravel()):
-            res[i] = stats.trapz.pdf(x1, c1, d1)
+            res[i] = stats.trapezoid.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
         # Check that the stats() method supports vector arguments.
-        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
+        v = np.asarray(stats.trapezoid.stats(c, d, moments="mvsk"))
         cc, dd = np.broadcast_arrays(c, d)
         res = np.empty((cc.size, 4))  # 4 stats returned per value
         ind = np.arange(cc.size)
         for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
-            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
+            res[i] = stats.trapezoid.stats(c1, d1, moments="mvsk")
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
+
+    def test_trapz(self):
+        # Basic test for alias
+        x = np.linspace(0, 1, 10)
+        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
 
 
 class TestTriang(object):
@@ -4923,6 +5010,45 @@ class TestArgus(object):
     def test_var(self, chi, expected_var, rtol):
         v = stats.argus.var(chi, scale=1)
         assert_allclose(v, expected_var, rtol=rtol)
+
+
+class TestNakagami:
+
+    def test_logpdf(self):
+        # Test nakagami logpdf for an input where the PDF is smaller
+        # than can be represented with 64 bit floating point.
+        # The expected value of logpdf was computed with mpmath:
+        #
+        #   def logpdf(x, nu):
+        #       x = mpmath.mpf(x)
+        #       nu = mpmath.mpf(nu)
+        #       return (mpmath.log(2) + nu*mpmath.log(nu) -
+        #               mpmath.loggamma(nu) + (2*nu - 1)*mpmath.log(x) -
+        #               nu*x**2)
+        #
+        nu = 2.5
+        x = 25
+        logp = stats.nakagami.logpdf(x, nu)
+        assert_allclose(logp, -1546.9253055607549)
+
+    def test_sf_isf(self):
+        # Test nakagami sf and isf when the survival function
+        # value is very small.
+        # The expected value of the survival function was computed
+        # with mpmath:
+        #
+        #   def sf(x, nu):
+        #       x = mpmath.mpf(x)
+        #       nu = mpmath.mpf(nu)
+        #       return mpmath.gammainc(nu, nu*x*x, regularized=True)
+        #
+        nu = 2.5
+        x0 = 5.0
+        sf = stats.nakagami.sf(x0, nu)
+        assert_allclose(sf, 2.736273158588307e-25, rtol=1e-13)
+        # Check round trip back to x0.
+        x1 = stats.nakagami.isf(sf, nu)
+        assert_allclose(x1, x0, rtol=1e-13)
 
 
 def test_rvs_no_size_warning():
