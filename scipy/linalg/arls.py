@@ -200,7 +200,7 @@ def arlsusv(A, b, U, S, Vt):
     return x, nr, ur, sigma, lambdah
 
 
-def arls(A, b):             # arlst???  arlsq ??  ARLSV  ARLSS print
+def arls(A, b):
     """Solves the linear system of equation, Ax = b, for any shape matrix.
 
     The system can be underdetermined, square, or over-determined.
@@ -337,7 +337,7 @@ def arls(A, b):             # arlst???  arlsq ??  ARLSV  ARLSS print
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     checkAb(A, b, 2)
     m, n = A.shape
     nrhs = 1
@@ -352,10 +352,10 @@ def arls(A, b):             # arlst???  arlsq ??  ARLSV  ARLSS print
 
     # multiple right hand sides
     xx = np.zeros((n, nrhs))
-    nr = min(A.shape)  # track minimum numeric rank
+    nr = min(A.shape)   # track minimum numeric rank
     mur = nr            # track minimum usable rank
-    msigma = 0.0           # track maximum estimated RHS error
-    mlamda = 0.0           # track maximum Tikhonov parameter
+    msigma = 0.0        # track maximum estimated RHS error
+    mlamda = 0.0        # track maximum Tikhonov parameter
     for p in range(0, nrhs):
         xx[:, p], nr, ur, sigma, lambdah = arlsusv(A, b[:, p], U, S, Vt)
         mur = min(mur, ur)
@@ -371,11 +371,15 @@ def strange(A, b):
     rn = np.zeros(m)
     for k in range(0, m):
         rn[k] = mynorm(A[k, :])
-    if min(rn) < max(rn) * epsilon:
-        return True, 0.0
-    bb = b/rn
+    tol = max(rn) * epsilon
+    odd = False
+    for k in range(0, m):
+        if rn[k] < tol:
+            rn[k] = tol
+            odd = True
+    bb = abs(b)/rn
     maxnorm = mynorm(bb) * 1.5
-    return False, maxnorm
+    return odd, maxnorm
 
 
 def arlsqr(A, b):
@@ -396,50 +400,34 @@ def arlsqr(A, b):
     """
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
-    if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+    nz = np.count_nonzero(A)
+    if nz == 0 or np.count_nonzero(b) == 0:
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     checkAb(A, b, 2)
     m, n = A.shape
     nr = min(m, n)
     # is b a single column?
-    if len(b.shape) < 2:
-        odd, maxnorm = strange(A, b)
-        if not odd:
-            if (m >= n):
-                Q, R = qr(A, mode='economic')
-                Qb = Q.T @ b
-                try:
-                    x = solve_triangular(R, Qb)
-                except LinAlgError:
-                    return arls(A, b)
-                if mynorm(x) < maxnorm:
-                    return x, nr, nr, 0.0, 0.0
-            else:
-                Q, R = qr(A.T, mode='economic')
-                try:
-                    y = solve_triangular(R, b, 'T')
-                except LinAlgError:
-                    return arls(A, b)
-                x = Q @ y
-                if mynorm(x) < maxnorm:
-                    return x, nr, nr, 0.0, 0.0
-    return arls(A, b)
-
-
-def cull(E, f, neglect):
-    """ delete rows of Ex=f where the row norm is less than "neglect" """
-    EE = E.copy()
-    ff = f.copy()
-    m = EE.shape[0]
-    i = 0
-    while i < m:
-        if mynorm(EE[i, :]) < neglect:
-            EE = np.delete(EE, i, 0)
-            ff = np.delete(ff, i, 0)
-            m = EE.shape[0]
+    if len(b.shape) > 1:
+        return arls(A, b)
+    odd, maxnorm = strange(A, b)
+    if not odd or nz < int((m*n)/2):  # max norm tests fails for sparse-like
+        if (m >= n):
+            Q, R = qr(A, mode='economic')
+            Qb = Q.T @ b
+            try:
+                x = solve_triangular(R, Qb)
+            except LinAlgError:
+                return arls(A, b)
         else:
-            i += 1
-    return EE, ff
+            Q, R = qr(A.T, mode='economic')
+            try:
+                y = solve_triangular(R, b, 'T')
+            except LinAlgError:
+                return arls(A, b)
+            x = Q @ y
+        if mynorm(x) < maxnorm or nz < int((m*n)/2):
+            return x, nr, nr, 0.0, 0.0
+    return arls(A, b)
 
 
 def find_max_row_norm(A):
@@ -498,7 +486,6 @@ def prepeq(E, f, neglect):
             EE[i, :] /= rin
             ff[i] /= rin
         else:
-            EE[i, :] = 0.0  # will be culled below
             ff[i] = 0.0
 
         # subtract projections onto EE[i,:]
@@ -642,7 +629,7 @@ def arlseq(A, b, E, f):
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     AA = A.copy()
     bb = b.copy()
     checkAb(AA, bb, 1)
@@ -778,7 +765,7 @@ def arlsgt(A, b, G, h):
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     checkAb(A, b, 1)
     m, n = A.shape
 
@@ -899,7 +886,7 @@ def arlsnn(A, b):
     A = atleast_2d(_asarray_validated(A, check_finite=True))
     b = atleast_1d(_asarray_validated(b, check_finite=True))
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     checkAb(A, b, 1)
     n = A.shape[1]
     G = np.eye(n)
