@@ -582,6 +582,10 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
                     y[jp] = i
         for jp in range(nc - 1, -1, -1):
             i = y[jp]
+            # If no row has been matched with column jp at this point, that
+            # can only mean that the column has no incident rows at all.
+            if i == -1:
+                raise ValueError('no full matching exists')
             if x[i] == -1:
                 x[i] = jp
             else:
