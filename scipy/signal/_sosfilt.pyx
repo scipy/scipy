@@ -41,8 +41,8 @@ cdef void _sosfilt_float(DTYPE_floating_t [:, ::1] sos,
 
             for s in xrange(n_sections):
                 x_new = sos[s, 0] * x_cur + zi[i, s, 0]
-                zi[i, s, 0] = sos[s, 1] * x_cur - sos[s, 4] * x_new +\
-                              zi[i, s, 1]
+                zi[i, s, 0] = (sos[s, 1] * x_cur - sos[s, 4] * x_new
+                               + zi[i, s, 1])
                 zi[i, s, 1] = sos[s, 2] * x_cur - sos[s, 5] * x_new
                 x_cur = x_new
 
