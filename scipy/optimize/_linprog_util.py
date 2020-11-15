@@ -1431,8 +1431,16 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     message : str
         A string descriptor of the exit status of the optimization.
     """
-    # Somewhat arbitrary, but status 5 is very unusual
+    # Somewhat arbitrary
     tol = np.sqrt(tol) * 10
+
+    if x is None:
+        # HiGHS does not provide x if infeasible/unbounded
+        if status == 0:  # Observed with HiGHS Simplex Primal
+            status = 4
+            message = ("The solver did not provide a solution nor did it "
+                       "report a failure. Please submit a bug report.")
+        return status, message
 
     contains_nans = (
         np.isnan(x).any()
@@ -1454,28 +1462,18 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         message = ("The solution does not satisfy the constraints within the "
                    "required tolerance of " + "{:.2E}".format(tol) + ", yet "
                    "no errors were raised and there is no certificate of "
-                   "infeasibility or unboundedness. This is known to occur "
-                   "if the `presolve` option is False and the problem is "
-                   "infeasible. This can also occur due to the limited "
-                   "accuracy of the `interior-point` method. Check whether "
+                   "infeasibility or unboundedness. Check whether "
                    "the slack and constraint residuals are acceptable; "
-                   "if not, consider enabling presolve, reducing option "
-                   "`tol`, and/or using method `revised simplex`. "
-                   "If you encounter this message under different "
-                   "circumstances, please submit a bug report.")
-    elif status == 0 and contains_nans:
-        status = 4
-        message = ("Numerical difficulties were encountered but no errors "
-                   "were raised. This is known to occur if the 'presolve' "
-                   "option is False, 'sparse' is True, and A_eq includes "
-                   "redundant rows. If you encounter this under different "
-                   "circumstances, please submit a bug report. Otherwise, "
-                   "remove linearly dependent equations from your equality "
-                   "constraints or enable presolve.")
+                   "if not, consider enabling presolve, adjusting the "
+                   "tolerance option(s), and/or using a different method. "
+                   "Please consider submitting a bug report.")
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
         # basic, however, this solution is NOT optimal
-        raise ValueError(message)
+        status = 4
+        message = ("The solution is feasible, but the solver did not report "
+                   "that the solution was optimal. Please try a different "
+                   "method.")
 
     return status, message

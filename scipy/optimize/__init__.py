@@ -247,8 +247,12 @@ The `linprog` function supports the following methods:
    optimize.linprog-simplex
    optimize.linprog-interior-point
    optimize.linprog-revised_simplex
+   optimize.linprog-highs-ipm
+   optimize.linprog-highs-ds
+   optimize.linprog-highs
 
-The simplex method supports callback functions, such as:
+The simplex, interior-point, and revised simplex methods support callback
+functions, such as:
 
 .. autosummary::
    :toctree: generated/
