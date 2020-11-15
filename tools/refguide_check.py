@@ -133,11 +133,18 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
+<<<<<<< HEAD
+=======
+    r'scipy\.integrate\.simps',   # alias for simpson
+    r'scipy\.integrate\.trapz',   # alias for trapezoid
+    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',

@@ -25,8 +25,15 @@ import textwrap
 import warnings
 
 
+<<<<<<< HEAD
 if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
     raise RuntimeError("Python version 2.7 or >= 3.4 required.")
+=======
+if sys.version_info[:2] < (3, 6):
+    raise RuntimeError("Python version >= 3.6 required.")
+
+import builtins
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
@@ -44,11 +51,18 @@ Programming Language :: Python :: 2
 Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
+<<<<<<< HEAD
 Programming Language :: Python :: 3.2
 Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+=======
+Programming Language :: Python :: 3.6
+Programming Language :: Python :: 3.7
+Programming Language :: Python :: 3.8
+Programming Language :: Python :: 3.9
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 Topic :: Software Development
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -59,8 +73,13 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
+<<<<<<< HEAD
 MINOR = 0
 MICRO = 1
+=======
+MINOR = 6
+MICRO = 0
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
@@ -192,7 +211,106 @@ class sdist_checked(sdist):
     """ check submodules on sdist to prevent incomplete tarballs """
     def run(self):
         check_submodules()
+<<<<<<< HEAD
         sdist.run(self)
+=======
+        with concat_license_files():
+            sdist.run(self)
+
+
+def get_build_ext_override():
+    """
+    Custom build_ext command to tweak extension building.
+    """
+    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+
+    class build_ext(old_build_ext):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable distutils parallel build, due to race conditions
+            # in numpy.distutils (Numpy issue gh-15957)
+            if self.parallel:
+                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                      "for parallel build.")
+            self.parallel = None
+
+        def build_extension(self, ext):
+            # When compiling with GNU compilers, use a version script to
+            # hide symbols during linking.
+            if self.__is_using_gnu_linker(ext):
+                export_symbols = self.get_export_symbols(ext)
+                text = '{global: %s; local: *; };' % (';'.join(export_symbols),)
+
+                script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
+                with open(script_fn, 'w') as f:
+                    f.write(text)
+                    # line below fixes gh-8680
+                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
+                    ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            # Allow late configuration
+            hooks = getattr(ext, '_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, ext))
+
+            old_build_ext.build_extension(self, ext)
+
+        def __is_using_gnu_linker(self, ext):
+            if not sys.platform.startswith('linux'):
+                return False
+
+            # Fortran compilation with gfortran uses it also for
+            # linking. For the C compiler, we detect gcc in a similar
+            # way as distutils does it in
+            # UnixCCompiler.runtime_library_dir_option
+            if ext.language == 'f90':
+                is_gcc = (self._f90_compiler.compiler_type in ('gnu', 'gnu95'))
+            elif ext.language == 'f77':
+                is_gcc = (self._f77_compiler.compiler_type in ('gnu', 'gnu95'))
+            else:
+                is_gcc = False
+                if self.compiler.compiler_type == 'unix':
+                    cc = sysconfig.get_config_var("CC")
+                    if not cc:
+                        cc = ""
+                    compiler_name = os.path.basename(cc.split(" ")[0])
+                    is_gcc = "gcc" in compiler_name or "g++" in compiler_name
+            return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
+    return build_ext
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
+
+
+def get_build_clib_override():
+    """
+    Custom build_clib command to tweak library building.
+    """
+    from numpy.distutils.command.build_clib import build_clib as old_build_clib
+
+    class build_clib(old_build_clib):
+        def finalize_options(self):
+            super().finalize_options()
+
+            # Disable parallelization (see build_ext above)
+            self.parallel = None
+
+        def build_a_library(self, build_info, lib_name, libraries):
+            # Allow late configuration
+            hooks = build_info.get('_pre_build_hook', ())
+            _run_pre_build_hooks(hooks, (self, build_info))
+            old_build_clib.build_a_library(self, build_info, lib_name, libraries)
+
+    return build_clib
+
+
+def _run_pre_build_hooks(hooks, args):
+    """Call a sequence of pre-build hooks, if any"""
+    if hooks is None:
+        hooks = ()
+    elif not hasattr(hooks, '__iter__'):
+        hooks = (hooks,)
+    for hook in hooks:
+        hook(*args)
 
 
 def generate_cython():
@@ -246,8 +364,9 @@ def parse_setuppy_commands():
     # useful messages to the user
     if 'install' in sys.argv[1:]:
         print(textwrap.dedent("""
-            Note: if you need reliable uninstall behavior, then install
-            with pip instead of using `setup.py install`:
+            Note: for reliable uninstall behaviour and dependency installation
+            and uninstallation, please use pip instead of using
+            `setup.py install`:
 
               - `pip install .`       (from a git repo or downloaded source
                                        release)
@@ -324,9 +443,43 @@ def parse_setuppy_commands():
                   "generating Cython sources and expanding templates")
     return True
 
+def check_setuppy_command():
+    run_build = parse_setuppy_commands()
+    if run_build:
+        try:
+            import numpy
+            import pybind11
+        except ImportError as exc:  # We do not have our build deps installed
+            print(textwrap.dedent(
+                    """Error: '%s' must be installed before running the build.
+                    """
+                    % (exc.name,)))
+            sys.exit(1)
+
+    return run_build
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+<<<<<<< HEAD
+=======
+
+    lapack_opt = get_info('lapack_opt')
+
+    if not lapack_opt:
+        if sys.platform == "darwin":
+            msg = ('No BLAS/LAPACK libraries found. '
+                   'Note: Accelerate is no longer supported.')
+        else:
+            msg = 'No BLAS/LAPACK libraries found.'
+        msg += ("\n"
+                "To build Scipy from sources, BLAS & LAPACK libraries "
+                "need to be installed.\n"
+                "See site.cfg.example in the Scipy source directory and\n"
+                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "for details.")
+        raise NotFoundError(msg)
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     config = Configuration(None, parent_package, top_path)
     config.set_options(ignore_setup_xxx_py=True,
                        assume_default_configuration=True,
@@ -349,6 +502,7 @@ def setup_package():
     if HAVE_SPHINX:
         cmdclass['build_sphinx'] = ScipyBuildDoc
 
+<<<<<<< HEAD
     # Figure out whether to add ``*_requires = ['numpy']``.
     # We don't want to do that unconditionally, because we risk updating
     # an installed numpy which fails too often.  Just if it's not installed, we
@@ -364,6 +518,8 @@ def setup_package():
         build_requires = (['numpy>=1.8.2'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -377,9 +533,16 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
+<<<<<<< HEAD
         setup_requires=build_requires,
         install_requires=build_requires,
         python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
+=======
+        install_requires=[
+            'numpy>=1.16.5',
+        ],
+        python_requires='>=3.6',
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     )
 
     if "--force" in sys.argv:
@@ -387,7 +550,7 @@ def setup_package():
         sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
-        run_build = parse_setuppy_commands()
+        run_build = check_setuppy_command()
 
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
@@ -396,6 +559,14 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+<<<<<<< HEAD
+=======
+
+        # Customize extension building
+        cmdclass['build_ext'] = get_build_ext_override()
+        cmdclass['build_clib'] = get_build_clib_override()
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release

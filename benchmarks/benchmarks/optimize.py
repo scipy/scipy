@@ -7,12 +7,18 @@ from collections import defaultdict, OrderedDict
 
 import numpy as np
 
-try:
+from . import test_functions as funcs
+from . import go_benchmark_functions as gbf
+from .common import Benchmark, is_xslow, safe_import
+from .lsq_problems import extract_lsq_problems
+
+with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
                                 dual_annealing, OptimizeResult)
     from scipy.optimize._minimize import MINIMIZE_METHODS
+<<<<<<< HEAD
 except ImportError:
     pass
 
@@ -20,6 +26,8 @@ from . import test_functions as funcs
 from . import go_benchmark_functions as gbf
 from .common import Benchmark, is_xslow
 from .lsq_problems import extract_lsq_problems
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class _BenchOptimizers(Benchmark):
@@ -420,6 +428,17 @@ class BenchLeastSquares(Benchmark):
             raise NotImplementedError
 
 
+<<<<<<< HEAD
+=======
+# `export SCIPY_XSLOW=1` to enable BenchGlobal.track_all
+# `export SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...` to run specific tests
+# `export SCIPY_GLOBAL_BENCH_NUMTRIALS=10` to specify n_iterations, default 100
+#
+# Note that it can take several hours to run; intermediate output
+# can be found under benchmarks/global-bench-results.json
+
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 class BenchGlobal(Benchmark):
     """
     Benchmark the global optimizers using the go_benchmark_functions
@@ -435,7 +454,11 @@ class BenchGlobal(Benchmark):
     ])
 
     if not is_xslow():
+<<<<<<< HEAD
         _enabled_functions = ['AMGM']
+=======
+        _enabled_functions = []
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     elif 'SCIPY_GLOBAL_BENCH' in os.environ:
         _enabled_functions = [x.strip() for x in
                               os.environ['SCIPY_GLOBAL_BENCH'].split(',')]
@@ -460,6 +483,7 @@ class BenchGlobal(Benchmark):
         self.results = {}
 
     def setup(self, name, ret_value, solver):
+<<<<<<< HEAD
         if not self.enabled:
             print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=1 to enable.\n"
                   "Set also e.g. SCIPY_GLOBAL_BENCH_NUMTRIALS=10 to specify how many iterations\n"
@@ -469,6 +493,8 @@ class BenchGlobal(Benchmark):
                   "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
             raise NotImplementedError()
 
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         if name not in self._enabled_functions:
             raise NotImplementedError("skipped")
 

@@ -15,12 +15,18 @@ Functions
 
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
+import warnings
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
+<<<<<<< HEAD
                        _prepare_scalar_function)
+=======
+                       _prepare_scalar_function, _clip_x_for_func,
+                       _check_clip_x)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -246,6 +252,19 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if not disp:
         iprint = 0
 
+    # Transform x0 into an array.
+    x = asfarray(x0).flatten()
+
+    # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
+    # ScalarFunction
+    if bounds is None or len(bounds) == 0:
+        new_bounds = (-np.inf, np.inf)
+    else:
+        new_bounds = old_bound_to_new(bounds)
+
+    # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
+    x = np.clip(x, new_bounds[0], new_bounds[1])
+
     # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
         constraints = (constraints, )
@@ -277,12 +296,25 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
+<<<<<<< HEAD
                     if jac in ['2-point', '3-point', 'cs']:
                         return approx_derivative(fun, x, method=jac, args=args,
                                                  rel_step=finite_diff_rel_step)
                     else:
                         return approx_derivative(fun, x, method='2-point',
                                                  abs_step=epsilon, args=args)
+=======
+                    x = _check_clip_x(x, new_bounds)
+
+                    if jac in ['2-point', '3-point', 'cs']:
+                        return approx_derivative(fun, x, method=jac, args=args,
+                                                 rel_step=finite_diff_rel_step,
+                                                 bounds=new_bounds)
+                    else:
+                        return approx_derivative(fun, x, method='2-point',
+                                                 abs_step=epsilon, args=args,
+                                                 bounds=new_bounds)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
                 return cjac
             cjac = cjac_factory(con['fun'])
@@ -303,6 +335,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
                    9: "Iteration limit reached"}
+<<<<<<< HEAD
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
@@ -316,6 +349,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
     x = np.clip(x, new_bounds[0], new_bounds[1])
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -369,6 +404,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
                                   bounds=new_bounds)
+<<<<<<< HEAD
+=======
+    # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
+    # doesn't get sent to the func/grad evaluator.
+    wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
+    wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)
@@ -403,12 +445,20 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
     # ScalarFunction
+<<<<<<< HEAD
     fx = sf.fun(x)
+=======
+    fx = wrapped_fun(x)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     try:
         fx = float(np.asarray(fx))
     except (TypeError, ValueError) as e:
         raise ValueError("Objective function must return a scalar") from e
+<<<<<<< HEAD
     g = append(sf.grad(x), 0.0)
+=======
+    g = append(wrapped_grad(x), 0.0)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     c = _eval_constraint(x, cons)
     a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
@@ -420,6 +470,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
               n1, n2, n3)
 
         if mode == 1:  # objective and constraint evaluation required
+<<<<<<< HEAD
             fx = sf.fun(x)
             c = _eval_constraint(x, cons)
 
@@ -432,6 +483,20 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             if callback is not None:
                 callback(np.copy(x))
 
+=======
+            fx = wrapped_fun(x)
+            c = _eval_constraint(x, cons)
+
+        if mode == -1:  # gradient evaluation required
+            g = append(wrapped_grad(x), 0.0)
+            a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
+
+        if majiter > majiter_prev:
+            # call callback if major iteration has incremented
+            if callback is not None:
+                callback(np.copy(x))
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
                 print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,

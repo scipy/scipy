@@ -4,7 +4,6 @@ import sys
 import warnings
 import numbers
 from collections import namedtuple
-from multiprocessing import Pool
 import inspect
 import math
 
@@ -367,6 +366,7 @@ class MapWrapper(object):
             self.pool = pool
             self._mapfunc = self.pool
         else:
+            from multiprocessing import Pool
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible

@@ -366,7 +366,7 @@ def association(arr, chi2_stat, stat="cramer"):
         stat_str = stat.lower()
 
     if len(arr.shape) != 2:
-        raise ValueError("currently method only accepts 2d arrays")
+        raise ValueError("method only accepts 2d arrays")
 
     else:
         try:

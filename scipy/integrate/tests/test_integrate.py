@@ -2,19 +2,18 @@
 """
 Tests for numerical integration.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
 
-from scipy._lib._numpy_compat import _assert_warns
-from scipy._lib.six import xrange
-
 from numpy.testing import (
     assert_, assert_array_almost_equal,
+<<<<<<< HEAD
     assert_allclose, assert_array_equal, assert_equal)
 import pytest
+=======
+    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
@@ -143,7 +142,7 @@ class TestOde(TestODEClass):
     def test_concurrent_ok(self):
         f = lambda t, y: 1.0
 
-        for k in xrange(3):
+        for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
@@ -619,7 +618,7 @@ class ODECheckParameterUse(object):
         solver.set_integrator(self.solver_name, nsteps=1)
         ic = [1.0, 0.0]
         solver.set_initial_value(ic, 0.0)
-        _assert_warns(UserWarning, solver.integrate, pi)
+        assert_warns(UserWarning, solver.integrate, pi)
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):
@@ -718,6 +717,19 @@ def test_odeint_banded_jacobian():
     assert_array_equal(info1['nje'], info2['nje'])
     assert_array_equal(info3['nje'], info4['nje'])
 
+<<<<<<< HEAD
+=======
+    # Test the use of tfirst
+    sol1ty, info1ty = odeint(lambda t, y, c: func(y, t, c), y0, t, args=(c,),
+                             full_output=True, atol=1e-13, rtol=1e-11,
+                             mxstep=10000,
+                             Dfun=lambda t, y, c: jac(y, t, c), tfirst=True)
+    # The code should execute the exact same sequence of floating point
+    # calculations, so these should be exactly equal. We'll be safe and use
+    # a small tolerance.
+    assert_allclose(sol1, sol1ty, rtol=1e-12, err_msg="sol1 != sol1ty")
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 def test_odeint_errors():
     def sys1d(x, t):

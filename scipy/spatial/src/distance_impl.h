@@ -97,6 +97,22 @@ chebyshev_distance_double(const double *u, const double *v, const npy_intp n)
 }
 
 static NPY_INLINE double
+weighted_chebyshev_distance_double(const double *u, const double *v,
+                                   const npy_intp n, const double *w)
+{
+    npy_intp i;
+    double maxv = 0.0;
+    for (i = 0; i < n; ++i) {
+        if (w[i] == 0.0) continue;
+        const double d = fabs(u[i] - v[i]);
+        if (d > maxv) {
+            maxv = d;
+        }
+    }
+    return maxv;
+}
+
+static NPY_INLINE double
 canberra_distance_double(const double *u, const double *v, const npy_intp n)
 {
     double tot = 0.;
@@ -398,8 +414,8 @@ weighted_minkowski_distance(const double *u, const double *v, const npy_intp n,
     npy_intp i = 0;
     double s = 0.0;
     for (i = 0; i < n; ++i) {
-        const double d = fabs(u[i] - v[i]) * w[i];
-        s += pow(d, p);
+        const double d = fabs(u[i] - v[i]);
+        s += pow(d, p) * w[i];
     }
     return pow(s, 1.0 / p);
 }
@@ -523,6 +539,22 @@ pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows,
 }
 
 static NPY_INLINE int
+pdist_weighted_chebyshev(const double *X, double *dm, npy_intp num_rows,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rows; ++i) {
+        const double *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const double *v = X + (num_cols * j);
+            *dm = weighted_chebyshev_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
+}
+
+static NPY_INLINE int
 pdist_cosine(const double *X, double *dm, const npy_intp num_rows,
              const npy_intp num_cols)
 {
@@ -592,11 +624,43 @@ pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
+/* Old weighting type which is inconsistent with other distance metrics.
+   Remove in SciPy 1.8 along with wminkowski. */
+static NPY_INLINE int
+pdist_old_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
+                             const npy_intp num_cols, const double p, const double *w)
+{
+    npy_intp i, j;
+
+    // Covert from old style weights to new weights
+    double * new_weights = malloc(num_cols * sizeof(double));
+    if (!new_weights) {
+        return 1;
+    }
+    for (i = 0; i < num_cols; ++i) {
+        new_weights[i] = pow(w[i], p);
+    }
+
+    for (i = 0; i < num_rows; ++i) {
+        const double *u = X + (num_cols * i);
+        for (j = i + 1; j < num_rows; ++j, ++dm) {
+            const double *v = X + (num_cols * j);
+            *dm = weighted_minkowski_distance(u, v, num_cols, p, new_weights);
+        }
+    }
+    free(new_weights);
+    return 0;
+}
+
 static NPY_INLINE int
 pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
                          const npy_intp num_cols, const double p, const double *w)
 {
     npy_intp i, j;
+
+    if (sc_isinf(p)) {
+        return pdist_weighted_chebyshev(X, dm, num_rows, num_cols, w);
+    }
 
     for (i = 0; i < num_rows; ++i) {
         const double *u = X + (num_cols * i);
@@ -690,6 +754,23 @@ dist_to_vector_from_squareform(const char *M, char *v, const npy_intp n, npy_int
         v += len;
         cit += (n + 1) * s;
     }
+}
+
+static NPY_INLINE int
+cdist_weighted_chebyshev(const double *XA, const double *XB, double *dm,
+                         const npy_intp num_rowsA, const npy_intp num_rowsB,
+                         const npy_intp num_cols, const double *w)
+{
+    npy_intp i, j;
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const double *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const double *v = XB + (num_cols * j);
+            *dm = weighted_chebyshev_distance_double(u, v, num_cols, w);
+        }
+    }
+    return 0;
 }
 
 
@@ -795,6 +876,37 @@ cdist_minkowski(const double *XA, const double *XB, double *dm,
     return 0;
 }
 
+/* Old weighting type which is inconsistent with other distance metrics.
+   Remove in SciPy 1.8 along with wminkowski. */
+static NPY_INLINE int
+cdist_old_weighted_minkowski(const double *XA, const double *XB, double *dm,
+                             const npy_intp num_rowsA, const npy_intp num_rowsB,
+                             const npy_intp num_cols, const double p,
+                             const double *w)
+{
+    npy_intp i, j;
+
+    // Covert from old style weights to new weights
+    double * new_weights = malloc(num_cols * sizeof(double));
+    if (!new_weights) {
+      return 1;
+    }
+
+    for (i = 0; i < num_cols; ++i) {
+      new_weights[i] = pow(w[i], p);
+    }
+
+    for (i = 0; i < num_rowsA; ++i) {
+        const double *u = XA + (num_cols * i);
+        for (j = 0; j < num_rowsB; ++j, ++dm) {
+            const double *v = XB + (num_cols * j);
+            *dm = weighted_minkowski_distance(u, v, num_cols, p, new_weights);
+        }
+    }
+    free(new_weights);
+    return 0;
+}
+
 static NPY_INLINE int
 cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
                          const npy_intp num_rowsA, const npy_intp num_rowsB,
@@ -802,6 +914,10 @@ cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
                          const double *w)
 {
     npy_intp i, j;
+
+    if (sc_isinf(p)) {
+        return cdist_weighted_chebyshev(XA, XB, dm, num_rowsA, num_rowsB, num_cols, w);
+    }
 
     for (i = 0; i < num_rowsA; ++i) {
         const double *u = XA + (num_cols * i);

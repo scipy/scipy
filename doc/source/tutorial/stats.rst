@@ -915,7 +915,7 @@ is called a rug plot):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    >>> x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    >>> x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float64)
     >>> kde1 = stats.gaussian_kde(x1)
     >>> kde2 = stats.gaussian_kde(x1, bw_method='silverman')
 

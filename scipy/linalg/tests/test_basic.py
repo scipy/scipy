@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #
 # Created by: Pearu Peterson, March 2002
 #
@@ -6,6 +7,8 @@
 """
 from __future__ import division, print_function, absolute_import
 
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 import warnings
 import itertools
 import numpy as np
@@ -16,10 +19,9 @@ from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
@@ -28,8 +30,8 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
-
-from scipy._lib._version import NumpyVersion
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
 
 """
@@ -1339,6 +1341,13 @@ class TestPinv(object):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv, a_pinv2)
 
+    def test_tall_transposed(self):
+        a = random([10, 2])
+        a_pinv = pinv(a)
+        # The result will be transposed internally hence will be a C-layout
+        # instead of the typical LAPACK output with Fortran-layout
+        assert a_pinv.flags['C_CONTIGUOUS']
+
 
 class TestPinvSymmetric(object):
 
@@ -1416,13 +1425,21 @@ class TestVectorNorms(object):
         assert_allclose(norm(a, axis=1), [[3.60555128, 4.12310563]] * 2)
         assert_allclose(norm(a, 1, axis=1), [[5.] * 2] * 2)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
         b = norm(a, axis=1, keepdims=True)
         assert_allclose(b, [[[3.60555128, 4.12310563]]] * 2)
         assert_(b.shape == (2, 1, 2))
         assert_allclose(norm(a, 1, axis=2, keepdims=True), [[[3.], [7.]]] * 2)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit BLAS required")
+    def test_large_vector(self):
+        check_free_memory(free_mb=17000)
+        x = np.zeros([2**31], dtype=np.float64)
+        x[-1] = 1
+        res = norm(x)
+        del x
+        assert_allclose(res, 1.0)
 
 
 class TestMatrixNorms(object):
@@ -1464,7 +1481,6 @@ class TestMatrixNorms(object):
         assert_allclose(b, d)
         assert_(b.shape == c.shape == d.shape)
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.10.0', reason="")
     def test_keepdims_kwd(self):
         a = np.arange(120, dtype='d').reshape(2, 3, 4, 5)
         b = norm(a, ord=np.inf, axis=(1, 0), keepdims=True)

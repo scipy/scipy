@@ -676,9 +676,22 @@ def _bin_edges(sample, bins=None, range=None):
         smin = np.atleast_1d(np.array(sample.min(axis=0), float))
         smax = np.atleast_1d(np.array(sample.max(axis=0), float))
     else:
+<<<<<<< HEAD
         smin = np.empty(Ndim)
         smax = np.empty(Ndim)
         for i in builtins.range(Ndim):
+=======
+        if len(range) != Ndim:
+            raise ValueError(
+                f"range given for {len(range)} dimensions; {Ndim} required")
+        smin = np.empty(Ndim)
+        smax = np.empty(Ndim)
+        for i in builtins.range(Ndim):
+            if range[i][1] < range[i][0]:
+                raise ValueError(
+                    "In {}range, start must be <= stop".format(
+                        f"dimension {i + 1} of " if Ndim > 1 else ""))
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.

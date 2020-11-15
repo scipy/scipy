@@ -1,14 +1,77 @@
 """
 Unit test for Linear Programming
 """
+<<<<<<< HEAD
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
+=======
+import sys
+
+import numpy as np
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           assert_array_less, assert_warns, suppress_warnings)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
+<<<<<<< HEAD
+=======
+from scipy.linalg import LinAlgWarning
+import pytest
+
+has_umfpack = True
+try:
+    from scikits.umfpack import UmfpackWarning
+except ImportError:
+    has_umfpack = False
+
+has_cholmod = True
+try:
+    import sksparse
+except ImportError:
+    has_cholmod = False
+
+
+def _assert_iteration_limit_reached(res, maxiter):
+    assert_(not res.success, "Incorrectly reported success")
+    assert_(res.success < maxiter, "Incorrectly reported number of iterations")
+    assert_equal(res.status, 1, "Failed to report iteration limit reached")
+
+
+def _assert_infeasible(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 2, "failed to report infeasible status")
+
+
+def _assert_unbounded(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 3, "failed to report unbounded status")
+
+
+def _assert_unable_to_find_basic_feasible_sol(res):
+    # res: linprog result object
+
+    # The status may be either 2 or 4 depending on why the feasible solution
+    # could not be found. If the undelying problem is expected to not have a
+    # feasible solution, _assert_infeasible should be used.
+    assert_(not res.success, "incorrectly reported success")
+    assert_(res.status in (2, 4), "failed to report optimization failure")
+
+
+def _assert_success(res, desired_fun=None, desired_x=None,
+                    rtol=1e-8, atol=1e-8):
+    # res: linprog result object
+    # desired_fun: desired objective function value or None
+    # desired_x: desired solution or None
+    if not res.success:
+        msg = "linprog status {0}, message: {1}".format(res.status,
+                                                        res.message)
+        raise AssertionError(msg)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 import pytest
 
@@ -186,9 +249,170 @@ class LinprogCommonTests(object):
                       bounds=bounds, method=self.method, options=self.options)
         _assert_success(res, desired_fun=2, desired_x=[2])
 
+<<<<<<< HEAD
     def test_linprog_upper_bound_constraints(self):
         # Maximize a linear function subject to only linear upper bound
         # constraints.
+=======
+    def test_unknown_options(self):
+        c = np.array([-3, -2])
+        A_ub = [[2, 1], [1, 1], [1, 0]]
+        b_ub = [10, 8, 4]
+
+        def f(c, A_ub=None, b_ub=None, A_eq=None,
+              b_eq=None, bounds=None, options={}):
+            linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                    method=self.method, options=options)
+
+        o = {key: self.options[key] for key in self.options}
+        o['spam'] = 42
+
+        assert_warns(OptimizeWarning, f,
+                     c, A_ub=A_ub, b_ub=b_ub, options=o)
+
+    def test_invalid_inputs(self):
+
+        def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
+            linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                    method=self.method, options=self.options)
+
+        # Test ill-formatted bounds
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
+
+        # Test other invalid inputs
+        assert_raises(ValueError, f, [1, 2], A_ub=[[1, 2]], b_ub=[1, 2])
+        assert_raises(ValueError, f, [1, 2], A_ub=[[1]], b_ub=[1])
+        assert_raises(ValueError, f, [1, 2], A_eq=[[1, 2]], b_eq=[1, 2])
+        assert_raises(ValueError, f, [1, 2], A_eq=[[1]], b_eq=[1])
+        assert_raises(ValueError, f, [1, 2], A_eq=[1], b_eq=1)
+
+        # this last check doesn't make sense for sparse presolve
+        if ("_sparse_presolve" in self.options and
+                self.options["_sparse_presolve"]):
+            return
+            # there aren't 3-D sparse matrices
+
+        assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_bounds_fixed(self):
+
+        # Test fixed bounds (upper equal to lower)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        do_presolve = self.options.get('presolve', True)
+
+        res = linprog([1], bounds=(1, 1),
+                      method=self.method, options=self.options)
+        _assert_success(res, 1, 1)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 2, 3], bounds=[(5, 5), (-1, -1), (3, 3)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 12, [5, -1, 3])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 1], bounds=[(1, 1), (1, 3)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 2, [1, 1])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 1, 2], A_eq=[[1, 0, 0], [0, 1, 0]], b_eq=[1, 7],
+                      bounds=[(-5, 5), (0, 10), (3.5, 3.5)],
+                      method=self.method, options=self.options)
+        _assert_success(res, 15, [1, 7, 3.5])
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+    def test_bounds_infeasible(self):
+
+        # Test ill-valued bounds (upper less than lower)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        do_presolve = self.options.get('presolve', True)
+
+        res = linprog([1], bounds=(1, -2), method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1], bounds=[(1, -2)], method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+        res = linprog([1, 2, 3], bounds=[(5, 0), (1, 2), (3, 4)], method=self.method, options=self.options)
+        _assert_infeasible(res)
+        if do_presolve:
+            assert_equal(res.nit, 0)
+
+    def test_bounds_infeasible_2(self):
+
+        # Test ill-valued bounds (lower inf, upper -inf)
+        # If presolve option True, test if solution found in presolve (i.e.
+        # number of iterations is 0).
+        # For the simplex method, the cases do not result in an
+        # infeasible status, but in a RuntimeWarning. This is a
+        # consequence of having _presolve() take care of feasibility
+        # checks. See issue gh-11618.
+        do_presolve = self.options.get('presolve', True)
+        simplex_without_presolve = not do_presolve and self.method == 'simplex'
+
+        c = [1, 2, 3]
+        bounds_1 = [(1, 2), (np.inf, np.inf), (3, 4)]
+        bounds_2 = [(1, 2), (-np.inf, -np.inf), (3, 4)]
+
+        if simplex_without_presolve:
+            def g(c, bounds):
+                res = linprog(c, bounds=bounds, method=self.method, options=self.options)
+                return res
+
+            with pytest.warns(RuntimeWarning):
+                with pytest.raises(IndexError):
+                    g(c, bounds=bounds_1)
+
+            with pytest.warns(RuntimeWarning):
+                with pytest.raises(IndexError):
+                    g(c, bounds=bounds_2)
+        else:
+            res = linprog(c=c, bounds=bounds_1, method=self.method, options=self.options)
+            _assert_infeasible(res)
+            if do_presolve:
+                assert_equal(res.nit, 0)
+            res = linprog(c=c, bounds=bounds_2, method=self.method, options=self.options)
+            _assert_infeasible(res)
+            if do_presolve:
+                assert_equal(res.nit, 0)
+
+    def test_empty_constraint_1(self):
+        c = [-1, -2]
+        res = linprog(c, method=self.method, options=self.options)
+        _assert_unbounded(res)
+
+    def test_empty_constraint_2(self):
+        c = [-1, 1, -1, 1]
+        bounds = [(0, np.inf), (-np.inf, 0), (-1, 1), (-1, 1)]
+        res = linprog(c, bounds=bounds,
+                      method=self.method, options=self.options)
+        _assert_unbounded(res)
+        # Unboundedness detected in presolve requires no iterations
+        if self.options.get('presolve', True):
+            assert_equal(res.nit, 0)
+
+    def test_empty_constraint_3(self):
+        c = [1, -1, 1, -1]
+        bounds = [(0, np.inf), (-np.inf, 0), (-1, 1), (-1, 1)]
+        res = linprog(c, bounds=bounds,
+                      method=self.method, options=self.options)
+        _assert_success(res, desired_x=[0, 0, -1, 1], desired_fun=-2)
+
+    def test_inequality_constraints(self):
+        # Minimize linear function subject to linear inequality constraints.
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         #  http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf
         c = np.array([3, 2]) * -1  # maximize
         A_ub = [[2, 1],
@@ -649,14 +873,92 @@ class TestLinprogSimplex(LinprogCommonTests):
             # no more kwargs
             assert_(not kwargs)
 
+<<<<<<< HEAD
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, callback=cb, method=self.method)
+=======
+class LinprogIPTests(LinprogCommonTests):
+    method = "interior-point"
+
+
+class LinprogRSTests(LinprogCommonTests):
+    method = "revised simplex"
+
+    # Revised simplex does not reliably solve these problems.
+    # Failure is intermittent due to the random choice of elements to complete
+    # the basis after phase 1 terminates. In any case, linprog exists
+    # gracefully, reporting numerical difficulties. I do not think this should
+    # prevent revised simplex from being merged, as it solves the problems
+    # most of the time and solves a broader range of problems than the existing
+    # simplex implementation.
+    # I believe that the root cause is the same for all three and that this
+    # same issue prevents revised simplex from solving many other problems
+    # reliably. Somehow the pivoting rule allows the algorithm to pivot into
+    # a singular basis. I haven't been able to find a reference that
+    # acknowledges this possibility, suggesting that there is a bug. On the
+    # other hand, the pivoting rule is quite simple, and I can't find a
+    # mistake, which suggests that this is a possibility with the pivoting
+    # rule. Hopefully, a better pivoting rule will fix the issue.
+
+    def test_bug_5400(self):
+        pytest.skip("Intermittent failure acceptable.")
+
+    def test_bug_8662(self):
+        pytest.skip("Intermittent failure acceptable.")
+
+    def test_network_flow(self):
+        pytest.skip("Intermittent failure acceptable.")
+
+################################
+# Simplex Option-Specific Tests#
+################################
+
+
+class TestLinprogSimplexDefault(LinprogSimplexTests):
+
+    def setup_method(self):
+        self.options = {}
+
+    def test_bug_5400(self):
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexDefault, self).test_bug_5400()
+
+    def test_bug_7237_low_tol(self):
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
+        self.options.update({'tol': 1e-12})
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexDefault, self).test_bug_7237()
+
+    def test_bug_8174_low_tol(self):
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate warning is issued.
+        self.options.update({'tol': 1e-12})
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexDefault, self).test_bug_8174()
+
+
+class TestLinprogSimplexBland(LinprogSimplexTests):
+
+    def setup_method(self):
+        self.options = {'bland': True}
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         assert_(callback_complete[0])
         assert_allclose(last_xk[0], res.x)
 
+<<<<<<< HEAD
+=======
+    def test_bug_8174_low_tol(self):
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
+        self.options.update({'tol': 1e-12})
+        with pytest.raises(AssertionError):
+            with pytest.warns(OptimizeWarning):
+                super(TestLinprogSimplexBland, self).test_bug_8174()
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
@@ -697,12 +999,60 @@ class BaseTestLinprogIP(LinprogCommonTests):
         _assert_success(sol, desired_fun=-1.191, rtol=1e-6)
 
     def test_bug_5400(self):
+<<<<<<< HEAD
         # https://github.com/scipy/scipy/issues/5400
         bounds = [
             (0, None),
             (0, 100), (0, 100), (0, 100), (0, 100), (0, 100), (0, 100),
             (0, 900), (0, 900), (0, 900), (0, 900), (0, 900), (0, 900),
             (0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
+=======
+        super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
+
+    def test_bug_6139_low_tol(self):
+        # Linprog(method='simplex') fails to find a basic feasible solution
+        # if phase 1 pseudo-objective function is outside the provided tol.
+        # https://github.com/scipy/scipy/issues/6139
+        # Without ``presolve`` eliminating such rows the result is incorrect.
+        self.options.update({'tol': 1e-12})
+        with pytest.raises(ValueError):
+            return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
+
+    def test_bug_7237_low_tol(self):
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate error is raised.
+        self.options.update({'tol': 1e-12})
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexNoPresolve, self).test_bug_7237()
+
+    def test_bug_8174_low_tol(self):
+        # Fails if the tolerance is too strict. Here, we test that
+        # even if the solution is wrong, the appropriate warning is issued.
+        self.options.update({'tol': 1e-12})
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
+
+    def test_unbounded_no_nontrivial_constraints_1(self):
+        pytest.skip("Tests behavior specific to presolve")
+
+    def test_unbounded_no_nontrivial_constraints_2(self):
+        pytest.skip("Tests behavior specific to presolve")
+
+
+#######################################
+# Interior-Point Option-Specific Tests#
+#######################################
+
+
+class TestLinprogIPDense(LinprogIPTests):
+    options = {"sparse": False}
+
+
+if has_cholmod:
+    class TestLinprogIPSparseCholmod(LinprogIPTests):
+        options = {"sparse": True, "cholesky": True}
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         f = 1 / 9
         g = -1e4
@@ -734,6 +1084,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
         _assert_unbounded(res)
         assert_equal(res.nit, 0)
 
+<<<<<<< HEAD
     def test_singleton_row_eq_1(self):
         # detected in presolve?
         c = [1, 1, 1, 2]
@@ -743,6 +1094,18 @@ class BaseTestLinprogIP(LinprogCommonTests):
                       method=self.method, options=self.options)
         _assert_infeasible(res)
         assert_equal(res.nit, 0)
+=======
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparse, self).test_bug_6139()
+
+    @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
+    def test_bug_6690(self):
+        # Test defined in base class, but can't mark as xfail there
+        super(TestLinprogIPSparse, self).test_bug_6690()
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     def test_singleton_row_ub_1(self):
         # detected in presolve?
@@ -816,6 +1179,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
                       c, A_eq=A_eq, b_eq=b_eq,
                       method=self.method, options=self.options)
 
+<<<<<<< HEAD
     def test_equal_bounds_no_presolve(self):
         # There was a bug when a lower and upper bound were equal but
         # presolve was not on to eliminate the variable. The bound
@@ -830,6 +1194,16 @@ class BaseTestLinprogIP(LinprogCommonTests):
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                       method=self.method, options=o)
         _assert_infeasible(res)
+=======
+    @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
+                                "perturbations in linear system solution in "
+                                "_linprog_ip._sym_solve.")
+    def test_bug_6139(self):
+        super(TestLinprogIPSparsePresolve, self).test_bug_6139()
+
+    def test_enzo_example_c_with_infeasibility(self):
+        pytest.skip('_sparse_presolve=True incompatible with presolve=False')
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     def test_unbounded_below_no_presolve_corrected(self):
         c = [1]

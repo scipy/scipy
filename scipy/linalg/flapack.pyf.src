@@ -28,6 +28,10 @@
 !
 
 python module _flapack
+    usercode '''
+#define F_INT int
+'''
+
 interface
 
    include 'flapack_user.pyf.src'

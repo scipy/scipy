@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 from decimal import Decimal
 from itertools import product
+from math import gcd
 import warnings
 
 import pytest
@@ -12,15 +11,17 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns, assert_array_less)
-from scipy._lib._numpy_compat import suppress_warnings
+    assert_allclose, assert_, assert_warns, assert_array_less,
+    suppress_warnings)
 from numpy import array, arange
 import numpy as np
 
+from scipy.fft import fft
 from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
+<<<<<<< HEAD
     correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -32,6 +33,19 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
 else:
     from fractions import gcd
+=======
+    correlate, correlation_lags, convolve, convolve2d,
+    fftconvolve, oaconvolve, choose_conv_method,
+    hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
+    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
+    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
+    residuez)
+from scipy.signal.windows import hann
+from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+                                      _group_poles)
+from scipy.signal._upfirdn import _upfirdn_modes
+from scipy._lib import _testutils
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class _TestConvolve(object):
@@ -375,6 +389,30 @@ class TestConvolve2d(_TestConvolve2d):
                 signal.convolve2d([a], [b], mode=mode)),
                 signal.convolve(a, b, mode=mode))
 
+<<<<<<< HEAD
+=======
+    def test_invalid_dims(self):
+        assert_raises(ValueError, convolve2d, 3, 4)
+        assert_raises(ValueError, convolve2d, [3], [4])
+        assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_large_array(self):
+        # Test indexing doesn't overflow an int (gh-10761)
+        n = 2**31 // (1000 * np.int64().itemsize)
+        _testutils.check_free_memory(2 * n * 1001 * np.int64().itemsize / 1e6)
+
+        # Create a chequered pattern of 1s and 0s
+        a = np.zeros(1001 * n, dtype=np.int64)
+        a[::2] = 1
+        a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
+
+        count = signal.convolve2d(a, [[1, 1]])
+        fails = np.where(count > 1)
+        assert fails[0].size == 0
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class TestFFTConvolve(object):
 
@@ -477,8 +515,190 @@ class TestFFTConvolve(object):
         assert_(np.allclose(c, d, rtol=1e-10))
 
     @pytest.mark.slow
+<<<<<<< HEAD
     def test_many_sizes(self):
         np.random.seed(1234)
+=======
+    @pytest.mark.parametrize(
+        'n',
+        list(range(1, 100)) +
+        list(range(1000, 1500)) +
+        np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
+    def test_many_sizes(self, n):
+        a = np.random.rand(n) + 1j * np.random.rand(n)
+        b = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = np.convolve(a, b, 'full')
+
+        out = fftconvolve(a, b, 'full')
+        assert_allclose(out, expected, atol=1e-10)
+
+        out = fftconvolve(a, b, 'full', axes=[0])
+        assert_allclose(out, expected, atol=1e-10)
+
+
+def fftconvolve_err(*args, **kwargs):
+    raise RuntimeError('Fell back to fftconvolve')
+
+
+def gen_oa_shapes(sizes):
+    return [(a, b) for a, b in product(sizes, repeat=2)
+            if abs(a - b) > 3]
+
+
+def gen_oa_shapes_2d(sizes):
+    shapes0 = gen_oa_shapes(sizes)
+    shapes1 = gen_oa_shapes(sizes)
+    shapes = [ishapes0+ishapes1 for ishapes0, ishapes1 in
+              zip(shapes0, shapes1)]
+
+    modes = ['full', 'valid', 'same']
+    return [ishapes+(imode,) for ishapes, imode in product(shapes, modes)
+            if imode != 'valid' or
+            (ishapes[0] > ishapes[1] and ishapes[2] > ishapes[3]) or
+            (ishapes[0] < ishapes[1] and ishapes[2] < ishapes[3])]
+
+
+def gen_oa_shapes_eq(sizes):
+    return [(a, b) for a, b in product(sizes, repeat=2)
+            if a >= b]
+
+
+class TestOAConvolve(object):
+    @pytest.mark.slow()
+    @pytest.mark.parametrize('shape_a_0, shape_b_0',
+                             gen_oa_shapes_eq(list(range(100)) +
+                                              list(range(100, 1000, 23)))
+                             )
+    def test_real_manylens(self, shape_a_0, shape_b_0):
+        a = np.random.rand(shape_a_0)
+        b = np.random.rand(shape_b_0)
+
+        expected = fftconvolve(a, b)
+        out = oaconvolve(a, b)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('shape_a_0, shape_b_0',
+                             gen_oa_shapes([50, 47, 6, 4, 1]))
+    @pytest.mark.parametrize('is_complex', [True, False])
+    @pytest.mark.parametrize('mode', ['full', 'valid', 'same'])
+    def test_1d_noaxes(self, shape_a_0, shape_b_0,
+                       is_complex, mode, monkeypatch):
+        a = np.random.rand(shape_a_0)
+        b = np.random.rand(shape_b_0)
+        if is_complex:
+            a = a + 1j*np.random.rand(shape_a_0)
+            b = b + 1j*np.random.rand(shape_b_0)
+
+        expected = fftconvolve(a, b, mode=mode)
+
+        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+                            fftconvolve_err)
+        out = oaconvolve(a, b, mode=mode)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [0, 1])
+    @pytest.mark.parametrize('shape_a_0, shape_b_0',
+                             gen_oa_shapes([50, 47, 6, 4]))
+    @pytest.mark.parametrize('shape_a_extra', [1, 3])
+    @pytest.mark.parametrize('shape_b_extra', [1, 3])
+    @pytest.mark.parametrize('is_complex', [True, False])
+    @pytest.mark.parametrize('mode', ['full', 'valid', 'same'])
+    def test_1d_axes(self, axes, shape_a_0, shape_b_0,
+                     shape_a_extra, shape_b_extra,
+                     is_complex, mode, monkeypatch):
+        ax_a = [shape_a_extra]*2
+        ax_b = [shape_b_extra]*2
+        ax_a[axes] = shape_a_0
+        ax_b[axes] = shape_b_0
+
+        a = np.random.rand(*ax_a)
+        b = np.random.rand(*ax_b)
+        if is_complex:
+            a = a + 1j*np.random.rand(*ax_a)
+            b = b + 1j*np.random.rand(*ax_b)
+
+        expected = fftconvolve(a, b, mode=mode, axes=axes)
+
+        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+                            fftconvolve_err)
+        out = oaconvolve(a, b, mode=mode, axes=axes)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('shape_a_0, shape_b_0, '
+                             'shape_a_1, shape_b_1, mode',
+                             gen_oa_shapes_2d([50, 47, 6, 4]))
+    @pytest.mark.parametrize('is_complex', [True, False])
+    def test_2d_noaxes(self, shape_a_0, shape_b_0,
+                       shape_a_1, shape_b_1, mode,
+                       is_complex, monkeypatch):
+        a = np.random.rand(shape_a_0, shape_a_1)
+        b = np.random.rand(shape_b_0, shape_b_1)
+        if is_complex:
+            a = a + 1j*np.random.rand(shape_a_0, shape_a_1)
+            b = b + 1j*np.random.rand(shape_b_0, shape_b_1)
+
+        expected = fftconvolve(a, b, mode=mode)
+
+        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+                            fftconvolve_err)
+        out = oaconvolve(a, b, mode=mode)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [[0, 1], [0, 2], [1, 2]])
+    @pytest.mark.parametrize('shape_a_0, shape_b_0, '
+                             'shape_a_1, shape_b_1, mode',
+                             gen_oa_shapes_2d([50, 47, 6, 4]))
+    @pytest.mark.parametrize('shape_a_extra', [1, 3])
+    @pytest.mark.parametrize('shape_b_extra', [1, 3])
+    @pytest.mark.parametrize('is_complex', [True, False])
+    def test_2d_axes(self, axes, shape_a_0, shape_b_0,
+                     shape_a_1, shape_b_1, mode,
+                     shape_a_extra, shape_b_extra,
+                     is_complex, monkeypatch):
+        ax_a = [shape_a_extra]*3
+        ax_b = [shape_b_extra]*3
+        ax_a[axes[0]] = shape_a_0
+        ax_b[axes[0]] = shape_b_0
+        ax_a[axes[1]] = shape_a_1
+        ax_b[axes[1]] = shape_b_1
+
+        a = np.random.rand(*ax_a)
+        b = np.random.rand(*ax_b)
+        if is_complex:
+            a = a + 1j*np.random.rand(*ax_a)
+            b = b + 1j*np.random.rand(*ax_b)
+
+        expected = fftconvolve(a, b, mode=mode, axes=axes)
+
+        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+                            fftconvolve_err)
+        out = oaconvolve(a, b, mode=mode, axes=axes)
+
+        assert_array_almost_equal(out, expected)
+
+    def test_empty(self):
+        # Regression test for #1745: crashes with 0-length input.
+        assert_(oaconvolve([], []).size == 0)
+        assert_(oaconvolve([5, 6], []).size == 0)
+        assert_(oaconvolve([], [7]).size == 0)
+
+    def test_zero_rank(self):
+        a = array(4967)
+        b = array(3920)
+        out = oaconvolve(a, b)
+        assert_equal(out, a * b)
+
+    def test_single_element(self):
+        a = array([4967])
+        b = array([3920])
+        out = oaconvolve(a, b)
+        assert_equal(out, a * b)
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         def ns():
             for j in range(1, 100):
@@ -539,10 +759,15 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
+<<<<<<< HEAD
         try:
             signal.medfilt(None)
         except:
             pass
+=======
+        with pytest.warns(UserWarning):
+            signal.medfilt(None)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -551,6 +776,25 @@ class TestMedFilt(object):
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
 
+<<<<<<< HEAD
+=======
+    def test_refcounting(self):
+        # Check a refcounting-related crash
+        a = Decimal(123)
+        x = np.array([a, a], dtype=object)
+        if hasattr(sys, 'getrefcount'):
+            n = 2 * sys.getrefcount(a)
+        else:
+            n = 10
+        # Shouldn't segfault:
+        with pytest.warns(UserWarning):
+            for j in range(n):
+                signal.medfilt(x)
+        if hasattr(sys, 'getrefcount'):
+            assert_(sys.getrefcount(a) < n)
+        assert_equal(x, [a, a])
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class TestWiener(object):
 
@@ -588,6 +832,7 @@ class TestResample(object):
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
+<<<<<<< HEAD
     def test_fft(self):
         # Test FFT-based resampling
         self._test_data(method='fft')
@@ -601,6 +846,46 @@ class TestResample(object):
         self._test_data(method='polyphase', ext=True)
 
     def test_mutable_window(self):
+=======
+    @pytest.mark.parametrize('window', (None, 'hamming'))
+    @pytest.mark.parametrize('N', (20, 19))
+    @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    def test_rfft(self, N, num, window):
+        # Make sure the speed up using rfft gives the same result as the normal
+        # way using fft
+        x = np.linspace(0, 10, N, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        assert_allclose(signal.resample(y, num, window=window),
+                        signal.resample(y + 0j, num, window=window).real)
+
+        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
+        y_complex = y + 0j
+        assert_allclose(
+            signal.resample(y, num, axis=1, window=window),
+            signal.resample(y_complex, num, axis=1, window=window).real,
+            atol=1e-9)
+
+    def test_input_domain(self):
+        # Test if both input domain modes produce the same results.
+        tsig = np.arange(256) + 0j
+        fsig = fft(tsig)
+        num = 256
+        assert_allclose(
+            signal.resample(fsig, num, domain='freq'),
+            signal.resample(tsig, num, domain='time'),
+            atol=1e-9)
+
+    @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
+    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    def test_dc(self, nx, ny, dtype):
+        x = np.array([1] * nx, dtype)
+        y = signal.resample(x, ny)
+        assert_allclose(y, [1] * ny)
+
+    @pytest.mark.parametrize('padtype', padtype_options)
+    def test_mutable_window(self, padtype):
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         # Test that a mutable window is not modified
         impulse = np.zeros(3)
         window = np.random.RandomState(0).randn(2)
@@ -1302,6 +1587,34 @@ class TestCorrelateReal(object):
         assert_raises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
+@pytest.mark.parametrize("mode", ["valid", "same", "full"])
+@pytest.mark.parametrize("behind", [True, False])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
+def test_correlation_lags(mode, behind, input_size):
+    # generate random data
+    rng = np.random.RandomState(0)
+    in1 = rng.standard_normal(input_size)
+    offset = int(input_size/10)
+    # generate offset version of array to correlate with
+    if behind:
+        # y is behind x
+        in2 = np.concatenate([rng.standard_normal(offset), in1])
+        expected = -offset
+    else:
+        # y is ahead of x
+        in2 = in1[offset:]
+        expected = offset
+    # cross correlate, returning lag information
+    correlation = correlate(in1, in2, mode=mode)
+    lags = correlation_lags(in1.size, in2.size, mode=mode)
+    # identify the peak
+    lag_index = np.argmax(correlation)
+    # Check as expected
+    assert_equal(lags[lag_index], expected)
+    # Correlation and lags shape should match
+    assert_equal(lags.shape, correlation.shape)
+
+
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
 class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.
@@ -1442,7 +1755,7 @@ class TestFiltFilt(object):
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_allclose(out, arange(12), atol=1e-11)
+        assert_allclose(out, arange(12), atol=5.28e-11)
 
     def test_sine(self):
         rate = 2000
@@ -1594,7 +1907,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     yg, zg1, zg2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
 
     # filtfilt_gust_opt is an independent implementation that gives the
-    # expected result, but it only handles 1-d arrays, so use some looping
+    # expected result, but it only handles 1-D arrays, so use some looping
     # and reshaping shenanigans to create the expected output arrays.
     xx = np.swapaxes(x, axis, -1)
     out_shape = xx.shape[:-1]
@@ -2088,6 +2401,58 @@ class TestVectorstrength(object):
         assert_raises(ValueError, vectorstrength, events, period)
 
 
+<<<<<<< HEAD
+=======
+def cast_tf2sos(b, a):
+    """Convert TF2SOS, casting to complex128 and back to the original dtype."""
+    # tf2sos does not support all of the dtypes that we want to check, e.g.:
+    #
+    #     TypeError: array type complex256 is unsupported in linalg
+    #
+    # so let's cast, convert, and cast back -- should be fine for the
+    # systems and precisions we are testing.
+    dtype = np.asarray(b).dtype
+    b = np.array(b, np.complex128)
+    a = np.array(a, np.complex128)
+    return tf2sos(b, a).astype(dtype)
+
+
+def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
+    """Wrap assert_allclose while casting object arrays."""
+    if actual.dtype.kind == 'O':
+        dtype = np.array(actual.flat[0]).dtype
+        actual, desired = actual.astype(dtype), desired.astype(dtype)
+    assert_allclose(actual, desired, rtol, atol)
+
+
+@pytest.mark.parametrize('func', (sosfilt, lfilter))
+def test_nonnumeric_dtypes(func):
+    x = [Decimal(1), Decimal(2), Decimal(3)]
+    b = [Decimal(1), Decimal(2), Decimal(3)]
+    a = [Decimal(1), Decimal(2), Decimal(3)]
+    x = np.array(x)
+    assert x.dtype.kind == 'O'
+    desired = lfilter(np.array(b, float), np.array(a, float), x.astype(float))
+    if func is sosfilt:
+        actual = sosfilt([b + a], x)
+    else:
+        actual = lfilter(b, a, x)
+    assert all(isinstance(x, Decimal) for x in actual)
+    assert_allclose(actual.astype(float), desired.astype(float))
+    # Degenerate cases
+    if func is lfilter:
+        args = [1., 1.]
+    else:
+        args = [tf2sos(1., 1.)]
+    with pytest.raises(NotImplementedError,
+                       match='input type .* not supported'):
+        func(*args, x=['foo'])
+    with pytest.raises(ValueError, match='must be at least 1-D'):
+        func(*args, x=1.)
+
+
+@pytest.mark.parametrize('dt', 'fdgFDGO')
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 class TestSOSFilt(object):
 
     # For sosfilt we only test a single datatype. Since sosfilt wraps

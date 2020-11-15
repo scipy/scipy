@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 This paver file is intended to help with the release process as much as
 possible. It relies on virtualenv to generate 'bootstrap' environments as
 independent from the user system as possible (e.g. to make sure the sphinx doc
@@ -39,7 +40,13 @@ For a more fancy installer which includes documentation and looks better, do::
 
   paver pdf  # needs to be done only once
   paver dmg
+=======
+This paver file is intended to help with the release process, and build sdist,
+documentation, release notes, and generate checksums for them.
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
+For details on the release process, see
+http://scipy.github.io/devdocs/dev/core-dev/index.html#making-a-scipy-release
 
 Building changelog + notes
 ==========================
@@ -48,6 +55,7 @@ Assumes you have git and the binaries/tarballs in installers/::
 
     paver write_release_and_log
 
+<<<<<<< HEAD
 This automatically put the checksum into NOTES.txt, and write the Changelog
 which can be uploaded to Github Releases (and maybe sourceforge for historical
 reasons, see gh-4939).
@@ -59,6 +67,11 @@ TODO
     - missing targets: install & test, sdist test, debian packaging
     - fix bdist_mpkg: we build the same source twice -> how to make sure we use
       the same underlying python for egg install in venv and for bdist_mpkg
+=======
+This automatically puts the checksum into NOTES.txt and writes the Changelog,
+which can be uploaded to Github Releases.
+
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 """
 
 import os
@@ -76,8 +89,13 @@ try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
         raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
+<<<<<<< HEAD
 except ImportError, e:
     raise RuntimeError("paver version >= 1.0 required")
+=======
+except ImportError as e:
+    raise RuntimeError("paver version >= 1.0 required") from e
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 import paver
 import paver.doctools
@@ -115,11 +133,19 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
+<<<<<<< HEAD
 RELEASE = 'doc/release/1.0.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.19.0'
 LOG_END = '1.0.x'
+=======
+RELEASE = 'doc/release/1.6.0-notes.rst'
+
+# Start/end of the log (from git)
+LOG_START = 'v1.5.0'
+LOG_END = 'master'
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 #-------------------------------------------------------
@@ -147,6 +173,7 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         dmg=Bunch(python_version=PYVER),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
 
+<<<<<<< HEAD
 # Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
 SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None',
                      'ATLAS': r'C:\local\lib\atlas\sse3'},
@@ -264,6 +291,8 @@ def nuke():
     for d in [options.superpack.builddir, options.installers.releasedir]:
         if os.path.exists(d):
             shutil.rmtree(d)
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 #--------------------
 # Documentation tasks
@@ -362,6 +391,7 @@ def release(options):
     write_release_and_log()
 
 
+<<<<<<< HEAD
 #---------------------------------------
 # Windows installers (Wine-based builds)
 #---------------------------------------
@@ -652,6 +682,8 @@ def _create_dmg(pyver, src_dir, volname=None):
     sh(" ".join(cmd))
 
 
+=======
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 #----------------------------
 # Release notes and Changelog
 #----------------------------
@@ -659,8 +691,14 @@ def _create_dmg(pyver, src_dir, volname=None):
 def compute_md5(idirs):
     released = paver.path.path(idirs).listdir()
     checksums = []
+<<<<<<< HEAD
     for f in sorted(released):
         m = md5(open(f, 'r').read())
+=======
+    for fn in sorted(released):
+        with open(fn, 'rb') as f:
+            m = md5(f.read())
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -670,8 +708,14 @@ def compute_sha256(idirs):
     # to verify the binaries instead of signing all binaries
     released = paver.path.path(idirs).listdir()
     checksums = []
+<<<<<<< HEAD
     for f in sorted(released):
         m = sha256(open(f, 'r').read())
+=======
+    for fn in sorted(released):
+        with open(fn, 'rb') as f:
+            m = sha256(f.read())
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
@@ -718,10 +762,16 @@ def write_log_task(filename='Changelog'):
             ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
+<<<<<<< HEAD
     out = st.communicate()[0]
     a = open(filename, 'w')
     a.writelines(out)
     a.close()
+=======
+    out = st.communicate()[0].decode()
+    with open(filename, 'w') as a:
+        a.writelines(out)
+>>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 @task
 @cmdopts([('gpg_key=', 'g', 'GPG key to use for signing')])
