@@ -29,34 +29,51 @@ def linregress(x, y=None):
 
     Returns
     -------
-    slope : float
-        Slope of the regression line.
-    intercept : float
-        Intercept of the regression line.
-    rvalue : float
-        Correlation coefficient.
-    pvalue : float
-        Two-sided p-value for a hypothesis test whose null hypothesis is
-        that the slope is zero, using Wald Test with t-distribution of
-        the test statistic.
-    stderr : float
-        Standard error of the estimated slope (gradient), under the assumption
-        of residual normality.
-    intercept_stderr : float
-        Standard error of the estimated intercept, under the assumption
-        of residual normality.
+    result : ``LinregressResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Slope of the regression line.
+        intercept : float
+            Intercept of the regression line.
+        rvalue : float
+            Correlation coefficient.
+        pvalue : float
+            Two-sided p-value for a hypothesis test whose null hypothesis is
+            that the slope is zero, using Wald Test with t-distribution of
+            the test statistic.
+        stderr : float
+            Standard error of the estimated slope (gradient), under the
+            assumption of residual normality.
+        intercept_stderr : float
+            Standard error of the estimated intercept, under the assumption
+            of residual normality.
+
+    See Also
     --------
-    :func:`scipy.optimize.curve_fit` : Use non-linear
-     least squares to fit a function to data.
-    :func:`scipy.optimize.leastsq` : Minimize the sum of
-     squares of a set of equations.
+    scipy.optimize.curve_fit :
+        Use non-linear least squares to fit a function to data.
+    scipy.optimize.leastsq :
+        Minimize the sum of squares of a set of equations.
 
     Notes
     -----
     Missing values are considered pair-wise: if a value is missing in `x`,
     the corresponding value in `y` is masked.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
+    ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
+
+        slope, intercept, r, p, se = linregress(x, y)
+
+    With that style, however, the standard error of the intercept is not
+    available.  To have access to all the computed values, including the
+    standard error of the intercept, use the return value as an object
+    with attributes, e.g.::
+
+        result = linregress(x, y)
+        print(result.intercept, result.intercept_stderr)
 
     Examples
     --------
@@ -214,8 +231,8 @@ def theilslopes(y, x=None, alpha=0.95):
 
     References
     ----------
-    .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
-           J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on
+           Kendall's tau", J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
     .. [2] H. Theil, "A rank-invariant method of linear and polynomial
            regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
@@ -261,7 +278,8 @@ def theilslopes(y, x=None, alpha=0.95):
     else:
         x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -405,7 +423,8 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError("Incompatible lengths ! (%s<>%s)" %
+                             (len(y), len(x)))
 
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y

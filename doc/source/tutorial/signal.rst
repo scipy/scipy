@@ -360,11 +360,7 @@ which is often used for blurring.
    >>> import matplotlib.pyplot as plt
 
    >>> image = misc.ascent()
-<<<<<<< HEAD
-   >>> w = signal.gaussian(51, 10.0)
-=======
    >>> w = signal.windows.gaussian(51, 10.0)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
    >>> image_new = signal.sepfir2d(image, w, w)
 
    >>> plt.figure()

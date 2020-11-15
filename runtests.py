@@ -528,8 +528,6 @@ def run_mypy(args):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
     return status
-<<<<<<< HEAD
-=======
 
 
 def run_asv(cmd):
@@ -561,7 +559,6 @@ def run_asv(cmd):
             print("to run Scipy benchmarks")
             return 1
         raise
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 if __name__ == "__main__":

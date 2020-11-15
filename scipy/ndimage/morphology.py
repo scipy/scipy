@@ -1833,19 +1833,6 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     ----------
     input : array_like
         Input
-<<<<<<< HEAD
-    metric : str, optional
-        Three types of distance metric are supported: 'euclidean', 'taxicab',
-        and 'chessboard'.
-    sampling : {int, sequence of ints}, optional
-        This parameter is only used in the case of the euclidean `metric`
-        distance transform.
-
-        The sampling along each axis can be given by the `sampling` parameter
-        which should be a sequence of length equal to the input rank, or a
-        single number in which the `sampling` is assumed to be equal along all
-        axes.
-=======
     metric : {'euclidean', 'taxicab', 'chessboard'}, optional
         'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
         The default is 'euclidean'.
@@ -1854,7 +1841,6 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     return_distances : bool, optional
         Whether to calculate the distance transform.
         Default is True.

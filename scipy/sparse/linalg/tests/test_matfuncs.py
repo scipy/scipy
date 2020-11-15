@@ -18,8 +18,9 @@ from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
+from scipy.sparse.sputils import matrix
 from scipy.linalg import logm
-from scipy.special import factorial
+from scipy.special import factorial, binom
 import scipy.sparse
 import scipy.sparse.linalg
 
@@ -77,20 +78,20 @@ class TestExpM(object):
         assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
 
     def test_zero_matrix(self):
-        a = np.matrix([[0.,0],[0,0]])
+        a = matrix([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_misc_types(self):
         A = expm(np.array([[1]]))
         assert_allclose(expm(((1,),)), A)
         assert_allclose(expm([[1]]), A)
-        assert_allclose(expm(np.matrix([[1]])), A)
+        assert_allclose(expm(matrix([[1]])), A)
         assert_allclose(expm(np.array([[1]])), A)
         assert_allclose(expm(csc_matrix([[1]])).A, A)
         B = expm(np.array([[1j]]))
         assert_allclose(expm(((1j,),)), B)
         assert_allclose(expm([[1j]]), B)
-        assert_allclose(expm(np.matrix([[1j]])), B)
+        assert_allclose(expm(matrix([[1j]])), B)
         assert_allclose(expm(csc_matrix([[1j]])).A, B)
 
     def test_bidiagonal_sparse(self):
@@ -167,6 +168,17 @@ class TestExpM(object):
             [1, 1, 1, -3]])
         assert_allclose(expm(Q), expm(1.0 * Q))
 
+    def test_integer_matrix_2(self):
+        # Check for integer overflows
+        Q = np.array([[-500, 500, 0, 0],
+                      [0, -550, 360, 190],
+                      [0, 630, -630, 0],
+                      [0, 0, 0, 0]], dtype=np.int16)
+        assert_allclose(expm(Q), expm(1.0 * Q))
+
+        Q = csc_matrix(Q)
+        assert_allclose(expm(Q).A, expm(1.0 * Q).A)
+
     def test_triangularity_perturbation(self):
         # Experiment (1) of
         # Awad H. Al-Mohy and Nicholas J. Higham (2012)
@@ -197,8 +209,7 @@ class TestExpM(object):
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "scipy.linalg.solve\nIll-conditioned.*")
+            sup.filter(RuntimeWarning, "Ill-conditioned.*")
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny
@@ -491,8 +502,6 @@ class TestExpM(object):
         actual = expm(A)
         assert_allclose(actual, desired)
 
-<<<<<<< HEAD
-=======
     def test_pascal(self):
         # Test pascal triangle.
         # Nilpotent exponential, used to trigger a failure (gh-8029)
@@ -541,7 +550,6 @@ class TestExpM(object):
 
         assert_allclose(E1, E2)
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class TestOperators(object):
 

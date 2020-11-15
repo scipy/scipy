@@ -1,11 +1,4 @@
 ''' Some tests for filters '''
-<<<<<<< HEAD
-import numpy as np
-
-from numpy.testing import (assert_equal, assert_allclose,
-                           assert_array_equal, assert_almost_equal,
-                           suppress_warnings)
-=======
 import functools
 import math
 import numpy
@@ -15,13 +8,10 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_equal, assert_almost_equal,
                            suppress_warnings, assert_)
 import pytest
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from pytest import raises as assert_raises
 
 from scipy import ndimage
 from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
-<<<<<<< HEAD
-=======
 
 from . import types, float_types, complex_types
 
@@ -104,13 +94,16 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
         assert_equal(output.dtype.type, type2)
 
-        # output cannot be real
-        with assert_raises(RuntimeError):
+        # warns if the output is not a complex dtype
+        with pytest.warns(UserWarning,
+                          match="promoting specified output dtype to complex"):
             correlate(array, kernel, output=real_dtype)
 
-        with assert_raises(RuntimeError):
+        with pytest.warns(UserWarning,
+                          match="promoting specified output dtype to complex"):
             convolve(array, kernel, output=real_dtype)
 
+        # raises if output array is provided, but is not complex-valued
         output_real = numpy.zeros_like(array, dtype=real_dtype)
         with assert_raises(RuntimeError):
             correlate(array, kernel, output=output_real)
@@ -1433,7 +1426,6 @@ class TestNdimageFilters:
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 def test_ticket_701():
     # Test generic filter sizes
@@ -1506,11 +1498,7 @@ def test_valid_origins():
     data = numpy.array([1, 2, 3, 4, 5], dtype=numpy.float64)
     assert_raises(ValueError, ndimage.generic_filter, data, func, size=3,
                   origin=2)
-<<<<<<< HEAD
-    assert_raises(ValueError, sndi.generic_filter1d, data, func,
-=======
     assert_raises(ValueError, ndimage.generic_filter1d, data, func,
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
                   filter_size=3, origin=2)
     assert_raises(ValueError, ndimage.percentile_filter, data, 0.2, size=3,
                   origin=2)

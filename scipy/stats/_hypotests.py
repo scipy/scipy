@@ -3,10 +3,7 @@ import numpy as np
 import warnings
 from . import distributions
 from ._continuous_distns import chi2
-<<<<<<< HEAD
-=======
 from scipy.special import gamma, kv, gammaln
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from . import _wilcoxon_data
 
 
@@ -137,8 +134,6 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
-<<<<<<< HEAD
-=======
 class CramerVonMisesResult:
     def __init__(self, statistic, pvalue):
         self.statistic = statistic
@@ -380,7 +375,6 @@ def cramervonmises(rvs, cdf, args=()):
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 def _get_wilcoxon_distr(n):
     """
     Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of

@@ -875,11 +875,6 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
     input = numpy.asarray(input)
-<<<<<<< HEAD
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')

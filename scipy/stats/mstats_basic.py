@@ -4,12 +4,6 @@ An extension of scipy.stats.stats to support masked arrays
 """
 # Original author (2007): Pierre GF Gerard-Marchant
 
-<<<<<<< HEAD
-# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-# TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 __all__ = ['argstoarray',
            'count_tied_groups',
@@ -1334,32 +1328,6 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
     # but the circular dependencies between mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-<<<<<<< HEAD
-    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative, mode=mode)
-
-
-ks_twosamp = ks_2samp
-
-
-def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
-    """
-
-    Parameters
-    ----------
-    data1 : array_like
-    data2 : str, callable or array_like
-    args : tuple, sequence, optional
-        Distribution parameters, used if `data1` or `data2` are strings.
-    alternative : str, as documented in stats.kstest
-    mode : str, as documented in stats.kstest
-
-    Returns
-    -------
-    tuple of (K-S statistic, probability)
-
-    """
-    return scipy.stats.stats.kstest(data1, data2, args, alternative=alternative, mode=mode)
-=======
     return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative,
                                       mode=mode)
 
@@ -1386,7 +1354,6 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     """
     return scipy.stats.stats.kstest(data1, data2, args,
                                     alternative=alternative, mode=mode)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 def trima(a, limits=None, inclusive=(True,True)):

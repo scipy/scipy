@@ -9,14 +9,7 @@ from pytest import raises as assert_raises
 import scipy.ndimage as ndimage
 
 
-<<<<<<< HEAD
-types = [np.int8, np.uint8, np.int16,
-         np.uint16, np.int32, np.uint32,
-         np.int64, np.uint64,
-         np.float32, np.float64]
-=======
 from . import types
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class Test_measurements_stats(object):
@@ -556,12 +549,8 @@ def test_sum_labels():
     for type in types:
         input = np.array([[1, 2], [3, 4]], type)
         output_sum = ndimage.sum(input, labels=labels, index=[4, 8, 2])
-<<<<<<< HEAD
-        output_labels = ndimage.sum_labels(input, labels=labels, index=[4, 8, 2])
-=======
         output_labels = ndimage.sum_labels(
             input, labels=labels, index=[4, 8, 2])
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         assert (output_sum == output_labels).all()
         assert_array_almost_equal(output_labels, [4.0, 0.0, 5.0])

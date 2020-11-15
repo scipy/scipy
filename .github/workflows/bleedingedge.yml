@@ -6,19 +6,11 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-<<<<<<< HEAD
-  schedule:
-    - cron:  '0 0 * * *'
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 jobs:
   test_nightly:
 
-<<<<<<< HEAD
-=======
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     runs-on: ubuntu-latest
     strategy:
       matrix:

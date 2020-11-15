@@ -4,16 +4,6 @@ import math
 import types
 import warnings
 
-<<<<<<< HEAD
-# trapz is a public function for scipy.integrate,
-# even though it's actually a NumPy function.
-from numpy import trapz
-from scipy.special import roots_legendre
-from scipy.special import gammaln
-
-__all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
-           'cumtrapz', 'newton_cotes', 'AccuracyWarning']
-=======
 # trapezoid is a public function for scipy.integrate,
 # even though it's actually a NumPy function.
 from numpy import trapz as trapezoid
@@ -24,7 +14,6 @@ __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
            'trapezoid', 'trapz', 'simps', 'simpson',
            'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
            'AccuracyWarning']
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 # Make See Also linking for our local copy work properly
@@ -37,11 +26,6 @@ def _copy_func(f):
     return g
 
 
-<<<<<<< HEAD
-trapz = _copy_func(trapz)
-if trapz.__doc__:
-    trapz.__doc__ = trapz.__doc__.replace('sum, cumsum', 'numpy.cumsum')
-=======
 trapezoid = _copy_func(trapezoid)
 if trapezoid.__doc__:
     trapezoid.__doc__ = trapezoid.__doc__.replace(
@@ -57,7 +41,6 @@ def trapz(y, x=None, dx=1.0, axis=-1):
     `trapezoid` instead.
     """
     return trapezoid(y, x=x, dx=dx, axis=axis)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class AccuracyWarning(Warning):
@@ -117,13 +100,8 @@ def fixed_quad(func, a, b, args=(), n=5):
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
-<<<<<<< HEAD
-    simps : integrators for sampled data
-    cumtrapz : cumulative integration for sampled data
-=======
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     ode : ODE integrator
     odeint : ODE integrator
 
@@ -244,13 +222,8 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrator for sampled data
-<<<<<<< HEAD
-    simps: integrator for sampled data
-    cumtrapz: cumulative integration for sampled data
-=======
     simpson: integrator for sampled data
     cumulative_trapezoid: cumulative integration for sampled data
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     ode: ODE integrator
     odeint: ODE integrator
 
@@ -295,9 +268,6 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
-<<<<<<< HEAD
-def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-=======
 # Note: alias kept for backwards compatibility. Rename was done
 # because cumtrapz is a slur in colloquial English (see gh-12924).
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
@@ -310,7 +280,6 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
 
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
 
@@ -359,11 +328,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     >>> x = np.linspace(-2, 2, num=20)
     >>> y = x
-<<<<<<< HEAD
-    >>> y_int = integrate.cumtrapz(y, x, initial=0)
-=======
     >>> y_int = integrate.cumulative_trapezoid(y, x, initial=0)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
     >>> plt.show()
 
@@ -406,11 +371,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     return res
 
 
-<<<<<<< HEAD
-def _basic_simps(y, start, stop, x, dx, axis):
-=======
 def _basic_simpson(y, start, stop, x, dx, axis):
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     nd = len(y.shape)
     if start is None:
         start = 0
@@ -441,9 +402,6 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-<<<<<<< HEAD
-def simps(y, x=None, dx=1, axis=-1, even='avg'):
-=======
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
 def simps(y, x=None, dx=1, axis=-1, even='avg'):
@@ -456,7 +414,6 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
 
 
 def simpson(y, x=None, dx=1, axis=-1, even='avg'):
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -496,11 +453,7 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrators for sampled data
-<<<<<<< HEAD
-    cumtrapz: cumulative integration for sampled data
-=======
     cumulative_trapezoid: cumulative integration for sampled data
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     ode: ODE integrators
     odeint: ODE integrators
 
@@ -517,28 +470,16 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
-<<<<<<< HEAD
-    >>> integrate.simps(y, x)
-    40.5
-
-    >>> y = np.power(x, 3)
-    >>> integrate.simps(y, x)
-=======
     >>> integrate.simpson(y, x)
     40.5
 
     >>> y = np.power(x, 3)
     >>> integrate.simpson(y, x)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     1642.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
 
-<<<<<<< HEAD
-    >>> integrate.simps(y, x, even='first')
-=======
     >>> integrate.simpson(y, x, even='first')
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     1644.5
 
     """
@@ -577,11 +518,7 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
-<<<<<<< HEAD
-            result = _basic_simps(y, 0, N-3, x, dx, axis)
-=======
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
             slice1 = tupleset(slice1, axis, 0)
@@ -589,21 +526,13 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
             if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
-<<<<<<< HEAD
-            result += _basic_simps(y, 1, N-2, x, dx, axis)
-=======
             result += _basic_simpson(y, 1, N-2, x, dx, axis)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         if even == 'avg':
             val /= 2.0
             result /= 2.0
         result = result + val
     else:
-<<<<<<< HEAD
-        result = _basic_simps(y, 0, N-2, x, dx, axis)
-=======
         result = _basic_simpson(y, 0, N-2, x, dx, axis)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     if returnshape:
         x = x.reshape(saveshape)
     return result
@@ -639,13 +568,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
-<<<<<<< HEAD
-    simps : integrators for sampled data
-    cumtrapz : cumulative integration for sampled data
-=======
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     ode : ODE integrators
     odeint : ODE integrators
 
@@ -843,13 +767,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     dblquad : Double integrals.
     tplquad : Triple integrals.
     romb : Integrators for sampled data.
-<<<<<<< HEAD
-    simps : Integrators for sampled data.
-    cumtrapz : Cumulative integration for sampled data.
-=======
     simpson : Integrators for sampled data.
     cumulative_trapezoid : Cumulative integration for sampled data.
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     ode : ODE integrator.
     odeint : ODE integrator.
 

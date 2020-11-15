@@ -53,14 +53,6 @@ _mode_reflect_doc = (
         symmetric.
 
     'wrap' (`a b c d | a b c d | a b c d`)
-<<<<<<< HEAD
-        The input is extended by wrapping around to the opposite edge.""")
-_mode_constant_doc = (
-    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'constant'"))
-_mode_mirror_doc = (
-    _mode_reflect_doc.replace("Default is 'reflect'", "Default is 'mirror'"))
-assert _mode_reflect_doc != _mode_constant_doc, 'Default not replaced'
-=======
         The input is extended by wrapping around to the opposite edge.
 
     For consistency with the interpolation functions, the following mode
@@ -122,7 +114,6 @@ _mode_interp_mirror_doc = (
 )
 assert _mode_interp_mirror_doc != _mode_interp_constant_doc, \
     'Default not replaced'
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 _mode_multiple_doc = (
 """mode : str or sequence, optional
@@ -201,13 +192,8 @@ docdict = {
     'axis': _axis_doc,
     'output': _output_doc,
     'size_foot': _size_foot_doc,
-<<<<<<< HEAD
-    'mode_constant': _mode_constant_doc,
-    'mode_mirror': _mode_mirror_doc,
-=======
     'mode_interp_constant': _mode_interp_constant_doc,
     'mode_interp_mirror': _mode_interp_mirror_doc,
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     'mode_reflect': _mode_reflect_doc,
     'mode_multiple': _mode_multiple_doc,
     'cval': _cval_doc,

@@ -82,8 +82,6 @@ Utility routines for plotting:
 
    set_link_color_palette
 
-<<<<<<< HEAD
-=======
 Utility classes:
 
 .. autosummary::
@@ -91,7 +89,6 @@ Utility classes:
 
    DisjointSet -- data structure for incremental connectivity queries
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 """
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 

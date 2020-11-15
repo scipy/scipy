@@ -1,10 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
-<<<<<<< HEAD
-=======
 import os
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose)
@@ -217,12 +214,8 @@ class Test_vectorization:
     def test_single_query_all_neighbors(self, r):
         np.random.seed(1234)
         point = np.random.rand(self.kdtree.m)
-<<<<<<< HEAD
-        d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-=======
         with pytest.warns(DeprecationWarning, match="k=None"):
             d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         assert isinstance(d, list)
         assert isinstance(i, list)
 
@@ -241,17 +234,6 @@ class Test_vectorization:
         r = 1.1
         np.random.seed(1234)
         points = np.random.rand(*query_shape, self.kdtree.m)
-<<<<<<< HEAD
-        d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
-        assert_equal(np.shape(d), query_shape)
-        assert_equal(np.shape(i), query_shape)
-
-        for idx in np.ndindex(query_shape):
-            dist, ind = d[idx], i[idx]
-            assert isinstance(dist, list)
-            assert isinstance(ind, list)
-
-=======
         with pytest.warns(DeprecationWarning, match="k=None"):
             d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
         assert_equal(np.shape(d), query_shape)
@@ -262,7 +244,6 @@ class Test_vectorization:
             assert isinstance(dist, list)
             assert isinstance(ind, list)
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             assert_array_equal(np.array(dist) <= r, True)  # All within bounds
             # results are sorted by distance
             assert all(a <= b for a, b in zip(dist, dist[1:]))
@@ -511,15 +492,9 @@ def test_query_ball_point_multithreading():
     k = 2
     points = np.random.randn(n, k)
     T = cKDTree(points)
-<<<<<<< HEAD
-    l1 = T.query_ball_point(points, 0.003, n_jobs=1)
-    l2 = T.query_ball_point(points, 0.003, n_jobs=64)
-    l3 = T.query_ball_point(points, 0.003, n_jobs=-1)
-=======
     l1 = T.query_ball_point(points, 0.003, workers=1)
     l2 = T.query_ball_point(points, 0.003, workers=64)
     l3 = T.query_ball_point(points, 0.003, workers=-1)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     for i in range(n):
         if l1[i] or l2[i]:
@@ -528,8 +503,6 @@ def test_query_ball_point_multithreading():
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
-<<<<<<< HEAD
-=======
 
 
 def test_n_jobs():
@@ -547,7 +520,6 @@ def test_n_jobs():
 
     with pytest.raises(TypeError, match="Unexpected keyword argument"):
         T.query(points, 1, workers=1, n_jobs=1)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class two_trees_consistency:
@@ -1534,8 +1506,6 @@ def test_kdtree_complex_data():
 
     with pytest.raises(TypeError, match="complex data"):
         t.query_ball_point(points, r=1)
-<<<<<<< HEAD
-=======
 
 
 def test_kdtree_tree_access():
@@ -1586,4 +1556,3 @@ def test_kdtree_attributes():
     assert_array_equal(t.maxes, np.amax(points, axis=0))
     assert_array_equal(t.mins, np.amin(points, axis=0))
     assert t.data is points
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76

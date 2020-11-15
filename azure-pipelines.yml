@@ -12,27 +12,46 @@ trigger:
       - 'benchmarks/*'
       - './*.txt'
       - 'site.cfg.example'
-<<<<<<< HEAD
 
 pr:
   branches:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-=======
-
-pr:
-  branches:
-    include:
-    - '*'  # must quote since "*" is a YAML reserved character; we want a string
-
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 # the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
 variables:
     openblas_version: 0.3.9
 
 jobs:
+- job: Lint
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - script: >-
+      python -m pip install
+      pycodestyle==2.5.0
+      pyflakes==2.1.1
+    displayName: 'Install tools'
+    failOnStderr: true
+  - script: |
+      PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
+      pycodestyle scipy benchmarks/benchmarks
+      # for Travis CI we used to do: git fetch --unshallow
+      # but apparently Azure clones are not as shallow
+      # so does not appear to be needed to fetch maintenance
+      # branches (which Azure logs show being checked out
+      # in Checkout stage)
+      python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
+      tools/unicode-check.py
+    displayName: 'Run Lint Checks'
+    failOnStderr: true
 - job: Linux_Python_36_32bit_full
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
@@ -46,28 +65,17 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.6 get-pip.py && \
            pip3 --version && \
-<<<<<<< HEAD
-           pip3 install setuptools wheel numpy==1.14.5 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
-           apt-get -y install gfortran-5 wget && \
-=======
            pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
            apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
            cd .. && \
            mkdir openblas && cd openblas && \
            target=\$(python3.6 ../scipy/tools/openblas_support.py) && \
            cp -r \$target/lib/* /usr/lib && \
            cp \$target/include/* /usr/include && \
            cd ../scipy && \
-<<<<<<< HEAD
-           F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
-           python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
-=======
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 setup.py install && \
            python3.6 tools/openblas_support.py --check_version $(openblas_version) && \
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -111,17 +119,13 @@ jobs:
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
           NPY_USE_BLAS_ILP64: 1
-<<<<<<< HEAD
-=======
           BITS: 64
           OPENBLAS64_: $(OPENBLAS)
         Python39-64bit-full:
           PYTHON_VERSION: '3.9'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
           BITS: 64
-          OPENBLAS64_: $(OPENBLAS)
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -156,13 +160,6 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-<<<<<<< HEAD
-  - script: python -m pip install numpy cython==0.29.18 pybind11 pytest==5.4.3 pytest-timeout pytest-xdist==1.34.0 pytest-env pytest-cov Pillow mpmath
-    displayName: 'Install dependencies'
-  - powershell: |
-      python -m pip install matplotlib
-    displayName: 'Install matplotlib'
-=======
   - script: >-
       python -m pip install
       cython==0.29.18
@@ -177,7 +174,6 @@ jobs:
       pytest-timeout
       pytest-xdist==1.34.0
     displayName: 'Install dependencies'
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
   # DLL resolution mechanics were changed in
   # Python 3.8: https://bugs.python.org/issue36085
   # While we normally leave adjustment of _distributor_init.py

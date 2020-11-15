@@ -185,19 +185,6 @@ template<typename T> class arr
       if (num==0) return nullptr;
       void *res = malloc(num*sizeof(T));
       if (!res) throw std::bad_alloc();
-<<<<<<< HEAD
-      return reinterpret_cast<T *>(res);
-      }
-    static void dealloc(T *ptr)
-      { free(ptr); }
-#elif __cplusplus >= 201703L
-    static T *ralloc(size_t num)
-      {
-      if (num==0) return nullptr;
-      void *res = aligned_alloc(64,num*sizeof(T));
-      if (!res) throw std::bad_alloc();
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
       return reinterpret_cast<T *>(res);
       }
     static void dealloc(T *ptr)
@@ -206,17 +193,8 @@ template<typename T> class arr
     static T *ralloc(size_t num)
       {
       if (num==0) return nullptr;
-<<<<<<< HEAD
-      void *ptr = malloc(num*sizeof(T)+64);
-      if (!ptr) throw std::bad_alloc();
-      T *res = reinterpret_cast<T *>
-        ((reinterpret_cast<size_t>(ptr) & ~(size_t(63))) + 64);
-      (reinterpret_cast<void**>(res))[-1] = ptr;
-      return res;
-=======
       void *ptr = aligned_alloc(64, num*sizeof(T));
       return static_cast<T*>(ptr);
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
       }
     static void dealloc(T *ptr)
       { aligned_dealloc(ptr); }
@@ -587,30 +565,16 @@ template <typename T> class concurrent_queue
   {
     std::queue<T> q_;
     std::mutex mut_;
-<<<<<<< HEAD
-    std::condition_variable item_added_;
-    bool shutdown_;
-    using lock_t = std::unique_lock<std::mutex>;
-=======
     std::atomic<size_t> size_;
     using lock_t = std::lock_guard<std::mutex>;
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
   public:
 
     void push(T val)
       {
       lock_t lock(mut_);
-<<<<<<< HEAD
-      if (shutdown_)
-        throw std::runtime_error("Item added to queue after shutdown");
-      q_.push(move(val));
-      }
-      item_added_.notify_one();
-=======
       ++size_;
       q_.push(std::move(val));
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
       }
 
     bool try_pop(T &val)
@@ -649,17 +613,6 @@ template <typename T> struct aligned_allocator
 
 class thread_pool
   {
-<<<<<<< HEAD
-    concurrent_queue<std::function<void()>> work_queue_;
-    std::vector<std::thread> threads_;
-
-    void worker_main()
-      {
-      std::function<void()> work;
-      while (work_queue_.pop(work))
-        work();
-      }
-=======
     // A reasonable guess, probably close enough for most hardware
     static constexpr size_t cache_line_size = 64;
     struct alignas(cache_line_size) worker
@@ -723,7 +676,6 @@ class thread_pool
     std::atomic<bool> shutdown_;
     std::atomic<size_t> unscheduled_tasks_;
     using lock_t = std::lock_guard<std::mutex>;
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     void create_threads()
       {
@@ -731,9 +683,6 @@ class thread_pool
       size_t nthreads=workers_.size();
       for (size_t i=0; i<nthreads; ++i)
         {
-<<<<<<< HEAD
-        try { threads_[i] = std::thread([this]{ worker_main(); }); }
-=======
         try
           {
           auto *worker = &workers_[i];
@@ -744,7 +693,6 @@ class thread_pool
             worker->worker_main(shutdown_, unscheduled_tasks_, overflow_work_);
             });
           }
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         catch (...)
           {
           shutdown_locked();
@@ -3545,11 +3493,7 @@ template<typename T> void c2r(const shape_t &shape_out,
     stride_inter[size_t(i)] =
       stride_inter[size_t(i+1)]*ptrdiff_t(shape_in[size_t(i+1)]);
   arr<std::complex<T>> tmp(nval);
-<<<<<<< HEAD
-  auto newaxes = shape_t({axes.begin(), --axes.end()});
-=======
   auto newaxes = shape_t{axes.begin(), --axes.end()};
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
   c2c(shape_in, stride_in, stride_inter, newaxes, forward, data_in, tmp.data(),
     T(1), nthreads);
   c2r(shape_out, stride_inter, stride_out, axes.back(), forward,

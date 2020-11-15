@@ -377,8 +377,6 @@ cdef class cKDTreeNode:
             start = self.start_idx
             stop = self.end_idx
             return self._indices[start:stop]
-<<<<<<< HEAD
-=======
 
 
 cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
@@ -409,7 +407,6 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
     elif n <= 0:
         raise ValueError(f'Invalid number of workers {workers}, must be -1 or > 0')
     return n
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 # Main cKDTree class
@@ -494,15 +491,9 @@ cdef class cKDTree:
     mins : ndarray, shape (m,)
         The minimum value in each dimension of the n data points.
     tree : object, class cKDTreeNode
-<<<<<<< HEAD
-        This attribute exposes a Python view of the root node in the cKDTree 
-        object. A full Python view of the kd-tree is created dynamically 
-        on the first access. This attribute allows you to create your own 
-=======
         This attribute exposes a Python view of the root node in the cKDTree
         object. A full Python view of the kd-tree is created dynamically
         on the first access. This attribute allows you to create your own
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         query functions in Python.
     size : int
         The number of nodes in the tree.
@@ -524,15 +515,6 @@ cdef class cKDTree:
 
     property n:
         def __get__(self): return self.cself.n
-<<<<<<< HEAD
-    
-    property m:
-        def __get__(self): return self.cself.m
-    
-    property leafsize:
-        def __get__(self): return self.cself.leafsize
-    
-=======
 
     property m:
         def __get__(self): return self.cself.m
@@ -540,7 +522,6 @@ cdef class cKDTree:
     property leafsize:
         def __get__(self): return self.cself.leafsize
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     property size:
         def __get__(self): return self.cself.size
 
@@ -795,10 +776,7 @@ cdef class cKDTree:
             const np.float64_t [:, ::1] xx
             np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
             ckdtree *cself = self.cself
-<<<<<<< HEAD
-=======
             np.intp_t num_workers = get_num_workers(workers, kwargs)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         n = num_points(x_arr, cself.m)
         xx = x_arr.reshape(n, cself.m)
@@ -837,14 +815,7 @@ cdef class cKDTree:
                 query_knn(cself, pdd, pii,
                     pxx, stop-start, pkk, kk.shape[0], kmax, eps, p, distance_upper_bound)
 
-<<<<<<< HEAD
-        if (n_jobs == -1):
-            n_jobs = number_of_processors
-
-        _run_threads(_thread_func, n, n_jobs)
-=======
         _run_threads(_thread_func, n, num_workers)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         ddret = np.reshape(dd, retshape + (len(k),))
         iiret = np.reshape(ii, retshape + (len(k),))
@@ -864,11 +835,7 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-<<<<<<< HEAD
-                         np.float64_t p=2., np.float64_t eps=0, np.intp_t n_jobs=1,
-=======
                          np.float64_t p=2., np.float64_t eps=0, object workers=None,
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
                          return_sorted=None,
                          return_length=False, **kwargs):
         """
@@ -945,10 +912,7 @@ cdef class cKDTree:
             bool sort_output = return_sorted or (
                 return_sorted is None and x_arr.ndim > 1)
 
-<<<<<<< HEAD
-=======
             np.intp_t num_workers = get_num_workers(workers, kwargs)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             np.intp_t n = num_points(x_arr, cself.m)
             tuple retshape = np.shape(x_arr)[:-1]
             np.ndarray r_arr = broadcast_contiguous(r, shape=retshape,
@@ -972,19 +936,11 @@ cdef class cKDTree:
                 const np.float64_t *pvxx
                 const np.float64_t *pvrr
                 list tmp
-<<<<<<< HEAD
 
             vvres.resize(stop - start)
             pvxx = vxx + start * cself.m
             pvrr = vrr + start
 
-=======
-
-            vvres.resize(stop - start)
-            pvxx = vxx + start * cself.m
-            pvrr = vrr + start
-
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             with nogil:
                 query_ball_point(cself, pvxx,
                                  pvrr, p, eps, stop - start, vvres.data(),
@@ -1003,15 +959,7 @@ cdef class cKDTree:
                     tmp[j] = cur[j]
                 vout[start + i] = tmp
 
-<<<<<<< HEAD
-        # multithreading logic is similar to cKDTree.query
-        if n_jobs == -1:
-            n_jobs = number_of_processors
-
-        _run_threads(_thread_func, n, n_jobs)
-=======
         _run_threads(_thread_func, n, num_workers)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         if x_arr.ndim == 1: # scalar query, unpack result.
             result = result[()]

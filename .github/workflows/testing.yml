@@ -14,29 +14,18 @@ on:
 jobs:
   test_macos:
 
-<<<<<<< HEAD
-=======
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     runs-on: macos-latest
     strategy:
       max-parallel: 3
       matrix:
-<<<<<<< HEAD
-        python-version: [3.6, 3.7, 3.8]
-=======
         python-version: [3.6, 3.7, 3.8, 3.9]
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         numpy-version: ['--upgrade numpy']
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-<<<<<<< HEAD
-      uses: actions/setup-python@v1
-=======
       uses: actions/setup-python@v2
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -97,11 +86,7 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-<<<<<<< HEAD
-        pip install setuptools wheel cython gmpy2 pytest pytest-xdist pybind11 pytest-xdist mpmath scikit-umfpack scikit-sparse
-=======
         pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     - name: Test SciPy
       run: |

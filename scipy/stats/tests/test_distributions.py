@@ -21,11 +21,7 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-<<<<<<< HEAD
-from scipy.integrate import IntegrationWarning
-=======
 from scipy.integrate import IntegrationWarning, quad
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -33,10 +29,7 @@ import scipy.stats.distributions
 from scipy.special import xlogy
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
-<<<<<<< HEAD
-=======
 from scipy.optimize import root
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -952,8 +945,6 @@ class TestLogistic(object):
         # with 64 bit floating point.
         assert_equal(logp, [-800, -800])
 
-<<<<<<< HEAD
-=======
     @pytest.mark.parametrize("loc_rvs,scale_rvs", [np.random.rand(2)])
     def test_fit(self, loc_rvs, scale_rvs):
         data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
@@ -987,7 +978,6 @@ class TestLogistic(object):
 
         _assert_less_or_close_loglike(stats.logistic, data, func)
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class TestLogser(object):
     def setup_method(self):
@@ -1135,47 +1125,6 @@ class TestPareto(object):
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
-<<<<<<< HEAD
-        def _assert_lessthan_loglike(dist, data, func, **kwds):
-            mle_analytical = dist.fit(data, **kwds)
-            numerical_opt = super(type(dist), dist).fit(data, **kwds)
-            ll_mle_analytical = func(mle_analytical, data)
-            ll_numerical_opt = func(numerical_opt, data)
-            assert ll_mle_analytical < ll_numerical_opt
-
-        # fixed `floc` to actual location provides as good or better fit.
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=rvs_loc)
-
-        # fixing `floc` to an arbitrary number, 0, still provides an as good
-        # or better fit.
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0)
-
-        # fixed shape still uses analytical MLE and provides
-        # an as good or better fit.
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0, f0=4)
-
-        # valid fixed fscale still uses analytical MLE and provides
-        # an as good or better fit.
-        _assert_lessthan_loglike(stats.pareto, data, func, floc=0,
-                                 fscale=rvs_scale/2)
-
-    def test_fit_warnings(self):
-        with pytest.raises(RuntimeError,
-                           match="All parameters fixed. There is nothing "
-                           "to optimize."):
-            stats.pareto.fit([1, 2, 3], f0=2, floc=1, fscale=1)
-        with pytest.raises(RuntimeError,
-                           match="The data contains non-finite values"):
-            stats.pareto.fit([np.nan])
-        with pytest.raises(RuntimeError,
-                           match="The data contains non-finite values"):
-            stats.pareto.fit([np.inf])
-        with pytest.raises(TypeError, match="Unknown keyword arguments:"):
-            stats.pareto.fit([2, 2, 3], floc=1, extra=2)
-        with pytest.raises(TypeError, match="Too many positional arguments."):
-            stats.pareto.fit([1, 2, 3], 1, 4)
-        assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
-=======
         # fixed `floc` to actual location provides a better fit than the
         # super method
         _assert_less_or_close_loglike(stats.pareto, data, func, floc=rvs_loc)
@@ -1198,7 +1147,6 @@ class TestPareto(object):
         # `floc` that causes invalid negative data
         assert_raises(FitDataError, stats.pareto.fit, [1, 2, 3], floc=2)
         # `floc` and `fscale` combination causes invalid data
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
@@ -1692,8 +1640,6 @@ class TestDLaplace(object):
         assert_allclose((v, k), (4., 3.25))
 
 
-<<<<<<< HEAD
-=======
 class TestInvgauss(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -1776,7 +1722,6 @@ class TestInvgauss(object):
             stats.invgauss.fit([1, 2, 3], floc=2)
 
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
@@ -1789,20 +1734,12 @@ class TestLaplace(object):
         loc_mle = np.median(data)
         scale_mle = np.sum(np.abs(data - loc_mle)) / len(data)
 
-<<<<<<< HEAD
-        # standard outputs should match MLE
-=======
         # standard outputs should match analytical MLE formulas
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         loc, scale = stats.laplace.fit(data)
         assert_allclose(loc, loc_mle, atol=1e-15, rtol=1e-15)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
 
-<<<<<<< HEAD
-        # fixed parameter should use MLE for other
-=======
         # fixed parameter should use analytical formula for other
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         loc, scale = stats.laplace.fit(data, floc=loc_mle)
         assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
@@ -1816,20 +1753,12 @@ class TestLaplace(object):
         # fixed loc to non median, scale should match
         # scale calculation with modified loc
         loc, scale = stats.laplace.fit(data, floc=loc)
-<<<<<<< HEAD
-        assert_allclose(scale, scale_mle, atol=1e-15, rtol=1e-15)
-=======
         assert_equal(scale_mle, scale)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         # fixed scale created with non median loc,
         # loc output should still be the data median.
         loc, scale = stats.laplace.fit(data, fscale=scale_mle)
-<<<<<<< HEAD
-        assert_allclose(loc_mle, loc, atol=1e-15, rtol=1e-15)
-=======
         assert_equal(loc_mle, loc)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         # error raised when both `floc` and `fscale` are fixed
         assert_raises(RuntimeError, stats.laplace.fit, data, floc=loc_mle,
@@ -2089,42 +2018,6 @@ class TestRvDiscrete(object):
         # same shapes => no error
         xk, pk = np.arange(6).reshape((3, 2)), np.full((3, 2), 1/6)
         assert_equal(stats.rv_discrete(values=(xk, pk)).pmf(0), 1/6)
-        
-    def test_expect(self):
-        # rv_sample should override _expect. Bug report from
-        # https://stackoverflow.com/questions/63199792
-        y = [200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0,
-             1100.0, 1200.0, 1300.0, 1400.0, 1500.0, 1600.0, 1700.0, 1800.0,
-             1900.0, 2000.0, 2100.0, 2200.0, 2300.0, 2400.0, 2500.0, 2600.0,
-             2700.0, 2800.0, 2900.0, 3000.0, 3100.0, 3200.0, 3300.0, 3400.0,
-             3500.0, 3600.0, 3700.0, 3800.0, 3900.0, 4000.0, 4100.0, 4200.0,
-             4300.0, 4400.0, 4500.0, 4600.0, 4700.0, 4800.0]
-
-        py = [0.0004, 0.0, 0.0033, 0.006500000000000001, 0.0, 0.0,
-              0.004399999999999999, 0.6862, 0.0, 0.0, 0.0,
-              0.00019999999999997797, 0.0006000000000000449,
-              0.024499999999999966, 0.006400000000000072, 0.0043999999999999595,
-              0.019499999999999962, 0.03770000000000007, 0.01759999999999995,
-              0.015199999999999991, 0.018100000000000005, 0.04500000000000004,
-              0.0025999999999999357, 0.0, 0.0041000000000001036,
-              0.005999999999999894, 0.0042000000000000925,
-              0.0050000000000000044, 0.0041999999999999815,
-              0.0004999999999999449, 0.009199999999999986, 0.008200000000000096,
-              0.0, 0.0, 0.0046999999999999265, 0.0019000000000000128,
-              0.0006000000000000449, 0.02510000000000001, 0.0,
-              0.007199999999999984, 0.0, 0.012699999999999934, 0.0, 0.0,
-              0.008199999999999985, 0.005600000000000049, 0.0]
-
-        rv = stats.rv_discrete(values=(y, py))
-
-        # check the mean
-        assert_allclose(rv.expect(), rv.mean(), atol=1e-14)
-        assert_allclose(rv.expect(),
-                        sum(v * w for v, w in zip(y, py)), atol=1e-14)
-
-        # also check the second moment
-        assert_allclose(rv.expect(lambda x: x**2),
-                        sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
 
     def test_expect1(self):
         xk = [1, 2, 4, 6, 7, 11]
@@ -2544,8 +2437,6 @@ class TestGumbelL(object):
         assert_allclose(x, xx)
 
 
-<<<<<<< HEAD
-=======
 class TestGumbelR:
 
     def test_sf(self):
@@ -2567,7 +2458,6 @@ class TestGumbelR:
                         rtol=1e-14)
 
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 class TestLevyStable(object):
 
     def test_fit(self):
@@ -3860,20 +3750,6 @@ class TestTrapezoid(object):
                             1.11111111111111111)
 
         # straightforward case
-<<<<<<< HEAD
-        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
-
-        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
-
-    def test_moments_and_entropy(self):
-        # issue #11795: improve precision of trapz stats
-=======
         assert_almost_equal(stats.trapezoid.pdf(0.1, 0.2, 0.8), 0.625)
         assert_almost_equal(stats.trapezoid.pdf(0.5, 0.2, 0.8), 1.25)
         assert_almost_equal(stats.trapezoid.pdf(0.9, 0.2, 0.8), 0.625)
@@ -3886,7 +3762,6 @@ class TestTrapezoid(object):
 
     def test_moments_and_entropy(self):
         # issue #11795: improve precision of trapezoid stats
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         # Apply formulas from Wikipedia for the following parameters:
         a, b, c, d = -3, -1, 2, 3  # => 1/3, 5/6, -3, 6
         p1, p2, loc, scale = (b-a) / (d-a), (c-a) / (d-a), a, d-a
@@ -3900,21 +3775,6 @@ class TestTrapezoid(object):
         mean = moment(1)
         var = moment(2) - mean**2
         entropy = 0.5 * (d-c+b-a) / (d+c-b-a) + np.log(0.5 * (d+c-b-a))
-<<<<<<< HEAD
-        assert_almost_equal(stats.trapz.mean(p1, p2, loc, scale),
-                            mean, decimal=13)
-        assert_almost_equal(stats.trapz.var(p1, p2, loc, scale),
-                            var, decimal=13)
-        assert_almost_equal(stats.trapz.entropy(p1, p2, loc, scale),
-                            entropy, decimal=13)
-
-        # Check boundary cases where scipy d=0 or d=1.
-        assert_almost_equal(stats.trapz.mean(0, 0, -3, 6), -1, decimal=13)
-        assert_almost_equal(stats.trapz.mean(0, 1, -3, 6), 0, decimal=13)
-        assert_almost_equal(stats.trapz.var(0, 1, -3, 6), 3, decimal=13)
-
-    def test_trapz_vect(self):
-=======
         assert_almost_equal(stats.trapezoid.mean(p1, p2, loc, scale),
                             mean, decimal=13)
         assert_almost_equal(stats.trapezoid.var(p1, p2, loc, scale),
@@ -3928,7 +3788,6 @@ class TestTrapezoid(object):
         assert_almost_equal(stats.trapezoid.var(0, 1, -3, 6), 3, decimal=13)
 
     def test_trapezoid_vect(self):
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
         d = np.array([0.5, 0.6])[:, None]
@@ -3945,21 +3804,11 @@ class TestTrapezoid(object):
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
         # Check that the stats() method supports vector arguments.
-<<<<<<< HEAD
-        v = np.asarray(stats.trapz.stats(c, d, moments="mvsk"))
-=======
         v = np.asarray(stats.trapezoid.stats(c, d, moments="mvsk"))
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         cc, dd = np.broadcast_arrays(c, d)
         res = np.empty((cc.size, 4))  # 4 stats returned per value
         ind = np.arange(cc.size)
         for i, c1, d1 in zip(ind, cc.ravel(), dd.ravel()):
-<<<<<<< HEAD
-            res[i] = stats.trapz.stats(c1, d1, moments="mvsk")
-
-        assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
-
-=======
             res[i] = stats.trapezoid.stats(c1, d1, moments="mvsk")
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
@@ -3969,7 +3818,6 @@ class TestTrapezoid(object):
         x = np.linspace(0, 1, 10)
         assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class TestTriang(object):
     def test_edge_cases(self):
@@ -5141,8 +4989,6 @@ class TestArgus(object):
         assert_almost_equal(stats.argus(3.5).mean(), x.mean(), decimal=3)
         assert_almost_equal(stats.argus(3.5).std(), x.std(), decimal=3)
 
-<<<<<<< HEAD
-=======
     # Expected values were computed with mpmath.
     @pytest.mark.parametrize('chi, expected_mean',
                              [(1, 0.6187026683551835),
@@ -5204,7 +5050,6 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):

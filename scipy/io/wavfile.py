@@ -305,8 +305,6 @@ class WAVE_FORMAT(IntEnum):
 
 
 KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
-<<<<<<< HEAD
-=======
 
 
 def _raise_bad_format(format_tag):
@@ -317,7 +315,6 @@ def _raise_bad_format(format_tag):
     raise ValueError(f"Unknown wave file format: {format_name}. Supported "
                      "formats: " +
                      ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 def _read_fmt_chunk(fid, is_big_endian):
@@ -378,17 +375,7 @@ def _read_fmt_chunk(fid, is_big_endian):
             raise ValueError("Binary structure of wave file is not compliant")
 
     if format_tag not in KNOWN_WAVE_FORMATS:
-<<<<<<< HEAD
-        try:
-            format_name = WAVE_FORMAT(format_tag).name
-        except ValueError:
-            format_name = f'{format_tag:#06x}'
-        raise ValueError(f"Unknown wave file format: {format_name}. Supported "
-                         "formats: " +
-                         ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
-=======
         _raise_bad_format(format_tag)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     # move file pointer to next chunk
     if size > bytes_read:
@@ -438,15 +425,6 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     # Number of bytes per sample (sample container size)
     bytes_per_sample = block_align // channels
     n_samples = size // bytes_per_sample
-<<<<<<< HEAD
-    if bit_depth == 8:
-        dtype = 'u1'
-    else:
-        if format_tag == WAVE_FORMAT.PCM:
-            dtype = f'{fmt}i{bytes_per_sample}'
-        else:
-            dtype = f'{fmt}f{bytes_per_sample}'
-=======
 
     if format_tag == WAVE_FORMAT.PCM:
         if 1 <= bit_depth <= 8:
@@ -468,21 +446,10 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
                              f"has {bit_depth}-bit floating-point data.")
     else:
         _raise_bad_format(format_tag)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     start = fid.tell()
     if not mmap:
         try:
-<<<<<<< HEAD
-            data = numpy.fromfile(fid, dtype=dtype, count=n_samples)
-        except io.UnsupportedOperation:  # not a C-like file
-            fid.seek(start, 0)  # just in case it seeked, though it shouldn't
-            data = numpy.frombuffer(fid.read(size), dtype=dtype)
-    else:
-        data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
-                            shape=(n_samples,))
-        fid.seek(start + size)
-=======
             count = size if dtype == 'V1' else n_samples
             data = numpy.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
@@ -505,9 +472,6 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             raise ValueError("mmap=True not compatible with "
                              f"{bytes_per_sample}-byte container size.")
-
-    _handle_pad_byte(fid, size)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     _handle_pad_byte(fid, size)
 
@@ -584,11 +548,7 @@ def read(filename, mmap=False):
     rate : int
         Sample rate of WAV file.
     data : numpy array
-<<<<<<< HEAD
-        Data read from wav file. Data-type is determined from the file;
-=======
         Data read from WAV file. Data-type is determined from the file;
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
         (Nsamples, Nchannels) otherwise. If a file-like input without a
         C-like file descriptor (e.g., :class:`python:io.BytesIO`) is
@@ -709,12 +669,6 @@ def read(filename, mmap=False):
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
                 block_align = fmt_chunk[5]
-<<<<<<< HEAD
-                if bit_depth not in {8, 16, 32, 64, 96, 128}:
-                    raise ValueError("Unsupported bit depth: the wav file "
-                                     "has {}-bit data.".format(bit_depth))
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':

@@ -54,11 +54,7 @@ distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
 skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
-<<<<<<< HEAD
-                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
-=======
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapezoid',
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
 

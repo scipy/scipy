@@ -1258,15 +1258,6 @@ def test_segfault_issue_9710():
     # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
-def test_segfault_issue_9710():
-    # https://github.com/scipy/scipy/issues/9710
-    # This test was created to check segfault
-    # In issue SEGFAULT only repros in optimized builds after calling the function twice
-    stats.weightedtau([1], [1.0])
-    stats.weightedtau([1], [1.0])
-    # The code below also caused SEGFAULT
-    stats.weightedtau([np.nan], [52])
-
 
 def test_kendall_tau_large():
     n = 172
@@ -3131,15 +3122,9 @@ class TestKSTest(object):
         self._test_kstest_and_ks1samp(x, 'two-sided')
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
-<<<<<<< HEAD
 
     # missing: no test that uses *args
 
-=======
-
-    # missing: no test that uses *args
-
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 class TestKSOneSample(object):
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
 

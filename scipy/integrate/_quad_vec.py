@@ -276,12 +276,8 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         _quadrature = {None: _quadrature_gk21,
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
-<<<<<<< HEAD
-                       'trapz': _quadrature_trapz}[quadrature]
-=======
                        'trapz': _quadrature_trapezoid,  # alias for backcompat
                        'trapezoid': _quadrature_trapezoid}[quadrature]
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     except KeyError as e:
         raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
 

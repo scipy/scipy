@@ -24,12 +24,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-<<<<<<< HEAD
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
-=======
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
     _fit_determine_optimizer)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -2565,19 +2561,7 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
-    
-    Gamma distributions are sometimes parameterized with two variables,
-    with a probability density function of:
 
-    .. math::
-
-<<<<<<< HEAD
-        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
-
-    Note that this parameterization is equivalent to the above, with 
-    ``scale = 1 / beta``.
-    
-=======
     Gamma distributions are sometimes parameterized with two variables,
     with a probability density function of:
 
@@ -2588,7 +2572,6 @@ class gamma_gen(rv_continuous):
     Note that this parameterization is equivalent to the above, with
     ``scale = 1 / beta``.
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     %(after_notes)s
 
     %(example)s
@@ -4045,11 +4028,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-<<<<<<< HEAD
-    num_shapes = len(dist.shapes) if dist.shapes else 0
-=======
     num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     fshape_keys = []
     fshapes = []
 
@@ -6942,11 +6921,7 @@ class trapezoid_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-<<<<<<< HEAD
-       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
-=======
        Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
     """
@@ -7015,10 +6990,6 @@ class trapezoid_gen(rv_continuous):
         # Substituting into the entropy formula from Wikipedia gives
         # the following result.
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
-<<<<<<< HEAD
-
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
@@ -8564,11 +8535,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-<<<<<<< HEAD
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
-=======
         m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 

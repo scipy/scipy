@@ -374,11 +374,7 @@ py::array genuine_hartley(const py::array &in, const py::object &axes_,
   }
 
 // Export good_size in raw C-API to reduce overhead (~4x faster)
-<<<<<<< HEAD
-PyObject * good_size(PyObject * /*self*/, PyObject * args)
-=======
 PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
   {
   Py_ssize_t n_ = -1;
   int real = false;

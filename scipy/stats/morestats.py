@@ -2852,11 +2852,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-<<<<<<< HEAD
-        The p-value for the test depending on `alternative` and `mode`.
-=======
         The p-value for the test depending on ``alternative`` and ``mode``.
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     See Also
     --------

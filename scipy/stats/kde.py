@@ -617,15 +617,9 @@ class gaussian_kde(object):
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
-<<<<<<< HEAD
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=self.weights /
-                                      self._norm_factor)
-=======
                 energy = sum(diff * tdiff, axis=0)
                 log_to_sum = 2.0 * np.log(self.weights) - self.log_det - energy
                 result[i] = logsumexp(0.5 * log_to_sum)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
         return result
 

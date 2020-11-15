@@ -58,11 +58,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
         # always true on first iteration of for-j loop, after that only
         # if d >= cmax
-<<<<<<< HEAD
-        if cmin != np.inf and cmin >= cmax and no_break_occurred == True:
-=======
         if cmin >= cmax and d >= cmax:
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
             cmax = cmin
             i_ret = i_store
             j_ret = j_store
