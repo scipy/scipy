@@ -337,18 +337,22 @@ def association(arr, chi2_stat, stat="cramer"):
     >>> chi2 = chi2_contingency(obs)[0]
 
     Pearson's contingency coefficient
+    
     >>> association(obs, chi2, stat="C")
     0.22768
 
     Cramer's V
+
     >>> association(obs, chi2, stat="V")
     0.23382
 
     Tschuprow's T
+
     >>> association(obs, chi2, stat="T")
     0.17766
 
     Phi
+
     >>> association(obs, chi2, stat="phi")
     0.23382
     """
