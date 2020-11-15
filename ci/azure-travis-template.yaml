@@ -73,6 +73,10 @@ steps:
     pytest
     pytest-xdist
   displayName: 'Install common python dependencies'
+- script: >-
+    pip install ${{parameters.other_spec}}
+    pythran
+  displayName: 'Install pythran'
 - ${{ if eq(parameters.test_mode, 'full') }}:
   - script: pip install matplotlib scikit-umfpack scikit-sparse
     displayName: 'Install full mode dependencies'

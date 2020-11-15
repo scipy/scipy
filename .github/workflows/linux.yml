@@ -36,6 +36,7 @@ jobs:
           python3.7-dbg -m pip install --upgrade pip setuptools wheel cython pytest pytest-xdist argparse pybind11
           python3.7-dbg -m pip install --upgrade mpmath gmpy2
           python3.7-dbg -m pip install --upgrade --no-cache-dir numpy
+          python3.7-dbg -m pip install --upgrade pythran
           python3.7-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -75,6 +76,7 @@ jobs:
     - name: Install packages
       run: |
         python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist
+        python3.9 -m pip install --user pythran
 
     - name: Test SciPy
       run: |
