@@ -14,8 +14,6 @@
     "repo": "..",
     "dvcs": "git",
     "branches": ["HEAD"],
-<<<<<<< HEAD
-=======
 
     // Customizable commands for building, installing, and
     // uninstalling the project. See asv.conf.json documentation.
@@ -26,7 +24,6 @@
     //     "python setup.py build",
     //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
     // ],
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
     // The base URL to "how a commit for the project.
     "show_commit_url": "https://github.com/scipy/scipy/commit/",
@@ -41,12 +38,7 @@
     // version.
     "matrix": {
         "numpy": [],
-<<<<<<< HEAD
-        "Tempita": [],
-        "Cython": ["0.29.18"],
-=======
         "Cython": ["0.29.21"],
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         "pytest": [],
         "pybind11": [],
     },

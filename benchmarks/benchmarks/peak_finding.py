@@ -1,12 +1,8 @@
 """Benchmarks for peak finding related functions."""
 
-<<<<<<< HEAD
-try:
-=======
 from .common import Benchmark, safe_import
 
 with safe_import():
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     from scipy.signal import find_peaks, peak_prominences, peak_widths
     from scipy.misc import electrocardiogram
 

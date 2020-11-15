@@ -3,80 +3,29 @@ import os
 import numpy as np
 from numpy.testing import suppress_warnings
 
-<<<<<<< HEAD
-from .common import Benchmark, is_xslow
-
-try:
-    from scipy.optimize import linprog, OptimizeWarning
-except ImportError:
-    pass
-
-try:
-=======
 from .common import Benchmark, is_xslow, safe_import
 
 with safe_import():
     from scipy.optimize import linprog, OptimizeWarning
 
 with safe_import() as exc:
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     from scipy.optimize.tests.test_linprog import lpgen_2d, magic_square
     from scipy.optimize._remove_redundancy import (
-        _remove_redundancy, _remove_redundancy_dense,
-        _remove_redundancy_sparse
+        _remove_redundancy_svd,
+        _remove_redundancy_pivot_sparse,
+        _remove_redundancy_pivot_dense,
+        _remove_redundancy_id
     )
-    from scipy.optimize._linprog_util import _presolve, _clean_inputs, _LPProblem
-<<<<<<< HEAD
-except ImportError:
-    pass
-
-try:
-    from scipy.linalg import toeplitz
-except ImportError:
-    pass
-
-try:
-    from scipy.sparse import csc_matrix, csr_matrix, issparse
-except ImportError:
-    pass
-
-
-methods = [("interior-point", {"sparse": True}),
-           ("interior-point", {"sparse": False}),
-           ("revised simplex", {})]
-rr_methods = [_remove_redundancy, _remove_redundancy_dense,
-              _remove_redundancy_sparse]
-presolve_methods = ['sparse', 'dense']
-
-problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
-            'BANDM', 'BEACONFD', 'BLEND', 'BNL1', 'BNL2', 'BORE3D', 'BRANDY',
-            'CAPRI', 'CYCLE', 'CZPROB', 'D6CUBE', 'DEGEN2', 'DEGEN3', 'E226',
-            'ETAMACRO', 'FFFFF800', 'FINNIS', 'FIT1D', 'FIT1P', 'GANGES',
-            'GFRD-PNC', 'GROW15', 'GROW22', 'GROW7', 'ISRAEL', 'KB2', 'LOTFI',
-            'MAROS', 'MODSZK1', 'PEROLD', 'PILOT', 'PILOT-WE', 'PILOT4',
-            'PILOTNOV', 'QAP8', 'RECIPE', 'SC105', 'SC205', 'SC50A', 'SC50B',
-            'SCAGR25', 'SCAGR7', 'SCFXM1', 'SCFXM2', 'SCFXM3', 'SCORPION',
-            'SCRS8', 'SCSD1', 'SCSD6', 'SCSD8', 'SCTAP1', 'SCTAP2', 'SCTAP3',
-            'SHARE1B', 'SHARE2B', 'SHELL', 'SHIP04L', 'SHIP04S', 'SHIP08L',
-            'SHIP08S', 'SHIP12L', 'SHIP12S', 'SIERRA', 'STAIR', 'STANDATA',
-            'STANDMPS', 'STOCFOR1', 'STOCFOR2', 'TRUSS', 'TUFF', 'VTP-BASE',
-            'WOOD1P', 'WOODW']
-presolve_problems = problems
-rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
-               'BORE3D', 'CYCLE', 'DEGEN2', 'DEGEN3', 'ETAMACRO', 'PILOTNOV',
-               'QAP8', 'RECIPE', 'SCORPION', 'SHELL', 'SIERRA', 'WOOD1P']
-infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
-                       'ceria3d', 'chemcom', 'cplex1', 'cplex2', 'ex72a',
-                       'ex73a', 'forest6', 'galenet', 'gosh', 'gran',
-                       'itest2', 'itest6', 'klein1', 'klein2', 'klein3',
-                       'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
-                       'refinery', 'vol1', 'woodinfe']
-
-=======
+    from scipy.optimize._linprog_util import (
+        _presolve,
+        _clean_inputs,
+        _LPProblem
+    )
 if exc.error:
-    _remove_redundancy = None
-    _remove_redundancy_dense = None
-    _remove_redundancy_sparse = None
+    _remove_redundancy_svd = None
+    _remove_redundancy_pivot_sparse = None
+    _remove_redundancy_pivot_dense = None
+    _remove_redundancy_id = None
 
 with safe_import():
     from scipy.linalg import toeplitz
@@ -84,12 +33,11 @@ with safe_import():
 with safe_import():
     from scipy.sparse import csc_matrix, csr_matrix, issparse
 
-
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
            ("revised simplex", {})]
-rr_methods = [_remove_redundancy, _remove_redundancy_dense,
-              _remove_redundancy_sparse]
+rr_methods = [_remove_redundancy_svd, _remove_redundancy_pivot_sparse,
+              _remove_redundancy_pivot_dense, _remove_redundancy_id]
 presolve_methods = ['sparse', 'dense']
 
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
@@ -116,16 +64,16 @@ infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
                        'mondou2', 'pang', 'pilot4i', 'qual', 'reactor',
                        'refinery', 'vol1', 'woodinfe']
 
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 if not is_xslow():
-    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7', 'LOTFI',
-                        'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
+    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7',
+                        'LOTFI', 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
     enabled_presolve_problems = enabled_problems
-    enabled_rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6', 'VTP-BASE',
-                           'DEGEN2', 'ETAMACRO', 'RECIPE']
-    enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom', 'cplex2',
-                                   'ex72a', 'ex73a', 'forest6', 'galenet', 'itest2',
-                                   'itest6', 'klein1', 'refinery', 'woodinfe']
+    enabled_rr_problems = ['AFIRO', 'BLEND', 'FINNIS', 'RECIPE', 'SCSD6',
+                           'VTP-BASE', 'DEGEN2', 'ETAMACRO', 'RECIPE']
+    enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom',
+                                   'cplex2', 'ex72a', 'ex73a', 'forest6',
+                                   'galenet', 'itest2', 'itest6', 'klein1',
+                                   'refinery', 'woodinfe']
 else:
     enabled_problems = problems
     enabled_presolve_problems = enabled_problems
@@ -278,9 +226,9 @@ class Netlib_RR(Benchmark):
     param_names = ['method', 'problems']
     # sparse routine returns incorrect matrix on BORE3D and PILOTNOV
     # SVD fails (doesn't converge) on QAP8
-    known_fails = {('_remove_redundancy', 'QAP8'),
-                   ('_remove_redundancy_sparse', 'BORE3D'),
-                   ('_remove_redundancy_sparse', 'PILOTNOV')}
+    known_fails = {('_remove_redundancy_svd', 'QAP8'),
+                   ('_remove_redundancy_pivot_sparse', 'BORE3D'),
+                   ('_remove_redundancy_pivot_sparse', 'PILOTNOV')}
 
     def setup(self, meth, prob):
         if prob not in enabled_rr_problems:
@@ -301,11 +249,12 @@ class Netlib_RR(Benchmark):
 
         lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
         lp_cleaned = _clean_inputs(lp)
-        res = _presolve(lp_cleaned, rr=False, tol=1e-9)[0]
+        # rr_method is None here because we're not using RR
+        res = _presolve(lp_cleaned, rr=False, rr_method=None, tol=1e-9)[0]
 
         self.A_eq, self.b_eq = res.A_eq, res.b_eq
         self.true_rank = np.linalg.matrix_rank(self.A_eq)
-        if meth == _remove_redundancy_sparse:
+        if meth == _remove_redundancy_pivot_sparse:
             self.A_eq = csc_matrix(self.A_eq)
         self.rr_A = None
 
@@ -316,7 +265,7 @@ class Netlib_RR(Benchmark):
         if self.rr_A is None:
             self.time_netlib_rr(meth, prob)
 
-        if meth == _remove_redundancy_sparse:
+        if meth == _remove_redundancy_pivot_sparse:
             self.rr_A = self.rr_A.todense()
 
         rr_rank = np.linalg.matrix_rank(self.rr_A)
@@ -360,7 +309,7 @@ class Netlib_presolve(Benchmark):
         self.lp_cleaned = _clean_inputs(lp)
 
     def time_netlib_presolve(self, meth, prob):
-        _presolve(self.lp_cleaned, rr=False, tol=1e-9)
+        _presolve(self.lp_cleaned, rr=False, rr_method=None, tol=1e-9)
 
 
 class Netlib_infeasible(Benchmark):

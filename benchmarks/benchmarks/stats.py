@@ -13,20 +13,6 @@ try:  # builtin lib
 except ImportError:
     pass
 
-<<<<<<< HEAD
-from .common import Benchmark
-try:
-    from scipy.stats._distr_params import distcont
-except ImportError:
-    pass
-
-try:
-    from itertools import compress
-except ImportError:
-    pass
-
-=======
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 class Anderson_KSamp(Benchmark):
     def setup(self, *args):

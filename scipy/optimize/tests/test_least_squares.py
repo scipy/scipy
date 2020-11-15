@@ -754,8 +754,6 @@ def test_small_tolerances_for_lm():
                              (1e-13, 1e-13, None)]:
         assert_raises(ValueError, least_squares, fun_trivial, 2.0, xtol=xtol,
                       ftol=ftol, gtol=gtol, method='lm')
-<<<<<<< HEAD
-=======
 
 
 def test_fp32_gh12991():
@@ -781,4 +779,3 @@ def test_fp32_gh12991():
     # used a step size for FP64 when the working space was FP32.
     assert res.nfev > 3
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76

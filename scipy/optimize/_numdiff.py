@@ -1,9 +1,5 @@
 """Routines for numerical differentiation."""
-<<<<<<< HEAD
-
-=======
 import functools
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 import numpy as np
 from numpy.linalg import norm
 
@@ -145,11 +141,7 @@ def _eps_for_method(x0_dtype, f0_dtype, method):
                            "{'2-point', '3-point', 'cs'}")
 
 
-<<<<<<< HEAD
-def _compute_absolute_step(rel_step, x0, method):
-=======
 def _compute_absolute_step(rel_step, x0, f0, method):
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     """
     Computes an absolute step from a relative step for finite difference
     calculation.
@@ -160,9 +152,6 @@ def _compute_absolute_step(rel_step, x0, f0, method):
         Relative step for the finite difference calculation
     x0 : np.ndarray
         Parameter vector
-<<<<<<< HEAD
-    method : {'2-point', '3-point', 'cs'}
-=======
     f0 : np.ndarray or scalar
     method : {'2-point', '3-point', 'cs'}
 
@@ -176,7 +165,6 @@ def _compute_absolute_step(rel_step, x0, f0, method):
     `h` will always be np.float64. However, if `x0` or `f0` are
     smaller floating point dtypes (e.g. np.float32), then the absolute
     step size will be calculated from the smallest floating point size.
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     """
     if rel_step is None:
         rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
@@ -366,18 +354,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Notes
     -----
-<<<<<<< HEAD
-    If `rel_step` is not provided, it assigned to ``EPS**(1/s)``, where EPS is
-    machine epsilon for float64 numbers, s=2 for '2-point' method and s=3 for
-    '3-point' method. Such relative step approximately minimizes a sum of
-    truncation and round-off errors, see [1]_. Relative steps are used by
-=======
     If `rel_step` is not provided, it assigned as ``EPS**(1/s)``, where EPS is
     determined from the smallest floating point dtype of `x0` or `fun(x0)`,
     ``np.finfo(x0.dtype).eps``, s=2 for '2-point' method and
     s=3 for '3-point' method. Such relative step approximately minimizes a sum
     of truncation and round-off errors, see [1]_. Relative steps are used by
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
     default. However, absolute steps are used when ``abs_step is not None``.
     If any of the absolute steps produces an indistinguishable difference from
     the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
@@ -478,11 +459,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     else:
         # by default we use rel_step
         if abs_step is None:
-<<<<<<< HEAD
-            h = _compute_absolute_step(rel_step, x0, method)
-=======
             h = _compute_absolute_step(rel_step, x0, f0, method)
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
         else:
             # user specifies an absolute step
             sign_x0 = (x0 >= 0).astype(float) * 2 - 1
@@ -492,13 +469,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             # or small. In which case fall back to relative step.
             dx = ((x0 + h) - x0)
             h = np.where(dx == 0,
-<<<<<<< HEAD
-                         relative_step[method] * sign_x0 *
-                         np.maximum(1.0, np.abs(x0)),
-=======
                          _eps_for_method(x0.dtype, f0.dtype, method) *
                          sign_x0 * np.maximum(1.0, np.abs(x0)),
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
                          h)
 
         if method == '2-point':

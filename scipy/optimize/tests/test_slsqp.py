@@ -7,11 +7,7 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 
-<<<<<<< HEAD
-from scipy.optimize import fmin_slsqp, minimize, Bounds
-=======
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
->>>>>>> 2a9e4923aa2be5cd54ccf2196fc0da32fe459e76
 
 
 class MyCallBack(object):
