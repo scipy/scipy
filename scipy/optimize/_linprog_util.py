@@ -7,7 +7,8 @@ import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
-    _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
+    _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
+    _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
@@ -439,7 +440,7 @@ def _clean_inputs(lp):
     return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
 
 
-def _presolve(lp, rr, tol=1e-9):
+def _presolve(lp, rr, rr_method, tol=1e-9):
     """
     Given inputs for a linear programming problem in preferred format,
     presolve the problem: identify trivial infeasibilities, redundancies,
@@ -479,6 +480,9 @@ def _presolve(lp, rr, tol=1e-9):
         If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
         Set False if ``A_eq`` is known to be of full row rank, or if you are
         looking for a potential speedup (at the expense of reliability).
+    rr_method : string
+        Method used to identify and remove redundant rows from the
+        equality constraint matrix after presolve.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -574,6 +578,13 @@ def _presolve(lp, rr, tol=1e-9):
 
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
+
+    if (rr_method is not None
+            and rr_method.lower() not in {"svd", "pivot", "id"}):
+        message = ("'" + str(rr_method) + "' is not a valid option "
+                   "for redundancy removal. Valid options are 'SVD', "
+                   "'pivot', and 'ID'.")
+        raise ValueError(message)
 
     if sps.issparse(A_eq):
         A_eq = A_eq.tocsr()
@@ -815,7 +826,8 @@ def _presolve(lp, rr, tol=1e-9):
                           "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
         if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
-            A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
+            rr_res = _remove_redundancy_pivot_sparse(A_eq, b_eq)
+            A_eq, b_eq, status, message = rr_res
             if A_eq.shape[0] < n_rows_A:
                 warn(redundancy_warning, OptimizeWarning, stacklevel=1)
             if status != 0:
@@ -827,17 +839,35 @@ def _presolve(lp, rr, tol=1e-9):
     # faster. More testing would be good.
     small_nullspace = 5
     if rr and A_eq.size > 0:
-        try:  # TODO: instead use results of first SVD in _remove_redundancy
+        try:  # TODO: use results of first SVD in _remove_redundancy_svd
             rank = np.linalg.matrix_rank(A_eq)
-        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
+        # oh well, we'll have to go with _remove_redundancy_pivot_dense
+        except Exception:
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning, stacklevel=3)
         dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace <= small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
-        if dim_row_nullspace > small_nullspace or status == 4:
-            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+        if rr_method is None:
+            if dim_row_nullspace <= small_nullspace:
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            if dim_row_nullspace > small_nullspace or status == 4:
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+
+        else:
+            rr_method = rr_method.lower()
+            if rr_method == "svd":
+                rr_res = _remove_redundancy_svd(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            elif rr_method == "pivot":
+                rr_res = _remove_redundancy_pivot_dense(A_eq, b_eq)
+                A_eq, b_eq, status, message = rr_res
+            elif rr_method == "id":
+                rr_res = _remove_redundancy_id(A_eq, b_eq, rank)
+                A_eq, b_eq, status, message = rr_res
+            else:  # shouldn't get here; option validity checked above
+                pass
         if A_eq.shape[0] < rank:
             message = ("Due to numerical issues, redundant equality "
                        "constraints could not be removed automatically. "
