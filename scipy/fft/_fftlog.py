@@ -118,6 +118,14 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     # compute transform coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
 
+    # check for singular transform
+    if np.isinf(u[0]):
+        warn(f'singular transform mu = {mu} for bias = {bias}; '
+             f'try changing the bias if the result is invalid')
+        # fix coefficient to obtain (potentially correct) result anyway
+        u = u.copy()
+        u[0] = 0
+
     # biased fast Hankel transform via real FFT
     A = rfft(a, axis=-1)
     A *= u
@@ -136,6 +144,14 @@ def ifht(a, dln, mu, offset=0.0, bias=0.0):
 
     # compute transform coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
+
+    # check for singular inverse transform
+    if u[0] == 0:
+        warn(f'singular inverse transform mu = {mu} for bias = {bias}; '
+             f'try changing the bias if the result is invalid')
+        # fix coefficient to obtain (potentially correct) result anyway
+        u = u.copy()
+        u[0] = np.inf
 
     # inverse biased Hankel transform via real FFT
     A = rfft(a, axis=-1)
@@ -180,9 +196,8 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
         # write u_0 = 2^q Gamma(xp)/Gamma(xm) = 2^q poch(xm, xp-xm)
         # poch() handles special cases for negative integers correctly
         u[0] = 2**q * poch(xm, xp-xm)
-        # check if the transform is singular
-        if np.isinf(u[0]):
-            warn(f'singular transform mu = {mu}; try changing bias = {bias}')
+        # the coefficient may be inf or 0, meaning the transform or the
+        # inverse transform, respectively, is singular
 
     return u
 

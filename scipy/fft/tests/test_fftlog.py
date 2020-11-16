@@ -97,16 +97,22 @@ def test_fht_special_cases():
     mu, bias = -4.0, 1.0
     with pytest.warns(None) as record:
         fht(a, dln, mu, bias=bias)
-        assert not record, 'fhtq warned about a well-defined transform'
+        assert not record, 'fht warned about a well-defined transform'
 
     # case 2: xp not in M, xm in M => well-defined transform
     mu, bias = -2.5, 0.5
     with pytest.warns(None) as record:
         fht(a, dln, mu, bias=bias)
-        assert not record, 'fhtq warned about a well-defined transform'
+        assert not record, 'fht warned about a well-defined transform'
 
     # case 3: xp in M, xm not in M => singular transform
     mu, bias = -3.5, 0.5
     with pytest.warns(Warning) as record:
         fht(a, dln, mu, bias=bias)
-        assert record, 'fhtq did not warn about a singular transform'
+        assert record, 'fht did not warn about a singular transform'
+
+    # case 4: xp not in M, xm in M => singular inverse transform
+    mu, bias = -2.5, 0.5
+    with pytest.warns(Warning) as record:
+        ifht(a, dln, mu, bias=bias)
+        assert record, 'ifht did not warn about a singular transform'
