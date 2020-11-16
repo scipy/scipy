@@ -57,7 +57,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     .. math::
 
-        A(k) = \int_{0}^{\infty} \! a(r) \, J_\mu \, k \, dr \;,
+        A(k) = \int_{0}^{\infty} \! a(r) \, J_\mu(kr) \, k \, dr \;,
 
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
     :math:`\mu` may be any real number, positive or negative.
@@ -85,7 +85,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     The centre points :math:`r_c` and :math:`k_c` of the periodic intervals may
     be chosen arbitrarily, but it would be usual to choose the product
-    :math:`k_c r_c = k_j r_{n+1-j} = k_{n+1-j} r_j` to be unity.  This can be
+    :math:`k_c r_c = k_j r_{n-1-j} = k_{n-1-j} r_j` to be unity.  This can be
     changed using the `offset` parameter, which controls the logarithmic offset
     :math:`\log(k_c) = \mathtt{offset} - \log(r_c)` of the output array.
     Choosing an optimal value for `offset` may reduce ringing of the discrete
@@ -96,14 +96,14 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     .. math::
 
-        A(k) = \int_{0}^{\infty} \! a_q(r) \, (kr)^q \, J_\mu \, k \, dr
+        A(k) = \int_{0}^{\infty} \! a_q(r) \, (kr)^q \, J_\mu(kr) \, k \, dr
 
-    where :math:`q` is the value of `bias`, and the input array is internally
-    biased as :math:`a_q(r) = a(r) \, (kr)^{-q}`.  Biasing the transform can
-    help approximate the continuous transform of :math:`a(r)` if there is a
-    value :math:`q` such that :math:`a_q(r)` is close to a periodic sequence,
-    in which case the resulting :math:`A(k)` will be close to the continuous
-    transform.
+    where :math:`q` is the value of `bias`, and a power law bias
+    :math:`a_q(r) = a(r) \, (kr)^{-q}` is applied to the input sequence.
+    Biasing the transform can help approximate the continuous transform of
+    :math:`a(r)` if there is a value :math:`q` such that :math:`a_q(r)` is
+    close to a periodic sequence, in which case the resulting :math:`A(k)` will
+    be close to the continuous transform.
 
     References
     ----------
@@ -140,7 +140,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     r'''Compute the inverse fast Hankel transform.
 
     Computes the discrete inverse Hankel transform of a logarithmically spaced
-    periodic sequence using the FFTLog algorithm [1]_, [2]_.
+    periodic sequence. This is the inverse operation to `fht`.
 
     Parameters
     ----------
@@ -173,7 +173,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
     .. math::
 
-        a(r) = \int_{0}^{\infty} \! A(k) \, J_\mu \, r \, dk \;,
+        a(r) = \int_{0}^{\infty} \! A(k) \, J_\mu(kr) \, r \, dk \;,
 
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
     :math:`\mu` may be any real number, positive or negative.
