@@ -63,8 +63,7 @@ Helper functions
    ifftshift - The inverse of `fftshift`
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
-   fhtcoeff - Compute coefficients for the Discrete Hankel Transform
-   fhtoffset - Compute an optimal offset for the Discrete Hankel Transform
+   fhtoffset - Compute an optimal offset for the Fast Hankel Transform
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
    set_workers - Context manager to set default number of workers
    get_workers - Get the current default number of workers
@@ -87,7 +86,7 @@ from ._basic import (
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
-from ._fftlog import fht, ifht, fhtcoeff, fhtoffset
+from ._fftlog import fht, ifht, fhtoffset
 from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
@@ -102,7 +101,7 @@ __all__ = [
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
     'fht', 'ifht',
-    'fhtcoeff', 'fhtoffset',
+    'fhtoffset',
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
     'get_workers', 'set_workers']
 

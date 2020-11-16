@@ -12,7 +12,6 @@ from ..special import loggamma, poch
 
 __all__ = [
     'fht', 'ifht',
-    'fhtcoeff',
     'fhtoffset',
 ]
 
@@ -22,7 +21,7 @@ LN_2 = np.log(2)
 
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
-    r'''Compute the discrete Hankel transform.
+    r'''Compute the fast Hankel transform.
 
     Computes the discrete Hankel transform of a logarithmically spaced periodic
     sequence using the FFTLog algorithm [1]_, [2]_.
@@ -54,14 +53,14 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     Notes
     -----
-    This function computes a discrete version of the biased Hankel transform
+    This function computes a discrete version of the Hankel transform
 
     .. math::
 
         A(k) = \int_{0}^{\infty} \! a(r) \, J_\mu \, k \, dr \;,
 
     where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
-    :math:`mu` may be any real number, positive or negative.
+    :math:`\mu` may be any real number, positive or negative.
 
     The input array `a` is a periodic sequence of length :math:`n`, uniformly
     logarithmically spaced with spacing `dln`,
@@ -97,13 +96,14 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     .. math::
 
-        A(k) = \int_{0}^{\infty} \! a(r) \, (kr)^q \, J_\mu \, k \, dr
+        A(k) = \int_{0}^{\infty} \! a_q(r) \, (kr)^q \, J_\mu \, k \, dr
 
-    where :math:`q` is the value of `bias`.  Biasing the transform can help
-    approximate the continuous transform of a function :math:`f(r)` if there is
-    a value :math:`q` such that :math:`a(r) = f(r) \, r^{-q}` is close to
-    periodic, in which case :math:`A(k) \, k^{-q}` for the discrete transform
-    will be close to the continuous transform :math:`F(k)`.
+    where :math:`q` is the value of `bias`, and the input array is internally
+    biased as :math:`a_q(r) = a(r) \, (kr)^{-q}`.  Biasing the transform can
+    help approximate the continuous transform of :math:`a(r)` if there is a
+    value :math:`q` such that :math:`a_q(r)` is close to a periodic sequence,
+    in which case the resulting :math:`A(k)` will be close to the continuous
+    transform.
 
     References
     ----------
@@ -115,55 +115,99 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     # size of transform
     n = np.shape(a)[-1]
 
-    # compute transform coefficients
+    # bias input array
+    if bias != 0:
+        # a_q(r) = a(r) (r/r_c)^{-q}
+        j_c = (n-1)/2
+        j = np.arange(n)
+        a = a * np.exp(-bias*(j - j_c)*dln)
+
+    # compute FHT coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
 
-    # check for singular transform
-    if np.isinf(u[0]):
-        warn(f'singular transform mu = {mu} for bias = {bias}; '
-             f'try changing the bias if the result is invalid')
-        # fix coefficient to obtain (potentially correct) result anyway
-        u = u.copy()
-        u[0] = 0
+    # transform
+    A = _fhtq(a, u)
 
-    # biased fast Hankel transform via real FFT
-    A = rfft(a, axis=-1)
-    A *= u
-    A = irfft(A, n, axis=-1)
-    A = A[..., ::-1]
+    # bias output array
+    if bias != 0:
+        # A(k) = A_q(k) (k/k_c)^{-q} (k_c r_c)^{-q}
+        A *= np.exp(-bias*((j - j_c)*dln + offset))
 
     return A
 
 
-def ifht(a, dln, mu, offset=0.0, bias=0.0):
-    '''
+def ifht(A, dln, mu, offset=0.0, bias=0.0):
+    r'''Compute the inverse fast Hankel transform.
+
+    Computes the discrete inverse Hankel transform of a logarithmically spaced
+    periodic sequence using the FFTLog algorithm [1]_, [2]_.
+
+    Parameters
+    ----------
+    A : array_like (..., n)
+        Real periodic input array, uniformly logarithmically spaced.  For
+        multidimensional input, the transform is performed over the last axis.
+    dln : float
+        Uniform logarithmic spacing of the input array.
+    mu : float
+        Order of the Hankel transform, any positive or negative real number.
+    offset : float, optional
+        Offset of the uniform logarithmic spacing of the output array.
+    bias : float, optional
+        Exponent of power law bias, any positive or negative real number.
+
+    Returns
+    -------
+    a : array_like (..., n)
+        The transformed output array, which is real, periodic, uniformly
+        logarithmically spaced, and of the same shape as the input array.
+
+    See Also
+    --------
+    fht : Definition of the fast Hankel transform.
+    fhtoffset : Return an optimal offset for `ifht`.
+
+    Notes
+    -----
+    This function computes a discrete version of the Hankel transform
+
+    .. math::
+
+        a(r) = \int_{0}^{\infty} \! A(k) \, J_\mu \, r \, dk \;,
+
+    where :math:`J_\mu` is the Bessel function of order :math:`\mu`.  The index
+    :math:`\mu` may be any real number, positive or negative.
+
+    See `fht` for further details.
+
     '''
 
     # size of transform
-    n = np.shape(a)[-1]
+    n = np.shape(A)[-1]
 
-    # compute transform coefficients
+    # bias input array
+    if bias != 0:
+        # A_q(k) = A(k) (k/k_c)^{q} (k_c r_c)^{q}
+        j_c = (n-1)/2
+        j = np.arange(n)
+        A = A * np.exp(bias*((j - j_c)*dln + offset))
+
+    # compute FHT coefficients
     u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
 
-    # check for singular inverse transform
-    if u[0] == 0:
-        warn(f'singular inverse transform mu = {mu} for bias = {bias}; '
-             f'try changing the bias if the result is invalid')
-        # fix coefficient to obtain (potentially correct) result anyway
-        u = u.copy()
-        u[0] = np.inf
+    # transform
+    a = _fhtq(A, u, inverse=True)
 
-    # inverse biased Hankel transform via real FFT
-    A = rfft(a, axis=-1)
-    A /= u.conj()
-    A = irfft(A, n, axis=-1)
-    A = A[..., ::-1]
+    # bias output array
+    if bias != 0:
+        # a(r) = a_q(r) (r/r_c)^{q}
+        a /= np.exp(-bias*(j - j_c)*dln)
 
-    return A
+    return a
 
 
 def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
-    '''
+    '''Compute the coefficient array for a fast Hankel transform.
     '''
 
     lnkr, q = offset, bias
@@ -203,7 +247,37 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
 
 
 def fhtoffset(dln, mu, initial=0.0, bias=0.0):
-    '''Compute a low-ringing FHT offset.
+    '''Return optimal offset for a fast Hankel transform.
+
+    Returns an offset close to `initial` that fulfils the low-ringing
+    condition of [1]_ for the fast Hankel transform `fht` with logarithmic
+    spacing `dln`, order `mu` and bias `bias`.
+
+    Parameters
+    ----------
+    dln : float
+        Uniform logarithmic spacing of the transform.
+    mu : float
+        Order of the Hankel transform, any positive or negative real number.
+    initial : float, optional
+        Initial value for the offset. Returns the closest value that fulfils
+        the low-ringing condition.
+    bias : float, optional
+        Exponent of power law bias, any positive or negative real number.
+
+    Returns
+    -------
+    offset : float
+        Optimal offset of the uniform logarithmic spacing of the transform that
+        fulfils a low-ringing condition.
+
+    See also
+    --------
+    fht : Definition of the fast Hankel transform.
+
+    References
+    ----------
+    .. [1] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
     '''
 
@@ -216,3 +290,38 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     zm = loggamma(xm + 1j*y)
     arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/np.pi
     return lnkr + (arg - np.round(arg))*dln
+
+
+def _fhtq(a, u, inverse=False):
+    '''Compute the biased fast Hankel transform.
+
+    This is the basic FFTLog routine.
+    '''
+
+    # size of transform
+    n = np.shape(a)[-1]
+
+    # check for singular transform or singular inverse transform
+    if np.isinf(u[0]) and not inverse:
+        warn(f'singular transform; consider changing the bias')
+        # fix coefficient to obtain (potentially correct) transform anyway
+        u = u.copy()
+        u[0] = 0
+    elif u[0] == 0 and inverse:
+        warn(f'singular inverse transform; consider changing the bias')
+        # fix coefficient to obtain (potentially correct) inverse anyway
+        u = u.copy()
+        u[0] = np.inf
+
+    # biased fast Hankel transform via real FFT
+    A = rfft(a, axis=-1)
+    if not inverse:
+        # forward transform
+        A *= u
+    else:
+        # backward transform
+        A /= u.conj()
+    A = irfft(A, n, axis=-1)
+    A = A[..., ::-1]
+
+    return A
