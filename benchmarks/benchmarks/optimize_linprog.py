@@ -35,7 +35,9 @@ with safe_import():
 
 methods = [("interior-point", {"sparse": True}),
            ("interior-point", {"sparse": False}),
-           ("revised simplex", {})]
+           ("revised simplex", {}),
+           ("highs-ipm", {}),
+           ("highs-simplex", {})]
 rr_methods = [_remove_redundancy_svd, _remove_redundancy_pivot_sparse,
               _remove_redundancy_pivot_dense, _remove_redundancy_id]
 presolve_methods = ['sparse', 'dense']

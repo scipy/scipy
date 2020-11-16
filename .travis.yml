@@ -89,7 +89,7 @@ matrix:
         - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
         - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
-    - python: 3.6
+    - python: 3.7
       name: "Refguide-check, Latest NumPy"
       env:
         - TESTMODE=fast
@@ -98,14 +98,14 @@ matrix:
         - REFGUIDE_CHECK=1
         - NUMPYSPEC="--upgrade numpy"
         - ASV_CHECK=1
-    - python: 3.6
+    - python: 3.7
       name: "Source Distribution"
       env:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="numpy==1.17.4"
         - USE_SDIST=1
-    - python: 3.6
+    - python: 3.7
       name: "Wheel, Optimised, GCC 4.8"
       addons:
         apt:
@@ -127,7 +127,7 @@ matrix:
         # pytest-xdist plugin for load scheduling its workers don't pick up the
         # flag. This environment variable starts all Py instances in -OO mode.
         - PYTHONOPTIMIZE=2
-    - python: 3.6
+    - python: 3.7
       name: "Power PC"
       os: linux
       arch: ppc64le
