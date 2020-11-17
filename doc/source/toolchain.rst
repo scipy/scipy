@@ -84,9 +84,9 @@ SciPy is compatible with most modern C compilers (in particular ``clang``).
 However, CPython on Windows is built with specific versions of the Microsoft
 Visual C++ compiler [7]_, [8]_, [9]_, as is the corresponding build of SciPy.
 This has implications for the C language standards that can be supported [6]_.
-Starting from MS Visual Studio 16.8, C17 is supported [11]_ (without the C11
-optional features [12]_ like atomics, threading, VLAs & complex types), though
-Windows builds of CPython have not yet upgraded this far.
+Starting from MS Visual Studio 16.8, C11/C17 is supported [11]_ (without the
+C11 optional features [12]_ like atomics, threading, VLAs & complex types),
+though Windows builds of CPython have not yet upgraded this far.
 
 ===================   ==============   ===================
 CPython               MS Visual C++    C Standard
@@ -94,9 +94,7 @@ CPython               MS Visual C++    C Standard
 2.7, 3.0, 3.1, 3.2       9.0           C90
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
-3.7                     15.7           C90 & most of C99
-3.8                     15.7           C90 & most of C99
-3.9                     15.7           C90 & most of C99
+3.7, 3.8, 3.9           15.7           C90 & most of C99
 ===================   ==============   ===================
 
 
@@ -130,7 +128,7 @@ may have to be added by the user if C99 features are used in SciPy code.
 that not all features are supported equally well across all platforms.*
 
 C17 (occasionally called C18) is a bug fix for C11, so C11 may be skipped entirely.
-Microsoft has taken very long to achieve conformance to C11/C17, but as soon as CPython
+Microsoft has taken very long to achieve conformance to C99/C11/C17, but as soon as CPython
 is built with Visual Studio 16.8 or newer (see above), it will be possible to use C17
 (though optional C11 features like atomics & threading are so far not supported in MSVC).
 
