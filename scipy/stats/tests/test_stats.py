@@ -1335,41 +1335,46 @@ class TestFindRepeats(object):
 
 
 class TestRegression(object):
+
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
-        # The constant should be 99999990 and the regression coefficient should be 1.
-        y = stats.linregress(X,BIG)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,99999990)
-        assert_almost_equal(r,1.0)
+        result = stats.linregress(X, BIG)
+        assert_almost_equal(result.intercept, 99999990)
+        assert_almost_equal(result.rvalue, 1.0)
+        # The uncertainty ought to be almost zero
+        # since all points lie on a line
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_regressXX(self):
         # W.IV.B.  Regress X on X.
-        # The constant should be exactly 0 and the regression coefficient should be 1.
-        # This is a perfectly valid regression.  The program should not complain.
-        y = stats.linregress(X,X)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,0.0)
-        assert_almost_equal(r,1.0)
-#     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
-#     should tell you that this model is "singular" because BIG and
-#     LITTLE are linear combinations of each other.  Cryptic error
-#     messages are unacceptable here.  Singularity is the most
-#     fundamental regression error.
-# Need to figure out how to handle multiple linear regression.  Not obvious
+        # The constant should be exactly 0 and the regression coefficient
+        # should be 1.  This is a perfectly valid regression and the
+        # program should not complain.
+        result = stats.linregress(X, X)
+        assert_almost_equal(result.intercept, 0.0)
+        assert_almost_equal(result.rvalue, 1.0)
+        # The uncertainly on regression through two points ought to be 0
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
+
+        # W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
+        # should tell you that this model is "singular" because BIG and
+        # LITTLE are linear combinations of each other.  Cryptic error
+        # messages are unacceptable here.  Singularity is the most
+        # fundamental regression error.
+        #
+        # Need to figure out how to handle multiple linear regression.
+        # This is not obvious
 
     def test_regressZEROX(self):
         # W.IV.D. Regress ZERO on X.
         # The program should inform you that ZERO has no variance or it should
         # go ahead and compute the regression and report a correlation and
         # total sum of squares of exactly 0.
-        y = stats.linregress(X,ZERO)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,0.0)
-        assert_almost_equal(r,0.0)
+        result = stats.linregress(X, ZERO)
+        assert_almost_equal(result.intercept, 0.0)
+        assert_almost_equal(result.rvalue, 0.0)
 
     def test_regress_simple(self):
         # Regress a line with sinusoidal noise.
@@ -1377,27 +1382,32 @@ class TestRegression(object):
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(x, y)
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
     def test_regress_simple_onearg_rows(self):
-        # Regress a line w sinusoidal noise, with a single input of shape (2, N).
+        # Regress a line w sinusoidal noise,
+        # with a single input of shape (2, N)
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
         rows = np.vstack((x, y))
 
-        res = stats.linregress(rows)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(rows)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_simple_onearg_cols(self):
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
-        cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
+        columns = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
-        res = stats.linregress(cols)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(columns)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_shape_error(self):
         # Check that a single input argument to linregress with wrong shape
@@ -1407,52 +1417,83 @@ class TestRegression(object):
     def test_linregress(self):
         # compared with multivariate ols with pinv
         x = np.arange(11)
-        y = np.arange(5,16)
-        y[[(1),(-2)]] -= 1
-        y[[(0),(-1)]] += 1
+        y = np.arange(5, 16)
+        y[[(1), (-2)]] -= 1
+        y[[(0), (-1)]] += 1
 
-        res = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733)
-        assert_array_almost_equal(stats.linregress(x,y),res,decimal=14)
+        result = stats.linregress(x, y)
+
+        # This test used to use 'assert_array_almost_equal' but its
+        # formualtion got confusing since LinregressResult became
+        # _lib._bunch._make_tuple_bunch instead of namedtuple
+        # (for backwards compatibility, see PR #12983)
+        assert_ae = lambda x, y: assert_almost_equal(x, y, decimal=14)
+        assert_ae(result.slope, 1.0)
+        assert_ae(result.intercept, 5.0)
+        assert_ae(result.rvalue, 0.98229948625750)
+        assert_ae(result.pvalue, 7.45259691e-008)
+        assert_ae(result.stderr, 0.063564172616372733)
+        assert_ae(result.intercept_stderr, 0.37605071654517686)
 
     def test_regress_simple_negative_cor(self):
-        # If the slope of the regression is negative the factor R tend to -1 not 1.
-        # Sometimes rounding errors makes it < -1 leading to stderr being NaN
+        # If the slope of the regression is negative the factor R tend
+        # to -1 not 1.  Sometimes rounding errors makes it < -1
+        # leading to stderr being NaN.
         a, n = 1e-71, 100000
         x = np.linspace(a, 2 * a, n)
         y = np.linspace(2 * a, a, n)
-        stats.linregress(x, y)
-        res = stats.linregress(x, y)
-        assert_(res[2] >= -1)  # propagated numerical errors were not corrected
-        assert_almost_equal(res[2], -1)  # perfect negative correlation case
-        assert_(not np.isnan(res[4]))  # stderr should stay finite
+        result = stats.linregress(x, y)
+
+        # Make sure propagated numerical errors
+        # did not bring rvalue below -1 (or were coersced)
+        assert_(result.rvalue >= -1)
+        assert_almost_equal(result.rvalue, -1)
+
+        # slope and intercept stderror should stay numeric
+        assert_(not np.isnan(result.stderr))
+        assert_(not np.isnan(result.intercept_stderr))
 
     def test_linregress_result_attributes(self):
-        # Regress a line with sinusoidal noise.
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
+        # Result is of a correct class
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+
+        # LinregressResult elements have correct names
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-        check_named_results(res, attributes)
+        check_named_results(result, attributes)
+        # Also check that the extra attribute (intercept_stderr) is present
+        assert 'intercept_stderr' in dir(result)
 
     def test_regress_two_inputs(self):
         # Regress a simple line formed by two points.
         x = np.arange(2)
         y = np.arange(3, 5)
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[3], 0.0)  # non-horizontal line
-        assert_almost_equal(res[4], 0.0)  # zero stderr
+        # Non-horizontal line
+        assert_almost_equal(result.pvalue, 0.0)
+
+        # Zero error through two points
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_regress_two_inputs_horizontal_line(self):
         # Regress a horizontal line formed by two points.
         x = np.arange(2)
         y = np.ones(2)
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[3], 1.0)  # horizontal line
-        assert_almost_equal(res[4], 0.0)  # zero stderr
+        # Horizontal line
+        assert_almost_equal(result.pvalue, 1.0)
+
+        # Zero error through two points
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_nist_norris(self):
         x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
@@ -1465,16 +1506,26 @@ class TestRegression(object):
              998.0, 888.8, 119.6, 0.3, 0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
              10.2, 117.6, 228.9, 668.4, 449.2, 0.2]
 
-        # Expected values
-        exp_slope = 1.00211681802045
-        exp_intercept = -0.262323073774029
-        exp_rsquared = 0.999993745883712
+        result = stats.linregress(x, y)
 
-        actual = stats.linregress(x, y)
+        assert_almost_equal(result.slope, 1.00211681802045)
+        assert_almost_equal(result.intercept, -0.262323073774029)
+        assert_almost_equal(result.rvalue**2, 0.999993745883712)
+        assert_almost_equal(result.pvalue, 0.0)
+        assert_almost_equal(result.stderr, 0.00042979684820)
+        assert_almost_equal(result.intercept_stderr, 0.23281823430153)
 
-        assert_almost_equal(actual.slope, exp_slope)
-        assert_almost_equal(actual.intercept, exp_intercept)
-        assert_almost_equal(actual.rvalue**2, exp_rsquared)
+    def test_compare_to_polyfit(self):
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+        result = stats.linregress(x, y)
+        poly = np.polyfit(x, y, 1)  # Fit 1st degree polynomial
+
+        # Make sure linear regression slope and intercept
+        # match with results from numpy polyfit
+        assert_almost_equal(result.slope, poly[0])
+        assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])
@@ -1484,8 +1535,13 @@ class TestRegression(object):
         x[9] = np.nan
 
         with np.errstate(invalid="ignore"):
-            assert_array_equal(stats.linregress(x, x),
-                               (np.nan, np.nan, np.nan, np.nan, np.nan))
+            result = stats.linregress(x, x)
+
+        # Make sure the resut still comes back as `LinregressResult`
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+        assert_array_equal(result, (np.nan,)*5)
+        assert_equal(result.intercept_stderr, np.nan)
 
 
 def test_theilslopes():

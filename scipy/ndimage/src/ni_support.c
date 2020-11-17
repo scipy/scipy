@@ -250,6 +250,7 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             break;
         /* abcdabcd|abcd|abcdabcd */
         case NI_EXTEND_WRAP:
+        case NI_EXTEND_GRID_WRAP:
             src = last - 1;
             dst = first - 1;
             while (size_before--) {
@@ -642,6 +643,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                         }
                         break;
                     case NI_EXTEND_WRAP:
+                    case NI_EXTEND_GRID_WRAP:
                         if (cc < 0) {
                             if (len <= 1) {
                                 cc = 0;

@@ -1,19 +1,14 @@
 import warnings
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.stats as stats
-except ImportError:
-    pass
-
-from .common import Benchmark
-try:
+with safe_import():
     from scipy.stats._distr_params import distcont
-except ImportError:
-    pass
 
-try:
+try:  # builtin lib
     from itertools import compress
 except ImportError:
     pass

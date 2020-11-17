@@ -167,7 +167,7 @@ def kaiserord(ripple, width):
     -----
     There are several ways to obtain the Kaiser window:
 
-    - ``signal.kaiser(numtaps, beta, sym=True)``
+    - ``signal.windows.kaiser(numtaps, beta, sym=True)``
     - ``signal.get_window(beta, numtaps)``
     - ``signal.get_window(('kaiser', beta), numtaps)``
 
