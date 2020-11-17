@@ -1019,6 +1019,33 @@ class TestLogser(object):
         assert_allclose(m, 1.000000005)
 
 
+class TestGumbel_r_l:
+    def setup_method(self):
+        np.random.seed(1234)
+
+    @pytest.mark.parametrize("dist", [stats.gumbel_r, stats.gumbel_l])
+    @pytest.mark.parametrize("loc_rvs,scale_rvs", ([np.random.rand(2)]))
+    def test_fit_comp_optimizer(self, dist, loc_rvs, scale_rvs):
+        data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+
+        # obtain objective function to compare results of the fit methods
+        args = [data, (dist._fitstart(data),)]
+        func = dist._reduce_func(args, {})[1]
+
+        # test that the gumbel_* fit method is better than super method
+        _assert_less_or_close_loglike(dist, data, func)
+
+    @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
+                                           (stats.gumbel_l, -1)])
+    def test_fit(self, dist, sgn):
+        z = sgn*np.array([3, 3, 3, 3, 3, 3, 3, 3.00000001])
+        loc, scale = dist.fit(z)
+        # The expected values were computed with mpmath with 60 digits
+        # of precision.
+        assert_allclose(loc, sgn*3.0000000001667906)
+        assert_allclose(scale, 1.2495222465145514e-09, rtol=1e-6)
+
+
 class TestPareto(object):
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
