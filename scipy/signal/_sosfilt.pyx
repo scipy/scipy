@@ -76,11 +76,11 @@ def _sosfilt_object(object [:, ::1] sos,
                 zi[i, s, 1] = (sos[s, 2] * x_n - sos[s, 5] * x[i, n])
 
 
-cpdef void _sosfilt(DTYPE_t [:, ::1] sos,
+def _sosfilt(DTYPE_t [:, ::1] sos,
              DTYPE_t [:, ::1] x,
-             DTYPE_t [:, :, ::1] zi) nogil:
+             DTYPE_t [:, :, ::1] zi):
     if DTYPE_t is object:
-        with gil:
-            _sosfilt_object(sos, x, zi)
+        _sosfilt_object(sos, x, zi)
     else:
-        _sosfilt_float(sos, x, zi)
+        with nogil:
+            _sosfilt_float(sos, x, zi)
