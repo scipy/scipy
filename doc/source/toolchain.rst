@@ -292,4 +292,4 @@ References
 .. [9] https://wiki.python.org/moin/WindowsCompilers
 .. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
 .. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
-.. [12] https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features
+.. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
