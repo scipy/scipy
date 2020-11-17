@@ -283,6 +283,7 @@ class Remove(Benchmark):
         ],
         BOX_SIZES, LEAF_SIZES
     ]
+    param_names = ['(m, n)', 'boxsize', 'leafsize']
 
     def setup(self, mn, boxsize, leafsize):
         m, n = mn
