@@ -60,11 +60,11 @@ Chirp Z-transform and Zoom FFT
 .. autosummary::
    :toctree: generated/
 
-   czt
-   zoomfft
-   CZT
-   ZoomFFT
-   czt_points
+   czt - Chirp z-transform convenience function
+   zoomfft - Zoom FFT convenience function
+   CZT - Chirp z-transform function generator
+   ZoomFFT - Zoom FFT function generator
+   czt_points - Output the z-plane points sampled by a chirp z-transform
 
 The functions are simpler to use, but less efficient, because they internally
 generate the same chirp signals with every call.  When using the same
