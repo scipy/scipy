@@ -662,6 +662,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
     cct1[3] = cct1[3] * (RT)(-3.0);
     T pp2 = pp * pp;
     T xyz = yym * zzm * xxm;
+    /* Prepare the "elementary" terms E_n as in Eqs. (31-32) in Ref. [2] */
     /* e2 = xxm * yym + zzm * xxm + yym * zzm - pp2 * 3.0 */
     T e2 = arithmetic::ndot2(cct1, cct2, 4);
     /* e3 = xyz + 2.0 * pp * (e2 + 2.0 * pp2) */
@@ -672,6 +673,9 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
     /* tmp = d4m * pow(sqrt(Am), -3) */
     T t = std::sqrt(Am);
     T tmp = d4m / (t * t * t);
+    /* Evaluate the 7th-degree expansion using the E_n terms, following
+     * Eq. 19.36.2 of [1], https://dlmf.nist.gov/19.36#E2
+     * The order of expansion is higher than that in Eq. (32) of Ref. [2]. */
     cct1[0] = arithmetic::comp_horner(e2, constants::RDJ_C1);
     cct1[1] = arithmetic::comp_horner(e3, constants::RDJ_C2);
     cct1[2] = arithmetic::comp_horner(e2, constants::RDJ_C3);
