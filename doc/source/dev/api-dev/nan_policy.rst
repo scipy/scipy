@@ -40,9 +40,9 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
 
       func(a[~np.isnan(a)], b[~np.isnan(b)])
 
-  For inputs with *related* values, the recommended behavior is to omit
-  all the values for which any of the related values are ``nan``.  For
-  a function with two related array inputs, this means::
+  For inputs with *related* or *paired* values, the recommended behavior
+  is to omit all the values for which any of the related values are ``nan``.
+  For a function with two related array inputs, this means::
 
       y = func(a, b, nan_policy='omit')
 
@@ -56,9 +56,12 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
 * ``nan_policy='raise'``:
   Raise a ``ValueError``.
 * ``nan_policy='propagate'``:
-  Progagate the ``nan`` value to the output.  This sounds like a
-  straightforward specification, but occasionally there are subtleties
-  to be considered--see below.
+  Propagate the ``nan`` value to the output.  Typically, this means just
+  execute the function without checking for ``nan``, but see
+
+      https://github.com/scipy/scipy/issues/7818
+
+  for an example where that might lead to unexpected output.
 
 
 ``nan_policy`` combined with an ``axis`` parameter
@@ -137,26 +140,6 @@ It is also consistent with the NumPy ``nan`` functions to not ignore
     -inf
 
 
-Subtleties of ``nan_policy='propagate'``
-----------------------------------------
-In many case, ``nan_policy='propagate'`` is trivial to implement: just
-execute the code in the function without checking for ``nan``, and let the
-chips fall where they may.  There are two potential problems with this:
-
-* It may result in warnings that, for the user, are unexpected. E.g. "Why
-  are you warning me about invalid values in double scalars when I have
-  already told you to propagate the ``nan`` values?"
-* How a ``nan`` propagates will be implementation dependent, and in some
-  cases may surprise a user.  A concrete example is reported in GitHub
-  issue https://github.com/scipy/scipy/issues/7818, where a user was
-  surprised that a ``nan`` propagated all the way to the end of an array,
-  rather than being limited to outputs for which a naive implementation
-  would only be affected by inputs within the specified window.
-
-  Generally, whether ``'propagate'`` needs to be handled as a special
-  case will be decided on a case-by-case basis.
-
-
 How *not* to implement ``nan_policy``
 -------------------------------------
 In the past (and possibly currently), some ``stats`` functions handled
@@ -165,4 +148,4 @@ then computing the result using the functions in the ``mstats`` subpackage.
 The problem with this approach is that the masked array code might convert
 ``inf`` to a masked value, which we don't want to do (see above).  It also
 means that, if care is not taken, the return value will be a masked array,
-which will likely be a surpise to the user if they passed in regular arrays.
+which will likely be a surprise to the user if they passed in regular arrays.
