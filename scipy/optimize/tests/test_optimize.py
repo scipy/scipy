@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import warnings
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_, assert_almost_equal,
@@ -236,7 +237,7 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
-                                    bounds=bounds, 
+                                    bounds=bounds,
                                     method='Powell', options=opts)
             params, fopt, direc, numiter, func_calls, warnflag = (
                     res['x'], res['fun'], res['direc'], res['nit'],
@@ -1975,9 +1976,9 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-         
+
 def test_cobyla_threadsafe():
-   
+
     # Verify that cobyla is threadsafe. Will segfault if it is not.
 
     import concurrent.futures
@@ -2009,8 +2010,8 @@ def test_cobyla_threadsafe():
         tasks.append(pool.submit(minimizer2))
         for t in tasks:
             res = t.result()
-   
-   
+
+
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
@@ -2174,8 +2175,37 @@ def test_memoize_jac_with_bfgs(function_with_gradient):
     scalar_function.fun(x0 + 0.2)
     assert function_with_gradient.number_of_calls == 3
 
+
 def test_gh12696():
     # Test that optimize doesn't throw warning gh-12696
     with assert_no_warnings():
         optimize.fminbound(
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
+
+
+@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+                                    'trust-constr'])
+def test_equal_bounds(method):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used
+    """
+    def f(x):
+        return optimize.rosen([x, 2.0])
+
+    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
+    x0 = np.array([0.5, 3.0])
+    bounds = [(0.0, 3.0), (2.0, 2.0)]
+
+    with warnings.catch_warnings(record=True):
+        # warning filter is for trust-constr
+        # UserWarning: delta_grad == 0.0.Check if the approximated
+        # function is linear.
+        warnings.simplefilter('ignore', category=UserWarning)
+
+        res = optimize.minimize(
+            optimize.rosen, x0, method=method, bounds=bounds,
+        )
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
