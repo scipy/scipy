@@ -599,26 +599,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
-        if isinstance(bounds, Bounds):
-            lb = bounds.lb
-            ub = bounds.ub
-        else:
-            bounds_a = np.array(bounds)
-            lb = bounds_a[:, 0]
-            ub = bounds_a[:, 1]
 
-        i_fixed = np.abs(ub - lb) < 1e-8
+        lb, ub = _split_bounds(bounds)
+        btol = 1e-8  # tolerance for bounds being considered equal. Expose?
+        i_fixed = np.abs(ub - lb) < btol
 
         if i_fixed.any():
-            if isinstance(bounds, Bounds):
-                bounds.lb = bounds.lb[~i_fixed]
-                bounds.ub = bounds.ub[~i_fixed]
-            else:
-                bounds = bounds_a[~i_fixed, :].tolist()
-
-            x_fixed = ((lb+ub)/2)[i_fixed]
-            x0 = x0[~i_fixed]
-            fun = _remove_fixed_variables(fun, i_fixed, x_fixed)
+            x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
+            x0 = x0[~i_fixed]   # remove fixed variables from x0
+            bounds = _remove_fixed_variables_from_bounds(bounds, i_fixed)
+            fun = _remove_fixed_variables_from_function(fun, i_fixed, x_fixed)
             # do the same for all other functions (constraints, etc.)
 
     if constraints is not None:
@@ -666,7 +656,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         raise ValueError('Unknown solver %s' % method)
 
     if bounds is not None and i_fixed.any():
-        res.x = _add_fixed_variables(res.x, i_fixed, x_fixed)
+        res.x = _add_fixed_variables_to_array(res.x, i_fixed, x_fixed)
         # need to add missing entries back to other outputs
 
     return res
@@ -830,7 +820,30 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         raise ValueError('Unknown solver %s' % method)
 
 
-def _remove_fixed_variables(fun_in, i_fixed, x_fixed):
+def _split_bounds(bounds):
+    """Splits bounds into upper and lower parts"""
+    if isinstance(bounds, Bounds):
+        lb = bounds.lb
+        ub = bounds.ub
+    else:
+        bounds_a = np.array(bounds)
+        lb = bounds_a[:, 0]
+        ub = bounds_a[:, 1]
+    return lb, ub
+
+
+def _remove_fixed_variables_from_bounds(bounds, i_fixed):
+    """Removes bounds for which upper and lower parts are equal"""
+    if isinstance(bounds, Bounds):
+        bounds.lb = bounds.lb[~i_fixed]
+        bounds.ub = bounds.ub[~i_fixed]
+    else:
+        bounds = np.array(bounds)[~i_fixed, :].tolist()
+    return bounds
+
+
+def _remove_fixed_variables_from_function(fun_in, i_fixed, x_fixed):
+    """Wraps a function such that fixed variables need not be passed in"""
     def fun_out(x_in, *args, **kwargs):
         x_out = np.zeros_like(i_fixed, dtype=float)
         x_out[i_fixed] = x_fixed
@@ -839,7 +852,8 @@ def _remove_fixed_variables(fun_in, i_fixed, x_fixed):
     return fun_out
 
 
-def _add_fixed_variables(x_in, i_fixed, x_fixed):
+def _add_fixed_variables_to_array(x_in, i_fixed, x_fixed):
+    """Adds fixed variables back to an array"""
     x_out = np.zeros_like(i_fixed, dtype=float)
     x_out[i_fixed] = x_fixed
     x_out[~i_fixed] = x_in
