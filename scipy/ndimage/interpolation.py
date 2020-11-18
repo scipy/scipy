@@ -773,13 +773,27 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     else:
         npad = 0
         filtered = input
+    if grid_mode:
+        # warn about modes that may have surprising behavior
+        suggest_mode = None
+        if mode == 'constant':
+            suggest_mode = 'grid-constant'
+        elif mode == 'wrap':
+            suggest_mode = 'grid-wrap'
+        if suggest_mode is not None:
+            warnings.warn(
+                ("It is recommended to use mode = {} instead of {} when "
+                 "grid_mode is True."
+                ).format(suggest_mode, mode)
+            )
     mode = _ni_support._extend_mode_to_code(mode)
 
     zoom_div = numpy.array(output_shape, float)
-    zoom_nominator = numpy.array(input.shape)
+    zoom_nominator = numpy.array(input.shape, float)
     if not grid_mode:
         zoom_div -= 1
         zoom_nominator -= 1
+
     # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
     zoom = numpy.divide(zoom_nominator, zoom_div,
