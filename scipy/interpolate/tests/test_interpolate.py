@@ -306,6 +306,7 @@ class TestInterp1D(object):
 
     def test_nearest(self):
         # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest asserts that half-integer case (1.5) rounds down to 1
         interp10 = interp1d(self.x10, self.y10, kind='nearest')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
@@ -326,6 +327,7 @@ class TestInterp1D(object):
 
     def test_nearest_up(self):
         # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest-up asserts that half-integer case (1.5) rounds up to 2
         interp10 = interp1d(self.x10, self.y10, kind='nearest-up')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))

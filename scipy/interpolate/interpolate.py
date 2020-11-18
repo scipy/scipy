@@ -342,13 +342,16 @@ class interp1d(_Interpolator1D):
         A N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`.
     kind : str or int, optional
-        Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'nearest-up', 'zero', 'slinear', 'quadratic',
-        'cubic', 'previous', 'next', where 'zero', 'slinear', 'quadratic'
-        and 'cubic' refer to a spline interpolation of zeroth, first,
-        second or third order; 'previous' and 'next' simply return the
-        previous or next value of the point) or as an integer specifying
-        the order of the spline interpolator to use. Default is 'linear'.
+        Specifies the kind of interpolation as a string or as an integer
+        specifying the order of the spline interpolator to use.
+        The string has to be one of 'linear', 'nearest', 'nearest-up', 'zero',
+        'slinear', 'quadratic', 'cubic', 'previous', or 'next'. 'zero',
+        'slinear', 'quadratic' and 'cubic' refer to a spline interpolation of
+        zeroth, first, second or third order; 'previous' and 'next' simply
+        return the previous or next value of the point; 'nearest-up' and
+        'nearest' differ when interpolating half-integers (e.g. 0.5, 1.5)
+        in that 'nearest-up' rounds up and 'nearest' rounds down. Default
+        is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
         Interpolation defaults to the last axis of `y`.
