@@ -652,7 +652,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
 int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                  PyArrayObject* shift_ar, PyArrayObject *output,
-                 int order, int mode, double cval, int nprepad)
+                 int order, int mode, double cval, int nprepad, int grid_mode)
 {
     char *po, *pi;
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
@@ -782,7 +782,16 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             if (shifts)
                 cc += shift;
             if (zooms)
-                cc *= zoom;
+            {
+                if (grid_mode)
+                {
+                    cc += 0.5;
+                    cc *= zoom;
+                    cc -= 0.5;
+                } else {
+                    cc *= zoom;
+                }
+            }
             cc += (double)nprepad;
             if (mode != NI_EXTEND_GRID_CONSTANT) {
                 /* if the input coordinate is outside the borders, map it: */
