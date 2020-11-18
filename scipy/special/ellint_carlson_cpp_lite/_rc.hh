@@ -48,8 +48,9 @@ rc(const T& x, const T& y, const double& rerr, T& res)
 	if ( is_horrible(status) )
 	{
 	    res = typing::nan<T>();
+	} else {
+	    res = tmpres * std::sqrt(x / (x - y));
 	}
-	res = tmpres * std::sqrt(x / (x - y));
 	return status;
     } else if ( argcheck::too_small(y) || !argcheck::ph_good(x) ) {
 	res = typing::nan<T>();
