@@ -703,13 +703,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         distance including the full pixel extent is used. For example, a 1d
         signal of length 5 is considered to have length 4 when `grid_mode` is
         False, but length 5 when `grid_mode` is True. See the following
-        visual illustration::
+        visual illustration:
 
-        | pixel 1 | pixel 2 | pixel 3 | pixel 4 | pixel 5 |
+        .. code-block:: none
 
-              |<------------------------------------>|
-                                vs.
-        |<----------------------------------------------->|
+                | pixel 1 | pixel 2 | pixel 3 | pixel 4 | pixel 5 |
+                     |<-------------------------------------->|
+                                        vs.
+                |<----------------------------------------------->|
 
         The starting point of the arrow in the diagram above corresponds to
         coordinate location 0 in each mode.
