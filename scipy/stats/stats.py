@@ -3708,7 +3708,7 @@ class TukeyKramerResult():
              f"\n(with {100*(1-self.alpha):.0f}% Confidence Limits and "
              f"significance at the {self.alpha} level)\n~~~~~~~~~~~~\n")
         s += (f"{'group' : <7}{'mean' : ^10}{'min' : ^10}"
-              f"{'max' : >5}{'sig' : >9}\n")
+              f"{'max' : >5}{'sig' : >9}{'p-value' : >11}\n")
         for i in range(nargs):
             for j in range(nargs):
                 if i == j:
@@ -3717,7 +3717,7 @@ class TukeyKramerResult():
                     paircomp = self.res[i, j]
                     s += (f"{i+1} - {j+1}  "
                           f"{paircomp[0] :>8.3f}{paircomp[1] :>10.3f}"
-                          f"{paircomp[2] :>8.3f}{paircomp[3] : >8}\n")
+                          f"{paircomp[2] :>8.3f}{paircomp[3] : >8}{paircomp[4] : >10.3f}\n")
         return s
 
     def __getitem__(self, key):
@@ -3898,13 +3898,18 @@ def tukeykramer(*args, sig_level=.05):
         # calculated
         normalize = 2 / len(args[0])
 
-    tukey_criterions = srd * np.sqrt(normalize * mse / 2)
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
+    tukey_criterions = srd * stand_err
 
     # determine the mean difference for each pairwaise
     mean_differences = np.asarray([x[0] - x[1] for x in permutations_means])
     # the confidence levels are determined by the mean diff +- tukey_criterion
     conf_levels = (mean_differences - tukey_criterions,
                    mean_differences + tukey_criterions)
+    t_stat = np.abs(mean_differences) / stand_err
+    p_vals = [1 - prtrng(t, nsamples - 1, len(args))[0] for t in t_stat]
 
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
@@ -3912,11 +3917,11 @@ def tukeykramer(*args, sig_level=.05):
     is_significant = np.abs(mean_differences) > tukey_criterions
 
     # form 2d output array
-    res = np.zeros((len(args), len(args), 4))
+    res = np.zeros((len(args), len(args), 5))
     for i in range(len(mean_differences)):
         m, n = permutations_key[i]
         res[m-1, n-1] = [mean_differences[i], conf_levels[0][i],
-                         conf_levels[1][i], is_significant[i]]
+                         conf_levels[1][i], is_significant[i], p_vals[i]]
     return TukeyKramerResult(res, sig_level, srd)
 
 
