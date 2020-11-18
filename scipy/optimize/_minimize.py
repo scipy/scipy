@@ -599,50 +599,77 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
+        if isinstance(bounds, Bounds):
+            lb = bounds.lb
+            ub = bounds.ub
+        else:
+            bounds_a = np.array(bounds)
+            lb = bounds_a[:, 0]
+            ub = bounds_a[:, 1]
+
+        i_fixed = np.abs(ub - lb) < 1e-8
+
+        if i_fixed.any():
+            if isinstance(bounds, Bounds):
+                bounds.lb = bounds.lb[~i_fixed]
+                bounds.ub = bounds.ub[~i_fixed]
+            else:
+                bounds = bounds_a[~i_fixed, :].tolist()
+
+            x_fixed = ((lb+ub)/2)[i_fixed]
+            x0 = x0[~i_fixed]
+            fun = _remove_fixed_variables(fun, i_fixed, x_fixed)
+            # do the same for all other functions (constraints, etc.)
 
     if constraints is not None:
         constraints = standardize_constraints(constraints, x0, meth)
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, callback, **options)
+        res = _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, callback, bounds, **options)
+        res = _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, callback, **options)
+        res = _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, callback, **options)
+        res = _minimize_bfgs(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
-                                  **options)
+        res = _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+                                 **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds,
-                                callback=callback, **options)
+        res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
+                               callback=callback, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
-                             **options)
+        res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+                            **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, **options)
+        res = _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':
-        return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, callback=callback, **options)
+        res = _minimize_slsqp(fun, x0, args, jac, bounds,
+                              constraints, callback=callback, **options)
     elif meth == 'trust-constr':
-        return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
-                                            bounds, constraints,
-                                            callback=callback, **options)
-    elif meth == 'dogleg':
-        return _minimize_dogleg(fun, x0, args, jac, hess,
-                                callback=callback, **options)
-    elif meth == 'trust-ncg':
-        return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
-                                   callback=callback, **options)
-    elif meth == 'trust-krylov':
-        return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
-                                      callback=callback, **options)
-    elif meth == 'trust-exact':
-        return _minimize_trustregion_exact(fun, x0, args, jac, hess,
+        res = _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+                                           bounds, constraints,
                                            callback=callback, **options)
+    elif meth == 'dogleg':
+        res = _minimize_dogleg(fun, x0, args, jac, hess,
+                               callback=callback, **options)
+    elif meth == 'trust-ncg':
+        res = _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
+                                  callback=callback, **options)
+    elif meth == 'trust-krylov':
+        res = _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
+                                     callback=callback, **options)
+    elif meth == 'trust-exact':
+        res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
+                                          callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    if bounds is not None and i_fixed.any():
+        res.x = _add_fixed_variables(res.x, i_fixed, x_fixed)
+        # need to add missing entries back to other outputs
+
+    return res
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
@@ -801,6 +828,22 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+
+def _remove_fixed_variables(fun_in, i_fixed, x_fixed):
+    def fun_out(x_in, *args, **kwargs):
+        x_out = np.zeros_like(i_fixed, dtype=float)
+        x_out[i_fixed] = x_fixed
+        x_out[~i_fixed] = x_in
+        return fun_in(x_out, *args, **kwargs)
+    return fun_out
+
+
+def _add_fixed_variables(x_in, i_fixed, x_fixed):
+    x_out = np.zeros_like(i_fixed, dtype=float)
+    x_out[i_fixed] = x_fixed
+    x_out[~i_fixed] = x_in
+    return x_out
 
 
 def standardize_bounds(bounds, x0, meth):
