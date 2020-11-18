@@ -99,8 +99,9 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	cct1[2] = cct2[1] = std::sqrt(zm);
 	T lam = arithmetic::ndot2(cct1, cct2, 3);
 
-	/* Ref[2], Eq. 2.34, accumulating the summation term into adt
-	 * with compensation term ade */
+	/* The cumulative sum term in Ref. [2], Eq. (41), implemented by
+	 * accumulating the summation term into adt with compensation
+	 * term ade */
 	tmp = d4m / (cct1[2] * (zm + lam));
 	arithmetic::sum2_acc(tmp, adt, ade);
 
@@ -125,6 +126,7 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     xxm /= Am;
     yym /= Am;
     T zzm = (xxm + yym) / (RT)(-3.0);
+    /* Prepare the "elementary" terms E_n as in Eqs. (39-40) in Ref. [2] */
     T xy = xxm * yym;
     T zz2 = zzm * zzm;
     T e2 = xy - zz2 * (RT)6.0;
@@ -133,6 +135,9 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     T e5 = xy * zz2 * zzm;
     T t = std::sqrt(Am);
     tmp = d4m / (t * t * t);
+    /* Evaluate the 7th-degree expansion using the E_n terms, following
+     * Eq. 19.36.2 of [1], https://dlmf.nist.gov/19.36#E2
+     * The order of expansion is higher than that in Eq. (41) of Ref. [2]. */
     cct1[0] = arithmetic::comp_horner(e2, constants::RDJ_C1);
     cct1[1] = arithmetic::comp_horner(e3, constants::RDJ_C2);
     cct1[2] = arithmetic::comp_horner(e2, constants::RDJ_C3);
@@ -148,7 +153,7 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     cct2[5] = e4;
     t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + 1.0;
     tmp *= t;
-    tmp += adt * (RT)3.0;
+    tmp += (adt + ade) * (RT)3.0;
 
     res = tmp;
     return status;
