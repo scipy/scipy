@@ -155,28 +155,17 @@ def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
     assert len(col_ind) == 0
 
 
-def test_min_weight_full_matching_infeasible_square():
-    biadjacency_matrix = csr_matrix([[1, 1, 1], [1, 0, 0], [1, 0, 0]])
+@pytest.mark.parametrize('biadjacency_matrix',
+                         [
+                            [[1, 1, 1], [1, 0, 0], [1, 0, 0]],
+                            [[1, 1, 1], [0, 0, 1], [0, 0, 1]],
+                            [[1, 0, 0], [2, 0, 0]],
+                            [[0, 1, 0], [0, 2, 0]],
+                            [[1, 0], [2, 0], [5, 0]]
+                         ])
+def test_min_weight_full_matching_infeasible_problems(biadjacency_matrix):
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(biadjacency_matrix)
-
-
-def test_min_weight_full_matching_infeasible_other_square():
-    biadjacency_matrix = csr_matrix([[1, 1, 1], [0, 0, 1], [0, 0, 1]])
-    with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(biadjacency_matrix)
-
-
-def test_min_weight_full_matching_infeasible_rectangular():
-    biadjacency_matrix = csr_matrix([[1, 0, 0], [2, 0, 0]])
-    with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(biadjacency_matrix)
-
-
-def test_min_weight_full_matching_infeasible_other_rectangular():
-    biadjacency_matrix = csr_matrix([[1, 0], [2, 0], [5, 0]])
-    with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(biadjacency_matrix)
+        min_weight_full_bipartite_matching(csr_matrix(biadjacency_matrix))
 
 
 def test_explicit_zero_causes_warning():
