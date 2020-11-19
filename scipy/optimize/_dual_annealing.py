@@ -412,8 +412,9 @@ class LocalSearchWrapper(object):
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
         if 'jac' in self.kwargs:
             # Make sure jac wrapper is used so that args are passed.
-            func_wrapper.jac = self.kwargs['jac']
-            self.kwargs['jac'] = func_wrapper.get_jac()
+            if callable(self.kwargs['jac']):
+                func_wrapper.jac = self.kwargs['jac']
+                self.kwargs['jac'] = func_wrapper.get_jac()
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
