@@ -54,7 +54,6 @@ def test_two_methods_give_expected_result_on_small_inputs():
 
         row_ind, col_ind = solver(cost_matrix, maximize=maximize)
         assert_array_equal(row_ind, np.sort(row_ind))
-        print(solver, array_type, sign, np.array(cost_matrix))
         assert_array_equal(expected_cost,
                            np.array(cost_matrix[row_ind, col_ind]).flatten())
 
