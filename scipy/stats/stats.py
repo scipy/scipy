@@ -413,7 +413,9 @@ def gmean(a, axis=0, dtype=None, weights=None):
         log_a = np.log(a)
 
     if weights:
-        weights = np.array(weights, dtype=dtype, copy=False)
+        if not isinstance(weights, np.ndarray):
+            # if not an ndarray object attempt to convert it
+            weights = np.array(weights, dtype=dtype)
         elif dtype:
             # Must change the default dtype allowing array type
             if isinstance(a, np.ma.MaskedArray):
