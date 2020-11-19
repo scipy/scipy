@@ -7,14 +7,21 @@
  *
  * Ref:
  *
- * S. Gaillat, V. Ménissier-Morain: Compensated Horner scheme in complex
+ * [1] S. Gaillat, V. Ménissier-Morain: Compensated Horner scheme in complex
  *      floating point arithmetic.
  *      2008-07-07, Proc. 8th Conf. Real Number Comput., pp. 133--146
+ *      https://www-pequan.lip6.fr/~graillat/papers/rnc08.pdf
  *
- * S. Gaillat, V. Ménissier-Morain: Accurate summation, dot product and
+ * [2] S. Gaillat, V. Ménissier-Morain: Accurate summation, dot product and
  *      polynomial evaluation in complex floating point arithmetic.
  *      2012-03-30, Inf. Comput., vol. 216 pp. 57--71
  *      https://doi.org/10.1016/j.ic.2011.09.003
+ *      https://web.stanford.edu/group/SOL/software/qdotdd/IC2012.pdf
+ *
+ * [3] S. Graillat, Ph.Langlois, N.Louve: Compensated Horner Scheme.
+ *      2005-07-24, Report No. RR2005-04, Université de Perpignan « Via
+ *      Domitia »
+ *      https://www-pequan.lip6.fr/~jmc/polycopies/Compensation-horner.pdf
  */
 
 
@@ -36,7 +43,8 @@ namespace ellint_carlson { namespace arithmetic
     /* Knuth's TwoSum algorithm, EFT on addition, with the sum written to s
      * and the correction term to p. This algorithm is generic enough to
      * write for both real and complex types (because there's no error in the
-     * complex "i"). */
+     * complex "i").
+     * Algorithms 2.1 and 3.1 in Ref. [1] */
     template<typename FPT>
     inline typing::real_or_cplx<FPT, void>
     eft_sum(const FPT& x, const FPT& y, FPT& s, FPT& corr)
@@ -48,7 +56,8 @@ namespace ellint_carlson { namespace arithmetic
 
 
     /* TwoSum in accumulator style, with sum accumulated to acc and the
-     * correction term to corr */
+     * correction term to corr
+     * Algorithm 4.1 in Ref. [2] */
     template<typename FPT>
     inline typing::real_or_cplx<FPT, void>
     sum2_acc(const FPT& summand, FPT& acc, FPT& corr)
@@ -94,7 +103,8 @@ namespace ellint_carlson { namespace arithmetic
 
     /* EFT for multiplication, with real-type arguments.
      * NOTE: This implementation uses the FMA function for correct rounding.
-     * (mandated by standard since C++11) */
+     * (mandated by standard since C++11)
+     * Algorithm 2.5 in Ref. [1] */
     template<typename RT>
     inline typing::real_only<RT, void>
     eft_prod(const RT& x, const RT& y, RT& prod, typing::corrbuf<RT>& corr)
@@ -104,7 +114,8 @@ namespace ellint_carlson { namespace arithmetic
     }
 
 
-    /* EFT for multiplication, with complex-type arguments. */
+    /* EFT for multiplication, with complex-type arguments.
+     * Algorithm 3.4 in Ref. [1] */
     template<typename CT>
     inline typing::cplx_only<CT, void>
     eft_prod(const CT& x, const CT& y, CT& prod, typing::corrbuf<CT>& corr)
@@ -133,7 +144,8 @@ namespace ellint_carlson { namespace arithmetic
     }
 
 
-    /* Accumulator version of dot-product */
+    /* Accumulator version of dot-product
+     * Algorithm 4.3 in Ref. [2] */
     template<typename RT>
     inline typing::real_only<RT, void>
     fdot2_acc(const RT& x, const RT& y, RT& acc, RT& corr)
@@ -172,7 +184,8 @@ namespace ellint_carlson { namespace arithmetic
     }
 
 
-    /* Dot-product, but for complex types. */
+    /* Dot-product, but for complex types.
+     * Algorithm 4.4 in Ref. [2] */
     template<typename Iterable>
     inline auto
     ndot2(const Iterable& x, const Iterable& y, std::size_t n)
@@ -216,7 +229,9 @@ namespace ellint_carlson { namespace arithmetic
     }
 
 
-    /* Polynomial evaluation with compensated Horner scheme. */
+    /* Polynomial evaluation with compensated Horner scheme.
+     * This instance for the real-only inputs is essentially the Algorithm 9 in
+     * Ref. [3] */
     template<typename RT>
     inline typing::real_only<RT, RT>
     dcomp_horner(const RT& x, const RT* poly, std::size_t degree)
@@ -234,6 +249,9 @@ namespace ellint_carlson { namespace arithmetic
 	return s + r;
     }
 
+    /* For complex-valued input: Algorithm 5.4 in Ref. [2].
+     * Notice that this makes use of the aux::acc_sum() algorithm, which is
+     * named "Accsum" in the referenced paper. */
     template<typename T0, typename T1>
     inline typename std::enable_if< typing::is_complex<T0>::value ||
                                     typing::is_complex<T1>::value,

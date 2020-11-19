@@ -11,10 +11,17 @@
  *
  * S. M. Rump, T. Ogita, S. Oishi: Accurate Floating-Point Summation.
  *      2005-11-13, Tech. Rep. 05.1, Fac. Inf. Commun. Sci, Hambg. Univ.
- *      Technol.
+ *      Technol., also known as SIAM J. Sci. Comput. Volume 31, Issue 1, pp.
+ *      189-224 (2008),
+ *      http://www.ti3.tuhh.de/paper/rump/RuOgOi07I.pdf
+ *
+ * The main purpose of these templates is to implement Algorithm 6.1 (here as
+ * acc_sum) which is required by compensated complex floating-point polynomial
+ * evaluation.
  */
 namespace ellint_carlson { namespace arithmetic { namespace aux
 {
+    /* Algorithm 3.6 */
     template<typename RT>
     inline typing::real_only<RT, RT>
     next_power_two(const RT& p)
@@ -29,6 +36,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* Algorithm 3.2 */
     template<typename RT>
     inline typing::real_only<RT, void>
     extract_scalar(const RT& sigma, RT& p, RT& q)
@@ -38,6 +46,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* Algorithm 3.4 */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, void>
     extract_vector(const RT& sigma, RT(& p)[LEN], bool(& mask)[LEN], RT& tau)
@@ -59,6 +68,9 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* The functions make, none, and count implements boolean-array
+     * initialization, test for all-false, and counting for number of true
+     * values. */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, void>
     make(const RT(& buf)[LEN], bool(& mask)[LEN])
@@ -101,6 +113,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* Seach for maximal absolute value in masked array. */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, RT>
     vmax(const RT(& p)[LEN], const bool(& mask)[LEN])
@@ -117,6 +130,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* Summation for masked array */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, RT>
     masked_sum(const RT(& p)[LEN], const bool(& mask)[LEN])
@@ -133,6 +147,7 @@ namespace ellint_carlson { namespace arithmetic { namespace aux
     }
 
 
+    /* Algorithm 6.1 */
     template<typename RT, std::size_t LEN>
     inline typing::real_only<RT, RT>
     acc_sum(RT(& p)[LEN], bool(& mask)[LEN])
