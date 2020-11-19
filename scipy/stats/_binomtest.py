@@ -11,7 +11,25 @@ ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 
 class BinomTestResult:
+    """
+    Result of `scipy.stats.binomtest`.
 
+    Attributes
+    ----------
+    k : int
+        The number of successes (copied from `binomtest` input).
+    n : int
+        The number of trials (copied from `binomtest` input).
+    alternative : str
+        Indicates the alternative hypothesis specified in the input
+        to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
+        or ``'less'``.
+    pvalue : float
+        The p-value of the hypothesis test.
+    proportion_estimate : float
+        The estimate of the proportion of successes.
+
+    """
     def __init__(self, k, n, alternative, pvalue, proportion_estimate):
         self.k = k
         self.n = n
@@ -66,6 +84,15 @@ class BinomTestResult:
         .. [3] Robert G. Newcombe, Two-sided confidence intervals for the
                single proportion: comparison of seven methods, Statistics
                in Medicine, 17, pp 857-872 (1998).
+
+        Examples
+        --------
+        >>> from scipy.stats import binomtest
+        >>> result = binomtest(k=7, n=50, p=0.1)
+        >>> result.proportion_estimate
+        0.14
+        >>> result.proportion_ci
+        ConfidenceInterval(low=0.04246878737883377, high=0.30910696596481874)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
@@ -194,15 +221,17 @@ def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
 
     Returns
     -------
-    result : BinomTestResult instance
+    result : `BinomTestResult` instance
         The return value is an object with the following attributes:
 
         k : int
-            Copied from the input.
+            The number of successes (copied from `binomtest` input).
         n : int
-            Copied from the input.
+            The number of trials (copied from `binomtest` input).
         alternative : str
-            Copied from the input.
+            Indicates the alternative hypothesis specified in the input
+            to `binomtest`.  It will be one of ``'two-sided'``, ``'greater'``,
+            or ``'less'``.
         pvalue : float
             The p-value of the hypothesis test.
         proportion_estimate : float
