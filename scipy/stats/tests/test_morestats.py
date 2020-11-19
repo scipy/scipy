@@ -725,6 +725,11 @@ class TestBinomTest:
         ci = res.proportion_ci(confidence_level=conf, method=method)
         assert_allclose(ci, (ci_low, ci_high), rtol=1e-6)
 
+    def test_invalid_confidence_level(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="must be in the interval"):
+            res.proportion_ci(confidence_level=-1)
+
 
 class TestFligner(object):
 

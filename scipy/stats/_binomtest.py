@@ -57,6 +57,8 @@ class BinomTestResult:
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
                              "'wilsoncc'.")
+        if not (0 <= confidence_level <= 1):
+            raise ValueError('confidence_level must be in the interval [0, 1].')
         if method == 'exact':
             low, high = _binom_exact_conf_int(self.k, self.n,
                                               confidence_level,
