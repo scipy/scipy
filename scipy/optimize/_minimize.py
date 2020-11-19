@@ -597,22 +597,37 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
 
+    if constraints is not None:
+        constraints = standardize_constraints(constraints, x0, meth)
+
+    remove_vars = False
     if bounds is not None:
         bounds = standardize_bounds(bounds, x0, meth)
 
         lb, ub = _split_bounds(bounds)
         btol = 1e-8  # tolerance for bounds being considered equal. Expose?
         i_fixed = np.abs(ub - lb) < btol
+        remove_vars = i_fixed.any() and meth in {'powell', 'l-bfgs-b', 'slsqp'}
 
-        if i_fixed.any():
-            x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
-            x0 = x0[~i_fixed]   # remove fixed variables from x0
-            bounds = _remove_fixed_variables_from_bounds(bounds, i_fixed)
-            fun = _remove_fixed_variables_from_function(fun, i_fixed, x_fixed)
-            # do the same for all other functions (constraints, etc.)
-
-    if constraints is not None:
-        constraints = standardize_constraints(constraints, x0, meth)
+    if remove_vars:
+        x_fixed = ((lb+ub)/2)[i_fixed]  # values of fixed variables
+        x0 = x0[~i_fixed]   # remove fixed variables from x0
+        bounds = _remove_from_bounds(bounds, i_fixed)
+        fun = _remove_from_func(fun, i_fixed, x_fixed)
+        if callable(jac):
+            jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+        if callable(hess):
+            hess = _remove_from_func(hess, i_fixed, x_fixed, remove=2)
+        if callable(callback):
+            callback = _remove_from_func(callback, i_fixed, x_fixed)
+        for con in constraints:
+            if isinstance(con, dict):
+                con['fun'] = _remove_from_func(con['fun'], i_fixed, x_fixed,
+                                               min_dim=1, remove=0)
+                if 'jac' in con and callable(con['jac']):
+                    con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                                                   x_fixed, min_dim=2,
+                                                   remove=1)
 
     if meth == 'nelder-mead':
         res = _minimize_neldermead(fun, x0, args, callback, **options)
@@ -655,9 +670,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     else:
         raise ValueError('Unknown solver %s' % method)
 
-    if bounds is not None and i_fixed.any():
-        res.x = _add_fixed_variables_to_array(res.x, i_fixed, x_fixed)
-        # need to add missing entries back to other outputs
+    if remove_vars:
+        res.x = _add_to_array(res.x, i_fixed, x_fixed)
+        if "jac" in res:
+            res.jac = _add_to_array(res.jac, i_fixed, np.nan)
+        if "direc" in res:
+            res.direc = _add_to_array(res.direc, i_fixed, np.nan)
+        # hess_inv?
 
     return res
 
@@ -832,7 +851,7 @@ def _split_bounds(bounds):
     return lb, ub
 
 
-def _remove_fixed_variables_from_bounds(bounds, i_fixed):
+def _remove_from_bounds(bounds, i_fixed):
     """Removes bounds for which upper and lower parts are equal"""
     if isinstance(bounds, Bounds):
         bounds.lb = bounds.lb[~i_fixed]
@@ -842,21 +861,37 @@ def _remove_fixed_variables_from_bounds(bounds, i_fixed):
     return bounds
 
 
-def _remove_fixed_variables_from_function(fun_in, i_fixed, x_fixed):
+def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
     """Wraps a function such that fixed variables need not be passed in"""
     def fun_out(x_in, *args, **kwargs):
-        x_out = np.zeros_like(i_fixed, dtype=float)
+        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
         x_out[i_fixed] = x_fixed
         x_out[~i_fixed] = x_in
-        return fun_in(x_out, *args, **kwargs)
+        y_out = fun_in(x_out, *args, **kwargs)
+        y_out = np.array(y_out)
+
+        if min_dim == 1:
+            y_out = np.atleast_1d(y_out)
+        elif min_dim == 2:
+            y_out = np.atleast_2d(y_out)
+
+        if remove == 1:
+            y_out = y_out[..., ~i_fixed]
+        elif remove == 2:
+            y_out = y_out[~i_fixed, ~i_fixed]
+
+        return y_out
     return fun_out
 
 
-def _add_fixed_variables_to_array(x_in, i_fixed, x_fixed):
+def _add_to_array(x_in, i_fixed, x_fixed):
     """Adds fixed variables back to an array"""
-    x_out = np.zeros_like(i_fixed, dtype=float)
-    x_out[i_fixed] = x_fixed
-    x_out[~i_fixed] = x_in
+    i_free = ~i_fixed
+    if x_in.ndim == 2:
+        i_free = i_free[:, None] @ i_free[None, :]
+    x_out = np.zeros_like(i_free, dtype=x_in.dtype)
+    x_out[~i_free] = x_fixed
+    x_out[i_free] = x_in.ravel()
     return x_out
 
 
