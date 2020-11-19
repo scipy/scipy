@@ -228,7 +228,7 @@ def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
     if k > n:
         raise ValueError('k must not be greater than n.')
 
-    if (p > 1.0) or (p < 0.0):
+    if not (0 <= p <= 1):
         raise ValueError("p must be in range [0,1]")
 
     if alternative not in ('two-sided', 'less', 'greater'):
