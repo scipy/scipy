@@ -1582,6 +1582,10 @@ class TestEllip(object):
 
 
 class TestEllipCarlson(object):
+    """Test for Carlson elliptic integrals ellipr[cdfgj].
+    The special values used in these tests can be found in Sec. 3 of Carlson
+    (1994), https://arxiv.org/abs/math/9409227
+    """
     def test_elliprc(self):
         assert_allclose(elliprc(1, 1), 1)
         assert elliprc(1, inf) == 0.0
