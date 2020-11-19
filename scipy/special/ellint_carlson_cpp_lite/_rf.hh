@@ -156,9 +156,13 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
     Am = arithmetic::sum2(cct1) / (RT)3.0;
     xxm /= Am;
     yym /= Am;
+    /* Prepare the E_2 and E_3 terms used in the expansion */
     T zzm = -(xxm + yym);
     T e2 = xxm * yym - zzm * zzm;
     T e3 = xxm * (yym * zzm);
+    /* Evaluate the 7th-degree expansion using the E_2 and E3 terms, following
+     * Eq. 19.36.1 of [1], https://dlmf.nist.gov/19.36.E1
+     * The order of expansion is higher than that in Eq. (14) of Ref. [2]. */
     T s = arithmetic::comp_horner(e2, constants::RF_C1);
     s += e3 * (arithmetic::comp_horner(e2, constants::RF_C2) +
                e3 * (RT)(constants::RF_c33));

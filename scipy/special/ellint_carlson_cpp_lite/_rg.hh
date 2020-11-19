@@ -24,6 +24,7 @@
 
 
 /* Forward declaration */
+/* See the file _rf.hh for the definition of agm_update */
 namespace ellint_carlson {
     template<typename T>
     inline void agm_update(T& x, T& y);
@@ -84,7 +85,7 @@ rg0(const T& x, const T& y, const double& rerr, T& res)
 	}
 
 	agm_update(xm, ym);
-	/* Ref[1], Eq. 2.39 */
+	/* Ref[1], Eq. 2.39 or Eq. (46) in the arXiv preprint */
 	fac *= (RT)2.0;
 	dm = xm - ym;
 	arithmetic::aux::rg_dot2_acc(fac, dm * dm, sum, cor);
@@ -157,8 +158,8 @@ rg(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	return status;
     }
 
-    /* Ref[1], Eq. 1.7; Ref[2], Eq. 19.21.10 <https://dlmf.nist.gov/19.21.E10>
-     */
+    /* Ref[1], Eq. 1.7 or Eq. (7) in the arXiv preprint; Ref[2], Eq. 19.21.10
+     * <https://dlmf.nist.gov/19.21.E10> */
     T tmp = cct[2] * rfv;
     tmp += (cct[1] - cct[2]) * (cct[2] - cct[0]) * rdv / (RT)3.0 +
            std::sqrt(cct[0] * cct[1] / cct[2]);

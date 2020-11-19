@@ -43,7 +43,7 @@ rc(const T& x, const T& y, const double& rerr, T& res)
         ( std::real(y) < 0.0 ) )
     {
 	T tmpres;
-	/* Ref[2], Eq. 2.14 */
+	/* Ref[2], Eq. 2.14 or Eq. (21) in the arXiv preprint */
 	status = ellint_carlson::rc(x - y, -y, rerr, tmpres);
 	if ( is_horrible(status) )
 	{
@@ -87,6 +87,7 @@ rc(const T& x, const T& y, const double& rerr, T& res)
     }
     Am = (xm + ym + ym) / (RT)3.0;
     sm /= Am;
+    /* Eq. (20) of Ref[2] */
     res = arithmetic::comp_horner(sm, constants::RC_C) /
           (std::sqrt(Am) * (RT)(constants::RC_C[0]));
     return status;
