@@ -2416,9 +2416,10 @@ add_newdoc("elliprj",
     Parameters
     ----------
     x, y, z, p : array_like
-        Real or complex input parameters. `x`, `y`, or `z` can be any number in
-        the complex plane cut along the negative real axis, but at most one of
-        them can be zero. `p` must be non-zero.
+        Real or complex input parameters. `x`, `y`, or `z` are numbers in
+        the complex plane cut along the negative real axis (subject to further
+        constraints, see Notes), and at most one of them can be zero. `p` must
+        be non-zero.
 
     Returns
     -------
@@ -2438,6 +2439,18 @@ add_newdoc("elliprj",
     call to `elliprc` (or ``atan``/``atanh``, see [4]_) is no longer needed in
     the inner loop. Asymptotic approximations are used where arguments differ
     widely in the order of magnitude. [5]_
+
+    The input values are subject to certain sufficient but not necessary
+    constaints when input arguments are complex. Notably, ``x``, ``y``, and
+    ``z`` must have non-negative real parts, unless two of them are
+    non-negative and complex-conjugates to each other while the other is a real
+    non-negative number. [1]_ If the inputs do not satisfy the sufficient
+    condition described in Ref. [1]_ they are rejected outright with the output
+    set to NaN.
+
+    In the case where one of ``x``, ``y``, and ``z`` is equal to ``p``, the
+    function ``elliprd`` should be preferred because of its less restrictive
+    domain.
 
     See Also
     --------
