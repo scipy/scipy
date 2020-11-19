@@ -421,7 +421,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
             else:
                 weights = np.asarray(weights, dtype=dtype)
 
-        assert weights.shape == log_a.shape, "Shape of a and weights must be identical."
+        if weights.shape != log_a.shape:
+            raise ValueError("Shape mismatch: Shape of a and weights must be identical.")
 
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
