@@ -45,8 +45,9 @@ def test_two_methods_give_expected_result_on_small_inputs():
           [float("inf"), 7, float("inf")]],
          [10, 1, 7]),
     ]
-    for (solver, array_type), sign, (cost_matrix, expected_cost)\
-            in product(solvers, signs, test_cases):
+    for (
+            (solver, array_type), sign, (cost_matrix, expected_cost)
+    ) in product(solvers, signs, test_cases):
 
         maximize = sign == -1
         cost_matrix = sign * array_type(cost_matrix)
