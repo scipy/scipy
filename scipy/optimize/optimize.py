@@ -3345,7 +3345,7 @@ def show_options(solver=None, method=None, disp=True):
     ----------
     solver : str
         Type of optimization solver. One of 'minimize', 'minimize_scalar',
-        'root', or 'linprog'.
+        'root', 'root_scalar', 'linprog', or 'quadratic_assignment'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
