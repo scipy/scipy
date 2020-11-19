@@ -190,9 +190,9 @@ def _validate_nonneg_int(k, name):
     try:
         k = operator.index(k)
     except TypeError:
-        raise TypeError(f'{name} must be an integer.')
+        raise TypeError(f'{name} must be an integer.') from None
     if k < 0:
-        raise ValueError(f'{name} must be nonnegative')
+        raise ValueError(f'{name} must be nonnegative') from None
     return k
 
 
