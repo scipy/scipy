@@ -2,6 +2,7 @@ from itertools import product
 
 from numpy.testing import assert_array_equal
 import numpy as np
+import pytest
 
 from scipy.optimize import linear_sum_assignment
 from scipy.sparse import csr_matrix, random
@@ -10,17 +11,16 @@ from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 
 # Tests that combine scipy.optimize.linear_sum_assignment and
 # scipy.sparse.csgraph.min_weight_full_bipartite_matching
-def test_two_methods_give_expected_result_on_small_inputs():
-    solvers = [(linear_sum_assignment, np.array),
-               (min_weight_full_bipartite_matching, csr_matrix)]
-    signs = [-1, 1]
-    test_cases = [
+@pytest.mark.parametrize('solver_type,sign,test_case', product(
+    [(linear_sum_assignment, np.array),
+     (min_weight_full_bipartite_matching, csr_matrix)],
+    [-1, 1],
+    [
         # Square
         ([[400, 150, 400],
           [400, 450, 600],
           [300, 225, 300]],
-         [150, 400, 300]
-         ),
+         [150, 400, 300]),
 
         # Rectangular variant
         ([[400, 150, 400, 1],
@@ -44,26 +44,28 @@ def test_two_methods_give_expected_result_on_small_inputs():
           [float("inf"), float("inf"), 1],
           [float("inf"), 7, float("inf")]],
          [10, 1, 7]),
-    ]
-    for (
-            (solver, array_type), sign, (cost_matrix, expected_cost)
-    ) in product(solvers, signs, test_cases):
+    ])
+)
+def test_two_methods_give_expected_result_on_small_inputs(
+    solver_type, sign, test_case
+):
+    solver, array_type = solver_type
+    cost_matrix, expected_cost = test_case
+    maximize = sign == -1
+    cost_matrix = sign * array_type(cost_matrix)
+    expected_cost = sign * np.array(expected_cost)
 
-        maximize = sign == -1
-        cost_matrix = sign * array_type(cost_matrix)
-        expected_cost = sign * np.array(expected_cost)
+    row_ind, col_ind = solver(cost_matrix, maximize=maximize)
+    assert_array_equal(row_ind, np.sort(row_ind))
+    assert_array_equal(expected_cost,
+                       np.array(cost_matrix[row_ind, col_ind]).flatten())
 
-        row_ind, col_ind = solver(cost_matrix, maximize=maximize)
-        assert_array_equal(row_ind, np.sort(row_ind))
-        assert_array_equal(expected_cost,
-                           np.array(cost_matrix[row_ind, col_ind]).flatten())
-
-        cost_matrix = cost_matrix.T
-        row_ind, col_ind = solver(cost_matrix, maximize=maximize)
-        assert_array_equal(row_ind, np.sort(row_ind))
-        assert_array_equal(np.sort(expected_cost),
-                           np.sort(np.array(
-                               cost_matrix[row_ind, col_ind])).flatten())
+    cost_matrix = cost_matrix.T
+    row_ind, col_ind = solver(cost_matrix, maximize=maximize)
+    assert_array_equal(row_ind, np.sort(row_ind))
+    assert_array_equal(np.sort(expected_cost),
+                       np.sort(np.array(
+                           cost_matrix[row_ind, col_ind])).flatten())
 
 
 def test_two_methods_give_same_result_on_many_sparse_inputs():
