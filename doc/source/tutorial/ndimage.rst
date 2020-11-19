@@ -146,12 +146,17 @@ supported:
 The following synonyms are also supported for consistency with the
 interpolation routines:
 
- =============   =======================
-   **mode**          **description**
- =============   =======================
- "grid-mirror"   equivalent to "reflect"
- "grid-wrap"     equivalent to "wrap"
- =============   =======================
+ ===============   =========================
+     **mode**           **description**
+ ===============   =========================
+ "grid-constant"   equivalent to "constant"*
+ "grid-mirror"     equivalent to "reflect"
+ "grid-wrap"       equivalent to "wrap"
+ ===============   =========================
+
+\* "grid-constant" and "constant" are equivalent for filtering operations, but
+have different behavior in interpolation functions. For API consistency, the
+filtering functions accept either name.
 
 The "constant" mode is special since it needs an additional parameter to
 specify the constant value that should be used.
@@ -793,7 +798,7 @@ filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
 is used. The behavior of all modes, including at non-integer locations is
-illustrated below. Note the boundaries is not handled the same for all modes;
+illustrated below. Note the boundaries are not handled the same for all modes;
 `reflect` (aka `grid-mirror`) and `grid-wrap` involve symmetry or repetition
 about a point that is half way between image samples (dashed vertical lines)
 while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
