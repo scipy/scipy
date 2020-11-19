@@ -1,4 +1,5 @@
 from collections import namedtuple
+import operator
 from math import sqrt
 import numpy as np
 from scipy.optimize import brentq
@@ -145,6 +146,16 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     return lo, hi
 
 
+def _validate_nonneg_int(k, name):
+    try:
+        k = operator.index(k)
+    except TypeError:
+        raise TypeError(f'{name} must be an integer.')
+    if k < 0:
+        raise ValueError(f'{name} must be nonnegative')
+    return k
+
+
 def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -154,12 +165,10 @@ def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
 
     Parameters
     ----------
-    k : int or array_like
-        The number of successes, or if k has length 2, it is the
-        number of successes and the number of failures.
+    k : int
+        The number of successes.
     n : int
-        The number of trials.  This is ignored if k gives both the
-        number of successes and failures.
+        The number of trials.
     p : float, optional
         The hypothesized probability of success.  ``0 <= p <= 1``. The
         default value is ``p = 0.5``.
@@ -214,23 +223,16 @@ def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
     ConfidenceInterval(low=0.056846867590246826, high=1.0)
 
     """
-    k = np.atleast_1d(k).astype(np.int_)
-    if len(k) == 2:
-        n = k[1] + k[0]
-        k = k[0]
-    elif len(k) == 1:
-        k = k[0]
-        if n is None or n < k:
-            raise ValueError("n must be >= k")
-        n = np.int_(n)
-    else:
-        raise ValueError("Incorrect length for k.")
+    k = _validate_nonneg_int(k, 'k')
+    n = _validate_nonneg_int(n, 'n')
+    if k > n:
+        raise ValueError('k must not be greater than n.')
 
     if (p > 1.0) or (p < 0.0):
         raise ValueError("p must be in range [0,1]")
 
     if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized\n"
+        raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
 
     if alternative == 'less':
