@@ -467,7 +467,7 @@ BOOST_TESTS = [
         data(elliprf, 'ellint_rf_data_ipp-ellint_rf_data', (0, 1, 2), 3,
              rtol=5e-16),
         data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,
-             rtol=5e-15, atol=1e-20,
+             rtol=5e-16, atol=1e-25,
              param_filter=(lambda s: s <= 5e-26,)),
         # ellint_rc_data_ipp/ellint_rc_data.txt
         # ellint_rd_0xy_ipp/ellint_rd_0xy.txt

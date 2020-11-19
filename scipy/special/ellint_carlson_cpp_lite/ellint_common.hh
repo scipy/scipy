@@ -29,7 +29,7 @@ namespace ellint_carlson
     {
 	static constexpr unsigned int max_iter = 1000u;
 	static constexpr double asym_zero_ul = 5.0e-14;
-	static constexpr double asym_close_ul = 1.0e-10;
+	static constexpr double asym_close_ul = 1.0e-9;
     }
 
     namespace constants

@@ -112,10 +112,10 @@ rf(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	    return status;
 	} else {
 	    T tmpres;
-	    status = rf0(ym, zm, rerr, tmpres);
+	    status = rf0(ym, zm, rerr * (RT)0.5, tmpres);
 	    /* Correction for non-zero x, see Eq. 19.27.3 in
 	     * https://dlmf.nist.gov/19.27.E3 */
-	    res = tmpres - (std::sqrt(xm) / std::sqrt(ym * zm));
+	    res = tmpres - std::sqrt(xm / (ym * zm));
 	    return status;
 	}
     }

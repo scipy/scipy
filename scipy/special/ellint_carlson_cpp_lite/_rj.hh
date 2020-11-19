@@ -309,17 +309,12 @@ rj_asym_conf(const T& x, const T& y, const T& z, const T& p,
 {
     T t;
 
-    /*
-    t = (*z) / (*p);
-    */
-    /* this bound is neither sharp enough nor useful */
-    /*
-    if ( ASYMP_ZERO(t) )
+    t = z / p;
+    if ( asymp_zero(t) )
     {
-	*c = ((*x) + (*y) + (*z)) / 3.0;
-	return asymp_hugep;
+	conf.c = (x + y + z) / 3.0;
+	return AsymFlag::hugep;
     }
-    */
 
     /* this bound is sharp. RJ in this case behaves with logarithmic
      * singularity as p -> +0 */
@@ -491,7 +486,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 	    case rjimpl::AsymFlag::hugep :
 	    {
 		/* Ref[2], Eq. 19.27.11 <https://dlmf.nist.gov/19.27.E11> */
-		status = rf(xr, yr, zr, rerr, tmpres);
+		status = rf(xr, yr, zr, rerr * (RT)0.5, tmpres);
 		tmpres = 3.0 * (tmpres -
 			        0.5 * (RT)(constants::pi) / std::sqrt(pr)) / pr;
 		break;
@@ -573,7 +568,7 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 		RT tt = config.h + pr;
 		tt *= tt;
 		RT tm = config.b + config.h;
-		status = rc(tt, (RT)2.0 * tm * pr, rerr, tmpres);
+		status = rc(tt, (RT)2.0 * tm * pr, rerr * (RT)0.5, tmpres);
 		tt = std::log((RT)2.0 * zr / tm);
 		RT rt_h = (RT)0.75 * ((RT)2.0 * pr * tmpres / zr -
 		                      tt / (zr - config.h));
@@ -581,8 +576,8 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
 		tmpres *= tt;
 		/* Also try if direct computation gives reasonable approx. */
 		RT tmp_direct;
-		ExitStatus status_direct = rj(xr, yr, zr, pr, rerr, tmp_direct,
-		                              true);
+		ExitStatus status_direct = rj(xr, yr, zr, pr, rerr * (RT)0.5,
+		                              tmp_direct, true);
 		if ( (tmp_direct > tmpres) ||
 		     (tmp_direct < tmpres + rt_h * tt) )
 		{
