@@ -3345,7 +3345,7 @@ def show_options(solver=None, method=None, disp=True):
     ----------
     solver : str
         Type of optimization solver. One of 'minimize', 'minimize_scalar',
-        'root', or 'linprog'.
+        'root', 'root_scalar', 'linprog', or 'quadratic_assignment'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
@@ -3396,6 +3396,17 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`golden      <optimize.minimize_scalar-golden>`
     - :ref:`bounded     <optimize.minimize_scalar-bounded>`
 
+    `scipy.optimize.root_scalar`
+
+    - :ref:`bisect  <optimize.root_scalar-bisect>`
+    - :ref:`brentq  <optimize.root_scalar-brentq>`
+    - :ref:`brenth  <optimize.root_scalar-brenth>`
+    - :ref:`ridder  <optimize.root_scalar-ridder>`
+    - :ref:`toms748 <optimize.root_scalar-toms748>`
+    - :ref:`newton  <optimize.root_scalar-newton>`
+    - :ref:`secant  <optimize.root_scalar-secant>`
+    - :ref:`halley  <optimize.root_scalar-halley>`
+
     `scipy.optimize.linprog`
 
     - :ref:`simplex           <optimize.linprog-simplex>`
@@ -3443,7 +3454,15 @@ def show_options(solver=None, method=None, disp=True):
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
-            ('trust-ncg', 'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('trust-ncg',
+             'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('trust-constr',
+             'scipy.optimize._trustregion_constr.'
+             '_minimize_trustregion_constr'),
+            ('trust-exact',
+             'scipy.optimize._trustregion_exact._minimize_trustregion_exact'),
+            ('trust-krylov',
+             'scipy.optimize._trustregion_krylov._minimize_trust_krylov'),
         ),
         'root': (
             ('hybr', 'scipy.optimize.minpack._root_hybr'),

@@ -19,9 +19,13 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
-from scipy.optimize._minimize import MINIMIZE_METHODS
+from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
+from scipy.optimize._linprog import LINPROG_METHODS
+from scipy.optimize._root import ROOT_METHODS
+from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
+from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction
-from scipy.optimize.optimize import MemoizeJac
+from scipy.optimize.optimize import MemoizeJac, show_options
 
 
 def test_check_grad():
@@ -2174,8 +2178,23 @@ def test_memoize_jac_with_bfgs(function_with_gradient):
     scalar_function.fun(x0 + 0.2)
     assert function_with_gradient.number_of_calls == 3
 
+
 def test_gh12696():
     # Test that optimize doesn't throw warning gh-12696
     with assert_no_warnings():
         optimize.fminbound(
             lambda x: np.array([x**2]), -np.pi, np.pi, disp=False)
+
+
+def test_show_options():
+    solver_methods = {
+        'minimize': MINIMIZE_METHODS,
+        'minimize_scalar': MINIMIZE_SCALAR_METHODS,
+        'root': ROOT_METHODS,
+        'root_scalar': ROOT_SCALAR_METHODS,
+        'linprog': LINPROG_METHODS,
+        'quadratic_assignment': QUADRATIC_ASSIGNMENT_METHODS,
+    }
+    for solver, methods in solver_methods.items():
+        for method in methods:
+            show_options(solver, method)
