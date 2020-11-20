@@ -526,7 +526,7 @@ class TestLaplaceasymmetric(object):
         pdf2 = stats.laplace.pdf(points)
         assert_almost_equal(pdf1, pdf2)
 
-    def test_asymmetric_laplace(self):
+    def test_asymmetric_laplace_pdf(self):
         # test assymetric Laplace
         points = np.array([1, 2, 3])
         kappa = 2
@@ -534,6 +534,17 @@ class TestLaplaceasymmetric(object):
         pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
         pdf2 = stats.laplace_asymmetric.pdf(points*(kappa**2), kapinv)
         assert_almost_equal(pdf1, pdf2)
+
+    def test_asymmetric_laplace_log_10_16(self):
+        # test assymetric Laplace
+        points = np.array([-np.log(16), np.log(10)])
+        kappa = 2
+        kapinv = 1/kappa
+        pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
+        cdf1 = stats.laplace_asymmetric.cdf(points, kappa)
+        pdf2 = np.array([1/10, 1/250])
+        cdf2 = np.array([1/5, 1 - 1/500])
+        assert_almost_equal(np.concatenate((pdf1, cdf1)), np.concatenate((pdf1, cdf1)))
 
 class TestTruncnorm(object):
     def setup_method(self):

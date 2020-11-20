@@ -4104,7 +4104,10 @@ class laplace_asymmetric_gen(rv_continuous):
 
     References
     ----------
-    .. [1] Kozubowski TJ and Podg\'orski K. A Multivariate and
+    .. [1] "Asymmetric Laplace distribution", Wikipedia
+            https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
+
+    .. [2] Kozubowski TJ and Podg\'orski K. A Multivariate and
            Asymmetric Generalization of Laplace Distribution,
            Computational Statistics 15, 531--540 (2000).
            :doi:`10.1007/PL00022717`
@@ -4112,19 +4115,12 @@ class laplace_asymmetric_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, kappa, size=None, random_state=None):
-        kapinv = 1/kappa
-        u = -kappa + (kappa+kapinv)*random_state.uniform(size=size)
-        return -np.where(u >= 0,
-            kapinv*np.log1p(-u*kappa),
-            -kappa*np.log1p(u*kapinv))
-
     def _pdf(self, x, kappa):
         return np.exp(self._logpdf(x, kappa))
 
     def _logpdf(self, x, kappa):
         kapinv = 1/kappa
-        lPx = np.where(x >= 0, -x*kappa, x*kapinv)
+        lPx = x * np.where(x >= 0, -kappa, kapinv)
         lPx -= np.log(kappa+kapinv)
         return lPx
 
@@ -4132,8 +4128,8 @@ class laplace_asymmetric_gen(rv_continuous):
         kapinv = 1/kappa
         kappkapinv = kappa+kapinv
         return np.where(x >= 0,
-            1-np.exp(-x*kappa)*(kapinv/kappkapinv),
-            np.exp(x*kapinv)*(kappa/kappkapinv))
+                        1 - np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        np.exp(x*kapinv)*(kappa/kappkapinv))
 
     def _sf(self, x, kappa):
         kapinv = 1/kappa
@@ -4146,15 +4142,15 @@ class laplace_asymmetric_gen(rv_continuous):
         kapinv = 1/kappa
         kappkapinv = kappa+kapinv
         return np.where(q >= kappa/kappkapinv,
-            -np.log((1-q)*kappkapinv*kappa)*kapinv,
-            np.log(q*kappkapinv/kappa)*kappa)
+                        -np.log((1 - q)*kappkapinv*kappa)*kapinv,
+                        np.log(q*kappkapinv/kappa)*kappa)
 
     def _isf(self, q, kappa):
         kapinv = 1/kappa
         kappkapinv = kappa+kapinv
         return np.where(q <= kapinv/kappkapinv,
-            -np.log(q*kappkapinv*kappa)*kapinv,
-            np.log((1-q)*kappkapinv/kappa)*kappa)
+                        -np.log(q*kappkapinv*kappa)*kapinv,
+                        np.log((1 - q)*kappkapinv/kappa)*kappa)
     
     def _stats(self, kappa):
         kapinv = 1/kappa
