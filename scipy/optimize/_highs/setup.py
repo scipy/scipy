@@ -13,6 +13,14 @@ def pre_build_hook(build_ext, ext):
     if std_flag is not None:
         ext.extra_compile_args.append(std_flag)
 
+def basiclu_pre_build_hook(build_clib, build_info):
+    from scipy._build_utils.compiler_helper import get_c_std_flag
+    c_flag = get_c_std_flag(build_clib.compiler)
+    if c_flag is not None:
+        if 'extra_compiler_args' not in build_info:
+            build_info['extra_compiler_args'] = []
+        build_info['extra_compiler_args'].append(c_flag)
+
 def _get_sources(CMakeLists, start_token, end_token):
     # Read in sources from CMakeLists.txt
     CMakeLists = pathlib.Path(__file__).parent / CMakeLists
@@ -90,6 +98,7 @@ def configuration(parent_package='', top_path=None):
         ],
         language='c',
         macros=DEFINE_MACROS,
+        _pre_build_hook=basiclu_pre_build_hook,
     )
 
     # highs_wrapper:
