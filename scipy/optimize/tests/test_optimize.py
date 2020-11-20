@@ -2197,4 +2197,6 @@ def test_show_options():
     }
     for solver, methods in solver_methods.items():
         for method in methods:
+            # testing that `show_options` works without error
             show_options(solver, method)
+            
