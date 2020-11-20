@@ -2199,4 +2199,12 @@ def test_show_options():
         for method in methods:
             # testing that `show_options` works without error
             show_options(solver, method)
-            
+
+    unknown_solver_method = {
+        'minimize': "ekki",  # unknown method
+        'maximize': "cg",  # unknown solver
+        'maximize': "ekki",  # unknown solver and method
+    }
+    for solver, method in unknown_solver_method.items():
+        # testing that `show_options` raises ValueError
+        assert_raises(ValueError, show_options, solver, method)
