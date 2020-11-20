@@ -277,7 +277,7 @@ class TestConstructUtils(object):
                 expected = np.kron(a, b)
                 for fmt in sparse_formats:
                     result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
-                    assert_equal(result_s.format, fmt)
+                    assert_equal(result.format, fmt)
                     assert_array_equal(result.todense(), expected)
 
     def test_kron_large(self):
