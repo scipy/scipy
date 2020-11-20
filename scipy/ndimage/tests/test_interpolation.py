@@ -1113,8 +1113,7 @@ class TestNdimageInterpolation:
     @pytest.mark.parametrize('shape', [(2, 3), (4, 4)])
     @pytest.mark.parametrize('zoom', [(1, 1), (3, 5), (8, 2), (8, 8)])
     @pytest.mark.parametrize('mode', ['nearest', 'reflect', 'mirror',
-                                      'grid-wrap', 'grid-mirror',
-                                      'grid-constant'])
+                                      'grid-wrap', 'grid-constant'])
     def test_zoom_grid_by_int_order0(self, shape, zoom, mode):
         # When grid_mode is True,  order 0 zoom should be the same as
         # replication via numpy.kron. The only exceptions to this are the

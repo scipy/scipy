@@ -789,8 +789,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
             )
     mode = _ni_support._extend_mode_to_code(mode)
 
-    zoom_div = numpy.array(output_shape, float)
-    zoom_nominator = numpy.array(input.shape, float)
+    zoom_div = numpy.array(output_shape)
+    zoom_nominator = numpy.array(input.shape)
     if not grid_mode:
         zoom_div -= 1
         zoom_nominator -= 1
