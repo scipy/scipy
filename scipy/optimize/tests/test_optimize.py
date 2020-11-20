@@ -2208,3 +2208,4 @@ def test_show_options():
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
         assert_raises(ValueError, show_options, solver, method)
+        
