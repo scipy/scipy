@@ -705,7 +705,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         False, but length 5 when `grid_mode` is True. See the following
         visual illustration:
 
-        .. code-block:: none
+        .. code-block:: text
 
                 | pixel 1 | pixel 2 | pixel 3 | pixel 4 | pixel 5 |
                      |<-------------------------------------->|
