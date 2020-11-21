@@ -3,13 +3,6 @@
 
 #include "Python.h"
 
-#if PY_VERSION_HEX >= 0x03000000
-    #define PyString_AsString PyBytes_AsString
-    #define PyString_FromFormat PyBytes_FromFormat
-#endif
-
-#include "numpy/noprefix.h"
-
 #define BOUNDARY_MASK 12
 #define OUTSIZE_MASK 3
 #define FLIP_MASK  16
@@ -39,7 +32,7 @@ typedef struct {
 
 typedef struct {
   char *data;
-  intp numels;
+  npy_intp numels;
   int elsize;
   char *zero;        /* Pointer to Representation of zero */
 } Generic_Vector;
@@ -47,13 +40,15 @@ typedef struct {
 typedef struct {
   char *data;
   int  nd;
-  intp  *dimensions;
+  npy_intp  *dimensions;
   int  elsize;
-  intp  *strides;
+  npy_intp  *strides;
   char *zero;         /* Pointer to Representation of zero */
 } Generic_Array;
 
-typedef void (MultAddFunction) (char *, intp, char *, intp, char *, intp *, intp *, int, intp, int, intp *, intp *, uintp *);
+typedef void (MultAddFunction) (char *, npy_intp, char *, npy_intp, char *,
+                                npy_intp *, npy_intp *, int, npy_intp, int,
+                                npy_intp *, npy_intp *, npy_uintp *);
 
 PyObject*
 scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args);

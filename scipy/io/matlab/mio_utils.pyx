@@ -6,24 +6,16 @@ import numpy as np
 cimport numpy as cnp
 
 
-def cproduct(tup):
-    cdef size_t res = 1
-    cdef int i
-    for i in range(len(tup)):
-        res *= tup[i]
-    return res
-
-
 cpdef object squeeze_element(cnp.ndarray arr):
     ''' Return squeezed element
 
     The returned object may not be an ndarray - for example if we do
     ``arr.item`` to return a ``mat_struct`` object from a struct array '''
     if not arr.size:
-        return np.array([])
-    arr2 = np.squeeze(arr)
+        return np.array([], dtype=arr.dtype)
+    cdef cnp.ndarray arr2 = np.squeeze(arr)
     # We want to squeeze 0d arrays, unless they are record arrays
-    if (not arr2.shape) and arr2.dtype.kind != 'V':
+    if arr2.ndim == 0 and arr2.dtype.kind != 'V':
         return arr2.item()
     return arr2
 

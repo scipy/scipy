@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file slaqgs.c
  * \brief Equlibrates a general sprase matrix
@@ -103,7 +113,7 @@ slaqgs(SuperMatrix *A, float *r, float *c,
     Aval = Astore->nzval;
     
     /* Initialize LARGE and SMALL. */
-    small = slamch_("Safe minimum") / slamch_("Precision");
+    small = smach("Safe minimum") / smach("Precision");
     large = 1. / small;
 
     if (rowcnd >= THRESH && amax >= small && amax <= large) {

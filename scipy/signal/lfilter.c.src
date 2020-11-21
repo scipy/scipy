@@ -5,38 +5,34 @@
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
-#include <numpy/noprefix.h>
-#include <numpy/npy_3kcompat.h>
-
-#if PY_VERSION_HEX >= 0x03000000
-#define PyNumber_Divide PyNumber_TrueDivide
-#endif
+#include <numpy/ndarrayobject.h>
 
 #include "sigtools.h"
 
 static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-                       intp len_b, uintp len_x, intp stride_X,
-                       intp stride_Y);
+                       npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                       npy_intp stride_Y);
 static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y);
 static void EXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y);
 static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y);
 static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-                         intp len_b, uintp len_x, intp stride_X,
-                         intp stride_Y);
+                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                         npy_intp stride_Y);
 static void CEXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                         intp len_b, uintp len_x, intp stride_X,
-                         intp stride_Y);
+                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                         npy_intp stride_Y);
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y);
 
-typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
+typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *,
+                                    npy_intp, npy_uintp, npy_intp, npy_intp);
 
 static BasicFilterFunction *BasicFilterFunctions[256];
 
@@ -65,24 +61,25 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           BasicFilterFunction * filter_func);
 
 PyObject*
-convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, intp val)
+convert_shape_to_errmsg(npy_intp ndim, npy_intp *Xshape, npy_intp *Vishape,
+                        npy_intp theaxis, npy_intp val)
 {
-    intp j, expect_size;
+    npy_intp j, expect_size;
     PyObject *msg, *tmp, *msg1, *tmp1;
 
     if (ndim == 1) {
-        msg = PyUString_FromFormat("Unexpected shape for zi: expected (%"   \
+        msg = PyUnicode_FromFormat("Unexpected shape for zi: expected (%"   \
                                     NPY_INTP_FMT ",), found (%" NPY_INTP_FMT \
                                     ",).", val, Vishape[0]);
         return msg;
     }
 
-    msg = PyUString_FromString("Unexpected shape for zi:  expected (");
+    msg = PyUnicode_FromString("Unexpected shape for zi:  expected (");
     if (!msg) {
         return 0;
     }
 
-    msg1 = PyUString_FromString("), found (");
+    msg1 = PyUnicode_FromString("), found (");
     if (!msg1) {
         Py_DECREF(msg);
         return 0;
@@ -92,11 +89,11 @@ convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, in
         expect_size = j != theaxis ? Xshape[j] : val;
 
         if (j == ndim - 1) {
-            tmp = PyUString_FromFormat("%" NPY_INTP_FMT, expect_size);
-            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
+            tmp = PyUnicode_FromFormat("%" NPY_INTP_FMT, expect_size);
+            tmp1 = PyUnicode_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
         } else {
-            tmp = PyUString_FromFormat("%" NPY_INTP_FMT ",", expect_size);
-            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
+            tmp = PyUnicode_FromFormat("%" NPY_INTP_FMT ",", expect_size);
+            tmp1 = PyUnicode_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
         }
         if (!tmp) {
             Py_DECREF(msg);
@@ -110,16 +107,21 @@ convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, in
             Py_DECREF(tmp);
             return 0;
         }
-        PyUString_ConcatAndDel(&msg, tmp);
-        PyUString_ConcatAndDel(&msg1, tmp1);
+        Py_SETREF(msg, PyUnicode_Concat(msg, tmp));
+        Py_SETREF(msg1, PyUnicode_Concat(msg1, tmp1));
+        Py_DECREF(tmp);
+        Py_DECREF(tmp1);
     }
-    tmp = PyUString_FromString(").");
+    tmp = PyUnicode_FromString(").");
     if (!tmp) {
         Py_DECREF(msg);
         Py_DECREF(msg1);
+        return 0;
     }
-    PyUString_ConcatAndDel(&msg1, tmp);
-    PyUString_ConcatAndDel(&msg, msg1);
+    Py_SETREF(msg1, PyUnicode_Concat(msg1, tmp));
+    Py_SETREF(msg, PyUnicode_Concat(msg, msg1));
+    Py_DECREF(tmp);
+    Py_DECREF(msg1);
     return msg;
 }
 
@@ -133,8 +135,8 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
     int axis, typenum, theaxis, st, Vi_needs_broadcasted = 0;
     char *ara_ptr, input_flag = 0, *azero;
-    intp na, nb, nal, zi_size;
-    intp zf_shape[NPY_MAXDIMS];
+    npy_intp na, nb, nal, zi_size;
+    npy_intp zf_shape[NPY_MAXDIMS];
     BasicFilterFunction *basic_filter;
 
     axis = -1;
@@ -156,6 +158,8 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     arX = (PyArrayObject *) PyArray_FromObject(X, typenum, 0, 0);
     /* XXX: fix failure handling here */
     if (ara == NULL || arb == NULL || arX == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "could not convert b, a, and x to a common type");
         goto fail;
     }
 
@@ -187,15 +191,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     }
     if (basic_filter == NULL) {
         PyObject *msg, *str;
-        char *s;
 
         str = PyObject_Str((PyObject*)PyArray_DESCR(arX));
         if (str == NULL) {
             goto fail;
         }
-        s = PyString_AsString(str);
-        msg = PyString_FromFormat(
-                        "input type '%s' not supported\n", s);
+        msg = PyUnicode_FromFormat(
+                        "input type '%U' not supported\n", str);
         Py_DECREF(str);
         if (msg == NULL) {
             goto fail;
@@ -224,7 +226,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     nb = PyArray_SIZE(arb);
     zi_size = (na > nb ? na : nb) - 1;
     if (input_flag) {
-        intp k, Vik, Xk;
+        npy_intp k, Vik, Xk;
         for (k = 0; k < PyArray_NDIM(arX); ++k) {
             Vik = PyArray_DIM(arVi, k);
             Xk = PyArray_DIM(arX, k);
@@ -232,7 +234,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 zf_shape[k] = zi_size;
             } else if (k != theaxis && Vik == Xk) {
                 zf_shape[k] = Xk;
-            } else if (k != theaxis && Vik == 1) { 
+            } else if (k != theaxis && Vik == 1) {
                 zf_shape[k] = Xk;
                 Vi_needs_broadcasted = 1;
             } else {
@@ -247,7 +249,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 goto fail;
             }
         }
-        
+
         if (Vi_needs_broadcasted) {
             /* Expand the singleton dimensions of arVi without copying by
              * creating a new view of arVi with the expanded dimensions
@@ -268,13 +270,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                     strides[k] = arVi_strides[k];
                 }
             }
-            
+
             /* PyArray_DESCR borrows a reference, but it will be stolen
              * by PyArray_NewFromDescr below, so increment it.
              */
             view_dtype = PyArray_DESCR(arVi);
             Py_INCREF(view_dtype);
-            
+
             arVi_view = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type,
                             view_dtype, ndim, zf_shape, strides,
                             PyArray_BYTES(arVi), 0, NULL);
@@ -283,7 +285,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             }
             /* Give our reference to arVi to arVi_view */
 #if NPY_API_VERSION >= 0x00000007
-            if (PyArray_SetBaseObject(arVi_view, arVi) == -1) {
+            if (PyArray_SetBaseObject(arVi_view, (PyObject *)arVi) == -1) {
                 Py_DECREF(arVi_view);
                 goto fail;
             }
@@ -300,7 +302,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             goto fail;
         }
     }
-    
+
     arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
                                               PyArray_DIMS(arX), typenum);
     if (arY == NULL) {
@@ -336,14 +338,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 }
 
 /*
- * Copy the first nxzfilled items of x into xzfilled , and fill the rest with
- * 0s
+ * Copy the first nx items of x into xzfilled , and fill the rest with 0s
  */
 static int
-zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
+zfill(const PyArrayObject * x, npy_intp nx, char *xzfilled, npy_intp nxzfilled)
 {
     char *xzero;
-    intp i, nxl;
+    npy_intp i, nxl;
     PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
     nxl = PyArray_ITEMSIZE(x);
@@ -355,7 +356,7 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
     if (nx > 0) {
         for (i = 0; i < nx; ++i) {
             copyswap(xzfilled + i * nxl,
-                     PyArray_DATA((PyArrayObject *)x) + i * nxl,
+                     (char *)PyArray_DATA((PyArrayObject *)x) + i * nxl,
                      0, NULL);
         }
     }
@@ -384,9 +385,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           BasicFilterFunction * filter_func)
 {
     PyArrayIterObject *itx, *ity, *itzi = NULL, *itzf = NULL;
-    intp nitx, i, nxl, nzfl, j;
-    intp na, nb, nal, nbl;
-    intp nfilt;
+    npy_intp nitx, i, nxl, nzfl, j;
+    npy_intp na, nb, nal, nbl;
+    npy_intp nfilt;
     char *azfilled, *bzfilled, *zfzfilled, *yoyo;
     PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
@@ -483,9 +484,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
                     itx->dataptr, ity->dataptr, zfzfilled,
                     nfilt, PyArray_DIM(x, axis), itx->strides[axis],
                     ity->strides[axis]);
-    
+
         if (PyErr_Occurred()) {
-            goto clean_zfzfilled; 
+            goto clean_zfzfilled;
         }
         PyArray_ITER_NEXT(itx);
         PyArray_ITER_NEXT(ity);
@@ -547,16 +548,24 @@ fail:
  * #NAME = FLOAT, DOUBLE, EXTENDED#
  */
 static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
-                       intp len_b, uintp len_x, intp stride_X,
-                       intp stride_Y)
+                       npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                       npy_intp stride_Y)
 {
+    Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z, *ptr_b;
-    @type@ *ptr_a;
+    @type@ *ptr_Z;
+    @type@ *ptr_b = (@type@*)b;
+    @type@ *ptr_a = (@type@*)a;
     @type@ *xn, *yn;
     const @type@ a0 = *((@type@ *) a);
-    intp n;
-    uintp k;
+    npy_intp n;
+    npy_uintp k;
+
+    /* normalize the filter coefs only once. */
+    for (n = 0; n < len_b; ++n) {
+        ptr_b[n] /= a0;
+        ptr_a[n] /= a0;
+    }
 
     for (k = 0; k < len_x; k++) {
         ptr_b = (@type@ *) b;   /* Reset a and b pointers */
@@ -565,32 +574,34 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
         yn = (@type@ *) ptr_y;
         if (len_b > 1) {
             ptr_Z = ((@type@ *) Z);
-            *yn = *ptr_Z + *ptr_b / a0 * *xn;   /* Calculate first delay (output) */
+            *yn = *ptr_Z + *ptr_b  * *xn;   /* Calculate first delay (output) */
             ptr_b++;
             ptr_a++;
             /* Fill in middle delays */
             for (n = 0; n < len_b - 2; n++) {
                 *ptr_Z =
-                    ptr_Z[1] + *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+                    ptr_Z[1] + *xn * (*ptr_b) - *yn * (*ptr_a);
                 ptr_b++;
                 ptr_a++;
                 ptr_Z++;
             }
             /* Calculate last delay */
-            *ptr_Z = *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+            *ptr_Z = *xn * (*ptr_b) - *yn * (*ptr_a);
         } else {
-            *yn = *xn * (*ptr_b / a0);
+            *yn = *xn * (*ptr_b);
         }
 
         ptr_y += stride_Y;      /* Move to next input/output point */
         ptr_x += stride_X;
     }
+    Py_END_ALLOW_THREADS
 }
 
 static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y)
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y)
 {
+    Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
     @type@ *ptr_Z, *ptr_b;
     @type@ *ptr_a;
@@ -598,8 +609,8 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     @type@ a0r = ((@type@ *) a)[0];
     @type@ a0i = ((@type@ *) a)[1];
     @type@ a0_mag, tmpr, tmpi;
-    intp n;
-    uintp k;
+    npy_intp n;
+    npy_uintp k;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
@@ -653,12 +664,13 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
         ptr_x += stride_X;
 
     }
+    Py_END_ALLOW_THREADS
 }
 /**end repeat**/
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y)
+                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                        npy_intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
     PyObject **ptr_Z, **ptr_b;
@@ -666,8 +678,8 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
     PyObject **xn, **yn;
     PyObject **a0 = (PyObject **) a;
     PyObject *tmp1, *tmp2, *tmp3;
-    intp n;
-    uintp k;
+    npy_intp n;
+    npy_uintp k;
 
     /* My reference counting might not be right */
     for (k = 0; k < len_x; k++) {
@@ -680,7 +692,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             /* Calculate first delay (output) */
             tmp1 = PyNumber_Multiply(*ptr_b, *xn);
             if (tmp1 == NULL) return;
-            tmp2 = PyNumber_Divide(tmp1, *a0);
+            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
             if (tmp2 == NULL) {
                 Py_DECREF(tmp1);
                 return;
@@ -693,12 +705,12 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             if (tmp3 == NULL) return;
             ptr_b++;
             ptr_a++;
-            
+
             /* Fill in middle delays */
             for (n = 0; n < len_b - 2; n++) {
                 tmp1 = PyNumber_Multiply(*xn, *ptr_b);
                 if (tmp1 == NULL) return;
-                tmp2 = PyNumber_Divide(tmp1, *a0);
+                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
                 if (tmp2 == NULL) {
                     Py_DECREF(tmp1);
                     return;
@@ -712,7 +724,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                     Py_DECREF(tmp3);
                     return;
                 }
-                tmp2 = PyNumber_Divide(tmp1, *a0);
+                tmp2 = PyNumber_TrueDivide(tmp1, *a0);
                 Py_DECREF(tmp1);
                 if (tmp2 == NULL) {
                     Py_DECREF(tmp3);
@@ -730,7 +742,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             /* Calculate last delay */
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
             if (tmp1 == NULL) return;
-            tmp3 = PyNumber_Divide(tmp1, *a0);
+            tmp3 = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (tmp3 == NULL) return;
             tmp1 = PyNumber_Multiply(*yn, *ptr_a);
@@ -738,7 +750,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                 Py_DECREF(tmp3);
                 return;
             }
-            tmp2 = PyNumber_Divide(tmp1, *a0);
+            tmp2 = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (tmp2 == NULL) {
                 Py_DECREF(tmp3);
@@ -752,7 +764,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
             tmp1 = PyNumber_Multiply(*xn, *ptr_b);
             if (tmp1 == NULL) return;
             Py_XDECREF(*yn);
-            *yn = PyNumber_Divide(tmp1, *a0);
+            *yn = PyNumber_TrueDivide(tmp1, *a0);
             Py_DECREF(tmp1);
             if (*yn == NULL) return;
         }

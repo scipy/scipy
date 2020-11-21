@@ -1,16 +1,17 @@
 """test sparse matrix construction functions"""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy import array, matrix
-from numpy.testing import (TestCase, run_module_suite, assert_equal, assert_,
-        assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
+from numpy import array
+from numpy.testing import (assert_equal, assert_,
+        assert_array_equal, assert_array_almost_equal_nulp)
+import pytest
+from pytest import raises as assert_raises
+from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import check_random_state
 
-from scipy.sparse import csr_matrix, coo_matrix
-
-from scipy.sparse import construct
+from scipy.sparse import csr_matrix, coo_matrix, construct
 from scipy.sparse.construct import rand as sprand
+from scipy.sparse.sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
@@ -19,16 +20,13 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     # Helper function for testing.
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
-        random_state = np.random.RandomState(random_state)
-    data_rvs = random_state.randn
+    random_state = check_random_state(random_state)
+    data_rvs = random_state.standard_normal
     return construct.random(m, n, density, format, dtype,
                             random_state, data_rvs)
 
 
-class TestConstructUtils(TestCase):
+class TestConstructUtils(object):
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -91,7 +89,20 @@ class TestConstructUtils(TestCase):
         cases.append(([a[:1]],[-1], (2, 2), [[0,0],[1,0]]))
         cases.append(([a[:3]], [0], (3, 4), [[1,0,0,0],[0,2,0,0],[0,0,3,0]]))
         cases.append(([a[:3]], [1], (3, 4), [[0,1,0,0],[0,0,2,0],[0,0,0,3]]))
+        cases.append(([a[:1]], [-2], (3, 5), [[0,0,0,0,0],[0,0,0,0,0],[1,0,0,0,0]]))
+        cases.append(([a[:2]], [-1], (3, 5), [[0,0,0,0,0],[1,0,0,0,0],[0,2,0,0,0]]))
+        cases.append(([a[:3]], [0], (3, 5), [[1,0,0,0,0],[0,2,0,0,0],[0,0,3,0,0]]))
+        cases.append(([a[:3]], [1], (3, 5), [[0,1,0,0,0],[0,0,2,0,0],[0,0,0,3,0]]))
         cases.append(([a[:3]], [2], (3, 5), [[0,0,1,0,0],[0,0,0,2,0],[0,0,0,0,3]]))
+        cases.append(([a[:2]], [3], (3, 5), [[0,0,0,1,0],[0,0,0,0,2],[0,0,0,0,0]]))
+        cases.append(([a[:1]], [4], (3, 5), [[0,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0]]))
+        cases.append(([a[:1]], [-4], (5, 3), [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[1,0,0]]))
+        cases.append(([a[:2]], [-3], (5, 3), [[0,0,0],[0,0,0],[0,0,0],[1,0,0],[0,2,0]]))
+        cases.append(([a[:3]], [-2], (5, 3), [[0,0,0],[0,0,0],[1,0,0],[0,2,0],[0,0,3]]))
+        cases.append(([a[:3]], [-1], (5, 3), [[0,0,0],[1,0,0],[0,2,0],[0,0,3],[0,0,0]]))
+        cases.append(([a[:3]], [0], (5, 3), [[1,0,0],[0,2,0],[0,0,3],[0,0,0],[0,0,0]]))
+        cases.append(([a[:2]], [1], (5, 3), [[0,1,0],[0,0,2],[0,0,0],[0,0,0],[0,0,0]]))
+        cases.append(([a[:1]], [2], (5, 3), [[0,0,1],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]))
 
         cases.append(([a[:3],b[:1]], [0,2], (3, 3), [[1,0,6],[0,2,0],[0,0,3]]))
         cases.append(([a[:2],b[:3]], [-1,0], (3, 4), [[6,0,0,0],[1,7,0,0],[0,2,8,0]]))
@@ -114,22 +125,33 @@ class TestConstructUtils(TestCase):
                                                           [1, 0, 0,14, 0],
                                                           [0, 2, 0, 0,15]]))
 
+        # too long arrays are OK
+        cases.append(([a], [0], (1, 1), [[1]]))
+        cases.append(([a[:3],b], [0,2], (3, 3), [[1, 0, 6], [0, 2, 0], [0, 0, 3]]))
+        cases.append((np.array([[1, 2, 3], [4, 5, 6]]), [0,-1], (3, 3), [[1, 0, 0], [4, 2, 0], [0, 5, 3]]))
+
         # scalar case: broadcasting
         cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
                                                     [1, -2, 1],
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            try:
-                assert_equal(construct.diags(d, o, shape=shape).todense(),
-                             result)
+            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            assert_equal(construct.diags(d, o, shape=shape).todense(),
+                         result, err_msg=err_msg)
 
-                if shape[0] == shape[1] and hasattr(d[0], '__len__'):
-                    # should be able to find the shape automatically
-                    assert_equal(construct.diags(d, o).todense(), result)
-            except:
-                print("%r %r %r" % (d, o, shape))
-                raise
+            if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
+                # should be able to find the shape automatically
+                assert_equal(construct.diags(d, o).todense(), result,
+                             err_msg=err_msg)
+
+    def test_diags_default(self):
+        a = array([1, 2, 3, 4, 5])
+        assert_equal(construct.diags(a).todense(), np.diag(a))
+
+    def test_diags_default_bad(self):
+        a = array([[1, 2, 3, 4, 5], [2, 3, 4, 5, 6]])
+        assert_raises(ValueError, construct.diags, a)
 
     def test_diags_bad(self):
         a = array([1, 2, 3, 4, 5])
@@ -138,22 +160,15 @@ class TestConstructUtils(TestCase):
 
         cases = []
         cases.append(([a[:0]], 0, (1, 1)))
-        cases.append(([a], [0], (1, 1)))
-        cases.append(([a[:3],b], [0,2], (3, 3)))
         cases.append(([a[:4],b,c[:3]], [-1,0,1], (5, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], None))
         cases.append(([], [-4,2,-1], None))
-        cases.append(([1], [-4], (4, 4)))
-        cases.append(([a[:0]], [-1], (1, 2)))
+        cases.append(([1], [-5], (4, 4)))
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            try:
-                assert_raises(ValueError, construct.diags, d, o, shape)
-            except:
-                print("%r %r %r" % (d, o, shape))
-                raise
+            assert_raises(ValueError, construct.diags, d, o, shape)
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
 
@@ -194,6 +209,10 @@ class TestConstructUtils(TestCase):
         for k in range(-5, 6):
             assert_equal(construct.diags(d, k).toarray(),
                          construct.diags([d], [k]).toarray())
+
+    def test_diags_empty(self):
+        x = construct.diags([])
+        assert_equal(x.shape, (0, 0))
 
     def test_identity(self):
         assert_equal(construct.identity(1).toarray(), [[1]])
@@ -255,9 +274,19 @@ class TestConstructUtils(TestCase):
 
         for a in cases:
             for b in cases:
-                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = np.kron(a,b)
-                assert_array_equal(result,expected)
+                expected = np.kron(a, b)
+                for fmt in sparse_formats:
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    assert_equal(result.format, fmt)
+                    assert_array_equal(result.todense(), expected)
+
+    def test_kron_large(self):
+        n = 2**16
+        a = construct.eye(1, n, n-1)
+        b = construct.eye(n, 1, 1-n)
+
+        construct.kron(a, a)
+        construct.kron(b, b)
 
     def test_kronsum(self):
         cases = []
@@ -292,6 +321,10 @@ class TestConstructUtils(TestCase):
                      expected)
         assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
                      np.float32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indices.dtype, np.int32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indptr.dtype, np.int32)
 
     def test_hstack(self):
 
@@ -312,6 +345,7 @@ class TestConstructUtils(TestCase):
         A = coo_matrix([[1,2],[3,4]])
         B = coo_matrix([[5],[6]])
         C = coo_matrix([[7]])
+        D = coo_matrix((0,0))
 
         expected = matrix([[1, 2, 5],
                            [3, 4, 6],
@@ -328,7 +362,37 @@ class TestConstructUtils(TestCase):
                            [7, 0]])
         assert_equal(construct.bmat([[None,B],[C,None]]).todense(), expected)
 
-        #TODO test failure cases
+        expected = matrix(np.empty((0,0)))
+        assert_equal(construct.bmat([[None,None]]).todense(), expected)
+        assert_equal(construct.bmat([[None,D],[D,None]]).todense(), expected)
+
+        # test bug reported in gh-5976
+        expected = matrix([[7]])
+        assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
+
+        # test failure cases
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A], [B]])
+        excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A, C]])
+        excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_concatenate_int32_overflow(self):
+        """ test for indptr overflow when concatenating matrices """
+        check_free_memory(30000)
+
+        n = 33000
+        A = csr_matrix(np.ones((n, n), dtype=bool))
+        B = A.copy()
+        C = construct._compressed_sparse_stack((A,B), 0)
+
+        assert_(np.all(np.equal(np.diff(C.indptr), n)))
+        assert_equal(C.indices.dtype, np.int64)
+        assert_equal(C.indptr.dtype, np.int64)
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
@@ -362,19 +426,36 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
+    def test_block_diag_sparse_matrices(self):
+        """ block_diag with sparse matrices """
+
+        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
+                               coo_matrix(([[4, 5]]), shape=(1, 2))]
+        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
+        assert_equal(block_sparse_cols_matrices.todense(),
+                     matrix([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
+
+        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
+                               coo_matrix(([[4], [5]]), shape=(2, 1))]
+        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
+        assert_equal(block_sparse_row_matrices.todense(),
+                     matrix([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
+
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
-            for t in [np.float32, np.float64, np.longdouble]:
+            for t in [np.float32, np.float64, np.longdouble,
+                      np.int32, np.int64, np.complex64, np.complex128]:
                 x = f(5, 10, density=0.1, dtype=t)
                 assert_equal(x.dtype, t)
                 assert_equal(x.shape, (5, 10))
-                assert_equal(x.nonzero()[0].size, 5)
+                assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
             assert_equal(x1.dtype, np.double)
 
-            x2 = f(5, 10, density=0.1, random_state=np.random.RandomState(4321))
+            x2 = f(5, 10, density=0.1,
+                   random_state=np.random.RandomState(4321))
 
             assert_array_equal(x1.data, x2.data)
             assert_array_equal(x1.row, x2.row)
@@ -393,7 +474,14 @@ class TestConstructUtils(TestCase):
 
     def test_rand(self):
         # Simple distributional checks for sparse.rand.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = sprand(10, 20, density=0.5, dtype=np.float64,
                        random_state=random_state)
             assert_(np.all(np.less_equal(0, x.data)))
@@ -403,12 +491,27 @@ class TestConstructUtils(TestCase):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = _sprandn(10, 20, density=0.5, dtype=np.float64,
                          random_state=random_state)
             assert_(np.any(np.less(x.data, 0)))
             assert_(np.any(np.less(1, x.data)))
 
+    def test_random_accept_str_dtype(self):
+        # anything that np.dtype can convert to a dtype should be accepted
+        # for the dtype
+        construct.random(10, 10, dtype='d')
 
-if __name__ == "__main__":
-    run_module_suite()
+    def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
+        # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
+        # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
+        sparse_matrix = construct.random(10, 10, density=0.1265)
+        assert_equal(sparse_matrix.count_nonzero(),13)
+

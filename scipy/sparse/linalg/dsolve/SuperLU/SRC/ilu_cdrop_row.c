@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ilu_cdrop_row.c
  * \brief Drop small rows from L
@@ -18,6 +28,7 @@ extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
 extern void ccopy_(int *, complex [], int *, complex [], int *);
 extern float scasum_(int *, complex *, int *);
 extern float scnrm2_(int *, complex *, int *);
+extern void scopy_(int *, float [], int *, float [], int *);
 extern double dnrm2_(int *, double [], int *);
 extern int icamax_(int *, complex [], int *);
 
@@ -64,7 +75,7 @@ int ilu_cdrop_row(
     int m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register float *temp;
-    register complex *lusup = Glu->lusup;
+    register complex *lusup = (complex *) Glu->lusup;
     register int *lsub = Glu->lsub;
     register int *xlsub = Glu->xlsub;
     register int *xlusup = Glu->xlusup;

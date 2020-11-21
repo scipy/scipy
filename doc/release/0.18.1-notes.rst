@@ -1,0 +1,48 @@
+==========================
+SciPy 0.18.1 Release Notes
+==========================
+
+SciPy 0.18.1 is a bug-fix release with no new features compared to 0.18.0.
+
+Authors
+=======
+
+* @kleskjr
+* Evgeni Burovski
+* CJ Carey
+* Luca Citi +
+* Yu Feng
+* Ralf Gommers
+* Johannes Schmitz +
+* Josh Wilson
+* Nathan Woods
+
+A total of 9 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 0.18.1
+------------------------
+
+- `#6357 <https://github.com/scipy/scipy/issues/6357>`__: scipy 0.17.1 piecewise cubic hermite interpolation does not return...
+- `#6420 <https://github.com/scipy/scipy/issues/6420>`__: circmean() changed behaviour from 0.17 to 0.18
+- `#6421 <https://github.com/scipy/scipy/issues/6421>`__: scipy.linalg.solve_banded overwrites input 'b' when the inversion...
+- `#6425 <https://github.com/scipy/scipy/issues/6425>`__: cKDTree INF bug
+- `#6435 <https://github.com/scipy/scipy/issues/6435>`__: scipy.stats.ks_2samp returns different values on different computers
+- `#6458 <https://github.com/scipy/scipy/issues/6458>`__: Error in scipy.integrate.dblquad when using variable integration...
+
+
+Pull requests for 0.18.1
+------------------------
+
+- `#6405 <https://github.com/scipy/scipy/pull/6405>`__: BUG: sparse: fix elementwise divide for CSR/CSC
+- `#6431 <https://github.com/scipy/scipy/pull/6431>`__: BUG: result for insufficient neighbours from cKDTree is wrong.
+- `#6432 <https://github.com/scipy/scipy/pull/6432>`__: BUG Issue #6421: scipy.linalg.solve_banded overwrites input 'b'...
+- `#6455 <https://github.com/scipy/scipy/pull/6455>`__: DOC: add links to release notes
+- `#6462 <https://github.com/scipy/scipy/pull/6462>`__: BUG: interpolate: fix .roots method of PchipInterpolator
+- `#6492 <https://github.com/scipy/scipy/pull/6492>`__: BUG: Fix regression in dblquad: #6458
+- `#6543 <https://github.com/scipy/scipy/pull/6543>`__: fix the regression in circmean
+- `#6545 <https://github.com/scipy/scipy/pull/6545>`__: Revert gh-5938, restore ks_2samp
+- `#6557 <https://github.com/scipy/scipy/pull/6557>`__: Backports for 0.18.1
+

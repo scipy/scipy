@@ -853,7 +853,7 @@ c
 c
       end if 
 c
-      if (type .ne. 'REGULR')
+      if (rvec .and. type .ne. 'REGULR')
      &   call dger  (n, nconv, one, resid, 1, workl(iw), 1, z, ldz)
 c
  9000 continue

@@ -4,7 +4,6 @@
  * Functions to handle arithmetic operations on NumPy Bool values.
  */
 #include <numpy/arrayobject.h>
-#include <assert.h>
 
 /*
  * A compiler time (ct) assert macro from 
@@ -14,31 +13,28 @@
 #define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
 
 class npy_bool_wrapper {
-    public:
+    private:
         char value;
-        
+
+    public:
         /* operators */
         operator char() const {
-            if(value != 0) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return value;
         }
         npy_bool_wrapper& operator=(const npy_bool_wrapper& x) {
-            value = x;
+            value = x.value;
             return (*this);
         }
         npy_bool_wrapper operator+(const npy_bool_wrapper& x) {
-            return (x || value) ? 1 : 0;
+            return value || x.value;
         }
         /* inplace operators */
         npy_bool_wrapper operator+=(const npy_bool_wrapper& x) {
-            value = (x || value) ? 1 : 0;
+            value = (value || x.value);
             return (*this);
         }
         npy_bool_wrapper operator*=(const npy_bool_wrapper& x) {
-            value = (value && x) ? 1 : 0;
+            value = (value && x.value);
             return (*this);
         }
         /* constructors */
@@ -47,7 +43,7 @@ class npy_bool_wrapper {
         }
         template <class T>
         npy_bool_wrapper(T x) {
-            value = (x) ? 1 : 0;
+            value = (x != 0);
         }
 };
 

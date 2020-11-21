@@ -1,0 +1,44 @@
+==========================
+SciPy 1.2.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.2.1 is a bug-fix release with no new features compared to 1.2.0.
+Most importantly, it solves the issue that 1.2.0 cannot be installed
+from source on Python 2.7 because of non-ascii character issues.
+
+It is also notable that SciPy 1.2.1 wheels were built with OpenBLAS
+0.3.5.dev, which may alleviate some linear algebra issues observed
+in SciPy 1.2.0.
+
+Authors
+=======
+
+* Eric Larson
+* Mark Mikofski
+* Evgeni Burovski
+* Ralf Gommers
+* Eric Moore
+* Tyler Reddy
+
+Issues closed for 1.2.1
+-----------------------
+
+* `#9606 <https://github.com/scipy/scipy/issues/9606>`__: SyntaxError: Non-ASCII character '\xe2' in file scipy/stats/_continuous_distns.py on line 3346, but no encoding declared
+* `#9608 <https://github.com/scipy/scipy/issues/9608>`__: Version 1.2.0 introduces `too many indices for array` error in...
+* `#9709 <https://github.com/scipy/scipy/issues/9709>`__: scipy.stats.gaussian_kde normalizes the weights keyword argument...
+* `#9733 <https://github.com/scipy/scipy/issues/9733>`__: scipy.linalg.qr_update gives NaN result
+* `#9724 <https://github.com/scipy/scipy/issues/9724>`__: CI: Is scipy.scipy Windows Python36-32bit-full working?
+
+Pull requests for 1.2.1
+-----------------------
+
+* `#9612 <https://github.com/scipy/scipy/pull/9612>`__: BUG: don't use array newton unless size is greater than 1
+* `#9615 <https://github.com/scipy/scipy/pull/9615>`__: ENH: Add test for encoding
+* `#9720 <https://github.com/scipy/scipy/pull/9720>`__: BUG: stats: weighted KDE does not modify the weights array
+* `#9739 <https://github.com/scipy/scipy/pull/9739>`__: BUG: qr_updates fails if u is exactly in span Q
+* `#9725 <https://github.com/scipy/scipy/pull/9725>`__: TST: pin mingw for Azure Win CI
+* `#9736 <https://github.com/scipy/scipy/pull/9736>`__: TST: adjust to vmImage dispatch in Azure
+* `#9681 <https://github.com/scipy/scipy/pull/9681>`__: BUG: Fix failing stats tests (partial backport)
+* `#9662 <https://github.com/scipy/scipy/pull/9662>`__: TST: interpolate: avoid pytest deprecations

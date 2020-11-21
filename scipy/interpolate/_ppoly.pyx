@@ -4,7 +4,6 @@ local power basis.
 
 """
 
-from .polyint import _Interpolator1D
 import numpy as np
 
 cimport cython
@@ -12,20 +11,18 @@ cimport cython
 cimport libc.stdlib
 cimport libc.math
 
+from scipy.linalg.cython_lapack cimport dgeev
+
 ctypedef double complex double_complex
 
 ctypedef fused double_or_complex:
     double
     double complex
 
-cdef extern from "blas_defs.h":
-    void c_dgeev(char *jobvl, char *jobvr, int *n, double *a,
-                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
-                 double *vr, int *ldvr, double *work, int *lwork,
-                 int *info)
-
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
+
+DEF MAX_DIMS = 64
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
@@ -35,10 +32,10 @@ cdef extern from "numpy/npy_math.h":
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate(double_or_complex[:,:,::1] c,
-             double[::1] x,
-             double[::1] xp,
+             const double[::1] x,
+             const double[::1] xp,
              int dx,
-             int extrapolate,
+             bint extrapolate,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial.
@@ -50,21 +47,20 @@ def evaluate(double_or_complex[:,:,::1] c,
         There are `n` polynomials in each interval.
         Coefficient of highest order-term comes first.
     x : ndarray, shape (m+1,)
-        Breakpoints of polynomials
+        Breakpoints of polynomials.
     xp : ndarray, shape (r,)
         Points to evaluate the piecewise polynomial at.
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+    extrapolate : bint
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
         This argument is modified in-place.
 
     """
-
     cdef int ip, jp
     cdef int interval
     cdef double xval
@@ -81,14 +77,20 @@ def evaluate(double_or_complex[:,:,::1] c,
     if c.shape[1] != x.shape[0] - 1:
         raise ValueError("x and c have incompatible shapes")
 
-    # evaluate
     interval = 0
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
+    # Evaluate.
     for ip in range(len(xp)):
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(x, xval, interval, extrapolate)
+        if ascending:
+            i = find_interval_ascending(&x[0], x.shape[0], xval, interval,
+                                        extrapolate)
+        else:
+            i = find_interval_descending(&x[0], x.shape[0], xval, interval,
+                                         extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
@@ -99,7 +101,162 @@ def evaluate(double_or_complex[:,:,::1] c,
 
         # Evaluate the local polynomial(s)
         for jp in range(c.shape[2]):
-            out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval, jp, dx)
+            out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval,
+                                         jp, dx)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def evaluate_nd(double_or_complex[:,:,::1] c,
+                tuple xs,
+                int[:] ks,
+                double[:,:] xp,
+                int[:] dx,
+                int extrapolate,
+                double_or_complex[:,::1] out):
+    """
+    Evaluate a piecewise tensor-product polynomial.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k_1*...*k_d, m_1*...*m_d, n)
+        Coefficients local polynomials of order `k-1` in
+        `m_1`, ..., `m_d` intervals. There are `n` polynomials
+        in each interval.
+    ks : ndarray of int, shape (d,)
+        Orders of polynomials in each dimension
+    xs : d-tuple of ndarray of shape (m_d+1,) each
+        Breakpoints of polynomials
+    xp : ndarray, shape (r, d)
+        Points to evaluate the piecewise polynomial at.
+    dx : ndarray of int, shape (d,)
+        Orders of derivative to evaluate.  The derivative is evaluated
+        piecewise and may have discontinuities.
+    extrapolate : int, optional
+        Whether to extrapolate to out-of-bounds points based on first
+        and last intervals, or to return NaNs.
+    out : ndarray, shape (r, n)
+        Value of each polynomial at each of the input points.
+        For points outside the span ``x[0] ... x[-1]``,
+        ``nan`` is returned.
+        This argument is modified in-place.
+
+    """
+    cdef size_t ntot
+    cdef ssize_t strides[MAX_DIMS]
+    cdef ssize_t kstrides[MAX_DIMS]
+    cdef double* xx[MAX_DIMS]
+    cdef size_t nxx[MAX_DIMS]
+    cdef double[::1] y
+    cdef double_or_complex[:,:,::1] c2
+    cdef int ip, jp, k, ndim
+    cdef int interval[MAX_DIMS]
+    cdef int pos, kpos, koutpos
+    cdef int out_of_range
+    cdef double xval
+
+    ndim = len(xs)
+
+    if ndim > MAX_DIMS:
+        raise ValueError("Too many dimensions (maximum: %d)" % (MAX_DIMS,))
+
+    # shape checks
+    if dx.shape[0] != ndim:
+        raise ValueError("dx has incompatible shape")
+    if xp.shape[1] != ndim:
+        raise ValueError("xp has incompatible shape")
+    if out.shape[0] != xp.shape[0]:
+        raise ValueError("out and xp have incompatible shapes")
+    if out.shape[1] != c.shape[2]:
+        raise ValueError("out and c have incompatible shapes")
+
+    # compute interval strides
+    ntot = 1
+    for ip in range(ndim-1, -1, -1):
+        if dx[ip] < 0:
+            raise ValueError("Order of derivative cannot be negative")
+
+        y = xs[ip]
+        if y.shape[0] < 2:
+            raise ValueError("each dimension must have >= 2 points")
+
+        strides[ip] = ntot
+        ntot *= y.shape[0] - 1
+
+        # grab array pointers
+        nxx[ip] = y.shape[0]
+        xx[ip] = <double*>&y[0]
+        y = None
+
+    if c.shape[1] != ntot:
+        raise ValueError("xs and c have incompatible shapes")
+
+    # compute order strides
+    ntot = 1
+    for ip in range(ndim):
+        kstrides[ip] = ntot
+        ntot *= ks[ip]
+
+    if c.shape[0] != ntot:
+        raise ValueError("ks and c have incompatible shapes")
+
+    # temporary storage
+    if double_or_complex is double:
+        c2 = np.zeros((c.shape[0], 1, 1), dtype=float)
+    else:
+        c2 = np.zeros((c.shape[0], 1, 1), dtype=complex)
+
+    # evaluate
+    for ip in range(ndim):
+        interval[ip] = 0
+
+    for ip in range(xp.shape[0]):
+        out_of_range = 0
+
+        # Find correct intervals
+        for k in range(ndim):
+            xval = xp[ip, k]
+
+            i = find_interval_ascending(xx[k],
+                                        nxx[k],
+                                        xval,
+                                        interval[k],
+                                        extrapolate)
+            if i < 0:
+                out_of_range = 1
+                break
+            else:
+                interval[k] = i
+
+        if out_of_range:
+            # xval was nan etc
+            for jp in range(c.shape[2]):
+                out[ip, jp] = nan
+            continue
+
+        pos = 0
+        for k in range(ndim):
+            pos += interval[k] * strides[k]
+
+        # Evaluate the local polynomials, via nested 1D polynomial evaluation
+        #
+        # sum_{ijk} c[kx-i,ky-j,kz-k] x**i y**j z**k = sum_i a[i] x**i
+        # a[i] = sum_j b[i,j] y**j
+        # b[i,j] = sum_k c[kx-i,ky-j,kz-k] z**k
+        #
+        # The array c2 is used to hold the intermediate sums a,b,...
+        for jp in range(c.shape[2]):
+            c2[:,0,0] = c[:,pos,jp]
+
+            for k in range(ndim-1, -1, -1):
+                xval = xp[ip, k] - xx[k][interval[k]]
+                kpos = 0
+                for koutpos in range(kstrides[k]):
+                    c2[koutpos,0,0] = evaluate_poly1(xval, c2[kpos:kpos+ks[k],:,:], 0, 0, dx[k])
+                    kpos += ks[k]
+
+            out[ip,jp] = c2[0,0,0]
 
 
 @cython.wraparound(False)
@@ -168,10 +325,10 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def integrate(double_or_complex[:,:,::1] c,
-              double[::1] x,
+              const double[::1] x,
               double a,
               double b,
-              int extrapolate,
+              bint extrapolate,
               double_or_complex[::1] out):
     """
     Compute integral over a piecewise polynomial.
@@ -186,8 +343,8 @@ def integrate(double_or_complex[:,:,::1] c,
         Start point of integration.
     b : double
         End point of integration.
-    extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+    extrapolate : bint, optional
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (n,)
         Integral of the piecewise polynomial, assuming the polynomial
@@ -210,14 +367,21 @@ def integrate(double_or_complex[:,:,::1] c,
     if not (b >= a):
         raise ValueError("Integral bounds not in order")
 
-    # find intervals
-    start_interval = find_interval(x, a, 0, extrapolate)
-    if start_interval < 0:
-        out[:] = nan
-        return
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
+    if ascending:
+        start_interval = find_interval_ascending(&x[0], x.shape[0], a, 0,
+                                                 extrapolate)
+        end_interval = find_interval_ascending(&x[0], x.shape[0], b, 0,
+                                               extrapolate)
+    else:
+        a, b = b, a
+        start_interval = find_interval_descending(&x[0], x.shape[0], a, 0,
+                                                  extrapolate)
+        end_interval = find_interval_descending(&x[0], x.shape[0], b, 0,
+                                                extrapolate)
 
-    end_interval = find_interval(x, b, 0, extrapolate)
-    if end_interval < 0:
+
+    if start_interval < 0 or end_interval < 0:
         out[:] = nan
         return
 
@@ -238,16 +402,20 @@ def integrate(double_or_complex[:,:,::1] c,
                 va = evaluate_poly1(0, c, interval, jp, -1)
 
             # integral
-            vtot = vtot + (vb - va)
+            vtot += vb - va
 
         out[jp] = vtot
+
+    if not ascending:
+        for jp in range(c.shape[2]):
+            out[jp] = -out[jp]
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
-               int extrapolate):
+def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
+               bint extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
 
@@ -262,10 +430,12 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
     ----------
     c, x
         Polynomial coefficients, as above
-    report_discont : int, optional
+    y : float
+        Find roots of ``pp(x) == y``.
+    report_discont : bint, optional
         Whether to report discontinuities across zero at breakpoints
         as roots
-    extrapolate : int, optional
+    extrapolate : bint, optional
         Whether to consider roots obtained by extrapolating based
         on first and last intervals.
 
@@ -288,9 +458,16 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in real_roots")
+
     workspace = NULL
 
     last_root = nan
+
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
     roots = []
     try:
@@ -299,8 +476,9 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
             for interval in range(c.shape[1]):
                 # Check for sign change across intervals
                 if interval > 0 and report_discont:
-                    va = evaluate_poly1(x[interval] - x[interval-1], c, interval-1, jp, 0)
-                    vb = evaluate_poly1(0, c, interval, jp, 0)
+                    va = evaluate_poly1(x[interval] - x[interval-1],
+                                        c, interval-1, jp, 0) - y
+                    vb = evaluate_poly1(0, c, interval, jp, 0) - y
                     if (va < 0 and vb > 0) or (va > 0 and vb < 0):
                         # sign change between intervals
                         if x[interval] != last_root:
@@ -308,7 +486,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
                             cur_roots.append(float(last_root))
 
                 # Compute first the complex roots
-                k = croots_poly1(c, interval, jp, wr, wi, &workspace)
+                k = croots_poly1(c, y, interval, jp, wr, wi, &workspace)
 
                 # Check for errors and identically zero values
                 if k == -1:
@@ -342,7 +520,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
                         continue
 
                     # Refine root by one Newton iteration
-                    f = evaluate_poly1(wr[i], c, interval, jp, 0)
+                    f = evaluate_poly1(wr[i], c, interval, jp, 0) - y
                     df = evaluate_poly1(wr[i], c, interval, jp, 1)
                     if df != 0:
                         dx = f/df
@@ -352,16 +530,24 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
                     # Check interval
                     wr[i] += x[interval]
                     if interval == 0 and extrapolate:
-                        # Half-open to the left
-                        if not wr[i] <= x[interval+1]:
-                            continue
+                        # Half-open to the left/right.
+                        # Might also be the only interval, in which case there is
+                        # no limitation.
+                        if (interval != c.shape[1] - 1 and
+                            (ascending and not wr[i] <= x[interval+1] or
+                             not ascending and not wr[i] >= x[interval + 1])):
+                                continue
                     elif interval == c.shape[1] - 1 and extrapolate:
-                        # Half-open to the right
-                        if not wr[i] >= x[interval]:
-                            continue
+                        # Half-open to the right/left.
+                        if (ascending and not wr[i] >= x[interval] or
+                            not ascending and not wr[i] <= x[interval]):
+                                continue
                     else:
-                        if not (x[interval] <= wr[i] <= x[interval+1]):
-                            continue
+                        if (ascending and
+                            not x[interval] <= wr[i] <= x[interval+1] or
+                            not ascending and
+                            not x[interval + 1] <= wr[i] <= x[interval]):
+                                continue
 
                     # Add to list
                     if wr[i] != last_root:
@@ -371,8 +557,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
             # Construct roots
             roots.append(np.array(cur_roots, dtype=float))
     finally:
-        if workspace != NULL:
-            libc.stdlib.free(workspace)
+        libc.stdlib.free(workspace)
         libc.stdlib.free(wr)
         libc.stdlib.free(wi)
 
@@ -382,26 +567,27 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval(double[::1] x,
-                       double xval,
-                       int prev_interval=0,
-                       int extrapolate=1) nogil:
+cdef int find_interval_ascending(const double *x,
+                                 size_t nx,
+                                 double xval,
+                                 int prev_interval=0,
+                                 bint extrapolate=1) nogil:
     """
-    Find an interval such that x[interval] <= xval < x[interval+1]
-    or interval == 0 and xval < x[0]
-    or interval == n-2 and xval > x[n-1]
+    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
+    that x is sorted in the ascending order.
+    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
 
     Parameters
     ----------
     x : array of double, shape (m,)
-        Piecewise polynomial breakpoints
+        Piecewise polynomial breakpoints sorted in ascending order.
     xval : double
-        Point to find
+        Point to find.
     prev_interval : int, optional
-        Interval where a previous point was found
-    extrapolate : int, optional
+        Interval where a previous point was found.
+    extrapolate : bint, optional
         Whether to return the last of the first interval if the
-        point is ouf-of-bounds. 
+        point is out-of-bounds.
 
     Returns
     -------
@@ -413,10 +599,10 @@ cdef int find_interval(double[::1] x,
     cdef double a, b
 
     a = x[0]
-    b = x[x.shape[0]-1]
+    b = x[nx-1]
 
     interval = prev_interval
-    if interval < 0 or interval >= x.shape[0]:
+    if interval < 0 or interval >= nx:
         interval = 0
 
     if not (a <= xval <= b):
@@ -426,19 +612,19 @@ cdef int find_interval(double[::1] x,
             interval = 0
         elif xval > b and extrapolate:
             # above
-            interval = x.shape[0] - 2
+            interval = nx - 2
         else:
             # nan or no extrapolation
             interval = -1
     elif xval == b:
         # Make the interval closed from the right
-        interval = x.shape[0] - 2
+        interval = nx - 2
     else:
         # Find the interval the coordinate is in
         # (binary search with locality)
         if xval >= x[interval]:
             low = interval
-            high = x.shape[0]-2
+            high = nx - 2
         else:
             low = 0
             high = interval
@@ -455,6 +641,94 @@ cdef int find_interval(double[::1] x,
                 low = mid + 1
             else:
                 # x[mid] <= xval < x[mid+1]
+                low = mid
+                break
+
+        interval = low
+
+    return interval
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef int find_interval_descending(const double *x,
+                                 size_t nx,
+                                 double xval,
+                                 int prev_interval=0,
+                                 bint extrapolate=1) nogil:
+    """
+    Find an interval such that x[interval + 1] < xval <= x[interval], assuming
+    that x are sorted in the descending order.
+    If xval > x[0], then interval = 0, if xval < x[-1] then interval = n - 2.
+
+    Parameters
+    ----------
+    x : array of double, shape (m,)
+        Piecewise polynomial breakpoints sorted in descending order.
+    xval : double
+        Point to find.
+    prev_interval : int, optional
+        Interval where a previous point was found.
+    extrapolate : bint, optional
+        Whether to return the last of the first interval if the
+        point is out-of-bounds.
+
+    Returns
+    -------
+    interval : int
+        Suitable interval or -1 if nan.
+
+    """
+    cdef int interval, high, low, mid
+    cdef double a, b
+
+    # Note that now a > b.
+    a = x[0]
+    b = x[nx-1]
+
+    interval = prev_interval
+    if interval < 0 or interval >= nx:
+        interval = 0
+
+    if not (b <= xval <= a):
+        # Out-of-bounds or NaN.
+        if xval > a and extrapolate:
+            # Above a.
+            interval = 0
+        elif xval < b and extrapolate:
+            # Below b.
+            interval = nx - 2
+        else:
+            # No extrapolation.
+            interval = -1
+    elif xval == b:
+        # Make the interval closed from the left.
+        interval = nx - 2
+    else:
+        # Apply the binary search in a general case. Note that low and high
+        # are used in terms of interval number, not in terms of abscissas.
+        # The conversion from find_interval_ascending is simply to change
+        # < to > and >= to <= in comparison with xval.
+        if xval <= x[interval]:
+            low = interval
+            high = nx - 2
+        else:
+            low = 0
+            high = interval
+
+        if xval > x[low + 1]:
+            high = low
+
+        while low < high:
+            mid = (high + low) // 2
+            if xval > x[mid]:
+                # mid < high
+                high = mid
+            elif xval <= x[mid + 1]:
+                low = mid + 1
+            else:
+                # x[mid] >= xval > x[mid+1]
                 low = mid
                 break
 
@@ -525,8 +799,8 @@ cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
-                      void **workspace):
+cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
+                      double* wr, double* wi, void **workspace) except -10:
     """
     Find all complex roots of a local polynomial.
 
@@ -534,6 +808,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     ----------
     c : ndarray, shape (k, m, n)
          Coefficients of polynomials of order k
+    y : float
+        right-hand side of ``pp(x) == y``.
     ci, cj : int
          Index of the local polynomial whose coefficients c[:,ci,cj] to use
     wr, wi : double*
@@ -560,7 +836,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     """
     cdef double *a
     cdef double *work
-    cdef double a0, a1, a2, d, br, bi
+    cdef double a0, a1, a2, d, br, bi, cc
     cdef int lwork, n, i, j, order
     cdef int nworkspace, info
 
@@ -576,14 +852,21 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
 
     if order < 0:
         # Zero everywhere
-        return -1
+        if y == 0:
+            return -1
+        else:
+            return 0
     elif order == 0:
         # Nonzero constant polynomial: no roots
-        return 0
+        # (unless r.h.s. is exactly equal to the coefficient, that is.)
+        if c[n-1, ci, cj] == y:
+            return -1
+        else:
+            return 0
     elif order == 1:
         # Low-order polynomial: a0*x + a1
         a0 = c[n-1-order,ci,cj]
-        a1 = c[n-1-order+1,ci,cj]
+        a1 = c[n-1-order+1,ci,cj] - y
         wr[0] = -a1 / a0
         wi[0] = 0
         return 1
@@ -591,7 +874,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
         # Low-order polynomial: a0*x**2 + a1*x + a2
         a0 = c[n-1-order,ci,cj]
         a1 = c[n-1-order+1,ci,cj]
-        a2 = c[n-1-order+2,ci,cj]
+        a2 = c[n-1-order+2,ci,cj] - y
 
         d = a1*a1 - 4*a0*a2
         if d < 0:
@@ -630,6 +913,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     if workspace[0] == NULL:
         nworkspace = n*n + lwork
         workspace[0] = libc.stdlib.malloc(nworkspace * sizeof(double))
+        if workspace[0] == NULL:
+            raise MemoryError("Failed to allocate memory in croots_poly1")
 
     a = <double*>workspace[0]
     work = a + n*n
@@ -638,14 +923,17 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     for j in range(order*order):
         a[j] = 0
     for j in range(order):
-        a[j + (order-1)*order] = -c[n-1-j,ci,cj]/c[n-1-order,ci,cj]
+        cc = c[n-1-j,ci,cj]
+        if j == 0:
+            cc -= y
+        a[j + (order-1)*order] = -cc / c[n-1-order,ci,cj]
         if j + 1 < order:
             a[j+1 + order*j] = 1
 
     # Compute companion matrix eigenvalues
     info = 0
-    c_dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
-            NULL, &order, NULL, &order, work, &lwork, &info)
+    dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+          NULL, &order, NULL, &order, work, &lwork, &info)
     if info != 0:
         # Failure
         return -2
@@ -670,7 +958,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     return order
 
 
-def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
+def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
     """
     Find roots of polynomials.
 
@@ -698,6 +986,11 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in _croots_poly1")
+
     workspace = NULL
 
     try:
@@ -706,7 +999,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
                 for k in range(c.shape[0]):
                     w[k,i,j] = nan
 
-                nroots = croots_poly1(c, i, j, wr, wi, &workspace)
+                nroots = croots_poly1(c, y, i, j, wr, wi, &workspace)
 
                 if nroots == -1:
                     continue
@@ -717,8 +1010,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
                     w[k,i,j].real = wr[k]
                     w[k,i,j].imag = wi[k]
     finally:
-        if workspace != NULL:
-            libc.stdlib.free(workspace)
+        libc.stdlib.free(workspace)
         libc.stdlib.free(wr)
         libc.stdlib.free(wi)
 
@@ -761,7 +1053,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
     # special-case lowest orders
     if k == 0:
         res = c[0, ci, cj]
-    elif k == 1: 
+    elif k == 1:
         res = c[0, ci, cj] * s1 + c[1, ci, cj] * s
     elif k == 2:
         res = c[0, ci, cj] * s1*s1 + c[1, ci, cj] * 2.*s1*s + c[2, ci, cj] * s*s
@@ -787,7 +1079,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Bernstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.
 
     A Bernstein polynomial is defined as
@@ -846,7 +1138,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int nu,
-             int extrapolate,
+             bint extrapolate,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial in the Bernstein basis.
@@ -864,8 +1156,8 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
     nu : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+    extrapolate : bint, optional
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
@@ -896,15 +1188,23 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
         else:
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
-        
-    # evaluate
-    interval = 0
 
+
+    interval = 0
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
+
+    # Evaluate.
     for ip in range(len(xp)):
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(x, xval, interval, extrapolate)
+        if ascending:
+            i = find_interval_ascending(&x[0], x.shape[0], xval, interval,
+                                        extrapolate)
+        else:
+            i = find_interval_descending(&x[0], x.shape[0], xval, interval,
+                                         extrapolate)
+
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):

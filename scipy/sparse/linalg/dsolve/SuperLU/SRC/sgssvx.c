@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file sgssvx.c
  * \brief Solves the system of linear equations A*X=B or A'*X=B
@@ -300,6 +310,17 @@
  *         any element of A or B that makes X(j) an exact solution).
  *         If options->IterRefine = NOREFINE, berr = 1.0.
  *
+ * Glu      (input/output) GlobalLU_t *
+ *          If options->Fact == SamePattern_SameRowPerm, it is an input;
+ *              The matrix A will be factorized assuming that a 
+ *              factorization of a matrix with the same sparsity pattern
+ *              and similar numerical values was performed prior to this one.
+ *              Therefore, this factorization will reuse both row and column
+ *		scaling factors R and C, both row and column permutation
+ *		vectors perm_r and perm_c, and the L & U data structures
+ *		set up from the previous factorization.
+ *          Otherwise, it is an output.
+ *
  * mem_usage (output) mem_usage_t*
  *         Record the memory usage statistics, consisting of following fields:
  *         - for_lu (float)
@@ -338,7 +359,7 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
        SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
        SuperMatrix *B, SuperMatrix *X, float *recip_pivot_growth, 
        float *rcond, float *ferr, float *berr, 
-       mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info )
+       GlobalLU_t *Glu, mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info )
 {
 
 
@@ -377,9 +398,9 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	rowequ = FALSE;
 	colequ = FALSE;
     } else {
-	rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-	colequ = lsame_(equed, "C") || lsame_(equed, "B");
-	smlnum = slamch_("Safe minimum");
+	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
+	smlnum = smach("Safe minimum");   /* lamch_("Safe minimum"); */
 	bignum = 1. / smlnum;
     }
 
@@ -400,8 +421,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
 	      A->Dtype != SLU_S || A->Mtype != SLU_GE )
 	*info = -2;
-    else if (options->Fact == FACTORED &&
-	     !(rowequ || colequ || lsame_(equed, "N")))
+    else if ( options->Fact == FACTORED &&
+	     !(rowequ || colequ || strncmp(equed, "N", 1)==0) )
 	*info = -6;
     else {
 	if (rowequ) {
@@ -449,7 +470,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
     }
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("sgssvx", &i);
+	input_error("sgssvx", &i);
 	return;
     }
     
@@ -487,8 +508,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	if ( info1 == 0 ) {
 	    /* Equilibrate matrix A. */
 	    slaqgs(AA, R, C, rowcnd, colcnd, amax, equed);
-	    rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-	    colequ = lsame_(equed, "C") || lsame_(equed, "B");
+	    rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+	    colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
 	}
 	utime[EQUIL] = SuperLU_timer_() - t0;
     }
@@ -521,7 +542,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	/* Compute the LU factorization of A*Pc. */
 	t0 = SuperLU_timer_();
 	sgstrf(options, &AC, relax, panel_size, etree,
-                work, lwork, perm_c, perm_r, L, U, stat, info);
+                work, lwork, perm_c, perm_r, L, U, Glu, stat, info);
 	utime[FACT] = SuperLU_timer_() - t0;
 	
 	if ( lwork == -1 ) {
@@ -530,16 +551,18 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	}
     }
 
-    if ( options->PivotGrowth ) {
-        if ( *info > 0 ) {
-	    if ( *info <= A->ncol ) {
-	        /* Compute the reciprocal pivot growth factor of the leading
-	           rank-deficient *info columns of A. */
-	        *recip_pivot_growth = sPivotGrowth(*info, AA, perm_c, L, U);
-	    }
-	    return;
+    if ( *info > 0 ) {
+        if ( *info <= A->ncol ) {
+	    /* Compute the reciprocal pivot growth factor of the leading
+	       rank-deficient (*info) columns of A. */
+	    *recip_pivot_growth = sPivotGrowth(*info, AA, perm_c, L, U);
         }
+	return;
+    }
 
+    /* *info == 0 at this point. */
+
+    if ( options->PivotGrowth ) {
         /* Compute the reciprocal pivot growth factor *recip_pivot_growth. */
         *recip_pivot_growth = sPivotGrowth(A->ncol, AA, perm_c, L, U);
     }
@@ -553,7 +576,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	    *(unsigned char *)norm = 'I';
         }
         anorm = slangs(norm, AA);
-        sgscon(norm, L, U, anorm, rcond, stat, info);
+        sgscon(norm, L, U, anorm, rcond, stat, &info1);
         utime[RCOND] = SuperLU_timer_() - t0;
     }
     
@@ -577,7 +600,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 	        Xmat[i + j*ldx] = Bmat[i + j*ldb];
     
         t0 = SuperLU_timer_();
-        sgstrs (trant, L, U, perm_c, perm_r, X, stat, info);
+        sgstrs (trant, L, U, perm_c, perm_r, X, stat, &info1);
         utime[SOLVE] = SuperLU_timer_() - t0;
     
         /* Use iterative refinement to improve the computed solution and compute
@@ -585,7 +608,7 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
         t0 = SuperLU_timer_();
         if ( options->IterRefine != NOREFINE ) {
             sgsrfs(trant, AA, L, U, perm_c, perm_r, equed, R, C, B,
-                   X, ferr, berr, stat, info);
+                   X, ferr, berr, stat, &info1);
         } else {
             for (j = 0; j < nrhs; ++j) ferr[j] = berr[j] = 1.0;
         }
@@ -607,7 +630,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 
     if ( options->ConditionNumber ) {
         /* Set INFO = A->ncol+1 if the matrix is singular to working precision. */
-        if ( *rcond < slamch_("E") ) *info = A->ncol + 1;
+        /*if ( *rcond < slamch_("E") ) *info = A->ncol + 1;*/
+        if ( *rcond < smach("E") ) *info = A->ncol + 1;
     }
 
     if ( nofact ) {

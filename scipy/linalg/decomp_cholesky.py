@@ -1,36 +1,44 @@
 """Cholesky decomposition functions."""
 
-from __future__ import division, print_function, absolute_import
-
-from numpy import asarray_chkfinite, asarray
+from numpy import asarray_chkfinite, asarray, atleast_2d
 
 # Local imports
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
-            'cho_solve_banded']
+           'cho_solve_banded']
 
 
 def _cholesky(a, lower=False, overwrite_a=False, clean=True,
-                check_finite=True):
+              check_finite=True):
     """Common code for cholesky() and cho_factor()."""
 
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+    a1 = asarray_chkfinite(a) if check_finite else asarray(a)
+    a1 = atleast_2d(a1)
+
+    # Dimension check
+    if a1.ndim != 2:
+        raise ValueError('Input array needs to be 2D but received '
+                         'a {}d-array.'.format(a1.ndim))
+    # Squareness check
+    if a1.shape[0] != a1.shape[1]:
+        raise ValueError('Input array is expected to be square but has '
+                         'the shape: {}.'.format(a1.shape))
+
+    # Quick return for square empty array
+    if a1.size == 0:
+        return a1.copy(), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
-        raise LinAlgError("%d-th leading minor not positive definite" % info)
+        raise LinAlgError("%d-th leading minor of the array is not positive "
+                          "definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal potrf'
-                                                                    % -info)
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         'on entry to "POTRF".'.format(-info))
     return c, lower
 
 
@@ -46,7 +54,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     a : (M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
-        Whether to compute the upper or lower triangular Cholesky
+        Whether to compute the upper- or lower-triangular Cholesky
         factorization.  Default is upper-triangular.
     overwrite_a : bool, optional
         Whether to overwrite data in `a` (may improve performance).
@@ -66,19 +74,19 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Examples
     --------
-    >>> from scipy import array, linalg, dot
-    >>> a = array([[1,-2j],[2j,5]])
-    >>> L = linalg.cholesky(a, lower=True)
+    >>> from scipy.linalg import cholesky
+    >>> a = np.array([[1,-2j],[2j,5]])
+    >>> L = cholesky(a, lower=True)
     >>> L
     array([[ 1.+0.j,  0.+0.j],
            [ 0.+2.j,  1.+0.j]])
-    >>> dot(L, L.T.conj())
+    >>> L @ L.T.conj()
     array([[ 1.+0.j,  0.-2.j],
            [ 0.+2.j,  5.+0.j]])
 
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                            check_finite=check_finite)
+                         check_finite=check_finite)
     return c
 
 
@@ -127,9 +135,22 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
 
+    Examples
+    --------
+    >>> from scipy.linalg import cho_factor
+    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
+    >>> c, low = cho_factor(A)
+    >>> c
+    array([[3.        , 1.        , 0.33333333, 1.66666667],
+           [3.        , 2.44948974, 1.90515869, -0.27216553],
+           [1.        , 5.        , 2.29330749, 0.8559528 ],
+           [5.        , 1.        , 2.        , 1.55418563]])
+    >>> np.allclose(np.triu(c).T @ np. triu(c) - A, np.zeros((4, 4)))
+    True
+
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
-                            check_finite=check_finite)
+                         check_finite=check_finite)
     return c, lower
 
 
@@ -158,6 +179,15 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     --------
     cho_factor : Cholesky factorization of a matrix
 
+    Examples
+    --------
+    >>> from scipy.linalg import cho_factor, cho_solve
+    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
+    >>> c, low = cho_factor(A)
+    >>> x = cho_solve((c, low), [1, 1, 1, 1])
+    >>> np.allclose(A @ x - [1, 1, 1, 1], np.zeros(4))
+    True
+
     """
     (c, lower) = c_and_lower
     if check_finite:
@@ -169,15 +199,16 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
-        raise ValueError("incompatible dimensions.")
+        raise ValueError("incompatible dimensions ({} and {})"
+                         .format(c.shape, b1.shape))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError('illegal value in %d-th argument of internal potrs'
-                                                                    % -info)
+        raise ValueError('illegal value in %dth argument of internal potrs'
+                         % -info)
     return x
 
 
@@ -185,7 +216,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
     Cholesky decompose a banded Hermitian positive-definite matrix
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in ab either in lower-diagonal or upper-
     diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
@@ -221,6 +252,23 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
+    See also
+    --------
+    cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
+                of a banded Hermitian.
+
+    Examples
+    --------
+    >>> from scipy.linalg import cholesky_banded
+    >>> from numpy import allclose, zeros, diag
+    >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
+    >>> A = np.diag(Ab[0,2:], k=2) + np.diag(Ab[1,1:], k=1)
+    >>> A = A + A.conj().T + np.diag(Ab[2, :])
+    >>> c = cholesky_banded(Ab)
+    >>> C = np.diag(c[0, 2:], k=2) + np.diag(c[1, 1:], k=1) + np.diag(c[2, :])
+    >>> np.allclose(C.conj().T @ C - A, np.zeros((5, 5)))
+    True
+
     """
     if check_finite:
         ab = asarray_chkfinite(ab)
@@ -233,19 +281,21 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal pbtrf'
-                                                                    % -info)
+                         % -info)
     return c
 
 
 def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
-    """Solve the linear equations A x = b, given the Cholesky factorization of A.
+    """
+    Solve the linear equations ``A x = b``, given the Cholesky factorization of
+    the banded Hermitian ``A``.
 
     Parameters
     ----------
-    (cb, lower) : tuple, (array, bool)
+    (cb, lower) : tuple, (ndarray, bool)
         `cb` is the Cholesky factorization of A, as given by cholesky_banded.
         `lower` must be the same value that was given to cholesky_banded.
-    b : array
+    b : array_like
         Right-hand side
     overwrite_b : bool, optional
         If True, the function will overwrite the values in `b`.
@@ -268,6 +318,17 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     .. versionadded:: 0.8.0
 
+    Examples
+    --------
+    >>> from scipy.linalg import cholesky_banded, cho_solve_banded
+    >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
+    >>> A = np.diag(Ab[0,2:], k=2) + np.diag(Ab[1,1:], k=1)
+    >>> A = A + A.conj().T + np.diag(Ab[2, :])
+    >>> c = cholesky_banded(Ab)
+    >>> x = cho_solve_banded((c, False), np.ones(5))
+    >>> np.allclose(A @ x - np.ones(5), np.zeros(5))
+    True
+
     """
     (cb, lower) = cb_and_lower
     if check_finite:
@@ -284,8 +345,8 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
-        raise LinAlgError("%d-th leading minor not positive definite" % info)
+        raise LinAlgError("%dth leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbtrs'
-                                                                    % -info)
+        raise ValueError('illegal value in %dth argument of internal pbtrs'
+                         % -info)
     return x

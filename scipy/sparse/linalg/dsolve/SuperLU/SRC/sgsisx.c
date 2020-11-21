@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file sgsisx.c
  * \brief Computes an approximate solutions of linear equations A*X=B or A'*X=B
@@ -24,7 +34,7 @@
  *
  *   1. If A is stored column-wise (A->Stype = SLU_NC):
  *  
- *	1.1. If options->Equil = YES or options->RowPerm = LargeDiag, scaling
+ *	1.1. If options->Equil = YES or options->RowPerm = LargeDiag_MC64, scaling
  *	     factors are computed to equilibrate the system:
  *	     options->Trans = NOTRANS:
  *		 diag(R)*A*diag(C) *inv(diag(C))*X = diag(R)*B
@@ -68,12 +78,12 @@
  *	     original system before equilibration.
  *
  *	1.9. options for ILU only
- *	     1) If options->RowPerm = LargeDiag, MC64 is used to scale and
+ *	     1) If options->RowPerm = LargeDiag_MC64, MC64 is used to scale and
  *		permute the matrix to an I-matrix, that is Pr*Dr*A*Dc has
  *		entries of modulus 1 on the diagonal and off-diagonal entries
  *		of modulus at most 1. If MC64 fails, dgsequ() is used to
  *		equilibrate the system.
- *              ( Default: LargeDiag )
+ *              ( Default: LargeDiag_MC64 )
  *	     2) options->ILU_DropTol = tau is the threshold for dropping.
  *		For L, it is used directly (for the whole row in a supernode);
  *		For U, ||A(:,i)||_oo * tau is used as the threshold
@@ -135,7 +145,7 @@
  *   2. If A is stored row-wise (A->Stype = SLU_NR), apply the above algorithm
  *	to the transpose of A:
  *
- *	2.1. If options->Equil = YES or options->RowPerm = LargeDiag, scaling
+ *	2.1. If options->Equil = YES or options->RowPerm = LargeDiag_MC64, scaling
  *	     factors are computed to equilibrate the system:
  *	     options->Trans = NOTRANS:
  *		 diag(R)*A*diag(C) *inv(diag(C))*X = diag(R)*B
@@ -214,7 +224,7 @@
  *	     equed = 'C':  transpose(A) := transpose(A) * diag(C)
  *	     equed = 'B':  transpose(A) := diag(R) * transpose(A) * diag(C).
  *
- *         If options->RowPerm = LargeDiag, MC64 is used to scale and permute
+ *         If options->RowPerm = LargeDiag_MC64, MC64 is used to scale and permute
  *            the matrix to an I-matrix, that is A is modified as follows:
  *            P*Dr*A*Dc has entries of modulus 1 on the diagonal and 
  *            off-diagonal entries of modulus at most 1. P is a permutation
@@ -396,7 +406,7 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
        SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
        SuperMatrix *B, SuperMatrix *X,
        float *recip_pivot_growth, float *rcond,
-       mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info)
+       GlobalLU_t *Glu, mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info)
 {
 
     DNformat  *Bstore, *Xstore;
@@ -432,15 +442,15 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     nofact = (options->Fact != FACTORED);
     equil = (options->Equil == YES);
     notran = (options->Trans == NOTRANS);
-    mc64 = (options->RowPerm == LargeDiag);
+    mc64 = (options->RowPerm == LargeDiag_MC64);
     if ( nofact ) {
 	*(unsigned char *)equed = 'N';
 	rowequ = FALSE;
 	colequ = FALSE;
     } else {
-	rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-	colequ = lsame_(equed, "C") || lsame_(equed, "B");
-	smlnum = slamch_("Safe minimum");
+	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
+	smlnum = smach("Safe minimum");  /* lamch_("Safe minimum"); */
 	bignum = 1. / smlnum;
     }
 
@@ -456,8 +466,8 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
 	      A->Dtype != SLU_S || A->Mtype != SLU_GE )
 	*info = -2;
-    else if (options->Fact == FACTORED &&
-	     !(rowequ || colequ || lsame_(equed, "N")))
+    else if ( options->Fact == FACTORED &&
+	     !(rowequ || colequ || strncmp(equed, "N", 1)==0) )
 	*info = -6;
     else {
 	if (rowequ) {
@@ -499,7 +509,7 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("sgsisx", &i);
+	input_error("sgsisx", &i);
 	return;
     }
 
@@ -583,8 +593,8 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    if ( info1 == 0 ) {
 		/* Equilibrate matrix A. */
 		slaqgs(AA, R, C, rowcnd, colcnd, amax, equed);
-		rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-		colequ = lsame_(equed, "C") || lsame_(equed, "B");
+		rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+		colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
 	    }
 	    utime[EQUIL] = SuperLU_timer_() - t0;
 	}
@@ -614,7 +624,7 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	/* Compute the LU factorization of A*Pc. */
 	t0 = SuperLU_timer_();
 	sgsitrf(options, &AC, relax, panel_size, etree, work, lwork,
-                perm_c, perm_r, L, U, stat, info);
+                perm_c, perm_r, L, U, Glu, stat, info);
 	utime[FACT] = SuperLU_timer_() - t0;
 
 	if ( lwork == -1 ) {
@@ -712,7 +722,8 @@ sgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
     if ( options->ConditionNumber ) {
 	/* The matrix is singular to working precision. */
-	if ( *rcond < slamch_("E") && *info == 0) *info = A->ncol + 1;
+	/* if ( *rcond < slamch_("E") && *info == 0) *info = A->ncol + 1; */
+	if ( *rcond < smach("E") && *info == 0) *info = A->ncol + 1;
     }
 
     if ( nofact ) {

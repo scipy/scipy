@@ -93,8 +93,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real     
-     &           wslapy2
-      external   wslapy2
+     &           slapy2
+      external   slapy2
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -117,8 +117,8 @@ c
 c
             if (j.lt.0) go to 30
 c
-            temp1 = wslapy2(xreal(j),ximag(j))
-            temp2 = wslapy2(xreal(j+igap),ximag(j+igap))
+            temp1 = slapy2(xreal(j),ximag(j))
+            temp2 = slapy2(xreal(j+igap),ximag(j+igap))
 c
             if (temp1.gt.temp2) then
                 temp = xreal(j)
@@ -158,8 +158,8 @@ c
 c
             if (j .lt. 0) go to 60
 c
-            temp1 = wslapy2(xreal(j),ximag(j))
-            temp2 = wslapy2(xreal(j+igap),ximag(j+igap))
+            temp1 = slapy2(xreal(j),ximag(j))
+            temp2 = slapy2(xreal(j+igap),ximag(j+igap))
 c
             if (temp1.lt.temp2) then
                temp = xreal(j)

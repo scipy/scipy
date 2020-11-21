@@ -1,8 +1,6 @@
 """ Functions that operate on sparse matrices
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['count_blocks','estimate_blocksize']
 
 from .csr import isspmatrix_csr, csr_matrix
@@ -15,7 +13,7 @@ def extract_diagonal(A):
 
 #def extract_diagonal(A):
 #    """extract_diagonal(A) returns the main diagonal of A."""
-#    #TODO extract k-th diagonal
+#    #TODO extract kth diagonal
 #    if isspmatrix_csr(A) or isspmatrix_csc(A):
 #        fn = getattr(sparsetools, A.format + "_diagonal")
 #        y = empty( min(A.shape), dtype=upcast(A.dtype) )

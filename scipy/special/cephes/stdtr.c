@@ -28,7 +28,7 @@
  *                                   | |
  *                                    -
  *                                   -inf.
- * 
+ *
  * Relation to incomplete beta integral:
  *
  *        1 - stdtr(k,t) = 0.5 * incbet( k/2, 1/2, z )
@@ -40,7 +40,7 @@
  * Since the function is symmetric about t=0, the area under the
  * right tail of the density is found by calling the function
  * with -t instead of t.
- * 
+ *
  * ACCURACY:
  *
  * Tested at random 1 <= k <= 25.  The "domain" refers to t.
@@ -68,7 +68,7 @@
  *
  * Given probability p, finds the argument t such that stdtr(k,t)
  * is equal to p.
- * 
+ *
  * ACCURACY:
  *
  * Tested at random 1 <= k <= 100.  The "domain" refers to p:
@@ -85,8 +85,9 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 
-extern double MAXNUM, MACHEP;
+extern double MACHEP;
 
 double stdtr(k, t)
 int k;
@@ -96,7 +97,7 @@ double t;
     int j;
 
     if (k <= 0) {
-	mtherr("stdtr", DOMAIN);
+	sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -176,7 +177,7 @@ double p;
     int rflg;
 
     if (k <= 0 || p <= 0.0 || p >= 1.0) {
-	mtherr("stdtri", DOMAIN);
+	sf_error("stdtri", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -199,7 +200,7 @@ double p;
     }
     z = incbi(0.5 * rk, 0.5, 2.0 * p);
 
-    if (MAXNUM * z < rk)
+    if (DBL_MAX * z < rk)
 	return (rflg * NPY_INFINITY);
     t = sqrt(rk / z - rk);
     return (rflg * t);

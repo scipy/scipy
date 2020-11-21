@@ -3,20 +3,15 @@
 # Distributed under the same license as SciPy itself.
 #
 
-from __future__ import division, print_function, absolute_import
-
-import warnings
-
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_allclose,\
- assert_
+from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
+                           assert_, suppress_warnings)
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
-from scipy.integrate import quad, IntegrationWarning
-from numpy import array, sqrt, pi
-from scipy.special._testutils import FuncData
+from scipy.integrate import IntegrationWarning
+from numpy import sqrt, pi
 
-    
+
 def test_ellip_potential():
     def change_coefficient(lambda1, mu, nu, h2, k2):
         x = sqrt(lambda1**2*mu**2*nu**2/(h2*k2))
@@ -57,8 +52,9 @@ def test_ellip_potential():
         (120, sqrt(16), 3.2, 21, sqrt(11), 2.9, 11, 20),
        ]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=IntegrationWarning)
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+        sup.filter(IntegrationWarning, "The maximum number of subdivisions")
 
         for p in pts:
             err_msg = repr(p)
@@ -161,9 +157,12 @@ def test_ellip_norm():
     points = []
     for n in range(4):
         for p in range(1, 2*n+2):
-            points.append((h2, k2, n*np.ones(h2.size), p*np.ones(h2.size)))
+            points.append((h2, k2, np.full(h2.size, n), np.full(h2.size, p)))
     points = np.array(points)
-    assert_func_equal(ellip_normal, ellip_normal_known, points, rtol=1e-12)
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+        assert_func_equal(ellip_normal, ellip_normal_known, points, rtol=1e-12)
+
 
 def test_ellip_harm_2():
 
@@ -173,14 +172,17 @@ def test_ellip_harm_2():
         ellip_harm_2(h2, k2, 1, 3, s)/(3 * ellip_harm(h2, k2, 1, 3, s)))
         return res
 
-    assert_almost_equal(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))))
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+        assert_almost_equal(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))))
 
-    # Values produced by code from arXiv:1204.0267
-    assert_almost_equal(ellip_harm_2(5, 8, 2, 1, 10), 0.00108056853382)
-    assert_almost_equal(ellip_harm_2(5, 8, 2, 2, 10), 0.00105820513809)
-    assert_almost_equal(ellip_harm_2(5, 8, 2, 3, 10), 0.00106058384743)
-    assert_almost_equal(ellip_harm_2(5, 8, 2, 4, 10), 0.00106774492306)
-    assert_almost_equal(ellip_harm_2(5, 8, 2, 5, 10), 0.00107976356454)
+        # Values produced by code from arXiv:1204.0267
+        assert_almost_equal(ellip_harm_2(5, 8, 2, 1, 10), 0.00108056853382)
+        assert_almost_equal(ellip_harm_2(5, 8, 2, 2, 10), 0.00105820513809)
+        assert_almost_equal(ellip_harm_2(5, 8, 2, 3, 10), 0.00106058384743)
+        assert_almost_equal(ellip_harm_2(5, 8, 2, 4, 10), 0.00106774492306)
+        assert_almost_equal(ellip_harm_2(5, 8, 2, 5, 10), 0.00107976356454)
+
 
 def test_ellip_harm():
 
@@ -265,3 +267,12 @@ def test_ellip_harm():
                 points.append((h2[i], k2[i], n, p, s[i]))
     points = np.array(points)
     assert_func_equal(ellip_harm, ellip_harm_known, points, rtol=1e-12)
+
+
+def test_ellip_harm_invalid_p():
+    # Regression test. This should return nan.
+    n = 4
+    # Make p > 2*n + 1.
+    p = 2*n + 2
+    result = ellip_harm(0.5, 2.0, n, p, 0.2)
+    assert np.isnan(result)

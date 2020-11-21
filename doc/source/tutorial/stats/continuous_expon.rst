@@ -11,7 +11,9 @@ therefore ( :math:`x\geq0` )
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x\right) & = & e^{-x}\\ F\left(x\right) & = & \Gamma\left(1,x\right)=1-e^{-x}\\ G\left(q\right) & = & -\log\left(1-q\right)\end{eqnarray*}
+    \begin{eqnarray*} f\left(x\right) & = & e^{-x}\\
+    F\left(x\right) & = & \gamma\left(1,x\right) = 1-e^{-x}\\
+    G\left(q\right) & = & -\log\left(1-q\right)\end{eqnarray*}
 
 .. math::
 

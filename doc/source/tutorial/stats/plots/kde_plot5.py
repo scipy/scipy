@@ -9,6 +9,7 @@ def measure(n):
     m2 = np.random.normal(scale=0.5, size=n)
     return m1+m2, m1-m2
 
+
 m1, m2 = measure(2000)
 xmin = m1.min()
 xmax = m1.max()
