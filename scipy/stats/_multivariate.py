@@ -3947,12 +3947,12 @@ class multivariate_t_gen(multi_rv_generic):
     `df`, and `allow_singular` parameters, returning a "frozen"
     multivariate_t random variable:
 
+    >>> from scipy.stats import multivariate_t
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
     >>> # Frozen object with the same methods but holding the given location,
     >>> # scale, and degrees of freedom fixed.
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import multivariate_t
     >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
     >>> pos = np.dstack((x, y))
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
