@@ -90,15 +90,6 @@ matrix:
         - OTHERSPEC="--pre --upgrade --timeout=60"
         - NPY_USE_BLAS_ILP64=1
     - python: 3.7
-      name: "Refguide-check, Latest NumPy"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - USE_WHEEL=1
-        - REFGUIDE_CHECK=1
-        - NUMPYSPEC="--upgrade numpy"
-        - ASV_CHECK=1
-    - python: 3.7
       name: "Source Distribution"
       env:
         - TESTMODE=fast
