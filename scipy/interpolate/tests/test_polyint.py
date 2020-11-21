@@ -615,6 +615,10 @@ class TestCubicSpline(object):
 
     def test_three_points(self):
         # gh-11758: Fails computing a_m2_m1
+        # In this case, s (first derivatives) could be found manually by solving
+        # system of 2 linear equations. Due to solution of this system,
+        # s[i] = (h1m2 + h2m1) / (h1 + h2), where h1 = x[1] - x[0], h2 = x[2] - x[1],
+        # m1 = (y[1] - y[0]) / h1, m2 = (y[2] - y[1]) / h2
         x = np.array([1.0, 2.75, 3.0])
         y = np.array([1.0, 15.0, 1.0])
         S = CubicSpline(x, y, bc_type='periodic')
