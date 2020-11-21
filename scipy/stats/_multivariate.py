@@ -34,14 +34,14 @@ _LOG_PI = np.log(np.pi)
 
 
 _doc_random_state = """\
-random_state : {None, int, np.random.RandomState, np.random.Generator}, optional
+seed : {None, int, np.random.RandomState, np.random.Generator}, optional
     Used for drawing random variates.
-    If `seed` is `None` the `~np.random.RandomState` singleton is used.
+    If `seed` is `None`, the `~np.random.RandomState` singleton is used.
     If `seed` is an int, a new ``RandomState`` instance is used, seeded
     with seed.
     If `seed` is already a ``RandomState`` or ``Generator`` instance,
     then that object is used.
-    Default is None.
+    Default is `None`.
 """
 
 
@@ -242,18 +242,18 @@ allow_singular : bool, optional
     Whether to allow a singular covariance matrix.  (Default: False)
 """
 
-_mvn_doc_callparams_note = \
-    """Setting the parameter `mean` to `None` is equivalent to having `mean`
-    be the zero-vector. The parameter `cov` can be a scalar, in which case
-    the covariance matrix is the identity times that value, a vector of
-    diagonal entries for the covariance matrix, or a two-dimensional
-    array_like.
-    """
+_mvn_doc_callparams_note = """\
+Setting the parameter `mean` to `None` is equivalent to having `mean`
+be the zero-vector. The parameter `cov` can be a scalar, in which case
+the covariance matrix is the identity times that value, a vector of
+diagonal entries for the covariance matrix, or a two-dimensional
+array_like.
+"""
 
 _mvn_doc_frozen_callparams = ""
 
-_mvn_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_mvn_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 mvn_docdict_params = {
     '_mvn_doc_default_callparams': _mvn_doc_default_callparams,
@@ -277,33 +277,23 @@ class multivariate_normal_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, mean=None, cov=1, allow_singular=False)``
+    pdf(x, mean=None, cov=1, allow_singular=False)
         Probability density function.
-    ``logpdf(x, mean=None, cov=1, allow_singular=False)``
+    logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    ``cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Cumulative distribution function.
-    ``logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
-    ``rvs(mean=None, cov=1, size=1, random_state=None)``
+    rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    ``entropy()``
+    entropy()
         Compute the differential entropy of the multivariate normal.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_mvn_doc_default_callparams)s
     %(_doc_random_state)s
-
-    Alternatively, the object may be called (as a function) to fix the mean
-    and covariance parameters, returning a "frozen" multivariate normal
-    random variable:
-
-    rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
-        - Frozen object with the same methods but holding the given
-          mean and covariance fixed.
 
     Notes
     -----
@@ -338,6 +328,14 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> fig1 = plt.figure()
     >>> ax = fig1.add_subplot(111)
     >>> ax.plot(x, y)
+
+    Alternatively, the object may be called (as a function) to fix the mean
+    and covariance parameters, returning a "frozen" multivariate normal
+    random variable:
+
+    >>> rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # mean and covariance fixed.
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.  This allows us for instance to
@@ -803,22 +801,22 @@ colcov : array_like, optional
     Among-column covariance matrix of the distribution (default: `1`)
 """
 
-_matnorm_doc_callparams_note = \
-    """If `mean` is set to `None` then a matrix of zeros is used for the mean.
-    The dimensions of this matrix are inferred from the shape of `rowcov` and
-    `colcov`, if these are provided, or set to `1` if ambiguous.
+_matnorm_doc_callparams_note = """\
+If `mean` is set to `None` then a matrix of zeros is used for the mean.
+The dimensions of this matrix are inferred from the shape of `rowcov` and
+`colcov`, if these are provided, or set to `1` if ambiguous.
 
-    `rowcov` and `colcov` can be two-dimensional array_likes specifying the
-    covariance matrices directly. Alternatively, a one-dimensional array will
-    be be interpreted as the entries of a diagonal matrix, and a scalar or
-    zero-dimensional array will be interpreted as this value times the
-    identity matrix.
-    """
+`rowcov` and `colcov` can be two-dimensional array_likes specifying the
+covariance matrices directly. Alternatively, a one-dimensional array will
+be be interpreted as the entries of a diagonal matrix, and a scalar or
+zero-dimensional array will be interpreted as this value times the
+identity matrix.
+"""
 
 _matnorm_doc_frozen_callparams = ""
 
-_matnorm_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_matnorm_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 matnorm_docdict_params = {
     '_matnorm_doc_default_callparams': _matnorm_doc_default_callparams,
@@ -843,27 +841,17 @@ class matrix_normal_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(X, mean=None, rowcov=1, colcov=1)``
+    pdf(X, mean=None, rowcov=1, colcov=1)
         Probability density function.
-    ``logpdf(X, mean=None, rowcov=1, colcov=1)``
+    logpdf(X, mean=None, rowcov=1, colcov=1)
         Log of the probability density function.
-    ``rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)``
+    rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)
         Draw random samples.
 
     Parameters
     ----------
-    X : array_like
-        Quantiles, with the last two axes of `X` denoting the components.
     %(_matnorm_doc_default_callparams)s
     %(_doc_random_state)s
-
-    Alternatively, the object may be called (as a function) to fix the mean
-    and covariance parameters, returning a "frozen" matrix normal
-    random variable:
-
-    rv = matrix_normal(mean=None, rowcov=1, colcov=1)
-        - Frozen object with the same methods but holding the given
-          mean and covariance fixed.
 
     Notes
     -----
@@ -931,6 +919,15 @@ class matrix_normal_gen(multi_rv_generic):
     >>> equiv_cov = np.kron(V,U)
     >>> multivariate_normal.pdf(vectorised_X, mean=equiv_mean, cov=equiv_cov)
     0.023410202050005054
+
+    Alternatively, the object may be called (as a function) to fix the mean
+    and covariance parameters, returning a "frozen" matrix normal
+    random variable:
+
+    >>> rv = matrix_normal(mean=None, rowcov=1, colcov=1)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # mean and covariance fixed.
+
     """
 
     def __init__(self, seed=None):
@@ -1162,7 +1159,7 @@ class matrix_normal_frozen(multi_rv_frozen):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-       seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
             This parameter defines the object to use for drawing random
             variates.
             If `seed` is `None` the `~np.random.RandomState` singleton is used.
@@ -1223,8 +1220,8 @@ alpha : array_like
 """
 _dirichlet_doc_frozen_callparams = ""
 
-_dirichlet_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_dirichlet_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 dirichlet_docdict_params = {
     '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
@@ -1324,33 +1321,23 @@ class dirichlet_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, alpha)``
+    pdf(x, alpha)
         Probability density function.
-    ``logpdf(x, alpha)``
+    logpdf(x, alpha)
         Log of the probability density function.
-    ``rvs(alpha, size=1, random_state=None)``
+    rvs(alpha, size=1, random_state=None)
         Draw random samples from a Dirichlet distribution.
-    ``mean(alpha)``
+    mean(alpha)
         The mean of the Dirichlet distribution
-    ``var(alpha)``
+    var(alpha)
         The variance of the Dirichlet distribution
-    ``entropy(alpha)``
+    entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_dirichlet_doc_default_callparams)s
     %(_doc_random_state)s
-
-    Alternatively, the object may be called (as a function) to fix
-    concentration parameters, returning a "frozen" Dirichlet
-    random variable:
-
-    rv = dirichlet(alpha)
-        - Frozen object with the same methods but holding the given
-          concentration parameters fixed.
 
     Notes
     -----
@@ -1418,6 +1405,14 @@ class dirichlet_gen(multi_rv_generic):
     >>> dirichlet.rvs(alpha, size=2, random_state=2)
     array([[0.01639427, 0.1292273 , 0.85437844],
            [0.00156917, 0.19033695, 0.80809388]])
+
+    Alternatively, the object may be called (as a function) to fix
+    concentration parameters, returning a "frozen" Dirichlet
+    random variable:
+
+    >>> rv = dirichlet(alpha)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # concentration parameters fixed.
 
     """
 
@@ -1627,8 +1622,8 @@ _wishart_doc_callparams_note = ""
 
 _wishart_doc_frozen_callparams = ""
 
-_wishart_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_wishart_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 wishart_docdict_params = {
     '_doc_default_callparams': _wishart_doc_default_callparams,
@@ -1655,29 +1650,19 @@ class wishart_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, df, scale)``
+    pdf(x, df, scale)
         Probability density function.
-    ``logpdf(x, df, scale)``
+    logpdf(x, df, scale)
         Log of the probability density function.
-    ``rvs(df, scale, size=1, random_state=None)``
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from a Wishart distribution.
-    ``entropy()``
+    entropy()
         Compute the differential entropy of the Wishart distribution.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
     %(_doc_random_state)s
-
-    Alternatively, the object may be called (as a function) to fix the degrees
-    of freedom and scale parameters, returning a "frozen" Wishart random
-    variable:
-
-    rv = wishart(df=1, scale=1)
-        - Frozen object with the same methods but holding the given
-          degrees of freedom and scale fixed.
 
     See Also
     --------
@@ -1739,6 +1724,14 @@ class wishart_gen(multi_rv_generic):
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
+
+    Alternatively, the object may be called (as a function) to fix the degrees
+    of freedom and scale parameters, returning a "frozen" Wishart random
+    variable:
+
+    >>> rv = wishart(df=1, scale=1)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # degrees of freedom and scale fixed.
 
     """
 
@@ -2387,27 +2380,17 @@ class invwishart_gen(wishart_gen):
 
     Methods
     -------
-    ``pdf(x, df, scale)``
+    pdf(x, df, scale)
         Probability density function.
-    ``logpdf(x, df, scale)``
+    logpdf(x, df, scale)
         Log of the probability density function.
-    ``rvs(df, scale, size=1, random_state=None)``
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
     %(_doc_random_state)s
-
-    Alternatively, the object may be called (as a function) to fix the degrees
-    of freedom and scale parameters, returning a "frozen" inverse Wishart
-    random variable:
-
-    rv = invwishart(df=1, scale=1)
-        - Frozen object with the same methods but holding the given
-          degrees of freedom and scale fixed.
 
     See Also
     --------
@@ -2473,6 +2456,14 @@ class invwishart_gen(wishart_gen):
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
+
+    Alternatively, the object may be called (as a function) to fix the degrees
+    of freedom and scale parameters, returning a "frozen" inverse Wishart
+    random variable:
+
+    >>> rv = invwishart(df=1, scale=1)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # degrees of freedom and scale fixed.
 
     """
 
@@ -2883,8 +2874,8 @@ p : array_like
     Probability of a trial falling into each category; should sum to 1
 """
 
-_multinomial_doc_callparams_note = \
-"""`n` should be a positive integer. Each element of `p` should be in the
+_multinomial_doc_callparams_note = """\
+`n` should be a positive integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
 1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
@@ -2892,8 +2883,8 @@ remaining probability left over from the earlier elements.
 
 _multinomial_doc_frozen_callparams = ""
 
-_multinomial_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_multinomial_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 multinomial_docdict_params = {
     '_doc_default_callparams': _multinomial_doc_default_callparams,
@@ -2914,30 +2905,25 @@ class multinomial_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pmf(x, n, p)``
+    pmf(x, n, p)
         Probability mass function.
-    ``logpmf(x, n, p)``
+    logpmf(x, n, p)
         Log of the probability mass function.
-    ``rvs(n, p, size=1, random_state=None)``
+    rvs(n, p, size=1, random_state=None)
         Draw random samples from a multinomial distribution.
-    ``entropy(n, p)``
+    entropy(n, p)
         Compute the entropy of the multinomial distribution.
-    ``cov(n, p)``
+    cov(n, p)
         Compute the covariance matrix of the multinomial distribution.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
     Notes
     -----
     %(_doc_callparams_note)s
-
-    Alternatively, the object may be called (as a function) to fix the `n` and
-    `p` parameters, returning a "frozen" multinomial random variable:
 
     The probability mass function for `multinomial` is
 
@@ -3003,6 +2989,13 @@ class multinomial_gen(multi_rv_generic):
     a :math:`2 \times 2` matrix, the result in fact has shape ``(2, 2, 2)``,
     where ``result[0]`` is equal to ``multinomial.cov(n=4, p=[.3, .7])`` and
     ``result[1]`` is equal to ``multinomial.cov(n=5, p=[.4, .6])``.
+
+    Alternatively, the object may be called (as a function) to fix the `n` and
+    `p` parameters, returning a "frozen" multinomial random variable:
+
+    >>> rv = multinomial(n=7, p=[.3, .7])
+    >>> # Frozen object with the same methods but holding the given
+    >>> # degrees of freedom and scale fixed.
 
     See also
     --------
@@ -3317,7 +3310,7 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from SO(N).
 
     Parameters
@@ -3357,6 +3350,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     This generates one random matrix from SO(3). It is orthogonal and
     has a determinant of 1.
+
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, returning a “frozen” special_ortho_group random variable:
+
+    >>> rv = special_ortho_group(5)
+    >>> # Frozen object with the same methods but holding the
+    >>> # dimension parameter fixed.
 
     """
 
@@ -3474,7 +3474,7 @@ class ortho_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from O(N).
 
     Parameters
@@ -3581,7 +3581,7 @@ class random_correlation_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(eigs=None, random_state=None)``
+    rvs(eigs=None, random_state=None)
         Draw random correlation matrices, all with eigenvalues eigs.
 
     Parameters
@@ -3772,7 +3772,7 @@ class unitary_group_gen(multi_rv_generic):
 
     Methods
     -------
-    ``rvs(dim=None, size=1, random_state=None)``
+    rvs(dim=None, size=1, random_state=None)
         Draw random samples from U(N).
 
     Parameters
@@ -3856,8 +3856,7 @@ class unitary_group_gen(multi_rv_generic):
 unitary_group = unitary_group_gen()
 
 
-_mvt_doc_default_callparams = \
-"""
+_mvt_doc_default_callparams = """\
 loc : array_like, optional
     Location of the distribution. (default ``0``)
 shape : array_like, optional
@@ -3869,15 +3868,15 @@ allow_singular : bool, optional
     Whether to allow a singular matrix. (default ``False``)
 """
 
-_mvt_doc_callparams_note = \
-"""Setting the parameter `loc` to ``None`` is equivalent to having `loc`
+_mvt_doc_callparams_note = """\
+Setting the parameter `loc` to ``None`` is equivalent to having `loc`
 be the zero-vector. The parameter `shape` can be a scalar, in which case
 the shape matrix is the identity times that value, a vector of
 diagonal entries for the shape matrix, or a two-dimensional array_like.
 """
 
-_mvt_doc_frozen_callparams_note = \
-"""See class definition for a detailed description of parameters."""
+_mvt_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 mvt_docdict_params = {
     '_mvt_doc_default_callparams': _mvt_doc_default_callparams,
@@ -3906,17 +3905,15 @@ class multivariate_t_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+    pdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Probability density function.
-    ``logpdf(x, loc=None, shape=1, df=1, allow_singular=False)``
+    logpdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Log of the probability density function.
-    ``rvs(loc=None, shape=1, df=1, size=1, random_state=None)``
+    rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
 
     Parameters
     ----------
-    x : array_like
-        Quantiles, with the last axis of `x` denoting the components.
     %(_mvt_doc_default_callparams)s
     %(_doc_random_state)s
 
@@ -3946,6 +3943,14 @@ class multivariate_t_gen(multi_rv_generic):
 
     Examples
     --------
+    The object may be called (as a function) to fix the `loc`, `shape`,
+    `df`, and `allow_singular` parameters, returning a "frozen"
+    multivariate_t random variable:
+
+    >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
+    >>> # Frozen object with the same methods but holding the given location,
+    >>> # scale, and degrees of freedom fixed.
+
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_t
     >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
@@ -4301,8 +4306,8 @@ values, the result will contain ``nan`` there.
 
 _mhg_doc_frozen_callparams = ""
 
-_mhg_doc_frozen_callparams_note = \
-    """See class definition for a detailed description of parameters."""
+_mhg_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
 
 mhg_docdict_params = {
     '_doc_default_callparams': _mhg_doc_default_callparams,
@@ -4323,18 +4328,18 @@ class multivariate_hypergeom_gen(multi_rv_generic):
 
     Methods
     -------
-    ``pmf(x, m, n)``
+    pmf(x, m, n)
         Probability mass function.
-    ``logpmf(x, m, n)``
+    logpmf(x, m, n)
         Log of the probability mass function.
-    ``rvs(m, n, size=1, random_state=None)``
+    rvs(m, n, size=1, random_state=None)
         Draw random samples from a multivariate hypergeometric
         distribution.
-    ``mean(m, n)``
+    mean(m, n)
         Mean of the multivariate hypergeometric distribution.
-    ``var(m, n)``
+    var(m, n)
         Variance of the multivariate hypergeometric distribution.
-    ``cov(m, n)``
+    cov(m, n)
         Compute the covariance matrix of the multivariate
         hypergeometric distribution.
 
