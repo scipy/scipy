@@ -85,7 +85,6 @@ class Rectangle(object):
 
     Represents a Cartesian product of intervals.
     """
-
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
         self.maxes = np.maximum(maxes,mins).astype(float)
@@ -387,7 +386,7 @@ class KDTree(cKDTree):
                instead.
 
         i : integer or array of integers
-            The index of the neighbors in ``self.data``.
+            The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
 
