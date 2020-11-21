@@ -28,6 +28,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <math.h>
 #include "numpy/arrayobject.h"
 #include "numpy/ndarraytypes.h"
 #include "rectangular_lsap/rectangular_lsap.h"
@@ -55,6 +56,15 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     int num_rows = PyArray_DIM(obj_cont, 0);
     int num_cols = PyArray_DIM(obj_cont, 1);
+
+    // test for NaN and -inf entries
+    for (size_t i=0;i<(size_t)num_rows*num_cols;i++) {
+        if (cost_matrix[i] != cost_matrix[i] || cost_matrix[i] == -INFINITY) {
+            PyErr_SetString(PyExc_ValueError,
+                            "matrix contains invalid numeric entries");
+            goto cleanup;
+        }
+    }
 
     npy_intp dim[1] = { num_rows };
     x = PyArray_SimpleNew(1, dim, NPY_INT64);

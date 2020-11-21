@@ -89,9 +89,6 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     if maximize:
         cost_matrix = -cost_matrix
 
-    if np.any(np.isneginf(cost_matrix) | np.isnan(cost_matrix)):
-        raise ValueError("matrix contains invalid numeric entries")
-
     cost_matrix = cost_matrix.astype(np.double)
     a = np.arange(np.min(cost_matrix.shape))
 
