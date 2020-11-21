@@ -706,7 +706,7 @@ cdef class cKDTree:
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
-            The locations of the neighbors in ``self.data``.
+            The index of each neighbor in ``self.data``.
             If ``x`` has shape ``tuple+(self.m,)``, then ``i`` has shape ``tuple+(k,)``.
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with ``self.n``.
