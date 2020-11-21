@@ -3352,7 +3352,7 @@ class special_ortho_group_gen(multi_rv_generic):
     has a determinant of 1.
 
     Alternatively, the object may be called (as a function) to fix the `dim`
-    parameter, returning a “frozen” special_ortho_group random variable:
+    parameter, returning a "frozen" special_ortho_group random variable:
 
     >>> rv = special_ortho_group(5)
     >>> # Frozen object with the same methods but holding the
