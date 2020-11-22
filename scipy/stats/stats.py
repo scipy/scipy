@@ -170,7 +170,7 @@ from math import gcd
 from collections import namedtuple
 
 import numpy as np
-from numpy import array, asarray, ma, zeros
+from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
@@ -178,9 +178,9 @@ from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 
 import scipy.special as special
+
 from scipy import linalg
 from . import distributions
-from ._rank import rankdata, tiecorrect
 
 from . import mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
@@ -5562,7 +5562,6 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None):
     """
@@ -5746,7 +5745,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     return Ttest_indResult(*res)
 
 
-<<<<<<< HEAD
 def _init_summation_index(cats):
     """
     Creates a matrix filled with category permutations
