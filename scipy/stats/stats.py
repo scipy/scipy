@@ -5763,6 +5763,23 @@ def _data_permutations(data, n=None, axis=-1):
     return data
 
 
+def _calc_t_stat(a, b, equal_var, axis=-1):
+    na = a.shape[axis]
+    nb = b.shape[axis]
+    avg_a = np.mean(a, axis=axis)
+    avg_b = np.mean(b, axis=axis)
+    var_a = np.var(a, axis=axis, ddof=1)
+    var_b = np.var(b, axis=axis, ddof=1)
+
+    # Calculate the t statistic
+    if not equal_var:
+        denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
+    else:
+        denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
+
+    return (avg_a-avg_b)/denom
+
+
 def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
                        random_state=None):
     """
@@ -5812,27 +5829,10 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
 
     copy_cats = cats.copy().astype(bool)
 
-    # I'm just trying to rework the variance calculation in the existing code;
-    # trying not to touch much outside
-    nb = np.sum(copy_cats)
-    na = copy_cats.shape[-1] - nb
-
     for p in range(permutations+1):
         a = mat[:, ~copy_cats]
         b = mat[:, copy_cats]
-        avg_a = np.mean(a, axis=-1)
-        avg_b = np.mean(b, axis=-1)
-        var_a = np.var(a, axis=-1, ddof=1)
-        var_b = np.var(b, axis=-1, ddof=1)
-
-        # Calculate the t statistic
-        if not equal_var:
-            denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
-
-        else:
-            denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
-
-        t_stat[:, p] = (avg_a-avg_b)/denom
+        t_stat[:, p] = _calc_t_stat(a, b, equal_var)
         random_state.shuffle(copy_cats)
 
     # Calculate the p-values
