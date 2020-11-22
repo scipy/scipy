@@ -24,6 +24,52 @@ variables:
     openblas_version: 0.3.9
 
 jobs:
+- job: pre_release_deps_source_dist
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - script: >-
+      python -m pip install --upgrade
+      pip==20.2.4
+      "setuptools<50"
+      wheel
+    displayName: 'Install deps'
+    failOnStderr: true
+  - script: >-
+      python -m pip install --pre --upgrade --timeout=60
+      cython
+      mpmath
+      pybind11
+      pytest
+      pytest-xdist
+    displayName: 'Install pre-release deps'
+    failOnStderr: true
+  - script: |
+      python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
+    displayName: 'Install pre-release NumPy wheel'
+    failOnStderr: true
+  - script: |
+        python tools/suppress_output.py python setup.py sdist
+        cd dist
+        python -m pip install $PWD/scipy* -v
+        cd ..
+    displayName: 'SciPy sdist install'
+    failOnStderr: true
+  - script: |
+        python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
+        tools/validate_runtests_log.py fast < runtests.log
+    displayName: 'Run Fast SciPy tests'
+    failOnStderr: true
+  - script: |
+         ./tools/check_pyext_symbol_hiding.sh build
+    displayName: 'Check dynamic symbol hiding works on Linux'
+    failOnStderr: true
 - job: refguide_asv_check
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
