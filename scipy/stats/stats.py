@@ -5610,9 +5610,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         The calculated t-statistic.
-    prob : float or array
+    pvalue : float or array
         The two-tailed p-value.
 
     Notes
@@ -5631,6 +5631,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     label - 0 corresponding to the first sample and 1 corresponding to the
     second sample. A vector of these labels is permutated multiple times and
     these permutations are used to calculate the permutation test.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -5688,16 +5689,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-    if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
-
-    if permutations is not None:
-        random_state = check_random_state(random_state)
-
-        if a.ndim == 1:  # will this be OK for masked arrays?
-            a = np.atleast_2d(a).T
-        if b.ndim == 1:
-            b = np.atleast_2d(b).T
 
     # check both a and b
     cna, npa = _contains_nan(a, nan_policy)
@@ -5713,6 +5704,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
+
+    if permutations is not None:
+        random_state = check_random_state(random_state)
+
+        if a.ndim == 1:  # will this be OK for masked arrays?
+            a = np.atleast_2d(a).T
+        if b.ndim == 1:
+            b = np.atleast_2d(b).T
 
         if a.shape[1-axis] != b.shape[1-axis]:
             if a.shape[1-axis] > b.shape[1-axis]:
@@ -5741,7 +5740,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         res = _ttest_ind_from_stats(np.mean(a, axis),
                                     np.mean(b, axis),
                                     denom, df)
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
     return Ttest_indResult(*res)
 
 
