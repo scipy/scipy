@@ -5708,7 +5708,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if permutations is not None:
         random_state = check_random_state(random_state)
 
-        if a.ndim == 1:  # will this be OK for masked arrays?
+        if a.ndim == 1:
             a = np.atleast_2d(a).T
         if b.ndim == 1:
             b = np.atleast_2d(b).T
@@ -5719,9 +5719,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             else:
                 a = np.tile(a, b.shape[1-axis]//a.shape[1-axis])
 
-        mat = np.concatenate((a, b), axis=axis)
-        cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
-        res = _permutation_ttest(mat, cats,
+        res = _permutation_ttest(a, b,
                                  axis=axis,
                                  equal_var=equal_var,
                                  permutations=permutations,
@@ -5781,7 +5779,7 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     return (avg_a-avg_b)/denom
 
 
-def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
+def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
                        random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
@@ -5820,21 +5818,12 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
 
     """
     random_state = check_random_state(random_state)
-    if axis == 0:
-        mat = mat.transpose()
-    if mat.ndim < 2:  # Handle 1-D arrays
-        mat = mat.reshape((1, len(mat)))
 
-    r, c = mat.shape
-    t_stat = np.zeros((r, permutations+1))
+    t_stat0 = _calc_t_stat(a, b, equal_var, axis=axis)
 
-    copy_cats = cats.copy().astype(bool)
-
-    a = mat[:, ~copy_cats]
-    b = mat[:, copy_cats]
-    t_stat0 = _calc_t_stat(a, b, equal_var)
-
-    na = a.shape[-1]
+    na = a.shape[axis]
+    mat = np.concatenate((a, b), axis=axis)
+    mat = np.moveaxis(mat, axis, -1)
     mat_perm = _data_permutations(mat, n=permutations,
                                   random_state=random_state)
     a = mat_perm[..., :na]
@@ -5845,13 +5834,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     cmps = abs(t_stat) >= abs(t_stat0)
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
 
-    t_stat = t_stat0
-    if t_stat.size == 1:
-        # Return scalars for 1-D input arrays
-        t_stat = t_stat[0]
-        pvalues = pvalues[0]
-
-    return (t_stat, pvalues)
+    return (t_stat0, pvalues)
 
 
 def _get_len(a, axis, msg):
