@@ -5829,17 +5829,21 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
 
     copy_cats = cats.copy().astype(bool)
 
-    for p in range(permutations+1):
+    a = mat[:, ~copy_cats]
+    b = mat[:, copy_cats]
+    t_stat0 = _calc_t_stat(a, b, equal_var)
+
+    for p in range(permutations):
+        random_state.shuffle(copy_cats)
         a = mat[:, ~copy_cats]
         b = mat[:, copy_cats]
         t_stat[:, p] = _calc_t_stat(a, b, equal_var)
-        random_state.shuffle(copy_cats)
 
     # Calculate the p-values
-    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
+    cmps = abs(t_stat.transpose()) >= abs(t_stat0)
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
 
-    t_stat = t_stat[:, 0]
+    t_stat = t_stat0
     if t_stat.size == 1:
         # Return scalars for 1-D input arrays
         t_stat = t_stat[0]
