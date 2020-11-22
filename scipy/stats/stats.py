@@ -5742,22 +5742,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     return Ttest_indResult(*res)
 
 
-def _init_summation_index(cats):
-    """
-    Creates a matrix filled with category permutations
-
-    cats: numpy.array
-       List of class assignments
-    """
-    c = len(cats)
-    num_cats = len(np.unique(cats))  # Number of distinct categories
-    copy_cats = cats.copy()
-    perms = np.zeros((c, num_cats), dtype=cats.dtype)
-    for i in range(num_cats):
-        perms[:, i] = (copy_cats == i).astype(cats.dtype)
-    return perms
-
-
 def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
                        random_state=None):
     """
@@ -5806,22 +5790,23 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     num_cats = 2  # Only 2 classes in t-test
     t_stat = np.zeros((r, num_cats*(permutations+1)))
 
-    copy_cats = cats.copy()
+    copy_cats = cats.copy().astype(bool)
+
+    # I'm just trying to rework the variance calculation in the existing code;
+    # trying not to touch much outside
+    nb = np.sum(copy_cats)
+    na = copy_cats.shape[-1] - nb
+    tot = np.array([na, nb])
 
     for p in range(permutations+1):
-        perms = _init_summation_index(copy_cats)
-
-        # Perform matrix multiplication on data matrix and calculate sums and
-        # squared sums
-        _sums = np.dot(mat, perms)
-        _sums2 = np.dot(np.multiply(mat, mat), perms)
-
-        # Calculate means and sample variances
-        tot = perms.sum(axis=0)
-        _avgs = _sums / tot
-        _avgs2 = _sums2 / tot
-        _vars = _avgs2 - np.multiply(_avgs, _avgs)
-        _samp_vars = np.multiply(tot, _vars) / (tot-1)
+        a = mat[:, copy_cats]
+        b = mat[:, ~copy_cats]
+        avg_a = np.mean(a, axis=-1)
+        avg_b = np.mean(b, axis=-1)
+        var_a = np.var(a, axis=-1, ddof=1)
+        var_b = np.var(b, axis=-1, ddof=1)
+        _avgs = np.array([avg_b, avg_a]).T
+        _samp_vars = np.array([var_b, var_a]).T
 
         idx = np.arange(0, num_cats, num_cats, dtype=np.int32)
 
