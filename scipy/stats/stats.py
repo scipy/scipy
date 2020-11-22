@@ -5787,8 +5787,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
         mat = mat.reshape((1, len(mat)))
 
     r, c = mat.shape
-    num_cats = 2  # Only 2 classes in t-test
-    t_stat = np.zeros((r, num_cats*(permutations+1)))
+    t_stat = np.zeros((r, permutations+1))
 
     copy_cats = cats.copy().astype(bool)
 
@@ -5796,7 +5795,6 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     # trying not to touch much outside
     nb = np.sum(copy_cats)
     na = copy_cats.shape[-1] - nb
-    tot = np.array([na, nb])
 
     for p in range(permutations+1):
         a = mat[:, copy_cats]
@@ -5805,23 +5803,16 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
         avg_b = np.mean(b, axis=-1)
         var_a = np.var(a, axis=-1, ddof=1)
         var_b = np.var(b, axis=-1, ddof=1)
-        _avgs = np.array([avg_b, avg_a]).T
-        _samp_vars = np.array([var_b, var_a]).T
-
-        idx = np.arange(0, num_cats, num_cats, dtype=np.int32)
 
         # Calculate the t statistic
         if not equal_var:
-            denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
-                            np.divide(_samp_vars[:, idx], tot[idx]))
+            denom = np.sqrt(var_a/nb + var_b/na)
         else:
-            df = tot[idx] + tot[idx+1] - 2
-            svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) *
-                    _samp_vars[:, idx]) / df
-            denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
+            df = na + nb - 2
+            svar = ((nb - 1) * var_a + (na - 1) * var_b) / df
+            denom = np.sqrt(svar * (1.0 / nb + 1.0 / na))
 
-        t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1],
-                                          denom))
+        t_stat[:, p] = (avg_b-avg_a)/denom
         random_state.shuffle(copy_cats)
 
     # Calculate the p-values
