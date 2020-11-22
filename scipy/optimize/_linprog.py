@@ -67,11 +67,15 @@ def linprog_verbose_callback(res):
         status : int
             An integer representing the exit status of the optimization:
 
-            0 : Optimization terminated successfully
-            1 : Iteration limit reached
-            2 : Problem appears to be infeasible
-            3 : Problem appears to be unbounded
-            4 : Serious numerical difficulties encountered
+            ``0`` : Optimization terminated successfully
+
+            ``1`` : Iteration limit reached
+
+            ``2`` : Problem appears to be infeasible
+
+            ``3`` : Problem appears to be unbounded
+
+            ``4`` : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -144,11 +148,15 @@ def linprog_terse_callback(res):
         status : int
             An integer representing the exit status of the optimization:
 
-            0 : Optimization terminated successfully
-            1 : Iteration limit reached
-            2 : Problem appears to be infeasible
-            3 : Problem appears to be unbounded
-            4 : Serious numerical difficulties encountered
+            ``0`` : Optimization terminated successfully
+
+            ``1`` : Iteration limit reached
+
+            ``2`` : Problem appears to be infeasible
+
+            ``3`` : Problem appears to be unbounded
+
+            ``4`` : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -263,10 +271,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
             ``4`` : Numerical difficulties encountered.
 
-            nit : int
-                The current iteration number.
-            message : str
-                A string descriptor of the algorithm status.
+        nit : int
+            The current iteration number.
+        message : str
+            A string descriptor of the algorithm status.
 
         Callback functions are not currently supported by the HiGHS methods.
 

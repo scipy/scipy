@@ -63,9 +63,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         .. note::
 
-           Only the COBYLA and SLSQP local minimize methods currently
-           support constraint arguments. If the ``constraints`` sequence
-           used in the local optimization problem is not defined in
+           Only the COBYLA, SLSQP, and trust-constr local minimize methods
+           currently support ``constraint`` arguments. If the ``constraints``
+           sequence used in the local optimization problem is not defined in
            ``minimizer_kwargs`` and a constrained method is used then the
            global ``constraints`` will be used.
            (Defining a ``constraints`` sequence in ``minimizer_kwargs``
@@ -85,7 +85,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         current parameter vector.
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
-        ``scipy.optimize.minimize`` Some important options could be:
+        ``scipy.optimize.minimize``. Some important options could be:
 
         method : str
             The minimization method (e.g. ``SLSQP``).
@@ -98,9 +98,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     options : dict, optional
         A dictionary of solver options. Many of the options specified for the
-        global routine are also passed to the scipy.optimize.minimize routine.
-        The options that are also passed to the local routine are marked with
-        "(L)".
+        global routine are also passed to the ``scipy.optimize.minimize``
+        routine. The options that are also passed to the local routine are
+        marked with "(L)".
 
         Stopping criteria, the algorithm will terminate if any of the specified
         criteria are met. However, the default algorithm does not require any to
@@ -111,7 +111,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
             (Note only methods that support this option will terminate
             the routine at precisely exact specified value. Otherwise the
             criterion will only terminate during a global iteration)
-        f_min
+        f_min : float
             Specify the minimum objective function value, if it is known.
         f_tol : float
             Precision goal for the value of f in the stopping

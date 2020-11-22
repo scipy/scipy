@@ -332,39 +332,35 @@ def _root_broyden1_doc():
         'armijo'.
     jac_options : dict, optional
         Options for the respective Jacobian approximation.
-            alpha : float, optional
-                Initial guess for the Jacobian is (-1/alpha).
-            reduction_method : str or tuple, optional
-                Method used in ensuring that the rank of the Broyden
-                matrix stays low. Can either be a string giving the
-                name of the method, or a tuple of the form ``(method,
-                param1, param2, ...)`` that gives the name of the
-                method and values for additional parameters.
 
-                Methods available:
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        reduction_method : str or tuple, optional
+            Method used in ensuring that the rank of the Broyden
+            matrix stays low. Can either be a string giving the
+            name of the method, or a tuple of the form ``(method,
+            param1, param2, ...)`` that gives the name of the
+            method and values for additional parameters.
 
-                - ``restart``
-                    Drop all matrix columns. Has no
-                    extra parameters.
-                - ``simple``
-                    Drop oldest matrix column. Has no
-                    extra parameters.
-                - ``svd``
-                    Keep only the most significant SVD
-                    components.
+            Methods available:
 
-                Extra parameters:
+            ``restart`` : Drop all matrix columns. Has no extra parameters.
 
-                - ``to_retain``
-                    Number of SVD components to
-                    retain when rank reduction is done.
-                    Default is ``max_rank - 2``.
+            ``simple`` : Drop oldest matrix column. Has no extra parameters.
 
-            max_rank : int, optional
-                Maximum rank for the Broyden matrix.
-                Default is infinity (i.e., no rank reduction).
+            ``svd`` : Keep only the most significant SVD components.
+
+            Extra parameters:
+
+            ``to_retain`` : Number of SVD components to retain when rank
+              reduction is done. Default is ``max_rank - 2``.
+
+        max_rank : int, optional
+            Maximum rank for the Broyden matrix.
+            Default is infinity (i.e., no rank reduction).
     """
     pass
+
 
 def _root_broyden2_doc():
     """
@@ -409,28 +405,23 @@ def _root_broyden2_doc():
 
             Methods available:
 
-            - ``restart``
-                Drop all matrix columns. Has no
-                extra parameters.
-            - ``simple``
-                Drop oldest matrix column. Has no
-                extra parameters.
-            - ``svd``
-                Keep only the most significant SVD
-                components.
+            ``restart`` : Drop all matrix columns. Has no extra parameters.
+
+            ``simple`` : Drop oldest matrix column. Has no extra parameters.
+
+            ``svd`` : Keep only the most significant SVD components.
 
             Extra parameters:
 
-            - ``to_retain``
-                Number of SVD components to
-                retain when rank reduction is done.
-                Default is ``max_rank - 2``.
+            ``to_retain`` : Number of SVD components to retain when rank
+              reduction is done. Default is ``max_rank - 2``.
 
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (i.e., no rank reduction).
     """
     pass
+
 
 def _root_anderson_doc():
     """

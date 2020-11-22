@@ -121,8 +121,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         the Hessian. Available quasi-Newton methods implementing
         this interface are:
 
-        - `BFGS` and
-        - `SR1`.
+        - `BFGS`
+        - `SR1`
 
         Whenever the gradient is estimated via finite-differences,
         the Hessian cannot be estimated with options
