@@ -5743,15 +5743,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     return Ttest_indResult(*res)
 
 
-def _data_permutations(data, n=None, axis=-1):
+def _data_permutations(data, n=-1, axis=-1, random_state=None):
     """Vectorized permutation of data"""
+    random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
 
     # prepare permutation indices
     m = data.shape[axis]
-    if n:
-        indices = rankdata(np.random.rand(m, n), axis=0) - 1
+    if n > 0:  # how can we generate these faster? This takes 95% of the time.
+        indices = rankdata(random_state.random((m, n)), axis=0) - 1
     else:
         indices = np.array(list(permutations(range(m)))).T
     indices = indices.astype(int)
@@ -5833,14 +5834,15 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     b = mat[:, copy_cats]
     t_stat0 = _calc_t_stat(a, b, equal_var)
 
-    for p in range(permutations):
-        random_state.shuffle(copy_cats)
-        a = mat[:, ~copy_cats]
-        b = mat[:, copy_cats]
-        t_stat[:, p] = _calc_t_stat(a, b, equal_var)
+    na = a.shape[-1]
+    mat_perm = _data_permutations(mat, n=permutations,
+                                  random_state=random_state)
+    a = mat_perm[..., :na]
+    b = mat_perm[..., na:]
+    t_stat = _calc_t_stat(a, b, equal_var)
 
     # Calculate the p-values
-    cmps = abs(t_stat.transpose()) >= abs(t_stat0)
+    cmps = abs(t_stat) >= abs(t_stat0)
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
 
     t_stat = t_stat0
