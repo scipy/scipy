@@ -51,6 +51,9 @@ jobs:
     displayName: 'Install deps'
     failOnStderr: true
   - script: |
+      sudo apt-get install -y wamerican-small
+    displayName: 'Install word list (for csgraph tutorial)'
+  - script: |
         # this step naturally writes to stderr, even on success
         python tools/suppress_output.py python setup.py build
         python tools/suppress_output.py pip wheel --no-build-isolation .
