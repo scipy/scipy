@@ -34,16 +34,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     method : str, optional
         Type of solver. Should be one of
 
-            - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
-            - 'lm'               :ref:`(see here) <optimize.root-lm>`
-            - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
-            - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
-            - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
-            - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
-            - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
-            - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
-            - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
-            - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
+        - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
+        - 'lm'               :ref:`(see here) <optimize.root-lm>`
+        - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
+        - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
+        - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
+        - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
+        - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
+        - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
+        - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
+        - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
@@ -343,22 +343,23 @@ def _root_broyden1_doc():
 
                 Methods available:
 
-                    - ``restart``
-                        Drop all matrix columns. Has no
-                        extra parameters.
-                    - ``simple``
-                        Drop oldest matrix column. Has no
-                        extra parameters.
-                    - ``svd``
-                        Keep only the most significant SVD
-                        components.
+                - ``restart``
+                    Drop all matrix columns. Has no
+                    extra parameters.
+                - ``simple``
+                    Drop oldest matrix column. Has no
+                    extra parameters.
+                - ``svd``
+                    Keep only the most significant SVD
+                    components.
 
-                        Extra parameters:
+                Extra parameters:
 
-                            - ``to_retain``
-                                Number of SVD components to
-                                retain when rank reduction is done.
-                                Default is ``max_rank - 2``.
+                - ``to_retain``
+                    Number of SVD components to
+                    retain when rank reduction is done.
+                    Default is ``max_rank - 2``.
+
             max_rank : int, optional
                 Maximum rank for the Broyden matrix.
                 Default is infinity (i.e., no rank reduction).
@@ -408,22 +409,23 @@ def _root_broyden2_doc():
 
             Methods available:
 
-                - ``restart``
-                    Drop all matrix columns. Has no
-                    extra parameters.
-                - ``simple``
-                    Drop oldest matrix column. Has no
-                    extra parameters.
-                - ``svd``
-                    Keep only the most significant SVD
-                    components.
+            - ``restart``
+                Drop all matrix columns. Has no
+                extra parameters.
+            - ``simple``
+                Drop oldest matrix column. Has no
+                extra parameters.
+            - ``svd``
+                Keep only the most significant SVD
+                components.
 
-                    Extra parameters:
+            Extra parameters:
 
-                        - ``to_retain``
-                            Number of SVD components to
-                            retain when rank reduction is done.
-                            Default is ``max_rank - 2``.
+            - ``to_retain``
+                Number of SVD components to
+                retain when rank reduction is done.
+                Default is ``max_rank - 2``.
+
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (i.e., no rank reduction).

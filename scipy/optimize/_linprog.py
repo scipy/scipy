@@ -65,13 +65,13 @@ def linprog_verbose_callback(res):
             feasible solution is sought and the T has an additional row
             representing an alternate objective function.
         status : int
-            An integer representing the exit status of the optimization::
+            An integer representing the exit status of the optimization:
 
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties encountered
+            0 : Optimization terminated successfully
+            1 : Iteration limit reached
+            2 : Problem appears to be infeasible
+            3 : Problem appears to be unbounded
+            4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -142,13 +142,13 @@ def linprog_terse_callback(res):
             feasible solution is sought and the T has an additional row
             representing an alternate objective function.
         status : int
-            An integer representing the exit status of the optimization::
+            An integer representing the exit status of the optimization:
 
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties encountered
+            0 : Optimization terminated successfully
+            1 : Iteration limit reached
+            2 : Problem appears to be infeasible
+            3 : Problem appears to be unbounded
+            4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.

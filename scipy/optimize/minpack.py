@@ -559,15 +559,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A 1-D `sigma` should contain values of standard deviations of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = sum((r / sigma) ** 2)``.
+        - A 1-D `sigma` should contain values of standard deviations of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = sum((r / sigma) ** 2)``.
 
-            - A 2-D `sigma` should contain the covariance matrix of
-              errors in `ydata`. In this case, the optimized function is
-              ``chisq = r.T @ inv(sigma) @ r``.
+        - A 2-D `sigma` should contain the covariance matrix of
+          errors in `ydata`. In this case, the optimized function is
+          ``chisq = r.T @ inv(sigma) @ r``.
 
-              .. versionadded:: 0.19
+          .. versionadded:: 0.19
 
         None (default) is equivalent of 1-D `sigma` filled with ones.
     absolute_sigma : bool, optional

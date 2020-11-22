@@ -368,11 +368,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Extra keyword arguments to be passed to the local minimizer
         ``scipy.optimize.minimize()`` Some important options could be:
 
-            method : str
-                The minimization method (e.g. ``"L-BFGS-B"``)
-            args : tuple
-                Extra arguments passed to the objective function (``func``) and
-                its derivatives (Jacobian, Hessian).
+        method : str
+            The minimization method (e.g. ``"L-BFGS-B"``)
+        args : tuple
+            Extra arguments passed to the objective function (``func``) and
+            its derivatives (Jacobian, Hessian).
 
     take_step : callable ``take_step(x)``, optional
         Replace the default step-taking routine with this routine. The default

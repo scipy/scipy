@@ -54,18 +54,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     strategy : str, optional
         The differential evolution strategy to use. Should be one of:
 
-            - 'best1bin'
-            - 'best1exp'
-            - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
-            - 'rand2exp'
-            - 'randtobest1bin'
-            - 'currenttobest1bin'
-            - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
+        - 'best1bin'
+        - 'best1exp'
+        - 'rand1exp'
+        - 'randtobest1exp'
+        - 'currenttobest1exp'
+        - 'best2exp'
+        - 'rand2exp'
+        - 'randtobest1bin'
+        - 'currenttobest1bin'
+        - 'best2bin'
+        - 'rand2bin'
+        - 'rand1bin'
 
         The default is 'best1bin'.
     maxiter : int, optional
@@ -122,12 +122,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify which type of population initialization is performed. Should be
         one of:
 
-            - 'latinhypercube'
-            - 'random'
-            - array specifying the initial population. The array should have
-              shape ``(M, len(x))``, where M is the total population size and
-              len(x) is the number of parameters.
-              `init` is clipped to `bounds` before use.
+        - 'latinhypercube'
+        - 'random'
+        - array specifying the initial population. The array should have
+          shape ``(M, len(x))``, where M is the total population size and
+          len(x) is the number of parameters.
+          `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
         maximize coverage of the available parameter space. 'random'

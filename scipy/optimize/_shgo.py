@@ -48,14 +48,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         Each constraint is defined in a dictionary with fields:
 
-            type : str
-                Constraint type: 'eq' for equality, 'ineq' for inequality.
-            fun : callable
-                The function defining the constraint.
-            jac : callable, optional
-                The Jacobian of `fun` (only for SLSQP).
-            args : sequence, optional
-                Extra arguments to be passed to the function and Jacobian.
+        type : str
+            Constraint type: 'eq' for equality, 'ineq' for inequality.
+        fun : callable
+            The function defining the constraint.
+        jac : callable, optional
+            The Jacobian of `fun` (only for SLSQP).
+        args : sequence, optional
+            Extra arguments to be passed to the function and Jacobian.
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
@@ -87,14 +87,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize`` Some important options could be:
 
-            * method : str
-                The minimization method (e.g. ``SLSQP``).
-            * args : tuple
-                Extra arguments passed to the objective function (``func``) and
-                its derivatives (Jacobian, Hessian).
-            * options : dict, optional
-                Note that by default the tolerance is specified as
-                ``{ftol: 1e-12}``
+        method : str
+            The minimization method (e.g. ``SLSQP``).
+        args : tuple
+            Extra arguments passed to the objective function (``func``) and
+            its derivatives (Jacobian, Hessian).
+        options : dict, optional
+            Note that by default the tolerance is specified as
+            ``{ftol: 1e-12}``
 
     options : dict, optional
         A dictionary of solver options. Many of the options specified for the
@@ -106,26 +106,26 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         criteria are met. However, the default algorithm does not require any to
         be specified:
 
-        * maxfev : int (L)
+        maxfev : int (L)
             Maximum number of function evaluations in the feasible domain.
             (Note only methods that support this option will terminate
             the routine at precisely exact specified value. Otherwise the
             criterion will only terminate during a global iteration)
-        * f_min
+        f_min
             Specify the minimum objective function value, if it is known.
-        * f_tol : float
+        f_tol : float
             Precision goal for the value of f in the stopping
             criterion. Note that the global routine will also
             terminate if a sampling point in the global routine is
             within this tolerance.
-        * maxiter : int
+        maxiter : int
             Maximum number of iterations to perform.
-        * maxev : int
+        maxev : int
             Maximum number of sampling evaluations to perform (includes
             searching in infeasible points).
-        * maxtime : float
+        maxtime : float
             Maximum processing runtime allowed
-        * minhgrd : int
+        minhgrd : int
             Minimum homology group rank differential. The homology group of the
             objective function is calculated (approximately) during every
             iteration. The rank of this group has a one-to-one correspondence
@@ -137,11 +137,11 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         Objective function knowledge:
 
-        * symmetry : bool
+        symmetry : bool
             Specify True if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by O(n!).
 
-        * jac : bool or callable, optional
+        jac : bool or callable, optional
             Jacobian (gradient) of objective function. Only for CG, BFGS,
             Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If ``jac`` is a
             boolean and is True, ``fun`` is assumed to return the gradient along
@@ -150,7 +150,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
             gradient of the objective. In this case, it must accept the same
             arguments as ``fun``. (Passed to `scipy.optimize.minmize` automatically)
 
-        * hess, hessp : callable, optional
+        hess, hessp : callable, optional
             Hessian (matrix of second-order derivatives) of objective function
             or Hessian of objective function times an arbitrary vector p.
             Only for Newton-CG, dogleg, trust-ncg. Only one of ``hessp`` or
@@ -163,15 +163,15 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         Algorithm settings:
 
-        * minimize_every_iter : bool
+        minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
             local minimization routine every iteration. If False then only the
             final minimizer pool will be run. Defaults to False.
-        * local_iter : int
+        local_iter : int
             Only evaluate a few of the best minimizer pool candidates every
             iteration. If False all potential points are passed to the local
             minimization routine.
-        * infty_constraints: bool
+        infty_constraints: bool
             If True then any sampling points generated which are outside will
             the feasible domain will be saved and given an objective function
             value of ``inf``. If False then these points will be discarded.
@@ -182,7 +182,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         Feedback:
 
-        * disp : bool (L)
+        disp : bool (L)
             Set to True to print convergence messages.
 
     sampling_method : str or function, optional
