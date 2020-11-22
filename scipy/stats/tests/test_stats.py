@@ -3642,7 +3642,7 @@ class Test_ttest_ind_permutations():
 
     p_d = [0.000999, 0.69031]       # desired pvalues
     p_d_gen = [0.000999, 0.682318]  # desired pvalues for Generator seed
-    p_d_big = [0.988012, 0.686314, 0.81019, 0.963037, 0.25974]
+    p_d_big = [0.99100899, 0.68131868, 0.85314685, 0.95504496, 0.25674326]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test
@@ -3654,7 +3654,7 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         (a2, b2, {'equal_var': True}, 0.000999),  # equal variances
-        (rvs1, rvs5, {'axis': 0, 'random_state': None}, p_d_big)  # bigger test
+        (rvs1, rvs5, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
         ]
 
     @pytest.mark.parametrize("a,b,update,p_d", params)
