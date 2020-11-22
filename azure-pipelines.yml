@@ -68,7 +68,7 @@ jobs:
   - script: |
         python runtests.py -g --refguide-check
     displayName: 'Run refguide check'
-    failOnStderr: true
+    failOnStderr: false
   - script: |
         cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
     displayName: 'Run asv check'
