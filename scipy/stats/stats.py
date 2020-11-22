@@ -167,6 +167,7 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
+from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -5742,6 +5743,26 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     return Ttest_indResult(*res)
 
 
+def _data_permutations(data, n=None, axis=-1):
+    """Vectorized permutation of data"""
+    if axis < 0:  # we'll be adding a new dimension at the end
+        axis = data.ndim + axis
+
+    # prepare permutation indices
+    m = data.shape[axis]
+    if n:
+        indices = rankdata(np.random.rand(m, n), axis=0) - 1
+    else:
+        indices = np.array(list(permutations(range(m)))).T
+    indices = indices.astype(int)
+
+    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
+    data = data[..., indices]        # generate permutations
+    data = data.swapaxes(-2, axis)   # restore original axis order
+    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
+    return data
+
+
 def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
                        random_state=None):
     """
@@ -5797,8 +5818,8 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     na = copy_cats.shape[-1] - nb
 
     for p in range(permutations+1):
-        a = mat[:, copy_cats]
-        b = mat[:, ~copy_cats]
+        a = mat[:, ~copy_cats]
+        b = mat[:, copy_cats]
         avg_a = np.mean(a, axis=-1)
         avg_b = np.mean(b, axis=-1)
         var_a = np.var(a, axis=-1, ddof=1)
@@ -5806,13 +5827,12 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
 
         # Calculate the t statistic
         if not equal_var:
-            denom = np.sqrt(var_a/nb + var_b/na)
-        else:
-            df = na + nb - 2
-            svar = ((nb - 1) * var_a + (na - 1) * var_b) / df
-            denom = np.sqrt(svar * (1.0 / nb + 1.0 / na))
+            denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
 
-        t_stat[:, p] = (avg_b-avg_a)/denom
+        else:
+            denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
+
+        t_stat[:, p] = (avg_a-avg_b)/denom
         random_state.shuffle(copy_cats)
 
     # Calculate the p-values
