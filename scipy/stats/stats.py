@@ -164,7 +164,6 @@ References
 """
 
 import warnings
-import copy
 import math
 from math import gcd
 from collections import namedtuple
@@ -5601,7 +5600,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 0.16.0
 
-    random_state : int or RandomState, optional
+    random_state : int, RandomState, or Generator, optional
         Pseudo number generator state used for random sampling (used only when
         `permutations` is not None).
 
@@ -5679,12 +5678,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
     (-0.94365973617132992, 0.34744170334794122)
 
-    When performing a permutation test, one usually wants to use a large number
-    of permutations and use a ``RandomState`` instance to ensure complete
+    When performing a permutation test, more permutations typically results
+    in more accurate results. Use a ``np.random.Generator`` to ensure
     reproducibility of the result:
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
-    ...                 random_state=np.random.RandomState(12345))
+    ...                 random_state=np.random.default_rng(12345))
     (-0.80402445, 0.41685831)
 
     """
@@ -5752,8 +5751,8 @@ def _init_summation_index(cats):
     """
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
-    copy_cats = copy.deepcopy(cats)
-    perms = np.array(np.zeros((c, num_cats), dtype=cats.dtype))
+    copy_cats = cats.copy()
+    perms = np.zeros((c, num_cats), dtype=cats.dtype)
     for i in range(num_cats):
         perms[:, i] = (copy_cats == i).astype(cats.dtype)
     return perms
@@ -5786,7 +5785,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     equal_var: bool, optional
         If false, a Welch's t-test is conducted.  Otherwise, an ordinary t-test
         is conducted.
-    random_state : int or RandomState, optional
+    random_state : int, RandomState, or Generator, optional
         Pseudo number generator state used for random sampling.
 
     Returns
@@ -5807,7 +5806,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
     num_cats = 2  # Only 2 classes in t-test
     t_stat = np.zeros((r, num_cats*(permutations+1)))
 
-    copy_cats = copy.deepcopy(cats)
+    copy_cats = cats.copy()
 
     for p in range(permutations+1):
         perms = _init_summation_index(copy_cats)
