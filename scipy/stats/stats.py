@@ -5594,10 +5594,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    permutations : int, optional
+    permutations : int or None, optional
         The number of permutations that will be used to calculate p-values
-        using a permutation test.  The permutation test will only be run
-        if ``permutations > 0``.
+        using a permutation test. If None, use the t-distribution to calculate
+        p-values; if negative, use all possible permutations of the data.
 
         .. versionadded:: 0.16.0
 
@@ -5617,20 +5617,35 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Notes
     -----
-    We can use this test, if we observe two independent samples from
-    the same or different population, e.g. exam scores of boys and
-    girls or of two ethnic groups. The test measures whether the
-    average (expected) value differs significantly across samples. If
-    we observe a large p-value, for example larger than 0.05 or 0.1,
-    then we cannot reject the null hypothesis of identical average scores.
-    If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
-    then we reject the null hypothesis of equal averages.
+    Suppose we observe two independent samples, e.g. flower petal lengths, and
+    we are considering whether the two samples were drawn from the same
+    population (e.g. the same species of flower or two species with similar
+    petal characteristics) or two different populations.
+    The t-test quantifies the difference between the average (expected) values
+    of the samples, it and assesses the probability of such an observation
+    occuring by chance under the null hypothesis that the samples were drawn
+    from populations with the same average.
+    A p-value larger than our chosen threshold (e.g. 5% or 1%) indicates that
+    our observation is not so unlikely to have occured by chance, so we do
+    not reject the null hypothesis of identical averages.
+    If the p-value is smaller than our threshold, then we have evidence
+    against the null hypothesis of equal averages.
 
-    When a permutation test is performed, the labels are permutated using
-    Monte Carlo sampling. Each element in each of the samples is assigned a
-    label - 0 corresponding to the first sample and 1 corresponding to the
-    second sample. A vector of these labels is permutated multiple times and
-    these permutations are used to calculate the permutation test.
+    By default, the p-value is determined by comparing the t-statistic of the
+    observed data against a theoretical t-distribution, which assumes that the
+    populations are normally distributed.
+    When `permutations > 0`, the data are randomly assigned to either group `a`
+    or `b`, and the t-statistic is calculated. This process is performed
+    repeatedly (`permutation` times), generating a distribution of the
+    t-statistic under the null hypothesis, and the t-statistic of the observed
+    data is compared to this distribution to determine the p-value.
+
+    The permutation test is computationally expensive and not necessarily
+    more accurate than the analytical test, but it does not make strong
+    assumptions about the shape of the underlying distribution. It may be
+    useful to compare the results of a permutation test against those of the
+    analytical test to gauge whether the theoretical requirements of the
+    analytical test are satisfied sufficiently well.
 
     References
     ----------
@@ -5679,9 +5694,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
     (-0.94365973617132992, 0.34744170334794122)
 
-    When performing a permutation test, more permutations typically results
-    in more accurate results. Use a ``np.random.Generator`` to ensure
-    reproducibility of the result:
+    When performing a permutation test, more permutations typically yields
+    more accurate results. Use a ``np.random.Generator`` to ensure
+    reproducibility:
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=np.random.default_rng(12345))
@@ -5705,7 +5720,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    if permutations is not None:
+    if permutations:
         res = _permutation_ttest(a, b,
                                  axis=axis,
                                  equal_var=equal_var,
@@ -5794,33 +5809,29 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
 
     This test is an equivalent to `stats.ttest_ind`, except it doesn't require
     the normality assumption since it uses a permutation test.  This function
-    is only called from ttest_ind if the p-value is calculated using a
-    permutation test.
+    is only called from ttest_ind permutations is not None.
 
     Parameters
     ----------
-    mat : array_like
-        This contains all of the data values for both groups.
-    cats: array_like
-        This array must be 1 dimensional and have the same size as
-        the length of the specified axis.  This encodes information
-        about which category each element of the mat array belongs to
+    a, b : array_like
+        The arrays must be broadcastable, except along the dimension
+        corresponding to `axis` (the zeroth, by default).
     axis : int, optional
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a and b).
+        The axis over which to operate on a and b.
     permutations: int, optional
-        Number of permutations used to calculate p-value
+        Number of permutations used to calculate p-value. If negative, use
+        all possible permutations.
     equal_var: bool, optional
-        If false, a Welch's t-test is conducted.  Otherwise, an ordinary t-test
+        If False, a Welch's t-test is conducted.  Otherwise, an ordinary t-test
         is conducted.
     random_state : int, RandomState, or Generator, optional
         Pseudo number generator state used for random sampling.
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         The calculated t-statistic.
-    prob : float or array
+    pvalue : float or array
         The two-tailed p-value.
 
     """

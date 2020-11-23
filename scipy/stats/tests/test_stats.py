@@ -3652,7 +3652,7 @@ class Test_ttest_ind_permutations():
         (a[0, :].tolist(), b[0, :].tolist(), {'axis': None}, p_d[0]),
         # different seeds
         (a, b, {'random_state': 0, "axis": 1}, p_d),
-        (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d)
+        (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 0.000999),  # equal variances
         (rvs1, rvs5, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
         ]
@@ -3680,17 +3680,18 @@ class Test_ttest_ind_permutations():
         # Test that permutation test works on many-dimensional arrays
         np.random.seed(0)
         a = np.random.rand(5, 4, 4, 3, 1, 6)
-        b = np.random.rand(4, 1, 3, 2, 6)
+        b = np.random.rand(4, 1, 8, 2, 6)
         res = stats.ttest_ind(a, b, permutations=200, axis=-3,
                               random_state=0)
 
-        a2 = a[0, :, 0, :, 0, :]
-        b2 = b[:, 0, :, 0, :]
+        i, j, k = 2, 3, 1
+        a2 = a[i, :, j, :, 0, :]
+        b2 = b[:, 0, :, k, :]
         res2 = stats.ttest_ind(a2, b2, permutations=200, axis=-2,
                                random_state=0)
-        assert_equal(res.statistic[0, :, 0, 0, :],
+        assert_equal(res.statistic[i, :, j, k, :],
                      res2.statistic)
-        assert_equal(res.pvalue[0, :, 0, 0, :],
+        assert_equal(res.pvalue[i, :, j, k, :],
                      res2.pvalue)
 
 
