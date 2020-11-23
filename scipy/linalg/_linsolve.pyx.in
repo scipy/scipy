@@ -17,6 +17,14 @@ from scipy.linalg.cython_lapack cimport (slamch, dlamch,
                                          spotrf, dpotrf, cpotrf, zpotrf
                                         )
 
+{{py:
+
+typenames = ['float', 'double', 'float complex', 'double complex']
+typenames_scdz = ['float', 'double', 'float', 'double']
+prefixes = ['s', 'd', 'c', 'z']
+
+}}
+
 __all__ = ['get_lapack_flavor', 'array_is_finite', 'find_array_structure',
            'lusolve', 'diagsolve', 'trisolve', 'bidiagsolve']
 
@@ -307,224 +315,81 @@ cpdef (int, int) find_array_structure(lapack_t[:, ::1]A) nogil:
 # ########################
 # internal ge functions
 # ########################
+{{for typename, typeprefix, typenamescdz in zip(typenames, prefixes, typenames_scdz)}}
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cdef int lusolve_s(char* trans, char* norm, int* n, int* nrhs, int* info,
-                   float* a, float* b) nogil except -1:
+cdef int lusolve_{{typeprefix}}(char* trans, char* norm, int* n, int* nrhs, int* info, ({{typename}}*) a, ({{typename}}*) b) nogil except -1:
     cdef int row = n[0]
-    cdef float* work = <float *> malloc(4*row*sizeof(float))
+    cdef {{typenamescdz}}* work = <{{typenamescdz}}*> malloc({{if typeprefix in ['s', 'd']}}4{{else}}2{{endif}}*row*sizeof({{typenamescdz}}))
+    {{if typeprefix in ['c', 'z']}}
+    cdef {{typename}}* cwork = <{{typename}}*> malloc(2*row*sizeof({{typename}}))
+    {{endif}}
     cdef int* ipiv = <int *> malloc(row * sizeof(int))
-    cdef float anorm
-    cdef float rcond = 0.0
-    cdef int step = 0
+    cdef {{typenamescdz}} anorm
+    cdef {{typenamescdz}} rcond = 0.0
+    {{if typeprefix in ['s', 'd']}}
     if not work or not ipiv:
         raise MemoryError("Internal array allocation failed.")
-
-    anorm = slange(norm, n, n, a, n, work);
-    sgetrf(n, n, a, n, ipiv, info)
-    if info[0] != 0:
-        free(ipiv)
-        free(work)
-        if info[0] > 0:
-            raise LinAlgError('Matrix is singular')
-        if info[0] < 0:
-            raise LinAlgError('LAPACK routine sgetrf reported an illegal'
-                             ' value in {}-th argument.'.format(-info[0]))
-
-    sgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
-    if info[0] != 0:
-        free(ipiv)
-        free(work)
-        raise LinAlgError('LAPACK routine sgetrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    # Recycle ipiv as iwork
-    sgecon(norm, n, a, n, &anorm, &rcond, work, ipiv, info);
-    free(ipiv)
-    free(work)
-
-    if info[0] != 0:
-        raise LinAlgError('LAPACK routine sgecon reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    # recycle anorm for eps
-    anorm = slamch('E')
-
-    if rcond < anorm:  # rcond < eps
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): '
-                 'result may not be accurate.'.format(rcond),
-                 LinAlgWarning)
-
-    return 0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int lusolve_d(char* trans, char* norm, int* n, int* nrhs, int* info,
-                   double* a, double* b) nogil except -1:
-    cdef int row = n[0]
-    cdef double* work = <double *> malloc(4*row*sizeof(double))
-    cdef int* ipiv = <int *> malloc(row * sizeof(int))
-    cdef double anorm
-    cdef double rcond = 0.0
-    cdef int step = 0
-    if not work or not ipiv:
+    {{else}}
+    if not work or not ipiv or not cwork:
         raise MemoryError("Internal array allocation failed.")
+    {{endif}}
 
-    anorm = dlange(norm, n, n, a, n, work);
-    dgetrf(n, n, a, n, ipiv, info)
+    anorm = {{typeprefix}}lange(norm, n, n, a, n, work);
+    {{typeprefix}}getrf(n, n, a, n, ipiv, info)
     if info[0] != 0:
         free(ipiv)
         free(work)
+        {{if typeprefix in ['c', 'z']}}
+        free(cwork)
+        {{endif}}
         if info[0] > 0:
             raise LinAlgError('Matrix is singular')
         if info[0] < 0:
-            raise LinAlgError('LAPACK routine dgetrf reported an illegal'
-                             ' value in {}-th argument.'.format(-info[0]))
+            raise LinAlgError('LAPACK routine {{typeprefix}}getrf reported an illegal value in {}-th argument.'.format(-info[0]))
 
-    dgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    {{typeprefix}}getrs(trans, n, nrhs, a, n, ipiv, b, n, info)
+    {{if typeprefix in ['c', 'z']}}
+    free(ipiv)  # We are done with it anyways
+    {{endif}}
+
     if info[0] != 0:
-        free(ipiv)
         free(work)
-        raise LinAlgError('LAPACK routine dgetrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
+        {{if typeprefix in ['c', 'z']}}
+        free(cwork)
+        {{else}}
+        free(ipiv)
+        {{endif}}
+        raise LinAlgError('LAPACK routine {{typeprefix}}getrs reported an illegal value in {}-th argument.'.format(-info[0]))
 
+    {{if typeprefix in ['s', 'd']}}
     # Recycle ipiv as iwork
-    dgecon(norm, n, a, n, &anorm, &rcond, work, ipiv, info);
+    {{typeprefix}}gecon(norm, n, a, n, &anorm, &rcond, work, ipiv, info);
     free(ipiv)
-    free(work)
-
-    if info[0] != 0:
-        raise LinAlgError('LAPACK routine dgecon reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    # recycle anorm for eps
-    anorm = dlamch('E')
-
-    if rcond < anorm:  # rcond < eps
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): '
-                 'result may not be accurate.'.format(rcond),
-                 LinAlgWarning)
-
-    return 0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int lusolve_c(char* trans, char* norm, int* n, int* nrhs, int* info,
-                   (float complex*) a, (float complex*) b) nogil except -1:
-    cdef int row = n[0]
-    cdef float* work = <float *> malloc(2*row*sizeof(float))
-    cdef float complex* cwork = <float complex*> malloc(2*row*sizeof(float complex))
-    cdef int* ipiv = <int *> malloc(row * sizeof(int))
-    cdef float anorm
-    cdef float rcond = 0.0
-    if not work or not ipiv or not cwork:
-        with gil:
-            raise MemoryError("Internal array allocation failed.")
-
-    anorm = clange(norm, n, n, a, n, work);
-    cgetrf(n, n, a, n, ipiv, info)
-    if info[0] != 0:
-        free(ipiv)
-        free(work)
-        free(cwork)
-        if info[0] > 0:
-            raise LinAlgError('Matrix is singular')
-        if info[0] < 0:
-            raise LinAlgError('LAPACK routine cgetrf reported an illegal'
-                             ' value in {}-th argument.'.format(-info[0]))
-
-    cgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
-    free(ipiv)  # We are done with it anyways
-
-    if info[0] != 0:
-        free(work)
-        free(cwork)
-        raise LinAlgError('LAPACK routine cgetrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    cgecon(norm, n, a, n, &anorm, &rcond, cwork, work, info);
-    free(work)
+    {{else}}
+    {{typeprefix}}gecon(norm, n, a, n, &anorm, &rcond, cwork, work, info);
     free(cwork)
+    {{endif}}
+    free(work)
 
     if info[0] != 0:
-        raise LinAlgError('LAPACK routine cgecon reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
+        raise LinAlgError('LAPACK routine {{typeprefix}}gecon reported an illegal value in {}-th argument.'.format(-info[0]))
 
     # recycle anorm for eps
+    {{if typeprefix in ['s', 'c']}}
     anorm = slamch('E')
-
-    if rcond < anorm:  # rcond < eps
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): '
-                 'result may not be accurate.'.format(rcond),
-                 LinAlgWarning)
-
-    return 0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int lusolve_z(char* trans, char* norm, int* n, int* nrhs, int* info,
-                   (double complex*) a, (double complex*) b) nogil except -1:
-
-    cdef int row = n[0]
-    cdef double* work = <double *> malloc(2*row*sizeof(double))
-    cdef double complex* cwork = <double complex*> malloc(2*row*sizeof(double complex))
-    cdef int* ipiv = <int *> malloc(row * sizeof(int))
-    cdef double anorm
-    cdef double rcond = 0.0
-    cdef int step = 0
-    if not work or not ipiv or not cwork:
-        with gil:
-            raise MemoryError("Internal array allocation failed.")
-
-    anorm = zlange(norm, n, n, a, n, work);
-    zgetrf(n, n, a, n, ipiv, info)
-    if info[0] != 0:
-        free(ipiv)
-        free(work)
-        free(cwork)
-        if info[0] > 0:
-            raise LinAlgError('Matrix is singular')
-        if info[0] < 0:
-            raise LinAlgError('LAPACK routine zgetrf reported an illegal'
-                             ' value in {}-th argument.'.format(-info[0]))
-
-    zgetrs(trans, n, nrhs, a, n, ipiv, b, n, info)
-    free(ipiv)  # We are done with it anyways
-
-    if info[0] != 0:
-        free(work)
-        free(cwork)
-        raise LinAlgError('LAPACK routine zgetrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    zgecon(norm, n, a, n, &anorm, &rcond, cwork, work, info);
-    free(work)
-    free(cwork)
-
-    if info[0] != 0:
-        raise LinAlgError('LAPACK routine zgecon reported an illegal'
-                          ' value in {}-th argument.'.format(-info[0]))
-
-    # recycle anorm for eps
+    {{else}}
     anorm = dlamch('E')
-
+    {{endif}}
     if rcond < anorm:  # rcond < eps
         with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): '
-                 'result may not be accurate.'.format(rcond),
-                 LinAlgWarning)
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be accurate.'.format(rcond), LinAlgWarning)
 
     return 0
+
+
+{{endfor}}
 
 
 @cython.boundscheck(False)
@@ -588,154 +453,54 @@ def diagsolve(a, b):
 # ########################
 # internal tr functions
 # ########################
+{{for typename, typeprefix, typenamescdz in zip(typenames, prefixes, typenames_scdz)}}
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cdef int trisolve_s(char* norm, char* uplo, char* diag, char* transa,
-                    int* n, int* nrhs, float* a, float* b) nogil except -1:
+cdef int trisolve_{{typeprefix}}(char* norm, char* uplo, char* diag, char* transa, int* n, int* nrhs, ({{typename}}*) a, ({{typename}}*) b) nogil except -1:
     cdef char* side = 'L'  # No XA = B for now
     cdef int row = n[0]
     cdef int info
-    cdef float* work = <float *> malloc(3*row*sizeof(float))
+    cdef {{typename}}* work = <{{typename}}*> malloc({{if typeprefix in ['s', 'd']}}3{{else}}2{{endif}}*row*sizeof({{typename}}))
+    {{if typeprefix in ['s', 'd']}}
     cdef int* iwork = <int *> malloc(row * sizeof(int))
-    cdef float eps = slamch('E')
-    cdef float rcond = 0.0
+    {{else}}
+    cdef {{typenamescdz}}* rwork = <{{typenamescdz}}*> malloc(row * sizeof({{typenamescdz}}))
+    {{endif}}
+    cdef {{typenamescdz}} eps = {{if typeprefix in ['s', 'c']}}s{{else}}d{{endif}}lamch('E')
+    cdef {{typenamescdz}} rcond = 0.0
 
+    {{if typeprefix in ['s', 'd']}}
     if not work or not iwork:
         raise MemoryError("Internal array allocation failed.")
 
-    strcon(norm, uplo, diag, n, a, n, &rcond, work, iwork, &info)
-    free(work)
+    {{typeprefix}}trcon(norm, uplo, diag, n, a, n, &rcond, work, iwork, &info)
     free(iwork)
-    if info < 0:
-        raise LinAlgError('LAPACK routine strcon reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if rcond < eps:
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
-                 'accurate.'.format(rcond), LinAlgWarning)
-
-    strtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
-    if info < 0:
-        raise LinAlgError('LAPACK routine strtrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if info > 0:
-        raise LinAlgError('Matrix is singular')
-
-    return 0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int trisolve_d(char* norm, char* uplo, char* diag, char* transa,
-                    int* n, int* nrhs, double* a, double* b) nogil except -1:
-    cdef char* side = 'L'  # No XA = B for now
-    cdef int row = n[0]
-    cdef int info
-    cdef double* work = <double *> malloc(3*row*sizeof(double))
-    cdef int* iwork = <int *> malloc(row*sizeof(int))
-    cdef double eps = dlamch('E')
-    cdef double rcond = 0.0
-
-    if not work or not iwork:
-        raise MemoryError("Internal array allocation failed.")
-
-    dtrcon(norm, uplo, diag, n, a, n, &rcond, work, iwork, &info)
-    free(work)
-    free(iwork)
-    if info < 0:
-        raise LinAlgError('LAPACK routine dtrcon reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if rcond < eps:
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
-                 'accurate.'.format(rcond), LinAlgWarning)
-
-    dtrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
-    if info < 0:
-        raise LinAlgError('LAPACK routine dtrtrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if info > 0:
-        raise LinAlgError('Matrix is singular')
-
-    return 0
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int trisolve_c(char* norm, char* uplo, char* diag, char* transa, int* n,
-                    int* nrhs,
-                    (float complex)* a, (float complex)* b) nogil except -1:
-
-    cdef char* side = 'L'  # No XA = B for now
-    cdef int row = n[0]
-    cdef int info
-    cdef float complex* work = <float complex *> malloc(2*row*sizeof(float complex))
-    cdef float* rwork = <float *> malloc(row * sizeof(float))
-    cdef float eps = slamch('E')
-    cdef float rcond = 0.0
-
+    {{else}}
     if not work or not rwork:
         raise MemoryError("Internal array allocation failed.")
 
-    ctrcon(norm, uplo, diag, n, a, n, &rcond, work, rwork, &info)
-    free(work)
+    {{typeprefix}}trcon(norm, uplo, diag, n, a, n, &rcond, work, rwork, &info)
     free(rwork)
+    {{endif}}
+    free(work)
+
     if info < 0:
-        raise LinAlgError('LAPACK routine ctrcon reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
+        raise LinAlgError('LAPACK routine {{typeprefix}}trcon reported an illegal value in {}-th argument.'.format(-info))
     if rcond < eps:
         with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
-                 'accurate.'.format(rcond), LinAlgWarning)
+            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be accurate.'.format(rcond), LinAlgWarning)
 
-    ctrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
+    {{typeprefix}}trtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
     if info < 0:
-        raise LinAlgError('LAPACK routine ctrtrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if info > 0:
-        raise LinAlgError('Matrix is singular')
-    return 0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.nonecheck(False)
-cdef int trisolve_z(char* norm, char* uplo, char* diag, char* transa,
-                    int* n, int* nrhs,
-                    (double complex)* a, (double complex)* b) nogil except -1:
-
-    cdef char* side = 'L'  # No XA = B for now
-    cdef int row = n[0]
-    cdef int info
-    cdef double complex* work = <double complex *> malloc(2*row*sizeof(double complex))
-    cdef double* rwork = <double *> malloc(row * sizeof(double))
-    cdef double eps = dlamch('E')
-    cdef double rcond = 0.0
-
-    if not work or not rwork:
-        raise MemoryError("Internal array allocation failed.")
-
-    ztrcon(norm, uplo, diag, n, a, n, &rcond, work, rwork, &info)
-    free(work)
-    free(rwork)
-    if info < 0:
-        raise LinAlgError('LAPACK routine ztrcon reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
-    if rcond < eps:
-        with gil:
-            warn('Ill-conditioned matrix (rcond={:.6g}): result may not be '
-                 'accurate.'.format(rcond), LinAlgWarning)
-
-    ztrtrs(uplo, transa, diag, n, nrhs, a, n, b, n, &info)
-    if info < 0:
-        raise LinAlgError('LAPACK routine ztrtrs reported an illegal'
-                          ' value in {}-th argument.'.format(-info))
+        raise LinAlgError('LAPACK routine {{typeprefix}}trtrs reported an illegal value in {}-th argument.'.format(-info))
     if info > 0:
         raise LinAlgError('Matrix is singular')
 
     return 0
+
+
+{{endfor}}
 
 
 @cython.boundscheck(False)
