@@ -601,7 +601,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if _perform_fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')

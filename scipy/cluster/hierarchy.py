@@ -2464,7 +2464,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               threshold of 0.8 do::
 
                   MR = maxRstat(Z, R, 3)
-                  cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+                  fcluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
           ``maxclust_monocrit`` :
               Forms a flat cluster from a
@@ -2477,7 +2477,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               clusters are formed, do::
 
                   MI = maxinconsts(Z, R)
-                  cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+                  fcluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.

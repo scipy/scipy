@@ -8,9 +8,9 @@ from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
-           'general_hamming', 'chebwin', 'cosine', 'hann',
-           'exponential', 'tukey', 'dpss', 'get_window']
+           'hamming', 'kaiser', 'gaussian', 'general_cosine',
+           'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
+           'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -145,7 +145,7 @@ def boxcar(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.boxcar(51)
+    >>> window = signal.windows.boxcar(51)
     >>> plt.plot(window)
     >>> plt.title("Boxcar window")
     >>> plt.ylabel("Amplitude")
@@ -202,7 +202,7 @@ def triang(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.triang(51)
+    >>> window = signal.windows.triang(51)
     >>> plt.plot(window)
     >>> plt.title("Triangular window")
     >>> plt.ylabel("Amplitude")
@@ -267,7 +267,7 @@ def parzen(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.parzen(51)
+    >>> window = signal.windows.parzen(51)
     >>> plt.plot(window)
     >>> plt.title("Parzen window")
     >>> plt.ylabel("Amplitude")
@@ -326,7 +326,7 @@ def bohman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bohman(51)
+    >>> window = signal.windows.bohman(51)
     >>> plt.plot(window)
     >>> plt.title("Bohman window")
     >>> plt.ylabel("Amplitude")
@@ -417,7 +417,7 @@ def blackman(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackman(51)
+    >>> window = signal.windows.blackman(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman window")
     >>> plt.ylabel("Amplitude")
@@ -478,7 +478,7 @@ def nuttall(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.nuttall(51)
+    >>> window = signal.windows.nuttall(51)
     >>> plt.plot(window)
     >>> plt.title("Nuttall window")
     >>> plt.ylabel("Amplitude")
@@ -525,7 +525,7 @@ def blackmanharris(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.blackmanharris(51)
+    >>> window = signal.windows.blackmanharris(51)
     >>> plt.plot(window)
     >>> plt.title("Blackman-Harris window")
     >>> plt.ylabel("Amplitude")
@@ -586,7 +586,7 @@ def flattop(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.flattop(51)
+    >>> window = signal.windows.flattop(51)
     >>> plt.plot(window)
     >>> plt.title("Flat top window")
     >>> plt.ylabel("Amplitude")
@@ -676,7 +676,7 @@ def bartlett(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.bartlett(51)
+    >>> window = signal.windows.bartlett(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett window")
     >>> plt.ylabel("Amplitude")
@@ -765,7 +765,7 @@ def hann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hann(51)
+    >>> window = signal.windows.hann(51)
     >>> plt.plot(window)
     >>> plt.title("Hann window")
     >>> plt.ylabel("Amplitude")
@@ -832,7 +832,7 @@ def tukey(M, alpha=0.5, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.tukey(51)
+    >>> window = signal.windows.tukey(51)
     >>> plt.plot(window)
     >>> plt.title("Tukey window")
     >>> plt.ylabel("Amplitude")
@@ -902,7 +902,7 @@ def barthann(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.barthann(51)
+    >>> window = signal.windows.barthann(51)
     >>> plt.plot(window)
     >>> plt.title("Bartlett-Hann window")
     >>> plt.ylabel("Amplitude")
@@ -1074,7 +1074,7 @@ def hamming(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.hamming(51)
+    >>> window = signal.windows.hamming(51)
     >>> plt.plot(window)
     >>> plt.title("Hamming window")
     >>> plt.ylabel("Amplitude")
@@ -1183,7 +1183,7 @@ def kaiser(M, beta, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.kaiser(51, beta=14)
+    >>> window = signal.windows.kaiser(51, beta=14)
     >>> plt.plot(window)
     >>> plt.title(r"Kaiser window ($\beta$=14)")
     >>> plt.ylabel("Amplitude")
@@ -1248,7 +1248,7 @@ def gaussian(M, std, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.gaussian(51, std=7)
+    >>> window = signal.windows.gaussian(51, std=7)
     >>> plt.plot(window)
     >>> plt.title(r"Gaussian window ($\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1318,7 +1318,7 @@ def general_gaussian(M, p, sig, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.general_gaussian(51, p=1.5, sig=7)
+    >>> window = signal.windows.general_gaussian(51, p=1.5, sig=7)
     >>> plt.plot(window)
     >>> plt.title(r"Generalized Gaussian window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Amplitude")
@@ -1415,7 +1415,7 @@ def chebwin(M, at, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.chebwin(51, at=100)
+    >>> window = signal.windows.chebwin(51, at=100)
     >>> plt.plot(window)
     >>> plt.title("Dolph-Chebyshev window (100 dB)")
     >>> plt.ylabel("Amplitude")
@@ -1505,7 +1505,7 @@ def cosine(M, sym=True):
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.cosine(51)
+    >>> window = signal.windows.cosine(51)
     >>> plt.plot(window)
     >>> plt.title("Cosine window")
     >>> plt.ylabel("Amplitude")
@@ -1567,8 +1567,8 @@ def exponential(M, center=None, tau=1., sym=True):
 
     References
     ----------
-    S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
-    Technical Review 3, Bruel & Kjaer, 1987.
+    .. [1] S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
+           Technical Review 3, Bruel & Kjaer, 1987.
 
     Examples
     --------
@@ -1580,7 +1580,7 @@ def exponential(M, center=None, tau=1., sym=True):
 
     >>> M = 51
     >>> tau = 3.0
-    >>> window = signal.exponential(M, tau=tau)
+    >>> window = signal.windows.exponential(M, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential Window (tau=3.0)")
     >>> plt.ylabel("Amplitude")
@@ -1599,7 +1599,7 @@ def exponential(M, center=None, tau=1., sym=True):
     This function can also generate non-symmetric windows:
 
     >>> tau2 = -(M-1) / np.log(0.01)
-    >>> window2 = signal.exponential(M, 0, tau2, False)
+    >>> window2 = signal.windows.exponential(M, 0, tau2, False)
     >>> plt.figure()
     >>> plt.plot(window2)
     >>> plt.ylabel("Amplitude")
@@ -1616,6 +1616,121 @@ def exponential(M, center=None, tau=1., sym=True):
 
     n = np.arange(0, M)
     w = np.exp(-np.abs(n-center) / tau)
+
+    return _truncate(w, needs_trunc)
+
+
+def taylor(M, nbar=4, sll=30, norm=True, sym=True):
+    """
+    Return a Taylor window.
+
+    The Taylor window taper function approximates the Dolph-Chebyshev window's
+    constant sidelobe level for a parameterized number of near-in sidelobes,
+    but then allows a taper beyond [2]_.
+
+    The SAR (synthetic aperature radar) community commonly uses Taylor
+    weighting for image formation processing because it provides strong,
+    selectable sidelobe suppression with minimum broadening of the
+    mainlobe [1]_.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an
+        empty array is returned.
+    nbar : int, optional
+        Number of nearly constant level sidelobes adjacent to the mainlobe.
+    sll : float, optional
+        Desired suppression of sidelobe level in decibels (dB) relative to the
+        DC gain of the mainlobe. This should be a positive number.
+    norm : bool, optional
+        When True (default), divides the window by the largest (middle) value
+        for odd-length windows or the value that would occur between the two
+        repeated middle values for even-length windows such that all values
+        are less than or equal to 1. When False the DC gain will remain at 1
+        (0 dB) and the sidelobes will be `sll` dB down.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    out : array
+        The window. When `norm` is True (default), the maximum value is
+        normalized to 1 (though the value 1 does not appear if `M` is
+        even and `sym` is True).
+
+    See Also
+    --------
+    chebwin, kaiser, bartlett, blackman, hamming, hanning
+
+    References
+    ----------
+    .. [1] W. Carrara, R. Goodman, and R. Majewski, "Spotlight Synthetic
+           Aperture Radar: Signal Processing Algorithms" Pages 512-513,
+           July 1995.
+    .. [2] Armin Doerry, "Catalog of Window Taper Functions for
+           Sidelobe Control", 2017.
+           https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.windows.taylor(51, nbar=20, sll=100, norm=False)
+    >>> plt.plot(window)
+    >>> plt.title("Taylor window (100 dB)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Taylor window (100 dB)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
+    """  # noqa: E501
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
+    # Original text uses a negative sidelobe level parameter and then negates
+    # it in the calculation of B. To keep consistent with other methods we
+    # assume the sidelobe level parameter to be positive.
+    B = 10**(sll / 20)
+    A = np.arccosh(B) / np.pi
+    s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
+    ma = np.arange(1, nbar)
+
+    Fm = np.empty(nbar-1)
+    signs = np.empty_like(ma)
+    signs[::2] = 1
+    signs[1::2] = -1
+    m2 = ma*ma
+    for mi, m in enumerate(ma):
+        numer = signs[mi] * np.prod(1 - m2[mi]/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2 * np.prod(1 - m2[mi]/m2[:mi]) * np.prod(1 - m2[mi]/m2[mi+1:])
+        Fm[mi] = numer / denom
+
+    def W(n):
+        return 1 + 2*np.dot(Fm, np.cos(
+            2*np.pi*ma[:, np.newaxis]*(n-M/2.+0.5)/M))
+
+    w = W(np.arange(M))
+
+    # normalize (Note that this is not described in the original text [1])
+    if norm:
+        scale = 1.0 / W((M - 1) / 2)
+        w *= scale
 
     return _truncate(w, needs_trunc)
 
@@ -1912,6 +2027,7 @@ _win_equiv_raw = {
     ('kaiser', 'ksr'): (kaiser, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
+    ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
 }
@@ -1973,6 +2089,8 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.chebwin` (needs attenuation)
     - `~scipy.signal.windows.exponential` (needs center, decay scale)
     - `~scipy.signal.windows.tukey` (needs taper fraction)
+    - `~scipy.signal.windows.taylor` (needs number of constant sidelobes,
+      sidelobe level)
 
     If the window requires no parameters, then `window` can be a string.
 

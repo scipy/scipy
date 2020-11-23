@@ -264,6 +264,29 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     return sf
 
 
+def _clip_x_for_func(func, bounds):
+    # ensures that x values sent to func are clipped to bounds
+
+    # this is used as a mitigation for gh11403, slsqp/tnc sometimes
+    # suggest a move that is outside the limits by 1 or 2 ULP. This
+    # unclean fix makes sure x is strictly within bounds.
+    def eval(x):
+        x = _check_clip_x(x, bounds)
+        return func(x)
+
+    return eval
+
+
+def _check_clip_x(x, bounds):
+    if (x < bounds[0]).any() or (x > bounds[1]).any():
+        warnings.warn("Values in x were outside bounds during a "
+                      "minimize step, clipping to bounds", RuntimeWarning)
+        x = np.clip(x, bounds[0], bounds[1])
+        return x
+
+    return x
+
+
 def rosen(x):
     """
     The Rosenbrock function.
@@ -3375,9 +3398,12 @@ def show_options(solver=None, method=None, disp=True):
 
     `scipy.optimize.linprog`
 
-    - :ref:`simplex         <optimize.linprog-simplex>`
-    - :ref:`interior-point  <optimize.linprog-interior-point>`
-    - :ref:`revised-simplex <optimize.linprog-revised_simplex>`
+    - :ref:`simplex           <optimize.linprog-simplex>`
+    - :ref:`interior-point    <optimize.linprog-interior-point>`
+    - :ref:`revised simplex   <optimize.linprog-revised_simplex>`
+    - :ref:`highs             <optimize.linprog-highs>`
+    - :ref:`highs-ds          <optimize.linprog-highs-ds>`
+    - :ref:`highs-ipm         <optimize.linprog-highs-ipm>`
 
     `scipy.optimize.quadratic_assignment`
 
@@ -3442,9 +3468,12 @@ def show_options(solver=None, method=None, disp=True):
             ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
-            ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
-            ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
-            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
+            ('simplex', 'scipy.optimize._linprog._linprog_simplex_doc'),
+            ('interior-point', 'scipy.optimize._linprog._linprog_ip_doc'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs_doc'),
+            ('highs-ipm', 'scipy.optimize._linprog._linprog_highs_ipm_doc'),
+            ('highs-ds', 'scipy.optimize._linprog._linprog_highs_ds_doc'),
+            ('highs', 'scipy.optimize._linprog._linprog_highs_doc'),
         ),
         'quadratic_assignment': (
             ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),

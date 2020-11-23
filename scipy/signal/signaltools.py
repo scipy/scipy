@@ -622,7 +622,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
     >>> from scipy import misc
     >>> face = misc.face(gray=True)
-    >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
+    >>> kernel = np.outer(signal.windows.gaussian(70, 8),
+    ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
     >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(3, 1,
@@ -1354,7 +1355,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> win = signal.hann(50)
+    >>> win = signal.windows.hann(50)
     >>> filtered = signal.convolve(sig, win, mode='same') / sum(win)
 
     >>> import matplotlib.pyplot as plt
