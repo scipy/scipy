@@ -28,6 +28,7 @@ from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
+from numpy.lib import NumpyVersion
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3651,15 +3652,18 @@ class Test_ttest_ind_permutations():
         (a[0, :].tolist(), b[0, :].tolist(), {'axis': None}, p_d[0]),
         # different seeds
         (a, b, {'random_state': 0, "axis": 1}, p_d),
-        (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         (a2, b2, {'equal_var': True}, 0.000999),  # equal variances
         (rvs1, rvs5, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
         ]
 
+    if NumpyVersion(np.__version__) >= '1.18.0':
+        params.append(
+            (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d)
+            )
+
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
-        # Test on horizontal dimension
         options_a = {'axis': None, 'equal_var': False}
         options_p = {'axis': None, 'equal_var': False,
                      'permutations': 1000, 'random_state': 0}
@@ -3672,6 +3676,7 @@ class Test_ttest_ind_permutations():
         assert_array_almost_equal(pvalue, p_d)
 
     def test_ttest_ind_permutations_many_dims(self):
+        # Test that permutation test works on many-dimensional arrays
         np.random.seed(0)
         a = np.random.rand(5, 4, 4, 3, 1, 6)
         b = np.random.rand(4, 1, 3, 2, 6)
