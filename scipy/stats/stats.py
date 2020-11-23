@@ -5706,19 +5706,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations is not None:
-        random_state = check_random_state(random_state)
-
-        if a.ndim == 1:
-            a = np.atleast_2d(a).T
-        if b.ndim == 1:
-            b = np.atleast_2d(b).T
-
-        if a.shape[1-axis] != b.shape[1-axis]:
-            if a.shape[1-axis] > b.shape[1-axis]:
-                b = np.tile(b, a.shape[1-axis]//b.shape[1-axis])
-            else:
-                a = np.tile(a, b.shape[1-axis]//a.shape[1-axis])
-
         res = _permutation_ttest(a, b,
                                  axis=axis,
                                  equal_var=equal_var,
@@ -5739,6 +5726,26 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                     np.mean(b, axis),
                                     denom, df)
     return Ttest_indResult(*res)
+
+
+def _broadcast_concatenate(xs, axis):
+    """Concatenate arrays along an axis with broadcasting"""
+    # move the axis we're concatenating along to the end
+    xs = [np.swapaxes(x, axis, -1) for x in xs]
+    # determine final shape of all but the last dim
+    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
+    # get final size of the dimension we're concatenating along
+    length = sum((x.shape[-1] for x in xs))
+    # create an empty array of the right shape
+    res = np.empty(shape + (length,))
+    # fill it up
+    index = 0
+    for x in xs:
+        res[..., index: index+x.shape[-1]] = x
+        index += x.shape[-1]
+    # move the axis we concatenated along to where it was
+    res = np.swapaxes(res, axis, -1)
+    return res
 
 
 def _data_permutations(data, n=-1, axis=-1, random_state=None):
@@ -5763,6 +5770,7 @@ def _data_permutations(data, n=-1, axis=-1, random_state=None):
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
+    """Calculate the t statistic along the given dimension"""
     na = a.shape[axis]
     nb = b.shape[axis]
     avg_a = np.mean(a, axis=axis)
@@ -5770,7 +5778,6 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     var_a = np.var(a, axis=axis, ddof=1)
     var_b = np.var(b, axis=axis, ddof=1)
 
-    # Calculate the t statistic
     if not equal_var:
         denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
     else:
@@ -5822,7 +5829,7 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
     t_stat0 = _calc_t_stat(a, b, equal_var, axis=axis)
 
     na = a.shape[axis]
-    mat = np.concatenate((a, b), axis=axis)
+    mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
     mat_perm = _data_permutations(mat, n=permutations,
                                   random_state=random_state)
