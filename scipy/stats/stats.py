@@ -392,6 +392,10 @@ def gmean(a, axis=0, dtype=None, weights=None):
     arise in the calculations such as Not a Number and infinity because masked
     arrays automatically mask any non-finite values.
 
+    References
+    ----------
+    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+
     Examples
     --------
     >>> from scipy.stats import gmean
