@@ -3671,6 +3671,22 @@ class Test_ttest_ind_permutations():
         assert_array_almost_equal(stat_a, stat_p, 5)
         assert_array_almost_equal(pvalue, p_d)
 
+    def test_ttest_ind_permutations_many_dims(self):
+        np.random.seed(0)
+        a = np.random.rand(5, 4, 4, 3, 1, 6)
+        b = np.random.rand(4, 1, 3, 2, 6)
+        res = stats.ttest_ind(a, b, permutations=200, axis=-3,
+                              random_state=np.random.default_rng(0))
+
+        a2 = a[0, :, 0, :, 0, :]
+        b2 = b[:, 0, :, 0, :]
+        res2 = stats.ttest_ind(a2, b2, permutations=200, axis=-2,
+                               random_state=np.random.default_rng(0))
+        assert_equal(res.statistic[0, :, 0, 0, :],
+                     res2.statistic)
+        assert_equal(res.pvalue[0, :, 0, 0, :],
+                     res2.pvalue)
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
