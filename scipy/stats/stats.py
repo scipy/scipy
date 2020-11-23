@@ -368,7 +368,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         platform integer is used.
     weights : array_like, optional
         The weights array can either be 1-D (in which case its length must be
-        the size of a along the given axis) or of the same shape as a.
+        the size of `a` along the given `axis`) or of the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
