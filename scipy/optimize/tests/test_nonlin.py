@@ -141,7 +141,7 @@ class TestNonlin(object):
 
         def local_norm_func(x):
             self._tol_norm_used = True
-            return abs(x).max()
+            return np.absolute(x).max()
 
         nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
              tol_norm=local_norm_func)
