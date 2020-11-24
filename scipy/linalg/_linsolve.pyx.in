@@ -428,27 +428,44 @@ cpdef inline int lusolve(lapack_t[:, ::1] a,
 # ########################
 # internal diag function
 # ########################
-# Just a regular python func.
-# Not optimized for its simple functionality
-# TODO: optimize
-def diagsolve(a, b):
-    if any(a == 0.):
-        raise LinAlgError("Matrix is singular")
+{{for typename, typeprefix, typenamescdz in zip(typenames, prefixes, typenames_scdz)}}
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+def diagsolve_{{typeprefix}}(({{typename}})[::1] a, ({{typename}})[::1, :]b):
+    cdef int r, c, n = <int>len(a), m = <int>b.shape[1]
+    cdef {{typenamescdz}}[::1] diags_abs
+    cdef {{typenamescdz}} diags_min, rcond
+
+    for r in xrange(n):
+        if a[r] == 0.:
+            raise LinAlgError("Matrix is singular")
+
+    with nogil:
+        for r in xrange(n):
+            for c in xrange(m):
+                # Cython doesn't like complex numbers and prefix ops !?
+                b[r, c] = b[r, c] / a[r]
 
     diags_abs = np.abs(a)
-    diags_min = diags_abs.min()
-    if diags_min == 0.:
-        raise LinAlgError("Matrix is singular")
-    rcond = diags_min/diags_abs.max()
-    b /= a[:, None]
+    diags_min = np.min(diags_abs)
+    rcond = diags_min/np.max(diags_abs)
+    if rcond < {{if typeprefix in ['s', 'c']}}s{{else}}d{{endif}}lamch('E'):
+        warn('Ill-conditioned matrix (rcond={:.6g}): result may not be accurate.'.format(rcond), LinAlgWarning)
 
-    if rcond <  np.finfo(a.dtype).eps:
-        warn('Ill-conditioned matrix (rcond={:.6g}): '
-              'result may not be accurate.'.format(rcond),
-              LinAlgWarning)
 
-    return b
+{{endfor}}
+def diagsolve(lapack_t[::1] a, lapack_t[::1, :]b):
+    if lapack_t is float:
+        diagsolve_s(a, b)
+    elif lapack_t is double:
+        diagsolve_d(a, b)
+    elif lapack_t is floatcomplex:
+        diagsolve_c(a, b)
+    else:
+        diagsolve_z(a, b)
 
+    return 0
 
 # ########################
 # internal tr functions

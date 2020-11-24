@@ -238,7 +238,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     elif fam == 1:
         # diagonal
         if member == 0:
-            _ = diagsolve(a.diagonal(), b)
+            _ = diagsolve(a.diagonal().copy(order='C'), b)
         # upper triangular (lower if f-contiguous)
         elif member == 1:
             _ = trisolve(a_t, b, a_is_c,
