@@ -1824,12 +1824,10 @@ class TestFactorialFunctions(object):
 
     def test_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Using factorial\\(\\) with floats is deprecated")
-            result = special.factorial(x, exact=True)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
-            result = special.factorial(x, exact=False)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        result = special.factorial(x, exact=True)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        result = special.factorial(x, exact=False)
+        assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
 
 
 class TestFresnel(object):

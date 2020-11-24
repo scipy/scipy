@@ -2349,7 +2349,11 @@ def factorial(n, exact=False):
 
             # Calculate products of each range of numbers
             if un.size:
-                val = math.factorial(un[0])
+                if not np.isnan(un[0]):
+                    val = math.factorial(un[0])
+                else:
+                    # On Python 3.10, math.factorial() no longer accepts float
+                    val = un[0]
                 out[n == un[0]] = val
                 for i in range(len(un) - 1):
                     prev = un[i] + 1
