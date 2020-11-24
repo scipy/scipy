@@ -3641,9 +3641,9 @@ class Test_ttest_ind_permutations():
     rvs1 = stats.norm.rvs(loc=5, scale=10, size=500).reshape(100, 5)
     rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
 
-    p_d = [0.000999, 0.678322]     # desired pvalues
-    p_d_gen = [0.000999, 0.676324]  # desired pvalues for Generator seed
-    p_d_big = [0.983017, 0.696304, 0.832168, 0.964036, 0.271728]
+    p_d = [0.000999, 0.679321]     # desired pvalues
+    p_d_gen = [0.000999, 0.674326]  # desired pvalues for Generator seed
+    p_d_big = [0.993007, 0.653347, 0.838162, 0.947053, 0.248751]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test

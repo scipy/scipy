@@ -5772,7 +5772,7 @@ def _data_permutations(data, n=-1, axis=-1, random_state=None):
     # prepare permutation indices
     m = data.shape[axis]
     if n > 0:  # how can we generate these faster? This takes 95% of the time.
-        indices = rankdata(random_state.random((m, n)), axis=0) - 1
+        indices = np.argsort(random_state.random((m, n)), axis=0)
     else:
         indices = np.array(list(permutations(range(m)))).T
     indices = indices.astype(int)
