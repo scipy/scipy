@@ -70,11 +70,21 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     npy_intp dim[1] = { num_rows };
     a = PyArray_SimpleNew(1, dim, NPY_INT64);
+    b = PyArray_SimpleNew(1, dim, NPY_INT64);
+    if (a == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "couldn't allocate column indices");
+        goto cleanup;
+    }
+
+    if (b == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "couldn't allocate row indices");
+        goto cleanup;
+    }
+
     int64_t* adata = PyArray_DATA((PyArrayObject*)a);
     for (int i=0;i<num_rows;i++)
         adata[i] = i;
 
-    b = PyArray_SimpleNew(1, dim, NPY_INT64);
     int ret = solve_rectangular_linear_sum_assignment(
       num_rows, num_cols, cost_matrix, PyArray_DATA((PyArrayObject*)b));
     if (ret != 0) {
@@ -83,14 +93,15 @@ calculate_assignment(PyObject* self, PyObject* args)
     }
 
     result = Py_BuildValue("OO", a, b);
+    if (result == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "couldn't allocate result");
+        goto cleanup;
+    }
 
 cleanup:
-    if (obj_cont)
-        Py_DECREF((PyObject*)obj_cont);
-    if (a)
-        Py_DECREF(a);
-    if (b)
-        Py_DECREF(b);
+    Py_XDECREF((PyObject*)obj_cont);
+    Py_XDECREF(a);
+    Py_XDECREF(b);
     return result;
 }
 
