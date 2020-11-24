@@ -274,9 +274,11 @@ class TestConstructUtils(object):
 
         for a in cases:
             for b in cases:
-                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = np.kron(a,b)
-                assert_array_equal(result,expected)
+                expected = np.kron(a, b)
+                for fmt in sparse_formats:
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    assert_equal(result.format, fmt)
+                    assert_array_equal(result.todense(), expected)
 
     def test_kron_large(self):
         n = 2**16
