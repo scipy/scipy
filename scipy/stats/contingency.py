@@ -282,7 +282,7 @@ def association(arr, chi2_stat, stat="cramer"):
     Parameters
     ----------
     arr : ndarray
-        The total number of observations
+        The array of observed values
     chi2_stat : float
         The chi-squared statistic.
     stat : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
@@ -374,7 +374,7 @@ def association(arr, chi2_stat, stat="cramer"):
         except ValueError:
             raise ValueError("Invalid chi2_stat, must be float or int")
         else:
-            phi2 = chi2_stat / sum(arr)
+            phi2 = chi2_stat / sum(arr.flatten())
 
             n_rows, n_cols = arr.shape
 
