@@ -27,7 +27,7 @@ Functions
     \begin{eqnarray*}
     \mu & = & \kappa^{-1}-\kappa\\
     \mu_2 & = & \kappa^{-2}+\kappa^2\\
-    \gamma_1 & = & \frac{2(1-\kappa^6)}{(1+\kappa^4)^{3/2}}
+    \gamma_1 & = & \frac{2(1-\kappa^6)}{(1+\kappa^4)^{3/2}}\\
     \gamma_2 & = & \frac{6(1+\kappa^8)}{(1+\kappa^4)^2}
     \end{eqnarray*}
 
