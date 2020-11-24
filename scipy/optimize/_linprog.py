@@ -642,7 +642,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
-    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+    status, message = _check_result(x, fun, status, slack, con,
+                                    lp_o.bounds, tol, message)
 
     if disp:
         _display_summary(message, status, fun, iteration)
