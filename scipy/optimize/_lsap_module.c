@@ -45,7 +45,7 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     PyArrayObject* obj_cont =
       (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
-    if (obj_cont == NULL) {
+    if (!obj_cont) {
         PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         return NULL;
     }
@@ -70,16 +70,12 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     npy_intp dim[1] = { num_rows };
     a = PyArray_SimpleNew(1, dim, NPY_INT64);
-    b = PyArray_SimpleNew(1, dim, NPY_INT64);
-    if (a == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "couldn't allocate column indices");
+    if (!a)
         goto cleanup;
-    }
 
-    if (b == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "couldn't allocate row indices");
+    b = PyArray_SimpleNew(1, dim, NPY_INT64);
+    if (!b)
         goto cleanup;
-    }
 
     int64_t* adata = PyArray_DATA((PyArrayObject*)a);
     for (int i=0;i<num_rows;i++)
@@ -93,10 +89,6 @@ calculate_assignment(PyObject* self, PyObject* args)
     }
 
     result = Py_BuildValue("OO", a, b);
-    if (result == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "couldn't allocate result");
-        goto cleanup;
-    }
 
 cleanup:
     Py_XDECREF((PyObject*)obj_cont);
