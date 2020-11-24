@@ -4135,8 +4135,8 @@ class laplace_asymmetric_gen(rv_continuous):
         kapinv = 1/kappa
         kappkapinv = kappa+kapinv
         return np.where(x >= 0,
-            np.exp(-x*kappa)*(kapinv/kappkapinv),
-            1-np.exp(x*kapinv)*(kappa/kappkapinv))
+                        np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        1 - np.exp(x*kapinv)*(kappa/kappkapinv))
 
     def _ppf(self, q, kappa):
         kapinv = 1/kappa
