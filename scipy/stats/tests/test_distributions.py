@@ -545,7 +545,7 @@ class TestLaplaceasymmetric(object):
         pdf2 = np.array([1/10, 1/250])
         cdf2 = np.array([1/5, 1 - 1/500])
         sf2 = np.array([4/5, 1/500])
-        ppf1 = stats.laplace_asymmetric.isf(cdf2, kappa)
+        ppf1 = stats.laplace_asymmetric.ppf(cdf2, kappa)
         ppf2 = points
         isf1 = stats.laplace_asymmetric.isf(sf2, kappa)
         isf2 = points
