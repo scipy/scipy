@@ -5771,8 +5771,10 @@ def _data_permutations(data, n=-1, axis=-1, random_state=None):
 
     # prepare permutation indices
     m = data.shape[axis]
-    if n > 0:  # how can we generate these faster? This takes 95% of the time.
-        indices = np.argsort(random_state.random((m, n)), axis=0)
+    if n > 0:
+        # replace with vectorized random_state.permutation if that gets added
+        # indices = np.argsort(random_state.random((m, n)), axis=0)
+        indices = np.array([random_state.permutation(m) for i in range(n)]).T
     else:
         indices = np.array(list(permutations(range(m)))).T
     indices = indices.astype(int)
