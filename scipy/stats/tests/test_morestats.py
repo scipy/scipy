@@ -798,6 +798,11 @@ class TestBinomTest:
                            match="must be an integer not less than"):
             stats.binomtest(k, n)
 
+    def test_invalid_k_too_big(self):
+        with pytest.raises(ValueError,
+                           match="k must not be greater than n"):
+            stats.binomtest(11, 10, 0.25)
+
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="must be in the interval"):
