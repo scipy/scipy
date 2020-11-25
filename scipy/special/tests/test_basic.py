@@ -34,7 +34,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk
+from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 
 from scipy.special._testutils import with_special_errors, \
@@ -1719,6 +1719,49 @@ class TestEllipCarlson(object):
                         829774.1424801627252574054378691828,
                         rtol=5e-15, atol=1e-20)
 
+
+class TestEllipLegendreCarlsonIdentities(object):
+    """Test identities expressing the Legendre elliptic integrals in terms
+    of Carlson's symmetric integrals.  These identities can be found
+    in the DLMF https://dlmf.nist.gov/19.25#i .
+    """
+
+    def setup_class(self):
+        self.m_n1_1 = np.arange(-1., 1., 0.01)
+        # For double, this is -(2**1024)
+        self.max_neg = finfo(float_).min
+        # Lots of very negative numbers
+        self.very_neg_m = -1. * 2.**arange(-1 +
+                                           np.log2(-self.max_neg), 0.,
+                                           -1.)
+        self.ms_up_to_1 = np.concatenate(([self.max_neg],
+                                          self.very_neg_m,
+                                          self.m_n1_1))
+
+    def test_k(self):
+        """Test identity:
+        K(m) = R_F(0, 1-m, 1)
+        """
+        m = self.ms_up_to_1
+        assert_allclose(ellipk(m), elliprf(0., 1.-m, 1.))
+
+    def test_km1(self):
+        """Test identity:
+        K(m) = R_F(0, 1-m, 1)
+        But with the ellipkm1 function
+        """
+        # For double, this is 2**-1022
+        tiny = finfo(float_).tiny
+        # All these small powers of 2, up to 2**-1
+        m1 = tiny * 2.**arange(0., -np.log2(tiny))
+        assert_allclose(ellipkm1(m1), elliprf(0., m1, 1.))
+
+    def test_e(self):
+        """Test identity:
+        E(m) = 2*R_G(0, 1-k^2, 1)
+        """
+        m = self.ms_up_to_1
+        assert_allclose(ellipe(m), 2.*elliprg(0., 1.-m, 1.))
 
 class TestErf:
 

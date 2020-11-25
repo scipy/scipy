@@ -1917,12 +1917,19 @@ add_newdoc("ellipe",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre E integral is related to Carlson's symmetric R_D or R_G
+    functions in multiple ways [3]_. For example,
+
+    .. math:: E(m) = 2 R_G(0, 1-k^2, 1) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
 
     References
     ----------
@@ -1931,6 +1938,9 @@ add_newdoc("ellipe",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
 
     Examples
     --------
@@ -1994,12 +2004,23 @@ add_newdoc("ellipeinc",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre E incomplete integral can be related to combinations
+    of Carlson's symmetric integrals R_D, R_F, and R_G in multiple
+    ways [3]_. For example, with :math:`c = \csc^2\phi`,
+
+    .. math::
+      E(\phi, m) = R_F(c-1, c-k^2, c)
+        - \frac{1}{3} k^2 R_D(c-1, c-k^2, c) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
+    elliprd : Symmetric elliptic integral of the second kind.
+    elliprf : Completely-symmetric elliptic integral of the first kind.
+    elliprg : Completely-symmetric elliptic integral of the second kind.
 
     References
     ----------
@@ -2008,6 +2029,9 @@ add_newdoc("ellipeinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
     """)
 
 add_newdoc("ellipj",
@@ -2107,6 +2131,7 @@ add_newdoc("ellipkm1",
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
@@ -2145,18 +2170,27 @@ add_newdoc("ellipk",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre K integral is related to Carlson's symmetric R_F
+    function by [2]_:
+
+    .. math:: K(m) = R_F(0, 1-k^2, 1) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind around m = 1
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
     .. [1] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [2] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
 
     """)
 
@@ -2170,7 +2204,7 @@ add_newdoc("ellipkinc",
 
     .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
 
-    This function is also called `F(phi, m)`.
+    This function is also called :math:`F(\phi, m)`.
 
     Parameters
     ----------
@@ -2196,12 +2230,19 @@ add_newdoc("ellipkinc",
     :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
     used, so be careful that you choose the correct parameter.
 
+    The Legendre K incomplete integral (or F integral) is related to
+    Carlson's symmetric R_F function [3]_.
+    Setting :math:`c = \csc^2\phi`,
+
+    .. math:: F(\phi, m) = R_F(c-1, c-k^2, c) .
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+    elliprf : Completely-symmetric elliptic integral of the first kind.
 
     References
     ----------
@@ -2210,6 +2251,9 @@ add_newdoc("ellipkinc",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical
+           Functions. http://dlmf.nist.gov/, Release 1.0.28 of
+           2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
     """)
 
 add_newdoc(
@@ -2248,6 +2292,8 @@ add_newdoc(
 
     The code implements Carlson's algorithm based on the duplication theorems
     and series expansion up to the 7th order. [2]_
+
+    .. versionadded:: 1.8.0
 
     See Also
     --------
@@ -2303,6 +2349,8 @@ add_newdoc(
     The code implements Carlson's algorithm based on the duplication theorems
     and series expansion up to the 7th order. [2]_
 
+    .. versionadded:: 1.8.0
+
     See Also
     --------
     elliprc : Degenerate symmetric elliptic integral.
@@ -2354,6 +2402,8 @@ add_newdoc(
     and series expansion up to the 7th order (cf.:
     https://dlmf.nist.gov/19.36.i) and the AGM algorithm for the complete
     integral. [2]_
+
+    .. versionadded:: 1.8.0
 
     See Also
     --------
@@ -2417,6 +2467,8 @@ add_newdoc(
     method is applied instead. Other special cases are computed following Ref.
     [2]_
 
+    .. versionadded:: 1.8.0
+
     See Also
     --------
     elliprc : Degenerate symmetric integral.
@@ -2467,6 +2519,10 @@ add_newdoc(
            \frac{3}{2} \int_0^{+\infty} [(t + x) (t + y) (t + z)]^{-1/2}
            (t + p)^{-1} dt
 
+    .. warning::
+        This function should be considered experimental when the inputs are
+        unbalanced.  Check correctness with another independent implementation.
+
     Parameters
     ----------
     x, y, z, p : array_like
@@ -2505,6 +2561,8 @@ add_newdoc(
     In the case where one of ``x``, ``y``, and ``z`` is equal to ``p``, the
     function ``elliprd`` should be preferred because of its less restrictive
     domain.
+
+    .. versionadded:: 1.8.0
 
     See Also
     --------
