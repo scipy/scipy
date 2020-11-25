@@ -50,17 +50,6 @@ matrix:
         - TEST_GROUP_COUNT=2
         - TEST_GROUP=2
     - python: 3.7
-      name: "Pre-release Dependencies, Source Dist"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        - OTHERSPEC="--pre --upgrade --timeout=60"
-        # Need a test with most recent Python version where we build from an
-        # sdist (uses pip build isolation), to check that the version we
-        # specify in pyproject.toml (will be older than --pre --upgrade) works
-        - USE_SDIST=1
-    - python: 3.7
       name: "Coverage, Full test suite"
       env:
         - TESTMODE=full
