@@ -11,7 +11,7 @@ from pytest import raises as assert_raises, deprecated_call
 import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
-                              rng_integers)
+                              rng_integers, _validate_int)
 
 
 def test__aligned_zeros():
@@ -71,9 +71,11 @@ def test_check_random_state():
 def test_getfullargspec_no_self():
     p = MapWrapper(1)
     argspec = getfullargspec_no_self(p.__init__)
-    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [], None, {}))
+    assert_equal(argspec, FullArgSpec(['pool'], None, None, (1,), [],
+                                      None, {}))
     argspec = getfullargspec_no_self(p.__call__)
-    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None, [], None, {}))
+    assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None,
+                                      [], None, {}))
 
     class _rv_generic(object):
         def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
@@ -81,7 +83,8 @@ def test_getfullargspec_no_self():
 
     rv_obj = _rv_generic()
     argspec = getfullargspec_no_self(rv_obj._rvs)
-    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs', (2, 3), ['size'], {'size': None}, {}))
+    assert_equal(argspec, FullArgSpec(['a', 'b', 'c'], 'args', 'kwargs',
+                                      (2, 3), ['size'], {'size': None}, {}))
 
 
 def test_mapwrapper_serial():
@@ -101,7 +104,7 @@ def test_mapwrapper_serial():
 
 def test_pool():
     with Pool(2) as p:
-        p.map(math.sin, [1,2,3, 4])
+        p.map(math.sin, [1, 2, 3, 4])
 
 
 def test_mapwrapper_parallel():
@@ -243,3 +246,19 @@ def test_rng_integers():
     assert np.max(arr) == 4
     assert np.min(arr) == 0
     assert arr.shape == (100, )
+
+
+class TestValidateInt:
+
+    def test_validate_int(self):
+        n = _validate_int(4, 'n')
+        assert n == 4
+
+    def test_validate_int_bad1(self):
+        with pytest.raises(TypeError, match='n must be an integer'):
+            _validate_int(4.0, 'n')
+
+    def test_validate_int_below_min(self):
+        with pytest.raises(ValueError, match='n must be an integer not '
+                                             'less than 0'):
+            _validate_int(-1, 'n', 0)

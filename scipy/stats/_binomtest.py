@@ -1,7 +1,7 @@
 from collections import namedtuple
-import operator
 from math import sqrt
 import numpy as np
+from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
 from ._discrete_distns import binom
@@ -186,16 +186,6 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     return lo, hi
 
 
-def _validate_nonneg_int(k, name):
-    try:
-        k = operator.index(k)
-    except TypeError:
-        raise TypeError(f'{name} must be an integer.') from None
-    if k < 0:
-        raise ValueError(f'{name} must be nonnegative') from None
-    return k
-
-
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -275,8 +265,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     ConfidenceInterval(low=0.056846867590246826, high=1.0)
 
     """
-    k = _validate_nonneg_int(k, 'k')
-    n = _validate_nonneg_int(n, 'n')
+    k = _validate_int(k, 'k', minimum=0)
+    n = _validate_int(n, 'n', minimum=1)
     if k > n:
         raise ValueError('k must not be greater than n.')
 
