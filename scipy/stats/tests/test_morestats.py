@@ -792,6 +792,14 @@ class TestBinomTest:
         ci = res.proportion_ci(confidence_level=conf, method=method)
         assert_allclose(ci, (ci_low, ci_high), rtol=1e-6)
 
+    def test_estimate_equals_hypothesized_prop(self):
+        # Test the special case where the estimated proportion equals
+        # the hypothesized proportion.  When alternative is 'two-sided',
+        # the p-value is 1.
+        res = stats.binomtest(4, 16, 0.25)
+        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.pvalue, 1.0)
+
     @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
     def test_invalid_k_n(self, k, n):
         with pytest.raises(ValueError,
