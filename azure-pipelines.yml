@@ -37,7 +37,7 @@ jobs:
   - script: >-
       python -m pip install --upgrade
       pip==20.2.4
-      "setuptools<50"
+      setuptools
       wheel
     displayName: 'Install deps'
     failOnStderr: true
@@ -55,12 +55,14 @@ jobs:
     displayName: 'Install pre-release NumPy wheel'
     failOnStderr: true
   - script: |
+        git submodule init
+        git submodule update
         python tools/suppress_output.py python setup.py sdist
         cd dist
         python -m pip install $PWD/scipy* -v
         cd ..
     displayName: 'SciPy sdist install'
-    failOnStderr: true
+    failOnStderr: false
   - script: |
         python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
         tools/validate_runtests_log.py fast < runtests.log
