@@ -91,8 +91,8 @@ class BinomTestResult:
         >>> result = binomtest(k=7, n=50, p=0.1)
         >>> result.proportion_estimate
         0.14
-        >>> result.proportion_ci
-        ConfidenceInterval(low=0.04246878737883377, high=0.30910696596481874)
+        >>> result.proportion_ci()
+        ConfidenceInterval(low=0.05819170033997341, high=0.2673960024970084)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
