@@ -672,6 +672,12 @@ class CubicSpline(CubicHermiteSpline):
 
             s = solve(A, b, overwrite_a=True, overwrite_b=True,
                       check_finite=False)
+        elif n == 3 and bc[0] == 'periodic':
+            # In case when number of points is 3 we should count derivatives
+            # manually
+            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            t = (slope / dxr).sum() / (1. / dxr).sum()
+            s.fill(t)
         else:
             # Find derivative values at each x[i] by solving a tridiagonal
             # system.
@@ -713,7 +719,7 @@ class CubicSpline(CubicHermiteSpline):
                 a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
                 a_m1_m2 = dx[-1]
                 a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-2]
+                a_m2_m1 = dx[-3]
                 a_0_m1 = dx[0]
 
                 b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
