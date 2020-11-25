@@ -1011,6 +1011,20 @@ class TestNdimageInterpolation:
             x[::-1, ::-1],
         )
 
+    @pytest.mark.parametrize('order', range(0, 6))
+    @pytest.mark.parametrize('prefilter', [False, True])
+    def test_shift_nearest_boundary(self, order, prefilter):
+        # verify that shifting at least order // 2 beyond the end of the array
+        # gives a value equal to the edge value.
+        x = numpy.arange(16)
+        kwargs = dict(mode='nearest', order=order, prefilter=prefilter)
+        assert_array_almost_equal(
+            ndimage.shift(x, order // 2 + 1, **kwargs)[0], x[0],
+        )
+        assert_array_almost_equal(
+            ndimage.shift(x, -order // 2 - 1, **kwargs)[-1], x[-1],
+        )
+
     @pytest.mark.parametrize('mode', ['grid-constant', 'grid-wrap', 'nearest',
                                       'mirror', 'reflect'])
     @pytest.mark.parametrize('order', range(6))
