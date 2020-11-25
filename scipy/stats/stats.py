@@ -7297,7 +7297,7 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('Less than 3 levels.  Friedman test not appropriate.')
+        raise ValueError('At least 3 sets of measurements must be given for Friedman test, got {}.'.format(k))
 
     n = len(args[0])
     for i in range(1, k):
