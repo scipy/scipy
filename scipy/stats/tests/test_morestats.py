@@ -618,18 +618,20 @@ class TestLevene(object):
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP(object):
+class TestBinomP:
     """Tests for stats.binom_test."""
+
+    binom_test_func = staticmethod(stats.binom_test)
 
     def test_data(self):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        message='.*`binom_test` is deprecated.*')
-            pval = stats.binom_test(100, 250)
+            pval = self.binom_test_func(100, 250)
             assert_almost_equal(pval, 0.0018833009350757682, 11)
-            pval = stats.binom_test(201, 405)
+            pval = self.binom_test_func(201, 405)
             assert_almost_equal(pval, 0.92085205962670713, 11)
-            pval = stats.binom_test([682, 243], p=3/4)
+            pval = self.binom_test_func([682, 243], p=3/4)
             assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
@@ -637,7 +639,7 @@ class TestBinomP(object):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError, stats.binom_test, [1, 2, 3])
+            assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
@@ -645,29 +647,53 @@ class TestBinomP(object):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError, stats.binom_test, [100])
+            assert_raises(ValueError, self.binom_test_func, [100])
             # n less than x[0]
-            assert_raises(ValueError, stats.binom_test, [100], n=50)
+            assert_raises(ValueError, self.binom_test_func, [100], n=50)
 
     def test_bad_p(self):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
+            assert_raises(ValueError,
+                          self.binom_test_func, [50, 50], p=2.0)
 
     def test_alternatives(self):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        message='.*`binom_test` is deprecated.*')
 
-            res = stats.binom_test(51, 235, p=1/6, alternative='less')
+            res = self.binom_test_func(51, 235, p=1/6, alternative='less')
             assert_almost_equal(res, 0.982022657605858)
 
-            res = stats.binom_test(51, 235, p=1/6, alternative='greater')
+            res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
             assert_almost_equal(res, 0.02654424571169085)
 
-            res = stats.binom_test(51, 235, p=1/6, alternative='two-sided')
+            res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
             assert_almost_equal(res, 0.0437479701823997)
+
+
+class TestBinomTestP(TestBinomP):
+    """
+    Tests for stats.binomtest as a replacement for stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
+
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
 
 class TestBinomTest:
