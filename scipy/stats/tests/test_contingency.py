@@ -197,6 +197,7 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
 def test_bad_association_args():
     # Invalid Chi Squared Stat Value Type
     assert_raises(ValueError, association, [[1, 2], [3, 4]], "x", "tschuprow")
@@ -204,6 +205,7 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[1, 2], [3, 4]], 2.55, "X")
     # Invalid array shape
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], 2.55, "cramer")
+
 
 def test_cramersv():
     # 2d Array

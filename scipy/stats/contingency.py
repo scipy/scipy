@@ -28,6 +28,7 @@ def margins(a):
 
     Examples
     --------
+    >>> from scipy.stats.contingency import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -130,7 +131,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         If True, *and* the degrees of freedom is 1, apply Yates' correction
         for continuity.  The effect of the correction is to adjust each
         observed value by 0.5 towards the corresponding expected value.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
@@ -281,7 +282,7 @@ def association(arr, chi2_stat, stat="cramer"):
 
     Parameters
     ----------
-    arr : ndarray
+    arr : array-like
         The array of observed values
     chi2_stat : float
         The chi-squared statistic.
@@ -329,7 +330,6 @@ def association(arr, chi2_stat, stat="cramer"):
 
     Examples
     --------
-
     2-way Example
 
     >>> from scipy.stats.contingency import association, chi2_contingency
