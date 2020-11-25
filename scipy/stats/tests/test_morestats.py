@@ -726,24 +726,65 @@ class TestBinomTest:
         proportion_ci = res.proportion_ci(confidence_level=0.99)
         assert_allclose(proportion_ci, (ci_low, ci_high), rtol=1e-6)
 
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_high',
+                             [('less', 0.05631351, 0.2588656),
+                              ('greater', 1.0, 1.0),
+                              ('two-sided', 0.07604122, 0.3084971)])
+    def test_confidence_interval_exact_k0(self, alternative, pval, ci_high):
+        # Test with k=0, n = 10.
+        res = stats.binomtest(0, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        proportion_ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(proportion_ci.low, 0.0)
+        assert_allclose(proportion_ci.high, ci_high, rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low',
+                             [('less', 1.0, 0.0),
+                              ('greater', 9.536743e-07, 0.7411344),
+                              ('two-sided', 9.536743e-07, 0.6915029)])
+    def test_confidence_interval_exact_k_is_n(self, alternative, pval, ci_low):
+        # Test with k = n = 10.
+        res = stats.binomtest(10, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        proportion_ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(proportion_ci.high, 1.0)
+        assert_allclose(proportion_ci.low, ci_low, rtol=1e-6)
+
     # Expected results are from the prop.test function in R 3.6.2.
     @pytest.mark.parametrize(
-        'alternative, corr, conf, ci_low, ci_high',
-        [['two-sided', True, 0.95, 0.08094782, 0.64632928],
-         ['two-sided', True, 0.99, 0.0586329, 0.7169416],
-         ['two-sided', False, 0.95, 0.1077913, 0.6032219],
-         ['two-sided', False, 0.99, 0.07956632, 0.6799753],
-         ['less', True, 0.95, 0.0, 0.6043476],
-         ['less', True, 0.99, 0.0, 0.6901811],
-         ['less', False, 0.95, 0.0, 0.5583002],
-         ['less', False, 0.99, 0.0, 0.6507187],
-         ['greater', True, 0.95, 0.09644904, 1.0],
-         ['greater', True, 0.99, 0.06659141, 1.0],
-         ['greater', False, 0.95, 0.1268766, 1.0],
-         ['greater', False, 0.99, 0.08974147, 1.0]]
+        'k, alternative, corr, conf, ci_low, ci_high',
+        [[3, 'two-sided', True, 0.95, 0.08094782, 0.64632928],
+         [3, 'two-sided', True, 0.99, 0.0586329, 0.7169416],
+         [3, 'two-sided', False, 0.95, 0.1077913, 0.6032219],
+         [3, 'two-sided', False, 0.99, 0.07956632, 0.6799753],
+         [3, 'less', True, 0.95, 0.0, 0.6043476],
+         [3, 'less', True, 0.99, 0.0, 0.6901811],
+         [3, 'less', False, 0.95, 0.0, 0.5583002],
+         [3, 'less', False, 0.99, 0.0, 0.6507187],
+         [3, 'greater', True, 0.95, 0.09644904, 1.0],
+         [3, 'greater', True, 0.99, 0.06659141, 1.0],
+         [3, 'greater', False, 0.95, 0.1268766, 1.0],
+         [3, 'greater', False, 0.99, 0.08974147, 1.0],
+
+         [0, 'two-sided', True, 0.95, 0.0, 0.3445372],
+         [0, 'two-sided', False, 0.95, 0.0, 0.2775328],
+         [0, 'less', True, 0.95, 0.0, 0.2847374],
+         [0, 'less', False, 0.95, 0.0, 0.212942],
+         [0, 'greater', True, 0.95, 0.0, 1.0],
+         [0, 'greater', False, 0.95, 0.0, 1.0],
+
+         [10, 'two-sided', True, 0.95, 0.6554628, 1.0],
+         [10, 'two-sided', False, 0.95, 0.7224672, 1.0],
+         [10, 'less', True, 0.95, 0.0, 1.0],
+         [10, 'less', False, 0.95, 0.0, 1.0],
+         [10, 'greater', True, 0.95, 0.7152626, 1.0],
+         [10, 'greater', False, 0.95, 0.787058, 1.0]]
     )
-    def test_ci_wilson_method(self, alternative, corr, conf, ci_low, ci_high):
-        res = stats.binomtest(3, n=10, p=0.1, alternative=alternative)
+    def test_ci_wilson_method(self, k, alternative, corr, conf,
+                              ci_low, ci_high):
+        res = stats.binomtest(k, n=10, p=0.1, alternative=alternative)
         if corr:
             method = 'wilsoncc'
         else:
@@ -761,6 +802,11 @@ class TestBinomTest:
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="must be in the interval"):
             res.proportion_ci(confidence_level=-1)
+
+    def test_invalid_ci_method(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="method must be"):
+            res.proportion_ci(method="plate of shrimp")
 
 
 class TestFligner(object):
