@@ -4107,7 +4107,7 @@ class laplace_asymmetric_gen(rv_continuous):
     .. [1] "Asymmetric Laplace distribution", Wikipedia
             https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
 
-    .. [2] Kozubowski TJ and Podg\'orski K. A Multivariate and
+    .. [2] Kozubowski TJ and Podgórski K. A Multivariate and
            Asymmetric Generalization of Laplace Distribution,
            Computational Statistics 15, 531--540 (2000).
            :doi:`10.1007/PL00022717`
