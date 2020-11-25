@@ -273,51 +273,51 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         options:
-        maxiter : int
-            Maximum number of iterations to perform.
-            Default: see method-specific documentation.
-        disp : bool
-            Set to ``True`` to print convergence messages.
-            Default: ``False``.
-        autoscale : bool
-            Set to ``True`` to automatically perform equilibration.
-            Consider using this option if the numerical values in the
-            constraints are separated by several orders of magnitude.
-            Default: ``False``.
-        presolve : bool
-            Set to ``False`` to disable automatic presolve.
-            Default: ``True``.
-        rr : bool
-            Set to ``False`` to disable automatic redundancy removal.
-            Default: ``True``.
-        rr_method : string
-            Method used to identify and remove redundant rows from the
-            equality constraint matrix after presolve. For problems with
-            dense input, the available methods for redundancy removal are:
+            maxiter : int
+                Maximum number of iterations to perform.
+                Default: see method-specific documentation.
+            disp : bool
+                Set to ``True`` to print convergence messages.
+                Default: ``False``.
+            autoscale : bool
+                Set to ``True`` to automatically perform equilibration.
+                Consider using this option if the numerical values in the
+                constraints are separated by several orders of magnitude.
+                Default: ``False``.
+            presolve : bool
+                Set to ``False`` to disable automatic presolve.
+                Default: ``True``.
+            rr : bool
+                Set to ``False`` to disable automatic redundancy removal.
+                Default: ``True``.
+            rr_method : string
+                Method used to identify and remove redundant rows from the
+                equality constraint matrix after presolve. For problems with
+                dense input, the available methods for redundancy removal are:
 
-                "SVD":
-                    Repeatedly performs singular value decomposition on
-                    the matrix, detecting redundant rows based on nonzeros
-                    in the left singular vectors that correspond with
-                    zero singular values. May be fast when the matrix is
-                    nearly full rank.
-                "pivot":
-                    Uses the algorithm presented in [5]_ to identify
-                    redundant rows.
-                "ID":
-                    Uses a randomized interpolative decomposition.
-                    Identifies columns of the matrix transpose not used in
-                    a full-rank interpolative decomposition of the matrix.
-                None:
-                    Uses "svd" if the matrix is nearly full rank, that is,
-                    the difference between the matrix rank and the number
-                    of rows is less than five. If not, uses "pivot". The
-                    behavior of this default is subject to change without
-                    prior notice.
+                    "SVD":
+                        Repeatedly performs singular value decomposition on
+                        the matrix, detecting redundant rows based on nonzeros
+                        in the left singular vectors that correspond with
+                        zero singular values. May be fast when the matrix is
+                        nearly full rank.
+                    "pivot":
+                        Uses the algorithm presented in [5]_ to identify
+                        redundant rows.
+                    "ID":
+                        Uses a randomized interpolative decomposition.
+                        Identifies columns of the matrix transpose not used in
+                        a full-rank interpolative decomposition of the matrix.
+                    None:
+                        Uses "svd" if the matrix is nearly full rank, that is,
+                        the difference between the matrix rank and the number
+                        of rows is less than five. If not, uses "pivot". The
+                        behavior of this default is subject to change without
+                        prior notice.
 
-            Default: None.
-            For problems with sparse input, this option is ignored, and the
-            pivot-based algorithm presented in [5]_ is used.
+                Default: None.
+                For problems with sparse input, this option is ignored, and the
+                pivot-based algorithm presented in [5]_ is used.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
