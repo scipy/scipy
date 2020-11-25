@@ -196,7 +196,7 @@ def _validate_nonneg_int(k, name):
     return k
 
 
-def binomtest(k, *, n=None, p=0.5, alternative='two-sided'):
+def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
 
