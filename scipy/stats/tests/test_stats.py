@@ -3639,7 +3639,7 @@ class Test_ttest_ind_permutations():
     # data for bigger test
     np.random.seed(0)
     rvs1 = stats.norm.rvs(loc=5, scale=10, size=500).reshape(100, 5)
-    rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)
 
     p_d = [0.000999, 0.676324]     # desired pvalues
     p_d_gen = [0.000999, 0.672328]  # desired pvalues for Generator seed
@@ -3654,7 +3654,7 @@ class Test_ttest_ind_permutations():
         (a, b, {'random_state': 0, "axis": 1}, p_d),
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
         (a2, b2, {'equal_var': True}, 0.000999),  # equal variances
-        (rvs1, rvs5, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
+        (rvs1, rvs2, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
         ]
 
     if NumpyVersion(np.__version__) >= '1.18.0':
