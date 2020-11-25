@@ -11,20 +11,7 @@ try:
 except ImportError as e:
     raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
                      (numpy.__version__, numpy.__file__)) from e
-
-
-def cxx_pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import (get_cxx_std_flag,
-                                                    try_add_flag)
-    cc = build_ext._cxx_compiler
-    args = ext.extra_compile_args
-
-    std_flag = get_cxx_std_flag(cc)
-    if std_flag is not None:
-        args.append(std_flag)
-    if sys.platform == 'darwin':
-        args.append('-mmacosx-version-min=10.7')
-        try_add_flag(args, cc, '-stdlib=libc++')
+from scipy._build_utils.compiler_helper import set_cxx_flags_hook
 
 
 def configuration(parent_package='',top_path=None):
@@ -128,7 +115,7 @@ def configuration(parent_package='',top_path=None):
                                    define_macros=define_macros,
                                    libraries=["sf_error"],
                                    extra_info=get_info("npymath"))
-    ext_cxx._pre_build_hook = cxx_pre_build_hook
+    ext_cxx._pre_build_hook = set_cxx_flags_hook
 
     cfg = combine_dict(lapack_opt, include_dirs=inc_dirs)
     cfg.setdefault('libraries', []).extend(["sf_error"])
