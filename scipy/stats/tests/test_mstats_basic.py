@@ -1032,9 +1032,10 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         assert_allclose(res1, res2)
+
         res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
         res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2)
+        assert_allclose(res1, res2, atol=1e-15)
 
         # Check default is axis=0
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
