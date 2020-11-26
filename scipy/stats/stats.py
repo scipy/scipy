@@ -178,7 +178,6 @@ from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 
 import scipy.special as special
-
 from scipy import linalg
 from . import distributions
 from . import mstats_basic
