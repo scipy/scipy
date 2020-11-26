@@ -5842,7 +5842,7 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
     t_stat = _calc_t_stat(a, b, equal_var)
 
     # Calculate the p-values
-    cmps = abs(t_stat) >= abs(t_stat0)
+    cmps = abs(t_stat) >= abs(t_stat_observed)
     pvalues = cmps.sum(axis=0) / permutations
 
     return (t_stat_observed, pvalues)
