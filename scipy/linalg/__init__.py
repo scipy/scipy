@@ -31,6 +31,7 @@ Basics
    solve_circulant - Solve a circulant system
    solve_triangular - Solve a triangular matrix
    solve_toeplitz - Solve a toeplitz matrix
+   matmul_toeplitz - Multiply a Toeplitz matrix with an array.
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
@@ -154,6 +155,7 @@ Special Matrices
    block_diag - Construct a block diagonal matrix from submatrices
    circulant - Circulant matrix
    companion - Companion matrix
+   convolution_matrix - Convolution matrix
    dft - Discrete Fourier transform matrix
    fiedler - Fiedler matrix
    fiedler_companion - Fiedler companion matrix

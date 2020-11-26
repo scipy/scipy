@@ -109,7 +109,7 @@ class IndexMixin(object):
             if not ((broadcast_row or x.shape[0] == i.shape[0]) and
                     (broadcast_col or x.shape[1] == i.shape[1])):
                 raise ValueError('shape mismatch in assignment')
-            if x.size == 0:
+            if x.shape[0] == 0 or x.shape[1] == 0:
                 return
             x = x.tocoo(copy=True)
             x.sum_duplicates()
@@ -117,7 +117,8 @@ class IndexMixin(object):
         else:
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
-            x, _ = _broadcast_arrays(x, i)
+            if x.squeeze().shape != i.squeeze().shape:
+                x = np.broadcast_to(x, i.shape)
             if x.size == 0:
                 return
             x = x.reshape(i.shape)
@@ -154,8 +155,8 @@ class IndexMixin(object):
         """
         try:
             x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError):
-            raise IndexError('invalid index')
+        except (ValueError, TypeError, MemoryError) as e:
+            raise IndexError('invalid index') from e
 
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')

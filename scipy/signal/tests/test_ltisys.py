@@ -418,9 +418,9 @@ class TestLsim(object):
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = matrix("0. 1.; 0. 0.")
-        B = matrix("0.; 1.")
-        C = matrix("2. 0.")
+        A = matrix([[0., 1.], [0., 0.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
@@ -436,9 +436,9 @@ class TestLsim(object):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = matrix("-1. 1.; 0. -1.")
-        B = matrix("0.; 1.")
-        C = matrix("1. 0.")
+        A = matrix([[-1., 1.], [0., -1.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)

@@ -12,7 +12,8 @@ import numpy as np
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly, BSpline)
+         RectBivariateSpline, interpn, NdPPoly, BSpline,
+         CloughTocher2DInterpolator)
 
 from scipy.special import poch, gamma
 
@@ -134,8 +135,8 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic',
-                     'cubic', 'previous', 'next'):
+        for kind in ('nearest', 'nearest-up', 'zero', 'linear', 'slinear',
+                     'quadratic', 'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
@@ -299,14 +300,17 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10(1.5), np.array([1.5]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]),)
 
     def test_nearest(self):
         # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest asserts that half-integer case (1.5) rounds down to 1
         interp10 = interp1d(self.x10, self.y10, kind='nearest')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 6., 6.]),)
 
@@ -321,11 +325,33 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_nearest_up(self):
+        # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest-up asserts that half-integer case (1.5) rounds up to 2
+        interp10 = interp1d(self.x10, self.y10, kind='nearest-up')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='nearest-up',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='nearest-up',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     def test_previous(self):
         # Check the actual implementation of previous interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='previous')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]),)
 
@@ -345,6 +371,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='next')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(2.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([3., 6., 6.]),)
 
@@ -364,6 +391,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]))
 
@@ -2580,6 +2608,56 @@ class TestRegularGridInterpolator(object):
         # xi = [(1, 1, 1)]
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
+
+    def test_broadcastable_input(self):
+        # input data
+        np.random.seed(0)
+        x = np.random.random(10)
+        y = np.random.random(10)
+        z = np.hypot(x, y)
+
+        # x-y grid for interpolation
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        X, Y = np.meshgrid(X, Y)
+        XY = np.vstack((X.ravel(), Y.ravel())).T
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(list(zip(x, y)), z)
+            # single array input
+            interp_points0 = interp(XY)
+            # tuple input
+            interp_points1 = interp((X, Y))
+            interp_points2 = interp((X, 0.0))
+            # broadcastable input
+            interp_points3 = interp(X, Y)
+            interp_points4 = interp(X, 0.0)
+
+            assert_equal(interp_points0.size ==
+                         interp_points1.size ==
+                         interp_points2.size ==
+                         interp_points3.size ==
+                         interp_points4.size, True)
+
+    def test_read_only(self):
+        # input data
+        np.random.seed(0)
+        xy = np.random.random((10, 2))
+        x, y = xy[:, 0], xy[:, 1]
+        z = np.hypot(x, y)
+        
+        # interpolation points
+        XY = np.random.random((50, 2))
+
+        xy.setflags(write=False)
+        z.setflags(write=False)
+        XY.setflags(write=False)
+
+        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
+                             CloughTocher2DInterpolator):
+            interp = interpolator(xy, z)
+            interp(XY)
 
 
 class MyValue(object):

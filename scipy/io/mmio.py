@@ -248,16 +248,18 @@ class MMFile:
             while not line.strip():
                 line = stream.readline()
 
-            line = line.split()
+            split_line = line.split()
             if format == self.FORMAT_ARRAY:
-                if not len(line) == 2:
-                    raise ValueError("Header line not of length 2: " + line)
-                rows, cols = map(int, line)
+                if not len(split_line) == 2:
+                    raise ValueError("Header line not of length 2: " +
+                                     line.decode('ascii'))
+                rows, cols = map(int, split_line)
                 entries = rows * cols
             else:
-                if not len(line) == 3:
-                    raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(int, line)
+                if not len(split_line) == 3:
+                    raise ValueError("Header line not of length 3: " +
+                                     line.decode('ascii'))
+                rows, cols, entries = map(int, split_line)
 
             return (rows, cols, entries, format, field.lower(),
                     symmetry.lower())

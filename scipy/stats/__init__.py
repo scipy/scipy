@@ -52,8 +52,6 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Deprecated. Alias for weibull_min
-   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -114,7 +112,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz             -- Trapezoidal
+   trapezoid         -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -133,16 +131,18 @@ Multivariate distributions
 .. autosummary::
    :toctree: generated/
 
-   multivariate_normal   -- Multivariate normal distribution
-   matrix_normal         -- Matrix normal distribution
-   dirichlet             -- Dirichlet
-   wishart               -- Wishart
-   invwishart            -- Inverse Wishart
-   multinomial           -- Multinomial distribution
-   special_ortho_group   -- SO(N) group
-   ortho_group           -- O(N) group
-   unitary_group         -- U(N) group
-   random_correlation    -- random correlation matrices
+   multivariate_normal    -- Multivariate normal distribution
+   matrix_normal          -- Matrix normal distribution
+   dirichlet              -- Dirichlet
+   wishart                -- Wishart
+   invwishart             -- Inverse Wishart
+   multinomial            -- Multinomial distribution
+   special_ortho_group    -- SO(N) group
+   ortho_group            -- O(N) group
+   unitary_group          -- U(N) group
+   random_correlation     -- random correlation matrices
+   multivariate_t         -- Multivariate t-distribution
+   multivariate_hypergeom -- Multivariate hypergeometric distribution
 
 Discrete distributions
 ======================
@@ -159,6 +159,7 @@ Discrete distributions
    hypergeom         -- Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
+   nhypergeom        -- Negative Hypergeometric
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
    randint           -- Discrete Uniform
@@ -201,6 +202,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -248,9 +250,11 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
+   cramervonmises
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -374,6 +378,7 @@ Warnings used in :mod:`scipy.stats`
    :toctree: generated/
 
    F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning

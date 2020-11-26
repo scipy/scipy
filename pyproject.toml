@@ -2,12 +2,10 @@
 requires = [
     "wheel",
     "setuptools",
-    "Cython>=0.29.14",
-    "numpy==1.14.5; python_version=='3.6' and platform_system!='AIX'",
-    "numpy==1.14.5; python_version=='3.7' and platform_system!='AIX'",
-    "numpy==1.17.3; python_version>='3.8' and platform_system!='AIX'",
-    "numpy==1.16.0; python_version=='3.6' and platform_system=='AIX'",
-    "numpy==1.16.0; python_version=='3.7' and platform_system=='AIX'",
-    "numpy==1.17.3; python_version>='3.8' and platform_system=='AIX'",
+    "Cython>=0.29.18",
+    "numpy==1.16.5; python_version=='3.7'",
+    "numpy==1.17.3; python_version=='3.8'",
+    # do not pin numpy on future versions of python to avoid incompatible numpy and python versions
+    "numpy; python_version>='3.9'",
     "pybind11>=2.4.3",
 ]

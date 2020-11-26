@@ -309,6 +309,21 @@ class TestUnivariateSpline(object):
             LSQUnivariateSpline(x_values, y_values, t_values, k=6)
         assert "k should be 1 <= k <= 5" in str(info.value)
 
+    def test_array_like_input(self):
+        x_values = np.array([1, 2, 4, 6, 8.5])
+        y_values = np.array([0.5, 0.8, 1.3, 2.5, 2.8])
+        w_values = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
+        bbox = np.array([-100, 100])
+        # np.array input
+        spl1 = UnivariateSpline(x=x_values, y=y_values, w=w_values,
+                                bbox=bbox)
+        # list input
+        spl2 = UnivariateSpline(x=x_values.tolist(), y=y_values.tolist(),
+                                w=w_values.tolist(), bbox=bbox.tolist())
+
+        assert_allclose(spl1([0.1, 0.5, 0.9, 0.99]),
+                        spl2([0.1, 0.5, 0.9, 0.99]))
+
 
 class TestLSQBivariateSpline(object):
     # NOTE: The systems in this test class are rank-deficient
@@ -430,6 +445,27 @@ class TestLSQBivariateSpline(object):
             LSQBivariateSpline(x, y, z, tx, ty, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
 
+    def test_array_like_input(self):
+        s = 0.1
+        tx = np.array([1 + s, 3 - s])
+        ty = np.array([1 + s, 3 - s])
+        x = np.linspace(1.0, 10.0)
+        y = np.linspace(1.0, 10.0)
+        z = np.linspace(1.0, 10.0)
+        w = np.linspace(1.0, 10.0)
+        bbox = np.array([1.0, 10.0, 1.0, 10.0])
+
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            # np.array input
+            spl1 = LSQBivariateSpline(x, y, z, tx, ty, w=w, bbox=bbox)
+            # list input
+            spl2 = LSQBivariateSpline(x.tolist(), y.tolist(), z.tolist(),
+                                      tx.tolist(), ty.tolist(), w=w.tolist(),
+                                      bbox=bbox)
+            assert_allclose(spl1(2.0, 2.0), spl2(2.0, 2.0))
+            assert_equal(len(r), 2)
+
 
 class TestSmoothBivariateSpline(object):
     def test_linear_constant(self):
@@ -537,6 +573,20 @@ class TestSmoothBivariateSpline(object):
         with assert_raises(ValueError) as exc_info:
             SmoothBivariateSpline(x, y, z, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
+
+    def test_array_like_input(self):
+        x = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3])
+        y = np.array([1, 2, 3, 1, 2, 3, 1, 2, 3])
+        z = np.array([3, 3, 3, 3, 3, 3, 3, 3, 3])
+        w = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
+        bbox = np.array([1.0, 3.0, 1.0, 3.0])
+        # np.array input
+        spl1 = SmoothBivariateSpline(x, y, z, w=w, bbox=bbox, kx=1, ky=1)
+        # list input
+        spl2 = SmoothBivariateSpline(x.tolist(), y.tolist(), z.tolist(),
+                                     bbox=bbox.tolist(), w=w.tolist(),
+                                     kx=1, ky=1)
+        assert_allclose(spl1(0.1, 0.5), spl2(0.1, 0.5))
 
 
 class TestLSQSphereBivariateSpline(object):
@@ -651,6 +701,30 @@ class TestLSQSphereBivariateSpline(object):
                                      knotst, knotsp, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
 
+    def test_array_like_input(self):
+        ntheta, nphi = 70, 90
+        theta = linspace(0.5 / (ntheta - 1), 1 - 0.5 / (ntheta - 1),
+                         ntheta) * pi
+        phi = linspace(0.5 / (nphi - 1), 1 - 0.5 / (nphi - 1),
+                       nphi) * 2. * pi
+        lats, lons = meshgrid(theta, phi)
+        data = ones((theta.shape[0], phi.shape[0]))
+        # define knots and extract data values at the knots
+        knotst = theta[::5]
+        knotsp = phi[::5]
+        w = ones((lats.ravel().shape[0]))
+
+        # np.array input
+        spl1 = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                        data.T.ravel(), knotst, knotsp, w=w)
+        # list input
+        spl2 = LSQSphereBivariateSpline(lats.ravel().tolist(),
+                                        lons.ravel().tolist(),
+                                        data.T.ravel().tolist(),
+                                        knotst.tolist(),
+                                        knotsp.tolist(), w=w.tolist())
+        assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
+
 
 class TestSmoothSphereBivariateSpline(object):
     def setup_method(self):
@@ -719,6 +793,22 @@ class TestSmoothSphereBivariateSpline(object):
         with assert_raises(ValueError) as exc_info:
             SmoothSphereBivariateSpline(theta, phi, r, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
+
+    def test_array_like_input(self):
+        theta = np.array([.25 * pi, .25 * pi, .25 * pi, .5 * pi, .5 * pi,
+                          .5 * pi, .75 * pi, .75 * pi, .75 * pi])
+        phi = np.array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi,
+                        pi, 1.5 * pi])
+        r = np.array([3, 3, 3, 3, 3, 3, 3, 3, 3])
+        w = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+
+        # np.array input
+        spl1 = SmoothSphereBivariateSpline(theta, phi, r, w=w, s=1E10)
+
+        # list input
+        spl2 = SmoothSphereBivariateSpline(theta.tolist(), phi.tolist(),
+                                           r.tolist(), w=w.tolist(), s=1E10)
+        assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
 
 class TestRectBivariateSpline(object):
@@ -825,6 +915,18 @@ class TestRectBivariateSpline(object):
             RectBivariateSpline(x, y, z, s=-1.0)
         assert "s should be s >= 0.0" in str(info.value)
 
+    def test_array_like_input(self):
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                   [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        bbox = array([1, 5, 1, 5])
+
+        spl1 = RectBivariateSpline(x, y, z, bbox=bbox)
+        spl2 = RectBivariateSpline(x.tolist(), y.tolist(), z.tolist(),
+                                   bbox=bbox.tolist())
+        assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
+
 
 class TestRectSphereBivariateSpline(object):
     def test_defaults(self):
@@ -924,6 +1026,20 @@ class TestRectSphereBivariateSpline(object):
             lons = np.linspace(10, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data, s=-1)
         assert "s should be positive" in str(exc_info.value)
+
+    def test_array_like_input(self):
+        y = linspace(0.01, 2 * pi - 0.01, 7)
+        x = linspace(0.01, pi - 0.01, 7)
+        z = array([[1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1],
+                   [1, 2, 3, 2, 1, 2, 1],
+                   [1, 2, 2, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1],
+                   [1, 2, 2, 2, 1, 2, 1],
+                   [1, 2, 1, 2, 1, 2, 1]])
+        # np.array input
+        spl1 = RectSphereBivariateSpline(x, y, z)
+        # list input
+        spl2 = RectSphereBivariateSpline(x.tolist(), y.tolist(), z.tolist())
+        assert_array_almost_equal(spl1(x, y), spl2(x, y))
 
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):

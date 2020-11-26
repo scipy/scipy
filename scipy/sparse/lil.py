@@ -117,8 +117,8 @@ class lil_matrix(spmatrix, IndexMixin):
             # assume A is dense
             try:
                 A = asmatrix(arg1)
-            except TypeError:
-                raise TypeError('unsupported matrix type')
+            except TypeError as e:
+                raise TypeError('unsupported matrix type') from e
             else:
                 from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
@@ -216,8 +216,8 @@ class lil_matrix(spmatrix, IndexMixin):
         # LIL routines handle bounds-checking for us, so don't do it here.
         try:
             x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError):
-            raise IndexError('invalid index')
+        except (ValueError, TypeError, MemoryError) as e:
+            raise IndexError('invalid index') from e
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')
         return x
@@ -466,7 +466,7 @@ class lil_matrix(spmatrix, IndexMixin):
             idx_dtype = get_index_dtype(maxval=N)
             lengths = np.empty(M, dtype=idx_dtype)
             _csparsetools.lil_get_lengths(self.rows, lengths)
-            nnz = lengths.sum()
+            nnz = lengths.sum(dtype=np.int64)
             idx_dtype = get_index_dtype(maxval=max(N, nnz))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indptr[0] = 0

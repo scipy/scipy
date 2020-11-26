@@ -56,8 +56,8 @@ yobi = 2**80
 
 # physical constants
 c = speed_of_light = _cd('speed of light in vacuum')
-mu_0 = 4e-7*pi
-epsilon_0 = 1 / (mu_0*c*c)
+mu_0 = _cd('vacuum mag. permeability')
+epsilon_0 = _cd('vacuum electric permittivity')
 h = Planck = _cd('Planck constant')
 hbar = h / (2 * pi)
 G = gravitational_constant = _cd('Newtonian constant of gravitation')
@@ -273,7 +273,7 @@ def lambda2nu(lambda_):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda_
+    return c / _np.asanyarray(lambda_)
 
 
 def nu2lambda(nu):
