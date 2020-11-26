@@ -11,6 +11,20 @@
 #include "ellint_carlson.hh"
 
 
+#define CHECK_STATUS_OR_FAIL()	\
+do {	\
+    if ( status_tmp != ExitStatus::success )	\
+    {	\
+	status = status_tmp;	\
+    }	\
+    if ( is_horrible(status) )	\
+    {	\
+	res = typing::nan<T>();	\
+	return status;	\
+    }	\
+} while ( 0 )
+
+
 /* References
  * [1] B. C. Carlson, "Numerical computation of real or complex elliptic
  *     integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
@@ -140,32 +154,38 @@ rg(const T& x, const T& y, const T& z, const double& rerr, T& res)
 	}
     }
 
-    T rfv, rdv;
-    ExitStatus status_tmp = rf(cct[0], cct[1], cct[2], rerr * 0.5, rfv);
-    if ( is_horrible(status_tmp) )
-    {
-	res = typing::nan<T>();
-	return status_tmp;
-    }
-    status = rd(cct[0], cct[1], cct[2], rerr * 0.5, rdv);
-    if ( status_tmp != ExitStatus::success )
-    {
-	status = status_tmp;
-    }
-    if ( is_horrible(status) )
-    {
-	res = typing::nan<T>();
-	return status;
-    }
+    /* Ref[2], Eq. 19.21.11 (second identity) <https://dlmf.nist.gov/19.21.E11>
+     * i.e. 6R_G() = sum of [ x * (y + z) * R_D() ] over cyclic permutations of
+     * (x, y, z).
+     * This cyclic form is manifestly symmetric and is preferred over
+     * Eq. 19.21.10 ibid.
+     * Here we put the three R_D terms in the buffer cct2, and the
+     * x * (y + z) = dot({x, x}, {y, z}) terms in cct1. */
+    T cct1[3];
+    T cct2[3];
 
-    /* Ref[1], Eq. 1.7 or Eq. (7) in the arXiv preprint; Ref[2], Eq. 19.21.10
-     * <https://dlmf.nist.gov/19.21.E10> */
-    T tmp = cct[2] * rfv;
-    tmp += (cct[1] - cct[2]) * (cct[2] - cct[0]) * rdv / (RT)3.0 +
-           std::sqrt(cct[0] * cct[1] / cct[2]);
-    tmp *= (RT)0.5;
+    ExitStatus status_tmp;
 
-    res = tmp;
+    status_tmp = rd(y, z, x, rerr, cct2[0]);
+    CHECK_STATUS_OR_FAIL();
+    status_tmp = rd(z, x, y, rerr, cct2[1]);
+    CHECK_STATUS_OR_FAIL();
+    status_tmp = rd(x, y, z, rerr, cct2[2]);
+    CHECK_STATUS_OR_FAIL();
+
+    /* Fill the cct1 buffer via the intermediate buffers tm1, tm2
+     * that are dotted together (using the compensation algorithm). */
+    T tm1[2] = {x, x};
+    T tm2[2] = {y, z};
+    cct1[0] = arithmetic::dot2(tm1, tm2);
+    tm1[0] = tm1[1] = y;
+    tm2[0] = x;
+    cct1[1] = arithmetic::dot2(tm1, tm2);
+    tm1[0] = tm1[1] = z;
+    tm2[1] = y;
+    cct1[2] = arithmetic::dot2(tm1, tm2);
+
+    res = arithmetic::dot2(cct1, cct2) / (RT)6.0;
     return status;
 }
 
