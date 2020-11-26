@@ -470,13 +470,17 @@ BOOST_TESTS = [
              rtol=5e-16),
         data(elliprd, 'ellint_rd_xxx_ipp-ellint_rd_xxx', (0, 1, 2), 3,
              rtol=5e-16),
-        # Work around one hard case in the boost test where we get slightly
-        # larger (5.05e-16 > 5e-16) error than the ideal bound when the x (==y)
-        # input is close to zero.
+        # Some of the following rtol for elliprd may be larger than 5e-16 to
+        # work around some hard cases in the Boost test where we get slightly
+        # larger error than the ideal bound when the x (==y) input is close to
+        # zero.
+        # Also the accuracy on 32-bit buids with g++ may suffer from excess
+        # loss of precision; see GCC bugzilla 323
+        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=323
         data(elliprd, 'ellint_rd_xxz_ipp-ellint_rd_xxz', (0, 1, 2), 3,
-             rtol=6e-16),
+             rtol=6.5e-16),
         data(elliprd, 'ellint_rd_xyy_ipp-ellint_rd_xyy', (0, 1, 2), 3,
-             rtol=5e-16),
+             rtol=6e-16),
         data(elliprf, 'ellint_rf_data_ipp-ellint_rf_data', (0, 1, 2), 3,
              rtol=5e-16),
         data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,
