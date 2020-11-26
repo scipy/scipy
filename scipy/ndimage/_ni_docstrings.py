@@ -61,6 +61,9 @@ _mode_reflect_doc = (
     'grid-mirror'
         This is a synonym for 'reflect'.
 
+    'grid-constant'
+        This is a synonym for 'constant'.
+
     'grid-wrap'
         This is a synonym for 'wrap'.""")
 
@@ -83,6 +86,11 @@ _mode_interp_constant_doc = (
         The input is extended by filling all values beyond the edge with
         the same constant value, defined by the `cval` parameter. No
         interpolation is performed beyond the edges of the input.
+
+    'grid-constant' (`k k k k | a b c d | k k k k`)
+        The input is extended by filling all values beyond the edge with
+        the same constant value, defined by the `cval` parameter. Interpolation
+        occurs for samples outside the input's extent  as well.
 
     'nearest' (`a a a a | a b c d | d d d d`)
         The input is extended by replicating the last pixel.
@@ -137,6 +145,9 @@ _mode_multiple_doc = (
 
     For consistency with the interpolation functions, the following mode
     names can also be used:
+
+    'grid-constant'
+        This is a synonym for 'constant'.
 
     'grid-mirror'
         This is a synonym for 'reflect'.

@@ -183,7 +183,8 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh", "invgauss"]
+    dists = ["pareto", "laplace", "rayleigh",
+             "invgauss", "gumbel_r", "gumbel_l"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
