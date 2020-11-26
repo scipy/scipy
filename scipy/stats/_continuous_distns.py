@@ -3313,7 +3313,7 @@ class gausshyper_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b, c, z):
-        return (a > 0) & (b > 0) & (c == c) & (z == z)
+        return (a > 0) & (b > 0) & (c == c) & (z > -1)
 
     def _pdf(self, x, a, b, c, z):
         # gausshyper.pdf(x, a, b, c, z) =
