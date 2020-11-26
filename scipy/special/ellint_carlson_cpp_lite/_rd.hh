@@ -145,17 +145,23 @@ rd(const T& x, const T& y, const T& z, const double& rerr, T& res)
     cct1[4] = arithmetic::comp_horner(e2, constants::RDJ_C5);
     cct1[5] = e3 * (RT)(constants::RDJ_C5[1]);
 
-    cct2[0] = T(1.0);
-    cct2[1] = T(1.0);
+    cct2[0] = (T)1.0;
+    cct2[1] = (T)1.0;
     cct2[2] = e3;
     cct2[3] = e4;
     cct2[4] = e5;
     cct2[5] = e4;
-    t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + 1.0;
-    tmp *= t;
-    tmp += (adt + ade) * (RT)3.0;
+    t = arithmetic::dot2(cct1, cct2) / (RT)(constants::RDJ_DENOM) + (T)1.0;
 
-    res = tmp;
+    /* Combine in to final result using compensated dot. See Eq. (41) of Ref.
+     * [2]. */
+    cct1[0] = tmp;
+    cct1[1] = (T)3.0;
+    cct1[2] = (T)3.0;
+    cct2[0] = t;
+    cct2[1] = adt;
+    cct2[2] = ade;
+    res = arithmetic::ndot2(cct1, cct2, 3);
     return status;
 }
 

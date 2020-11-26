@@ -464,6 +464,19 @@ BOOST_TESTS = [
              rtol=5e-16),
         data(elliprd, 'ellint_rd_data_ipp-ellint_rd_data', (0, 1, 2), 3,
              rtol=5e-16),
+        data(elliprd, 'ellint_rd_0xy_ipp-ellint_rd_0xy', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_0yy_ipp-ellint_rd_0yy', (0, 1, 2), 3,
+             rtol=5e-16),
+        data(elliprd, 'ellint_rd_xxx_ipp-ellint_rd_xxx', (0, 1, 2), 3,
+             rtol=5e-16),
+        # Work around one hard case in the boost test where we get slightly
+        # larger (5.05e-16 > 5e-16) error than the ideal bound when the x (==y)
+        # input is close to zero.
+        data(elliprd, 'ellint_rd_xxz_ipp-ellint_rd_xxz', (0, 1, 2), 3,
+             rtol=6e-16),
+        data(elliprd, 'ellint_rd_xyy_ipp-ellint_rd_xyy', (0, 1, 2), 3,
+             rtol=5e-16),
         data(elliprf, 'ellint_rf_data_ipp-ellint_rf_data', (0, 1, 2), 3,
              rtol=5e-16),
         data(elliprj, 'ellint_rj_data_ipp-ellint_rj_data', (0, 1, 2, 3), 4,
