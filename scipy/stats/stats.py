@@ -5833,7 +5833,7 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
     """
     random_state = check_random_state(random_state)
 
-    t_stat0 = _calc_t_stat(a, b, equal_var, axis=axis)
+    t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
 
     na = a.shape[axis]
     mat = _broadcast_concatenate((a, b), axis=axis)
