@@ -181,7 +181,6 @@ import scipy.special as special
 
 from scipy import linalg
 from . import distributions
-
 from . import mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
