@@ -5700,7 +5700,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=np.random.default_rng(12345))
-    (-1.467966985449, 0.143785621437)
+    (-1.467966985449, 0.14)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
