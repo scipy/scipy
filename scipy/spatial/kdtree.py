@@ -386,7 +386,7 @@ class KDTree(cKDTree):
                instead.
 
         i : integer or array of integers
-            The locations of the neighbors in ``self.data``.
+            The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
             Missing neighbors are indicated with ``self.n``.
 

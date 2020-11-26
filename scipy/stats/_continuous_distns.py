@@ -2928,6 +2928,14 @@ class gompertz_gen(rv_continuous):
 gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
+def _average_with_log_weights(x, logweights):
+    x = np.asarray(x)
+    logweights = np.asarray(logweights)
+    maxlogw = logweights.max()
+    weights = np.exp(logweights - maxlogw)
+    return np.average(x, weights=weights)
+
+
 class gumbel_r_gen(rv_continuous):
     r"""A right-skewed Gumbel continuous random variable.
 
@@ -2982,6 +2990,40 @@ class gumbel_r_gen(rv_continuous):
     def _entropy(self):
         # https://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
+
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # if user has provided `floc` or `fscale`, fall back on super fit
+        # method. This scenario is not suitable for solving a system of
+        # equations
+        if floc is not None or fscale is not None:
+            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
+
+        # rv_continuous provided guesses
+        loc, scale = self._fitstart(data)
+        # account for user provided guesses
+        loc = kwds.pop('loc', loc)
+        scale = kwds.pop('scale', scale)
+
+        # By the method of maximum likelihood, the estimators of the
+        # location and scale are the roots of the equation defined in
+        # `func` and the value of the expression for `loc` that follows.
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 101
+
+        def func(scale, data):
+            sdata = -data / scale
+            wavg = _average_with_log_weights(data, logweights=sdata)
+            return data.mean() - wavg - scale
+
+        soln = optimize.root(func, scale, args=(data,),
+                             options={'xtol': 1e-14})
+        scale = soln.x[0]
+        loc = -scale * (sc.logsumexp(-data/scale) - np.log(len(data)))
+
+        return loc, scale
 
 
 gumbel_r = gumbel_r_gen(name='gumbel_r')
@@ -3041,6 +3083,17 @@ class gumbel_l_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER + 1.
+
+    def fit(self, data, *args, **kwds):
+        # The fit method of `gumbel_r` can be used for this distribution with
+        # small modifications. The process to do this is
+        # 1. pass the sign negated data into `gumbel_r.fit`
+        # 2. negate the sign of the resulting location, leaving the scale
+        #    unmodified.
+        # `gumbel_r.fit` holds necessary input checks.
+
+        loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
+        return (-loc_r, scale_r)
 
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')

@@ -1,11 +1,5 @@
-Module-Specific Instructions
-============================
-
-Some SciPy modules have specific development workflows that it is
-useful to be aware of while contributing.
-
-``scipy.special``
------------------
+Adding vectorized ufuncs in ``scipy.special``
+=============================================
 
 .. highlight:: none
 

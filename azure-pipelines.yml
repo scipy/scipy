@@ -24,6 +24,107 @@ variables:
     openblas_version: 0.3.9
 
 jobs:
+- job: pre_release_deps_source_dist
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - script: >-
+      python -m pip install --upgrade
+      pip==20.2.4
+      setuptools
+      wheel
+    displayName: 'Install deps'
+    failOnStderr: true
+  - script: >-
+      python -m pip install --pre --upgrade --timeout=60
+      cython
+      mpmath
+      pybind11
+      pytest
+      pytest-xdist
+    displayName: 'Install pre-release deps'
+    failOnStderr: true
+  - script: |
+      python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
+    displayName: 'Install pre-release NumPy wheel'
+    failOnStderr: true
+  - script: |
+        git submodule init
+        git submodule update
+        python tools/suppress_output.py python setup.py sdist
+        cd dist
+        python -m pip install $PWD/scipy* -v
+        cd ..
+    displayName: 'SciPy sdist install'
+    failOnStderr: false
+  - script: |
+        python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
+        tools/validate_runtests_log.py fast < runtests.log
+    displayName: 'Run Fast SciPy tests'
+    failOnStderr: true
+  - script: |
+         ./tools/check_pyext_symbol_hiding.sh build
+    displayName: 'Check dynamic symbol hiding works on Linux'
+    failOnStderr: true
+- job: refguide_asv_check
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - script: >-
+      python -m pip install
+      asv>=0.4.1
+      cython
+      matplotlib
+      numpy
+      numpydoc
+      pip==20.2.4
+      pybind11
+      pytest
+      pytest-xdist
+      setuptools
+      Sphinx==1.7.2
+      wheel
+    displayName: 'Install deps'
+    failOnStderr: true
+  - script: |
+      sudo apt-get install -y wamerican-small
+    displayName: 'Install word list (for csgraph tutorial)'
+  - script: |
+        # this step naturally writes to stderr, even on success
+        python tools/suppress_output.py python setup.py build
+        python tools/suppress_output.py pip wheel --no-build-isolation .
+        pip install --no-cache-dir scipy*.whl
+    displayName: 'Build/Install SciPy Wheel'
+    failOnStderr: false
+  - script: |
+        python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
+        tools/validate_runtests_log.py fast < runtests.log
+    displayName: 'Run Fast SciPy tests'
+    failOnStderr: true
+  - script: |
+        python runtests.py -g --refguide-check
+    displayName: 'Run refguide check'
+    failOnStderr: false
+  - script: |
+        cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
+    displayName: 'Run asv check'
+    failOnStderr: true
+  - script: |
+         ./tools/check_pyext_symbol_hiding.sh build
+    displayName: 'Check dynamic symbol hiding works on Linux'
+    failOnStderr: true
 - job: Lint
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
