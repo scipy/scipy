@@ -3636,14 +3636,18 @@ class Test_ttest_ind_permutations():
     a2 = np.arange(10)
     b2 = np.arange(10) + 100
 
+    # data for exact test
+    a3 = [1, 2]
+    b3 = [3, 4]
+
     # data for bigger test
     np.random.seed(0)
     rvs1 = stats.norm.rvs(loc=5, scale=10, size=500).reshape(100, 5)
     rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)
 
-    p_d = [0.000999, 0.676324]     # desired pvalues
-    p_d_gen = [0.000999, 0.672328]  # desired pvalues for Generator seed
-    p_d_big = [0.993007, 0.685315, 0.84016, 0.955045, 0.255744]
+    p_d = [0, 0.676]  # desired pvalues
+    p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
+    p_d_big = [0.993, 0.685, 0.84, 0.955, 0.255]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test
@@ -3653,8 +3657,9 @@ class Test_ttest_ind_permutations():
         # different seeds
         (a, b, {'random_state': 0, "axis": 1}, p_d),
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
-        (a2, b2, {'equal_var': True}, 0.000999),  # equal variances
-        (rvs1, rvs2, {'axis': 0, 'random_state': 0}, p_d_big)  # bigger test
+        (a2, b2, {'equal_var': True}, 0),  # equal variances
+        (rvs1, rvs2, {'axis': 0, 'random_state': 0}, p_d_big),  # bigger test
+        (a3, b3, {}, 1/3)  # exact test
         ]
 
     if NumpyVersion(np.__version__) >= '1.18.0':

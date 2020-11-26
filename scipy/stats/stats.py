@@ -5591,16 +5591,18 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    permutations : int or None, optional
-        The number of permutations that will be used to calculate p-values
-        using a permutation test. If None, use the t-distribution to calculate
-        p-values; if negative, use all possible permutations of the data.
+    permutations : int or None (default), optional
+        The number of random permutations that will be used to estimate
+        p-values using a permutation test. If `permutations` equals or exceeds
+        the number of distinct permutations, an exact test is performed
+        instead (i.e. each distinct permutation is used exactly once).
+        If None (default), use the t-distribution to calculate p-values.
 
         .. versionadded:: 0.16.0
 
     random_state : int, RandomState, or Generator, optional
-        Pseudo number generator state used for random sampling (used only when
-        `permutations` is not None).
+        Pseudorandom number generator state used to generate permutations
+        (used only when `permutations` is not None).
 
         .. versionadded:: 0.16.0
 
@@ -5618,26 +5620,30 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     we are considering whether the two samples were drawn from the same
     population (e.g. the same species of flower or two species with similar
     petal characteristics) or two different populations.
+
     The t-test quantifies the difference between the arithmetic means
-    of the two samples. The p-value quantifies the probability of observing 
-    as or more extreme values assuming the null hypothesis, that the 
-    samples are drawn from populations with the same population means, is true. 
+    of the two samples. The p-value quantifies the probability of observing
+    as or more extreme values assuming the null hypothesis, that the
+    samples are drawn from populations with the same population means, is true.
     A p-value larger than a chosen threshold (e.g. 5% or 1%) indicates that
-    our observation is not so unlikely to have occurred by chance. Therefore, we do
-    not reject the null hypothesis of identical averages.
+    our observation is not so unlikely to have occurred by chance. Therefore,
+    we do not reject the null hypothesis of equal population means.
     If the p-value is smaller than our threshold, then we have evidence
-    against the null hypothesis of equal averages.
+    against the null hypothesis of equal population means.
 
     By default, the p-value is determined by comparing the t-statistic of the
     observed data against a theoretical t-distribution, which assumes that the
     populations are normally distributed.
-    When `permutations > 0`, the data are randomly assigned to either group `a`
+    When ``1 < permutations < factorial(n)``, where ``n`` is the total
+    number of data, the data are randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
-    data is compared to this distribution to determine the p-value.
+    data is compared to this distribution to determine the p-value. When
+    ``permutations >= factorial(n)``, an exact test is performed: the data are
+    permuted within and between the groups in each distinct way exactly once.
 
-    The permutation test is computationally expensive and not necessarily
+    The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
     assumptions about the shape of the underlying distribution.
 
@@ -5715,10 +5721,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations:
-        res = _permutation_ttest(a, b,
-                                 axis=axis,
-                                 equal_var=equal_var,
-                                 permutations=permutations,
+        res = _permutation_ttest(a, b, permutations=permutations,
+                                 axis=axis, equal_var=equal_var,
                                  random_state=random_state)
 
     else:
@@ -5757,7 +5761,7 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
-def _data_permutations(data, n=-1, axis=-1, random_state=None):
+def _data_permutations(data, n, axis=-1, random_state=None):
     """Vectorized permutation of data"""
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
@@ -5765,16 +5769,19 @@ def _data_permutations(data, n=-1, axis=-1, random_state=None):
 
     # prepare permutation indices
     m = data.shape[axis]
-    if n > 0:
+    n_max = float_factorial(m)  # number of distinct permutations
+
+    if n < n_max:
         indices = np.array([random_state.permutation(m) for i in range(n)]).T
     else:
+        n = n_max
         indices = np.array(list(permutations(range(m)))).T
 
     data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
     data = data.swapaxes(-2, axis)   # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data
+    return data, n
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -5794,13 +5801,13 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     return (avg_a-avg_b)/denom
 
 
-def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
+def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
                        random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
 
-    This test is an similar to `stats.ttest_ind`, except it doesn't rely on an 
+    This test is similar to `stats.ttest_ind`, except it doesn't rely on an
     approximate normality assumption since it uses a permutation test.
     This function is only called from ttest_ind when permutations is not None.
 
@@ -5812,13 +5819,14 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
     axis : int, optional
         The axis over which to operate on a and b.
     permutations: int, optional
-        Number of permutations used to calculate p-value. If negative, use
-        all possible permutations.
+        Number of permutations used to calculate p-value. If greater than or
+        equal to the number of distinct permutations, perform an exact test.
     equal_var: bool, optional
-        If False, an equal variance (Welch's) t-test is conducted.  Otherwise, an ordinary t-test
-        is conducted.
+        If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
+        an ordinary t-test is conducted.
     random_state : int, RandomState, or Generator, optional
-        Pseudo number generator state used for random sampling.
+        Pseudorandom number generator state used for generating random
+        permutations.
 
     Returns
     -------
@@ -5835,8 +5843,9 @@ def _permutation_ttest(a, b, axis=0, permutations=10000, equal_var=True,
     na = a.shape[axis]
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
-    mat_perm = _data_permutations(mat, n=permutations,
-                                  random_state=random_state)
+
+    mat_perm, permutations = _data_permutations(mat, n=permutations,
+                                                random_state=random_state)
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
