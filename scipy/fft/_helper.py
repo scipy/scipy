@@ -1,7 +1,5 @@
 from functools import update_wrapper, lru_cache
-import numpy as np
 
-from . import _pocketfft
 from ._pocketfft import helper as _helper
 
 
@@ -21,8 +19,8 @@ def next_fast_len(target, real=False):
     target : int
         Length to start searching from. Must be a positive integer.
     real : bool, optional
-        True if the FFT involves real input or output (e.g., `rfft` or `hfft` but
-        not `fft`). Defaults to False.
+        True if the FFT involves real input or output (e.g., `rfft` or `hfft`
+        but not `fft`). Defaults to False.
 
     Returns
     -------
@@ -39,7 +37,7 @@ def next_fast_len(target, real=False):
 
     Examples
     --------
-    On a particular machine, an FFT of prime length takes 17 ms:
+    On a particular machine, an FFT of prime length takes 11.4 ms:
 
     >>> from scipy import fft
     >>> min_len = 93059  # prime length is worst case for speed
@@ -47,14 +45,14 @@ def next_fast_len(target, real=False):
     >>> b = fft.fft(a)
 
     Zero-padding to the next regular length reduces computation time to
-    1.3 ms, a speedup of 13 times:
+    1.6 ms, a speedup of 7.3 times:
 
-    >>> fft.next_fast_len(min_len)
+    >>> fft.next_fast_len(min_len, real=True)
     93312
     >>> b = fft.fft(a, 93312)
 
-    Rounding up to the next power of 2 is not optimal, taking 1.9 ms to
-    compute; 1.3 times longer than the size given by ``next_fast_len``:
+    Rounding up to the next power of 2 is not optimal, taking 3.0 ms to
+    compute; 1.9 times longer than the size given by ``next_fast_len``:
 
     >>> b = fft.fft(a, 131072)
 

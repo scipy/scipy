@@ -91,6 +91,10 @@ pip-wheel-metadata
 .cache/*
 .pytest_cache/*
 
+# mypy cache #
+##############
+.mypy_cache/*
+
 # Patches #
 ###########
 *.patch
@@ -124,6 +128,9 @@ scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c
 scipy/_lib/src/messagestream_config.h
+scipy/_lib/_test_deprecation_call.c
+scipy/_lib/_test_deprecation_def.c
+scipy/_lib/_test_deprecation_def.h
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/cluster/_optimal_leaf_ordering.c
@@ -135,6 +142,9 @@ scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
+scipy/integrate/_dop-f2pywrappers.f
+scipy/integrate/lsoda-f2pywrappers.f
+scipy/integrate/vode-f2pywrappers.f
 scipy/interpolate/_ppoly.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
@@ -179,13 +189,15 @@ scipy/linalg/cython_blas.pyx
 scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
+scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
+scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
-scipy/optimize/nnls/_nnlsmodule.c
+scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
@@ -230,6 +242,7 @@ scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
+scipy/spatial/transform/rotation.c
 scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
@@ -244,6 +257,7 @@ scipy/special/_ufuncs_cxx.pxd
 scipy/special/_ufuncs_cxx.pyx
 scipy/special/_ufuncs_cxx_defs.h
 scipy/special/_ufuncs_defs.h
+scipy/special/_ufuncs.pyi
 scipy/special/cython_special.c
 scipy/special/cython_special.h
 scipy/special/cython_special.pxd
@@ -262,3 +276,6 @@ scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
+scipy/optimize/_highs/cython/src/highs_wrapper.cxx
+scipy/optimize/_highs/cython/src/mpswriter.cxx
+scipy/optimize/_highs/cython/src/constants.cxx

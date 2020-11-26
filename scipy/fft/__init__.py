@@ -71,8 +71,6 @@ Backend control
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from ._basic import (
     fft, ifft, fft2, ifft2, fftn, ifftn,
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
@@ -94,28 +92,7 @@ __all__ = [
     'set_backend', 'skip_backend', 'set_global_backend', 'register_backend',
     'get_workers', 'set_workers']
 
-from numpy.dual import register_func
-for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
-    register_func(k, eval(k))
-del k, register_func
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-
-# Hack to allow numpy.fft.fft to be called as scipy.fft
-import sys
-class _FFTModule(sys.modules[__name__].__class__):
-    @staticmethod
-    def __call__(*args, **kwargs):
-        from scipy import _dep_fft
-        return _dep_fft(*args, **kwargs)
-
-
-import os
-if os.environ.get('_SCIPY_BUILDING_DOC') != 'True':
-    sys.modules[__name__].__class__ = _FFTModule
-del os
-del _FFTModule
-del sys

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
@@ -178,8 +176,8 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 def test_shortest_path_min_only_random(n):
     np.random.seed(1234)
     data = scipy.sparse.rand(n, n, density=0.5, format='lil',
-                             random_state=42, dtype=np.float)
-    data.setdiag(np.zeros(n, dtype=np.bool))
+                             random_state=42, dtype=np.float64)
+    data.setdiag(np.zeros(n, dtype=np.bool_))
     # choose some random vertices
     v = np.arange(n)
     np.random.shuffle(v)
@@ -279,7 +277,7 @@ def test_negative_cycles():
 
 
 def test_masked_input():
-    G = np.ma.masked_equal(directed_G, 0)
+    np.ma.masked_equal(directed_G, 0)
 
     def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,
@@ -311,3 +309,26 @@ def test_buffer(method):
     G = scipy.sparse.csr_matrix([[1.]])
     G.data.flags['WRITEABLE'] = False
     shortest_path(G, method=method)
+
+
+def test_NaN_warnings():
+    with pytest.warns(None) as record:
+        shortest_path(np.array([[0, 1], [np.nan, 0]]))
+    for r in record:
+        assert r.category is not RuntimeWarning
+
+
+def test_sparse_matrices():
+    # Test that using lil,csr and csc sparse matrix do not cause error
+    G_dense = np.array([[0, 3, 0, 0, 0],
+                        [0, 0, -1, 0, 0],
+                        [0, 0, 0, 2, 0],
+                        [0, 0, 0, 0, 4],
+                        [0, 0, 0, 0, 0]], dtype=float)
+    SP = shortest_path(G_dense)
+    G_csr = scipy.sparse.csr_matrix(G_dense)
+    G_csc = scipy.sparse.csc_matrix(G_dense)
+    G_lil = scipy.sparse.lil_matrix(G_dense)
+    assert_array_almost_equal(SP, shortest_path(G_csr))
+    assert_array_almost_equal(SP, shortest_path(G_csc))
+    assert_array_almost_equal(SP, shortest_path(G_lil))

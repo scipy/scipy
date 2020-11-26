@@ -1,6 +1,4 @@
 ''' Tests for netcdf '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from os.path import join as pjoin, dirname
 import shutil
@@ -102,7 +100,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
+        # https://www.unidata.ucar.edu/software/netcdf/guide_toc.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
@@ -143,7 +141,7 @@ def test_read_write_files():
 
 def test_read_write_sio():
     eg_sio1 = BytesIO()
-    with make_simple(eg_sio1, 'w') as f1:
+    with make_simple(eg_sio1, 'w'):
         str_val = eg_sio1.getvalue()
 
     eg_sio2 = BytesIO(str_val)
@@ -232,9 +230,9 @@ def test_encoded_fill_value():
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
-        with netcdf_file(fname, 'r') as f:
+        with netcdf_file(fname, 'r'):
             pass
-        with netcdf_file(fname, 'r', mmap=False) as f:
+        with netcdf_file(fname, 'r', mmap=False):
             pass
 
 
@@ -284,7 +282,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     with make_simple(stream, mode='w') as f:
-        x = f.createDimension('x',4)
+        x = f.createDimension('x',4)  # x is used in createVariable
         v = f.createVariable('v', 'i2', ['x'])
         v[:] = 1
         f.flush()

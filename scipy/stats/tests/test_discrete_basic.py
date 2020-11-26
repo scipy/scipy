@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy.testing as npt
 import numpy as np
 import pytest
@@ -252,3 +250,24 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
+
+@pytest.mark.parametrize('method', ['pmf', 'logpmf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+@pytest.mark.parametrize('distname, args', distdiscrete)
+def test_methods_with_lists(method, distname, args):
+    # Test that the discrete distributions can accept Python lists
+    # as arguments.
+    try:
+        dist = getattr(stats, distname)
+    except TypeError:
+        return
+    if method in ['ppf', 'isf']:
+        z = [0.1, 0.2]
+    else:
+        z = [0, 1]
+    p2 = [[p]*2 for p in args]
+    loc = [0, 1]
+    result = dist.pmf(z, *p2, loc=loc)
+    npt.assert_allclose(result,
+                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        rtol=1e-15, atol=1e-15)

@@ -284,12 +284,12 @@
 *
       CALL <_c>COPY( N, B, 1, WORK(1,R), 1 )
       IF ( <rc>NRM2( N, X, 1 ).NE.ZERO ) THEN
-*********CALL MATVEC( -ONE, X, ZERO, WORK(1,R) )
-*        Note: using D as temp
-*********CALL <_c>COPY( N, X, 1, WORK(1,D), 1 )
+*********CALL MATVEC( -ONE, X, ONE, WORK(1,R) )
+*        Note: using VTLD as temp
+*********CALL <_c>COPY( N, X, 1, WORK(1,VTLD), 1 )
          SCLR1 = -ONE
-         SCLR2 = ZERO
-         NDX1 = ((D - 1) * LDW) + 1
+         SCLR2 = ONE
+         NDX1 = -1
          NDX2 = ((R - 1) * LDW) + 1
          RLBL = 2
          IJOB = 7

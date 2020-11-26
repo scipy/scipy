@@ -16,8 +16,6 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from __future__ import division, print_function, absolute_import
-
 from .rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
 

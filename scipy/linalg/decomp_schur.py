@@ -1,6 +1,4 @@
 """Schur decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
@@ -136,7 +134,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
-        lwork = result[-2][0].real.astype(numpy.int)
+        lwork = result[-2][0].real.astype(numpy.int_)
 
     if sort is None:
         sort_t = 0

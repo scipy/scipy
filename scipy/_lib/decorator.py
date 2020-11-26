@@ -31,8 +31,6 @@
 Decorator module, see https://pypi.python.org/pypi/decorator
 for the documentation.
 """
-from __future__ import print_function
-
 import re
 import sys
 import inspect
@@ -40,32 +38,14 @@ import operator
 import itertools
 import collections
 
+from inspect import getfullargspec
+
 __version__ = '4.0.5'
 
-if sys.version >= '3':
-    from inspect import getfullargspec
 
-    def get_init(cls):
-        return cls.__init__
-else:
-    class getfullargspec(object):
-        "A quick and dirty replacement for getfullargspec for Python 2.x"
-        def __init__(self, f):
-            self.args, self.varargs, self.varkw, self.defaults = \
-                inspect.getargspec(f)
-            self.kwonlyargs = []
-            self.kwonlydefaults = None
+def get_init(cls):
+    return cls.__init__
 
-        def __iter__(self):
-            yield self.args
-            yield self.varargs
-            yield self.varkw
-            yield self.defaults
-
-        getargspec = inspect.getargspec
-
-    def get_init(cls):
-        return cls.__init__.__func__
 
 # getargspec has been deprecated in Python 3.5
 ArgSpec = collections.namedtuple(
@@ -110,26 +90,21 @@ class FunctionMaker(object):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
                     setattr(self, 'arg%d' % i, arg)
-                if sys.version < '3':  # easy way
-                    self.shortsignature = self.signature = (
-                        inspect.formatargspec(
-                            formatvalue=lambda val: "", *argspec)[1:-1])
-                else:  # Python 3 way
-                    allargs = list(self.args)
-                    allshortargs = list(self.args)
-                    if self.varargs:
-                        allargs.append('*' + self.varargs)
-                        allshortargs.append('*' + self.varargs)
-                    elif self.kwonlyargs:
-                        allargs.append('*')  # single star syntax
-                    for a in self.kwonlyargs:
-                        allargs.append('%s=None' % a)
-                        allshortargs.append('%s=%s' % (a, a))
-                    if self.varkw:
-                        allargs.append('**' + self.varkw)
-                        allshortargs.append('**' + self.varkw)
-                    self.signature = ', '.join(allargs)
-                    self.shortsignature = ', '.join(allshortargs)
+                allargs = list(self.args)
+                allshortargs = list(self.args)
+                if self.varargs:
+                    allargs.append('*' + self.varargs)
+                    allshortargs.append('*' + self.varargs)
+                elif self.kwonlyargs:
+                    allargs.append('*')  # single star syntax
+                for a in self.kwonlyargs:
+                    allargs.append('%s=None' % a)
+                    allshortargs.append('%s=%s' % (a, a))
+                if self.varkw:
+                    allargs.append('**' + self.varkw)
+                    allshortargs.append('**' + self.varkw)
+                self.signature = ', '.join(allargs)
+                self.shortsignature = ', '.join(allshortargs)
                 self.dict = func.__dict__.copy()
         # func=None happens when decorating a caller
         if name:

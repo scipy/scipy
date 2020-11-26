@@ -7,8 +7,6 @@
 A Dual Annealing global optimization algorithm
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize
@@ -40,20 +38,20 @@ class VisitingDistribution(object):
         makes the algorithm jump to a more distant region.
         The value range is (0, 3]. It's value is fixed for the life of the
         object.
-    rand_state : `~numpy.random.RandomState` object
-        A `~numpy.random.RandomState` object for using the current state
-        of the created random generator container.
+    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
+        A `~numpy.random.RandomState`, `~numpy.random.Generator` object
+        for using the current state of the created random generator container.
     """
     TAIL_LIMIT = 1.e8
     MIN_VISIT_BOUND = 1.e-10
 
-    def __init__(self, lb, ub, visiting_param, rand_state):
+    def __init__(self, lb, ub, visiting_param, rand_gen):
         # if you wish to make _visiting_param adjustable during the life of
         # the object then _factor2, _factor3, _factor5, _d1, _factor6 will
         # have to be dynamically calculated in `visit_fn`. They're factored
         # out here so they don't need to be recalculated all the time.
         self._visiting_param = visiting_param
-        self.rand_state = rand_state
+        self.rand_gen = rand_gen
         self.lower = lb
         self.upper = ub
         self.bound_range = ub - lb
@@ -80,8 +78,7 @@ class VisitingDistribution(object):
         if step < dim:
             # Changing all coordinates with a new visiting value
             visits = self.visit_fn(temperature, dim)
-            upper_sample = self.rand_state.random_sample()
-            lower_sample = self.rand_state.random_sample()
+            upper_sample, lower_sample = self.rand_gen.uniform(size=2)
             visits[visits > self.TAIL_LIMIT] = self.TAIL_LIMIT * upper_sample
             visits[visits < -self.TAIL_LIMIT] = -self.TAIL_LIMIT * lower_sample
             x_visit = visits + x
@@ -96,9 +93,9 @@ class VisitingDistribution(object):
             x_visit = np.copy(x)
             visit = self.visit_fn(temperature, 1)
             if visit > self.TAIL_LIMIT:
-                visit = self.TAIL_LIMIT * self.rand_state.random_sample()
+                visit = self.TAIL_LIMIT * self.rand_gen.uniform()
             elif visit < -self.TAIL_LIMIT:
-                visit = -self.TAIL_LIMIT * self.rand_state.random_sample()
+                visit = -self.TAIL_LIMIT * self.rand_gen.uniform()
             index = step - dim
             x_visit[index] = visit + x[index]
             a = x_visit[index] - self.lower[index]
@@ -112,7 +109,7 @@ class VisitingDistribution(object):
 
     def visit_fn(self, temperature, dim):
         """ Formula Visita from p. 405 of reference [2] """
-        x, y = self.rand_state.normal(size=(dim, 2)).T
+        x, y = self.rand_gen.normal(size=(dim, 2)).T
 
         factor1 = np.exp(np.log(temperature) / (self._visiting_param - 1.0))
         factor4 = self._factor4_p * factor1
@@ -158,14 +155,14 @@ class EnergyState(object):
         self.upper = upper
         self.callback = callback
 
-    def reset(self, func_wrapper, rand_state, x0=None):
+    def reset(self, func_wrapper, rand_gen, x0=None):
         """
         Initialize current location is the search domain. If `x0` is not
         provided, a random location within the bounds is generated.
         """
         if x0 is None:
-            self.current_location = self.lower + rand_state.random_sample(
-                len(self.lower)) * (self.upper - self.lower)
+            self.current_location = rand_gen.uniform(self.lower, self.upper,
+                                                     size=len(self.lower))
         else:
             self.current_location = np.copy(x0)
         init_error = True
@@ -184,8 +181,9 @@ class EnergyState(object):
                         'trying new random parameters'
                     )
                     raise ValueError(message)
-                self.current_location = self.lower + rand_state.random_sample(
-                    self.lower.size) * (self.upper - self.lower)
+                self.current_location = rand_gen.uniform(self.lower,
+                                                         self.upper,
+                                                         size=self.lower.size)
                 reinit_counter += 1
             else:
                 init_error = False
@@ -228,14 +226,15 @@ class StrategyChain(object):
         Instance of `ObjectiveFunWrapper` class.
     minimizer_wrapper: LocalSearchWrapper
         Instance of `LocalSearchWrapper` class.
-    rand_state : `~numpy.random.RandomState` object
-        A `~numpy.random.RandomState` object for using the current state
-        of the created random generator container.
+    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
+        A `~numpy.random.RandomState` or `~numpy.random.Generator`
+        object for using the current state of the created random generator
+        container.
     energy_state: EnergyState
         Instance of `EnergyState` class.
     """
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
-                 minimizer_wrapper, rand_state, energy_state):
+                 minimizer_wrapper, rand_gen, energy_state):
         # Local strategy chain minimum energy and location
         self.emin = energy_state.current_energy
         self.xmin = np.array(energy_state.current_location)
@@ -251,20 +250,20 @@ class StrategyChain(object):
         self.minimizer_wrapper = minimizer_wrapper
         self.not_improved_idx = 0
         self.not_improved_max_idx = 1000
-        self._rand_state = rand_state
+        self._rand_gen = rand_gen
         self.temperature_step = 0
         self.K = 100 * len(energy_state.current_location)
 
     def accept_reject(self, j, e, x_visit):
-        r = self._rand_state.random_sample()
-        pqv_temp = (self.acceptance_param - 1.0) * (
-            e - self.energy_state.current_energy) / (
-                self.temperature_step + 1.)
+        r = self._rand_gen.uniform()
+        pqv_temp = 1.0 - ((1.0 - self.acceptance_param) *
+            (e - self.energy_state.current_energy) / self.temperature_step)
         if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
                 1. - self.acceptance_param))
+
         if r <= pqv:
             # We accept the new location and update state
             self.energy_state.update_current(e, x_visit)
@@ -332,7 +331,7 @@ class StrategyChain(object):
             pls = np.exp(self.K * (
                 self.energy_state.ebest - self.energy_state.current_energy) /
                 self.temperature_step)
-            if pls >= self._rand_state.random_sample():
+            if pls >= self._rand_gen.uniform():
                 do_ls = True
         # Global energy not improved, let's see what LS gives
         # on the best strategy chain location
@@ -384,11 +383,11 @@ class LocalSearchWrapper(object):
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.minimizer = minimize
-        bounds_list = list(zip(*bounds))
+        bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
         self.upper = np.array(bounds_list[1])
 
@@ -408,9 +407,9 @@ class LocalSearchWrapper(object):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
-        if 'njev' in mres.keys():
+        if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
-        if 'nhev' in mres.keys():
+        if 'nhev' in mres:
             self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
@@ -476,16 +475,16 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int or `~numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `~numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+    seed : {int, `~numpy.random.RandomState`, `~numpy.random.Generator`}, optional
+        If `seed` is not specified the `~numpy.random.RandomState` singleton is
+        used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with `seed`.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance, then
+        that instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
-        generated with this seed only affect the visiting distribution
-        function and new coordinates generation.
+        generated with this seed only affect the visiting distribution function
+        and new coordinates generation.
     no_local_search : bool, optional
         If `no_local_search` is set to True, a traditional Generalized
         Simulated Annealing will be performed with no local search
@@ -579,7 +578,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Simulated Annealing for Efficient Global Optimization: the GenSA
         Package for R. The R Journal, Volume 5/1 (2013).
     .. [6] Mullen, K. Continuous Global Optimization in R. Journal of
-        Statistical Software, 60(6), 1 - 45, (2014). DOI:10.18637/jss.v060.i06
+        Statistical Software, 60(6), 1 - 45, (2014).
+        :doi:`10.18637/jss.v060.i06`
 
     Examples
     --------

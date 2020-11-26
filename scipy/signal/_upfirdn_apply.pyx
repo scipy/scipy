@@ -33,8 +33,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import
-
 cimport cython
 cimport numpy as np
 import numpy as np
@@ -65,14 +63,8 @@ def _output_len(np.intp_t len_h,
                 np.intp_t up,
                 np.intp_t down):
     """The output length that results from a given input"""
-    cdef np.intp_t nt
-    cdef np.intp_t in_len_copy
-    in_len_copy = in_len + (len_h + (-len_h % up)) // up - 1
-    nt = in_len_copy * up
-    cdef np.intp_t need = nt // down
-    if nt % down > 0:
-        need += 1
-    return need
+    # ceil(((in_len - 1) * up + len_h) / down), but using integer arithmetic
+    return (((in_len - 1) * up + len_h) - 1) // down + 1
 
 
 # Signal extension modes
@@ -290,6 +282,7 @@ def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
     cdef DTYPE_t *filter_ptr
     cdef DTYPE_t *out_ptr
     cdef int retval
+    cdef np.intp_t len_out = out.shape[axis]
 
     data_info.ndim = data.ndim
     data_info.strides = <np.intp_t *> data.strides
@@ -307,7 +300,7 @@ def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
         retval = _apply_axis_inner(data_ptr, data_info,
                                    filter_ptr, len_h,
                                    out_ptr, output_info,
-                                   up, down, axis, <MODE>mode, cval)
+                                   up, down, axis, <MODE>mode, cval, len_out)
     if retval == 1:
         raise ValueError("failure in _apply_axis_inner: data and output arrays"
                          " must have the same number of dimensions.")
@@ -327,7 +320,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
                            DTYPE_t* h_trans_flip, np.intp_t len_h,
                            DTYPE_t* output, ArrayInfo output_info,
                            np.intp_t up, np.intp_t down,
-                           np.intp_t axis, MODE mode, DTYPE_t cval) nogil:
+                           np.intp_t axis, MODE mode, DTYPE_t cval,
+                           np.intp_t len_out) nogil:
     cdef np.intp_t i
     cdef np.intp_t num_loops = 1
     cdef bint make_temp_data, make_temp_output
@@ -405,7 +399,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 
         # call 1D upfirdn
         _apply_impl(data_row, data_info.shape[axis],
-                    h_trans_flip, len_h, output_row, up, down, mode, cval)
+                    h_trans_flip, len_h, output_row, up, down, mode, cval,
+                    len_out)
 
         # Copy from temporary output if necessary
         if make_temp_output:
@@ -425,8 +420,8 @@ cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
 cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
                       np.intp_t len_h, DTYPE_t *out,
                       np.intp_t up, np.intp_t down, MODE mode,
-                      DTYPE_t cval) nogil:
-    cdef np.intp_t h_per_phase = len_h / up
+                      DTYPE_t cval, np.intp_t len_out) nogil:
+    cdef np.intp_t h_per_phase = len_h // up
     cdef np.intp_t padded_len = len_x + h_per_phase - 1
     cdef np.intp_t x_idx = 0
     cdef np.intp_t y_idx = 0
@@ -437,6 +432,8 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
     cdef bint zpad
 
     zpad = (mode == MODE_CONSTANT and cval == 0)
+    if len_out == 0:
+        return
 
     while x_idx < len_x:
         h_idx = t * h_per_phase
@@ -455,8 +452,10 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
             h_idx += 1
         # store and increment
         y_idx += 1
+        if y_idx >= len_out:
+            return
         t += down
-        x_idx += t / up  # integer div
+        x_idx += t // up
         # which phase of the filter to use
         t = t % up
 
@@ -474,6 +473,8 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
             out[y_idx] += xval * h_trans_flip[h_idx]
             h_idx += 1
         y_idx += 1
+        if y_idx >= len_out:
+            return
         t += down
-        x_idx += t / up  # integer div
+        x_idx += t // up
         t = t % up

@@ -1,7 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join, dirname
-import platform
 
 import numpy as np
 from numpy.testing import (
@@ -417,7 +414,7 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
 class Test_DCTN_IDCTN(object):
     dec = 14
     dct_type = [1, 2, 3, 4]
-    norms = [None, 'ortho']
+    norms = [None, 'backward', 'ortho', 'forward']
     rstate = np.random.RandomState(1234)
     shape = (32, 16)
     data = rstate.randn(*shape)
@@ -446,7 +443,7 @@ class Test_DCTN_IDCTN(object):
 
     @pytest.mark.parametrize('funcn,func', [(idctn, idct), (idstn, idst)])
     @pytest.mark.parametrize('dct_type', dct_type)
-    @pytest.mark.parametrize('norm', [None, 'ortho'])
+    @pytest.mark.parametrize('norm', norms)
     def test_idctn_vs_2d_reference(self, funcn, func, dct_type, norm):
         fdata = dctn(self.data, type=dct_type, norm=norm)
         y1 = funcn(fdata, type=dct_type, norm=norm)
@@ -479,3 +476,12 @@ class Test_DCTN_IDCTN(object):
         tmp = fforward(self.data, s=None, axes=axes, norm='ortho')
         tmp = finverse(tmp, s=None, axes=axes, norm='ortho')
         assert_array_almost_equal(self.data, tmp, decimal=self.dec)
+
+
+@pytest.mark.parametrize('func', [dct, dctn, idct, idctn,
+                                  dst, dstn, idst, idstn])
+def test_swapped_byte_order(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10)
+    swapped_dt = x.dtype.newbyteorder('S')
+    assert_allclose(func(x.astype(swapped_dt)), func(x))

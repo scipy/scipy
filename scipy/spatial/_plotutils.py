@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy._lib.decorator import decorator as _decorator
 
@@ -8,7 +6,7 @@ __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 @_decorator
 def _held_figure(func, obj, ax=None, **kw):
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
 
     if ax is None:
         fig = plt.figure()
@@ -133,7 +131,7 @@ def convex_hull_plot_2d(hull, ax=None):
     >>> plt.show()
 
     """
-    from matplotlib.collections import LineCollection
+    from matplotlib.collections import LineCollection  # type: ignore[import]
 
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")

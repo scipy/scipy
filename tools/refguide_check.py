@@ -22,8 +22,6 @@ docstrings is valid python::
     $ python refguide_check.py --doctests optimize
 
 """
-from __future__ import print_function
-
 import copy
 import doctest
 import glob
@@ -50,7 +48,7 @@ from numpydoc.docscrape_sphinx import get_doc_object
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
-    from sphinx.directives import SeeAlso, Only
+    from sphinx.directives.other import SeeAlso, Only
     directives.register_directive('seealso', SeeAlso)
     directives.register_directive('only', Only)
 else:
@@ -111,10 +109,11 @@ OTHER_MODULE_DOCS = {
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
 DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign', # inaccurate cdf or ppf
+    'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
-    'scipy.special.sinc', # comes from numpy
-    'scipy.misc.who', # comes from numpy
+    'scipy.special.sinc',  # comes from numpy
+    'scipy.misc.who',  # comes from numpy
+    'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -133,17 +132,22 @@ REFGUIDE_ALL_SKIPLIST = [
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
+    r'scipy\.ndimage\.sum',   # alias for sum_labels
+    r'scipy\.integrate\.simps',   # alias for simpson
+    r'scipy\.integrate\.trapz',   # alias for trapezoid
+    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
-             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+             'kaiser', 'nuttall', 'parzen', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
@@ -281,8 +285,8 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     output += "Objects in refguide: %i\n\n" % num_ref
 
     only_all, only_ref, missing = compare(all_dict, others, names, module_name)
-    dep_in_ref = set(only_ref).intersection(deprecated)
-    only_ref = set(only_ref).difference(deprecated)
+    dep_in_ref = only_ref.intersection(deprecated)
+    only_ref = only_ref.difference(deprecated)
 
     if len(dep_in_ref) > 0:
         output += "Deprecated objects in refguide::\n\n"
@@ -407,7 +411,6 @@ def check_rest(module, names, dots=True):
         # python 3
         skip_types = (dict, str, float, int)
 
-
     results = []
 
     if module.__name__[6:] not in OTHER_MODULE_DOCS:
@@ -490,6 +493,7 @@ class DTRunner(doctest.DocTestRunner):
 
     def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
         self._item_name = item_name
+        self._had_unexpected_error = False
         doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
                                        optionflags=optionflags)
 
@@ -509,9 +513,15 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_success(self, out, test, example, got)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
+        # Ignore name errors after failing due to an unexpected exception
+        exception_type = exc_info[0]
+        if self._had_unexpected_error and exception_type is NameError:
+            return
+        self._had_unexpected_error = True
+
         self._report_item_name(out)
-        return doctest.DocTestRunner.report_unexpected_exception(
-            self, out, test, example, exc_info)
+        return super().report_unexpected_exception(
+            out, test, example, exc_info)
 
     def report_failure(self, out, test, example, got):
         self._report_item_name(out)
@@ -519,7 +529,7 @@ class DTRunner(doctest.DocTestRunner):
                                                     example, got)
 
 class Checker(doctest.OutputChecker):
-    obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
+    obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -591,9 +601,9 @@ class Checker(doctest.OutputChecker):
             # and then compare the tuples.
             try:
                 num = len(a_want)
-                regex = ('[\w\d_]+\(' +
-                         ', '.join(['[\w\d_]+=(.+)']*num) +
-                         '\)')
+                regex = (r'[\w\d_]+\(' +
+                         ', '.join([r'[\w\d_]+=(.+)']*num) +
+                         r'\)')
                 grp = re.findall(regex, got.replace('\n', ' '))
                 if len(grp) > 1:  # no more than one for now
                     return False
@@ -608,9 +618,9 @@ class Checker(doctest.OutputChecker):
             return self._do_check(a_want, a_got)
         except Exception:
             # heterog tuple, eg (1, np.array([1., 2.]))
-           try:
+            try:
                 return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
-           except (TypeError, ValueError):
+            except (TypeError, ValueError):
                 return False
 
     def _do_check(self, want, got):
@@ -637,6 +647,7 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     success = True
     # Redirect stderr to the stdout or output
     tmp_stderr = sys.stdout if doctest_warnings else output
+
     @contextmanager
     def temp_cwd():
         cwd = os.getcwd()
@@ -770,17 +781,13 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    if sys.version_info.major <= 2:
-        with open(fname) as f:
-            text = f.read()
-    else:
-        with open(fname, encoding='utf-8') as f:
-            text = f.read()
+    with open(fname, encoding='utf-8') as f:
+        text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it
                       'integrate.nquad(func,'  # ctypes integrate tutotial
-    ])
+                      ])
 
     # split the text into "blocks" and try to detect and omit pseudocode blocks.
     parser = doctest.DocTestParser()
@@ -913,7 +920,8 @@ def main(argv):
             tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
                     dots=dots, doctest_warnings=args.doctest_warnings)
 
-            def scratch(): pass        # stub out a "module", see below
+            def scratch():
+                pass        # stub out a "module", see below
             scratch.__name__ = filename
             results.append((scratch, tut_results))
 

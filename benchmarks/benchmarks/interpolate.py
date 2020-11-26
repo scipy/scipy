@@ -1,18 +1,12 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
-from .common import run_monitored, set_mem_rlimit, Benchmark
+from .common import run_monitored, set_mem_rlimit, Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.stats import spearmanr
-except ImportError:
-    pass
 
-try:
+with safe_import():
     import scipy.interpolate as interpolate
-except ImportError:
-    pass
 
 
 class Leaks(Benchmark):
@@ -79,7 +73,7 @@ class GridData(Benchmark):
         [10j, 100j, 1000j],
         ['nearest', 'linear', 'cubic']
     ]
-    
+
     def setup(self, n_grids, method):
         self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
         self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]

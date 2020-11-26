@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from numpy import zeros, asarray, eye, poly1d, hstack, r_
 from scipy import linalg
 
@@ -16,9 +14,9 @@ def pade(an, m, n=None):
     m : int
         The order of the returned approximating polynomial `q`.
     n : int, optional
-        The order of the returned approximating polynomial `p`. By default, 
+        The order of the returned approximating polynomial `p`. By default,
         the order is ``len(an)-m``.
-    
+
     Returns
     -------
     p, q : Polynomial class

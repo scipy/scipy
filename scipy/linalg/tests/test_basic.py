@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import itertools
 import numpy as np
@@ -20,6 +18,8 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           matrix_balance, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = [np.float32, np.float64, np.longdouble]
 COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
@@ -1262,6 +1262,13 @@ class TestPinv(object):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv, a_pinv2)
 
+    def test_tall_transposed(self):
+        a = random([10, 2])
+        a_pinv = pinv(a)
+        # The result will be transposed internally hence will be a C-layout
+        # instead of the typical LAPACK output with Fortran-layout
+        assert a_pinv.flags['C_CONTIGUOUS']
+
 
 class TestPinvSymmetric(object):
 
@@ -1367,6 +1374,15 @@ class TestVectorNorms(object):
         assert_allclose(b, [[[3.60555128, 4.12310563]]] * 2)
         assert_(b.shape == (2, 1, 2))
         assert_allclose(norm(a, 1, axis=2, keepdims=True), [[[3.], [7.]]] * 2)
+
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit BLAS required")
+    def test_large_vector(self):
+        check_free_memory(free_mb=17000)
+        x = np.zeros([2**31], dtype=np.float64)
+        x[-1] = 1
+        res = norm(x)
+        del x
+        assert_allclose(res, 1.0)
 
 
 class TestMatrixNorms(object):

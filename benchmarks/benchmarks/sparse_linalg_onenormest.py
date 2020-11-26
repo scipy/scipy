@@ -1,17 +1,13 @@
 """Compare the speed of exact one-norm calculation vs. its estimation.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     import scipy.sparse
     import scipy.special  # import cycle workaround for some versions
     import scipy.sparse.linalg
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class BenchmarkOneNormEst(Benchmark):

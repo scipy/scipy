@@ -1,8 +1,6 @@
 """Test functions for the sparse.linalg.interface module
 """
 
-from __future__ import division, print_function, absolute_import
-
 from functools import partial
 from itertools import product
 import operator
@@ -15,10 +13,6 @@ import scipy.sparse as sparse
 
 from scipy.sparse.linalg import interface
 from scipy.sparse.sputils import matrix
-
-
-# Only test matmul operator (A @ B) when available (Python 3.5+)
-TEST_MATMUL = hasattr(operator, 'matmul')
 
 
 class TestLinearOperator(object):
@@ -174,9 +168,6 @@ class TestLinearOperator(object):
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
     def test_matmul(self):
-        if not TEST_MATMUL:
-            pytest.skip("matmul is only tested in Python 3.5+")
-
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
              'rmatvec': lambda x: np.dot(self.A.T.conj(),
@@ -426,7 +417,7 @@ def test_no_double_init():
 
     # It should call matvec exactly once (in order to determine the
     # operator dtype)
-    A = interface.LinearOperator((2, 2), matvec=matvec)
+    interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
 
 def test_adjoint_conjugate():
@@ -440,6 +431,11 @@ def test_adjoint_conjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.H.dot(v), Y.T.conj().dot(v))
+
+def test_ndim():
+    X = np.array([[1]])
+    A = interface.aslinearoperator(X)
+    assert_equal(A.ndim, 2)
 
 def test_transpose_noconjugate():
     X = np.array([[1j]])

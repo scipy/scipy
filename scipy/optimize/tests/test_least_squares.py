@@ -1,5 +1,3 @@
-from __future__ import division
-
 from itertools import product
 
 import numpy as np
@@ -371,6 +369,8 @@ class BaseMixin(object):
                       method=self.method, ftol=None, xtol=None, gtol=None)
 
     def test_convergence_with_only_one_tolerance_enabled(self):
+        if self.method == 'lm':
+            return  # should not do test
         x0 = [-2, 1]
         x_opt = [1, 1]
         for ftol, xtol, gtol in [(1e-8, None, None),
@@ -746,3 +746,36 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_small_tolerances_for_lm():
+    for ftol, xtol, gtol in [(None, 1e-13, 1e-13),
+                             (1e-13, None, 1e-13),
+                             (1e-13, 1e-13, None)]:
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0, xtol=xtol,
+                      ftol=ftol, gtol=gtol, method='lm')
+
+
+def test_fp32_gh12991():
+    # checks that smaller FP sizes can be used in least_squares
+    # this is the minimum working example reported for gh12991
+    np.random.seed(1)
+
+    x = np.linspace(0, 1, 100).astype("float32")
+    y = np.random.random(100).astype("float32")
+
+    def func(p, x):
+        return p[0] + p[1] * x
+
+    def err(p, x, y):
+        return func(p, x) - y
+
+    res = least_squares(err, [-1.0, -1.0], args=(x, y))
+    # previously the initial jacobian calculated for this would be all 0
+    # and the minimize would terminate immediately, with nfev=1, would
+    # report a successful minimization (it shouldn't have done), but be
+    # unchanged from the initial solution.
+    # It was terminating early because the underlying approx_derivative
+    # used a step size for FP64 when the working space was FP32.
+    assert res.nfev > 3
+    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)

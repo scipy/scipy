@@ -1,12 +1,12 @@
-import numpy as np
 from numbers import Number
 import operator
-from .pypocketfft import good_size
-import operator
-import sys
 import os
 import threading
 import contextlib
+
+import numpy as np
+# good_size is exposed (and used) from this import
+from .pypocketfft import good_size
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
@@ -91,8 +91,11 @@ def _asfarray(x):
     elif x.dtype.kind not in 'fc':
         return np.asarray(x, np.float64)
 
+    # Require native byte order
+    dtype = x.dtype.newbyteorder('=')
     # Always align input
-    return np.array(x, copy=not x.flags['ALIGNED'])
+    copy = not x.flags['ALIGNED']
+    return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):
     """
@@ -141,17 +144,18 @@ def _fix_shape_1d(x, n, axis):
     return _fix_shape(x, (n,), (axis,))
 
 
+_NORM_MAP = {None: 0, 'backward': 0, 'ortho': 1, 'forward': 2}
+
+
 def _normalization(norm, forward):
     """Returns the pypocketfft normalization mode from the norm argument"""
-
-    if norm is None:
-        return 0 if forward else 2
-
-    if norm == 'ortho':
-        return 1
-
-    raise ValueError(
-        "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+    try:
+        inorm = _NORM_MAP[norm]
+        return inorm if forward else (2 - inorm)
+    except KeyError:
+        raise ValueError(
+            f'Invalid norm value {norm!r}, should '
+            'be "backward", "ortho" or "forward"') from None
 
 
 def _workers(workers):

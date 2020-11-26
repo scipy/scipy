@@ -1,8 +1,6 @@
 """
 Real spectrum transforms (DCT, DST, MDCT)
 """
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 

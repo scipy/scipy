@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import pickle
 
 import numpy as np
@@ -32,10 +30,10 @@ window_funcs = [
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
-    ('slepian', (2,)),
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
+    ('taylor', ()),
     ('tukey', (0.5,)),
     ]
 
@@ -93,6 +91,80 @@ class TestBlackmanHarris(object):
         assert_allclose(windows.blackmanharris(7, sym=True),
                         [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645,
                          6.0e-05])
+
+
+class TestTaylor(object):
+
+    def test_normalized(self):
+        """Tests windows of small length that are normalized to 1. See the
+        documentation for the Taylor window for more information on
+        normalization.
+        """
+        assert_allclose(windows.taylor(1, 2, 15), 1.0)
+        assert_allclose(
+            windows.taylor(5, 2, 15),
+            np.array([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
+        )
+        assert_allclose(
+            windows.taylor(6, 2, 15),
+            np.array([
+                0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
+                0.7504082
+            ])
+        )
+
+    def test_non_normalized(self):
+        """Test windows of small length that are not normalized to 1. See
+        the documentation for the Taylor window for more information on
+        normalization.
+        """
+        assert_allclose(
+            windows.taylor(5, 2, 15, norm=False),
+            np.array([
+                0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
+            ])
+        )
+        assert_allclose(
+            windows.taylor(6, 2, 15, norm=False),
+            np.array([
+                0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
+            ])
+        )
+
+    def test_correctness(self):
+        """This test ensures the correctness of the implemented Taylor
+        Windowing function. A Taylor Window of 1024 points is created, its FFT
+        is taken, and the Peak Sidelobe Level (PSLL) and 3dB and 18dB bandwidth
+        are found and checked.
+
+        A publication from Sandia National Laboratories was used as reference
+        for the correctness values [1]_.
+
+        References
+        -----
+        .. [1] Armin Doerry, "Catalog of Window Taper Functions for
+               Sidelobe Control", 2017.
+               https://www.researchgate.net/profile/Armin_Doerry/publication/316281181_Catalog_of_Window_Taper_Functions_for_Sidelobe_Control/links/58f92cb2a6fdccb121c9d54d/Catalog-of-Window-Taper-Functions-for-Sidelobe-Control.pdf
+        """
+        M_win = 1024
+        N_fft = 131072
+        # Set norm=False for correctness as the values obtained from the
+        # scientific publication do not normalize the values. Normalizing
+        # changes the sidelobe level from the desired value.
+        w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False)
+        f = fft(w, N_fft)
+        spec = 20 * np.log10(np.abs(f / np.amax(f)))
+
+        first_zero = np.argmax(np.diff(spec) > 0)
+
+        PSLL = np.amax(spec[first_zero:-first_zero])
+
+        BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
+        BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
+
+        assert_allclose(PSLL, -35.1672, atol=1)
+        assert_allclose(BW_3dB, 1.1822, atol=0.1)
+        assert_allclose(BW_18dB, 2.6112, atol=0.1)
 
 
 class TestBohman(object):
@@ -293,6 +365,7 @@ class TestGeneralCosine(object):
                         [0.4, 0.3, 1, 0.3, 0.4])
         assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
                         [0.4, 0.3, 1, 0.3])
+
 
 class TestGeneralHamming(object):
 
@@ -571,7 +644,7 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('slepian', 'hanning'):
+            if window_name in ('hanning',):
                 sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
@@ -623,7 +696,7 @@ def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
+                   'dss', 'dpss',
                    'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
                    'tuk', 'dpss']:
         assert_raises(ValueError, get_window, winstr, 7)

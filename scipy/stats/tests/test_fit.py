@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 import numpy as np
@@ -25,6 +23,7 @@ failing_fits = [
         'gengamma',
         'kappa4',
         'ksone',
+        'kstwo',
         'mielke',
         'ncf',
         'ncx2',
@@ -35,7 +34,7 @@ failing_fits = [
         'vonmises',
         'wrapcauchy',
         'levy_stable',
-        'trapz'
+        'trapezoid'
 ]
 
 # Don't run the fit test on these:

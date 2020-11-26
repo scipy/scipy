@@ -1,13 +1,11 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
                            assert_, suppress_warnings)
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad, simps, fixed_quad)
-from scipy.integrate.quadrature import AccuracyWarning
+                             cumulative_trapezoid, cumtrapz, trapz, trapezoid,
+                             quad, simpson, simps, fixed_quad, AccuracyWarning)
 
 
 class TestFixedQuad(object):
@@ -143,34 +141,41 @@ class TestQuadrature(object):
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
-    def test_simps(self):
+    def test_simpson(self):
         y = np.arange(17)
-        assert_equal(simps(y), 128)
-        assert_equal(simps(y, dx=0.5), 64)
-        assert_equal(simps(y, x=np.linspace(0, 4, 17)), 32)
+        assert_equal(simpson(y), 128)
+        assert_equal(simpson(y, dx=0.5), 64)
+        assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
 
         y = np.arange(4)
         x = 2**y
-        assert_equal(simps(y, x=x, even='avg'), 13.875)
-        assert_equal(simps(y, x=x, even='first'), 13.75)
-        assert_equal(simps(y, x=x, even='last'), 14)
+        assert_equal(simpson(y, x=x, even='avg'), 13.875)
+        assert_equal(simpson(y, x=x, even='first'), 13.75)
+        assert_equal(simpson(y, x=x, even='last'), 14)
+
+    def test_simps(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(simpson(y, x=x, dx=0.5, even='first'),
+                     simps(y, x=x, dx=0.5, even='first'))
 
 
-class TestCumtrapz(object):
+class TestCumulative_trapezoid(object):
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x
-        y_int = cumtrapz(y, x, initial=0)
+        y_int = cumulative_trapezoid(y, x, initial=0)
         y_expected = [0., -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, x, initial=None)
+        y_int = cumulative_trapezoid(y, x, initial=None)
         assert_allclose(y_int, y_expected[1:])
 
     def test_y_nd_x_nd(self):
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        y_int = cumtrapz(y, x, initial=0)
+        y_int = cumulative_trapezoid(y, x, initial=0)
         y_expected = np.array([[[0., 0.5, 2., 4.5],
                                 [0., 4.5, 10., 16.5]],
                                [[0., 8.5, 18., 28.5],
@@ -183,9 +188,9 @@ class TestCumtrapz(object):
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
-            y_int = cumtrapz(y, x, initial=3.45, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=3.45, axis=axis)
             assert_equal(y_int.shape, (3, 2, 4))
-            y_int = cumtrapz(y, x, initial=None, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
 
     def test_y_nd_x_1d(self):
@@ -208,25 +213,55 @@ class TestCumtrapz(object):
                        [20.5, 85., 197.5]]]))
 
         for axis, y_expected in zip([0, 1, 2], ys_expected):
-            y_int = cumtrapz(y, x=x[:y.shape[axis]], axis=axis, initial=None)
+            y_int = cumulative_trapezoid(y, x=x[:y.shape[axis]], axis=axis,
+                                         initial=None)
             assert_allclose(y_int, y_expected)
 
     def test_x_none(self):
         y = np.linspace(-2, 2, num=5)
 
-        y_int = cumtrapz(y)
+        y_int = cumulative_trapezoid(y)
         y_expected = [-1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, initial=1.23)
+        y_int = cumulative_trapezoid(y, initial=1.23)
         y_expected = [1.23, -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, dx=3)
+        y_int = cumulative_trapezoid(y, dx=3)
         y_expected = [-4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumtrapz(y, dx=3, initial=1.23)
+        y_int = cumulative_trapezoid(y, dx=3, initial=1.23)
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
+
+    def test_cumtrapz(self):
+        # Basic coverage test for the alias
+        x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
+        y = x
+        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
+                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
+                        rtol=1e-14)
+
+
+class TestTrapezoid():
+    """This function is tested in NumPy more extensive, just do some
+    basic due diligence here."""
+    def test_trapezoid(self):
+        y = np.arange(17)
+        assert_equal(trapezoid(y), 128)
+        assert_equal(trapezoid(y, dx=0.5), 64)
+        assert_equal(trapezoid(y, x=np.linspace(0, 4, 17)), 32)
+
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.1), 13.5)
+
+    def test_trapz(self):
+        # Basic coverage test for the alias
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                     trapz(y, x=x, dx=0.5, axis=0))
 

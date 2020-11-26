@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import numpy as np
 import math
@@ -105,7 +103,7 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name))
+        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
     return n
 
 
@@ -2330,7 +2328,7 @@ def factorial(n, exact=False):
             n = asarray(n)
             un = np.unique(n).astype(object)
 
-            # Convert to object array of long ints if np.int can't handle size
+            # Convert to object array of long ints if np.int_ can't handle size
             if np.isnan(n).any():
                 dt = float
             elif un[-1] > 20:
@@ -2338,7 +2336,7 @@ def factorial(n, exact=False):
             elif un[-1] > 12:
                 dt = np.int64
             else:
-                dt = np.int
+                dt = np.int_
 
             out = np.empty_like(n, dtype=dt)
 

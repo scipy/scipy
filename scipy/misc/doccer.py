@@ -1,9 +1,6 @@
 ''' Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings'''
 
-from __future__ import division, print_function, absolute_import
-
-import sys
 import numpy as np
 from .._lib import doccer as _ld
 

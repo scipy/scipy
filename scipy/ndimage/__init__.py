@@ -85,7 +85,7 @@ Measurements
    minimum
    minimum_position
    standard_deviation - Standard deviation of an N-D image array
-   sum - Sum of the values of the array
+   sum_labels - Sum of the values of the array
    variance - Variance of the values of an N-D image array
    watershed_ift
 
@@ -147,8 +147,6 @@ Morphology
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from __future__ import division, print_function, absolute_import
 
 from .filters import *
 from .fourier import *

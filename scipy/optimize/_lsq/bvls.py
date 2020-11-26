@@ -1,6 +1,4 @@
 """Bounded-variable least-squares algorithm."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.optimize import OptimizeResult
@@ -16,17 +14,17 @@ def compute_kkt_optimality(g, on_bound):
     return np.max(g_kkt)
 
 
-def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
+def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose, rcond=None):
     m, n = A.shape
 
     x = x_lsq.copy()
     on_bound = np.zeros(n)
 
-    mask = x < lb
+    mask = x <= lb
     x[mask] = lb[mask]
     on_bound[mask] = -1
 
-    mask = x > ub
+    mask = x >= ub
     x[mask] = ub[mask]
     on_bound[mask] = 1
 
@@ -66,7 +64,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
         A_free = A[:, free_set]
         b_free = b - A.dot(x * active_set)
-        z = lstsq(A_free, b_free, rcond=-1)[0]
+        z = lstsq(A_free, b_free, rcond=rcond)[0]
 
         lbv = z < lb[free_set]
         ubv = z > ub[free_set]
@@ -108,7 +106,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
     # Main BVLS loop.
 
     optimality = compute_kkt_optimality(g, on_bound)
-    for iteration in range(iteration, max_iter):
+    for iteration in range(iteration, max_iter):  # BVLS Loop A
         if verbose == 2:
             print_iteration_linear(iteration, cost, cost_change,
                                    step_norm, optimality)
@@ -121,43 +119,48 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
         move_to_free = np.argmax(g * on_bound)
         on_bound[move_to_free] = 0
-        free_set = on_bound == 0
-        active_set = ~free_set
-        free_set, = np.nonzero(free_set)
+        
+        while True:   # BVLS Loop B
 
-        x_free = x[free_set]
-        x_free_old = x_free.copy()
-        lb_free = lb[free_set]
-        ub_free = ub[free_set]
+            free_set = on_bound == 0
+            active_set = ~free_set
+            free_set, = np.nonzero(free_set)
+    
+            x_free = x[free_set]
+            x_free_old = x_free.copy()
+            lb_free = lb[free_set]
+            ub_free = ub[free_set]
 
-        A_free = A[:, free_set]
-        b_free = b - A.dot(x * active_set)
-        z = lstsq(A_free, b_free, rcond=-1)[0]
+            A_free = A[:, free_set]
+            b_free = b - A.dot(x * active_set)
+            z = lstsq(A_free, b_free, rcond=rcond)[0]
 
-        lbv, = np.nonzero(z < lb_free)
-        ubv, = np.nonzero(z > ub_free)
-        v = np.hstack((lbv, ubv))
+            lbv, = np.nonzero(z < lb_free)
+            ubv, = np.nonzero(z > ub_free)
+            v = np.hstack((lbv, ubv))
 
-        if v.size > 0:
-            alphas = np.hstack((
-                lb_free[lbv] - x_free[lbv],
-                ub_free[ubv] - x_free[ubv])) / (z[v] - x_free[v])
+            if v.size > 0:
+                alphas = np.hstack((
+                    lb_free[lbv] - x_free[lbv],
+                    ub_free[ubv] - x_free[ubv])) / (z[v] - x_free[v])
 
-            i = np.argmin(alphas)
-            i_free = v[i]
-            alpha = alphas[i]
+                i = np.argmin(alphas)
+                i_free = v[i]
+                alpha = alphas[i]
 
-            x_free *= 1 - alpha
-            x_free += alpha * z
+                x_free *= 1 - alpha
+                x_free += alpha * z
+                x[free_set] = x_free
 
-            if i < lbv.size:
-                on_bound[free_set[i_free]] = -1
+                if i < lbv.size:
+                    on_bound[free_set[i_free]] = -1
+                else:
+                    on_bound[free_set[i_free]] = 1
             else:
-                on_bound[free_set[i_free]] = 1
-        else:
-            x_free = z
+                x_free = z
+                x[free_set] = x_free
+                break
 
-        x[free_set] = x_free
         step_norm = norm(x_free - x_free_old)
 
         r = A.dot(x) - b

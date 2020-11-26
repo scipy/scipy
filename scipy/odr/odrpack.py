@@ -35,8 +35,7 @@ Robert Kern
 robert.kern@gmail.com
 
 """
-
-from __future__ import division, print_function, absolute_import
+import os
 
 import numpy
 from warnings import warn
@@ -398,7 +397,7 @@ class RealData(Data):
         """ Convert covariance matrix(-ices) to weights.
         """
 
-        from numpy.dual import inv
+        from scipy.linalg import inv
 
         if len(cov.shape) == 2:
             return inv(cov)
@@ -551,7 +550,7 @@ class Output(object):
     beta : ndarray
         Estimated parameter values, of shape (q,).
     sd_beta : ndarray
-        Standard errors of the estimated parameters, of shape (p,).
+        Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
     delta : ndarray, optional
@@ -658,11 +657,13 @@ class ODR(object):
         ODRPACK User's Guide if you absolutely must set the value here. Use the
         method set_iprint post-initialization for a more readable interface.
     errfile : str, optional
-        string with the filename to print ODRPACK errors to. *Do Not Open
-        This File Yourself!*
+        string with the filename to print ODRPACK errors to. If the file already
+        exists, an error will be thrown. The `overwrite` argument can be used to
+        prevent this. *Do Not Open This File Yourself!*
     rptfile : str, optional
-        string with the filename to print ODRPACK summaries to. *Do Not
-        Open This File Yourself!*
+        string with the filename to print ODRPACK summaries to. If the file
+        already exists, an error will be thrown. The `overwrite` argument can be
+        used to prevent this. *Do Not Open This File Yourself!*
     ndigit : int, optional
         integer specifying the number of reliable digits in the computation
         of the function.
@@ -711,6 +712,9 @@ class ODR(object):
     iwork : ndarray, optional
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
+    overwrite : bool, optional
+        If it is True, output files defined by `errfile` and `rptfile` are
+        overwritten. The default is False.
 
     Attributes
     ----------
@@ -727,7 +731,8 @@ class ODR(object):
     def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
         ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
         ndigit=None, taufac=None, sstol=None, partol=None, maxit=None,
-        stpb=None, stpd=None, sclb=None, scld=None, work=None, iwork=None):
+        stpb=None, stpd=None, sclb=None, scld=None, work=None, iwork=None,
+        overwrite=False):
 
         self.data = data
         self.model = model
@@ -744,6 +749,13 @@ class ODR(object):
 
         if ifixx is None and data.fix is not None:
             ifixx = data.fix
+
+        if overwrite:
+            # remove output files for overwriting.
+            if rptfile is not None and os.path.exists(rptfile):
+                os.remove(rptfile)
+            if errfile is not None and os.path.exists(errfile):
+                os.remove(errfile)
 
         self.delta0 = _conv(delta0)
         # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit

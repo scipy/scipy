@@ -5,8 +5,6 @@ native byte order and swapped byte order to explicit NumPy endian
 codes - one of '<' (little endian) or '>' (big endian)
 
 '''
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 sys_is_le = sys.byteorder == 'little'

@@ -1,5 +1,4 @@
 """Constraints definition for minimize."""
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
@@ -8,6 +7,13 @@ from .optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
+
+
+def _arr_to_scalar(x):
+    # If x is a numpy array, return x.item().  This will
+    # fail if the array has more than one element.
+    return x.item() if isinstance(x, np.ndarray) else x
+
 
 class NonlinearConstraint(object):
     """Nonlinear constraint on the variables.
@@ -299,8 +305,8 @@ def new_bounds_to_old(lb, ub, n):
     if ub.ndim == 0:
         ub = np.resize(ub, n)
 
-    lb = [x if x > -np.inf else None for x in lb]
-    ub = [x if x < np.inf else None for x in ub]
+    lb = [float(x) if x > -np.inf else None for x in lb]
+    ub = [float(x) if x < np.inf else None for x in ub]
 
     return list(zip(lb, ub))
 
@@ -315,8 +321,14 @@ def old_bound_to_new(bounds):
     -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([x if x is not None else -np.inf for x in lb])
-    ub = np.array([x if x is not None else np.inf for x in ub])
+
+    # Convert occurrences of None to -inf or inf, and replace occurrences of
+    # any numpy array x with x.item(). Then wrap the results in numpy arrays.
+    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf
+                   for x in lb])
+    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf
+                   for x in ub])
+
     return lb, ub
 
 
@@ -431,12 +443,14 @@ def old_constraint_to_new(ic, con):
     # check type
     try:
         ctype = con['type'].lower()
-    except KeyError:
-        raise KeyError('Constraint %d has no type defined.' % ic)
-    except TypeError:
-        raise TypeError('Constraints must be a sequence of dictionaries.')
-    except AttributeError:
-        raise TypeError("Constraint's type must be a string.")
+    except KeyError as e:
+        raise KeyError('Constraint %d has no type defined.' % ic) from e
+    except TypeError as e:
+        raise TypeError(
+            'Constraints must be a sequence of dictionaries.'
+        ) from e
+    except AttributeError as e:
+        raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
             raise ValueError("Unknown constraint type '%s'." % con['type'])

@@ -31,8 +31,6 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
 import pytest
@@ -42,7 +40,7 @@ import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
-    is_isomorphic, single, leaders, complete, weighted, centroid,
+    is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
@@ -56,11 +54,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -814,6 +812,34 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
+    def test_labels_as_array_or_list(self):
+        # test for gh-12418
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
+        labels = np.array([1, 3, 2, 6, 4, 5])
+        result1 = dendrogram(Z, labels=labels, no_plot=True)
+        result2 = dendrogram(Z, labels=labels.tolist(), no_plot=True)
+        assert result1 == result2
+
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    def test_valid_label_size(self):
+        link = np.array([
+            [0, 1, 1.0, 4],
+            [2, 3, 1.0, 5],
+            [4, 5, 2.0, 6],
+        ])
+        plt.figure()
+        with pytest.raises(ValueError) as exc_info:
+            dendrogram(link, labels=list(range(100)))
+        assert "Dimensions of Z and labels must be consistent."\
+               in str(exc_info.value)
+
+        with pytest.raises(
+                ValueError,
+                match="Dimensions of Z and labels must be consistent."):
+            dendrogram(link, labels=[])
+
+        plt.close()
+
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
@@ -822,7 +848,7 @@ class TestDendrogram(object):
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
         Z = linkage(hierarchy_test_data.ytdist, 'single')
-        expected = {'color_list': ['g', 'b', 'b', 'b', 'b'],
+        expected = {'color_list': ['C1', 'C0', 'C0', 'C0', 'C0'],
                     'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                [0.0, 219.0, 219.0, 0.0],
                                [0.0, 255.0, 255.0, 219.0],
@@ -834,7 +860,9 @@ class TestDendrogram(object):
                                [25.0, 25.0, 42.5, 42.5],
                                [10.0, 10.0, 33.75, 33.75]],
                     'ivl': ['2', '5', '1', '0', '3', '4'],
-                    'leaves': [2, 5, 1, 0, 3, 4]}
+                    'leaves': [2, 5, 1, 0, 3, 4],
+                    'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0', 'C0'],
+                    }
 
         fig = plt.figure()
         ax = fig.add_subplot(221)
@@ -845,8 +873,8 @@ class TestDendrogram(object):
 
         # test that dendrogram accepts and handle the leaf_font_size and
         # leaf_rotation keywords
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20, leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20, leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
@@ -854,16 +882,16 @@ class TestDendrogram(object):
         )
         assert_equal(testlabel.get_rotation(), 90)
         assert_equal(testlabel.get_size(), 20)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_rotation=90)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_rotation=90)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
         assert_equal(testlabel.get_rotation(), 90)
-        R1a = dendrogram(Z, ax=ax, orientation=orientation,
-                         leaf_font_size=20)
+        dendrogram(Z, ax=ax, orientation=orientation,
+                   leaf_font_size=20)
         testlabel = (
             ax.get_xticklabels()[0]
             if orientation in ['top', 'bottom']
@@ -883,15 +911,17 @@ class TestDendrogram(object):
 
         R = dendrogram(Z, 2, 'lastp', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['b'],
+        assert_equal(R, {'color_list': ['C0'],
                          'dcoord': [[0.0, 295.0, 295.0, 0.0]],
                          'icoord': [[5.0, 5.0, 15.0, 15.0]],
                          'ivl': ['(2)', '(4)'],
-                         'leaves': [6, 9]})
+                         'leaves': [6, 9],
+                         'leaves_color_list': ['C0', 'C0'],
+                         })
 
         R = dendrogram(Z, 2, 'mtica', show_contracted=True)
         plt.close()
-        assert_equal(R, {'color_list': ['g', 'b', 'b', 'b'],
+        assert_equal(R, {'color_list': ['C1', 'C0', 'C0', 'C0'],
                          'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                     [0.0, 255.0, 255.0, 0.0],
                                     [0.0, 268.0, 268.0, 255.0],
@@ -901,7 +931,9 @@ class TestDendrogram(object):
                                     [25.0, 25.0, 40.0, 40.0],
                                     [10.0, 10.0, 32.5, 32.5]],
                          'ivl': ['2', '5', '1', '0', '(2)'],
-                         'leaves': [2, 5, 1, 0, 7]})
+                         'leaves': [2, 5, 1, 0, 7],
+                         'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0'],
+                         })
 
     def test_dendrogram_colors(self):
         # Tests dendrogram plots with alternate colors
@@ -1057,4 +1089,3 @@ def test_Heap():
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
-

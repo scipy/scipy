@@ -1,7 +1,5 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less)
 import pytest
@@ -297,17 +295,17 @@ class _TestRFFTBase(object):
         def __getattr__(self, item):
             try:
                 return getattr(self.data, item)
-            except AttributeError:
+            except AttributeError as e:
                 raise AttributeError(("'MockSeries' object "
                                       "has no attribute '{attr}'".
-                                      format(attr=item)))
+                                      format(attr=item))) from e
 
     def test_non_ndarray_with_dtype(self):
         x = np.array([1., 2., 3., 4., 5.])
         xs = _TestRFFTBase.MockSeries(x)
 
         expected = [1, 2, 3, 4, 5]
-        out = rfft(xs)
+        rfft(xs)
 
         # Data should not have been overwritten
         assert_equal(x, expected)
@@ -756,8 +754,8 @@ class FakeArray2(object):
 class TestOverwrite(object):
     """Check input overwrite behavior of the FFT functions."""
 
-    real_dtypes = [np.float32, np.float64]
-    dtypes = real_dtypes + [np.complex64, np.complex128]
+    real_dtypes = (np.float32, np.float64)
+    dtypes = real_dtypes + (np.complex64, np.complex128)
     fftsizes = [8, 16, 32]
 
     def _check(self, x, routine, fftsize, axis, overwrite_x):

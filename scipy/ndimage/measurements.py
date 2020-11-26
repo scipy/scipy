@@ -28,8 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import numpy
 import numpy as np
 from . import _ni_support
@@ -40,7 +38,7 @@ from . import morphology
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
            'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift']
+           'histogram', 'watershed_ift', 'sum_labels']
 
 
 def label(input, structure=None, output=None):
@@ -219,7 +217,7 @@ def label(input, structure=None, output=None):
 
     try:
         max_label = _ni_label._label(input, structure, output)
-    except _ni_label.NeedMoreBits:
+    except _ni_label.NeedMoreBits as e:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
         tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
@@ -227,7 +225,9 @@ def label(input, structure=None, output=None):
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
             # refuse to return bad results
-            raise RuntimeError("insufficient bit-depth in requested output type")
+            raise RuntimeError(
+                "insufficient bit-depth in requested output type"
+            ) from e
 
     if caller_provided_output:
         # result was written in-place
@@ -390,9 +390,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     try:
         input, labels = numpy.broadcast_arrays(input, labels)
-    except ValueError:
+    except ValueError as e:
         raise ValueError("input and labels must have the same shape "
-                            "(excepting dimensions with width 1)")
+                            "(excepting dimensions with width 1)") from e
 
     if index is None:
         if not pass_positions:
@@ -556,7 +556,7 @@ def _stats(input, labels=None, index=None, centered=False):
         if centered:
             sums_c = _sum_centered(labels)
         # make sure all index values are valid
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs < counts.size)
         idxs[~found] = 0
 
@@ -574,6 +574,20 @@ def _stats(input, labels=None, index=None, centered=False):
 
 
 def sum(input, labels=None, index=None):
+    """
+    Calculate the sum of the values of the array.
+
+    Notes
+    -----
+    This is an alias for `ndimage.sum_labels` kept for backwards compatibility
+    reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
+    docstring for more details.
+
+    """
+    return sum_labels(input, labels, index)
+
+
+def sum_labels(input, labels=None, index=None):
     """
     Calculate the sum of the values of the array.
 
@@ -667,7 +681,7 @@ def mean(input, labels=None, index=None):
     """
 
     count, sum = _stats(input, labels, index)
-    return sum / numpy.asanyarray(count).astype(numpy.float)
+    return sum / numpy.asanyarray(count).astype(numpy.float64)
 
 
 def variance(input, labels=None, index=None):
@@ -833,7 +847,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         found = (unique_labels[idxs] == index)
     else:
         # labels are an integer type, and there aren't too many
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
     idxs[~ found] = labels.max() + 1
@@ -866,9 +880,9 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         result += [maxpos[idxs]]
     if find_median:
         locs = numpy.arange(len(labels))
-        lo = numpy.zeros(labels.max() + 2, numpy.int)
+        lo = numpy.zeros(labels.max() + 2, numpy.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = numpy.zeros(labels.max() + 2, numpy.int)
+        hi = numpy.zeros(labels.max() + 2, numpy.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]
@@ -879,7 +893,12 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         step = (hi - lo) // 2
         lo += step
         hi -= step
-        result += [(input[lo] + input[hi]) / 2.0]
+        if (np.issubdtype(input.dtype, np.integer)
+                or np.issubdtype(input.dtype, np.bool_)):
+            # avoid integer overflow or boolean addition (gh-12836)
+            result += [(input[lo].astype('d') + input[hi].astype('d')) / 2.0]
+        else:
+            result += [(input[lo] + input[hi]) / 2.0]
 
     return result
 
@@ -1205,7 +1224,7 @@ def maximum_position(input, labels=None, index=None):
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
-    
+
     Examples
     --------
     >>> from scipy import ndimage
@@ -1224,14 +1243,14 @@ def maximum_position(input, labels=None, index=None):
     ...                 [0, 1, 2, 3]])
     >>> ndimage.maximum_position(a, lbl, 1)
     (1, 1)
-    
+
     If no index is given, non-zero `labels` are processed:
 
     >>> ndimage.maximum_position(a, lbl)
     (2, 3)
-    
+
     If there are no maxima, the position of the first element is returned:
-    
+
     >>> ndimage.maximum_position(a, lbl, 2)
     (0, 2)
 

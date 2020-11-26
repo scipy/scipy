@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.integrate import quad_vec
 
-quadrature_params = pytest.mark.parametrize('quadrature',
-                                            [None, "gk15", "gk21", "trapz"])
+quadrature_params = pytest.mark.parametrize(
+    'quadrature', [None, "gk15", "gk21", "trapezoid"])
 
 
 @quadrature_params
@@ -16,7 +14,7 @@ def test_quad_vec_simple(quadrature):
     n = np.arange(10)
     f = lambda x: x**n
     for epsabs in [0.1, 1e-3, 1e-6]:
-        if quadrature == 'trapz' and epsabs < 1e-4:
+        if quadrature == 'trapezoid' and epsabs < 1e-4:
             # slow: skip
             continue
 
@@ -46,7 +44,7 @@ def test_quad_vec_simple_inf(quadrature):
     f = lambda x: 1 / (1 + np.float64(x)**2)
 
     for epsabs in [0.1, 1e-3, 1e-6]:
-        if quadrature == 'trapz' and epsabs < 1e-4:
+        if quadrature == 'trapezoid' and epsabs < 1e-4:
             # slow: skip
             continue
 

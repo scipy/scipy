@@ -2,8 +2,6 @@
 Differential and pseudo-differential operators.
 """
 # Created by Pearu Peterson, September 2002
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['diff',
            'tilbert','itilbert','hilbert','ihilbert',

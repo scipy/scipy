@@ -383,9 +383,9 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
                 nit += 1
 
     if len(basis[:m]) == 0:
-        solution = np.zeros(T.shape[1] - 1, dtype=np.float64)
+        solution = np.empty(T.shape[1] - 1, dtype=np.float64)
     else:
-        solution = np.zeros(max(T.shape[1] - 1, max(basis[:m]) + 1),
+        solution = np.empty(max(T.shape[1] - 1, max(basis[:m]) + 1),
                             dtype=np.float64)
 
     while not complete:
@@ -407,8 +407,8 @@ def _solve_simplex(T, n, basis, callback, postsolve_args,
             solution[:] = 0
             solution[basis[:n]] = T[:n, -1]
             x = solution[:m]
-            x, fun, slack, con, _, _ = _postsolve(
-                x, postsolve_args, tol=tol
+            x, fun, slack, con = _postsolve(
+                x, postsolve_args
             )
             res = OptimizeResult({
                 'x': x,
@@ -451,6 +451,8 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
 
         A @ x == b
             x >= 0
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------

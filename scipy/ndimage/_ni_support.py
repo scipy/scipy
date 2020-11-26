@@ -28,9 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 from collections.abc import Iterable
+import warnings
 import numpy
 
 
@@ -41,12 +40,16 @@ def _extend_mode_to_code(mode):
         return 0
     elif mode == 'wrap':
         return 1
-    elif mode == 'reflect':
+    elif mode in ['reflect', 'grid-mirror']:
         return 2
     elif mode == 'mirror':
         return 3
     elif mode == 'constant':
         return 4
+    elif mode == 'grid-wrap':
+        return 5
+    elif mode == 'grid-constant':
+        return 6
     else:
         raise RuntimeError('boundary mode not supported')
 
@@ -67,25 +70,28 @@ def _normalize_sequence(input, rank):
     return normalized
 
 
-def _get_output(output, input, shape=None):
+def _get_output(output, input, shape=None, complex_output=False):
     if shape is None:
         shape = input.shape
     if output is None:
-        output = numpy.zeros(shape, dtype=input.dtype.name)
+        if not complex_output:
+            output = numpy.zeros(shape, dtype=input.dtype.name)
+        else:
+            complex_type = numpy.promote_types(input.dtype, numpy.complex64)
+            output = numpy.zeros(shape, dtype=complex_type)
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
+        if complex_output and numpy.dtype(output).kind != 'c':
+            warnings.warn("promoting specified output dtype to complex")
+            output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
         output = numpy.typeDict[output]
+        if complex_output and numpy.dtype(output).kind != 'c':
+            raise RuntimeError("output must have complex dtype")
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
+    elif complex_output and output.dtype.kind != 'c':
+        raise RuntimeError("output must have complex dtype")
     return output
-
-
-def _check_axis(axis, rank):
-    if axis < 0:
-        axis += rank
-    if axis < 0 or axis >= rank:
-        raise ValueError('invalid axis')
-    return axis

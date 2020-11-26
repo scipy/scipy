@@ -11,8 +11,6 @@ Functions
     scalar_search_wolfe2
 
 """
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 from scipy.optimize import minpack2
@@ -260,6 +258,24 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
 
+    Examples
+    --------
+    >>> from scipy.optimize import line_search
+
+    A objective function and its gradient are defined.
+
+    >>> def obj_func(x):
+    ...     return (x[0])**2+(x[1])**2
+    >>> def obj_grad(x):
+    ...     return [2*x[0], 2*x[1]]
+
+    We can find alpha that satisfies strong Wolfe conditions.
+
+    >>> start_point = np.array([1.8, 1.7])
+    >>> search_gradient = np.array([-1.0, -1.0])
+    >>> line_search(obj_func, obj_grad, start_point, search_gradient)
+    (1.0, 2, 1, 1.1300000000000001, 6.13, [1.6, 1.4])
+
     """
     fc = [0]
     gc = [0]
@@ -421,8 +437,9 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             warn(msg, LineSearchWarning)
             break
 
+        not_first_iteration = i > 0
         if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
-           ((phi_a1 >= phi_a0) and (i > 1)):
+           ((phi_a1 >= phi_a0) and not_first_iteration):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,

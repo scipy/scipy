@@ -6,8 +6,6 @@
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from .base import spmatrix, _ufuncs_with_fixed_point_at_zero

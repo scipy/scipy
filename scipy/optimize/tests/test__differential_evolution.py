@@ -1,9 +1,7 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import gc
 import multiprocessing
-import sys
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
@@ -12,6 +10,8 @@ from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
+from scipy.sparse import csr_matrix
+from scipy._lib._pep440 import Version
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
@@ -19,11 +19,6 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
 import pytest
-
-
-knownfail_on_py38 = pytest.mark.xfail(
-    sys.version_info >= (3, 8), run=False,
-    reason='Python 3.8 hangs when cleaning up MapWrapper')
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -239,15 +234,26 @@ class TestDifferentialEvolutionSolver(object):
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
+        expected_msg = 'callback function requested stop early by returning True'
 
-        def callback(param, convergence=0.):
+        def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        assert_string_equal(result.message, expected_msg)
 
-        assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+        def callback_evaluates_true(param, convergence=0.):
+            # DE should stop if bool(self.callback) is True
+            return [10]
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
+        assert_string_equal(result.message, expected_msg)
+
+        def callback_evaluates_false(param, convergence=0.):
+            return []
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        assert result.success
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
@@ -386,6 +392,22 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_generator(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng()
+
+        inits = ['random', 'latinhypercube']
+        for init in inits:
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   seed=rng,
+                                   tol=0.5,
+                                   init=init)
+
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
         solver = DifferentialEvolutionSolver(rosen,
@@ -438,11 +460,11 @@ class TestDifferentialEvolutionSolver(object):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        x_prev, fun_prev = next(solver)
+        _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
             assert(fun_prev >= fun_current)
-            x_prev, fun_prev = x_current, fun_current
+            _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:
                 break
@@ -522,9 +544,7 @@ class TestDifferentialEvolutionSolver(object):
                 return np.inf
             return x[1]
         bounds = [(0, 1), (0, 1)]
-        x_fit = differential_evolution(sometimes_inf,
-                                       bounds=[(0, 1), (0, 1)],
-                                       disp=False)
+        differential_evolution(sometimes_inf, bounds=bounds, disp=False)
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
@@ -534,7 +554,6 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    @knownfail_on_py38
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -544,12 +563,10 @@ class TestDifferentialEvolutionSolver(object):
         # should raise a UserWarning because the updating='immediate'
         # is being overridden by the workers keyword
         with warns(UserWarning):
-            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+                pass
         assert_(solver._updating == 'deferred')
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
-    @knownfail_on_py38
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -564,8 +581,6 @@ class TestDifferentialEvolutionSolver(object):
             assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
-        del solver
-        gc.collect()  # ensure MapWrapper cleans up properly
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
@@ -740,6 +755,11 @@ class TestDifferentialEvolutionSolver(object):
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
 
+        pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
+                                x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
         def fun(x):
             return A.dot(x)
 
@@ -794,6 +814,24 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
+
+        assert_allclose(f(x_opt), f_opt)
+        assert res.success
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+        # now repeat the same solve, using the same overall constraints,
+        # but using a sparse matrix for the LinearConstraint instead of an
+        # array
+
+        L = LinearConstraint(csr_matrix(A), -np.inf, b)
+
+        # using a lower popsize to speed the test up
+        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
+                                     constraints=(L), popsize=2)
 
         assert_allclose(f(x_opt), f_opt)
         assert res.success
@@ -959,7 +997,14 @@ class TestDifferentialEvolutionSolver(object):
 
         assert_allclose(f(x_opt), f_opt, atol=0.001)
         assert_allclose(res.fun, f_opt, atol=0.001)
-        assert_allclose(res.x, x_opt, atol=0.002)
+
+        # use higher tol here for 32-bit Windows, see gh-11693
+        if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
+            assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
+        else:
+            # tolerance determined from macOS + MKL failure, see gh-12701
+            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
+
         assert res.success
         assert_(np.all(A @ res.x <= b))
         assert_(np.all(np.array(c1(res.x)) >= 0))
@@ -989,7 +1034,6 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1.22797135, 4.24537337)
         f_opt = -0.095825
-        print(res)
         assert_allclose(f(x_opt), f_opt, atol=2e-5)
         assert_allclose(res.fun, f_opt, atol=1e-4)
         assert res.success
@@ -1104,7 +1148,10 @@ class TestDifferentialEvolutionSolver(object):
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
+            # original Lampinen test was with rand1bin, but that takes a
+            # huge amount of CPU time. Changing strategy to best1bin speeds
+            # things up a lot
+            res = differential_evolution(f, bounds, strategy='best1bin',
                                          seed=1234, constraints=constraints,
                                          maxiter=5000)
 

@@ -1,7 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
-
 DEFINE_MACROS = [("SCIPY_PY3K", None)]
 
 

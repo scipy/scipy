@@ -1,15 +1,11 @@
-from __future__ import division, absolute_import, print_function
-
 import re
 import numpy as np
 from scipy import special
 
-try:
-    from scipy.special import cython_special
-except ImportError:
-    pass
+from .common import with_attributes, safe_import
 
-from .common import with_attributes
+with safe_import():
+    from scipy.special import cython_special
 
 
 FUNC_ARGS = {

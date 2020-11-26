@@ -10,8 +10,6 @@ Directed Hausdorff Code
 # Distributed under the same BSD license as Scipy.
 #
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -23,7 +21,6 @@ __all__ = ['directed_hausdorff']
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
     cdef double cmax, cmin, d
-    cdef bint no_break_occurred
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
@@ -44,7 +41,6 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
     cmax = 0
     for i in range(N1):
-        no_break_occurred = True
         cmin = np.inf
         for j in range(N2):
             d = 0
@@ -53,7 +49,6 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
             for k in range(data_dims):
                 d += (ar1[i, k] - ar2[j, k])**2
             if d < cmax: # break out of `for j` loop
-                no_break_occurred = False
                 break
 
             if d < cmin: # always true on first iteration of for-j loop
@@ -63,7 +58,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
         # always true on first iteration of for-j loop, after that only
         # if d >= cmax
-        if cmin != np.inf and cmin >= cmax and no_break_occurred == True:
+        if cmin >= cmax and d >= cmax:
             cmax = cmin
             i_ret = i_store
             j_ret = j_store

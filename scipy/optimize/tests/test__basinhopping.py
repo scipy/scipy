@@ -1,10 +1,10 @@
 """
 Unit tests for the basin hopping global minimization algorithm.
 """
-from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import assert_almost_equal, assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
@@ -12,6 +12,7 @@ from numpy import cos, sin
 from scipy.optimize import basinhopping, OptimizeResult
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
+from scipy._lib._pep440 import Version
 
 
 def func1d(x):
@@ -261,7 +262,10 @@ class TestBasinHopping(object):
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
-        assert_equal(res.nit, 10)
+        # One of the calls of MyCallBack is during BasinHoppingRunner
+        # construction, so there are only 9 remaining before MyCallBack stops
+        # the minimization.
+        assert_equal(res.nit, 9)
 
     def test_minimizer_fail(self):
         # test if a minimizer fails
@@ -300,6 +304,24 @@ class TestBasinHopping(object):
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
+
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        rng = np.random.default_rng(1)
+
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        res1 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+
+        rng = np.random.default_rng(1)
+        res2 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+        assert_equal(res1.x, res2.x)
 
     def test_monotonic_basin_hopping(self):
         # test 1-D minimizations with gradient and T=0

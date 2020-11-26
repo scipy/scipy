@@ -1,8 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import lstsq
-from math import factorial
+from scipy._lib._util import float_factorial
 from scipy.ndimage import convolve1d
 from ._arraytools import axis_slice
 
@@ -133,7 +131,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     y = np.zeros(polyorder + 1)
     # The coefficient assigned to y[deriv] scales the result to take into
     # account the order of the derivative and the sample spacing.
-    y[deriv] = factorial(deriv) / (delta ** deriv)
+    y[deriv] = float_factorial(deriv) / (delta ** deriv)
 
     # Find the least-squares solution of A*c = y
     coeffs, _, _, _ = lstsq(A, y)

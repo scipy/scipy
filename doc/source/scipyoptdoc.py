@@ -20,8 +20,6 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-from __future__ import division, absolute_import, print_function
-
 import os, sys, re, pydoc
 import sphinx
 import inspect

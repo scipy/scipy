@@ -17,9 +17,11 @@ This guide is designed to help you quickly find the information you need about S
 
 Development environment
 -----------------------
+- :ref:`quickstart-pip` presents an overview of setting up the development environment using pip on Linux
 - :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
 - :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you don't have macOS or Ubuntu, or if you have trouble with the instructions above, this may be your best option
+- :ref:`build-windows` presents a step-by-step process for building SciPy on Windows
+- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
 - :ref:`building` may have some helpful hints if you need to deviate from the guides above
 - :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 
@@ -67,6 +69,7 @@ Compiled code
 -------------
 - :ref:`adding-cython` extending and compiling Python code with `Cython`_ can significantly improve its performance; this document helps you get started
 - :ref:`other-languages` discusses the use of C, C++, and Fortran code in SciPy
+- :ref:`public-cython-api` on guidelines on exposing public Cython APIs
 
 .. _Scipy Development Workflow: https://youtu.be/HgU01gJbzMY
 
