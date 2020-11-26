@@ -244,20 +244,11 @@ case NPY_##_TYPE:                                    \
 
 int _get_spline_boundary_mode(int mode)
 {
-    int spline_mode;
-    if (mode == NI_EXTEND_NEAREST) {
-        // No analytical spline condition implemented. Reflect gives
-        // lower error than using mirror or wrap.
-        spline_mode = NI_EXTEND_REFLECT;
-    } else if ((mode == NI_EXTEND_MIRROR) || (mode == NI_EXTEND_REFLECT)
-               || (mode == NI_EXTEND_GRID_WRAP)) {
-        // exact analytic boundary conditions exist for these modes.
-        spline_mode = mode;
-    } else {
-        // Use mirror spline boundary condition
-        spline_mode = NI_EXTEND_MIRROR;
-    }
-    return spline_mode;
+    if ((mode == NI_EXTEND_CONSTANT) || (mode == NI_EXTEND_WRAP))
+        // Modes without an anlaytic prefilter or explicit prepadding use
+        // mirror extension.
+        return NI_EXTEND_MIRROR;
+    return mode;
 }
 
 int
@@ -473,15 +464,12 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
         /* iterate over axes: */
         for(hh = 0; hh < irank; hh++) {
-            double cc = 0.0;
-            if (mode == NI_EXTEND_GRID_CONSTANT) {
-                // no coordinate mapping in this case
-                cc = icoor[hh] + nprepad;
-            } else {
+            double cc = icoor[hh] + nprepad;
+            if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
                 /* if the input coordinate is outside the borders, map it: */
-                cc = map_coordinate(icoor[hh] + nprepad, idimensions[hh], mode);
+                cc = map_coordinate(cc, idimensions[hh], mode);
             }
-            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT) {
+            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 /* find the filter location along this axis: */
                 npy_intp start;
                 if (order & 1) {
@@ -784,11 +772,11 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             if (zooms)
                 cc *= zoom;
             cc += (double)nprepad;
-            if (mode != NI_EXTEND_GRID_CONSTANT) {
+            if ((mode != NI_EXTEND_GRID_CONSTANT) && (mode != NI_EXTEND_NEAREST)) {
                 /* if the input coordinate is outside the borders, map it: */
                 cc = map_coordinate(cc, idimensions[jj], mode);
             }
-            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT) {
+            if (cc > -1.0 || mode == NI_EXTEND_GRID_CONSTANT || mode == NI_EXTEND_NEAREST) {
                 npy_intp start;
                 if (zeros && zeros[jj])
                     zeros[jj][kk] = 0;
