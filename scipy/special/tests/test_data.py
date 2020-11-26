@@ -495,13 +495,14 @@ BOOST_TESTS = [
         # internally. It is generally worse than R_D. Notice that we increased
         # the rtol for R_G here. The cases with duplicate arguments are
         # slightly less likely to be unbalanced (at least two arguments are
-        # already balanced) so the error bound is slightly better.
+        # already balanced) so the error bound is slightly better. Again,
+        # precision with g++ 32-bit is even worse.
         data(elliprg, 'ellint_rg_ipp-ellint_rg', (0, 1, 2), 3,
-             rtol=6.5e-16),
+             rtol=8.0e-16),
         data(elliprg, 'ellint_rg_xxx_ipp-ellint_rg_xxx', (0, 1, 2), 3,
              rtol=6e-16),
         data(elliprg, 'ellint_rg_xyy_ipp-ellint_rg_xyy', (0, 1, 2), 3,
-             rtol=6e-16),
+             rtol=7.5e-16),
         data(elliprg, 'ellint_rg_xy0_ipp-ellint_rg_xy0', (0, 1, 2), 3,
              rtol=5e-16),
         data(elliprg, 'ellint_rg_00x_ipp-ellint_rg_00x', (0, 1, 2), 3,
