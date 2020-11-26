@@ -356,7 +356,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 : array_like
         Initial guess.
     niter : integer, optional
-        The number of basin-hopping iterations
+        The number of basin-hopping iterations. There will be a total of
+        ``niter + 1`` runs of the local minimizer.
     T : float, optional
         The "temperature" parameter for the accept or reject criterion. Higher
         "temperatures" mean that larger jumps in function value will be
@@ -602,6 +603,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=10, callback=print_fun)
     at minimum 0.4159 accepted 1
+    at minimum 0.4159 accepted 1
     at minimum -0.9073 accepted 1
     at minimum -0.1021 accepted 1
     at minimum -0.1021 accepted 1
@@ -677,6 +679,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
                             accept_tests, disp=disp)
+
+    # The wrapped minimizer is called once during construction of
+    # BasinHoppingRunner, so run the callback
+    if callable(callback):
+        callback(bh.storage.minres.x, bh.storage.minres.fun, True)
 
     # start main iteration loop
     count, i = 0, 0

@@ -704,6 +704,8 @@ def correlation(u, v, w=None, centered=True):
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
+    centered : bool, optional
+        If True, `u` and `v` will be centered. Default is True.
 
     Returns
     -------
