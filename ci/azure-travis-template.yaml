@@ -163,7 +163,10 @@ steps:
       mv *.gcov "$RUN_DIR/"
       # Run codecov
       cd "$RUN_DIR"
-      codecov -X gcov
+      curl https://codecov.io/bash -o codecov-upload.sh
+      chmod +x codecov-upload.sh
+      # Skip running gcov since we have already done it
+      ./codecov-upload.sh -X gcov
     displayName: 'Upload coverage information'
 
 
