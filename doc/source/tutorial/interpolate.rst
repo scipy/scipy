@@ -147,6 +147,8 @@ that do not form a regular grid.
 Spline interpolation
 ====================
 
+.. _tutorial-interpolate_splXXX:
+
 Spline interpolation in 1-D: Procedural (interpolate.splXXX)
 ------------------------------------------------------------
 
@@ -222,6 +224,17 @@ example that follows.
    >>> plt.legend(['Cubic Spline', 'True'])
    >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
+   >>> plt.show()
+
+   All derivatives of spline
+
+   >>> yders = interpolate.spalde(xnew, tck)
+   >>> plt.figure()
+   >>> for i in range(len(yders[0])):
+   ...    plt.plot(xnew, [d[i] for d in yders], '--', label=f"{i} derivative")
+   >>> plt.legend()
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
+   >>> plt.title('All derivatives of a B-spline')
    >>> plt.show()
 
    Integral of spline
@@ -342,6 +355,7 @@ spline.
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
 
+.. _tutorial-interpolate_2d_spline:
 
 2-D spline representation: Procedural (:func:`bisplrep`)
 --------------------------------------------------------------------

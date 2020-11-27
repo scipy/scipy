@@ -195,7 +195,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
-    >>> plt.plot(xx, BSpline.basis_element(k:-k)(xx),
+    >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
     ...          'r-', lw=5, alpha=0.5)
     >>> c = ['b', 'g', 'c', 'k']
 

@@ -54,7 +54,7 @@ distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
 skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
-                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapz',
+                 'powerlognorm', 'powernorm', 'recipinvgauss', 'trapezoid',
                  'vonmises', 'vonmises_line',
                  'levy_stable', 'rv_histogram_instance']
 
@@ -64,7 +64,7 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
                      'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapz', 'vonmises', 'vonmises_line']
+                     'recipinvgauss', 'trapezoid', 'vonmises', 'vonmises_line']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending

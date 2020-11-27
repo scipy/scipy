@@ -130,9 +130,9 @@ else:
     from . import _distributor_init
 
     from scipy._lib import _pep440
-    if _pep440.parse(__numpy_version__) < _pep440.Version('1.14.5'):
+    if _pep440.parse(__numpy_version__) < _pep440.Version('1.16.5'):
         import warnings
-        warnings.warn("NumPy 1.14.5 or above is required for this version of "
+        warnings.warn("NumPy 1.16.5 or above is required for this version of "
                       "SciPy (detected version %s)" % __numpy_version__,
                       UserWarning)
 

@@ -116,6 +116,10 @@ def configuration(parent_package='', top_path=None):
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 
+    # HiGHS linear programming libraries and extensions
+    config.add_subpackage('_highs')
+    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
+
     config.add_data_dir('tests')
 
     # Add license files

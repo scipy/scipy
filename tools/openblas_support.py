@@ -33,7 +33,9 @@ sha256_vals = {
 'openblas-v0.3.9-win32-gcc_7_1_0.zip':
 '69a7dc265e8a8e45b358637d11cb1710ce88c4456634c7ce37d429b1d9bc9aaa',
 'openblas-v0.3.9-win_amd64-gcc_7_1_0.zip': 
-'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48'
+'0cea06f4a2afebaa6255854f73f237802fc6b58eaeb1a8b1c22d87cc399e0d48',
+'openblas-v0.3.9-manylinux2014_aarch64.tar.gz':
+'10d5ef5e9e19af5c199b59a17f43763e0c85ecf13cbc8f2d91e076f7847cdb5e'
 }
 
 IS_32BIT = sys.maxsize < 2**32

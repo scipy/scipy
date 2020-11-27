@@ -182,6 +182,7 @@ class TestRankData(object):
 
     methods = ["average", "min", "max", "dense", "ordinal"]
     dtypes = [np.float64] + [np.int_]*4
+
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
     def test_size_0_axis(self, axis, method, dtype):
