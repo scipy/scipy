@@ -226,6 +226,12 @@ class TestSLSQP(object):
         bnd = Bounds([0., 0.], [1.0, 1.0])
         minimize(f, x0, method='SLSQP', bounds=bnd, constraints=cns)
 
+        # now check that the system can deal with equal bounds as well
+        bnd = Bounds([1.0, 0.], [1.0, 1.0])
+        res = minimize(f, x0, method='SLSQP', bounds=bnd, constraints=cns)
+        assert res.x.size == 2
+        assert res.jac.size == 2
+
     def test_minimize_bound_equality_given2(self):
         # Minimize with method='SLSQP': bounds, eq. const., given jac. for
         # fun. and const.

@@ -22,7 +22,7 @@ from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function, _clip_x_for_func,
-                       _check_clip_x)
+                       _check_clip_x, _filter_params_func, _filter_params_jac)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -239,6 +239,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+
+    Notes
+    -----
+    If any of the lower bounds are equal to the upper bounds then the
+    corresponding entry in ``OptimizeResult.jac`` will be np.nan.
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
@@ -249,17 +254,50 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         iprint = 0
 
     # Transform x0 into an array.
-    x = asfarray(x0).flatten()
+    full_x0 = np.copy(asfarray(x0).flatten())
 
     # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
     # ScalarFunction
     if bounds is None or len(bounds) == 0:
-        new_bounds = (-np.inf, np.inf)
+        b = np.array([np.inf] * len(full_x0))
+        full_new_bounds = -b, b
     else:
-        new_bounds = old_bound_to_new(bounds)
+        full_new_bounds = old_bound_to_new(bounds)
 
     # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
-    x = np.clip(x, new_bounds[0], new_bounds[1])
+    full_x0 = np.clip(full_x0, full_new_bounds[0], full_new_bounds[1])
+
+    # Filter out parameters whose lower_bound == upper_bound.
+    # This definitely needs to be done when jacobians are estimated
+    # numerically. However, even if the user supplies a callable jacobian
+    # filtering is advised because some of the user supplied constraints may
+    # not have callable jacobians.
+    filtered_params = full_new_bounds[0] == full_new_bounds[1]
+
+    # factor parameters with equal bounds out of input array
+    x = full_x0[~filtered_params]
+
+    # factor equal_bounds out of bounds arrays
+    new_bounds = (
+        full_new_bounds[0][~filtered_params],
+        full_new_bounds[1][~filtered_params]
+    )
+
+    if filtered_params.any():
+        func = _filter_params_func(func, full_x0, filtered_params)
+        if callable(jac):
+            jac = _filter_params_jac(
+                _filter_params_func(jac, full_x0, filtered_params),
+                filtered_params
+            )
+        # deal with eps and finite_diff_rel_step that may be array-like
+        if np.asarray(eps).size == full_x0.size:
+            eps = np.asarray(eps)[~filtered_params]
+        if (finite_diff_rel_step is not None and
+            np.asarray(finite_diff_rel_step).size == full_x0.size
+        ):
+            finite_diff_rel_step = np.asarray(
+                finite_diff_rel_step)[~filtered_params]
 
     # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
@@ -284,6 +322,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check function
         if 'fun' not in con:
             raise ValueError('Constraint %d has no function defined.' % ic)
+        cfun = con['fun']
+        if filtered_params.any():
+            cfun = _filter_params_func(cfun, full_x0, filtered_params)
 
         # check Jacobian
         cjac = con.get('jac')
@@ -304,10 +345,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                                                  bounds=new_bounds)
 
                 return cjac
-            cjac = cjac_factory(con['fun'])
+            cjac = cjac_factory(cfun)
+        else:
+            if filtered_params.any():
+                cjac = _filter_params_jac(
+                    _filter_params_func(cjac, full_x0, filtered_params),
+                    filtered_params
+                )
 
         # update constraints' dictionary
-        cons[ctype] += ({'fun': con['fun'],
+        cons[ctype] += ({'fun': cfun,
                          'jac': cjac,
                          'args': con.get('args', ())}, )
 
@@ -346,30 +393,17 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     jw = zeros(len_jw)
 
     # Decompose bounds into xl and xu
-    if bounds is None or len(bounds) == 0:
-        xl = np.empty(n, dtype=float)
-        xu = np.empty(n, dtype=float)
-        xl.fill(np.nan)
-        xu.fill(np.nan)
-    else:
-        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
-                      for (l, u) in bounds], float)
-        if bnds.shape[0] != n:
-            raise IndexError('SLSQP Error: the length of bounds is not '
-                             'compatible with that of x0.')
+    with np.errstate(invalid='ignore'):
+        bnderr = full_new_bounds[0] > full_new_bounds[1]
 
-        with np.errstate(invalid='ignore'):
-            bnderr = bnds[:, 0] > bnds[:, 1]
+    if bnderr.any():
+        raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
+                         ', '.join(str(b) for b in bnderr))
+    xl, xu = new_bounds[0], new_bounds[1]
 
-        if bnderr.any():
-            raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
-        xl, xu = bnds[:, 0], bnds[:, 1]
-
-        # Mark infinite bounds with nans; the Fortran code understands this
-        infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = np.nan
-        xu[infbnd[:, 1]] = np.nan
+    # Mark infinite bounds with nans; the Fortran code understands this
+    xl[~isfinite(xl)] = np.nan
+    xu[~isfinite(xu)] = np.nan
 
     # ScalarFunction provides function and gradient evaluation
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
@@ -440,7 +474,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if majiter > majiter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
-                callback(np.copy(x))
+                new_x = np.copy(full_x0)
+                new_x[~filtered_params] = x
+                callback(new_x)
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
@@ -461,7 +497,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+    # re-expand x and gradient
+    full_x = np.copy(full_x0)
+    full_x[~filtered_params] = x
+    grad = np.empty_like(full_x)
+    grad[filtered_params] = np.nan
+    grad[~filtered_params] = g[:-1]
+
+    return OptimizeResult(x=full_x, fun=fx, jac=grad, nit=int(majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 

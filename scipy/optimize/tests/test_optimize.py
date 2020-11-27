@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import warnings
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_, assert_almost_equal,
@@ -2208,4 +2209,45 @@ def test_show_options():
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
         assert_raises(ValueError, show_options, solver, method)
-        
+
+
+@pytest.mark.parametrize('method', ['Powell', 'L-BFGS-B', 'SLSQP',
+                                    'trust-constr'])
+def test_equal_bounds(method):
+    """
+    Tests that minimizers still work if (bounds.lb == bounds.ub).any()
+    gh12502 - Divide by zero in Jacobian numerical differentiation when
+    equality bounds constraints are used.
+    """
+    def f(x):
+        return optimize.rosen([x, 2.0])
+
+    best_x = optimize.minimize_scalar(f, method="bounded", bounds=(0, 3.0))
+    x0 = np.array([0.5, 3.0])
+    bounds = [(0.0, 3.0), (2.0, 2.0)]
+
+    with warnings.catch_warnings(record=True):
+        # warning filter is for trust-constr
+        # UserWarning: delta_grad == 0.0.Check if the approximated
+        # function is linear.
+        warnings.simplefilter('ignore', category=UserWarning)
+
+        res = optimize.minimize(
+            optimize.rosen, x0, method=method, bounds=bounds,
+        )
+        assert res.success
+        assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
+        assert res.x.size == 2
+
+        if method not in ['Powell']:
+            # check that jacobian specification can work
+            res = optimize.minimize(
+                optimize.rosen, x0, jac=optimize.rosen_der, method=method,
+                bounds=bounds
+            )
+            assert res.success
+            assert_allclose(res.x, np.r_[best_x.x, 2.0], rtol=3e-6)
+            assert res.x.size == 2
+
+        if method in ['SLSQP', 'L-BFGS-B']:
+            assert res.jac.size == 2

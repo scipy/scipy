@@ -287,6 +287,24 @@ def _check_clip_x(x, bounds):
     return x
 
 
+def _filter_params_func(func, full_x, mask):
+    # Wraps a function expecting a full set of x0 into a function that
+    # accepts a reduced parameter set, based on a mask
+    def wrapped_func(x, *args):
+        expanded_x = np.copy(full_x)
+        expanded_x[~mask] = x
+        return func(expanded_x, *args)
+
+    return wrapped_func
+
+
+def _filter_params_jac(jac, mask):
+    def wrapped_func(x, *args):
+        g = jac(x, *args)
+        return g[~mask]
+    return wrapped_func
+
+
 def rosen(x):
     """
     The Rosenbrock function.

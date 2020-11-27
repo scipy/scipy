@@ -37,7 +37,8 @@ import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, _prepare_scalar_function)
+                       _check_unknown_options, _prepare_scalar_function,
+                       _filter_params_func, _filter_params_jac)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -268,34 +269,72 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     relationship between the two is ``ftol = factr * numpy.finfo(float).eps``.
     I.e., `factr` multiplies the default machine floating-point precision to
     arrive at `ftol`.
-
+    If any of the lower bounds are equal to the upper bounds then the
+    corresponding entry in ``OptimizeResult.jac`` will be np.nan.
     """
     _check_unknown_options(unknown_options)
     m = maxcor
     pgtol = gtol
     factr = ftol / np.finfo(float).eps
 
-    x0 = asarray(x0).ravel()
-    n, = x0.shape
+    full_x0 = asarray(x0).ravel()
 
     if bounds is None:
-        bounds = [(None, None)] * n
-    if len(bounds) != n:
+        bounds = [(-np.inf, np.inf)] * full_x0.size
+    if len(bounds) != full_x0.size:
         raise ValueError('length of x0 != length of bounds')
 
-    # unbounded variables must use None, not +-inf, for optimizer to work properly
-    bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
     # LBFGSB is sent 'old-style' bounds, 'new-style' bounds are required by
     # approx_derivative and ScalarFunction
-    new_bounds = old_bound_to_new(bounds)
+    full_new_bounds = old_bound_to_new(bounds)
+
+    # initial vector must lie within the bounds. Otherwise ScalarFunction and
+    # approx_derivative will cause problems
+    full_x0 = np.clip(full_x0, full_new_bounds[0], full_new_bounds[1])
+
+    # filter out parameters whose lower_bound == upper_bound. This only needs
+    # to be done if the jac needs to be estimated by finite differences.
+    if callable(jac):
+        filtered_params = np.zeros_like(full_x0, dtype=bool)
+    else:
+        filtered_params = full_new_bounds[0] == full_new_bounds[1]
+
+    x = full_x0[~filtered_params]
+    n, = x.shape
+
+    # if there are equal bounds then the user function has to be wrapped.
+    # This is done in a conditional clause because wrapped functions might
+    # be slower. At the moment there is no filtering of params if jac is
+    # callable.
+    if filtered_params.any():
+        fun = _filter_params_func(fun, full_x0, filtered_params)
+
+        # eps and finite_diff_rel_step that may be array-like, filter out
+        # values for entries that are fixed.
+        if np.asarray(eps).size == full_x0.size:
+            eps = np.asarray(eps)[~filtered_params]
+        if (finite_diff_rel_step is not None and
+            np.asarray(finite_diff_rel_step).size == full_x0.size
+        ):
+            finite_diff_rel_step = np.asarray(
+                finite_diff_rel_step)[~filtered_params]
+
+    # factor equal_bounds out of bounds arrays
+    new_bounds = (
+        full_new_bounds[0][~filtered_params],
+        full_new_bounds[1][~filtered_params]
+    )
 
     # check bounds
     if (new_bounds[0] > new_bounds[1]).any():
         raise ValueError("LBFGSB - one of the lower bounds is greater than an upper bound.")
 
-    # initial vector must lie within the bounds. Otherwise ScalarFunction and
-    # approx_derivative will cause problems
-    x0 = np.clip(x0, new_bounds[0], new_bounds[1])
+    # unbounded variables must use None, not +-inf, for optimizer
+    # to work properly
+    bounds = [
+        (None if l == -np.inf else l, None if u == np.inf else u)
+        for l, u in zip(new_bounds[0], new_bounds[1])
+    ]
 
     if disp is not None:
         if disp == 0:
@@ -303,7 +342,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
-    sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
+    sf = _prepare_scalar_function(fun, x, jac=jac, args=args, epsilon=eps,
                                   bounds=new_bounds,
                                   finite_diff_rel_step=finite_diff_rel_step)
 
@@ -331,7 +370,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     if not maxls > 0:
         raise ValueError('maxls must be positive.')
 
-    x = array(x0, float64)
+    x = array(x, float64)
     f = array(0.0, float64)
     g = zeros((n,), float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
@@ -362,7 +401,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # new iteration
             n_iterations += 1
             if callback is not None:
-                callback(np.copy(x))
+                new_x = np.copy(full_x0)
+                new_x[~filtered_params] = x
+                callback(new_x)
 
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
@@ -393,10 +434,26 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
     task_str = task_str.decode()
-    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
+
+    # re-expand x and gradient, there might have been equal_bounds
+    full_x = np.copy(full_x0)
+    full_x[~filtered_params] = x
+    grad = np.empty_like(full_x)
+    grad[filtered_params] = np.nan
+    grad[~filtered_params] = g
+    if filtered_params.any():
+        # expand hess_inv. Do this by setting increments in s and y for fixed
+        # values to 0.
+        s_amended = np.zeros((n_corrs, np.size(full_x0)))
+        y_amended = np.zeros_like(s_amended)
+        s_amended[:, ~filtered_params] = hess_inv.sk
+        y_amended[:, ~filtered_params] = hess_inv.yk
+        hess_inv = LbfgsInvHessProduct(s_amended, y_amended)
+
+    return OptimizeResult(fun=f, jac=grad, nfev=sf.nfev,
                           njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,
-                          x=x, success=(warnflag == 0), hess_inv=hess_inv)
+                          x=full_x, success=(warnflag == 0), hess_inv=hess_inv)
 
 
 class LbfgsInvHessProduct(LinearOperator):
