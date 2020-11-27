@@ -146,9 +146,7 @@ def test_cont_basic(distname, arg):
     elif distname == 'ksone':
         arg = (3,)
 
-    with npt.suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value")
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
+    check_named_args(distfn, x, arg, locscale_defaults, meths)
     check_random_state_property(distfn, arg)
     check_pickling(distfn, arg)
     check_freezing(distfn, arg)
@@ -187,7 +185,6 @@ def test_cont_basic(distname, arg):
 
     if distname not in skip_fit_fix_test:
         check_fit_args_fix(distfn, arg, rvs[0:200])
-
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 def test_rvs_scalar(distname, arg):
@@ -241,7 +238,6 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
         distname = 'rv_histogram_instance'
 
     with npt.suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value")
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
         if is_xfailing:

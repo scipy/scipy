@@ -1241,13 +1241,12 @@ class rv_generic(object):
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         arrs = tuple(map(np.asarray, [*args, loc, scale]))
-        arrs = tuple(map(np.atleast_1d, [*args, loc, scale]))
         arrs = np.broadcast_arrays(*arrs)
         args = arrs[:-2]
         loc, scale = arrs[-2], arrs[-1]
-        cond0 = (self._argcheck(*args) and scale <= 0)
+        cond0 = (self._argcheck(*args) and scale > 0)
+        cond1 = (loc != 0)
         output = zeros(loc.shape, dtype='d')
-        putmask(output, cond0, nan)
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
@@ -1263,16 +1262,17 @@ class rv_generic(object):
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        cond1 = (loc == 0)
-        mloc = loc.copy()
-        putmask(mloc, cond1, 1)
-        fac = scale / mloc
+        fac = _lazywhere(cond1, (scale, loc),
+                         lambda scale, loc: scale / loc, self.badvalue)
         for k in range(n):
             valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
             output += comb(n, k, exact=True)*fac**k * valk
-        output += fac**n * val
+        output = output + fac**n * val
         output = output * loc**n
-        putmask(output, cond1, scale**n * val)
+        output = np.where(cond1, output, scale**n * val)
+        output = np.where(cond0, output, self.badvalue)
+        if output.ndim == 0:
+            return output.item()
         return output
 
     def median(self, *args, **kwds):
