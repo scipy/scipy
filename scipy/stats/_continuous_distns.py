@@ -4314,8 +4314,8 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, beta, size=None, random_state=None):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (2/np.pi*(np.pi/2 + bTH)*tanTH -
-                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
+            return (2/np.pi*((np.pi/2 + bTH)*tanTH -
+                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH))))
 
         def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return (W/(cosTH/np.tan(aTH) + np.sin(TH)) *
