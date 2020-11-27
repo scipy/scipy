@@ -1266,7 +1266,7 @@ class rv_generic(object):
                          lambda scale, loc: scale / loc, self.badvalue)
         for k in range(n):
             valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-            output += comb(n, k, exact=True)*fac**k * valk
+            output = output + comb(n, k, exact=True)*fac**k * valk
         output = output + fac**n * val
         output = output * loc**n
         output = np.where(cond1, output, scale**n * val)
