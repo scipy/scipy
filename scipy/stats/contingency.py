@@ -5,7 +5,7 @@
 from functools import reduce
 import numpy as np
 from .stats import power_divergence
-
+import math
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency']
 
@@ -28,6 +28,7 @@ def margins(a):
 
     Examples
     --------
+    >>> from scipy.stats.contingency import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -130,7 +131,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         If True, *and* the degrees of freedom is 1, apply Yates' correction
         for continuity.  The effect of the correction is to adjust each
         observed value by 0.5 towards the corresponding expected value.
-    lambda_ : float or str, optional.
+    lambda_ : float or str, optional
         By default, the statistic computed in this test is Pearson's
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
@@ -271,3 +272,122 @@ def chi2_contingency(observed, correction=True, lambda_=None):
                                    lambda_=lambda_)
 
     return chi2, p, dof, expected
+
+def association(arr, chi2_stat, stat="cramer"):
+    """Calculates degree of association between variables
+    that are nominal or greater.
+
+    Allows for specification of one of four related methods,
+    Tschuprow's T, Pearson's Contingency Coefficient, Cramer's V and Phi.
+
+    Parameters
+    ----------
+    arr : array-like
+        The array of observed values
+    chi2_stat : float
+        The chi-squared statistic.
+    stat : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
+        The association test statistic.
+
+    Returns
+    -------
+    value : float
+        Value of the test statistic
+
+    Notes
+    ------
+    Cramer's V and Tschuprow's T measure degree to which two variables are
+    related, or the level of their association. This differs from correlation,
+    although many often mistakenly consider them equivalent.
+    Correlation measures in what way two variables are related, whereas,
+    association measures how related the variables are. As such, association
+    does not subsume independent variables, and is rather a
+    test of independence. A value of 1.0 indicates perfect association, and
+    0.0 means the variables have no association.
+
+    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient.
+    Moreover, due to the close relationship between the Cramer's V and
+    Tschuprow's T the returned values can often be similar or even equivalent.
+    They are likely to diverge more as the array shape diverges from a 2x2.
+
+    The evaluation of Pearsons Contingency Coefficient is not effected by the
+    bias correction metric, because it was not included as a
+    part of the supporting academic paper.
+
+    References
+    ----------
+    .. [1] "Tschuprow's T",
+           https://en.wikipedia.org/wiki/Tschuprow's_T
+    .. [2] Tschuprow, A. A. (1939)
+           Principles of the Mathematical Theory of Correlation;
+           translated by M. Kantorowitsch. W. Hodge & Co.
+    .. [3] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
+    .. [4] "Nominal Association: Phi and Cramer's V",
+           http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
+    .. [5] Gingrich, Paul, "Association Between Variables",
+           http://uregina.ca/~gingrich/ch11a.pdf
+
+
+    Examples
+    --------
+    2-way Example
+
+    >>> from scipy.stats.contingency import association, chi2_contingency
+    >>> obs = np.array([[100, 150], [203, 322], [42, 7], [32, 21]])
+    >>> chi2 = chi2_contingency(obs)[0]
+
+    Pearson's contingency coefficient
+    
+    >>> association(obs, chi2, stat="C")
+    0.22768
+
+    Cramer's V
+
+    >>> association(obs, chi2, stat="V")
+    0.23382
+
+    Tschuprow's T
+
+    >>> association(obs, chi2, stat="T")
+    0.17766
+
+    Phi
+
+    >>> association(obs, chi2, stat="phi")
+    0.23382
+    """
+    arr = np.asarray(arr)
+
+    if stat.lower() not in ['tschuprow', "pearson", 'cramer', 'phi',
+                            't', 'c', 'v']:
+        raise ValueError("stat must be in "
+                         "['tschuprow', 'cramer', 'pearson', 'phi']")
+    else:
+        stat_str = stat.lower()
+
+    if len(arr.shape) != 2:
+        raise ValueError("method only accepts 2d arrays")
+
+    else:
+        try:
+            chi2_stat = float(chi2_stat)
+        except ValueError:
+            raise ValueError("Invalid chi2_stat, must be float or int")
+        else:
+            phi2 = chi2_stat / sum(arr.flatten())
+
+            n_rows, n_cols = arr.shape
+
+            if stat_str == "cramer" or stat_str == 'v':
+                value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
+            elif stat_str == "tschuprow" or stat_str == 't':
+                value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
+            elif stat_str == 'pearson' or stat_str == 'c':
+                value = math.sqrt(phi2 / (1 + phi2))
+            elif stat_str == "phi":
+                value = math.sqrt(phi2)
+            else:
+                raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+
+            return value
+

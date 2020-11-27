@@ -2,9 +2,9 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
          assert_array_almost_equal, assert_approx_equal, assert_allclose)
 from pytest import raises as assert_raises
-
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import margins, expected_freq, \
+    chi2_contingency, association
 
 
 def test_margins():
@@ -196,3 +196,62 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
+def test_bad_association_args():
+    # Invalid Chi Squared Stat Value Type
+    assert_raises(ValueError, association, [[1, 2], [3, 4]], "x", "tschuprow")
+    # Invalid Test Statistic
+    assert_raises(ValueError, association, [[1, 2], [3, 4]], 2.55, "X")
+    # Invalid array shape
+    assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], 2.55, "cramer")
+
+
+def test_cramersv():
+    # 2d Array
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    chi2 = chi2_contingency(obs)[0]
+    a = association(obs, chi2_stat=chi2,
+                    stat='v')
+
+    correct = 0.09222412010290792
+    assert_approx_equal(a, correct)
+
+
+def test_tschuprowst():
+    # 2d Array
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    chi2 = chi2_contingency(obs)[0]
+    a = association(obs, chi2_stat=chi2,
+                    stat='t')
+    correct = 0.0775509319944633
+    assert_approx_equal(a, correct)
+
+
+def test_phi():
+    # 2d Array
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+
+    chi2 = chi2_contingency(obs)[0]
+    a = association(obs, chi2_stat=chi2,
+                    stat='phi')
+    correct = 0.1304246014274576
+    assert_approx_equal(a, correct)
+
+
+def test_c():
+    # 2d Array
+
+    obs = np.array([[12, 13, 14, 15, 16],
+                    [17, 16, 18, 19, 11],
+                    [9, 15, 14, 12, 11]])
+    chi2 = chi2_contingency(obs)[0]
+    a = association(obs, chi2_stat=chi2,
+                    stat='c')
+    correct = 0.12932925727138758
+    assert_approx_equal(a, correct)

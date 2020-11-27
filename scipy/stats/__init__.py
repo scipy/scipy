@@ -82,7 +82,6 @@ Continuous distributions
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
-   laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
    levy_l
    levy_stable
@@ -341,6 +340,7 @@ Contingency table functions
    chi2_contingency
    contingency.expected_freq
    contingency.margins
+   contingency.association
    fisher_exact
 
 Plot-tests
@@ -394,8 +394,9 @@ from .morestats import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
-from .contingency import chi2_contingency
 from ._multivariate import *
+from . import contingency
+from .contingency import chi2_contingency
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
