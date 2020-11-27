@@ -550,7 +550,8 @@ class TestLaplaceasymmetric(object):
         isf1 = stats.laplace_asymmetric.isf(sf2, kappa)
         isf2 = points
         assert_allclose(np.concatenate((pdf1, cdf1, sf1, ppf1, isf1)),
-                        np.concatenate((pdf1, cdf1, sf2, ppf2, isf2)))
+                        np.concatenate((pdf2, cdf2, sf2, ppf2, isf2)))
+
 
 class TestTruncnorm(object):
     def setup_method(self):
