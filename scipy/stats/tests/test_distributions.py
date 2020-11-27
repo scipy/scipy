@@ -518,6 +518,40 @@ class TestHalfgennorm(object):
         assert_almost_equal(pdf1, 2*pdf2)
 
 
+class TestLaplaceasymmetric(object):
+    def test_laplace(self):
+        # test against Laplace (special case for kappa=1)
+        points = np.array([1, 2, 3])
+        pdf1 = stats.laplace_asymmetric.pdf(points, 1)
+        pdf2 = stats.laplace.pdf(points)
+        assert_allclose(pdf1, pdf2)
+
+    def test_asymmetric_laplace_pdf(self):
+        # test assymetric Laplace
+        points = np.array([1, 2, 3])
+        kappa = 2
+        kapinv = 1/kappa
+        pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
+        pdf2 = stats.laplace_asymmetric.pdf(points*(kappa**2), kapinv)
+        assert_allclose(pdf1, pdf2)
+
+    def test_asymmetric_laplace_log_10_16(self):
+        # test assymetric Laplace
+        points = np.array([-np.log(16), np.log(10)])
+        kappa = 2
+        pdf1 = stats.laplace_asymmetric.pdf(points, kappa)
+        cdf1 = stats.laplace_asymmetric.cdf(points, kappa)
+        sf1 = stats.laplace_asymmetric.sf(points, kappa)
+        pdf2 = np.array([1/10, 1/250])
+        cdf2 = np.array([1/5, 1 - 1/500])
+        sf2 = np.array([4/5, 1/500])
+        ppf1 = stats.laplace_asymmetric.ppf(cdf2, kappa)
+        ppf2 = points
+        isf1 = stats.laplace_asymmetric.isf(sf2, kappa)
+        isf2 = points
+        assert_allclose(np.concatenate((pdf1, cdf1, sf1, ppf1, isf1)),
+                        np.concatenate((pdf1, cdf1, sf2, ppf2, isf2)))
+
 class TestTruncnorm(object):
     def setup_method(self):
         np.random.seed(1234)
