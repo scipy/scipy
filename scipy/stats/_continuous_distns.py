@@ -4095,8 +4095,8 @@ class laplace_asymmetric_gen(rv_continuous):
 
     .. math::
 
-        f(x, \kappa) &= \frac{1}{\kappa+\kappa^{-1}}\exp(-x\kappa),\quad x\ge0\\
-                     &= \frac{1}{\kappa+\kappa^{-1}}\exp(x/\kappa),\quad x<0\\
+       f(x, \kappa) &= \frac{1}{\kappa+\kappa^{-1}}\exp(-x\kappa),\quad x\ge0\\
+                    &= \frac{1}{\kappa+\kappa^{-1}}\exp(x/\kappa),\quad x<0\\
 
     for :math:`-\infty < x < \infty`, :math:`\kappa > 0`.
 
