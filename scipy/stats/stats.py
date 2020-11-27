@@ -4591,10 +4591,10 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
     behavior with default parameters.
 
-    Note that if you are computing the weighted :math:`\tau` on arrays of
-    ranks, rather than of scores (i.e., a larger value implies a lower
-    rank) you must negate the ranks, so that elements of higher rank are
-    associated with a larger value.
+    Note that the inputs `x` and `y` must be scores, not ranks.
+    If you are working with arrays of ranks rather than
+    arrays of scores, negate the ranks so that elements
+    of lower rank are associated with higher (less negative) scores.
 
     Parameters
     ----------
