@@ -3299,8 +3299,8 @@ class gausshyper_gen(rv_continuous):
 
         f(x, a, b, c, z) = C x^{a-1} (1-x)^{b-1} (1+zx)^{-c}
 
-    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, and
-    :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
+    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, :math:`z > -1`,
+    and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
     :math:`F[2, 1]` is the Gauss hypergeometric function
     `scipy.special.hyp2f1`.
 
@@ -3309,11 +3309,19 @@ class gausshyper_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
+           Queues." *Journal of the Royal Statistical Society*. Series D (The
+           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+
     %(example)s
 
     """
+
     def _argcheck(self, a, b, c, z):
-        return (a > 0) & (b > 0) & (c == c) & (z == z)
+        # z > -1 per gh-10134
+        return (a > 0) & (b > 0) & (c == c) & (z > -1)
 
     def _pdf(self, x, a, b, c, z):
         # gausshyper.pdf(x, a, b, c, z) =
