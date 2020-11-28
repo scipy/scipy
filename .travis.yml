@@ -49,12 +49,6 @@ matrix:
         - NUMPYSPEC="numpy"
         - TEST_GROUP_COUNT=2
         - TEST_GROUP=2
-    - python: 3.7
-      name: "Coverage, Full test suite"
-      env:
-        - TESTMODE=full
-        - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="numpy==1.18.5"
     # Test SciPy with the debug version of Python.
     # However travis only specifies regular or development builds of Python
     # so we must install python3.6-dbg using apt.
@@ -71,42 +65,6 @@ matrix:
             - *common_packages
             - python3.7-dbg
             - python3.7-dev
-    - python: 3.8
-      name: "Pre-release Deps, 64-bit BLAS"
-      env:
-        - TESTMODE=full
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        - OTHERSPEC="--pre --upgrade --timeout=60"
-        - NPY_USE_BLAS_ILP64=1
-    - python: 3.7
-      name: "Source Distribution"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="numpy==1.17.4"
-        - USE_SDIST=1
-    - python: 3.7
-      name: "Wheel, Optimised, GCC 4.8"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - *common_packages
-            - g++-4.8
-            - gcc-4.8
-      env:
-        # GCC 4.8 is used by manylinux1 wheel builds
-        - CC="gcc-4.8"
-        - CXX="g++-4.8"
-        - TESTMODE=fast
-        - COVERAGE=
-        - USE_WHEEL=1
-        - NUMPYSPEC="numpy==1.16.5"
-        # The following is needed for optimized "-OO" test run but since we use
-        # pytest-xdist plugin for load scheduling its workers don't pick up the
-        # flag. This environment variable starts all Py instances in -OO mode.
-        - PYTHONOPTIMIZE=2
     - python: 3.7
       name: "Power PC"
       os: linux

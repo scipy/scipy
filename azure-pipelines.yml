@@ -22,10 +22,16 @@ pr:
 # and should be updated to match scipy-wheels as appropriate
 variables:
     openblas_version: 0.3.9
+    pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
+    CCACHE_DIR: $(Pipeline.Workspace)/ccache
+    SCIPY_AVAILABLE_MEM: 3G
+    NPY_NUM_BUILD_JOBS: 2
+    CCACHE_COMPRESS: 1
+    # Using a single thread can actually speed up some computations
+    OPENBLAS_NUM_THREADS: 1
 
 jobs:
 - job: pre_release_deps_source_dist
-  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-18.04'
   steps:
@@ -34,46 +40,26 @@ jobs:
       versionSpec: '3.7'
       addToPath: true
       architecture: 'x64'
-  - script: >-
-      python -m pip install --upgrade
-      pip==20.2.4
-      setuptools
-      wheel
-    displayName: 'Install deps'
-    failOnStderr: true
-  - script: >-
-      python -m pip install --pre --upgrade --timeout=60
-      cython
-      mpmath
-      pybind11
-      pytest
-      pytest-xdist
-    displayName: 'Install pre-release deps'
-    failOnStderr: true
-  - script: |
-      python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-    displayName: 'Install pre-release NumPy wheel'
-    failOnStderr: true
-  - script: |
-        git submodule init
-        git submodule update
-        python tools/suppress_output.py python setup.py sdist
-        cd dist
-        python -m pip install $PWD/scipy* -v
-        cd ..
-    displayName: 'SciPy sdist install'
-    failOnStderr: false
-  - script: |
-        python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
-        tools/validate_runtests_log.py fast < runtests.log
-    displayName: 'Run Fast SciPy tests'
-    failOnStderr: true
-  - script: |
-         ./tools/check_pyext_symbol_hiding.sh build
-    displayName: 'Check dynamic symbol hiding works on Linux'
-    failOnStderr: true
-- job: refguide_asv_check
-  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "--pre --upgrade --timeout=60 -i $(PRE_WHEELS) numpy"
+      other_spec: "--pre --upgrade --timeout=60"
+- job: coverage_full_tests
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: full
+      coverage: true
+      numpy_spec: "numpy==1.18.5"
+- job: prerelease_deps_64bit_blas
   pool:
     vmImage: 'ubuntu-18.04'
   steps:
@@ -82,49 +68,69 @@ jobs:
       versionSpec: '3.8'
       addToPath: true
       architecture: 'x64'
-  - script: >-
-      python -m pip install
-      asv>=0.4.1
-      cython
-      matplotlib
-      numpy
-      numpydoc
-      pip==20.2.4
-      pybind11
-      pytest
-      pytest-xdist
-      setuptools
-      Sphinx==1.7.2
-      wheel
-    displayName: 'Install deps'
-    failOnStderr: true
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: full
+      numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+      other_spec: "--pre --upgrade --timeout=60"
+      use_64bit_blas: true
+- job: refguide_asv_check
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "--upgrade numpy"
+      refguide_check: true
+      asv_check: true
+      use_wheel: true
+- job: source_distribution
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "numpy==1.17.4"
+      use_sdist: true
+- job: wheel_optimized_gcc48
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    # The following is needed for optimized "-OO" test run but since we use
+    # pytest-xdist plugin for load scheduling its workers don't pick up the
+    # flag. This environment variable starts all Py instances in -OO mode.
+    PYTHONOPTIMIZE: 2
+    # Use gcc version 4.8
+    CC: gcc-4.8
+    CXX: g++-4.8
+  steps:
   - script: |
-      sudo apt-get install -y wamerican-small
-    displayName: 'Install word list (for csgraph tutorial)'
-  - script: |
-        # this step naturally writes to stderr, even on success
-        python tools/suppress_output.py python setup.py build
-        python tools/suppress_output.py pip wheel --no-build-isolation .
-        pip install --no-cache-dir scipy*.whl
-    displayName: 'Build/Install SciPy Wheel'
-    failOnStderr: false
-  - script: |
-        python -u runtests.py -g -j2 -m fast -n -- -rfEX --durations=10 2>&1 | tee runtests.log
-        tools/validate_runtests_log.py fast < runtests.log
-    displayName: 'Run Fast SciPy tests'
-    failOnStderr: true
-  - script: |
-        python runtests.py -g --refguide-check
-    displayName: 'Run refguide check'
-    failOnStderr: false
-  - script: |
-        cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
-    displayName: 'Run asv check'
-    failOnStderr: true
-  - script: |
-         ./tools/check_pyext_symbol_hiding.sh build
-    displayName: 'Check dynamic symbol hiding works on Linux'
-    failOnStderr: true
+      set -e
+      sudo apt update -y
+      sudo apt install -y g++-4.8 gcc-4.8
+    displayName: 'Install GCC 4.8'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "numpy==1.16.5"
+      use_wheel: true
 - job: Lint
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
