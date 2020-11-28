@@ -6516,12 +6516,12 @@ def _compute_prob_inside_method(m, n, g, h):
     # This is an integer calculation, but the entries are essentially
     # binomial coefficients, hence grow quickly.
     # Scaling after each column is computed avoids dividing by a
-    # large binomial coefficent at the end, but is not sufficient to avoid
+    # large binomial coefficient at the end, but is not sufficient to avoid
     # the large dyanamic range which appears during the calculation.
     # Instead we rescale based on the magnitude of the right most term in
     # the column and keep track of an exponent separately and apply
     # it at the end of the calculation.  Similarly when multiplying by
-    # the binomial coefficint
+    # the binomial coefficient
     dtype = np.float64
     A = np.zeros(lenA, dtype=dtype)
     # Initialize the first column
@@ -6535,7 +6535,7 @@ def _compute_prob_inside_method(m, n, g, h):
         minj = min(minj, n)
         maxj = min(int(np.ceil((ng * i + h) / mg)), n + 1)
         if maxj <= minj:
-            return 0
+            return 0, 0
         # Now fill in the values
         A[0:maxj - minj] = np.cumsum(A[minj - lastminj:maxj - lastminj])
         curlen = maxj - minj
@@ -6555,13 +6555,22 @@ def _compute_prob_inside_method(m, n, g, h):
     val = A[maxj - minj - 1]
     # Now divide by the binomial (m+n)!/m!/n!
     for i in range(1, n + 1):
-        val = (val * i) / (m + i)
+        val *= i / (m + i)
         _, valexpt = math.frexp(val)
         if valexpt < -128:
             val = np.ldexp(val, -valexpt)
             expnt += valexpt
     # Finally scale if needed.
-    return np.ldexp(val, expnt)
+    prob = np.ldexp(val, expnt)
+    # How much precision does prob have?
+    # The relative error from the binomial division should be
+    # at most gamma_n = n*eps/(1-n*eps), most likely less.
+    # [Nicholas J. Higham. Accuracy and stability of numerical algorithms]
+    # Each iteration of A involves a cumsum of positive non-decreasing floats.
+    # Some error also does come into the calculation of A.
+    neps = n * np.finfo(float).eps
+    relative_error = neps / (1 - neps)
+    return prob, relative_error
 
 
 def _compute_prob_outside_square(n, h):
@@ -6651,6 +6660,7 @@ def _count_paths_outside_method(m, n, g, h):
     mg = m // g
     ng = n // g
 
+    _MAX_EXPABLE = np.log(np.finfo(float).max)
     # Not every x needs to be considered.
     # xj holds the list of x values to be checked.
     # Wherever n*x/m + ng*h crosses an integer
@@ -6660,6 +6670,9 @@ def _count_paths_outside_method(m, n, g, h):
     # B[j] == B(x_j, j)
     if lxj == 0:
         return np.round(special.binom(m + n, n))
+    if -special.betaln(m, lxj) > _MAX_EXPABLE:
+        # The computation will overflow, raise Exception now
+        raise FloatingPointError()
     B = np.zeros(lxj)
     B[0] = 1
     # Compute the B(x, y) terms
@@ -6706,7 +6719,13 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
             if n1 == n2:
                 prob = _compute_prob_outside_square(n1, h)
             else:
-                prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+                complementary_prob, relative_error = _compute_prob_inside_method(n1, n2, g, h)
+                # Computing prob as 1-complementary_prob can result in large
+                # subtractive cancellation.  If that possibly occurred, declare
+                # prob to have lost all precision and raise FloatingPointError
+                if complementary_prob * (1 + relative_error) >= 1.0:
+                    raise FloatingPointError
+                prob = 1 - complementary_prob
         else:
             if n1 == n2:
                 # prob = binom(2n, n-h) / binom(2n, n)
@@ -6727,7 +6746,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 
     if saw_fp_error:
         return False, d, np.nan
-    if not (0 <= prob <= 1):
+    if not (0 <= prob < 1):
         return False, d, prob
     return True, d, prob
 
@@ -6787,7 +6806,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     are the same.
 
     If the mode is 'auto', the computation is exact if the sample sizes are
-    less than 10000.  For larger sizes, the computation uses the
+    less than 5000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
     The 'two-sided' 'exact' computation computes the complementary probability
@@ -6840,7 +6859,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
-    MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
+    MAX_AUTO_N = 5000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
     if np.ma.is_masked(data1):
         data1 = data1.compressed()
     if np.ma.is_masked(data2):
@@ -6885,7 +6904,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
                               f"Switching to mode={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
-        # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
+        # The product n1*n2 is large.  Use Smirnov's asymptotic formula.
         # Ensure float to avoid overflow in multiplication
         # sorted because the one-sided formula is not symmetric in n1, n2
         m, n = sorted([float(n1), float(n2)], reverse=True)

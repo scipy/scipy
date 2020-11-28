@@ -3473,6 +3473,17 @@ class TestKSTwoSamples(object):
         stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
 
+    def test_gh12999(self):
+        np.random.seed(123456)
+        for x in range(1000, 12000, 1000):
+            vals1 = np.random.normal(100, 10, x)
+            vals2 = np.random.normal(95, 10, x+10)
+            ans1 = stats.ks_2samp(vals1, vals2)
+            ans2 = stats.ks_2samp(vals1, vals2, mode='asymp')
+            # these two p-values should be in line with each other
+            assert_allclose(ans1.pvalue, ans2.pvalue)
+            assert_allclose(ans2.pvalue, ans1.pvalue)
+
 
 def test_ttest_rel():
     # regression test
