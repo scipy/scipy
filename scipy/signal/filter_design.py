@@ -2215,7 +2215,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         if wp[0] < 0 or ws[0] < 0:
             raise ValueError("Values for wp, ws can't be negative")
         elif 1 < wp[1] or 1 < ws[1]:
-            raise ValueError("Values for wp, ws can't be above 1")
+            raise ValueError("Values for wp, ws can't be larger than 1")
         elif not((ws[0] < wp[0] and wp[1] < ws[1]) or
             (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"

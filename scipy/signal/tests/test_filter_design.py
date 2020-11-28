@@ -3690,7 +3690,7 @@ class TestIIRDesign(object):
                       np.array([[0.4, 0.5], [0.4, 0.5]]), 1, 40)
         with pytest.raises(ValueError, match="can't be negative"):
             iirdesign([0.1, 0.3], [-0.1, 0.5], 1, 40)
-        with pytest.raises(ValueError, match="can't be above 1"):
+        with pytest.raises(ValueError, match="can't be larger than 1"):
             iirdesign([0.1, 1.3], [0.1, 0.5], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.1, 0.4], [0.5, 0.6], 1, 40)
