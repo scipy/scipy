@@ -277,6 +277,7 @@ def check_pickling(distfn, args):
     # save the random_state (restore later)
     rndm = distfn.random_state
 
+    # check unfrozen
     distfn.random_state = 1234
     distfn.rvs(*args, size=8)
     s = pickle.dumps(distfn)
@@ -291,6 +292,15 @@ def check_pickling(distfn, args):
     npt.assert_equal(medians[0], medians[1])
     npt.assert_equal(distfn.cdf(medians[0], *args),
                      unpickled.cdf(medians[1], *args))
+
+    # check frozen pickling/unpickling with rvs
+    frozen_dist = distfn(*args)
+    pkl = pickle.dumps(frozen_dist)
+    unpickled = pickle.loads(pkl)
+
+    r0 = frozen_dist.rvs(size=8)
+    r1 = unpickled.rvs(size=8)
+    npt.assert_equal(r0, r1)
 
     # restore the random_state
     distfn.random_state = rndm
@@ -317,4 +327,4 @@ def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
         rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
         np.random.seed(123)
         expected = rvs(*allargs)
-        assert_allclose(sample, expected, rtol=1e-15)
+        assert_allclose(sample, expected, rtol=1e-13)

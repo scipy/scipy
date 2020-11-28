@@ -475,7 +475,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-
+    
+    # Remove potential trailing whitespace
+    line = line.strip()
+    
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer

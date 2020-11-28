@@ -273,8 +273,8 @@ class interp2d(object):
             raise ValueError("x and y should both be 1-D arrays")
 
         if not assume_sorted:
-            x = np.sort(x)
-            y = np.sort(y)
+            x = np.sort(x, kind="mergesort")
+            y = np.sort(y, kind="mergesort")
 
         if self.bounds_error or self.fill_value is not None:
             out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
@@ -334,9 +334,6 @@ class interp1d(_Interpolator1D):
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
-    Note that calling `interp1d` with NaNs present in input values results in
-    undefined behaviour.
-
     Parameters
     ----------
     x : (N,) array_like
@@ -345,14 +342,16 @@ class interp1d(_Interpolator1D):
         A N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`.
     kind : str or int, optional
-        Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',
-        'previous', 'next', where 'zero', 'slinear', 'quadratic' and 'cubic'
-        refer to a spline interpolation of zeroth, first, second or third
-        order; 'previous' and 'next' simply return the previous or next value
-        of the point) or as an integer specifying the order of the spline
-        interpolator to use.
-        Default is 'linear'.
+        Specifies the kind of interpolation as a string or as an integer
+        specifying the order of the spline interpolator to use.
+        The string has to be one of 'linear', 'nearest', 'nearest-up', 'zero',
+        'slinear', 'quadratic', 'cubic', 'previous', or 'next'. 'zero',
+        'slinear', 'quadratic' and 'cubic' refer to a spline interpolation of
+        zeroth, first, second or third order; 'previous' and 'next' simply
+        return the previous or next value of the point; 'nearest-up' and
+        'nearest' differ when interpolating half-integers (e.g. 0.5, 1.5)
+        in that 'nearest-up' rounds up and 'nearest' rounds down. Default
+        is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
         Interpolation defaults to the last axis of `y`.
@@ -400,6 +399,15 @@ class interp1d(_Interpolator1D):
     UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
     interp2d : 2-D interpolation
 
+    Notes
+    -----
+    Calling `interp1d` with NaNs present in input values results in
+    undefined behaviour.
+
+    Input values `x` and `y` must be convertible to `float` values like
+    `int` or `float`.
+
+
     Examples
     --------
     >>> import matplotlib.pyplot as plt
@@ -430,14 +438,15 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest', 'previous', 'next'):
+        elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
+                          'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
         if not assume_sorted:
-            ind = np.argsort(x)
+            ind = np.argsort(x, kind="mergesort")
             x = x[ind]
             y = np.take(y, ind, axis=axis)
 
@@ -465,13 +474,22 @@ class interp1d(_Interpolator1D):
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
         # collection.  See: https://docs.python.org/reference/datamodel.html
-        if kind in ('linear', 'nearest', 'previous', 'next'):
+        if kind in ('linear', 'nearest', 'nearest-up', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
             if kind == 'nearest':
                 # Do division before addition to prevent possible integer
                 # overflow
+                self._side = 'left'
+                self.x_bds = self.x / 2.0
+                self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
+
+                self._call = self.__class__._call_nearest
+            elif kind == 'nearest-up':
+                # Do division before addition to prevent possible integer
+                # overflow
+                self._side = 'right'
                 self.x_bds = self.x / 2.0
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
@@ -616,7 +634,7 @@ class interp1d(_Interpolator1D):
         #    would be inserted.
         #    Note: use side='left' (right) to searchsorted() to define the
         #    halfway point to be nearest to the left (right) neighbor
-        x_new_indices = searchsorted(self.x_bds, x_new, side='left')
+        x_new_indices = searchsorted(self.x_bds, x_new, side=self._side)
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
         x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)

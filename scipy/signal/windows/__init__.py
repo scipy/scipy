@@ -32,6 +32,7 @@ The suite of window functions for filtering and spectral estimation.
    kaiser            -- Kaiser window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
+   taylor            -- Taylor window
    triang            -- Triangular window
    tukey             -- Tukey window
 
@@ -43,4 +44,4 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'general_cosine',
            'general_hamming', 'chebwin', 'cosine', 'hann',
-           'exponential', 'tukey', 'get_window', 'dpss']
+           'exponential', 'tukey', 'taylor', 'get_window', 'dpss']

@@ -13,9 +13,9 @@ import inspect
 from itertools import zip_longest
 
 from scipy._lib import doccer
+from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
-from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
@@ -411,6 +411,19 @@ def _kurtosis(data):
     return m4 / m2**2 - 3
 
 
+def _fit_determine_optimizer(optimizer):
+    if not callable(optimizer) and isinstance(optimizer, str):
+        if not optimizer.startswith('fmin_'):
+            optimizer = "fmin_"+optimizer
+        if optimizer == 'fmin_':
+            optimizer = 'fmin'
+        try:
+            optimizer = getattr(optimize, optimizer)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+    return optimizer
+
+
 # Frozen RV class
 class rv_frozen(object):
 
@@ -560,12 +573,22 @@ def _ncx2_log_pdf(x, df, nc):
     df2 = df/2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
     res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    res += np.log(ive(df2, xs*ns) / 2.0)
-    return res
+    corr = ive(df2, xs*ns) / 2.0
+    # Return res + np.log(corr) avoiding np.log(0)
+    return _lazywhere(
+        corr > 0,
+        (res, corr),
+        f=lambda r, c: r + np.log(c),
+        fillvalue=-np.inf)
 
 
 def _ncx2_pdf(x, df, nc):
-    return np.exp(_ncx2_log_pdf(x, df, nc))
+    # Copy of _ncx2_log_pdf avoiding np.log(0) when corr = 0
+    df2 = df/2.0 - 1.0
+    xs, ns = np.sqrt(x), np.sqrt(nc)
+    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
+    corr = ive(df2, xs*ns) / 2.0
+    return np.exp(res) * corr
 
 
 def _ncx2_cdf(x, df, nc):
@@ -618,22 +641,54 @@ class rv_generic(object):
     def random_state(self, seed):
         self._random_state = check_random_state(seed)
 
-    def __getstate__(self):
-        return self._updated_ctor_param(), self._random_state
-
     def __setstate__(self, state):
-        ctor_param, r = state
-        self.__init__(**ctor_param)
-        self._random_state = r
-        return self
+        try:
+            self.__dict__.update(state)
+            # attaches the dynamically created methods on each instance.
+            # if a subclass overrides rv_generic.__setstate__, or implements
+            # it's own _attach_methods, then it must make sure that
+            # _attach_argparser_methods is called.
+            self._attach_methods()
+        except ValueError:
+            # reconstitute an old pickle scipy<1.6, that contains
+            # (_ctor_param, random_state) as state
+            self._ctor_param = state[0]
+            self._random_state = state[1]
+            self.__init__()
+
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_* instance.
+
+        This method must be overridden by subclasses, and must itself call
+         _attach_argparser_methods. This method is called in __init__ in
+         subclasses, and in __setstate__
+        """
+        raise NotImplementedError
+
+    def _attach_argparser_methods(self):
+        """
+        Generates the argument-parsing functions dynamically and attaches
+        them to the instance.
+
+        Should be called from `_attach_methods`, typically in __init__ and
+        during unpickling (__setstate__)
+        """
+        ns = {}
+        exec(self._parse_arg_template, ns)
+        # NB: attach to the instance, not class
+        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
+            setattr(self, name, types.MethodType(ns[name], self))
 
     def _construct_argparser(
             self, meths_to_inspect, locscale_in, locscale_out):
-        """Construct the parser for the shape arguments.
+        """Construct the parser string for the shape arguments.
 
-        Generates the argument-parsing functions dynamically and attaches
-        them to the instance.
-        Is supposed to be called in __init__ of a class for each distribution.
+        This method should be called in __init__ of a class for each
+        distribution. It creates the `_parse_arg_template` attribute that is
+        then used by `_attach_argparser_methods` to dynamically create and
+        attach the `_parse_args`, `_parse_args_stats`, `_parse_args_rvs`
+        methods to the instance.
 
         If self.shapes is a non-empty string, interprets it as a
         comma-separated list of shape parameters.
@@ -697,11 +752,9 @@ class rv_generic(object):
                    locscale_in=locscale_in,
                    locscale_out=locscale_out,
                    )
-        ns = {}
-        exec(parse_arg_template % dct, ns)
-        # NB: attach to the instance, not class
-        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self, name, types.MethodType(ns[name], self))
+
+        # this string is used by _attach_argparser_methods
+        self._parse_arg_template = parse_arg_template % dct
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
@@ -1052,7 +1105,7 @@ class rv_generic(object):
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = []
-        default = valarray(shape(cond), self.badvalue)
+        default = np.full(shape(cond), fill_value=self.badvalue)
 
         # Use only entries that are valid in calculation
         if np.any(cond):
@@ -1622,25 +1675,12 @@ class rv_continuous(rv_generic):
         self.xtol = xtol
         self.moment_type = momtype
         self.shapes = shapes
+        self.extradoc = extradoc
+
         self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
                                   locscale_in='loc=0, scale=1',
                                   locscale_out='loc, scale')
-
-        # nin correction
-        self._ppfvec = vectorize(self._ppf_single, otypes='d')
-        self._ppfvec.nin = self.numargs + 1
-        self.vecentropy = vectorize(self._entropy, otypes='d')
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self._cdfvec.nin = self.numargs + 1
-
-        self.extradoc = extradoc
-        if momtype == 0:
-            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
-        else:
-            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
-        # Because of the *args argument of _mom0_sc, vectorize cannot count the
-        # number of arguments correctly.
-        self.generic_moment.nin = self.numargs + 1
+        self._attach_methods()
 
         if longname is None:
             if name[0] in ['aeiouAEIOU']:
@@ -1660,10 +1700,42 @@ class rv_continuous(rv_generic):
                 dct = dict(distcont)
                 self._construct_doc(docdict, dct.get(self.name))
 
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+
+        # these methods will be remade in __setstate__
+        # _random_state attribute is taken care of by rv_generic
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
+                 "_cdfvec", "_ppfvec", "vecentropy", "generic_moment"]
+        [dct.pop(attr, None) for attr in attrs]
+        return dct
+
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_continuous instance
+        """
+        # _attach_methods is responsible for calling _attach_argparser_methods
+        self._attach_argparser_methods()
+
+        # nin correction
+        self._ppfvec = vectorize(self._ppf_single, otypes='d')
+        self._ppfvec.nin = self.numargs + 1
+        self.vecentropy = vectorize(self._entropy, otypes='d')
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self._cdfvec.nin = self.numargs + 1
+
+        if self.moment_type == 0:
+            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
+        else:
+            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
+        # Because of the *args argument of _mom0_sc, vectorize cannot count the
+        # number of arguments correctly.
+        self.generic_moment.nin = self.numargs + 1
+
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing and pickling.
+            Used by freezing.
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
@@ -2019,7 +2091,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 0)
         cond3 = cond0 & (q == 1)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -2065,7 +2137,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (q == 1)
         cond3 = cond0 & (q == 0)
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue)
+        output = np.full(shape(cond), fill_value=self.badvalue)
 
         lower_bound = _a * scale + loc
         upper_bound = _b * scale + loc
@@ -2313,19 +2385,9 @@ class rv_continuous(rv_generic):
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
         x0, func, restore, args = self._reduce_func(args, kwds)
-
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, str):
-            if not optimizer.startswith('fmin_'):
-                optimizer = "fmin_"+optimizer
-            if optimizer == 'fmin_':
-                optimizer = 'fmin'
-            try:
-                optimizer = getattr(optimize, optimizer)
-            except AttributeError as e:
-                raise ValueError("%s is not a valid optimizer" % optimizer) from e
-
+        optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
@@ -2520,7 +2582,7 @@ class rv_continuous(rv_generic):
         --------
 
         To understand the effect of the bounds of integration consider
-        
+
         >>> from scipy.stats import expon
         >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
         0.6321205588285578
@@ -2868,8 +2930,6 @@ class rv_discrete(rv_generic):
         self.b = b
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
 
         if values is not None:
@@ -2879,6 +2939,26 @@ class rv_discrete(rv_generic):
                                   locscale_in='loc=0',
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
+        self._attach_methods()
+        self._construct_docstrings(name, longname, extradoc)
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+        # these methods will be remade in __setstate__
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs",
+                 "_cdfvec", "_ppfvec", "generic_moment"]
+        [dct.pop(attr, None) for attr in attrs]
+        return dct
+
+    def _attach_methods(self):
+        """
+        Attaches dynamically created methods to the rv_discrete instance
+        """
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self.vecentropy = vectorize(self._entropy)
+
+        # _attach_methods is responsible for calling _attach_argparser_methods
+        self._attach_argparser_methods()
 
         # nin correction needs to be after we know numargs
         # correct nin for generic moment vectorization
@@ -2893,8 +2973,6 @@ class rv_discrete(rv_generic):
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
-
-        self._construct_docstrings(name, longname, extradoc)
 
     def _construct_docstrings(self, name, longname, extradoc):
         if name is None:
@@ -2929,7 +3007,7 @@ class rv_discrete(rv_generic):
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing and pickling.
+            Used by freezing.
             Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
@@ -3263,7 +3341,7 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _a-1 + loc)
         place(output, cond2, _b + loc)
@@ -3306,7 +3384,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
 
         # same problem as with ppf; copied from ppf and changed
-        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), _b)
         place(output, cond2, _a-1)
@@ -3349,12 +3427,12 @@ class rv_discrete(rv_generic):
             Default is 0.
         lb, ub : int, optional
             Lower and upper bound for the summation, default is set to the
-            support of the distribution, inclusive (``ul <= k <= ub``).
+            support of the distribution, inclusive (``lb <= k <= ub``).
         conditional : bool, optional
             If true then the expectation is corrected by the conditional
             probability of the summation interval. The return value is the
             expectation of the function, `func`, conditional on being in
-            the given interval (k such that ``ul <= k <= ub``).
+            the given interval (k such that ``lb <= k <= ub``).
             Default is False.
         maxcount : int, optional
             Maximal number of terms to evaluate (to avoid an endless loop for
@@ -3394,7 +3472,6 @@ class rv_discrete(rv_generic):
         # might be problems(?) with correct self.a, self.b at this stage maybe
         # not anymore, seems to work now with _pmf
 
-        self._argcheck(*args)  # (re)generate scalar self.a and self.b
         _a, _b = self._get_support(*args)
         if lb is None:
             lb = _a
@@ -3408,6 +3485,10 @@ class rv_discrete(rv_generic):
             invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
+
+        if isinstance(self, rv_sample):
+            res = self._expect(fun, lb, ub)
+            return res / invfac
 
         # iterate over the support, starting from the median
         x0 = self.ppf(0.5, *args)
@@ -3538,12 +3619,31 @@ class rv_sample(rv_discrete):
         self.qvals = np.cumsum(self.pk, axis=0)
 
         self.shapes = ' '   # bypass inspection
+
         self._construct_argparser(meths_to_inspect=[self._pmf],
                                   locscale_in='loc=0',
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
 
+        self._attach_methods()
+
         self._construct_docstrings(name, longname, extradoc)
+
+    def __getstate__(self):
+        dct = self.__dict__.copy()
+
+        # these methods will be remade in rv_generic.__setstate__,
+        # which calls rv_generic._attach_methods
+        attrs = ["_parse_args", "_parse_args_stats", "_parse_args_rvs"]
+        [dct.pop(attr, None) for attr in attrs]
+
+        return dct
+
+    def _attach_methods(self):
+        """
+        Attaches dynamically created argparser methods.
+        """
+        self._attach_argparser_methods()
 
     def _get_support(self, *args):
         """Return the support of the (unscaled, unshifted) distribution.
@@ -3591,6 +3691,12 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+    def _expect(self, fun, lb, ub, *args, **kwds):
+        # ignore all args, just do a brute force summation
+        supp = self.xk[(lb <= self.xk) & (self.xk <= ub)]
+        vals = fun(supp)
+        return np.sum(vals)
 
 
 def _check_shape(argshape, size):
