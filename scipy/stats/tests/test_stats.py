@@ -5036,13 +5036,13 @@ class TestTukeykramer(object):
         factor levels have been ordered
 
         Fit: aov(formula = breaks ~ tension, data = warpbreaks)
- 
+
         $tension
                  diff        lwr      upr     p adj
         M-H  4.722222 -4.8376022 14.28205 0.4630831
         L-H 14.722222  5.1623978 24.28205 0.0014315
         L-M 10.000000  0.4401756 19.55982 0.0384598
-        
+
         '''
         l = [26, 30, 54, 25, 70, 52, 51, 26, 67,
              27, 14, 29, 19, 29, 31, 41, 20, 44]
@@ -5059,10 +5059,35 @@ class TestTukeykramer(object):
         assert_array_almost_equal(m_h, [4.722222, -4.8376022, 14.28205,
                                         0.4630831], decimal=1e-4)
         assert_array_almost_equal(l_h, [14.722222,  5.1623978, 24.28205,
-                                        0.0014315], decimal=1e-4) 
+                                        0.0014315], decimal=1e-4)
         assert_array_almost_equal(l_m, [10.000000,  0.4401756, 19.55982,
                                         0.0384598], decimal=1e-4)
 
+    def test_engineering_stat_handbook(self):
+        '''
+        Example sourced from:
+        https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
+        '''
+        group1 = [6.9, 5.4, 5.8, 4.6, 4.0]
+        group2 = [8.3, 6.8,	7.8, 9.2, 6.5]
+        group3 = [8.0, 10.5, 8.1, 6.9, 9.3]
+        group4 = [5.8, 3.8,	6.1, 5.6, 6.2]
+        res = stats.tukeykramer(group1, group2, group3, group4)
+
+        # Test against their confidence intervals and significance. See
+        # sections "Confidence intervals for each pair" and "Conclusions".
+        assert_array_almost_equal(res.get_pairwise(2, 1)[1:-1],
+                                  [.29, 4.47, 1], decimal=2)
+        assert_array_almost_equal(res.get_pairwise(3, 1)[1:-1],
+                                  [1.13, 5.31, 1], decimal=2)
+        assert_array_almost_equal(res.get_pairwise(1, 4)[1:-1],
+                                  [-2.25, 1.93, 0], decimal=2)
+        assert_array_almost_equal(res.get_pairwise(2, 3)[1:-1],
+                                  [-2.93, 1.25, 0], decimal=2)
+        assert_array_almost_equal(res.get_pairwise(2, 4)[1:-1],
+                                  [.13, 4.31, 1], decimal=2)
+        assert_array_almost_equal(res.get_pairwise(3, 4)[1:-1],
+                                  [.97, 5.15, 1], decimal=2)
 
 
 class TestKruskal(object):
