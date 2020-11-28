@@ -1217,7 +1217,7 @@ class StateSpace(LinearTimeInvariant):
     Parameters
     ----------
     *system: arguments
-        The `StateSpace` class can be instantiated with 1 or 3 arguments.
+        The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
