@@ -146,6 +146,7 @@ ANOVA Functions
    :toctree: generated/
 
    f_oneway
+   tukeykramer
 
 Support Functions
 -----------------
@@ -3749,12 +3750,7 @@ def tukeykramer(*args, sig_level=.05):
     have the same population mean, the Tukey Kramer test compares the absolute
     mean difference between each input group to the Tukey criterion for
     significance. For inputs of differing sample sizes, the Tukey Kramer
-    method is used, albeit with a higher confidence coefficient.
-
-    Assumptions:
-    1. There are equal variances between the samples.
-    2. The samples are equally distributed
-
+    method is used, albeit with a higher confidence coefficient. [1]_
 
     Parameters
     ----------
@@ -3766,94 +3762,57 @@ def tukeykramer(*args, sig_level=.05):
         range distribution value.
         Default is .05.
 
+    Notes
+    -----
+    The use of this test relies on several assumptions.
+   
+    1. There are equal variances between the samples.
+    2. Each sample is from a normally distributed population.
 
-    SAS example, adapted from
-    https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
-    ```
-    DATA ACHE;
-    INPUT BRAND RELIEF;
-    CARDS;
-    1 24.5
-    1 23.5
-    1 26.4
-    1 27.1
-    1 29.9
-    2 28.4
-    2 34.2
-    2 29.5
-    2 32.2
-    2 30.1
-    3 26.1
-    3 28.3
-    3 24.3
-    3 26.2
-    3 27.8
-    ;
-    ODS RTF;ODS LISTING CLOSE;
-    PROC ANOVA DATA=ACHE;
-        CLASS BRAND;
-        MODEL RELIEF=BRAND;
-        MEANS BRAND/TUKEY CLDIFF;
-    TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
-    ```
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm, 28 November 2020.
 
-    Additional Info: the critical value of the Studentized Range is 3.77289.
 
-    Yeilds the following results :
-    (*** denotes significance at the .05 significance level)
-    Brand Comparison    Mean Difference     Simultanious 95% Confidence Limits
-    2 - 3               4.340               0.691           7.989   ***
-    2 - 1               4.600               0.951           8.249   ***
-    3 - 2              -4.340              -7.989          -0.691   ***
-    3 - 1               0.260              -3.389           3.909
-    1 - 2              -4.600              -8.249          -0.951   ***
-    1 - 3              -0.260              -3.909           3.389
+    Examples
+    --------
+        >>> from scipy.stats import tukeykramer
+        Here are some data comparing the time to relief of three brands of
+        headache medicine, reported in minutes. Data adapted from
+        https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
 
-    Let's test our function against the SAS result:
-    group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
-    group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
-    group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
-    args=[group1,group2,group3]
-    tukeykramer(*args)
-    ~~~~~~~~~~~~
-    Comparison between groups with Simultanious
-    with 95% Confidence Limits and significance at the 0.05 level)
-    ~~~~~~~~~~~~
-    group     mean      min      max      sig
-    1 - 2    -4.600    -8.249  -0.951     1.0
-    1 - 3    -0.260    -3.909   3.389     0.0
-    2 - 1     4.600     0.951   8.249     1.0
-    2 - 3     4.340     0.691   7.989     1.0
-    3 - 1     0.260    -3.389   3.909     0.0
-    3 - 2    -4.340    -7.989  -0.691     1.0
-
-    # second just different sizes
-    group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
-    group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
-    group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
-    tukeykramer(group1, group2, group3)
-
-    expected from SAS:
-    Brand Comparison    Mean Difference     Simultanious 95% Confidence Limits
-    2 - 3               3.645               0.268        	7.022   ***
-    2 - 1               4.34                0.593        	8.087   ***
-    3 - 2              -3.645              -7.022      	   -0.268   ***
-    3 - 1               0.695              -2.682         	4.072
-    1 - 2              -4.34               -8.087	       -0.593   ***
-    1 - 3              -0.695              -4.072	        2.682
-
-    actual:
-    ~~~~~~~~~~~~
-    Comparison between groups with Simultanious
-    (with 95% Confidence Limits and significance at the 0.05 level)
-    ~~~~~~~~~~~~
-    group     mean      min      max      sig
-    1 - 2    -3.645    -7.022  -0.268     1.0
-    1 - 3     0.695    -2.682   4.072     0.0
-    2 - 1     3.645     0.268   7.022     1.0
-    2 - 3     4.340     0.593   8.087     1.0
-    3 - 1    -0.695    -4.072   2.682     0.0
-    3 - 2    -4.340    -8.087  -0.593     1.0
+        >>> group1 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> tukeykramer(group1, group2, group3)
+        ~~~~~~~~~~~~
+            	Comparison between groups with  Simultanious
+        (with 95% Confidence Limits and significance at the 0.05 level)
+        ~~~~~~~~~~~~
+        group     mean      min      max      sig    p-value
+        1 - 2    -4.600    -8.249  -0.951     1.0     0.012
+        1 - 3    -0.260    -3.909   3.389     0.0     0.980
+        2 - 1     4.600     0.951   8.249     1.0     0.012
+        2 - 3     4.340     0.691   7.989     1.0     0.017
+        3 - 1     0.260    -3.389   3.909     0.0     0.980
+        3 - 2    -4.340    -7.989  -0.691     1.0     0.017
+        The test can also be conducted with varying group sizes.
+        >>> group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
+        >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> tukeykramer(group1, group2, group3)
+        ~~~~~~~~~~~~
+            	Comparison between groups with  Simultanious
+        (with 95% Confidence Limits and significance at the 0.05 level)
+        ~~~~~~~~~~~~
+        group     mean      min      max      sig    p-value
+        1 - 2    -3.645    -7.022  -0.268     1.0     0.031
+        1 - 3     0.695    -2.682   4.072     0.0     0.856
+        2 - 1     3.645     0.268   7.022     1.0     0.031
+        2 - 3     4.340     0.593   8.087     1.0     0.020
+        3 - 1    -0.695    -4.072   2.682     0.0     0.856
+        3 - 2    -4.340    -8.087  -0.593     1.0     0.020
 
     """
     args = [np.asarray(arg) for arg in args]
@@ -3869,9 +3828,10 @@ def tukeykramer(*args, sig_level=.05):
         else:
             raise ValueError(res.message)
 
-    # determine the studentized range distribution critical value
-    # Number of treatments is number of args.
-    # DF: Number of datapoints minus number of treatments
+    # determine the critical value of the studentized range using the
+    # appropriate significance level, number of treatments, and degrees
+    # of freedom as determined by the number of data less the number of 
+    # treatments. ("Confidence limits for Tukey's method")[1].
     nsamples = np.sum([a.shape[0] for a in args])
     srd = get_q(sig_level, len(args), nsamples - len(args))
 
@@ -3889,6 +3849,7 @@ def tukeykramer(*args, sig_level=.05):
     # range value * the square root of mean square error over the sample size.
     # This only applies for treatments of equal sizes. The criterion is
     # calculated for each comparison when treatments differ in size.
+    # See ("Unequal sample sizes")[1].
     if len(set(permutations_lengths)) > 1:
         # to compare groups of differing sizes, we must compute a variance
         # value for each individual comparison
@@ -3913,7 +3874,7 @@ def tukeykramer(*args, sig_level=.05):
 
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
-    # ("Conclusions")[https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm]
+    # ("Conclusions")[1]
     is_significant = np.abs(mean_differences) > tukey_criterions
 
     # form 2d output array

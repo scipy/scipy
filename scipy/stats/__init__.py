@@ -237,6 +237,7 @@ Correlation functions
    siegelslopes
    theilslopes
    multiscale_graphcorr
+   tukeykramer
 
 Statistical tests
 =================
