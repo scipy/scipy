@@ -277,9 +277,9 @@ class CNeighbors(Benchmark):
 class Remove(Benchmark):
     params = [
         [
-          (2, 20000),
-          (8, 20000),
-          (16, 20000)
+          (2, 50000),
+          (8, 50000),
+          (16, 50000)
         ],
         BOX_SIZES, LEAF_SIZES
     ]
@@ -289,12 +289,16 @@ class Remove(Benchmark):
         m, n = mn
         dataset = np.random.uniform(size=(n, m))
         self.T = cKDTree(dataset, boxsize=boxsize, leafsize=leafsize)
+        self.i = 0
 
     def time_remove(self, mn, boxsize, leafsize):
         """
         Time to remove one point from cKDTree.
         """
-        self.T.remove(0)
+
+        self.T.remove(self.i)
+        self.i += 1
+
 
 
 def generate_spherical_points(num_points):
