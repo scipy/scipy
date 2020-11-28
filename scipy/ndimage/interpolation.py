@@ -722,8 +722,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.zoom(ascent, 3.0)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> ax1.imshow(ascent, vmin=0, vmax=255)
+    >>> ax2.imshow(result, vmin=0, vmax=255)
     >>> plt.show()
 
     >>> print(ascent.shape)
