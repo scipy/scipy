@@ -3528,12 +3528,7 @@ def _first(arr, axis):
     """
     Return arr[..., 0:1, ...] where 0:1 is in the `axis` position.
     """
-    # When the oldest version of numpy supported by scipy is at
-    # least 1.15.0, this function can be replaced by np.take_along_axis
-    # (with appropriately configured arguments).
-    axis = np.core.multiarray.normalize_axis_index(axis, arr.ndim)
-    return arr[tuple(slice(None) if k != axis else slice(0, 1)
-               for k in range(arr.ndim))]
+    return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
 def f_oneway(*args, axis=0):
