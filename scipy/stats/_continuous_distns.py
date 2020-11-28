@@ -1232,7 +1232,8 @@ chi = chi_gen(a=0.0, name='chi')
 
 ## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
-    r"""A chi-squared continuous random variable.
+    r"""A chi-squared continuous random variable. For the noncentral
+    chi-square distribution, see `ncx2`.
 
     %(before_notes)s
 
@@ -1251,6 +1252,10 @@ class chi2_gen(rv_continuous):
     `chi2` takes ``df`` as a shape parameter.
 
     %(after_notes)s
+
+    See Also
+    --------
+    ncx2
 
     %(example)s
 
@@ -1844,7 +1849,8 @@ foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy')
 
 
 class f_gen(rv_continuous):
-    r"""An F continuous random variable.
+    r"""An F continuous random variable. For the noncentral
+    F distribution, see `ncf`.
 
     %(before_notes)s
 
@@ -1863,6 +1869,10 @@ class f_gen(rv_continuous):
     `f` takes ``dfn`` and ``dfd`` as shape parameters.
 
     %(after_notes)s
+
+    See Also
+    --------
+    ncf
 
     %(example)s
 
@@ -4159,7 +4169,7 @@ class laplace_asymmetric_gen(rv_continuous):
         return np.where(q <= kapinv/kappkapinv,
                         -np.log(q*kappkapinv*kappa)*kapinv,
                         np.log((1 - q)*kappkapinv/kappa)*kappa)
-    
+
     def _stats(self, kappa):
         kapinv = 1/kappa
         mn = kapinv - kappa
@@ -5925,7 +5935,8 @@ ncf = ncf_gen(a=0.0, name='ncf')
 
 
 class t_gen(rv_continuous):
-    r"""A Student's t continuous random variable.
+    r"""A Student's t continuous random variable. For the noncentral
+    chi-square distribution, see `nct`.
 
     %(before_notes)s
 
@@ -5945,6 +5956,10 @@ class t_gen(rv_continuous):
     (`scipy.special.gamma`).
 
     %(after_notes)s
+
+    See Also
+    --------
+    nct
 
     %(example)s
 
