@@ -1232,8 +1232,9 @@ chi = chi_gen(a=0.0, name='chi')
 
 ## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
-    r"""A chi-squared continuous random variable. For the noncentral
-    chi-square distribution, see `ncx2`.
+    r"""A chi-squared continuous random variable.
+    
+    For the noncentral chi-square distribution, see `ncx2`.
 
     %(before_notes)s
 
@@ -1849,8 +1850,9 @@ foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy')
 
 
 class f_gen(rv_continuous):
-    r"""An F continuous random variable. For the noncentral
-    F distribution, see `ncf`.
+    r"""An F continuous random variable.
+    
+    For the noncentral F distribution, see `ncf`.
 
     %(before_notes)s
 
@@ -5935,8 +5937,9 @@ ncf = ncf_gen(a=0.0, name='ncf')
 
 
 class t_gen(rv_continuous):
-    r"""A Student's t continuous random variable. For the noncentral
-    chi-square distribution, see `nct`.
+    r"""A Student's t continuous random variable.
+    
+    For the noncentral t distribution, see `nct`.
 
     %(before_notes)s
 
