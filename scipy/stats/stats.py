@@ -2539,7 +2539,60 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     array([[-1.13490897, -0.37830299,         nan, -0.08718406,  1.60039602],
            [-0.91611681, -0.89090508,  1.4983032 ,  0.88731639, -0.5785977 ]])
     """
-    a = np.asanyarray(a)
+    return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
+
+
+def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
+    """
+    Calculate the relative z-scores.
+
+    Return an array of z-scores, i.e., scores that are standardized to
+    zero mean and unit variance, where mean and variance are calculated
+    from the comparison array.
+
+    Parameters
+    ----------
+    scores : array_like
+        The input for which z-scores are calculated.
+    compare : array_like
+        The input from which the mean and standard deviation of the
+        normalization are taken; assumed to have the same dimension as
+        `scores`.
+    axis : int or None, optional
+        Axis over which mean and variance of `compare` are calculated.
+        Default is 0. If None, compute over the whole array `scores`.
+    ddof : int, optional
+        Degrees of freedom correction in the calculation of the
+        standard deviation. Default is 0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle the occurrence of nans in `compare`.
+        'propagate' returns nan, 'raise' raises an exception, 'omit'
+        performs the calculations ignoring nan values. Default is
+        'propagate'. Note that when the value is 'omit', nans in `scores`
+        also propagate to the output, but they do not affect the z-scores
+        computed for the non-nan values.
+
+    Returns
+    -------
+    zscore : array_like
+        Z-scores, in the same shape as `scores`.
+
+    Notes
+    -----
+    This function preserves ndarray subclasses, and works also with
+    matrices and masked arrays (it uses `asanyarray` instead of
+    `asarray` for parameters).
+
+    Examples
+    --------
+    >>> from scipy.stats import zmap
+    >>> a = [0.5, 2.0, 2.5, 3]
+    >>> b = [0, 1, 2, 3, 4]
+    >>> zmap(a, b)
+    array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
+
+    """
+    a = np.asanyarray(compare)
 
     if a.size == 0:
         return np.empty(a.shape)
@@ -2565,59 +2618,10 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
 
     # Set std deviations that are 0 to 1 to avoid division by 0.
     std[isconst] = 1.0
-    z = (a - mn) / std
+    z = (scores - mn) / std
     # Set the outputs associated with a constant input to nan.
     z[np.broadcast_to(isconst, z.shape)] = np.nan
     return z
-
-
-def zmap(scores, compare, axis=0, ddof=0):
-    """
-    Calculate the relative z-scores.
-
-    Return an array of z-scores, i.e., scores that are standardized to
-    zero mean and unit variance, where mean and variance are calculated
-    from the comparison array.
-
-    Parameters
-    ----------
-    scores : array_like
-        The input for which z-scores are calculated.
-    compare : array_like
-        The input from which the mean and standard deviation of the
-        normalization are taken; assumed to have the same dimension as
-        `scores`.
-    axis : int or None, optional
-        Axis over which mean and variance of `compare` are calculated.
-        Default is 0. If None, compute over the whole array `scores`.
-    ddof : int, optional
-        Degrees of freedom correction in the calculation of the
-        standard deviation. Default is 0.
-
-    Returns
-    -------
-    zscore : array_like
-        Z-scores, in the same shape as `scores`.
-
-    Notes
-    -----
-    This function preserves ndarray subclasses, and works also with
-    matrices and masked arrays (it uses `asanyarray` instead of
-    `asarray` for parameters).
-
-    Examples
-    --------
-    >>> from scipy.stats import zmap
-    >>> a = [0.5, 2.0, 2.5, 3]
-    >>> b = [0, 1, 2, 3, 4]
-    >>> zmap(a, b)
-    array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
-
-    """
-    scores, compare = map(np.asanyarray, [scores, compare])
-    mns = compare.mean(axis=axis, keepdims=True)
-    sstd = compare.std(axis=axis, ddof=ddof, keepdims=True)
-    return (scores - mns) / sstd
 
 
 def gstd(a, axis=0, ddof=1):
