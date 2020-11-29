@@ -3797,10 +3797,10 @@ def tukeykramer(*args, sig_level=.05):
         2 - 3     4.340     0.691   7.989     1.0     0.017
         3 - 1     0.260    -3.389   3.909     0.0     0.980
         3 - 2    -4.340    -7.989  -0.691     1.0     0.017
-        The test can also be conducted with varying group sizes.
         >>> group1 = [24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1]
         >>> group2 = [28.4, 34.2, 29.5, 32.2, 30.1]
         >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        The test can also be conducted with varying group sizes.
         >>> tukeykramer(group1, group2, group3)
         ~~~~~~~~~~~~
             	Comparison between groups with  Simultanious
@@ -3813,7 +3813,6 @@ def tukeykramer(*args, sig_level=.05):
         2 - 3     4.340     0.593   8.087     1.0     0.020
         3 - 1    -0.695    -4.072   2.682     0.0     0.856
         3 - 2    -4.340    -8.087  -0.593     1.0     0.020
-
     """
     args = [np.asarray(arg) for arg in args]
     means = [np.mean(arg) for arg in args]
