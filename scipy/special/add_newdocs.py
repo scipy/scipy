@@ -7736,6 +7736,31 @@ add_newdoc("ndtr_delta",
     ndtr
     """)
 
+add_newdoc("trunc_ndtr",
+    r"""
+    trunc_ndtr(a, b, x)
+
+    Cumulative distribution function for the truncated normal distribution.
+
+    Parameters
+    ----------
+    a : array_like
+        Lower bound of the truncated interval.
+    b : array_like
+        Upper bound of the truncated interval.
+    x : array_like
+        Quantile.
+
+    Returns
+    -------
+    ndarray
+        Values of the CDF of the truncated normal distribution.
+
+    See Also
+    --------
+    ndtr
+    """)
+
 add_newdoc("nrdtrimn",
     """
     nrdtrimn(p, x, std)

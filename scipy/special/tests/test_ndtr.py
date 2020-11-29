@@ -32,6 +32,7 @@ class TestNdtrDelta:
         assert sc.ndtr_delta(3.0, 3.0) == 0
 
     # Expected values were computed with mpmath, e.g.:
+    #
     #   >>> import mpmath
     #   >>> mpmath.mp.dps = 80
     #   >>> a = 10
@@ -47,3 +48,31 @@ class TestNdtrDelta:
     def test_values(self, a, b, expected):
         assert_allclose(sc.ndtr_delta(a, b), expected, rtol=1e-13)
         assert_allclose(sc.ndtr_delta(b, a), -expected, rtol=1e-13)
+
+
+class TestTruncNdtr:
+
+    def test_boundaries(self):
+        assert sc.trunc_ndtr(1, 5, 1) == 0.0
+        assert sc.trunc_ndtr(1, 5, 5) == 1.0
+
+    def test_mid_symmetric(self):
+        assert sc.trunc_ndtr(-3.2, 3.2, 0) == 0.5
+
+    # Expected values were computed with mpmath, e.g.:
+    #
+    #   >>> import mpmath
+    #   >>> mpmath.mp.dps = 80
+    #   >>> a = 1
+    #   >>> b = 5
+    #   >>> x = 2
+    #   >>> float((mpmath.ncdf(x) - mpmath.ncdf(a)) /
+    #   ...       (mpmath.ncdf(b) - mpmath.ncdf(a)))
+    #   0.8566080489842209
+    #
+    @pytest.mark.parametrize('x, a, b, expected',
+                             [(2, 1, 5, 0.8566080489842209),
+                              (1.000001, 1, 5, 1.5251372690210932e-06),
+                              (11.25, 10, 15, 0.9999984803377245)])
+    def test_values(self, x, a, b, expected):
+        assert_allclose(sc.trunc_ndtr(a, b, x), expected, rtol=1e-10)

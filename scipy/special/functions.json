@@ -1077,6 +1077,11 @@
             "ndtr_delta": "dd->d"
         }
     },
+    "trunc_ndtr": {
+        "cephes.h": {
+            "trunc_ndtr": "ddd->d"
+        }
+    },
     "ndtri": {
         "cephes.h": {
             "ndtri": "d->d"

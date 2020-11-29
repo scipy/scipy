@@ -262,6 +262,46 @@ double ndtr_delta(double a, double b)
     return sgn*delta;
 }
 
+//
+// Compute the CDF for the truncated normal distribution.
+//
+double trunc_ndtr(double a, double b, double x)
+{
+    double delta;
+    double logp;
+
+    if (cephes_isnan(x) || cephes_isnan(a) || cephes_isnan(b) || (a >= b)) {
+        sf_error("trunc_ndtr", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+    if (x <= a) {
+        return 0.0;
+    }
+    if (x >= b) {
+        return 1.0;
+    }
+    delta = ndtr_delta(b, a);
+    if (delta > 0) {
+        return ndtr_delta(x, a) / delta;
+    }
+    if (a < 0) {
+        double logcdfa = log_ndtr(a);
+        double logcdfb = log_ndtr(b);
+        double logcdfx = log_ndtr(x);
+        double tab = log1p(-exp(logcdfa - logcdfb));
+        double tax = log1p(-exp(logcdfa - logcdfx));
+        logp = logcdfx + tax - (logcdfb + tab);
+    }
+    else {
+        double logsfa = log_ndtr(-a);
+        double logsfb = log_ndtr(-b);
+        double logsfx = log_ndtr(-x);
+        logp = log1p(-exp(logsfx - logsfa)) - log1p(-exp(logsfb - logsfa));
+    }
+    return exp(logp);
+}
+
+
 double erfc(double a)
 {
     double p, q, x, y, z;
