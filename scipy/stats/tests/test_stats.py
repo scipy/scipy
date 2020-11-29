@@ -603,7 +603,7 @@ class TestCorrSpearmanr(object):
         x[1, 0] = np.nan
         x[3, -1] = np.nan
         corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
-        res = [[stats.spearmanr(x[i,:], x[j,:]).correlation for i in range(m)]
+        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation for i in range(m)]
                for j in range(m)]
         assert_allclose(corr, res)
 
