@@ -708,8 +708,8 @@ class TestBinomTest:
         res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
         assert_equal(res.proportion_estimate, 0.2)
-        proportion_ci = res.proportion_ci(confidence_level=0.95)
-        assert_allclose(proportion_ci, (ci_low, ci_high), rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
     # Expected results here are from R 3.6.2 binom.test.
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
@@ -723,8 +723,8 @@ class TestBinomTest:
         res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
         assert_equal(res.proportion_estimate, 0.06)
-        proportion_ci = res.proportion_ci(confidence_level=0.99)
-        assert_allclose(proportion_ci, (ci_low, ci_high), rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.99)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
     # Expected results here are from R 3.6.2 binom.test.
     @pytest.mark.parametrize('alternative, pval, ci_high',
@@ -735,9 +735,9 @@ class TestBinomTest:
         # Test with k=0, n = 10.
         res = stats.binomtest(0, 10, p=0.25, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
-        proportion_ci = res.proportion_ci(confidence_level=0.95)
-        assert_equal(proportion_ci.low, 0.0)
-        assert_allclose(proportion_ci.high, ci_high, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.low, 0.0)
+        assert_allclose(ci.high, ci_high, rtol=1e-6)
 
     # Expected results here are from R 3.6.2 binom.test.
     @pytest.mark.parametrize('alternative, pval, ci_low',
@@ -748,9 +748,9 @@ class TestBinomTest:
         # Test with k = n = 10.
         res = stats.binomtest(10, 10, p=0.25, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
-        proportion_ci = res.proportion_ci(confidence_level=0.95)
-        assert_equal(proportion_ci.high, 1.0)
-        assert_allclose(proportion_ci.low, ci_low, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.high, 1.0)
+        assert_allclose(ci.low, ci_low, rtol=1e-6)
 
     # Expected results are from the prop.test function in R 3.6.2.
     @pytest.mark.parametrize(
@@ -790,7 +790,7 @@ class TestBinomTest:
         else:
             method = 'wilson'
         ci = res.proportion_ci(confidence_level=conf, method=method)
-        assert_allclose(ci, (ci_low, ci_high), rtol=1e-6)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
     def test_estimate_equals_hypothesized_prop(self):
         # Test the special case where the estimated proportion equals
