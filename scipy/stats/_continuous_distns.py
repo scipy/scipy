@@ -6300,25 +6300,39 @@ class powerlaw_gen(rv_continuous):
         if floc is not None:
             # `floc` is fixed, `fshape` and `fscale` may be deterermined
             # through analytical equations
+            if floc > np.min(data):
+                # a constraint to fitting is that loc < np.min
+                raise ValueError("Invalid values in `data`.  Maximum"
+                                 " likelihood estimation with 'powerlaw'"
+                                 " requires loc < min(data).")
             if fscale is None:
                 fscale = np.max(data) - floc
+            else:
+                if fscale + floc <= np.max(data):
+                    # fitting with fixed scale and fixed location requires
+                    # that loc + scale > max(data)
+                    raise ValueError("Invalid values in `data`.  Maximum"
+                                     " likelihood estimation with 'powerlaw'"
+                                     " requires loc + scale > max(data).")
             if fshape is None:
                 fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
             return fshape, floc, fscale
 
         elif fscale is not None:
-            # `floc` can be determined by reording the equation for `fscale`
+            # `floc` can be determined by reordering the equation for `fscale`
             floc = np.max(data) - fscale
             if fshape is None:
                 fshape = - len(data) / (np.sum(np.log((data - floc)/fscale)))
             return fshape, floc, fscale
 
         else:
-            # in the case where all parameters are free or only `fshape` is
-            # fixed, we optimize over `floc` using dependent equations for
-            # `fscale` and `fshape` (if free) with `func`. `func` is given
-            # by comparison for equality of the partial derivatives of the
-            # log-likelihood function with respect to `loc` and `scale`.
+            '''
+            In the case where all parameters are free or only `fshape` is
+            fixed, we optimize over `floc` using dependent equations for
+            `fscale` and `fshape` (if free) with `func`. `func` is given
+            by comparison for equality of the partial derivatives of the
+            log-likelihood function with respect to `loc` and `scale`.
+            '''
             ndata = len(data)
 
             def func(floc, fshape):
