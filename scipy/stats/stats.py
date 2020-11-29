@@ -6724,7 +6724,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                 # subtractive cancellation.  If that possibly occurred, declare
                 # prob to have lost all precision and raise FloatingPointError
                 if complementary_prob * (1 + relative_error) >= 1.0:
-                    raise FloatingPointError
+                    raise FloatingPointError()
                 prob = 1 - complementary_prob
         else:
             if n1 == n2:
