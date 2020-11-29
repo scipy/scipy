@@ -1,5 +1,6 @@
+import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 import scipy.special as sc
 
 
@@ -18,3 +19,31 @@ class TestNdtri:
 
     def test_outside_of_domain(self):
         assert all(np.isnan(sc.ndtri([-1.5, 1.5])))
+
+
+class TestNdtrDelta:
+
+    @pytest.mark.parametrize('a, b', [(-50, 0), [0, 50]])
+    def test_half(self, a, b):
+        assert sc.ndtr_delta(a, b) == 0.5
+        assert sc.ndtr_delta(b, a) == -0.5
+
+    def test_zero(self):
+        assert sc.ndtr_delta(3.0, 3.0) == 0
+
+    # Expected values were computed with mpmath, e.g.:
+    #   >>> import mpmath
+    #   >>> mpmath.mp.dps = 80
+    #   >>> a = 10
+    #   >>> b = 12
+    #   >>> float(mpmath.ncdf(b) - mpmath.ncdf(a))
+    #   7.619853022384043e-24
+    #
+    @pytest.mark.parametrize('a, b, expected',
+                             [(10, 12, 7.619853022384043e-24),
+                              (-1, 1.5, 0.7745375447996848),
+                              (1, 5, 0.15865496727988518),
+                              (-30, -25, 3.056696706382561e-138)])
+    def test_values(self, a, b, expected):
+        assert_allclose(sc.ndtr_delta(a, b), expected, rtol=1e-13)
+        assert_allclose(sc.ndtr_delta(b, a), -expected, rtol=1e-13)

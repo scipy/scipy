@@ -224,6 +224,44 @@ double ndtr(double a)
 }
 
 
+#define NDTR_DELTA_TAIL_LIMIT  38.5
+
+//
+// Compute ndtr(b) - ndtr(a) robustly.
+//
+double ndtr_delta(double a, double b)
+{
+    int sgn = 1;
+    double delta;
+
+    if (cephes_isnan(a) || cephes_isnan(b)) {
+        sf_error("ndtr_delta", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+    if (a == b) {
+        return 0.0;
+    }
+    if (a > b) {
+        double tmp = a;
+        a = b;
+        b = tmp;
+        sgn = -1;
+    }
+    if ((a > NDTR_DELTA_TAIL_LIMIT) || (b < -NDTR_DELTA_TAIL_LIMIT)) {
+        return 0.0;
+    }
+    if (a > 0) {
+        delta = ndtr(-a) - ndtr(-b);
+    }
+    else {
+        delta = ndtr(b) - ndtr(a);
+    }
+    if (delta < 0) {
+        delta = 0.0;
+    }
+    return sgn*delta;
+}
+
 double erfc(double a)
 {
     double p, q, x, y, z;

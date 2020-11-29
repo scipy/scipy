@@ -89,6 +89,7 @@ extern double nbdtr(int k, int n, double p);
 extern double nbdtri(int k, int n, double p);
 
 extern double ndtr(double a);
+extern double ndtr_delta(double a, double b);
 extern double log_ndtr(double a);
 extern double erfc(double a);
 extern double erf(double x);

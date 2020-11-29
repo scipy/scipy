@@ -7707,6 +7707,34 @@ add_newdoc("ndtr",
 
     """)
 
+add_newdoc("ndtr_delta",
+    r"""
+    ndtr_delta(a, b)
+
+    Gaussian cumulative distribution function difference.
+
+    Returns the area under the standard Gaussian probability
+    density function between a and b.
+
+    .. math::
+
+       \frac{1}{\sqrt{2\pi}} \int_a^b \exp(-t^2/2) dt
+
+    Parameters
+    ----------
+    a : array_like
+    b : array_like
+        Arguments
+
+    Returns
+    -------
+    ndarray
+        Differences of the Gaussian CDF.
+
+    See Also
+    --------
+    ndtr
+    """)
 
 add_newdoc("nrdtrimn",
     """
