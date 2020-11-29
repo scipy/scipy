@@ -7681,17 +7681,7 @@ class truncnorm_gen(rv_continuous):
         return it.operands[3]
 
     def _cdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_cdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_cdf_scalar(x, a.item(), b.item())
-        out = None
-        it = np.nditer([x, a, b, out], [],
-                       [['readonly'], ['readonly'], ['readonly'], ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_cdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return sc.trunc_ndtr(a, b, x)
 
     def _logcdf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
