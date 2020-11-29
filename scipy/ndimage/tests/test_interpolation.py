@@ -1107,18 +1107,44 @@ class TestNdimageInterpolation:
         out = ndimage.zoom(arr, zoom)
         assert_array_equal(out.shape, (4, 15, 29))
 
-    @pytest.mark.parametrize('zoom', [(1, 1), (8, 2), (8, 8)])
+    @pytest.mark.parametrize('zoom', [(1, 1), (3, 5), (8, 2), (8, 8)])
     @pytest.mark.parametrize('mode', ['nearest', 'constant', 'wrap', 'reflect',
                                       'mirror', 'grid-wrap', 'grid-mirror',
                                       'grid-constant'])
     def test_zoom_by_int_order0(self, zoom, mode):
         # order 0 zoom should be the same as replication via numpy.kron
+        # Note: This is not True for general x shapes when grid_mode is False,
+        #       but works here for all modes because the size ratio happens to
+        #       always be an integer when x.shape = (2, 2).
         x = numpy.array([[0, 1],
                          [2, 3]], dtype=float)
+        # x = numpy.arange(16, dtype=float).reshape(4, 4)
         assert_array_almost_equal(
             ndimage.zoom(x, zoom, order=0, mode=mode),
             numpy.kron(x, numpy.ones(zoom))
         )
+
+    @pytest.mark.parametrize('shape', [(2, 3), (4, 4)])
+    @pytest.mark.parametrize('zoom', [(1, 1), (3, 5), (8, 2), (8, 8)])
+    @pytest.mark.parametrize('mode', ['nearest', 'reflect', 'mirror',
+                                      'grid-wrap', 'grid-constant'])
+    def test_zoom_grid_by_int_order0(self, shape, zoom, mode):
+        # When grid_mode is True,  order 0 zoom should be the same as
+        # replication via numpy.kron. The only exceptions to this are the
+        # non-grid modes 'constant' and 'wrap'.
+        x = numpy.arange(numpy.prod(shape), dtype=float).reshape(shape)
+        assert_array_almost_equal(
+            ndimage.zoom(x, zoom, order=0, mode=mode, grid_mode=True),
+            numpy.kron(x, numpy.ones(zoom))
+        )
+
+    @pytest.mark.parametrize('mode', ['constant', 'wrap'])
+    def test_zoom_grid_mode_warnings(self, mode):
+        # Warn on use of non-grid modes when grid_mode is True
+        x = numpy.arange(9, dtype=float).reshape((3, 3))
+        with pytest.warns(UserWarning,
+                          match="It is recommended to use mode"):
+            ndimage.zoom(x, 2, mode=mode, grid_mode=True),
 
     @pytest.mark.parametrize('order', range(0, 6))
     def test_rotate01(self, order):
