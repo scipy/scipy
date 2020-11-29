@@ -59,7 +59,8 @@ map_coordinate(double in, npy_intp len, int mode)
                 npy_intp sz2 = 2 * len;
                 if (in < -sz2)
                     in = sz2 * (npy_intp)(-in / sz2) + in;
-                in = in < -len ? in + sz2 : -in - 1;
+                // -1e-15 check to avoid possibility that: (-in - 1) == -1
+                in = in < -len ? in + sz2 : (in > -1e-15 ? 1e-15 : -in) - 1;
             }
             break;
         case NI_EXTEND_WRAP:
