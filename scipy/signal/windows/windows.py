@@ -2017,7 +2017,7 @@ _win_equiv_raw = {
         'rect', 'rectangular'): (boxcar, False),
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
-    ('exponential', 'poisson'): (exponential, True),
+    ('exponential', 'poisson'): (exponential, False),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
     ('general gaussian', 'general_gaussian',
@@ -2029,7 +2029,10 @@ _win_equiv_raw = {
     ('parzen', 'parz', 'par'): (parzen, False),
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
-    ('tukey', 'tuk'): (tukey, True),
+    ('tukey', 'tuk'): (tukey, False),
+    ('general_cosine',): (general_cosine, True),
+    ('general_hamming',): (general_hamming, True),
+    ('dpss',): (dpss, True),
 }
 
 # Fill dict with all valid window name strings
@@ -2082,13 +2085,16 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.blackmanharris`
     - `~scipy.signal.windows.nuttall`
     - `~scipy.signal.windows.barthann`
+    - `~scipy.signal.windows.cosine`
+    - `~scipy.signal.windows.exponential`
+    - `~scipy.signal.windows.tukey`
+    - `~scipy.signal.windows.general_cosine` (needs sequence of weights)
+    - `~scipy.signal.windows.general_hamming` (needs alpha)
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
-    - `~scipy.signal.windows.exponential` (needs center, decay scale)
-    - `~scipy.signal.windows.tukey` (needs taper fraction)
     - `~scipy.signal.windows.taylor` (needs number of constant sidelobes,
       sidelobe level)
 
@@ -2145,9 +2151,8 @@ def get_window(window, Nx, fftbins=True):
         except KeyError as e:
             raise ValueError("Unknown window type.") from e
 
-        params = (Nx,) + args + (sym,)
+        params = (Nx,) + args
     else:
         winfunc = kaiser
-        params = (Nx, beta, sym)
-
-    return winfunc(*params)
+        params = (Nx, beta)
+    return winfunc(*params, sym=sym)

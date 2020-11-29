@@ -696,10 +696,10 @@ def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
-                   'dss', 'dpss',
-                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk', 'dpss']:
-        assert_raises(ValueError, get_window, winstr, 7)
+                   'dpss', 'chebwin', 'cheb', 'general_cosine',
+                   'general_hamming']:
+        with assert_raises(ValueError, match="window needs one or"):
+            get_window(winstr, 7)
 
 
 def test_deprecation():
