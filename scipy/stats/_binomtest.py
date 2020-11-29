@@ -76,8 +76,9 @@ class BinomTestResult:
 
         Returns
         -------
-        ci : namedtuple with fields ``low`` and ``high``
-            Contains the lower and upper bounds of the confidence interval.
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence interval.
 
         References
         ----------
