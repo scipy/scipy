@@ -168,32 +168,32 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     else:
         z = ndtri(confidence_level)
 
-    t = 1 + z**2/n
-    r = (p + z**2/(2*n)) / t
-
+    # For reference, the formulas implemented here are from
+    # Newcombe (1998) (ref. [3] in the proportion_ci docstring).
+    denom = 2*(n + z**2)
+    center = (2*n*p + z**2)/denom
+    q = 1 - p
     if correction:
         if alternative == 'less' or k == 0:
             lo = 0.0
         else:
-            dlo = ((z * sqrt(z**2 - 1/n + 4*n*p*(1 - p) + (4*p - 2)) + 1) /
-                   (2*n*t))
-            lo = r - dlo
+            dlo = (1 + z*sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1))) / denom
+            lo = center - dlo
         if alternative == 'greater' or k == n:
             hi = 1.0
         else:
-            dhi = ((z * sqrt(z**2 - 1/n + 4*n*p*(1 - p) - (4*p - 2)) + 1) /
-                   (2*n*t))
-            hi = r + dhi
+            dhi = (1 + z*sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1))) / denom
+            hi = center + dhi
     else:
-        d = z/t * sqrt(p*(1-p)/n + (z/(2*n))**2)
+        delta = z/denom * sqrt(4*n*p*q + z**2)
         if alternative == 'less' or k == 0:
             lo = 0.0
         else:
-            lo = r - d
+            lo = center - delta
         if alternative == 'greater' or k == n:
             hi = 1.0
         else:
-            hi = r + d
+            hi = center + delta
 
     return lo, hi
 
