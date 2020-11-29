@@ -239,8 +239,10 @@ Raw statistical functions
    chdtri       -- Inverse to `chdtrc`.
    chdtriv      -- Inverse to `chdtr` vs `v`.
    ndtr         -- Gaussian cumulative distribution function.
+   ndtr_delta   -- Gaussian cumulative distribution difference.
    log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
    ndtri        -- Inverse of `ndtr` vs x.
+   trunc_ndtr   -- Truncated normal cumulative distribution function.
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
