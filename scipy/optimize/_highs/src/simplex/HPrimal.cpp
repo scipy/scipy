@@ -287,6 +287,7 @@ void HPrimal::solvePhase2() {
   } else {
     HighsPrintMessage(workHMO.options_.output, workHMO.options_.message_level,
                       ML_MINIMAL, "primal-unbounded\n");
+    savePrimalRay();
     workHMO.scaled_model_status_ = HighsModelStatus::PRIMAL_UNBOUNDED;
   }
   computeDualObjectiveValue(workHMO);
@@ -768,6 +769,13 @@ void HPrimal::primalUpdate() {
 
   // Report on the iteration
   iterationAnalysis();
+}
+
+void HPrimal::savePrimalRay() {
+  workHMO.simplex_lp_status_.has_primal_ray = true;
+  workHMO.simplex_info_.primal_ray_col_ = columnIn;
+  workHMO.simplex_info_.primal_ray_sign_ =
+      workHMO.simplex_basis_.nonbasicMove_[columnIn];
 }
 
 void HPrimal::iterationAnalysisData() {

@@ -28,9 +28,9 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   // Copy tolerances from options
   allow_dual_steepest_edge_to_devex_switch =
       options.simplex_dual_edge_weight_strategy ==
-      SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH;
-  dual_steepest_edge_weight_log_error_threshhold =
-      options.dual_steepest_edge_weight_log_error_threshhold;
+      SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE;
+  dual_steepest_edge_weight_log_error_threshold =
+      options.dual_steepest_edge_weight_log_error_threshold;
   //
   AnIterIt0 = simplex_iteration_count_;
   AnIterCostlyDseFq = 0;
@@ -88,12 +88,11 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   //
   const int dual_edge_weight_strategy =
       options.simplex_dual_edge_weight_strategy;
-  if (dual_edge_weight_strategy ==
+  if (dual_edge_weight_strategy == SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE ||
+      dual_edge_weight_strategy ==
           SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE ||
       dual_edge_weight_strategy ==
-          SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL ||
-      dual_edge_weight_strategy ==
-          SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH) {
+          SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL) {
     // Initialise the measures used to analyse accuracy of steepest edge weights
     num_dual_steepest_edge_weight_check = 0;
     num_dual_steepest_edge_weight_reject = 0;
@@ -185,13 +184,16 @@ void HighsSimplexAnalysis::setup(const HighsLp& lp, const HighsOptions& options,
   AnIterTraceRec* lcAnIter = &AnIterTrace[0];
   lcAnIter->AnIterTraceIter = AnIterIt0;
   lcAnIter->AnIterTraceTime = timer_->getWallTime();
-
   initialiseValueDistribution("Primal step summary", "", 1e-16, 1e16, 10.0,
                               primal_step_distribution);
   initialiseValueDistribution("Dual step summary", "", 1e-16, 1e16, 10.0,
                               dual_step_distribution);
-  initialiseValueDistribution("Pivot summary summary", "", 1e-8, 1e16, 10.0,
-                              pivot_distribution);
+  initialiseValueDistribution("Simplex pivot summary", "", 1e-8, 1e16, 10.0,
+                              simplex_pivot_distribution);
+  initialiseValueDistribution("Factor pivot threshold summary", "",
+                              min_pivot_threshold, max_pivot_threshold,
+                              pivot_threshold_change_factor,
+                              factor_pivot_threshold_distribution);
   initialiseValueDistribution("Numerical trouble summary", "", 1e-16, 1.0, 10.0,
                               numerical_trouble_distribution);
   initialiseValueDistribution("", "1 ", 1e-16, 1e16, 10.0,
@@ -277,7 +279,7 @@ void HighsSimplexAnalysis::invertReport(const bool header) {
 void HighsSimplexAnalysis::dualSteepestEdgeWeightError(
     const double computed_edge_weight, const double updated_edge_weight) {
   const bool accept_weight =
-      updated_edge_weight >= accept_weight_threshhold * computed_edge_weight;
+      updated_edge_weight >= accept_weight_threshold * computed_edge_weight;
   int low_weight_error = 0;
   int high_weight_error = 0;
   double weight_error;
@@ -289,7 +291,7 @@ void HighsSimplexAnalysis::dualSteepestEdgeWeightError(
   if (updated_edge_weight < computed_edge_weight) {
     // Updated weight is low
     weight_error = computed_edge_weight / updated_edge_weight;
-    if (weight_error > weight_error_threshhold) {
+    if (weight_error > weight_error_threshold) {
       low_weight_error = 1;
 #ifdef HiGHSDEV
       error_type = " Low";
@@ -301,7 +303,7 @@ void HighsSimplexAnalysis::dualSteepestEdgeWeightError(
   } else {
     // Updated weight is correct or high
     weight_error = updated_edge_weight / computed_edge_weight;
-    if (weight_error > weight_error_threshhold) {
+    if (weight_error > weight_error_threshold) {
       high_weight_error = 1;
 #ifdef HiGHSDEV
       error_type = "High";
@@ -339,7 +341,7 @@ void HighsSimplexAnalysis::dualSteepestEdgeWeightError(
               average_log_high_dual_steepest_edge_weight_error);
 #ifdef HiGHSDEV
   const bool report_weight_error = false;
-  if (report_weight_error && weight_error > 0.5 * weight_error_threshhold) {
+  if (report_weight_error && weight_error > 0.5 * weight_error_threshold) {
     printf(
         "DSE Wt Ck |%8d| OK = %1d (%4d / %6d) (c %10.4g, u %10.4g, er %10.4g - "
         "%s): Low (Fq %10.4g, Er %10.4g); High (Fq%10.4g, Er%10.4g) | %10.4g "
@@ -404,16 +406,16 @@ bool HighsSimplexAnalysis::switchToDevex() {
     double dse_weight_error_measure =
         average_log_low_dual_steepest_edge_weight_error +
         average_log_high_dual_steepest_edge_weight_error;
-    double dse_weight_error_threshhold =
-        dual_steepest_edge_weight_log_error_threshhold;
+    double dse_weight_error_threshold =
+        dual_steepest_edge_weight_log_error_threshold;
     switch_to_devex = allow_dual_steepest_edge_to_devex_switch &&
-                      dse_weight_error_measure > dse_weight_error_threshhold;
+                      dse_weight_error_measure > dse_weight_error_threshold;
 #ifdef HiGHSDEV
     if (switch_to_devex) {
       HighsLogMessage(logfile, HighsMessageType::INFO,
                       "Switch from DSE to Devex with log error measure of %g > "
-                      "%g = threshhold",
-                      dse_weight_error_measure, dse_weight_error_threshhold);
+                      "%g = threshold",
+                      dse_weight_error_measure, dse_weight_error_threshold);
     }
 #endif
   }
@@ -695,7 +697,9 @@ void HighsSimplexAnalysis::iterationRecord() {
   updateValueDistribution(dual_step, cleanup_dual_step_distribution);
   updateValueDistribution(primal_step, primal_step_distribution);
   updateValueDistribution(dual_step, dual_step_distribution);
-  updateValueDistribution(pivot_value_from_column, pivot_distribution);
+  updateValueDistribution(pivot_value_from_column, simplex_pivot_distribution);
+  updateValueDistribution(factor_pivot_threshold,
+                          factor_pivot_threshold_distribution);
   // Only update the distribution of legal values for
   // numerical_trouble. Illegal values are set in PAMI since it's not
   // known in minor iterations
@@ -900,7 +904,8 @@ void HighsSimplexAnalysis::summaryReport() {
   printValueDistribution(ftran_upper_hyper_density, numRow);
   printValueDistribution(primal_step_distribution);
   printValueDistribution(dual_step_distribution);
-  printValueDistribution(pivot_distribution);
+  printValueDistribution(simplex_pivot_distribution);
+  printValueDistribution(factor_pivot_threshold_distribution);
   printValueDistribution(numerical_trouble_distribution);
   printValueDistribution(cleanup_dual_change_distribution);
   printValueDistribution(cleanup_primal_step_distribution);

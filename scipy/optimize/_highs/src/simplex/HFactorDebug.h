@@ -18,7 +18,8 @@
 #include "simplex/HFactor.h"
 
 HighsDebugStatus debugCheckInvert(const HighsOptions& options,
-                                  const HFactor& factor);
+                                  const HFactor& factor,
+                                  const bool force = false);
 
 void debugReportRankDeficiency(const int call_id, const int highs_debug_level,
                                FILE* output, const int message_level,
@@ -45,4 +46,9 @@ void debugLogRankDeficiency(const int highs_debug_level, FILE* output,
                             const int basis_matrix_num_el,
                             const int invert_num_el, const int& kernel_dim,
                             const int kernel_num_el, const int nwork);
+
+void debugPivotValueAnalysis(const int highs_debug_level, FILE* output,
+                             const int message_level, const int numRow,
+                             const vector<double>& UpivotValue);
+
 #endif  // SIMPLEX_HFACTORDEBUG_H_

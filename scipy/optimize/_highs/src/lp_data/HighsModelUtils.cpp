@@ -105,13 +105,13 @@ std::string ch4VarStatus(const HighsBasisStatus status, const double lower,
   return "";
 }
 
-void reportModelBoundSol(FILE* file, const bool columns, const int dim,
-                         const std::vector<double>& lower,
-                         const std::vector<double>& upper,
-                         const std::vector<std::string>& names,
-                         const std::vector<double>& primal,
-                         const std::vector<double>& dual,
-                         const std::vector<HighsBasisStatus>& status) {
+void writeModelBoundSol(FILE* file, const bool columns, const int dim,
+                        const std::vector<double>& lower,
+                        const std::vector<double>& upper,
+                        const std::vector<std::string>& names,
+                        const std::vector<double>& primal,
+                        const std::vector<double>& dual,
+                        const std::vector<HighsBasisStatus>& status) {
   const bool have_names = names.size() > 0;
   const bool have_basis = status.size() > 0;
   const bool have_primal = primal.size() > 0;
@@ -325,6 +325,12 @@ std::string utilHighsModelStatusToString(const HighsModelStatus model_status) {
     case HighsModelStatus::REACHED_ITERATION_LIMIT:
       return "Reached iteration limit";
       break;
+    case HighsModelStatus::PRIMAL_DUAL_INFEASIBLE:
+      return "Primal and dual infeasible";
+      break;
+    case HighsModelStatus::DUAL_INFEASIBLE:
+      return "Dual infeasible";
+      break;
     default:
 #ifdef HiGHSDEV
       printf("HiGHS model status %d not recognised\n", (int)model_status);
@@ -333,6 +339,18 @@ std::string utilHighsModelStatusToString(const HighsModelStatus model_status) {
       break;
   }
   return "";
+}
+
+void zeroHighsIterationCounts(HighsIterationCounts& iteration_counts) {
+  iteration_counts.simplex = 0;
+  iteration_counts.ipm = 0;
+  iteration_counts.crossover = 0;
+}
+
+void zeroHighsIterationCounts(HighsInfo& info) {
+  info.simplex_iteration_count = 0;
+  info.ipm_iteration_count = 0;
+  info.crossover_iteration_count = 0;
 }
 
 void copyHighsIterationCounts(const HighsIterationCounts& iteration_counts,
@@ -372,11 +390,15 @@ HighsStatus highsStatusFromHighsModelStatus(HighsModelStatus model_status) {
       return HighsStatus::OK;
     case HighsModelStatus::OPTIMAL:
       return HighsStatus::OK;
+    case HighsModelStatus::PRIMAL_DUAL_INFEASIBLE:
+      return HighsStatus::OK;
     case HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND:
       return HighsStatus::OK;
     case HighsModelStatus::REACHED_TIME_LIMIT:
       return HighsStatus::Warning;
     case HighsModelStatus::REACHED_ITERATION_LIMIT:
+      return HighsStatus::Warning;
+    case HighsModelStatus::DUAL_INFEASIBLE:
       return HighsStatus::Warning;
     default:
       return HighsStatus::Error;

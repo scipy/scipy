@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "lp_data/HStruct.h"
 #include "lp_data/HighsInfo.h"
 #include "lp_data/HighsLp.h"
 #include "lp_data/HighsStatus.h"
@@ -71,5 +72,11 @@ void copySolutionObjectiveParams(
 
 void copyFromSolutionParams(HighsInfo& highs_info,
                             const HighsSolutionParams& solution_params);
+
+bool isBasisConsistent(const HighsLp& lp, const HighsBasis& basis);
+bool isSolutionRightSize(const HighsLp& lp, const HighsSolution& solution);
+bool isBasisRightSize(const HighsLp& lp, const HighsBasis& basis);
+void clearSolutionUtil(HighsSolution& solution);
+void clearBasisUtil(HighsBasis& solution);
 
 #endif  // LP_DATA_HIGHSSOLUTION_H_

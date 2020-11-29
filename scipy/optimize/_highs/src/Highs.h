@@ -16,15 +16,10 @@
 
 #include <sstream>
 
-#include "lp_data/HighsInfo.h"
-#include "lp_data/HighsLp.h"
 #include "lp_data/HighsModelObject.h"
-#include "lp_data/HighsOptions.h"
+#include "lp_data/HighsRanging.h"
 #include "lp_data/HighsSolutionDebug.h"
-#include "lp_data/HighsStatus.h"
 #include "presolve/PresolveComponent.h"
-#include "util/HighsTimer.h"
-#include "util/HighsUtils.h"
 
 /**
  * @brief Class to set parameters and run HiGHS
@@ -42,17 +37,30 @@ class Highs {
    */
 
   /**
-   * @brief Clears the vector of HighsModelObjects (hmos), creates a
-   * HighsModelObject for this LP and makes it the first of the vector
-   * of HighsModelObjects
+   * @brief Every model loading module eventually uses passModel to
+   * communicate the model to HiGHS. It clears the vector of
+   * HighsModelObjects (hmos), creates a HighsModelObject for this LP
+   * and makes it the first of the vector of HighsModelObjects
    */
   HighsStatus passModel(const HighsLp& lp  //!< The HighsLp instance for this LP
   );
+
+  HighsStatus passModel(const int num_col, const int num_row, const int num_nz,
+                        const double* costs, const double* col_lower,
+                        const double* col_upper, const double* row_lower,
+                        const double* row_upper, const int* astart,
+                        const int* aindex, const double* avalue);
 
   /**
    * @brief reads in a model and initializes the HighsModelObject
    */
   HighsStatus readModel(const std::string filename  //!< the filename
+  );
+
+  /**
+   * @brief reads in a basis
+   */
+  HighsStatus readBasis(const std::string filename  //!< the filename
   );
 
   /**
@@ -105,10 +113,10 @@ class Highs {
       const char* value           //!< The option value
   );
 
-  HighsStatus setHighsLogfile(FILE* logfile  //!< The log file
+  HighsStatus setHighsLogfile(FILE* logfile = NULL  //!< The log file
   );
 
-  HighsStatus setHighsOutput(FILE* output  //!< The log file
+  HighsStatus setHighsOutput(FILE* output = NULL  //!< The log file
   );
 
   HighsStatus readHighsOptions(const std::string filename  //!< The filename
@@ -202,7 +210,23 @@ class Highs {
    */
   int getSimplexIterationCount() { return info_.simplex_iteration_count; }
 
-  // todo: getRangingInformation(..)
+  /**
+   * @brief Indicates whether a dual unbounded ray exdists, and gets
+   * it if it does and dual_ray is not NULL
+   */
+  HighsStatus getDualRay(bool& has_dual_ray, double* dual_ray_value = NULL);
+
+  /**
+   * @brief Indicates whether a primal unbounded ray exdists, and gets
+   * it if it does and primal_ray is not NULL
+   */
+  HighsStatus getPrimalRay(bool& has_primal_ray,
+                           double* primal_ray_value = NULL);
+
+  /**
+   * @brief Gets the ranging information for the current LP
+   */
+  HighsStatus getRanging(HighsRanging& ranging);
 
   /**
    * Methods for operations with the invertible representation of the
@@ -263,10 +287,12 @@ class Highs {
   /**
    * @brief Forms a row of \f$B^{-1}A\f$
    */
-  HighsStatus getReducedRow(const int row,           //!< Index of row required
-                            double* row_vector,      //!< Row required
-                            int* row_num_nz = NULL,  //!< Number of nonzeros
-                            int* row_indices = NULL  //!< Indices of nonzeros
+  HighsStatus getReducedRow(const int row,            //!< Index of row required
+                            double* row_vector,       //!< Row required
+                            int* row_num_nz = NULL,   //!< Number of nonzeros
+                            int* row_indices = NULL,  //!< Indices of nonzeros
+                            const double* pass_basis_inverse_row_vector =
+                                NULL  //!< Necessary row of \f$B^{-1}\f$
   );
 
   /**
@@ -424,6 +450,12 @@ class Highs {
    * @brief writes out current model
    */
   HighsStatus writeModel(const std::string filename  //!< the filename
+  );
+
+  /**
+   * @brief writes out current basis
+   */
+  HighsStatus writeBasis(const std::string filename  //!< the filename
   );
 
   /**
@@ -655,6 +687,22 @@ class Highs {
   );
 
   /**
+   * @brief Scale a matrix column (and cost) by a constant - flipping bounds if
+   * the constant is negative
+   */
+  bool scaleCol(const int col,         //!< Column to change
+                const double scaleval  //!< Scaling value
+  );
+
+  /**
+   * @brief Scale a matrix row by a constant - flipping bounds if the constant
+   * is negative
+   */
+  bool scaleRow(const int row,         //!< Row to change
+                const double scaleval  //!< Scaling value
+  );
+
+  /**
    * Other methods for specialist applications
    */
 
@@ -685,8 +733,6 @@ class Highs {
    * @brief Clears the HighsBasis for the LP of the HighsModelObject
    */
   HighsStatus setBasis();
-
-  // todo: getRangingInformation(..)
 
   /**
    * @brief Gets the value of infinity used by HiGHS
@@ -771,9 +817,10 @@ class Highs {
                        const double unscaled_dual_feasibility_tolerance,
                        const bool report = false);
 
-  bool haveHmo(const string method_name);
+  bool haveHmo(const string method_name) const;
 
-  void updateHighsSolutionBasis();
+  void newHighsBasis();
+  void forceHighsSolutionBasisSize();
   bool getHighsModelStatusAndInfo(const int solved_hmo);
 
   HighsStatus reset();

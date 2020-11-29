@@ -95,19 +95,23 @@ int Highs_writeSolution(void* highs,          //!< HiGHS object reference
  * @brief pass an LP to HiGHS
  */
 int Highs_passLp(
-    void* highs,       //!< HiGHS object reference
-    int numcol,        //!< number of columns
-    int numrow,        //!< number of rows
-    int numnz,         //!< number of entries in the constraint matrix
-    double* colcost,   //!< array of length [numcol] with column costs
-    double* collower,  //!< array of length [numcol] with lower column bounds
-    double* colupper,  //!< array of length [numcol] with upper column bounds
-    double* rowlower,  //!< array of length [numrow] with lower row bounds
-    double* rowupper,  //!< array of length [numrow] with upper row bounds
-    int* astart,       //!< array of length [numcol+1] with column start indices
-    int*
+    void* highs,            //!< HiGHS object reference
+    const int numcol,       //!< number of columns
+    const int numrow,       //!< number of rows
+    const int numnz,        //!< number of entries in the constraint matrix
+    const double* colcost,  //!< array of length [numcol] with column costs
+    const double*
+        collower,  //!< array of length [numcol] with lower column bounds
+    const double*
+        colupper,  //!< array of length [numcol] with upper column bounds
+    const double* rowlower,  //!< array of length [numrow] with lower row bounds
+    const double* rowupper,  //!< array of length [numrow] with upper row bounds
+    const int*
+        astart,  //!< array of length [numcol+1] with column start indices
+    const int*
         aindex,  //!< array of length [numnz] with row indices of matrix entries
-    double* avalue  //!< array of length [numnz] with value of matrix entries
+    const double*
+        avalue  //!< array of length [numnz] with value of matrix entries
 );
 
 /*

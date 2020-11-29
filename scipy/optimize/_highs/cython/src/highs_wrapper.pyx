@@ -167,6 +167,7 @@ cdef apply_options(dict options, Highs & highs):
             'primal_feasibility_tolerance',
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
+            'start_crossover_tolerance',
             'time_limit'
     ]):
         val = options.get(opt, None)
@@ -469,6 +470,10 @@ def highs_wrapper(
             - solver : str {'simplex', 'ipm'}
                 Choose which solver to use.  If ``solver='simplex'``
                 and ``parallel=True`` then PAMI will be used.
+
+            - start_crossover_tolerance : double
+                Tolerance to be satisfied before IPM crossover will
+                start.
 
             - time_limit : double
                 Max number of seconds to run the solver for.

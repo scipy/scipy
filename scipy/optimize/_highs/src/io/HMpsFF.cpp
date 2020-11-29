@@ -675,15 +675,20 @@ HMpsFF::parsekey HMpsFF::parseBounds(FILE* logfile, std::ifstream& file) {
     // start of new section?
     if (key != parsekey::NONE) {
       if (num_mi)
-        printf("Number of MI entries in BOUNDS section is %d\n", num_mi);
+        HighsLogMessage(logfile, HighsMessageType::INFO,
+                        "Number of MI entries in BOUNDS section is %d", num_mi);
       if (num_pl)
-        printf("Number of PL entries in BOUNDS section is %d\n", num_pl);
+        HighsLogMessage(logfile, HighsMessageType::INFO,
+                        "Number of PL entries in BOUNDS section is %d", num_pl);
       if (num_bv)
-        printf("Number of BV entries in BOUNDS section is %d\n", num_bv);
+        HighsLogMessage(logfile, HighsMessageType::INFO,
+                        "Number of BV entries in BOUNDS section is %d", num_bv);
       if (num_li)
-        printf("Number of LI entries in BOUNDS section is %d\n", num_li);
+        HighsLogMessage(logfile, HighsMessageType::INFO,
+                        "Number of LI entries in BOUNDS section is %d", num_li);
       if (num_ui)
-        printf("Number of UI entries in BOUNDS section is %d\n", num_ui);
+        HighsLogMessage(logfile, HighsMessageType::INFO,
+                        "Number of UI entries in BOUNDS section is %d", num_ui);
       // Assign bounds to columns that remain binary by default
       for (int colidx = 0; colidx < numCol; colidx++) {
         if (col_binary[colidx]) {

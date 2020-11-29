@@ -33,23 +33,6 @@ cdef extern from "HighsLp.h" nogil:
 
         vector[int] integrality_
 
-    ctypedef enum HighsModelStatus:
-        HighsModelStatusNOTSET "HighsModelStatus::NOTSET" = 0
-        HighsModelStatusHIGHS_MODEL_STATUS_MIN "HighsModelStatus::HIGHS_MODEL_STATUS_MIN" = HighsModelStatusNOTSET
-        HighsModelStatusLOAD_ERROR "HighsModelStatus::LOAD_ERROR"
-        HighsModelStatusMODEL_ERROR "HighsModelStatus::MODEL_ERROR"
-        HighsModelStatusPRESOLVE_ERROR "HighsModelStatus::PRESOLVE_ERROR"
-        HighsModelStatusSOLVE_ERROR "HighsModelStatus::SOLVE_ERROR"
-        HighsModelStatusPOSTSOLVE_ERROR "HighsModelStatus::POSTSOLVE_ERROR"
-        HighsModelStatusMODEL_EMPTY "HighsModelStatus::MODEL_EMPTY"
-        HighsModelStatusPRIMAL_INFEASIBLE "HighsModelStatus::PRIMAL_INFEASIBLE"
-        HighsModelStatusPRIMAL_UNBOUNDED "HighsModelStatus::PRIMAL_UNBOUNDED"
-        HighsModelStatusOPTIMAL "HighsModelStatus::OPTIMAL"
-        HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND "HighsModelStatus::REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND"
-        HighsModelStatusREACHED_TIME_LIMIT "HighsModelStatus::REACHED_TIME_LIMIT"
-        HighsModelStatusREACHED_ITERATION_LIMIT "HighsModelStatus::REACHED_ITERATION_LIMIT"
-        HighsModelStatusHIGHS_MODEL_STATUS_MAX "HighsModelStatus::HIGHS_MODEL_STATUS_MAX" = HighsModelStatusREACHED_ITERATION_LIMIT
-
     ctypedef enum ObjSense:
         ObjSenseMINIMIZE "ObjSense::MINIMIZE" = 1
         ObjSenseMAXIMIZE "ObjSense::MAXIMIZE" = -1

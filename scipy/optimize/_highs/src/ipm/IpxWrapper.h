@@ -557,6 +557,7 @@ HighsStatus solveLpIpx(const HighsOptions& options, HighsTimer& timer,
           unscaled_solution_params.dual_feasibility_tolerance);
 
   parameters.ipm_optimality_tol = options.ipm_optimality_tolerance;
+  parameters.crossover_start = options.start_crossover_tolerance;
   // Determine the run time allowed for IPX
   parameters.time_limit = options.time_limit - timer.readRunHighsClock();
   parameters.ipm_maxiter = options.ipm_iteration_limit - iteration_counts.ipm;

@@ -766,3 +766,49 @@ void copyFromSolutionParams(HighsInfo& highs_info,
   highs_info.sum_dual_infeasibilities =
       solution_params.sum_dual_infeasibilities;
 }
+
+bool isBasisConsistent(const HighsLp& lp, const HighsBasis& basis) {
+  bool consistent = true;
+  consistent = isBasisRightSize(lp, basis) && consistent;
+  int num_basic_variables = 0;
+  for (int iCol = 0; iCol < lp.numCol_; iCol++) {
+    if (basis.col_status[iCol] == HighsBasisStatus::BASIC)
+      num_basic_variables++;
+  }
+  for (int iRow = 0; iRow < lp.numRow_; iRow++) {
+    if (basis.row_status[iRow] == HighsBasisStatus::BASIC)
+      num_basic_variables++;
+  }
+  bool right_num_basic_variables = num_basic_variables == lp.numRow_;
+  consistent = right_num_basic_variables && consistent;
+  return consistent;
+}
+
+bool isSolutionRightSize(const HighsLp& lp, const HighsSolution& solution) {
+  bool right_size = true;
+  right_size = (int)solution.col_value.size() == lp.numCol_ && right_size;
+  right_size = (int)solution.col_dual.size() == lp.numCol_ && right_size;
+  right_size = (int)solution.row_value.size() == lp.numRow_ && right_size;
+  right_size = (int)solution.row_dual.size() == lp.numRow_ && right_size;
+  return right_size;
+}
+
+bool isBasisRightSize(const HighsLp& lp, const HighsBasis& basis) {
+  bool right_size = true;
+  right_size = (int)basis.col_status.size() == lp.numCol_ && right_size;
+  right_size = (int)basis.row_status.size() == lp.numRow_ && right_size;
+  return right_size;
+}
+
+void clearSolutionUtil(HighsSolution& solution) {
+  solution.col_dual.clear();
+  solution.col_value.clear();
+  solution.row_dual.clear();
+  solution.row_value.clear();
+}
+
+void clearBasisUtil(HighsBasis& basis) {
+  basis.row_status.clear();
+  basis.col_status.clear();
+  basis.valid_ = false;
+}

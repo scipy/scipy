@@ -186,7 +186,6 @@ HighsStatus HQPrimal::solve() {
 void HQPrimal::solvePhase2() {
   HighsSimplexInfo& simplex_info = workHMO.simplex_info_;
   HighsSimplexLpStatus& simplex_lp_status = workHMO.simplex_lp_status_;
-  printf("HQPrimal::solvePhase2\n");
   // When starting a new phase the (updated) primal objective function
   // value isn't known. Indicate this so that when the value
   // computed from scratch in build() isn't checked against the the
@@ -267,15 +266,15 @@ void HQPrimal::solvePhase2() {
         /* Primal phase 1 choose column */
         phase1ChooseColumn();
         if (columnIn == -1) {
-          printf("==> Primal phase 1 choose column failed.\n");
           invertHint = INVERT_HINT_CHOOSE_COLUMN_FAIL;
           break;
         }
 
-        /* Primal phsae 1 choose row */
+        /* Primal phase 1 choose row */
         phase1ChooseRow();
         if (rowOut == -1) {
-          printf("Primal phase 1 choose row failed.\n");
+          HighsLogMessage(workHMO.options_.logfile, HighsMessageType::ERROR,
+                          "Primal phase 1 choose row failed");
           exit(0);
         }
 

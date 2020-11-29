@@ -48,6 +48,8 @@ class HPrimal {
   void primalChooseRow();
   void primalUpdate();
 
+  void savePrimalRay();
+
   void iterationAnalysisData();
   void iterationAnalysis();
   void reportRebuild(const int rebuild_invert_hint = -1);

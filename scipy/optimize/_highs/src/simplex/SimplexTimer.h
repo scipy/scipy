@@ -37,19 +37,14 @@ enum iClockSimplex {
   IterateDevexIzClock,        //!< Second level timing of initialise Devex
   IteratePivotsClock,         //!< Second level timing of pivoting
 
-  initialiseSimplexLpDefinitionClock,     //!< initialise Simplex LP definition
-  initialiseSimplexLpRandomVectorsClock,  //!< initialise Simplex LP random
-                                          //!< vectors
-  setNonbasicFlagClock,                   //!< set nonbasicFlag
-  permuteSimplexLpClock,                  //!< permute SImplex LP
-  setBasicIndexClock,                     //!< set basicIndex
-  ScaleClock,                             //!< Scale
-  CrashClock,                             //!< Crash
-  factorSetupClock,                       //!< HFactor setup
-  BasisConditionClock,                    //!< Basis condition estimation
-  matrixSetupClock,                       //!< HMatrix setup
-  setNonbasicMoveClock,                   //!< set nonbasicMove
-  allocateSimplexArraysClock,             //!< allocate simplex arrays
+  initialiseSimplexLpBasisAndFactorClock,  //!< initialise Simplex LP, its basis
+                                           //!< and factor
+  ScaleClock,                              //!< Scale
+  CrashClock,                              //!< Crash
+  BasisConditionClock,                     //!< Basis condition estimation
+  matrixSetupClock,                        //!< HMatrix setup
+  setNonbasicMoveClock,                    //!< set nonbasicMove
+  allocateSimplexArraysClock,              //!< allocate simplex arrays
   initialiseSimplexCostBoundsClock,  //!< initialise simplex cost and bounds
 
   DseIzClock,        //!< DSE weight initialisation
@@ -133,24 +128,17 @@ class SimplexTimer {
     clock[IteratePrimalClock] = timer.clock_def("PRIMAL", "UPR");
     clock[IterateDevexIzClock] = timer.clock_def("DEVEX_IZ", "DVI");
     clock[IteratePivotsClock] = timer.clock_def("PIVOTS", "PIV");
-    clock[setNonbasicFlagClock] = timer.clock_def("SET_NONBASICFLAG", "SNF");
-    //    clock[] = timer.clock_def("", "");
+    clock[initialiseSimplexLpBasisAndFactorClock] =
+        timer.clock_def("IZ_SIMPLEX_LP_DEF", "ISD");
     clock[allocateSimplexArraysClock] =
-        timer.clock_def("ALLOC_RSM_ARRAYS", "ISA");
+        timer.clock_def("ALLOC_SIMPLEX_ARRS", "ASA");
     clock[initialiseSimplexCostBoundsClock] =
-        timer.clock_def("IZ_RSM_CO_BD", "ISV");
-    clock[permuteSimplexLpClock] = timer.clock_def("PERM_SIMPLEX_LP", "PLP");
-    clock[setBasicIndexClock] = timer.clock_def("SET_BASICINDEX", "SBI");
+        timer.clock_def("IZ_SIMPLEX_CO_BD", "ICB");
     clock[ScaleClock] = timer.clock_def("SCALE", "SCL");
     clock[CrashClock] = timer.clock_def("CRASH", "CSH");
-    clock[factorSetupClock] = timer.clock_def("FACTOR_SETUP", "FST");
     clock[BasisConditionClock] = timer.clock_def("BASIS_CONDITION", "CON");
     clock[matrixSetupClock] = timer.clock_def("MATRIX_SETUP", "FST");
     clock[setNonbasicMoveClock] = timer.clock_def("SET_NONBASICMOVE", "SNM");
-    clock[initialiseSimplexLpDefinitionClock] =
-        timer.clock_def("IZ_SIMPLEX_LP_DEF", "ISD");
-    clock[initialiseSimplexLpRandomVectorsClock] =
-        timer.clock_def("IZ_SIMPLEX_LP_RAND", "ISR");
     clock[DseIzClock] = timer.clock_def("DSE_IZ", "DEI");
     clock[InvertClock] = timer.clock_def("INVERT", "INV");
     clock[PermWtClock] = timer.clock_def("PERM_WT", "PWT");
@@ -259,16 +247,7 @@ class SimplexTimer {
   };
 
   void reportSimplexInnerClock(HighsTimerClock& simplex_timer_clock) {
-    std::vector<int> simplex_clock_list{initialiseSimplexLpDefinitionClock,
-                                        initialiseSimplexLpRandomVectorsClock,
-                                        setNonbasicFlagClock,
-                                        permuteSimplexLpClock,
-                                        setBasicIndexClock,
-                                        ScaleClock,
-                                        CrashClock,
-                                        factorSetupClock,
-                                        BasisConditionClock,
-                                        matrixSetupClock,
+    std::vector<int> simplex_clock_list{initialiseSimplexLpBasisAndFactorClock,
                                         allocateSimplexArraysClock,
                                         initialiseSimplexCostBoundsClock,
                                         setNonbasicMoveClock,

@@ -136,9 +136,9 @@ class HMatrix {
   const double* getAvalue() const { return &Avalue[0]; }
 
 #ifdef HiGHSDEV
-  bool setup_ok(const int* nonbasicFlag);
-  bool price_er_ck(HVector& row_ap, const HVector& row_ep) const;
-  bool price_er_ck_core(HVector& row_ap, const HVector& row_ep) const;
+  bool debugRowMatrix(const int* nonbasicFlag);
+  bool debugPriceResult(HVector& row_ap, const HVector& row_ep) const;
+  bool debugPriceResultCore(HVector& row_ap, const HVector& row_ep) const;
 #endif
 
   /**

@@ -20,6 +20,7 @@
 #include "io/HighsIO.h"
 #include "lp_data/HConst.h"
 #include "lp_data/HighsStatus.h"
+#include "simplex/HFactor.h"
 #include "simplex/SimplexConst.h"
 
 using std::string;
@@ -272,8 +273,11 @@ struct HighsOptionsStruct {
   int dual_chuzc_sort_strategy;
   bool simplex_initial_condition_check;
   double simplex_initial_condition_tolerance;
-  double dual_steepest_edge_weight_log_error_threshhold;
+  double dual_steepest_edge_weight_log_error_threshold;
   double dual_simplex_cost_perturbation_multiplier;
+  double factor_pivot_threshold;
+  double factor_pivot_tolerance;
+  double start_crossover_tolerance;
   bool less_infeasible_DSE_check;
   bool less_infeasible_DSE_choose_row;
   bool use_original_HFactor_logic;
@@ -370,18 +374,18 @@ class HighsOptions : public HighsOptionsStruct {
                                &options_file, FILENAME_DEFAULT);
     records.push_back(record_string);
     // Options read from the file
-    record_double =
-        new OptionRecordDouble("infinite_cost",
-                               "Limit on cost coefficient: values larger than "
-                               "this will be treated as infinite",
-                               advanced, &infinite_cost, 1e15, 1e20, 1e25);
+    record_double = new OptionRecordDouble(
+        "infinite_cost",
+        "Limit on cost coefficient: values larger than "
+        "this will be treated as infinite",
+        advanced, &infinite_cost, 1e15, 1e20, HIGHS_CONST_INF);
     records.push_back(record_double);
 
-    record_double =
-        new OptionRecordDouble("infinite_bound",
-                               "Limit on |constraint bound|: values larger "
-                               "than this will be treated as infinite",
-                               advanced, &infinite_bound, 1e15, 1e20, 1e25);
+    record_double = new OptionRecordDouble(
+        "infinite_bound",
+        "Limit on |constraint bound|: values larger "
+        "than this will be treated as infinite",
+        advanced, &infinite_bound, 1e15, 1e20, HIGHS_CONST_INF);
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(
@@ -391,11 +395,11 @@ class HighsOptions : public HighsOptionsStruct {
         advanced, &small_matrix_value, 1e-12, 1e-9, HIGHS_CONST_INF);
     records.push_back(record_double);
 
-    record_double =
-        new OptionRecordDouble("large_matrix_value",
-                               "Upper limit on |matrix entries|: values larger "
-                               "than this will be treated as infinite",
-                               advanced, &large_matrix_value, 1e0, 1e15, 1e20);
+    record_double = new OptionRecordDouble(
+        "large_matrix_value",
+        "Upper limit on |matrix entries|: values larger "
+        "than this will be treated as infinite",
+        advanced, &large_matrix_value, 1e0, 1e15, HIGHS_CONST_INF);
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(
@@ -447,23 +451,25 @@ class HighsOptions : public HighsOptionsStruct {
         SIMPLEX_CRASH_STRATEGY_OFF, SIMPLEX_CRASH_STRATEGY_MAX);
     records.push_back(record_int);
 
-    record_int = new OptionRecordInt(
-        "simplex_dual_edge_weight_strategy",
-        "Strategy for simplex dual edge weights: Dantzig / Devex / Steepest "
-        "Edge (0/1/2)",
-        advanced, &simplex_dual_edge_weight_strategy,
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN,
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH,
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MAX);
+    record_int =
+        new OptionRecordInt("simplex_dual_edge_weight_strategy",
+                            "Strategy for simplex dual edge weights: Choose / "
+                            "Dantzig / Devex / Steepest "
+                            "Edge (-1/0/1/2)",
+                            advanced, &simplex_dual_edge_weight_strategy,
+                            SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN,
+                            SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
+                            SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MAX);
     records.push_back(record_int);
 
-    record_int = new OptionRecordInt(
-        "simplex_primal_edge_weight_strategy",
-        "Strategy for simplex primal edge weights: Dantzig / Devex (0/1)",
-        advanced, &simplex_primal_edge_weight_strategy,
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN,
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MAX);
+    record_int =
+        new OptionRecordInt("simplex_primal_edge_weight_strategy",
+                            "Strategy for simplex primal edge weights: Choose "
+                            "/ Dantzig / Devex (-1/0/1)",
+                            advanced, &simplex_primal_edge_weight_strategy,
+                            SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN,
+                            SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
+                            SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MAX);
     records.push_back(record_int);
 
     record_int = new OptionRecordInt("simplex_iteration_limit",
@@ -607,9 +613,9 @@ class HighsOptions : public HighsOptionsStruct {
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(
-        "dual_steepest_edge_weight_log_error_threshhold",
-        "Threshhold on dual steepest edge weight errors for Devex switch",
-        advanced, &dual_steepest_edge_weight_log_error_threshhold, 1.0, 1e1,
+        "dual_steepest_edge_weight_log_error_threshold",
+        "Threshold on dual steepest edge weight errors for Devex switch",
+        advanced, &dual_steepest_edge_weight_log_error_threshold, 1.0, 1e1,
         HIGHS_CONST_INF);
     records.push_back(record_double);
 
@@ -618,6 +624,24 @@ class HighsOptions : public HighsOptionsStruct {
         "Dual simplex cost perturbation multiplier: 0 => no perturbation",
         advanced, &dual_simplex_cost_perturbation_multiplier, 0.0, 1.0,
         HIGHS_CONST_INF);
+    records.push_back(record_double);
+
+    record_double = new OptionRecordDouble(
+        "factor_pivot_threshold", "Matrix factorization pivot threshold",
+        advanced, &factor_pivot_threshold, min_pivot_threshold,
+        default_pivot_threshold, max_pivot_threshold);
+    records.push_back(record_double);
+
+    record_double = new OptionRecordDouble(
+        "factor_pivot_tolerance", "Matrix factorization pivot tolerance",
+        advanced, &factor_pivot_tolerance, min_pivot_tolerance,
+        default_pivot_tolerance, max_pivot_tolerance);
+    records.push_back(record_double);
+
+    record_double = new OptionRecordDouble(
+        "start_crossover_tolerance",
+        "Tolerance to be satisfied before IPM crossover will start", advanced,
+        &start_crossover_tolerance, 1e-12, 1e-8, HIGHS_CONST_INF);
     records.push_back(record_double);
 
     record_bool = new OptionRecordBool(

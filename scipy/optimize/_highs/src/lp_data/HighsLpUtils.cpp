@@ -281,7 +281,7 @@ HighsStatus assessCosts(const HighsOptions& options, const int ml_col_os,
       HighsLogMessage(options.logfile, HighsMessageType::ERROR,
                       "Col  %12d has |cost| of %12g >= %12g", ml_col, abs_cost,
                       infinite_cost);
-      error_found = true;
+      error_found = !allow_infinite_costs;
     }
   }
   if (error_found)
@@ -473,6 +473,7 @@ HighsStatus assessMatrix(const HighsOptions& options, const int vec_dim,
     // Account for any index-value pairs removed so far
     Astart[ix] = num_new_nz;
     for (int el = from_el; el < to_el; el++) {
+      // Check the index
       int component = Aindex[el];
       // Check that the index is non-negative
       bool legal_component = component >= 0;
@@ -503,9 +504,19 @@ HighsStatus assessMatrix(const HighsOptions& options, const int vec_dim,
       }
       // Indicate that the index has occurred
       check_vector[component] = 1;
-      // Check that the value is not too large
+      // Check the value
       double abs_value = fabs(Avalue[el]);
-      bool large_value = abs_value >= large_matrix_value;
+      /*
+      // Check that the value is not zero
+      bool zero_value = abs_value == 0;
+      if (zero_value) {
+        HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                        "Matrix packed vector %d, entry %d, is zero", ix, el);
+        return HighsStatus::Error;
+      }
+      */
+      // Check that the value is not too large
+      bool large_value = abs_value > large_matrix_value;
       if (large_value) {
         HighsLogMessage(
             options.logfile, HighsMessageType::ERROR,
@@ -854,6 +865,48 @@ void colScaleMatrix(const int max_scale_factor_exponent, double* colScale,
   }
 }
 
+HighsStatus applyScalingToLpCol(const HighsOptions& options, HighsLp& lp,
+                                const int col, const double colScale) {
+  if (col < 0) return HighsStatus::Error;
+  if (col >= lp.numCol_) return HighsStatus::Error;
+  if (!colScale) return HighsStatus::Error;
+
+  for (int el = lp.Astart_[col]; el < lp.Astart_[col + 1]; el++)
+    lp.Avalue_[el] *= colScale;
+  lp.colCost_[col] *= colScale;
+  if (colScale > 0) {
+    lp.colLower_[col] /= colScale;
+    lp.colUpper_[col] /= colScale;
+  } else {
+    const double new_upper = lp.colLower_[col] / colScale;
+    lp.colLower_[col] = lp.colUpper_[col] / colScale;
+    lp.colUpper_[col] = new_upper;
+  }
+  return HighsStatus::OK;
+}
+
+HighsStatus applyScalingToLpRow(const HighsOptions& options, HighsLp& lp,
+                                const int row, const double rowScale) {
+  if (row < 0) return HighsStatus::Error;
+  if (row >= lp.numRow_) return HighsStatus::Error;
+  if (!rowScale) return HighsStatus::Error;
+
+  for (int col = 0; col < lp.numCol_; col++) {
+    for (int el = lp.Astart_[col]; el < lp.Astart_[col + 1]; el++) {
+      if (lp.Aindex_[el] == row) lp.Avalue_[el] *= rowScale;
+    }
+  }
+  if (rowScale > 0) {
+    lp.rowLower_[row] /= rowScale;
+    lp.rowUpper_[row] /= rowScale;
+  } else {
+    const double new_upper = lp.rowLower_[row] / rowScale;
+    lp.rowLower_[row] = lp.rowUpper_[row] / rowScale;
+    lp.rowUpper_[row] = new_upper;
+  }
+  return HighsStatus::OK;
+}
+
 HighsStatus appendColsToLpVectors(HighsLp& lp, const int num_new_col,
                                   const vector<double>& colCost,
                                   const vector<double>& colLower,
@@ -1110,13 +1163,14 @@ HighsStatus deleteColsFromLpMatrix(
     // number of columns from zero when there are no rows in the LP.
     for (int col = delete_from_col; col <= delete_to_col; col++)
       lp.Astart_[col] = 0;
+    // Shift the starts - both in place and value - to account for the
+    // columns and nonzeros removed
+    const int keep_from_el = lp.Astart_[keep_from_col];
     for (int col = keep_from_col; col <= keep_to_col; col++) {
-      lp.Astart_[new_num_col] =
-          new_num_nz + lp.Astart_[col] - lp.Astart_[keep_from_col];
+      lp.Astart_[new_num_col] = new_num_nz + lp.Astart_[col] - keep_from_el;
       new_num_col++;
     }
-    for (int el = lp.Astart_[keep_from_col]; el < lp.Astart_[keep_to_col + 1];
-         el++) {
+    for (int el = keep_from_el; el < lp.Astart_[keep_to_col + 1]; el++) {
       lp.Aindex_[new_num_nz] = lp.Aindex_[el];
       lp.Avalue_[new_num_nz] = lp.Avalue_[el];
       new_num_nz++;
@@ -1184,7 +1238,7 @@ HighsStatus deleteRowsFromLpVectors(
 
   int row_dim = lp.numRow_;
   new_num_row = 0;
-  bool have_names = lp.row_names_.size();
+  bool have_names = (int)lp.row_names_.size() > 0;
   for (int k = from_k; k <= to_k; k++) {
     updateIndexCollectionOutInIndex(index_collection, delete_from_row,
                                     delete_to_row, keep_from_row, keep_to_row,
@@ -1201,7 +1255,7 @@ HighsStatus deleteRowsFromLpVectors(
       if (have_names) lp.row_names_[new_num_row] = lp.row_names_[row];
       new_num_row++;
     }
-    if (keep_to_row == row_dim) break;
+    if (keep_to_row >= row_dim - 1) break;
   }
   lp.rowLower_.resize(new_num_row);
   lp.rowUpper_.resize(new_num_row);
@@ -1240,7 +1294,8 @@ HighsStatus deleteRowsFromLpMatrix(
   // Set up a row mask to indicate the new row index of kept rows and
   // -1 for deleted rows so that the kept entries in the column-wise
   // matrix can be identified and have their correct row index.
-  int* new_index = (int*)malloc(sizeof(int) * lp.numRow_);
+  vector<int> new_index;
+  new_index.resize(lp.numRow_);
   int new_num_row = 0;
   bool mask = index_collection.is_mask_;
   const int* row_mask = index_collection.mask_;
@@ -1292,7 +1347,6 @@ HighsStatus deleteRowsFromLpMatrix(
     }
   }
   lp.Astart_[lp.numCol_] = new_num_nz;
-  free(new_index);
   lp.Astart_.resize(lp.numCol_ + 1);
   lp.Aindex_.resize(new_num_nz);
   lp.Avalue_.resize(new_num_nz);
@@ -1305,20 +1359,14 @@ HighsStatus changeLpMatrixCoefficient(HighsLp& lp, const int row, const int col,
   if (col < 0 || col > lp.numCol_) return HighsStatus::Error;
   int changeElement = -1;
   for (int el = lp.Astart_[col]; el < lp.Astart_[col + 1]; el++) {
-    // printf("Column %d: Element %d is row %d. Is it %d?\n", col, el,
-    // lp.Aindex_[el], row);
     if (lp.Aindex_[el] == row) {
       changeElement = el;
       break;
     }
   }
   if (changeElement < 0) {
-    //    printf("changeLpMatrixCoefficient: Cannot find row %d in column %d\n",
-    //    row, col);
     changeElement = lp.Astart_[col + 1];
     int new_num_nz = lp.Astart_[lp.numCol_] + 1;
-    //    printf("changeLpMatrixCoefficient: Increasing Nnonz from %d to %d\n",
-    //    lp.Astart_[lp.numCol_], new_num_nz);
     lp.Aindex_.resize(new_num_nz);
     lp.Avalue_.resize(new_num_nz);
     for (int i = col + 1; i <= lp.numCol_; i++) lp.Astart_[i]++;
@@ -1467,9 +1515,6 @@ HighsStatus getLpRowBounds(const HighsLp& lp, const int from_row,
 // Get a single coefficient from the matrix
 HighsStatus getLpMatrixCoefficient(const HighsLp& lp, const int Xrow,
                                    const int Xcol, double* val) {
-#ifdef HiGHSDEV
-  printf("Called getLpMatrixCoefficient(row=%d, col=%d)\n", Xrow, Xcol);
-#endif
   if (Xrow < 0 || Xrow >= lp.numRow_) return HighsStatus::Error;
   if (Xcol < 0 || Xcol >= lp.numCol_) return HighsStatus::Error;
 
@@ -1712,96 +1757,126 @@ void analyseLp(const HighsLp& lp, const std::string message) {
 }
 #endif
 
-// void writeSolutionToFile(FILE* file, const HighsLp& lp, const HighsBasis&
-// basis,
-//                          const HighsSolution& solution, const bool pretty) {
-//   if (pretty) {
-//     reportModelBoundSol(file, true, lp.numCol_, lp.colLower_, lp.colUpper_,
-//                         lp.col_names_, solution.col_value, solution.col_dual,
-//                         basis.col_status);
-//     reportModelBoundSol(file, false, lp.numRow_, lp.rowLower_, lp.rowUpper_,
-//                         lp.row_names_, solution.row_value, solution.row_dual,
-//                         basis.row_status);
-//   } else {
-//     fprintf(file,
-//             "%d %d : Number of columns and rows for primal and dual solution
-//             " "and basis\n", lp.numCol_, lp.numRow_);
-//     const bool with_basis = basis.valid_;
-//     if (with_basis) {
-//       fprintf(file, "T\n");
-//     } else {
-//       fprintf(file, "F\n");
-//     }
-//     for (int iCol = 0; iCol < lp.numCol_; iCol++) {
-//       fprintf(file, "%g %g", solution.col_value[iCol],
-//       solution.col_dual[iCol]); if (with_basis) fprintf(file, " %d",
-//       (int)basis.col_status[iCol]); fprintf(file, " \n");
-//     }
-//     for (int iRow = 0; iRow < lp.numRow_; iRow++) {
-//       fprintf(file, "%g %g", solution.row_value[iRow],
-//       solution.row_dual[iRow]); if (with_basis) fprintf(file, " %d",
-//       (int)basis.row_status[iRow]); fprintf(file, " \n");
-//     }
-//   }
-// }
-
-HighsStatus convertBasis(const HighsLp& lp, const SimplexBasis& basis,
-                         HighsBasis& new_basis) {
-  new_basis.col_status.clear();
-  new_basis.row_status.clear();
-
-  new_basis.col_status.resize(lp.numCol_);
-  new_basis.row_status.resize(lp.numRow_);
-
-  for (int col = 0; col < lp.numCol_; col++) {
-    if (!basis.nonbasicFlag_[col]) {
-      new_basis.col_status[col] = HighsBasisStatus::BASIC;
-    } else if (basis.nonbasicMove_[col] == NONBASIC_MOVE_UP) {
-      new_basis.col_status[col] = HighsBasisStatus::LOWER;
-    } else if (basis.nonbasicMove_[col] == NONBASIC_MOVE_DN) {
-      new_basis.col_status[col] = HighsBasisStatus::UPPER;
-    } else if (basis.nonbasicMove_[col] == NONBASIC_MOVE_ZE) {
-      if (lp.colLower_[col] == lp.colUpper_[col]) {
-        new_basis.col_status[col] = HighsBasisStatus::LOWER;
-      } else {
-        new_basis.col_status[col] = HighsBasisStatus::ZERO;
-      }
+void writeSolutionToFile(FILE* file, const HighsLp& lp, const HighsBasis& basis,
+                         const HighsSolution& solution, const bool pretty) {
+  if (pretty) {
+    writeModelBoundSol(file, true, lp.numCol_, lp.colLower_, lp.colUpper_,
+                       lp.col_names_, solution.col_value, solution.col_dual,
+                       basis.col_status);
+    writeModelBoundSol(file, false, lp.numRow_, lp.rowLower_, lp.rowUpper_,
+                       lp.row_names_, solution.row_value, solution.row_dual,
+                       basis.row_status);
+  } else {
+    fprintf(file,
+            "%d %d : Number of columns and rows for primal and dual solution "
+            "and basis\n",
+            lp.numCol_, lp.numRow_);
+    const bool with_basis = basis.valid_;
+    if (with_basis) {
+      fprintf(file, "T\n");
     } else {
-      return HighsStatus::Error;
+      fprintf(file, "F\n");
+    }
+    for (int iCol = 0; iCol < lp.numCol_; iCol++) {
+      fprintf(file, "%g %g", solution.col_value[iCol], solution.col_dual[iCol]);
+      if (with_basis) fprintf(file, " %d", (int)basis.col_status[iCol]);
+      fprintf(file, " \n");
+    }
+    for (int iRow = 0; iRow < lp.numRow_; iRow++) {
+      fprintf(file, "%g %g", solution.row_value[iRow], solution.row_dual[iRow]);
+      if (with_basis) fprintf(file, " %d", (int)basis.row_status[iRow]);
+      fprintf(file, " \n");
     }
   }
-
-  for (int row = 0; row < lp.numRow_; row++) {
-    int var = lp.numCol_ + row;
-    if (!basis.nonbasicFlag_[var]) {
-      new_basis.row_status[row] = HighsBasisStatus::BASIC;
-    } else if (basis.nonbasicMove_[var] == NONBASIC_MOVE_DN) {
-      new_basis.row_status[row] = HighsBasisStatus::LOWER;
-    } else if (basis.nonbasicMove_[var] == NONBASIC_MOVE_UP) {
-      new_basis.row_status[row] = HighsBasisStatus::UPPER;
-    } else if (basis.nonbasicMove_[var] == NONBASIC_MOVE_ZE) {
-      if (lp.rowLower_[row] == lp.rowUpper_[row]) {
-        new_basis.row_status[row] = HighsBasisStatus::LOWER;
-      } else {
-        new_basis.row_status[row] = HighsBasisStatus::ZERO;
-      }
-    } else {
-      return HighsStatus::Error;
-    }
-  }
-
-  return HighsStatus::OK;
 }
 
-HighsBasis getSimplexBasis(const HighsLp& lp, const SimplexBasis& basis) {
-  HighsBasis new_basis;
-  HighsStatus result = convertBasis(lp, basis, new_basis);
-  if (result != HighsStatus::OK) return HighsBasis();
-  // Call Julian's code to translate basis once it's out of
-  // SimplexInterface. Until it is out of SimplexInteface use code
-  // I just added above which does the same but only returns an
-  // error and not which basis index has an illegal value.
-  return new_basis;
+HighsStatus writeBasisFile(const HighsOptions& options, const HighsBasis& basis,
+                           const std::string filename) {
+  HighsStatus return_status = HighsStatus::OK;
+  if (basis.valid_ == false) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "writeBasisFile: Cannot write an invalid basis");
+    return HighsStatus::Error;
+  }
+  std::ofstream outFile(filename);
+  if (outFile.fail()) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "writeBasisFile: Cannot open writeable file \"%s\"",
+                    filename.c_str());
+    return HighsStatus::Error;
+  }
+  outFile << "HiGHS Version " << HIGHS_VERSION_MAJOR << std::endl;
+  outFile << basis.col_status.size() << " " << basis.row_status.size()
+          << std::endl;
+  for (const auto& status : basis.col_status) {
+    outFile << (int)status << " ";
+  }
+  outFile << std::endl;
+  for (const auto& status : basis.row_status) {
+    outFile << (int)status << " ";
+  }
+  outFile << std::endl;
+  outFile << std::endl;
+  outFile.close();
+  return return_status;
+}
+
+HighsStatus readBasisFile(const HighsOptions& options, HighsBasis& basis,
+                          const std::string filename) {
+  // Reads a basis file, returning an error if what's read is
+  // inconsistent with the sizes of the HighsBasis passed in
+  HighsStatus return_status = HighsStatus::OK;
+  std::ifstream inFile(filename);
+  if (inFile.fail()) {
+    HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                    "readBasisFile: Cannot open readable file \"%s\"",
+                    filename.c_str());
+    return HighsStatus::Error;
+  }
+  std::string string_highs, string_version;
+  int highs_version_number;
+  inFile >> string_highs >> string_version >> highs_version_number;
+  if (highs_version_number == 1) {
+    int numCol, numRow;
+    inFile >> numCol >> numRow;
+    int basis_numCol = (int)basis.col_status.size();
+    int basis_numRow = (int)basis.row_status.size();
+    if (numCol != basis_numCol) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "readBasisFile: Basis file is for %d columns, not %d",
+                      numCol, basis_numCol);
+      return HighsStatus::Error;
+    }
+    if (numRow != basis_numRow) {
+      HighsLogMessage(options.logfile, HighsMessageType::ERROR,
+                      "readBasisFile: Basis file is for %d rows, not %d",
+                      numRow, basis_numRow);
+      return HighsStatus::Error;
+    }
+    int int_status;
+    for (int iCol = 0; iCol < numCol; iCol++) {
+      inFile >> int_status;
+      basis.col_status[iCol] = (HighsBasisStatus)int_status;
+    }
+    for (int iRow = 0; iRow < numRow; iRow++) {
+      inFile >> int_status;
+      basis.row_status[iRow] = (HighsBasisStatus)int_status;
+    }
+    if (inFile.eof()) {
+      HighsLogMessage(
+          options.logfile, HighsMessageType::ERROR,
+          "readBasisFile: Reached end of file before reading complete basis");
+      return_status = HighsStatus::Error;
+    }
+  } else {
+    HighsLogMessage(
+        options.logfile, HighsMessageType::ERROR,
+        "readBasisFile: Cannot read basis file for HiGHS version %d",
+        highs_version_number);
+    return_status = HighsStatus::Error;
+  }
+  inFile.close();
+  return return_status;
 }
 
 HighsStatus calculateColDuals(const HighsLp& lp, HighsSolution& solution) {
