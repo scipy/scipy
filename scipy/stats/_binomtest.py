@@ -113,6 +113,18 @@ class BinomTestResult:
         return ConfidenceInterval(low=low, high=high)
 
 
+def _findp(func):
+    try:
+        p = brentq(func, 0, 1)
+    except RuntimeError:
+        raise RuntimeError('numerical solver failed to converge when '
+                           'computing the confidence limits') from None
+    except ValueError as exc:
+        raise ValueError('brentq raised a ValueError; report this to the '
+                         'SciPy developers') from exc
+    return p
+
+
 def _binom_exact_conf_int(k, n, confidence_level, alternative):
     """
     Compute the estimate and confidence interval for the binomial test.
@@ -124,24 +136,24 @@ def _binom_exact_conf_int(k, n, confidence_level, alternative):
         if k == 0:
             plow = 0.0
         else:
-            plow = brentq(lambda p: binom.sf(k-1, n, p) - alpha, 0, 1)
+            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
         if k == n:
             phigh = 1.0
         else:
-            phigh = brentq(lambda p: binom.cdf(k, n, p) - alpha, 0, 1)
+            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
     elif alternative == 'less':
         alpha = 1 - confidence_level
         plow = 0.0
         if k == n:
             phigh = 1.0
         else:
-            phigh = brentq(lambda p: binom.cdf(k, n, p) - alpha, 0, 1)
+            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
     elif alternative == 'greater':
         alpha = 1 - confidence_level
         if k == 0:
             plow = 0.0
         else:
-            plow = brentq(lambda p: binom.sf(k-1, n, p) - alpha, 0, 1)
+            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
         phigh = 1.0
     return plow, phigh
 
