@@ -418,10 +418,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         log_a = np.log(a)
 
     if weights is not None:
-        if isinstance(weights, np.ma.MaskedArray):
-            weights = weights.astype(dtype)
-        else:
-            weights = np.array(weights, dtype=dtype, copy=False)
+        weights = np.asanyarray(weights, dtype=dtype)
 
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
