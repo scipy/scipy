@@ -49,30 +49,6 @@ matrix:
         - NUMPYSPEC="numpy"
         - TEST_GROUP_COUNT=2
         - TEST_GROUP=2
-    # Test SciPy with the debug version of Python.
-    # However travis only specifies regular or development builds of Python
-    # so we must install python3.6-dbg using apt.
-    - language: generic
-      name: "Python 3.7 Debug"
-      dist: bionic
-      env:
-        - USE_DEBUG=python3.7-dbg
-        - TESTMODE=fast
-        - NUMPYSPEC="--upgrade numpy"
-      addons:
-        apt:
-          packages:
-            - *common_packages
-            - python3.7-dbg
-            - python3.7-dev
-    - python: 3.7
-      name: "Power PC"
-      os: linux
-      arch: ppc64le
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--upgrade numpy --no-cache-dir"
 
 cache:
   directories:
