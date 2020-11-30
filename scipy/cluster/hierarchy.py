@@ -1591,7 +1591,7 @@ def cut_tree_balanced(Z, max_cluster_size):
                     full_cut[selected_curr_elems, 0:curr_column] = -1
 
                     # Update the cluster id
-                    last_cluster_id = last_cluster_id + 1
+                    last_cluster_id += 1
 
     # Return the resulting clustering array (containing for each row in
     # input_data_x_sample its corresponding cluster id)
