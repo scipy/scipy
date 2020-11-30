@@ -1524,10 +1524,10 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     # Scan the full cut matrix from the last column (root tree level) to the
     # first column (leaves tree level)
-    for curr_column in range(ndim-1, -1, -1):
+    for icol in range(ndim-1, -1, -1):
         # Get a list of unique group ids and their count within the current
         # tree level
-        values, counts = np.unique(full_cut[:, curr_column],
+        values, counts = np.unique(full_cut[:, icol],
                                    return_counts=True)
 
         # Stop if all samples have been already selected (i.e. if all data
@@ -1536,34 +1536,34 @@ def cut_tree_balanced(Z, max_cluster_size):
             break
 
         # For each group id within the current tree level
-        for curr_elem_pos in range(values.size):
+        for ival in range(values.size):
             # If it is a valid group id (i.e. not yet marked with -1)
             # Note: data samples which were alredy included in a valid
             # cluster id are marked with the group id -1 (see below)
-            if (values[curr_elem_pos] >= 0):
+            if (values[ival] >= 0):
                 # Select the current group id
-                selected_curr_value = values[curr_elem_pos]
+                selected_curr_value = values[ival]
 
                 # Look for the vector positions (related to rows in
                 # input_data_x_sample) belonging to the current group id
-                selected_curr_elems = np.where(full_cut[:, curr_column] ==
+                selected_curr_elems = np.where(full_cut[:, icol] ==
                                                selected_curr_value)
 
                 # Major step #1: Populate the resulting vector of cluster
                 # levels for each data sample, if we are not at the root
-                if curr_column < (ndim-1):
+                if icol < (ndim-1):
                     # Get the ancestor values and element positions
                     selected_ancestor_value = (
-                        full_cut[selected_curr_elems[0][0], curr_column+1])
+                        full_cut[selected_curr_elems[0][0], icol+1])
                     selected_ancestor_elems = np.where(
-                        full_cut[:, curr_column+1] ==
+                        full_cut[:, icol+1] ==
                         selected_ancestor_value)
 
                     # Compute the values and counts of the offspring and sort
                     # them by their count (so that the biggest cluster gets the
                     # offspring_elem_label = 0, see below)
                     offspring_values, offspring_counts = np.unique(
-                        full_cut[selected_ancestor_elems, curr_column],
+                        full_cut[selected_ancestor_elems, icol],
                         return_counts=True)
                     count_sort_ind = np.argsort(-offspring_counts)
                     offspring_values = offspring_values[count_sort_ind]
@@ -1582,13 +1582,13 @@ def cut_tree_balanced(Z, max_cluster_size):
                 # Major step #2: Populate the resulting vector of cluster ids
                 # for each data sample, and mark them as clustered (-1)
                 # If the number of elements is below max_cluster_size
-                if (counts[curr_elem_pos] <= max_cluster_size):
+                if (counts[ival] <= max_cluster_size):
                     # Relate vector positions to the current cluster id
                     cluster_id[selected_curr_elems] = last_cluster_id
 
                     # Delete these vector positions at lower tree levels for
                     # further processing (i.e. mark as clustered)
-                    full_cut[selected_curr_elems, 0:curr_column] = -1
+                    full_cut[selected_curr_elems, 0:icol] = -1
 
                     # Update the cluster id
                     last_cluster_id += 1
