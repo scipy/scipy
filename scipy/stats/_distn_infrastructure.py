@@ -1244,9 +1244,13 @@ class rv_generic(object):
         arrs = np.broadcast_arrays(*arrs)
         args = arrs[:-2]
         loc, scale = arrs[-2], arrs[-1]
-        cond0 = (self._argcheck(*args) and scale > 0)
+        cond0 = np.logical_and(self._argcheck(*args), scale > 0)
         cond1 = (loc != 0)
-        output = zeros(loc.shape, dtype='d')
+        goodargs = argsreduce(cond0, *args, loc, scale)
+        goodloc, goodscale = goodargs[-2:]
+        goodargs = goodargs[:-2]
+        result = zeros(cond0.shape, dtype='d')
+        cond1_ = (goodloc != 0)
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
@@ -1257,23 +1261,25 @@ class rv_generic(object):
                 mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args, **mdict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+            mu, mu2, g1, g2 = self._stats(*goodargs, **mdict)
+        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, goodargs)
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        fac = _lazywhere(cond1, (scale, loc),
-                         lambda scale, loc: scale / loc, self.badvalue)
+        fac = _lazywhere(cond1_, (goodloc, goodscale),
+                         lambda loc, scale: scale / loc, self.badvalue)
         for k in range(n):
-            valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-            output = output + comb(n, k, exact=True)*fac**k * valk
-        output = output + fac**n * val
-        output = output * loc**n
-        output = np.where(cond1, output, scale**n * val)
-        output = np.where(cond0, output, self.badvalue)
-        if output.ndim == 0:
-            return output.item()
-        return output
+            valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp,
+                                      goodargs)
+            result[cond0] += comb(n, k, exact=True)*fac**k * valk
+        result[cond0] += fac**n * val
+        result[cond0] *= goodloc**n
+        res = goodscale**n * val
+        place(result, ~cond1, res[~cond1_])
+        place(result, ~cond0, self.badvalue)
+        if result.ndim == 0:
+            return result.item()
+        return result
 
     def median(self, *args, **kwds):
         """
