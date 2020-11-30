@@ -1417,7 +1417,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix resulting from calling `ward` or `linkage`. I.e. it 
+        The linkage matrix resulting from calling `ward` or `linkage`. I.e. it
         contains the hierarchical clustering encoded as a linkage matrix.
     max_cluster_size : int
         Maximum number of data samples contained within the resulting clusters.
@@ -1581,7 +1581,7 @@ def cut_tree_balanced(Z, max_cluster_size):
                             offspring_values == selected_curr_value)[0][0]
                         for i in selected_curr_elems[0]:
                             cluster_level[i] = np.hstack((cluster_level[i],
-                                offspring_elem_label))
+                                                         offspring_elem_label))
 
                 # Major step #2: Populate the resulting vector of cluster ids
                 # for each data sample, and mark them as clustered (-1)

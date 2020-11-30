@@ -1047,11 +1047,11 @@ def test_cut_tree():
 
 
 def test_cut_tree_balanced():
-    # Tests cut_tree_balanced(Z, max_cluster_size) on a random unbalanced data 
+    # Tests cut_tree_balanced(Z, max_cluster_size) on a random unbalanced data
     # set. There should be exactly one resulting cluster_id and cluster_level
     # for each of the input observations (i.e. input samples). Further, all
-    # resulting clusters should contain a number of samples 
-    # "<= max_cluster_size". As a corollary, the highest cluster_id should be 
+    # resulting clusters should contain a number of samples
+    # "<= max_cluster_size". As a corollary, the highest cluster_id should be
     # ">= (nobs / max_cluster_size)".
     nobs = 100
     np.random.seed(14)
@@ -1065,12 +1065,12 @@ def test_cut_tree_balanced():
     assert_equal(cluster_level.shape, (nobs,))
     assert_(all(elem <= max_cluster_size for elem in uniq_count))
     assert_(uniq_id.max() >= (nobs / max_cluster_size))
-    
-    # Tests cut_tree_balanced(Z, max_cluster_size) on invalid input 
+
+    # Tests cut_tree_balanced(Z, max_cluster_size) on invalid input
     # "max_cluster_size = 0". The methond should raise a ValueError.
     assert_raises(ValueError, cut_tree_balanced, Z, 0)
 
-    # Tests cut_tree_balanced(Z, max_cluster_size) on hardcoded numbers for a 
+    # Tests cut_tree_balanced(Z, max_cluster_size) on hardcoded numbers for a
     # very small linkage tree. Since the data is unbalanced, there is a bigger
     # cluster containing 4 samples, and 2 smaller clusters with 2 samples.
     # Note however that the size of all clusters is "<= max_cluster_size".
@@ -1105,7 +1105,7 @@ def test_cut_tree_balanced():
     assert_equal(cluster_level[5], [0, 0, 0, 0])
     assert_equal(cluster_level[6], [0, 0, 0, 1])
     assert_equal(cluster_level[7], [0, 0, 0, 1])
-    
+
 
 def test_optimal_leaf_ordering():
     # test with the distance vector y
