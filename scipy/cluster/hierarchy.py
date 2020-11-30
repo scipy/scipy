@@ -1533,8 +1533,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     for icol in range(ndim-1, -1, -1):
         # Get a list of unique group ids and their count within the current
         # tree level
-        values, counts = np.unique(full_cut[:, icol],
-                                   return_counts=True)
+        values, counts = np.unique(full_cut[:, icol], return_counts=True)
 
         # Stop if all samples have been already selected (i.e. if all data
         # samples have been already clustered)
@@ -1561,9 +1560,8 @@ def cut_tree_balanced(Z, max_cluster_size):
                     # Get the ancestor values and element positions
                     selected_ancestor_value = (
                         full_cut[selected_curr_elems[0][0], icol+1])
-                    selected_ancestor_elems = np.where(
-                        full_cut[:, icol+1] ==
-                        selected_ancestor_value)
+                    selected_ancestor_elems = np.where(full_cut[:, icol+1] ==
+                                                       selected_ancestor_value)
 
                     # Compute the values and counts of the offspring and sort
                     # them by their count (so that the biggest cluster gets the
