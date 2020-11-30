@@ -1489,7 +1489,8 @@ def cut_tree_balanced(Z, max_cluster_size):
     array([19,  4, 10, 12, 20, 12, 14,  9, 15,  2])
     >>> cluster_level[:10]
     array([array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-           array([0, 0, 0, 1]), array([0, 0, 0, 0, 0, 0, 0, 0, 1]),
+           array([0, 0, 0, 1]),
+           array([0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
            array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
@@ -1497,6 +1498,11 @@ def cut_tree_balanced(Z, max_cluster_size):
            array([0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 1, 0])], dtype=object)
+
+    Note that clusters with more similar values for cluster_level denote
+    clusters with less distance in between, thus representing vectors which are
+    closer in the multidimensional space. This information contained within
+    cluster_level is not usually present in cluster_id.
 
     """
     # Assert that the input max_cluster_size is >= 1
