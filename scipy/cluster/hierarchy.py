@@ -1509,7 +1509,7 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     # Initialize the variable containing the current cluster id (it will be
     # higher for each newly found valid cluster)
-    last_cluster_id = 1
+    last_cluster_id = 0
 
     # Initialize the resulting cluster id vector (containing for each row in
     # input_data_x_sample its corresponding cluster id)

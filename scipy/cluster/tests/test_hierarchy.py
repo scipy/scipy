@@ -1079,7 +1079,7 @@ def test_cut_tree_balanced():
     max_cluster_size = 4
     [cluster_id, cluster_level] = cut_tree_balanced(
         Z, max_cluster_size=max_cluster_size)
-    assert_equal(cluster_id, [1, 1, 2, 2, 3, 3, 3, 3])
+    assert_equal(cluster_id, [0, 0, 1, 1, 2, 2, 2, 2])
     assert_equal(cluster_level[0], [0, 1])
     assert_equal(cluster_level[1], [0, 1])
     assert_equal(cluster_level[2], [0, 0, 1])
@@ -1096,7 +1096,7 @@ def test_cut_tree_balanced():
     max_cluster_size = 2
     [cluster_id, cluster_level] = cut_tree_balanced(
         Z, max_cluster_size=max_cluster_size)
-    assert_equal(cluster_id, [1, 1, 2, 2, 3, 3, 4, 4])
+    assert_equal(cluster_id, [0, 0, 1, 1, 2, 2, 3, 3])
     assert_equal(cluster_level[0], [0, 1])
     assert_equal(cluster_level[1], [0, 1])
     assert_equal(cluster_level[2], [0, 0, 1])
