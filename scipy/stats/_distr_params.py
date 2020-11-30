@@ -64,6 +64,7 @@ distcont = [
     ['kstwo', (10,)],
     ['kstwobign', ()],
     ['laplace', ()],
+    ['laplace_asymmetric', (2,)],
     ['levy', ()],
     ['levy_l', ()],
     ['levy_stable', (1.8, -0.5)],
