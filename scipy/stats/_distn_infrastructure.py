@@ -1275,7 +1275,7 @@ class rv_generic(object):
         result[cond0] += fac**n * val
         result[cond0] *= goodloc**n
         res = goodscale**n * val
-        place(result, ~cond1, res[~cond1_])
+        place(result, (cond0 & ~cond1), res[~cond1_])
         place(result, ~cond0, self.badvalue)
         if result.ndim == 0:
             return result.item()
