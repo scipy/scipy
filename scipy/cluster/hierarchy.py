@@ -1447,16 +1447,16 @@ def cut_tree_balanced(Z, max_cluster_size):
     There are several implemented methods following the same idea, i.e.
     performing a tree cut in which the resulting clusters are at different tree
     levels, but using more elaborated algorithms (in which the threshold of
-    max_cluster_size is dinamycally computed). The CRAN R package
+    ``max_cluster_size`` is dynamically computed). The CRAN R package
     [dynamicTreeCut](https://github.com/cran/dynamicTreeCut) implements novel
     dynamic branch cutting methods for detecting clusters in a dendrogram
-    depending on their shape. Further, [MLCut]](https://github.com/than8/MLCut)
+    depending on their shape. Further, [MLCut](https://github.com/than8/MLCut)
     provides interactive methods to cut tree branches at multiple levels.
-    Note that in the present method, the max_cluster_size threshold is a fixed
-    value given as input.
+    Note that in the present method, the ``max_cluster_size`` threshold is a
+    fixed value given as input.
 
     Further, note that this algorithm uses :math:`O(n^2)` memory, i.e. the same
-    as cut_tree because a full cut tree of the linkage matrix is performed
+    as `cut_tree` because a full cut tree of the linkage matrix is performed
     as the beginning. Further, this data structure is used in order to perform
     the successive computations.
 
@@ -1499,10 +1499,10 @@ def cut_tree_balanced(Z, max_cluster_size):
            array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 1, 0])], dtype=object)
 
-    Note that clusters with more similar values for cluster_level denote
+    Note that clusters with more similar values for ``cluster_level`` denote
     clusters with less distance in between, thus representing vectors which are
     closer in the multidimensional space. This information contained within
-    cluster_level is not usually present in cluster_id.
+    ``cluster_level`` is not usually present in ``cluster_id``.
 
     """
     # Assert that the input max_cluster_size is >= 1
