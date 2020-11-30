@@ -49,8 +49,7 @@ jobs:
         run: ./tools/check_pyext_symbol_hiding.sh build
   test_nightly:
     name: Nightly CPython
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
-    if: " !contains(github.ref, 'maintenance/')"
+    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
