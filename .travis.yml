@@ -49,6 +49,14 @@ matrix:
         - NUMPYSPEC="numpy"
         - TEST_GROUP_COUNT=2
         - TEST_GROUP=2
+    - python: 3.7
+      name: "Power PC"
+      os: linux
+      arch: ppc64le
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade numpy --no-cache-dir"
 
 cache:
   directories:
