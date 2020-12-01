@@ -1457,8 +1457,8 @@ def cut_tree_balanced(Z, max_cluster_size):
 
     Further, note that this algorithm uses :math:`O(n^2)` memory, i.e. the same
     as `cut_tree` because a full cut tree of the linkage matrix is performed
-    as the beginning. Further, this data structure is used in order to perform
-    the successive computations.
+    as the beginning. This data structure ``full_cut`` is used in order to
+    perform the successive computations.
 
 
     Examples
