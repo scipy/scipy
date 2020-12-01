@@ -3,8 +3,8 @@ from numpy.testing import (assert_equal, assert_array_equal,
          assert_array_almost_equal, assert_approx_equal, assert_allclose)
 from pytest import raises as assert_raises
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, \
-    chi2_contingency, association
+from scipy.stats.contingency import (margins, expected_freq,
+                                     chi2_contingency, association)
 
 
 def test_margins():
@@ -204,14 +204,11 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
     # Invalid array shape (asymmetric)
     assert_raises(ValueError, association, [[1, 2], [3, 4], [5]], 'cramer')
-    # Invalid Test Statistic phi limitation
-    assert_raises(ValueError, association, [[1, 2], [3, 4], [5, 6]], 'phi')
     # chi2_contingency exception
-    assert_raises(Exception, association, [[0, 1], [1, 0]], 'cramer')
+    assert_raises(Exception, association, [[-1, 10], [1, 2]], 'cramer')
     # Invalid array (asymmetric)
     assert_raises(ValueError, association, [[1, 2], [3]], 'cramer')
     # Invalid array item value type
-    assert_raises(ValueError, association, [["x", 2], [3, 4]], 'phi')
 
 
 def test_assoc():
@@ -225,8 +222,5 @@ def test_assoc():
                0.129329]
     for stat in stats:
         a = association(observed=obs1, method=stat)
-        assert_approx_equal(a, results[stats.index(stat)], significant=5)
+        assert_allclose(a, results[stats.index(stat)])
 
-    obs2 = np.array([[10, 50], [100, 300]])
-    assoc_phi = association(obs2, method='phi')
-    assert_approx_equal(assoc_phi, 0.05823, significant=4)
