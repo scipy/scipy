@@ -399,7 +399,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if bnderr.any():
         raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
                          ', '.join(str(b) for b in bnderr))
-    xl, xu = new_bounds[0], new_bounds[1]
+    xl, xu = np.copy(new_bounds[0]), np.copy(new_bounds[1])
 
     # Mark infinite bounds with nans; the Fortran code understands this
     xl[~isfinite(xl)] = np.nan
