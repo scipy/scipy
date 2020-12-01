@@ -1791,7 +1791,7 @@ def anderson(x, dist='norm'):
     .. [7] Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
            Fit for the Three-Parameter Weibull Distribution"
            Journal of the Royal Statistical Society.Series B(Methodological)
-           Vol. 56, No. 3 (1994), pp. 491-500
+           Vol. 56, No. 3 (1994), pp. 491-500, Table 0. Keys in dict is C*100
 
     """
     if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
@@ -1842,7 +1842,7 @@ def anderson(x, dist='norm'):
         c, loc, scale = distributions.weibull_min.fit(y, loc=0.0)
         logcdf = distributions.weibull_min.logcdf(x=y, c=c, loc=loc, scale=scale)
         logsf = distributions.weibull_min.logsf(x=y, c=c, loc=loc, scale=scale)
-        shape_for_critical = min(np.round(np.divide(1.0, c), 2) * 100, 50)
+        shape_for_critical = min(5 * round(np.round(np.divide(1.0, c) * 100) / 5), 50)
         sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
         critical = _Avals_weibull[shape_for_critical]
     else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
