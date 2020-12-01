@@ -28,6 +28,7 @@ from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
+    import sksparse
     from sksparse.cholmod import cholesky as cholmod
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
@@ -835,6 +836,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
         A @ x == b
             x >= 0
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------

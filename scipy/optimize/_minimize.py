@@ -40,6 +40,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
+MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -418,7 +419,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
        Trust region methods. 2000. Siam. pp. 169-200.
     .. [14] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
        implementation of the GLTR method for iterative solution of
-       the trust region problem", https://arxiv.org/abs/1611.04718
+       the trust region problem", :arxiv:`1611.04718`
     .. [15] N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
        Trust-Region Subproblem using the Lanczos Method",
        SIAM J. Optim., 9(2), 504--525, (1999).

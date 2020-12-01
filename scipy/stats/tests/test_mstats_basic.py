@@ -201,6 +201,16 @@ class TestCorr(object):
         assert_almost_equal(r, np.sqrt(3)/2)
         assert_almost_equal(p, 1.0/3)
 
+    def test_pearsonr_misaligned_mask(self):
+        mx = np.ma.masked_array([1, 2, 3, 4, 5, 6], mask=[0, 1, 0, 0, 0, 0])
+        my = np.ma.masked_array([9, 8, 7, 6, 5, 9], mask=[0, 0, 1, 0, 0, 0])
+        x = np.array([1, 4, 5, 6])
+        y = np.array([9, 6, 5, 9])
+        mr, mp = mstats.pearsonr(mx, my)
+        r, p = stats.pearsonr(x, y)
+        assert_equal(mr, r)
+        assert_equal(mp, p)
+
     def test_spearmanr(self):
         # Tests some computations of Spearman's rho
         (x, y) = ([5.05,6.75,3.21,2.66], [1.65,2.64,2.64,6.95])
@@ -691,15 +701,20 @@ def test_regress_simple():
     y = 0.2 * np.linspace(0, 100, 100) + 10
     y += np.sin(np.linspace(0, 20, 100))
 
-    slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    result = mstats.linregress(x, y)
 
-    # test for namedtuple attributes
-    res = mstats.linregress(x, y)
+    # Result is of a correct class and with correct fields
+    lr = stats._stats_mstats_common.LinregressResult
+    assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-    check_named_results(res, attributes, ma=True)
+    check_named_results(result, attributes, ma=True)
+    assert 'intercept_stderr' in dir(result)
 
+    # Slope and intercept are estimated correctly
+    assert_almost_equal(result.slope, 0.19644990055858422)
+    assert_almost_equal(result.intercept, 10.211269918932341)
+    assert_almost_equal(result.stderr, 0.002395781449783862)
+    assert_almost_equal(result.intercept_stderr, 0.13866936078570702)
 
 def test_theilslopes():
     # Test for basic slope and intercept.
@@ -1027,9 +1042,10 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         assert_allclose(res1, res2)
+
         res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
         res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2)
+        assert_allclose(res1, res2, atol=1e-15)
 
         # Check default is axis=0
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
@@ -1129,9 +1145,9 @@ class TestCompareWithStats(object):
     def test_linregress(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            res1 = stats.linregress(x, y)
-            res2 = stats.mstats.linregress(xm, ym)
-            assert_allclose(np.asarray(res1), np.asarray(res2))
+            result1 = stats.linregress(x, y)
+            result2 = stats.mstats.linregress(xm, ym)
+            assert_allclose(np.asarray(result1), np.asarray(result2))
 
     def test_pearsonr(self):
         for n in self.get_n():

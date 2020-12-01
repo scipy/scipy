@@ -31,6 +31,7 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
+from scipy._lib import _testutils
 
 
 class _TestConvolve(object):
@@ -413,6 +414,7 @@ class TestConvolve2d(_TestConvolve2d):
     def test_large_array(self):
         # Test indexing doesn't overflow an int (gh-10761)
         n = 2**31 // (1000 * np.int64().itemsize)
+        _testutils.check_free_memory(2 * n * 1001 * np.int64().itemsize / 1e6)
 
         # Create a chequered pattern of 1s and 0s
         a = np.zeros(1001 * n, dtype=np.int64)
