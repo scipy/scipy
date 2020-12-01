@@ -363,7 +363,7 @@ def association(observed, method="cramer", correction=True, lambda_=None):
     0.14146
     """
     try:
-        arr = np.asarray(observed, dtype=np.int)
+        arr = np.asarray(observed, dtype=int)
     except ValueError as err:
         raise ValueError("All array values must be float or int")
 

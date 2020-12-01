@@ -221,4 +221,3 @@ def test_assoc():
     for stat in stats:
         a = association(observed=obs1, method=stat)
         assert_allclose(a, results[stats.index(stat)])
-
