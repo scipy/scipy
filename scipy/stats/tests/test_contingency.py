@@ -217,9 +217,7 @@ def test_assoc():
                      [17, 16, 18, 19, 11],
                      [9, 15, 14, 12, 11]])
     stats = ['cramer', 'tschuprow', 'pearson']
-    results = [0.092224,
-               0.077551,
-               0.129329]
+    results = [0.09222412010290792, 0.0775509319944633, 0.12932925727138758]
     for stat in stats:
         a = association(observed=obs1, method=stat)
         assert_allclose(a, results[stats.index(stat)])
