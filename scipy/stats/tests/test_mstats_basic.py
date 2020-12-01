@@ -201,6 +201,16 @@ class TestCorr(object):
         assert_almost_equal(r, np.sqrt(3)/2)
         assert_almost_equal(p, 1.0/3)
 
+    def test_pearsonr_misaligned_mask(self):
+        mx = np.ma.masked_array([1, 2, 3, 4, 5, 6], mask=[0, 1, 0, 0, 0, 0])
+        my = np.ma.masked_array([9, 8, 7, 6, 5, 9], mask=[0, 0, 1, 0, 0, 0])
+        x = np.array([1, 4, 5, 6])
+        y = np.array([9, 6, 5, 9])
+        mr, mp = mstats.pearsonr(mx, my)
+        r, p = stats.pearsonr(x, y)
+        assert_equal(mr, r)
+        assert_equal(mp, p)
+
     def test_spearmanr(self):
         # Tests some computations of Spearman's rho
         (x, y) = ([5.05,6.75,3.21,2.66], [1.65,2.64,2.64,6.95])
