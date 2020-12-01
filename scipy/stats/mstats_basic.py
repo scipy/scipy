@@ -355,7 +355,7 @@ def msign(x):
     return ma.filled(np.sign(x), 0)
 
 
-def pearsonr(x,y):
+def pearsonr(x, y):
     """
     Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
@@ -399,24 +399,8 @@ def pearsonr(x,y):
     if df < 0:
         return (masked, masked)
 
-    (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)
-
-    r_num = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
-    r = r_num / r_den
-    # Presumably, if r > 1, then it is only some small artifact of floating
-    # point arithmetic.
-    r = min(r, 1.0)
-    r = max(r, -1.0)
-
-    if r is masked or abs(r) == 1.0:
-        prob = 0.
-    else:
-        t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        prob = _betai(0.5*df, 0.5, df/(df + t_squared))
-
-    return r, prob
+    return scipy.stats.stats.pearsonr(ma.masked_array(x, mask=m).compressed(),
+                                      ma.masked_array(y, mask=m).compressed())
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
