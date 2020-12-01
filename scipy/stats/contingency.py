@@ -273,7 +273,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     return chi2, p, dof, expected
 
-def association(arr, chi2_stat, stat="cramer"):
+
+def association(observed, method="cramer", correction=True, lambda_=None):
     """Calculates degree of association between variables
     that are nominal or greater.
 
@@ -282,22 +283,32 @@ def association(arr, chi2_stat, stat="cramer"):
 
     Parameters
     ----------
-    arr : array-like
+    observed : array-like
         The array of observed values
-    chi2_stat : float
-        The chi-squared statistic.
-    stat : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
+    method : {"cramer", "tschuprow", "pearson", "phi"} (default = "cramer")
         The association test statistic.
+    correction : bool, optional
+        Inherited from chi2_contingency function.
+        If True, *and* the degrees of freedom is 1, apply Yates' correction
+        for continuity.  The effect of the correction is to adjust each
+        observed value by 0.5 towards the corresponding expected value.
+    lambda_ : float or str, optional
+        Inherited from chi2_contingency function.
+        By default, the statistic computed in this test is Pearson's
+        chi-squared statistic [2]_.  `lambda_` allows a statistic from the
+        Cressie-Read power divergence family [3]_ to be used instead.  See
+        `power_divergence` for details.
 
     Returns
     -------
-    value : float
+    statistic : float
         Value of the test statistic
 
     Notes
     ------
-    Cramer's V and Tschuprow's T measure degree to which two variables are
-    related, or the level of their association. This differs from correlation,
+    Cramer's V, Tschuprow's T, Pearsons Contingency Coefficient and Phi,
+    all measure degree to which two nominal or ordinal variables are related,
+    or the level of their association. This differs from correlation,
     although many often mistakenly consider them equivalent.
     Correlation measures in what way two variables are related, whereas,
     association measures how related the variables are. As such, association
@@ -309,10 +320,14 @@ def association(arr, chi2_stat, stat="cramer"):
     Moreover, due to the close relationship between the Cramer's V and
     Tschuprow's T the returned values can often be similar or even equivalent.
     They are likely to diverge more as the array shape diverges from a 2x2.
+    Similarly, in cases where the observed values are in a 2x2 array Cramer's V
+    and phi will be equivalent values.
 
-    The evaluation of Pearsons Contingency Coefficient is not effected by the
-    bias correction metric, because it was not included as a
-    part of the supporting academic paper.
+    Lastly, all of the metrics are subject to the introduction of bias from
+    increased counts or increased number of groups among observed values.
+    In other words, as each value of N approaches infinity the association
+    statistic will approach 1.0.
+
 
     References
     ----------
@@ -327,67 +342,89 @@ def association(arr, chi2_stat, stat="cramer"):
     .. [5] Gingrich, Paul, "Association Between Variables",
            http://uregina.ca/~gingrich/ch11a.pdf
 
-
     Examples
     --------
-    2-way Example
+    A 2-way Example (4x2)
 
-    >>> from scipy.stats.contingency import association, chi2_contingency
-    >>> obs = np.array([[100, 150], [203, 322], [42, 7], [32, 21]])
-    >>> chi2 = chi2_contingency(obs)[0]
+    >>> from scipy.stats.contingency import association
+    >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 
     Pearson's contingency coefficient
     
-    >>> association(obs, chi2, stat="C")
-    0.22768
+    >>> association(obs4x2, method="pearson")
+    0.18303
 
     Cramer's V
 
-    >>> association(obs, chi2, stat="V")
-    0.23382
+    >>> association(obs4x2, method="cramer")
+    0.18617
 
     Tschuprow's T
 
-    >>> association(obs, chi2, stat="T")
-    0.17766
+    >>> association(obs4x2, method="tschuprow")
+    0.14146
+
+    Another 2-way Example (2x2)
+
+    In the case of phi the observed values need to be in a 2x2 2d-Array.
+
+    >>> obs2x2 = np.array([[100, 150], [203, 322]])
 
     Phi
 
-    >>> association(obs, chi2, stat="phi")
-    0.23382
-    """
-    arr = np.asarray(arr)
+    >>> association(obs2x2, method="phi")
+    0.009944
 
-    if stat.lower() not in ['tschuprow', "pearson", 'cramer', 'phi',
-                            't', 'c', 'v']:
+
+    As stated above, phi and Cramer's V are equivalent when the observed
+    values are a 2x2 array.
+
+    >>> association(obs2x2, method='cramer')
+    0.009944
+
+    """
+    if method.lower() not in ["tschuprow", "pearson", "cramer", "phi"]:
         raise ValueError("stat must be in "
                          "['tschuprow', 'cramer', 'pearson', 'phi']")
     else:
-        stat_str = stat.lower()
+        stat_str = method.lower()
 
-    if len(arr.shape) != 2:
-        raise ValueError("method only accepts 2d arrays")
-
+    try:
+        arr = np.asarray(observed, dtype=np.int)
+    except ValueError as err:
+        raise ValueError("All array values must be float or int")
     else:
-        try:
-            chi2_stat = float(chi2_stat)
-        except ValueError:
-            raise ValueError("Invalid chi2_stat, must be float or int")
+        if len(arr.shape) != 2:
+            raise ValueError("method only accepts 2d arrays")
+
+        elif any([(True if type(a) == list else False) for a in arr]):
+            raise ValueError("All arrays must be non-empty and have "
+                             "equivalent length.")
+        elif stat_str == 'phi' and arr.shape != (2, 2):
+            raise ValueError("phi is only valid for 2x2 arrays")
+
         else:
-            phi2 = chi2_stat / sum(arr.flatten())
-
-            n_rows, n_cols = arr.shape
-
-            if stat_str == "cramer" or stat_str == 'v':
-                value = math.sqrt(phi2 / min(n_cols - 1, n_rows - 1))
-            elif stat_str == "tschuprow" or stat_str == 't':
-                value = math.sqrt(phi2 / math.sqrt((n_rows - 1) * (n_cols - 1)))
-            elif stat_str == 'pearson' or stat_str == 'c':
-                value = math.sqrt(phi2 / (1 + phi2))
-            elif stat_str == "phi":
-                value = math.sqrt(phi2)
+            try:
+                chi2_stat = chi2_contingency(arr, correction=correction,
+                                             lambda_=lambda_)
+            except Exception as err:
+                raise Exception(err)
             else:
-                raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+                phi2 = float(chi2_stat[0]) / sum(arr.flatten())
 
-            return value
+                n_rows, n_cols = arr.shape
+
+                if stat_str == "cramer":
+                    value = phi2 / min(n_cols - 1, n_rows - 1)
+                elif stat_str == "tschuprow":
+                    value = phi2 / math.sqrt((n_rows - 1) * (n_cols - 1))
+                elif stat_str == 'pearson':
+                    value = phi2 / (1 + phi2)
+                elif stat_str == "phi":
+                    value = phi2
+                else:
+                    raise ValueError("Invalid argument value: 'method' argument must "
+                                     "be 'cramer', 'tschuprow', 'pearson', or 'phi'")
+
+                return math.sqrt(value)
 
