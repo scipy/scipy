@@ -2409,7 +2409,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
-    mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
+    mm = (ma.minimum.reduce(a, axis=axis), ma.maximum.reduce(a, axis=axis))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
