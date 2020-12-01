@@ -1074,13 +1074,13 @@ def test_cut_tree_balanced():
     # when the linkage matrix is empty (edge invalid case).
     Z = np.array([])
     assert_raises(ValueError, cut_tree_balanced,
-        Z, max_cluster_size=max_cluster_size)
+                  Z, max_cluster_size=max_cluster_size)
 
     # Tests cut_tree_balanced(Z, max_cluster_size) on invalid input
     # when the linkage matrix only has one element (edge invalid case).
     Z = np.array([[0.0]])
     assert_raises(ValueError, cut_tree_balanced,
-        Z, max_cluster_size=max_cluster_size)
+                  Z, max_cluster_size=max_cluster_size)
 
     # Tests cut_tree_balanced(Z, max_cluster_size) on hardcoded numbers for a
     # very small linkage tree (2 smples, edge valid case).
