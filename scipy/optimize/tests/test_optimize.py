@@ -2203,7 +2203,7 @@ def test_show_options():
     unknown_solver_method = {
         'minimize': "ekki",  # unknown method
         'maximize': "cg",  # unknown solver
-        'maximize': "ekki",  # unknown solver and method
+        'maximize_scalar': "ekki",  # unknown solver and method
     }
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
