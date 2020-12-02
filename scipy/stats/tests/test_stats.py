@@ -2980,6 +2980,19 @@ class TestPowerDivergence(object):
         check_named_results(res, attributes)
 
 
+def test_gh_12282():
+    # The sums of observed and expected frequencies must match
+    f_obs = np.array([[10, 20], [30, 20]])
+    f_exp = np.array([[5, 15], [35, 25]])
+    with assert_raises(ValueError, match='For each axis slice...'):
+        stats.chisquare(f_obs=[10, 20], f_exp=[30, 60])
+    with assert_raises(ValueError, match='For each axis slice...'):
+        stats.chisquare(f_obs=f_obs, f_exp=f_exp, axis=1)
+    stat, pval = stats.chisquare(f_obs, f_exp)
+    assert_allclose(stat, [5.71428571, 2.66666667])
+    assert_allclose(pval, [0.01682741, 0.10247043])
+
+
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
 def test_chiquare_data_types(n, dtype):
     # Regression test for gh-10159.
