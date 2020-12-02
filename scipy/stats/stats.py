@@ -6937,12 +6937,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     Performs the (one sample or two samples) Kolmogorov-Smirnov test for goodness of fit.
 
     The one-sample test performs a test of the distribution F(x) of an observed
-    random variable against a given distribution G(x). Under the null
-    hypothesis, the two distributions are identical, F(x)=G(x). The
-    alternative hypothesis can be either 'two-sided' (default), 'less'
-    or 'greater'. The KS test is only valid for continuous distributions.
-    The two-sample test tests whether the two independent samples are drawn
-    from the same continuous distribution.
+    random variable against a given distribution G(x).
+
+    The two-sample test `ks_2samp` tests whether the two independent samples
+    are drawn from the same distribution.
+
+    These KS tests are only valid for continuous distributions.
 
     Parameters
     ----------
@@ -6964,12 +6964,14 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     N : int, optional
         Sample size if `rvs` is string or callable.  Default is 20.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
+        Defines the null and alternative hypotheses.
         The following options are available (default is 'two-sided'):
 
           * 'two-sided'
-          * 'less': one-sided, see explanation in Notes
-          * 'greater': one-sided, see explanation in Notes
+          * 'less'
+          * 'greater'
+
+        Please see explanations in the Notes below.
     mode : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
@@ -6992,10 +6994,17 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     Notes
     -----
-    In the one-sided test, the alternative is that the empirical
-    cumulative distribution function of the random variable is "less"
-    or "greater" than the cumulative distribution function G(x) of the
-    hypothesis, ``F(x)<=G(x)``, resp. ``F(x)>=G(x)``.
+    There are three options for the null and corresponding alternative
+    hypothesis that can be selected using the `alternative` parameter.
+
+    - `two-sided`: The null hypothesis is that the two distributions are
+      identical, F(x)=G(x); the alternative is that they are not identical.
+
+    - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
+      alternative is that F(x) < G(x) for at least one x.
+
+    - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
+      alternative is that F(x) > G(x) for at least one x.
 
     Examples
     --------
@@ -7024,12 +7033,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     >>> stats.kstest(x, 'norm', alternative='less')
     (0.12464329735846891, 0.040989164077641749)
 
-    Reject equal distribution against alternative hypothesis: less
+    Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.kstest(x, 'norm', alternative='greater')
     (0.0072115233216311081, 0.98531158590396395)
 
-    Don't reject equal distribution against alternative hypothesis: greater
+    Don't reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.kstest(x, 'norm')
     (0.12464329735846891, 0.08197335233541582)
