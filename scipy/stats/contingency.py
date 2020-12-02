@@ -85,8 +85,8 @@ def expected_freq(observed):
 
     Examples
     --------
+    >>> from scipy.stats.contingency import margins, expected_freq
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
-    >>> from scipy.stats.contingency import expected_freq
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
