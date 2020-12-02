@@ -500,6 +500,7 @@ class DOP853(RungeKutta):
         if err5_norm_2 == 0 and err3_norm_2 == 0:
             return 0.0
         denom = err5_norm_2 + 0.01 * err3_norm_2
+        denom = denom or 1.
         return np.abs(h) * err5_norm_2 / np.sqrt(denom * len(scale))
 
     def _dense_output_impl(self):
