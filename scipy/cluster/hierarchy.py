@@ -1448,9 +1448,9 @@ def cut_tree_balanced(Z, max_cluster_size):
     performing a tree cut in which the resulting clusters are at different tree
     levels, but using more elaborated algorithms (in which the threshold of
     ``max_cluster_size`` is dynamically computed). The CRAN R package
-    [dynamicTreeCut](https://github.com/cran/dynamicTreeCut) implements novel
+    dynamicTreeCut (github.com/cran/dynamicTreeCut) implements novel
     dynamic branch cutting methods for detecting clusters in a dendrogram
-    depending on their shape. Further, [MLCut](https://github.com/than8/MLCut)
+    depending on their shape. Further, MLCut (github.com/than8/MLCut)
     provides interactive methods to cut tree branches at multiple levels.
     Note that in the present method, the ``max_cluster_size`` threshold is a
     fixed value given as input.
@@ -1460,8 +1460,8 @@ def cut_tree_balanced(Z, max_cluster_size):
     as the beginning. This data structure ``full_cut`` is used in order to
     perform the successive computations.
 
-    For graphical examples of this algorithm you can visit [the original repo
-    describing this method](https://github.com/vreyespue/cut_tree_balanced).
+    Graphical examples of this algorithm can be found at the original repo
+    describing this method (github.com/vreyespue/cut_tree_balanced).
 
     Examples
     --------
