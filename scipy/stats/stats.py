@@ -6934,15 +6934,13 @@ def _parse_kstest_args(data1, data2, args, N):
 
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     """
-    Performs the (one sample or two samples) Kolmogorov-Smirnov test for goodness of fit.
+    Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
+    goodness of fit.
 
-    The one-sample test performs a test of the distribution F(x) of an observed
-    random variable against a given distribution G(x).
-
-    The two-sample test `ks_2samp` compares the distributions of two
-    independent samples.
-
-    These KS tests are only valid for continuous distributions.
+    The one-sample test compares the underlying distribution F(x) of a sample
+    against a given distribution G(x). The two-sample test compares the
+    underlying distributions of two independent samples. Both tests are valid
+    only for continuous distributions.
 
     Parameters
     ----------
