@@ -201,7 +201,7 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
 
     Examples
     --------
-    >>> from scipy.stats import relative_risk
+    >>> from scipy.stats.contingency import relative_risk
 
     This example is from Example 3.1 of [2]_.  The results of a heart
     disease study are summarized in the following table::
