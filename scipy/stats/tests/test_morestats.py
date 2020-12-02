@@ -285,7 +285,7 @@ class TestAnderson(object):
         #             Fit for the Three-Parameter Weibull Distribution"
         #             Journal of the Royal Statistical Society.Series B(Methodological)
         #             Vol. 56, No. 3 (1994), pp. 491-500
-        x1 = np.array([225, 171, 198, 189, 135, 162, 135, 117, 162])
+        x1 = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
         x2 = np.array([74, 57, 48, 29, 502, 12, 70, 21, 29, 386,
                        59, 27, 153, 26, 326])
         A1, crit1, sig1 = stats.anderson(x1, 'weibull_min')

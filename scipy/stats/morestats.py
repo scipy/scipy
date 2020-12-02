@@ -1699,7 +1699,7 @@ _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 # From Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
 #             Fit for the Three-Parameter Weibull Distribution"
 #             Journal of the Royal Statistical Society.Series B(Methodological)
-#             Vol. 56, No. 3 (1994), pp. 491-500
+#             Vol. 56, No. 3 (1994), pp. 491-500, table 1. Keys are c*100
 _Avals_weibull = {0: array([0.292, 0.395, 0.467, 0.522, 0.617, 0.711, 0.836, 0.931]),
                   5: array([0.295, 0.399, 0.471, 0.527, 0.623, 0.719, 0.845, 0.941]),
                   10: array([0.298, 0.403, 0.476, 0.534, 0.631, 0.728, 0.856, 0.954]),
