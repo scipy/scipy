@@ -6939,8 +6939,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     The one-sample test performs a test of the distribution F(x) of an observed
     random variable against a given distribution G(x).
 
-    The two-sample test `ks_2samp` tests whether the two independent samples
-    are drawn from the same distribution.
+    The two-sample test `ks_2samp` compares the distributions of two
+    independent samples.
 
     These KS tests are only valid for continuous distributions.
 
@@ -6964,13 +6964,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     N : int, optional
         Sample size if `rvs` is string or callable.  Default is 20.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the null and alternative hypotheses.
-        The following options are available (default is 'two-sided'):
-
-          * 'two-sided'
-          * 'less'
-          * 'greater'
-
+        Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
     mode : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
@@ -6998,7 +6992,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     hypothesis that can be selected using the `alternative` parameter.
 
     - `two-sided`: The null hypothesis is that the two distributions are
-      identical, F(x)=G(x); the alternative is that they are not identical.
+      identical, F(x)=G(x) for all x; the alternative is that they are not
+      identical.
 
     - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
       alternative is that F(x) < G(x) for at least one x.
