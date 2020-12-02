@@ -339,8 +339,8 @@ Contingency table functions
    chi2_contingency
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
    fisher_exact
-   relative_risk
 
 Plot-tests
 ==========
@@ -394,7 +394,6 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
-from ._relative_risk import relative_risk
 from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.

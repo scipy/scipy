@@ -1,6 +1,7 @@
 
 import operator
 from collections import namedtuple
+from dataclasses import dataclass
 import numpy as np
 from scipy.special import ndtri
 
@@ -16,7 +17,10 @@ def _validate_int(n, bound, name):
     return n
 
 
-ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
+@dataclass
+class ConfidenceInterval:
+    low : float
+    high : float
 
 
 class RelativeRiskResult:
@@ -63,7 +67,7 @@ class RelativeRiskResult:
         """
         Compute the confidence interval for the relative risk.
 
-        The confidence interal is computed using the Katz method
+        The confidence interval is computed using the Katz method
         ([1]_, [2]_).
 
         Parameters
@@ -74,9 +78,9 @@ class RelativeRiskResult:
 
         Returns
         -------
-        ci : namedtuple
-            The return value is a namedtuple with named fields
-            ``low`` and ``high``.
+        ci : ConfidenceInterval instance
+            The return value is an object with attributes ``low`` and
+            ``high`` that hold the confidence interval.
 
         References
         ----------
@@ -88,7 +92,7 @@ class RelativeRiskResult:
 
         Examples
         --------
-        >>> from scipy.stats import relative_risk
+        >>> from scipy.stats.contingency import relative_risk
         >>> result = relative_risk(exposed_cases=10, exposed_total=75,
         ...                        control_cases=12, control_total=225)
         >>> result.relative_risk
@@ -134,13 +138,13 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     Compute the relative risk (also known as the risk ratio).
 
     This function computes the relative risk associated with a 2x2
-    contingency table.  Instead of accepting a table as an argument, the
-    individual numbers that are used to compute the relative risk are
-    given as separate parameters.  This is to avoid the ambiguity of which
-    row or column of the contingency table corresponds to the "exposed"
-    cases and which corresponds to the "control" cases.  Unlike, say, the
-    odds ratio, the relative risk is not invariant under an interchange of
-    the rows or columns.
+    contingency table ([1]_, section 2.2.3; [2]_, section 3.1.2). Instead
+    of accepting a table as an argument, the individual numbers that are
+    used to compute the relative risk are given as separate parameters.
+    This is to avoid the ambiguity of which row or column of the contingency
+    table corresponds to the "exposed" cases and which corresponds to the
+    "control" cases.  Unlike, say, the odds ratio, the relative risk is not
+    invariant under an interchange of the rows or columns.
 
     Parameters
     ----------
@@ -190,14 +194,16 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
 
     References
     ----------
-    .. [1] Hardeo Sahai and Anwer Khurshid, Statistics in Epidemiology,
+    .. [1] Alan Agresti, An Introduction to Categorical Data Analysis
+           (second edition), Wiley, Hoboken, NJ, USA (2007).
+    .. [2] Hardeo Sahai and Anwer Khurshid, Statistics in Epidemiology,
            CRC Press LLC, Boca Raton, FL, USA (1996).
 
     Examples
     --------
     >>> from scipy.stats import relative_risk
 
-    This example is from Example 3.1 of [1]_.  The results of a heart
+    This example is from Example 3.1 of [2]_.  The results of a heart
     disease study are summarized in the following table::
 
                  High CAT   Low CAT    Total

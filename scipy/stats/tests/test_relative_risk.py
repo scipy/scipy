@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from scipy.stats import relative_risk
+from scipy.stats.contingency import relative_risk
 
 
 # Test just the calculation of the relative risk, including edge
@@ -39,7 +39,7 @@ def test_relative_risk_confidence_interval():
     #
     # The last line is the result that we want.
     assert_allclose(rr, 4/3)
-    assert_allclose(ci, (0.7347317, 2.419628), rtol=5e-7)
+    assert_allclose((ci.low, ci.high), (0.7347317, 2.419628), rtol=5e-7)
 
 
 def test_relative_risk_ci_conflevel0():
@@ -48,35 +48,38 @@ def test_relative_risk_ci_conflevel0():
     rr = result.relative_risk
     assert_allclose(rr, 2.0, rtol=1e-14)
     ci = result.confidence_interval(0)
-    assert_allclose(ci, (2.0, 2.0), rtol=1e-12)
+    assert_allclose((ci.low, ci.high), (2.0, 2.0), rtol=1e-12)
 
 
 def test_relative_risk_ci_conflevel1():
     result = relative_risk(exposed_cases=4, exposed_total=12,
                            control_cases=5, control_total=30)
     ci = result.confidence_interval(1)
-    assert_equal(ci, (0, np.inf))
+    assert_equal((ci.low, ci.high), (0, np.inf))
 
 
 def test_relative_risk_ci_edge_cases_00():
     result = relative_risk(exposed_cases=0, exposed_total=12,
                            control_cases=0, control_total=30)
     assert_equal(result.relative_risk, np.nan)
-    assert_equal(result.confidence_interval(), (np.nan, np.nan))
+    ci = result.confidence_interval()
+    assert_equal((ci.low, ci.high), (np.nan, np.nan))
 
 
 def test_relative_risk_ci_edge_cases_01():
     result = relative_risk(exposed_cases=0, exposed_total=12,
                            control_cases=1, control_total=30)
     assert_equal(result.relative_risk, 0)
-    assert_equal(result.confidence_interval(), (0.0, np.nan))
+    ci = result.confidence_interval()
+    assert_equal((ci.low, ci.high), (0.0, np.nan))
 
 
 def test_relative_risk_ci_edge_cases_10():
     result = relative_risk(exposed_cases=1, exposed_total=12,
                            control_cases=0, control_total=30)
     assert_equal(result.relative_risk, np.inf)
-    assert_equal(result.confidence_interval(), (np.nan, np.inf))
+    ci = result.confidence_interval()
+    assert_equal((ci.low, ci.high), (np.nan, np.inf))
 
 
 @pytest.mark.parametrize('ec, et, cc, ct', [(0, 0, 10, 20),
