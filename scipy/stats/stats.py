@@ -6148,16 +6148,19 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     # cases of lambda_.
     if lambda_ == 1:
         f_obs = f_obs.astype(np.float64)
+        rtol = 1e-5  # to pass existing tests
         with np.errstate(invalid='ignore'):
             relative_diff = np.abs((f_obs - f_exp).sum(axis=axis)
                                    / np.minimum(f_obs, f_exp).sum(axis=axis))
-        rtol = 1e-5  # to pass existing tests
-        if (relative_diff > rtol).any():
-            raise ValueError(f"For each axis slice, the sum of the observed "
-                             f"frequencies must agree with the sum of the "
-                             f"expected frequencies to a relative tolerance "
-                             f"of {rtol}, but the percent differences are:\n"
-                             f"{relative_diff}")
+            diff_gt_tol = (relative_diff > rtol).any()
+        if diff_gt_tol:
+            msg = (f"For each axis slice, the sum of the observed "
+                   f"frequencies must agree with the sum of the "
+                   f"expected frequencies to a relative tolerance "
+                   f"of {rtol}, but the percent differences are:\n"
+                   f"{relative_diff}")
+            raise ValueError(msg)
+
         # Pearson's chi-squared statistic
         terms = (f_obs - f_exp)**2 / f_exp
     elif lambda_ == 0:
