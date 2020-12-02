@@ -1460,6 +1460,8 @@ def cut_tree_balanced(Z, max_cluster_size):
     as the beginning. This data structure ``full_cut`` is used in order to
     perform the successive computations.
 
+    For graphical examples of this algorithm you can visit [the original repo
+    describing this method](https://github.com/vreyespue/cut_tree_balanced).
 
     Examples
     --------
