@@ -1,6 +1,6 @@
 
 from functools import lru_cache
-from collections import namedtuple
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -262,7 +262,10 @@ def _conditional_oddsratio_ci(table, confidence_level=0.95,
     return lower, upper
 
 
-ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
+@dataclass
+class ConfidenceInterval:
+    low: float
+    high: float
 
 
 FisherExactBaseResult = _make_tuple_bunch('FisherExactBaseResult',
@@ -292,9 +295,9 @@ class FisherExactResult(FisherExactBaseResult):
 
         Returns
         -------
-        ci : namedtuple
-            The confidence interval, represented as a namedtuple with
-            fields ``low`` and ``high``.
+        ci : ``ConfidenceInterval`` instance
+            The confidence interval, represented as an object with
+            attributes ``low`` and ``high``.
 
         References
         ----------
@@ -321,7 +324,7 @@ class FisherExactResult(FisherExactBaseResult):
             ci = _conditional_oddsratio_ci(table,
                                            confidence_level=confidence_level,
                                            alternative=self.alternative)
-        return ConfidenceInterval(*ci)
+        return ConfidenceInterval(low=ci[0], high=ci[1])
 
 
 def fisher_exact(table, alternative='two-sided'):
