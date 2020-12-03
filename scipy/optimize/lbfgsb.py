@@ -319,9 +319,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             finite_diff_rel_step = np.asarray(
                 finite_diff_rel_step)[~filtered_params]
 
-        if callback is not None:
-            callback = _filter_params_func(callback, full_x0, filtered_params)
-
     # factor equal_bounds out of bounds arrays
     new_bounds = (
         full_new_bounds[0][~filtered_params],
