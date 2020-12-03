@@ -3,13 +3,13 @@ import numpy as np
 
 def crosstab(*args, levels=None):
     """
-    Create a table of the counts of the tuples in ``zip(*args)``.
+    Return table of counts for each possible unique combination in ``*args``.
 
     When ``len(args) > 1``, the array computed by this function is
     often referred to as a *contingency table* [1]_.
 
     The arguments must be sequences with the same length.  The second return
-    value, `count` is an integer array with ``len(args)`` dimensions.  If
+    value, `count`, is an integer array with ``len(args)`` dimensions.  If
     `levels` is None, the shape of `count` is ``(n0, n1, ...)``, where ``nk``
     is the number of unique elements in ``args[k]``.
 
@@ -24,7 +24,8 @@ def crosstab(*args, levels=None):
         is a sequence, it gives the values in the corresponding sequence in
         `args` that are to be counted.  If any value in the sequences in `args`
         does not occur in the corresponding sequence in `levels`, that value
-        is ignored and not counted in the returned array `count`.
+        is ignored and not counted in the returned array `count`.  The default
+        value of `levels` for ``args[i]`` is ``np.unique(args[i])``
 
     Returns
     -------
@@ -32,6 +33,8 @@ def crosstab(*args, levels=None):
         Tuple of length ``len(args)`` containing the arrays of elements that
         are counted in `count`.  These can be interpreted as the labels of
         the corresponding dimensions of `count`.
+        If `levels` was given, then if ``levels[i]`` is not None,
+        ``elements[i]`` will hold the values given in ``levels[i]``.
     count : numpy.ndarray
         Counts of the unique elements in ``zip(*args)``, stored in an array.
         Also known as a *contingency table* when ``len(args) > 1``.
@@ -58,10 +61,10 @@ def crosstab(*args, levels=None):
     >>> a = ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'A', 'B', 'B']
     >>> x = ['X', 'X', 'X', 'Y', 'Z', 'Z', 'Y', 'Y', 'Z', 'Z']
     >>> (avals, xvals), count = crosstab(a, x)
-    >>> avals.tolist()
-    ['A', 'B']
-    >>> xvals.tolist()
-    ['X', 'Y', 'Z']
+    >>> avals
+    array(['A', 'B'], dtype='<U1')
+    >>> xvals
+    array(['X', 'Y', 'Z'], dtype='<U1')
     >>> count
     array([[2, 3, 0],
            [1, 0, 4]])
@@ -110,6 +113,17 @@ def crosstab(*args, levels=None):
     array([[1, 1, 0, 1],
            [1, 4, 0, 1],
            [0, 3, 0, 3]])
+
+    If we want to ignore the pairs where 4 occurs in ``q2``, we can
+    give just the values [1, 2] to `levels`, and the 4 will be ignored:
+
+    >>> vals, count = crosstab(q1, q2, levels=(None, [1, 2]))
+    >>> vals
+    [array([2, 3, 4]), [1, 2]
+    >>> count
+    array([[1, 1],
+           [1, 4],
+           [0, 3]])
     """
     if len(args) == 0:
         raise TypeError("At least one input sequence is required.")

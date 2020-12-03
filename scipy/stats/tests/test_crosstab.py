@@ -5,7 +5,7 @@ from scipy.stats.contingency import crosstab
 
 def test_crosstab_basic():
     a = [0, 0, 9, 9, 0, 0, 9]
-    b = [1, 2, 3, 1, 2, 3, 3]
+    b = [2, 1, 3, 1, 2, 3, 3]
     expected_avals = [0, 9]
     expected_bvals = [1, 2, 3]
     expected_count = np.array([[1, 2, 1],
