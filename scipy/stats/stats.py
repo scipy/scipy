@@ -6148,7 +6148,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     # cases of lambda_.
     if lambda_ == 1:
         f_obs = f_obs.astype(np.float64)
-        rtol = 1e-5  # to pass existing tests
+        rtol = 1e-8  # to pass existing tests
         with np.errstate(invalid='ignore'):
             relative_diff = np.abs((f_obs - f_exp).sum(axis=axis)
                                    / np.minimum(f_obs, f_exp).sum(axis=axis))
