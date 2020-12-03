@@ -125,10 +125,12 @@ def crosstab(*args, levels=None):
            [1, 4],
            [0, 3]])
     """
-    if len(args) == 0:
+    nargs = len(args)
+    if nargs == 0:
         raise TypeError("At least one input sequence is required.")
 
-    if not all(len(a) == len(args[0]) for a in args[1:]):
+    len0 = len(args[0])
+    if not all(len(a) == len0 for a in args[1:]):
         raise ValueError("All input sequences must have the same length.")
 
     if levels is None:
@@ -140,13 +142,13 @@ def crosstab(*args, levels=None):
         np.add.at(count, inverses, 1)
     else:
         # `levels` is not None...
-        if len(levels) != len(args):
+        if len(levels) != nargs:
             raise ValueError('len(levels) must equal the number of input '
                              'sequences')
 
         args = [np.asarray(arg) for arg in args]
-        mask = np.zeros((len(args), len(args[0])), dtype=np.bool_)
-        inv = np.zeros((len(args), len(args[0])), dtype=np.intp)
+        mask = np.zeros((nargs, len0), dtype=np.bool_)
+        inv = np.zeros((nargs, len0), dtype=np.intp)
         actual_levels = []
         for k, (levels_list, arg) in enumerate(zip(levels, args)):
             if levels_list is None:
