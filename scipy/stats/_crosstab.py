@@ -119,7 +119,7 @@ def crosstab(*args, levels=None):
 
     >>> vals, count = crosstab(q1, q2, levels=(None, [1, 2]))
     >>> vals
-    [array([2, 3, 4]), [1, 2]
+    [array([2, 3, 4]), [1, 2]]
     >>> count
     array([[1, 1],
            [1, 4],
