@@ -85,7 +85,7 @@ def expected_freq(observed):
 
     Examples
     --------
-    >>> from scipy.stats.contingency import margins, expected_freq
+    >>> from scipy.stats.contingency import expected_freq
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
@@ -391,4 +391,3 @@ def association(observed, method="cramer", correction=True, lambda_=None):
                              "be 'cramer', 'tschuprow', 'pearson'")
 
         return math.sqrt(value)
-
