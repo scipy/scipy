@@ -38,7 +38,7 @@ from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
 from .optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, _prepare_scalar_function,
-                       _filter_params_func, _filter_params_jac)
+                       _filter_params_func)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -302,9 +302,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     x = full_x0[~filtered_params]
     n, = x.shape
 
-    # if there are equal bounds then the user function has to be wrapped.
-    # This is done in a conditional clause because wrapped functions might
-    # be slower. At the moment there is no filtering of params if jac is
+    # If there are filtered parameters then the user function has to be
+    # wrapped. This is done in a conditional clause because wrapped functions
+    # might be slower. At the moment there is no filtering of params if jac is
     # callable.
     if filtered_params.any():
         fun = _filter_params_func(fun, full_x0, filtered_params)
@@ -318,6 +318,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         ):
             finite_diff_rel_step = np.asarray(
                 finite_diff_rel_step)[~filtered_params]
+
+        if callback is not None:
+            callback = _filter_params_func(callback, full_x0, filtered_params)
 
     # factor equal_bounds out of bounds arrays
     new_bounds = (

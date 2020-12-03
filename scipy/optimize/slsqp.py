@@ -299,6 +299,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             finite_diff_rel_step = np.asarray(
                 finite_diff_rel_step)[~filtered_params]
 
+        if callback is not None:
+            callback = _filter_params_func(callback, full_x0, filtered_params)
+
     # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
         constraints = (constraints, )
@@ -474,9 +477,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if majiter > majiter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
-                new_x = np.copy(full_x0)
-                new_x[~filtered_params] = x
-                callback(new_x)
+                callback(x)
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
