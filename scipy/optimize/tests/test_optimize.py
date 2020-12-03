@@ -2250,4 +2250,11 @@ def test_equal_bounds(method):
             assert res.x.size == 2
 
         if method in ['SLSQP', 'L-BFGS-B']:
+            rel_step = np.sqrt(np.finfo(np.float64).eps)
+            arr = np.array([rel_step, rel_step * 1000])
+            options = {'finite_diff_rel_step': arr}
+            res = optimize.minimize(
+                optimize.rosen, x0, jac='2-point', method=method,
+                bounds=bounds, options=options
+            )
             assert res.jac.size == 2
