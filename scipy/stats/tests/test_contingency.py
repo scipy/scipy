@@ -202,8 +202,6 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")
     # Invalid array shape
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
-    # Invalid array shape (asymmetric)
-    assert_raises(ValueError, association, [[1, 2], [3, 4], [5]], 'cramer')
     # chi2_contingency exception
     assert_raises(Exception, association, [[-1, 10], [1, 2]], 'cramer')
     # Invalid array (asymmetric)
