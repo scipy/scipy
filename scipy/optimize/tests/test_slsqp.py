@@ -608,3 +608,35 @@ class TestSLSQP(object):
         with pytest.warns(RuntimeWarning, match='x were outside bounds'):
             res = minimize(f, x0, method='SLSQP', bounds=bounds)
             assert res.success
+
+    def test_minimize_equal_bounds_vector_constraint(self):
+        # now check what happens if two parameters have equal lower/upper
+        # bounds for a vector constrained function with specified constraint
+        # jacobian
+        def f(x):
+            return (x ** 3).sum()
+
+        def con(x):
+            return x ** 2 - 1
+
+        def conjac(x):
+            return np.diag(2 * x)
+
+        method = 'slsqp'
+        constraints = {"fun": con, "type": 'ineq', "jac": conjac}
+        x0 = np.array([0.5, 3.0, 2, 5])
+        bounds = [(0.0, 3.0), (2.0, 2.0), (0, np.inf), (1.5, 1.5)]
+
+        res = minimize(
+            f, x0, method=method, bounds=bounds, constraints=constraints
+        )
+        assert res.success
+        assert_allclose(res.x, [1.0, 2.0, 1.0, 1.5])
+
+        # check for numerical differentiation of constraints
+        constraints = {"fun": con, "type": 'ineq'}
+        res = minimize(
+            f, x0, method=method, bounds=bounds, constraints=constraints
+        )
+        assert res.success
+        assert_allclose(res.x, [1.0, 2.0, 1.0, 1.5])

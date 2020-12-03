@@ -299,9 +299,10 @@ def _filter_params_func(func, full_x, mask):
 
 
 def _filter_params_jac(jac, mask):
+    # filters entries from the last dimension of a Jacobian based on a mask
     def wrapped_func(x, *args):
         g = jac(x, *args)
-        return g[~mask]
+        return g[..., ~mask]
     return wrapped_func
 
 
