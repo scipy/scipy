@@ -277,7 +277,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 def association(observed, method="cramer", correction=False, lambda_=None):
     """Calculates degree of association between two nominal variables.
 
-    The function provides the option for computing one of four measures of
+    The function provides the option for computing one of three measures of
     association between two nominal variables from the data given in a 2d
     contingency table: Tshuprow's T, Pearson's Contingency Coefficient
     and Cramer's V.
