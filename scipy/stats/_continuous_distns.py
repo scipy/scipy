@@ -2105,71 +2105,72 @@ class truncweibull_min_gen(rv_continuous):
     %(example)s
 
     """
-    def _argcheck(self, a, c):
-        self.a = a
-        return (a > 0.) & (c > 0.)
+    def _argcheck(self, a, b, c):
+        return (a > 0.) & (b > a) & (c > 0.)
 
-    def _pdf(self, x, a, c):
-        return c * x**(c-1) * np.exp(-x**c + a**c)
+    def _get_support(self, a, b, c):
+        return a, b
 
-    def _logpdf(self, x, a, c):
-        return np.log(c) + sc.xlogy(c - 1, x) - x**c + a**c
+    def _pdf(self, x, a, b, c):
+        return (c * x**(c-1) * np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
-    def _cdf(self, x, a, c):
-        return -sc.expm1(-x**c + a**c)
+    def _logpdf(self, x, a, b, c):
+        return np.log(c) + sc.xlogy(c - 1, x) - x**c - np.log(np.exp(-a**c) - np.exp(-b**c))
 
-    def _sf(self, x, a, c):
-        return np.exp(-x**c + a**c)
+#     def _cdf(self, x, a, c):
+#         return -sc.expm1(-x**c + a**c)
 
-    def _logsf(self, x, a, c):
-        return -x**c + a**c
+#     def _sf(self, x, a, c):
+#         return np.exp(-x**c + a**c)
 
-    def _ppf(self, q, a, c):
-        return (a**c - sc.log1p(-q))**(1/c)
+#     def _logsf(self, x, a, c):
+#         return -x**c + a**c
 
-    def _a_est(self, x, c):
-        x_r = x.min()
-        f_r = (1. - 0.3)/(len(x) + 0.4)
+#     def _ppf(self, q, a, c):
+#         return (a**c - sc.log1p(-q))**(1/c)
 
-        if -np.log(1 - f_r) > x_r**c:
-            return 0
-        else:
-            return (np.log(1. - f_r) + x_r**c)**(1/c)
+#     def _a_est(self, x, c):
+#         x_r = x.min()
+#         f_r = (1. - 0.3)/(len(x) + 0.4)
 
-    def _penalized_nnlf_mod(self, theta, x):
-        """
-        Ignore provided `a` and estimate it using an alternative method. This
-        modifies the resulting ML function sent to the optimizer.
+#         if -np.log(1 - f_r) > x_r**c:
+#             return 0
+#         else:
+#             return (np.log(1. - f_r) + x_r**c)**(1/c)
 
-        """
-        loc, scale, (_, c) = self._unpack_loc_scale(theta)
-        theta = (self._a_est((x - loc)/scale, c), c, loc, scale)
-        return super()._penalized_nnlf(theta, x)
+#     def _penalized_nnlf_mod(self, theta, x):
+#         """
+#         Ignore provided `a` and estimate it using an alternative method. This
+#         modifies the resulting ML function sent to the optimizer.
 
-    def fit(self, data, *args, **kwds):
+#         """
+#         loc, scale, (_, c) = self._unpack_loc_scale(theta)
+#         theta = (self._a_est((x - loc)/scale, c), c, loc, scale)
+#         return super()._penalized_nnlf(theta, x)
 
-        f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-              kwds.get('fix_a', None))
-        floc = kwds.get('floc', None)
-        fscale = kwds.get('fscale', None)
+#     def fit(self, data, *args, **kwds):
 
-        # MLE is well-behaved, use default fit method.
-        if f0 is not None or (floc is not None and fscale is not None):
-            return super().fit(data, *args, **kwds)
+#         f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
+#               kwds.get('fix_a', None))
+#         floc = kwds.get('floc', None)
+#         fscale = kwds.get('fscale', None)
 
-        else:  # MLE is non-existent - use a modified version. See notes
-            penalized_nnlf = self._penalized_nnlf
-            try:
-                self._penalized_nnlf = self._penalized_nnlf_mod
-                _, c, loc, scale = super().fit(
-                    data, *args, **kwds)
-                a = self._a_est((data - loc)/scale, c)
-            finally:  # revert back to default penalized_nnlf
-                self._penalized_nnlf = penalized_nnlf
-            return a, c, loc, scale
+#         # MLE is well-behaved, use default fit method.
+#         if f0 is not None or (floc is not None and fscale is not None):
+#             return super().fit(data, *args, **kwds)
 
+#         else:  # MLE is non-existent - use a modified version. See notes
+#             penalized_nnlf = self._penalized_nnlf
+#             try:
+#                 self._penalized_nnlf = self._penalized_nnlf_mod
+#                 _, c, loc, scale = super().fit(
+#                     data, *args, **kwds)
+#                 a = self._a_est((data - loc)/scale, c)
+#             finally:  # revert back to default penalized_nnlf
+#                 self._penalized_nnlf = penalized_nnlf
+#             return a, c, loc, scale
 
-truncweibull_min = truncweibull_min_gen(a=0.0, name='truncweibull_min')
+truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
 
 
 class weibull_max_gen(rv_continuous):
