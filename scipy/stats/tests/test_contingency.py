@@ -204,8 +204,6 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
     # chi2_contingency exception
     assert_raises(Exception, association, [[-1, 10], [1, 2]], 'cramer')
-    # Invalid array (asymmetric)
-    assert_raises(ValueError, association, [[1, 2], [3]], 'cramer')
     # Invalid array item value type
 
 
