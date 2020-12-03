@@ -207,13 +207,14 @@ def test_bad_association_args():
     # Invalid array item value type
 
 
-def test_assoc():
+@pytest.mark.parametrize('stat, expected',
+                         [('cramer', 0.09222412010290792),
+                          ('tschuprow', 0.0775509319944633),
+                          ('pearson', 0.12932925727138758)])
+def test_assoc(stat, expected):
     # 2d Array
     obs1 = np.array([[12, 13, 14, 15, 16],
                      [17, 16, 18, 19, 11],
                      [9, 15, 14, 12, 11]])
-    stats = ['cramer', 'tschuprow', 'pearson']
-    results = [0.09222412010290792, 0.0775509319944633, 0.12932925727138758]
-    for stat in stats:
-        a = association(observed=obs1, method=stat)
-        assert_allclose(a, results[stats.index(stat)])
+    a = association(observed=obs1, method=stat)
+    assert_allclose(a, expected)
