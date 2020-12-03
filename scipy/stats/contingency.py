@@ -279,7 +279,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
 
     The function provides the option for computing one of three measures of
     association between two nominal variables from the data given in a 2d
-    contingency table: Tshuprow's T, Pearson's Contingency Coefficient
+    contingency table: Tschuprow's T, Pearson's Contingency Coefficient
     and Cramer's V.
 
     Parameters
