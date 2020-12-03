@@ -6030,6 +6030,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     category are too small.  A typical rule is that all of the observed
     and expected frequencies should be at least 5.
 
+    Also, the sum of the observed and expected frequencies must be the same
+    for the test to be valid; `power_divergence` raises an error if the sums
+    do not agree within a relative tolerance of ``1e-8``.
+
     When `lambda_` is less than zero, the formula for the statistic involves
     dividing by `f_obs`, so a warning or error may be generated if any value
     in `f_obs` is 0.
@@ -6143,26 +6147,26 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         with np.errstate(invalid='ignore'):
             f_exp = f_obs.mean(axis=axis, keepdims=True)
 
+    f_obs_float = f_obs.astype(np.float64)
+    rtol = 1e-8  # to pass existing tests
+    with np.errstate(invalid='ignore'):
+        relative_diff = np.abs((f_obs_float - f_exp).sum(axis=axis)
+                               / np.minimum(f_obs_float, f_exp).sum(axis=axis))
+        diff_gt_tol = (relative_diff > rtol).any()
+    if diff_gt_tol:
+        msg = (f"For each axis slice, the sum of the observed "
+               f"frequencies must agree with the sum of the "
+               f"expected frequencies to a relative tolerance "
+               f"of {rtol}, but the percent differences are:\n"
+               f"{relative_diff}")
+        raise ValueError(msg)
+
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
     # cases of lambda_.
     if lambda_ == 1:
-        f_obs = f_obs.astype(np.float64)
-        rtol = 1e-8  # to pass existing tests
-        with np.errstate(invalid='ignore'):
-            relative_diff = np.abs((f_obs - f_exp).sum(axis=axis)
-                                   / np.minimum(f_obs, f_exp).sum(axis=axis))
-            diff_gt_tol = (relative_diff > rtol).any()
-        if diff_gt_tol:
-            msg = (f"For each axis slice, the sum of the observed "
-                   f"frequencies must agree with the sum of the "
-                   f"expected frequencies to a relative tolerance "
-                   f"of {rtol}, but the percent differences are:\n"
-                   f"{relative_diff}")
-            raise ValueError(msg)
-
         # Pearson's chi-squared statistic
-        terms = (f_obs - f_exp)**2 / f_exp
+        terms = (f_obs_float - f_exp)**2 / f_exp
     elif lambda_ == 0:
         # Log-likelihood ratio (i.e. G-test)
         terms = 2.0 * special.xlogy(f_obs, f_obs / f_exp)
