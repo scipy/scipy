@@ -274,7 +274,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     return chi2, p, dof, expected
 
 
-def association(observed, method="cramer", correction=True, lambda_=None):
+def association(observed, method="cramer", correction=False, lambda_=None):
     """Calculates degree of association between two nominal variables.
 
     The function provides the option for computing one of four measures of
