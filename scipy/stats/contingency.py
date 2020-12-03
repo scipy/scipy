@@ -5,9 +5,10 @@
 from functools import reduce
 import numpy as np
 from .stats import power_divergence
+from ._crosstab import crosstab
 
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab']
 
 
 def margins(a):

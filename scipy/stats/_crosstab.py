@@ -42,7 +42,7 @@ def crosstab(*args, levels=None):
 
     Notes
     -----
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.7.0
 
     References
     ----------
@@ -50,7 +50,7 @@ def crosstab(*args, levels=None):
 
     Examples
     --------
-    >>> from scipy.stats import crosstab
+    >>> from scipy.stats.contingency import crosstab
 
     Given the lists `a` and `x`, create a contingency table that counts the
     frequencies of the corresponding pairs.
