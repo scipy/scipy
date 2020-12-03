@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
          assert_array_almost_equal, assert_approx_equal, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 from scipy.special import xlogy
 from scipy.stats.contingency import (margins, expected_freq,
@@ -204,7 +205,8 @@ def test_bad_association_args():
     assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
     # chi2_contingency exception
     assert_raises(Exception, association, [[-1, 10], [1, 2]], 'cramer')
-    # Invalid array item value type
+    # Invalid Array Item Data Type
+    assert_raises(ValueError, association, [[1, 2], ["dd", 4]], 'cramer')
 
 
 @pytest.mark.parametrize('stat, expected',

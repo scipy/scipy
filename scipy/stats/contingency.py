@@ -28,7 +28,6 @@ def margins(a):
 
     Examples
     --------
-    >>> from scipy.stats.contingency import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -369,9 +368,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
 
     if len(arr.shape) != 2:
         raise ValueError("method only accepts 2d arrays")
-    elif any([(True if type(a) == list else False) for a in arr]):
-        raise ValueError("All arrays must be non-empty and have "
-                         "equivalent length.")
+
     try:
         chi2_stat = chi2_contingency(arr, correction=correction,
                                      lambda_=lambda_)
