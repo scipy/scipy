@@ -288,16 +288,9 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     method : {"cramer", "tschuprow", "pearson"} (default = "cramer")
         The association test statistic.
     correction : bool, optional
-        Inherited from chi2_contingency function.
-        If True, *and* the degrees of freedom is 1, apply Yates' correction
-        for continuity.  The effect of the correction is to adjust each
-        observed value by 0.5 towards the corresponding expected value.
+        Inherited from `scipy.stats.contingency.chi2_contingency()`
     lambda_ : float or str, optional
-        Inherited from chi2_contingency function.
-        By default, the statistic computed in this test is Pearson's
-        chi-squared statistic [2]_.  `lambda_` allows a statistic from the
-        Cressie-Read power divergence family [3]_ to be used instead.  See
-        `power_divergence` for details.
+        Inherited from `scipy.stats.contingency.chi2_contingency()`
 
     Returns
     -------
