@@ -19,17 +19,6 @@ from HConst cimport (
     HighsOptionTypeINT,
     HighsOptionTypeDOUBLE,
     HighsOptionTypeSTRING,
-)
-from Highs cimport Highs
-from HighsStatus cimport (
-    HighsStatus,
-    HighsStatusError,
-    HighsStatusWarning,
-    HighsStatusOK,
-)
-from HighsLp cimport (
-    HighsLp,
-    HighsSolution,
     HighsModelStatus,
     HighsModelStatusNOTSET,
     HighsModelStatusLOAD_ERROR,
@@ -44,6 +33,18 @@ from HighsLp cimport (
     HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
     HighsModelStatusREACHED_TIME_LIMIT,
     HighsModelStatusREACHED_ITERATION_LIMIT,
+)
+from Highs cimport Highs
+from HighsStatus cimport (
+    HighsStatus,
+    HighsStatusError,
+    HighsStatusWarning,
+    HighsStatusOK,
+)
+from HighsLp cimport (
+    HighsLp,
+    HighsSolution,
+
 )
 from HighsInfo cimport HighsInfo
 from HighsOptions cimport (
