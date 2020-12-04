@@ -710,6 +710,11 @@ def test_moments_with_array_gh12192():
     expected9 = np.array([3.59576912, np.nan, np.nan])
     npt.assert_allclose(vals9, expected9, rtol=1e-8)
 
+    # (n > 4), all(loc != 0), and all(scale != 0)
+    vals10 = stats.norm.moment(5, [1., 2.], [1., 2.])
+    expected10 = np.array([26., 832.])
+    npt.assert_equal(vals10, expected10)
+
 
 def test_broadcasting_in_moments_gh12192():
     vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[[1]])

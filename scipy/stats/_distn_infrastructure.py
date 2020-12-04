@@ -1277,7 +1277,7 @@ class rv_generic(object):
             if mu is not None:
                 mu, mu2, g1, g2 = argsreduce(loc != 0, mu, mu2, g1, g2)
             args = argsreduce(loc != 0, *shapes, loc, scale, val)
-            shapes, loc, scale, val = args[:-2], args[-3], args[-2], args[-1]
+            shapes, loc, scale, val = args[:-3], args[-3], args[-2], args[-1]
 
             res2 = zeros(loc.shape, dtype='d')
             fac = scale / loc
