@@ -1,4 +1,19 @@
-"""Some functions for working with contingency tables (i.e. cross tabulations).
+"""
+Contingency table functions (:mod:`scipy.stats.contingency`)
+============================================================
+
+Functions for creating and analyzing contingency tables.
+
+.. currentmodule:: scipy.stats.contingency
+
+.. autosummary::
+   :toctree: generated/
+
+   chi2_contingency
+   expected_freq
+   margins
+   relative_risk
+
 """
 
 
