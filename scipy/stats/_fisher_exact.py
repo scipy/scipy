@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from scipy.special import ndtri
 from scipy.optimize import brentq
 from scipy._lib._bunch import _make_tuple_bunch
 from .distributions import hypergeom
@@ -262,6 +263,28 @@ def _conditional_oddsratio_ci(table, confidence_level=0.95,
     return lower, upper
 
 
+def _sample_odds_ratio_ci(table, confidence_level=0.95,
+                          alternative='two-sided'):
+    oddsratio = _sample_odds_ratio(table)
+    log_or = np.log(oddsratio)
+    se = np.sqrt((1/table).sum())
+    if alternative == 'less':
+        z = ndtri(confidence_level)
+        loglow = -np.inf
+        loghigh = log_or + z*se
+    elif alternative == 'greater':
+        z = ndtri(confidence_level)
+        loglow = log_or - z*se
+        loghigh = np.inf
+    else:
+        # alternative is 'two-sided'
+        z = ndtri(0.5*confidence_level + 0.5)
+        loglow = log_or - z*se
+        loghigh = log_or + z*se
+
+    return np.exp(loglow), np.exp(loghigh)
+
+
 @dataclass
 class ConfidenceInterval:
     low: float
@@ -324,6 +347,55 @@ class FisherExactResult(FisherExactBaseResult):
             ci = _conditional_oddsratio_ci(table,
                                            confidence_level=confidence_level,
                                            alternative=self.alternative)
+        return ConfidenceInterval(low=ci[0], high=ci[1])
+
+    def sample_odds_ratio_ci(self, confidence_level=0.95):
+        """
+        Confidence interval for the sample odds ratio.
+
+        The confidence interval is computed under the assumption that
+        the logarithm of the odds ratio is normally distributed with
+        standard error given by::
+
+            se = sqrt(1/a + 1/b + 1/c + 1/d)
+
+        where ``a``, ``b``, ``c`` and ``d`` are the elements of the
+        contingency table.  (See, for example, [1]_, section 3.1.3.2,
+        or [2]_, section 2.3.3).
+
+        Parameters
+        ----------
+        confidence_level: float
+            Desired confidence level for the confidence interval.
+            The value must be given as a fraction between 0 and 1.
+            Default is 0.95 (meaning 95%).
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` instance
+            The confidence interval, represented as an object with
+            attributes ``low`` and ``high``.
+
+        References
+        ----------
+        .. [1] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
+               Methods, Techniques, and Applications, CRC Press LLC, Boca
+               Raton, Florida.
+        .. [2] Alan Agresti, An Introduction to Categorical Data Analyis
+               (second edition), Wiley, Hoboken, NJ, USA (2007).
+        """
+        if confidence_level < 0 or confidence_level > 1:
+            raise ValueError('confidence_level must be between 0 and 1')
+
+        table = self.table
+        if 0 in table.sum(axis=0) or 0 in table.sum(axis=1):
+            # If both values in a row or column are zero, the p-value is 1,
+            # the odds ratio is NaN and the confidence interval is (0, inf).
+            ci = (0, np.inf)
+        else:
+            ci = _sample_odds_ratio_ci(table,
+                                       confidence_level=confidence_level,
+                                       alternative=self.alternative)
         return ConfidenceInterval(low=ci[0], high=ci[1])
 
 
