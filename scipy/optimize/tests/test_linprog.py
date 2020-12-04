@@ -241,7 +241,7 @@ def test_unknown_solvers_and_options():
     assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
                   options={"rr_method": 'ekki-ekki-ekki'})
 
-    
+
 def test_choose_solver():
     # 'highs' chooses 'dual'
     c = np.array([-3, -2])
@@ -251,7 +251,7 @@ def test_choose_solver():
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-    
+
 A_ub = None
 b_ub = None
 A_eq = None
@@ -1484,6 +1484,26 @@ class LinprogCommonTests(object):
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
+
+    def test_bug_13200(self):
+        """
+        Test for redundancy removal tolerance issue
+        https://github.com/scipy/scipy/issues/13200
+        """
+
+        A1 = np.kron(np.ones((1, 3)), np.identity(3))
+        A2 = np.kron(np.identity(3), np.ones((1, 3)))
+        A_eq = np.vstack([A1, A2])
+        b_eq = np.hstack([7000, 12400, 7100, 13700, 5800, 7000])
+        c = np.array([20, 14, 17, 15, 12, 12, 12, 10, 11])
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                          method=self.method, options=self.options)
+        xd = [0, 12400, 1300, 0, 0, 5800, 7000, 0, 0]
+        _assert_success(res, desired_x=xd, desired_fun=349300,
+                        atol=1e-3, rtol=1e-6)
 
     def test_bug_10466(self):
         """

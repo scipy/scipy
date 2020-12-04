@@ -1432,7 +1432,9 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         A string descriptor of the exit status of the optimization.
     """
     # Somewhat arbitrary
-    tol = np.sqrt(tol) * 10
+    # Factor of 10 fixed some issues, 100 fixed gh-13200.
+    # Should make this a relative tolerance at some point.
+    tol = np.sqrt(tol) * 100
 
     if x is None:
         # HiGHS does not provide x if infeasible/unbounded

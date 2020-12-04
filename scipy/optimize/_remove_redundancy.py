@@ -432,7 +432,8 @@ def _remove_redundancy_svd(A, b):
                        "off redundancy removal, or try turning off presolve "
                        "altogether.")
             break
-        if np.any(np.abs(v.dot(b)) > tol * 100):  # factor of 100 to fix 10038 and 10349
+        # factor fixes gh-10038, gh-10349, and gh-13200
+        if np.any(np.abs(v.dot(b)) > tol * 1e4):
             status = 2
             message = ("There is a linear combination of rows of A_eq that "
                        "results in zero, suggesting a redundant constraint. "
