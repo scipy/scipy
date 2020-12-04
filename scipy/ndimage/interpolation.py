@@ -543,7 +543,10 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if output_shape is None:
-        output_shape = input.shape
+        if isinstance(output, numpy.ndarray):
+            output_shape = output.shape
+        else:
+            output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
     complex_output = numpy.iscomplexobj(input)

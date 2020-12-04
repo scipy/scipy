@@ -851,6 +851,22 @@ class TestNdimageInterpolation:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
 
+
+    def test_affine_transform_output_shape(self):
+        # don't require output_shape when out of a different size is given
+        data = numpy.arange(8, dtype=numpy.float64)
+        out = numpy.ones((16,))
+        oshape = out.shape
+
+        ndimage.affine_transform(data, [[1]], output=out)
+        assert_array_almost_equal(out[:8], data)
+
+        # mismatched output shape raises an error
+        with pytest.raises(RuntimeError):
+            ndimage.affine_transform(
+                data, [[1]], output=out, output_shape=(12,))
+
+
     def test_affine_transform_with_string_output(self):
         data = numpy.array([1])
         out = ndimage.affine_transform(data, [[1]], output='f')
