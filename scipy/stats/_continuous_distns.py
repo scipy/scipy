@@ -2106,7 +2106,7 @@ class truncweibull_min_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b, c):
-        return (a > 0.) & (b > a) & (c > 0.)
+        return (a >= 0.) & (b > a) & (c > 0.)
 
     def _get_support(self, a, b, c):
         return a, b
