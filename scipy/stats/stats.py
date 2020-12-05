@@ -5966,6 +5966,13 @@ def _count(a, axis=None):
     return num
 
 
+def _m_broadcast_to(a, shape):
+    if np.ma.isMaskedArray(a):
+        return np.ma.masked_array(np.broadcast_to(a, shape),
+                                  mask=np.broadcast_to(a.mask, shape))
+    return np.broadcast_to(a, shape, subok=True)
+
+
 Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
 
@@ -6138,28 +6145,30 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         lambda_ = 1
 
     f_obs = np.asanyarray(f_obs)
+    f_obs_float = f_obs.astype(np.float64)
 
     if f_exp is not None:
-        f_exp = np.asanyarray(f_exp)
+        f_exp = _m_broadcast_to(np.asanyarray(f_exp), f_obs_float.shape)
+        rtol = 1e-8  # to pass existing tests
+        with np.errstate(invalid='ignore'):
+            f_obs_sum = f_obs_float.sum(axis=axis)
+            f_exp_sum = f_exp.sum(axis=axis)
+            relative_diff = (np.abs(f_obs_sum - f_exp_sum) /
+                             np.minimum(f_obs_sum, f_exp_sum))
+            diff_gt_tol = (relative_diff > rtol).any()
+        if diff_gt_tol:
+            msg = (f"For each axis slice, the sum of the observed "
+                   f"frequencies must agree with the sum of the "
+                   f"expected frequencies to a relative tolerance "
+                   f"of {rtol}, but the percent differences are:\n"
+                   f"{relative_diff}")
+            raise ValueError(msg)
+
     else:
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
         with np.errstate(invalid='ignore'):
             f_exp = f_obs.mean(axis=axis, keepdims=True)
-
-    f_obs_float = f_obs.astype(np.float64)
-    rtol = 1e-8  # to pass existing tests
-    with np.errstate(invalid='ignore'):
-        relative_diff = np.abs((f_obs_float - f_exp).sum(axis=axis)
-                               / np.minimum(f_obs_float, f_exp).sum(axis=axis))
-        diff_gt_tol = (relative_diff > rtol).any()
-    if diff_gt_tol:
-        msg = (f"For each axis slice, the sum of the observed "
-               f"frequencies must agree with the sum of the "
-               f"expected frequencies to a relative tolerance "
-               f"of {rtol}, but the percent differences are:\n"
-               f"{relative_diff}")
-        raise ValueError(msg)
 
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
