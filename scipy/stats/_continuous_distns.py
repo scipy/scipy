@@ -2087,18 +2087,21 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = c x^{c-1} \exp(-x^c + a^c)
+        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`x > a`, :math:`c > 0`.
+    for :math:`a < x <= b`, :math:`c > 0`.
 
-    `truncweibull_min` takes :math:`a` and :math:`b` as shape parameters.
+    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    parameters.
 
-    Notice that the truncation value, :math:`a`, is defined in standardized
-    form::
+    Notice that the truncation values, :math:`a` and :math:`b`, is defined in
+    standardized form::
 
-        a = (u - loc)/scale
+        a = (u_l - loc)/scale
+        b = (u_r - loc)/scale
 
-    where :math:`u` is the specific truncation value.
+    where :math:`u_l` and :math:`u_r` are the specific left and right truncation
+    values, respectively.
 
     %(after_notes)s
 
