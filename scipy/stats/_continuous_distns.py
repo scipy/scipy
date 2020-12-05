@@ -2120,8 +2120,11 @@ class truncweibull_min_gen(rv_continuous):
     def _logpdf(self, x, a, b, c):
         return np.log(c) + sc.xlogy(c - 1, x) - x**c - np.log(np.exp(-a**c) - np.exp(-b**c))
 
-#     def _cdf(self, x, a, c):
-#         return -sc.expm1(-x**c + a**c)
+    def _cdf(self, x, a, b, c):
+        return (np.exp(-a**c) - np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
+
+    def _logcdf(self, x, a, b, c):
+        return np.log(np.exp(-a**c) - np.exp(-x**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
 #     def _sf(self, x, a, c):
 #         return np.exp(-x**c + a**c)

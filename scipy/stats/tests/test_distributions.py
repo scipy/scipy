@@ -3803,11 +3803,13 @@ class TestTruncWeibull(object):
         lp_trunc = stats.truncweibull_min.logpdf(x, a, b, c, scale=scale)
         assert_allclose(lp, lp_trunc)
 
-        # c = stats.weibull_min.cdf(x, a, scale=b)
-        # assert_allclose(c, -special.expm1(-0.25))
+        cdf = stats.weibull_min.cdf(x, c, scale=scale)
+        cdf_trunc = stats.truncweibull_min.cdf(x, a, b, c, scale=scale)
+        assert_allclose(cdf, cdf_trunc)
 
-        # lc = stats.weibull_min.logcdf(x, a, scale=b)
-        # assert_allclose(lc, np.log(-special.expm1(-0.25)))
+        lc = stats.weibull_min.logcdf(x, c, scale=scale)
+        lc_trunc = stats.truncweibull_min.logcdf(x, a, b, c, scale=scale)
+        assert_allclose(lc, lc_trunc)
 
         # s = stats.weibull_min.sf(x, a, scale=b)
         # assert_allclose(s, np.exp(-0.25))
