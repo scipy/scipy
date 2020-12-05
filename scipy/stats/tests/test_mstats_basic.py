@@ -18,7 +18,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-
+from scipy.stats import mstats_basic
 
 class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
@@ -356,6 +356,29 @@ class TestCorr(object):
         assert_almost_equal(output['global p-value (indep)'], 0.008, 3)
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
+
+
+def test_kendall_p_exact_large():
+    # Test for the exact method with large samples (n >= 171)
+    # expected values generated using SymPy
+    expectations = {(100, 2393): 0.62822615287956040664,
+                    (101, 2436): 0.60439525773513602669,
+                    (170, 0): 2.755801935583541e-307,
+                    (171, 0): 0.0,
+                    (171, 1): 2.755801935583541e-307,
+                    (172, 1): 0.0,
+                    (200, 9797): 0.74753983745929675209,
+                    (201, 9656): 0.40959218958120363618,
+                    (400, 38965): 0.48444283672113314099,
+                    (401, 39516): 0.66363159823474837662,
+                    (800, 156772): 0.42265448483120932055,
+                    (801, 157849): 0.53437553412194416236,
+                    (1600, 637472): 0.84200727400323538419,
+                    (1601, 630304): 0.34465255088058593946}
+    
+    for nc, expected in expectations.items():
+        res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+        assert_almost_equal(res, expected)
 
     def test_pointbiserial(self):
         x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
