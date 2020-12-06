@@ -1095,7 +1095,7 @@ class zipfian_gen(rv_discrete):
 
     """
     def _argcheck(self, a, n):
-        return (a >= 0) & (n == n.astype(int))
+        return (a >= 0) & (np.asarray(n) == np.asarray(n, dtype=int))
 
     def _pmf(self, k, a, n):
         Pk = 1.0 / _gen_harmonic(n, a) / k**a
@@ -1104,6 +1104,28 @@ class zipfian_gen(rv_discrete):
     def _cdf(self, k, a, n):
         return  _gen_harmonic(k, a)/_gen_harmonic(n, a)
 
+    def _sf(self, k, a, n):
+        k += 1  # # to match SciPy convention
+        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        # implemented exactly as shown; please suggest improvements
+        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
+                / (k**a*_gen_harmonic(n, a)))
+
+    def _stats(self, a, n):
+        # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        Hna = _gen_harmonic(n, a)
+        Hna1 = _gen_harmonic(n, a-1)
+        Hna2 = _gen_harmonic(n, a-2)
+        Hna3 = _gen_harmonic(n, a-3)
+        Hna4 = _gen_harmonic(n, a-4)
+        mu1 = Hna1/Hna
+        mu2n = (Hna2*Hna - Hna1**2)
+        mu2d = Hna**2
+        mu2 = mu2n / mu2d
+        g1 = (Hna3/Hna - 3*Hna1*Hna2/Hna**2 + 2*Hna1**3/Hna**3)/mu2**(3/2)
+        g2 = (Hna**3*Hna4 - 4*Hna**2*Hna1*Hna3 + 6*Hna*Hna1**2*Hna2
+              - 3*Hna1**4) / mu2n**2 - 3
+        return mu1, mu2, g1, g2
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
 
