@@ -71,6 +71,11 @@ def czt_points(m, w=None, a=1+0j):
         The points in the Z plane at which `CZT` samples the z-transform,
         when called with arguments `m`, `w`, and `a`, as complex numbers.
 
+    See Also
+    --------
+    CZT : Class that creates a callable chirp z-transform function.
+    czt : Convenience function for quickly calculating CZT.
+
     Examples
     --------
     Plot the points of a 16-point FFT:
@@ -134,7 +139,8 @@ class CZT:
 
     See Also
     --------
-    ZoomFFT : for a friendlier interface to partial FFT calculations.
+    czt : Convenience function for quickly calculating CZT.
+    ZoomFFT : Class that creates a callable partial FFT function.
 
     Notes
     -----
@@ -280,6 +286,10 @@ class ZoomFFT(CZT):
     f : ZoomFFT
         Callable object ``f(x, axis=-1)`` for computing the zoom FFT on `x`.
 
+    See Also
+    --------
+    zoomfft : Convenience function for calculating a zoom FFT.
+
     Notes
     -----
     Sampling frequency is 1/dt, the time step between samples in the
@@ -373,7 +383,8 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
 
     See Also
     --------
-    zoomfft : for a friendlier interface to partial FFT calculations
+    CZT : Class that creates a callable chirp z-transform function.
+    zoomfft : Convenience function for partial FFT calculations.
 
     Notes
     -----
@@ -417,6 +428,10 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     out : ndarray
         The transformed signal.  The Fourier transform will be calculated
         at the points f1, f1+df, f1+2df, ..., f2, where df=(f2-f1)/m.
+
+    See Also
+    --------
+    ZoomFFT : Class that creates a callable partial FFT function.
 
     Notes
     -----
