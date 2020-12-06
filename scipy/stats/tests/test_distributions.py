@@ -3775,47 +3775,47 @@ class TestTruncWeibull(object):
 
     def test_pdf_bounds(self):
         # test bounds
-        y = stats.truncweibull_min.pdf([0.1, 2.0], 0.11, 1.99, 2.)
+        y = stats.truncweibull_min.pdf([0.1, 2.0], 2.0, 0.11, 1.99)
         assert_equal(y, [0., 0.])
 
     def test_logpdf(self):
-        y = stats.truncweibull_min.logpdf(2., 2., np.inf, 1.)
+        y = stats.truncweibull_min.logpdf(2.0, 1.0, 2.0, np.inf)
         assert_equal(y, 0)
 
         # hand calculation
-        y = stats.truncweibull_min.logpdf(2., 2., 4., 1.)
+        y = stats.truncweibull_min.logpdf(2.0, 1.0, 2.0, 4.0)
         assert_allclose(y, 0.14541345786885884)
 
     def test_compare_weibull_min(self):
         # Verify that the truncweibull_min distribution gives the same results
         # as the original weibull_min
         x = 1.5
-        a = 0.0
-        b = np.inf
-        c = 2.0
+        a = 2.0
+        b = 0.0
+        c = np.inf
         scale = 3.0
 
-        p = stats.weibull_min.pdf(x, c, scale=scale)
+        p = stats.weibull_min.pdf(x, a, scale=scale)
         p_trunc = stats.truncweibull_min.pdf(x, a, b, c, scale=scale)
         assert_allclose(p, p_trunc)
 
-        lp = stats.weibull_min.logpdf(x, c, scale=scale)
+        lp = stats.weibull_min.logpdf(x, a, scale=scale)
         lp_trunc = stats.truncweibull_min.logpdf(x, a, b, c, scale=scale)
         assert_allclose(lp, lp_trunc)
 
-        cdf = stats.weibull_min.cdf(x, c, scale=scale)
+        cdf = stats.weibull_min.cdf(x, a, scale=scale)
         cdf_trunc = stats.truncweibull_min.cdf(x, a, b, c, scale=scale)
         assert_allclose(cdf, cdf_trunc)
 
-        lc = stats.weibull_min.logcdf(x, c, scale=scale)
+        lc = stats.weibull_min.logcdf(x, a, scale=scale)
         lc_trunc = stats.truncweibull_min.logcdf(x, a, b, c, scale=scale)
         assert_allclose(lc, lc_trunc)
 
-        s = stats.weibull_min.sf(x, c, scale=scale)
+        s = stats.weibull_min.sf(x, a, scale=scale)
         s_trunc = stats.truncweibull_min.sf(x, a, b, c, scale=scale)
         assert_allclose(s, s_trunc)
 
-        ls = stats.weibull_min.logsf(x, c, scale=scale)
+        ls = stats.weibull_min.logsf(x, a, scale=scale)
         ls_trunc = stats.truncweibull_min.logsf(x, a, b, c, scale=scale)
         assert_allclose(ls, ls_trunc)
 
