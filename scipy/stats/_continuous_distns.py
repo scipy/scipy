@@ -2108,28 +2108,28 @@ class truncweibull_min_gen(rv_continuous):
     %(example)s
 
     """
-    def _argcheck(self, a, b, c):
+    def _argcheck(self, c, a, b):
         return (a >= 0.) & (b > a) & (c > 0.)
 
-    def _get_support(self, a, b, c):
+    def _get_support(self, c, a, b):
         return a, b
 
-    def _pdf(self, x, a, b, c):
+    def _pdf(self, x, c, a, b):
         return (c * x**(c-1) * np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
-    def _logpdf(self, x, a, b, c):
+    def _logpdf(self, x, c, a, b):
         return np.log(c) + sc.xlogy(c - 1, x) - x**c - np.log(np.exp(-a**c) - np.exp(-b**c))
 
-    def _cdf(self, x, a, b, c):
+    def _cdf(self, x, c, a, b):
         return (np.exp(-a**c) - np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
-    def _logcdf(self, x, a, b, c):
+    def _logcdf(self, x, c, a, b):
         return np.log(np.exp(-a**c) - np.exp(-x**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
-    def _sf(self, x, a, b, c):
+    def _sf(self, x, c, a, b):
         return (np.exp(-x**c) - np.exp(-b**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
-    def _logsf(self, x, a, b, c):
+    def _logsf(self, x, c, a, b):
         return np.log(np.exp(-x**c) - np.exp(-b**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
 #     def _ppf(self, q, a, c):
