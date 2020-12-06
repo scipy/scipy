@@ -112,7 +112,7 @@ def czt_points(m, w=None, a=1+0j):
 
 class CZT:
     """
-    Create a chirp z-transform function.
+    Create a callable chirp z-transform function.
 
     Transform to compute the frequency response around a spiral.
     Objects of this class are callables which can compute the
@@ -259,7 +259,7 @@ class CZT:
 
 class ZoomFFT(CZT):
     """
-    Create a zoom FFT transform function.
+    Create a callable zoom FFT transform function.
 
     This is a specialization of the chirp z-transform (`CZT`) for a set of
     equally-spaced frequencies around the unit circle, used to calculate a
