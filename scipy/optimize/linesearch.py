@@ -437,8 +437,9 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             warn(msg, LineSearchWarning)
             break
 
+        not_first_iteration = i > 0
         if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
-           ((phi_a1 >= phi_a0) and (i > 1)):
+           ((phi_a1 >= phi_a0) and not_first_iteration):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,

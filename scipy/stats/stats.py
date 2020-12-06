@@ -2427,6 +2427,50 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
+def _isconst(x):
+    """
+    Check if all values in x are the same.  nans are ignored.
+
+    x must be a 1d array.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([True])
+    else:
+        return (y[0] == y).all(keepdims=True)
+
+
+def _quiet_nanmean(x):
+    """
+    Compute nanmean for the 1d array x, but quietly return nan if x is all nan.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([np.nan])
+    else:
+        return np.mean(y, keepdims=True)
+
+
+def _quiet_nanstd(x):
+    """
+    Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([np.nan])
+    else:
+        return np.std(y, keepdims=True)
+
+
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2447,7 +2491,9 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'.  Note that when the value is 'omit',
+        nans in the input also propagate to the output, but they do not affect
+        the z-scores computed for the non-nan values.
 
     Returns
     -------
@@ -2485,19 +2531,44 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
 
+    An example with `nan_policy='omit'`:
+
+    >>> x = np.array([[25.11, 30.10, np.nan, 32.02, 43.15],
+    ...               [14.95, 16.06, 121.25, 94.35, 29.81]])
+    >>> stats.zscore(x, axis=1, nan_policy='omit')
+    array([[-1.13490897, -0.37830299,         nan, -0.08718406,  1.60039602],
+           [-0.91611681, -0.89090508,  1.4983032 ,  0.88731639, -0.5785977 ]])
     """
     a = np.asanyarray(a)
+
+    if a.size == 0:
+        return np.empty(a.shape)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        mns = np.nanmean(a=a, axis=axis, keepdims=True)
-        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
+        if axis is None:
+            mn = _quiet_nanmean(a.ravel())
+            std = _quiet_nanstd(a.ravel())
+            isconst = _isconst(a.ravel())
+        else:
+            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
+            std = np.apply_along_axis(_quiet_nanstd, axis, a)
+            isconst = np.apply_along_axis(_isconst, axis, a)
     else:
-        mns = a.mean(axis=axis, keepdims=True)
-        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+        mn = a.mean(axis=axis, keepdims=True)
+        std = a.std(axis=axis, ddof=ddof, keepdims=True)
+        if axis is None:
+            isconst = (a.item(0) == a).all()
+        else:
+            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
 
-    return (a - mns) / sstd
+    # Set std deviations that are 0 to 1 to avoid division by 0.
+    std[isconst] = 1.0
+    z = (a - mn) / std
+    # Set the outputs associated with a constant input to nan.
+    z[np.broadcast_to(isconst, z.shape)] = np.nan
+    return z
 
 
 def zmap(scores, compare, axis=0, ddof=0):
@@ -3457,12 +3528,7 @@ def _first(arr, axis):
     """
     Return arr[..., 0:1, ...] where 0:1 is in the `axis` position.
     """
-    # When the oldest version of numpy supported by scipy is at
-    # least 1.15.0, this function can be replaced by np.take_along_axis
-    # (with appropriately configured arguments).
-    axis = np.core.multiarray.normalize_axis_index(axis, arr.ndim)
-    return arr[tuple(slice(None) if k != axis else slice(0, 1)
-               for k in range(arr.ndim))]
+    return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
 def f_oneway(*args, axis=0):
@@ -3773,14 +3839,14 @@ def pearsonr(x, y):
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
     the mean of the vector :math:`y`.
 
-    Under the assumption that x and y are drawn from independent normal
-    distributions (so the population correlation coefficient is 0), the
-    probability density function of the sample correlation coefficient r
-    is ([1]_, [2]_)::
+    Under the assumption that :math:`x` and :math:`m_y` are drawn from
+    independent normal distributions (so the population correlation coefficient
+    is 0), the probability density function of the sample correlation
+    coefficient :math:`r` is ([1]_, [2]_):
 
-               (1 - r**2)**(n/2 - 2)
-        f(r) = ---------------------
-                  B(1/2, n/2 - 1)
+    .. math::
+
+        f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
@@ -4214,7 +4280,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             else:
                 # Keep track of variables with NaNs, set the outputs to NaN
                 # only for those variables
-                variable_has_nan = np.isnan(a).sum(axis=axisout)
+                variable_has_nan = np.isnan(a).any(axis=axisout)
 
     a_ranked = np.apply_along_axis(rankdata, axisout, a)
     rs = np.corrcoef(a_ranked, rowvar=axisout)
@@ -4367,8 +4433,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'auto': selects the appropriate method based on a trade-off
             between speed and accuracy
           * 'asymptotic': uses a normal approximation valid for large samples
-          * 'exact': computes the exact p-value, but is only available when
-            no ties are present
+          * 'exact': computes the exact p-value, but can only be used if no ties
+            are present. As the sample size increases, the 'exact' computation
+            time may grow and the result may lose some precision.
 
     variant: {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
@@ -4517,35 +4584,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation
-        # Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = min(dis, tot-dis)
-        if size <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > size*(size-1):
-            raise ValueError
-        elif size == 1:
-            pvalue = 1.0
-        elif size == 2:
-            pvalue = 1.0
-        elif c == 0:
-            pvalue = 2.0/float_factorial(size)
-        elif c == 1:
-            pvalue = 2.0/float_factorial(size-1)
-        elif 2*c == tot:
-            pvalue = 1.0
-        else:
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3, size+1):
-                old = new[:]
-                for k in range(1, min(j, c+1)):
-                    new[k] += new[k-1]
-                for k in range(j, c+1):
-                    new[k] += new[k-1] - old[k-j]
+        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
 
-            pvalue = 2.0*sum(new)/float_factorial(size)
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
@@ -4708,7 +4748,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     # If there are NaNs we apply _toint64()
     if np.isnan(np.sum(x)):
         x = _toint64(x)
-    if np.isnan(np.sum(x)):
+    if np.isnan(np.sum(y)):
         y = _toint64(y)
 
     # Reduce to ranks unsupported types
@@ -5280,7 +5320,8 @@ def _two_sample_transform(u, v):
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
+def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
+                alternative="two-sided"):
     """
     Calculate the T-test for the mean of ONE group of scores.
 
@@ -5296,8 +5337,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
         Expected value in null hypothesis. If array_like, then it must have the
         same shape as `a` excluding the axis dimension.
     axis : int or None, optional
-        Axis along which to compute test. If None, compute over the whole
-        array `a`.
+        Axis along which to compute test; default is 0. If None, compute over
+        the whole array `a`.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5305,6 +5346,15 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5331,14 +5381,26 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
 
     Examples using axis and non-scalar dimension for population mean.
 
-    >>> stats.ttest_1samp(rvs,[5.0,0.0])
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
-    >>> stats.ttest_1samp(rvs.T,[5.0,0.0],axis=1)
-    (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
-    >>> stats.ttest_1samp(rvs,[[5.0],[0.0]])
-    (array([[-0.68014479, -0.04323899],
-           [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
-           [  7.89094663e-03,   1.49986458e-04]]))
+    >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
+    >>> result.statistic
+    array([-0.68014479,  4.11038784]),
+    >>> result.pvalue
+    array([4.99613833e-01, 1.49986458e-04])
+
+    >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
+    >>> result.statistic
+    array([-0.68014479,  4.11038784])
+    >>> result.pvalue
+    array([4.99613833e-01, 1.49986458e-04])
+
+    >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
+    >>> result.statistic
+    array([[-0.68014479, -0.04323899],
+           [ 2.77025808,  4.11038784]])
+    >>> result.pvalue
+    array([[4.99613833e-01, 9.65686743e-01],
+           [7.89094663e-03, 1.49986458e-04]])
+
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -5346,6 +5408,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
+        if alternative != 'two-sided':
+            raise ValueError("nan-containing/masked inputs with "
+                             "nan_policy='omit' are currently not "
+                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         return mstats_basic.ttest_1samp(a, popmean, axis)
 
@@ -5358,26 +5424,35 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return Ttest_1sampResult(t, prob)
 
 
-def _ttest_finish(df, t):
+def _ttest_finish(df, t, alternative):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(np.abs(t), df) * 2  # use np.abs to get upper tail
+    if alternative == 'less':
+        prob = distributions.t.cdf(t, df)
+    elif alternative == 'greater':
+        prob = distributions.t.sf(t, df)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.t.sf(np.abs(t), df)
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+
     if t.ndim == 0:
         t = t[()]
 
     return t, prob
 
 
-def _ttest_ind_from_stats(mean1, mean2, denom, df):
+def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return (t, prob)
 
@@ -5406,7 +5481,7 @@ Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
-                         equal_var=True):
+                         equal_var=True, alternative="two-sided"):
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
@@ -5432,6 +5507,15 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5512,7 +5596,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
 
-    res = _ttest_ind_from_stats(mean1, mean2, denom, df)
+    res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
 
 
@@ -5558,7 +5642,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
+def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
+              alternative="two-sided"):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5588,6 +5673,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5663,6 +5757,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
+        if alternative != 'two-sided':
+            raise ValueError("nan-containing/masked inputs with "
+                             "nan_policy='omit' are currently not "
+                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
@@ -5680,7 +5778,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
+    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df,
+                                alternative)
 
     return Ttest_indResult(*res)
 
@@ -5696,7 +5795,7 @@ def _get_len(a, axis, msg):
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
-def ttest_rel(a, b, axis=0, nan_policy='propagate'):
+def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """
     Calculate the t-test on TWO RELATED samples of scores, a and b.
 
@@ -5717,6 +5816,15 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+          .. versionadded:: 1.6.0
 
     Returns
     -------
@@ -5766,6 +5874,10 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
+        if alternative != 'two-sided':
+            raise ValueError("nan-containing/masked inputs with "
+                             "nan_policy='omit' are currently not "
+                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         m = ma.mask_or(ma.getmask(a), ma.getmask(b))
@@ -5791,7 +5903,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(dm, denom)
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative)
 
     return Ttest_relResult(t, prob)
 
@@ -7297,7 +7409,7 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('Less than 3 levels.  Friedman test not appropriate.')
+        raise ValueError('At least 3 sets of measurements must be given for Friedman test, got {}.'.format(k))
 
     n = len(args[0])
     for i in range(1, k):

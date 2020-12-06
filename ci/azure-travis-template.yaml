@@ -1,0 +1,175 @@
+# This template is for the migration of Travis CI jobs to azure
+# It is still missing debug python support
+
+parameters:
+- name: test_mode
+  type: string
+  default: fast
+  values:
+    - fast
+    - full
+- name: coverage
+  type: boolean
+  default: false
+- name: refguide_check
+  type: boolean
+  default: false
+- name: asv_check
+  type: boolean
+  default: false
+- name: use_wheel
+  type: boolean
+  default: false
+- name: use_sdist
+  type: boolean
+  default: false
+- name: numpy_spec
+  type: string
+- name: other_spec
+  type: string
+  default: ''
+- name: use_64bit_blas
+  type: boolean
+  default: false
+
+steps:
+# Handle caching
+- task: Cache@2
+  inputs:
+    key: 'ccache | $(Agent.OS) | $(Agent.JobName)'
+    path: $(CCACHE_DIR)
+  displayName: ccache
+# Install dependencies
+- ${{ if eq(parameters.use_64bit_blas, true) }}:
+  - script: |
+      target=$(python tools/openblas_support.py)
+      echo "[openblas64_]" > site.cfg
+      echo "library_dirs = $target/lib" >> site.cfg
+      echo "include_dirs = $target/include" >> site.cfg
+      echo "runtime_library_dirs = $target/lib" >> site.cfg
+    displayName: 'Enable 64-bit OpenBlas'
+- script: >-
+    sudo apt-get update -y &&
+    sudo apt-get install -y
+    libatlas-base-dev
+    liblapack-dev
+    gfortran
+    libgmp-dev
+    libmpfr-dev
+    libsuitesparse-dev
+    ccache
+    libmpc-dev
+  displayName: 'Install common apt dependencies'
+- script: 'echo "##vso[task.prependpath]/usr/lib/ccache"'
+  displayName: 'Add ccache to path'
+- script: >-
+    pip install --upgrade ${{parameters.numpy_spec}} &&
+    pip install --upgrade pip==20.2.4 setuptools wheel &&
+    pip install ${{parameters.other_spec}}
+    cython
+    gmpy2
+    mpmath
+    pybind11
+    pytest
+    pytest-xdist
+  displayName: 'Install common python dependencies'
+- ${{ if eq(parameters.test_mode, 'full') }}:
+  - script: pip install matplotlib scikit-umfpack scikit-sparse
+    displayName: 'Install full mode dependencies'
+- ${{ if eq(parameters.coverage, true) }}:
+  - script: pip install pytest-cov coverage codecov
+    displayName: 'Install coverage dependencies'
+- ${{ if eq(parameters.refguide_check, true) }}:
+  - script: pip install matplotlib Sphinx==1.7.2
+    displayName: 'Install documentation dependencies'
+  - script: sudo apt-get install -y wamerican-small
+    displayName: 'Install word list (for csgraph tutorial)'
+- ${{ if eq(parameters.asv_check, true) }}:
+  - script: pip install "asv>=0.4.1"
+    displayName: 'Install asv'
+- script: pip uninstall -y nose
+  displayName: 'Uninstall Nose'
+- script: git submodule update --init
+  displayName: 'Fetch submodules'
+
+
+# Build and test SciPy
+- script: |
+    set -e
+    python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
+    python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
+- ${{ if eq(parameters.use_wheel, true) }}:
+  - script: |
+      set -e
+      # Run setup.py build before pip wheel, to build in current directory
+      # and make more efficient use of ccache
+      echo "setup.py build"
+      python tools/suppress_output.py python setup.py build
+      echo "pip wheel"
+      python tools/suppress_output.py pip wheel --no-build-isolation .
+      pip install --no-cache-dir scipy*.whl
+    displayName: 'Install SciPy from Wheel'
+- ${{ if eq(parameters.use_sdist, true) }}:
+  - script: |
+      set -e
+      echo "setup.py sdist"
+      python tools/suppress_output.py python setup.py sdist
+      # Move out of source directory to avoid finding local scipy
+      cd dist
+      echo "pip install"
+      # Note: uses build isolation, which is what pip does with sdists by default
+      # Note: don't use a fixed build dir (which would help for ccache), because
+      #       --build is partially broken and the workaround in commit b4617dd764
+      #       messes with build isolation.
+      pip install $PWD/scipy* -v
+    displayName: 'Install SciPy from SDist'
+- script: 'python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD'
+  env:
+    ${{ if eq(parameters.coverage, true) }}:
+      COVERAGE: '--coverage --gcov'
+    ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
+      USE_WHEEL_BUILD: '--no-build'
+  displayName: 'Build SciPy'
+- script: |
+    set -e
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 2>&1 | tee runtests.log
+    tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
+  env:
+    ${{ if eq(parameters.coverage, true) }}:
+      COVERAGE: '--coverage --gcov'
+    ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
+      USE_WHEEL_BUILD: '--no-build'
+  # Only run tests on master for the coverage build
+  ${{ if eq(parameters.coverage, false) }}:
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  displayName: 'Run tests'
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.refguide_check, true)) }}:
+  - script: python runtests.py -g --refguide-check
+    displayName: 'Refguide Check'
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.asv_check, true)) }}:
+  - script: |
+      set -e
+      cd benchmarks
+      python -masv check -E existing
+      # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+      ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
+- script: ./tools/check_pyext_symbol_hiding.sh build
+  displayName: "Check dynamic symbol hiding works"
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')
+  failOnStderr: true
+- ${{ if eq(parameters.coverage, true) }}:
+  - script: |
+      set -e
+      RUN_DIR=`echo build/testenv/lib/python*/site-packages`
+      # Produce gcov output for codecov to find
+      find build -name '*.gcno' -type f -exec gcov -pb {} +
+      mv *.gcov "$RUN_DIR/"
+      # Run codecov
+      cd "$RUN_DIR"
+      curl https://codecov.io/bash -o codecov-upload.sh
+      chmod +x codecov-upload.sh
+      # Skip running gcov since we have already done it
+      ./codecov-upload.sh -X gcov
+    displayName: 'Upload coverage information'
+
+

@@ -11,7 +11,7 @@ def configuration(parent_package='', top_path=None):
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
     from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, set_cxx_flags_clib_hook)
+        set_cxx_flags_hook, set_cxx_flags_clib_hook, set_c_flags_hook)
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -30,7 +30,7 @@ def configuration(parent_package='', top_path=None):
                        sources='rectangular_lsap/rectangular_lsap.cpp',
                        headers='rectangular_lsap/rectangular_lsap.h',
                        _pre_build_hook=set_cxx_flags_clib_hook)
-    config.add_extension(
+    _lsap = config.add_extension(
         '_lsap_module',
         sources=['_lsap_module.c'],
         libraries=['rectangular_lsap'],
@@ -38,6 +38,7 @@ def configuration(parent_package='', top_path=None):
                   'rectangular_lsap/rectangular_lsap.h']),
         include_dirs=include_dirs,
         **numpy_nodepr_api)
+    _lsap._pre_build_hook = set_c_flags_hook
 
     rootfind_src = [join('Zeros', '*.c')]
     rootfind_hdr = [join('Zeros', 'zeros.h')]
@@ -115,6 +116,10 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
+
+    # HiGHS linear programming libraries and extensions
+    config.add_subpackage('_highs')
+    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
 
     config.add_data_dir('tests')
 
