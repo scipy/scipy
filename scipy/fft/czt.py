@@ -271,8 +271,8 @@ class ZoomFFT(CZT):
     n : int
         The size of the signal.
     fn : array_like, optional
-        A length-2 sequence [f1, f2] giving the frequency range, or a scalar,
-        for which the range [0, fn] is assumed.
+        A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
+        scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
         The number of output points desired.  Default is `n`.
     fs : float, optional
@@ -295,8 +295,8 @@ class ZoomFFT(CZT):
     Sampling frequency is 1/dt, the time step between samples in the
     signal `x`.  The unit circle corresponds to frequencies from 0 up
     to the sampling frequency.  The default sampling frequency of 2
-    means that f1, f2 values up to the Nyquist frequency are in the
-    range [0, 1). For f1, f2 values expressed in radians, a sampling
+    means that `f1`, `f2` values up to the Nyquist frequency are in the
+    range [0, 1). For `f1`, `f2` values expressed in radians, a sampling
     frequency of 1/pi should be used.
 
     Remember that a zoom FFT can only interpolate the points of the existing
@@ -406,14 +406,14 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     x : array
         The input signal.
     fn : array_like, optional
-        A length-2 sequence [f1, f2] giving the frequency range, or a scalar,
-        for which the range [0, fn] is assumed.
+        A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
+        scalar, for which the range [0, `fn`] is assumed.
     m : int, optional
         The number of points to evaluate.  The default is the length of `x`.
     fs : float, optional
         The sampling frequency.  With a sampling frequency of
-        10kHz for example, the range f1 and f2 can be expressed in kHz.
-        The default sampling frequency is 2, so f1 and f2 should be
+        10kHz for example, the range `f1` and `f2` can be expressed in kHz.
+        The default sampling frequency is 2, so `f1` and `f2` should be
         in the range [0, 1] to keep the transform below the Nyquist
         frequency.
     endpoint : bool, optional
