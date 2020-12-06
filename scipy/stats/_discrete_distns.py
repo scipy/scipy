@@ -4,7 +4,7 @@
 #
 from functools import partial
 from scipy import special
-from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
 from scipy._lib._util import _lazywhere, rng_integers
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -31,8 +31,8 @@ class binom_gen(rv_discrete):
     for ``k`` in ``{0, 1,..., n}``, :math:`0 \leq p \leq 1`
 
     `binom` takes ``n`` and ``p`` as shape parameters,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -113,8 +113,8 @@ class bernoulli_gen(binom_gen):
     for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
     `bernoulli` takes :math:`p` as shape parameter,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -258,8 +258,8 @@ class nbinom_gen(rv_discrete):
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success, 
-    and :math:`1-p` is the probability of a single failure. 
+    number of successes, :math:`p` is the probability of a single success,
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -327,8 +327,8 @@ class geom_gen(rv_discrete):
 
     for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter, 
-    where :math:`p` is the probability of a single success 
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
@@ -1006,7 +1006,7 @@ randint = randint_gen(name='randint', longname='A discrete uniform '
 
 # FIXME: problems sampling.
 class zipf_gen(rv_discrete):
-    r"""A Zipf discrete random variable.
+    r"""A Zipf (Zeta) discrete random variable.
 
     %(before_notes)s
 
@@ -1018,12 +1018,20 @@ class zipf_gen(rv_discrete):
 
         f(k, a) = \frac{1}{\zeta(a) k^a}
 
-    for :math:`k \ge 1`.
+    for :math:`k \ge 1`, :math:`a > 1`.
 
     `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
     Riemann zeta function (`scipy.special.zeta`)
 
+    The Zipf distribution is also known as the zeta distribution, which is
+    a special case of the Zipfian distribution (`zipfian`).
+
     %(after_notes)s
+
+    References
+    ----------
+    "Zeta Distribution", Wikipedia,
+    https://en.wikipedia.org/wiki/Zeta_distribution
 
     %(example)s
 
@@ -1047,6 +1055,57 @@ class zipf_gen(rv_discrete):
 
 
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
+
+
+def _gen_harmonic(n, a=1):
+    """Generalized harmonic number"""
+    # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
+    return zeta(a, 1) - zeta(a, n+1)
+
+
+class zipfian_gen(rv_discrete):
+    r"""A Zipfian discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability mass function for `zipfian` is:
+
+    .. math::
+
+        f(k, a, n) = \frac{1}{H_{n,a} k^a}
+
+    for :math:`k \ge 1`, :math:`a \ge 0`, :math:`n \in {1, 2, 3, \dots}`.
+
+    `zipfian` takes :math:`a` and :math:`n` as shape parameters.
+    :math:`H_{n,a}` is the :math:`n^{\mbox{th}}` generalized harmonic number
+    of order :math:`a`.
+
+    The Zipfian distribution converges to the Zipf (zeta) distribution as
+    :math:`n \rightarrow \infty`.
+
+    %(after_notes)s
+
+    References
+    ----------
+    "Zipf's Law", Wikipedia, https://en.wikipedia.org/wiki/Zipf's_law
+
+    %(example)s
+
+    """
+    def _argcheck(self, a, n):
+        return (a >= 0) & (n == n.astype(int))
+
+    def _pmf(self, k, a, n):
+        Pk = 1.0 / _gen_harmonic(n, a) / k**a
+        return Pk
+
+    def _cdf(self, k, a, n):
+        return  _gen_harmonic(k, a)/_gen_harmonic(n, a)
+
+
+zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
 
 
 class dlaplace_gen(rv_discrete):
@@ -1106,7 +1165,7 @@ class dlaplace_gen(rv_discrete):
         #     https://www.sciencedirect.com/science/
         #     article/abs/pii/S0378375804003519
         # Furthermore, the two-sided geometric distribution is
-        # equivalent to the difference between two iid geometric 
+        # equivalent to the difference between two iid geometric
         # distributions.
         #   Reference (page 179):
         #     https://pdfs.semanticscholar.org/61b3/

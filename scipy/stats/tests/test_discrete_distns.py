@@ -1,4 +1,6 @@
-from scipy.stats import betabinom, hypergeom, nhypergeom, bernoulli, boltzmann
+from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
+                         boltzmann, zipf, zipfian)
+
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
@@ -96,3 +98,12 @@ def test_betabinom_bernoulli():
     p = betabinom(1, a, b).pmf(k)
     expected = bernoulli(a / (a + b)).pmf(k)
     assert_almost_equal(p, expected)
+
+
+def test_zipfian():
+    # test limiting case that zipfian(a, n) -> zipf(a) as n-> oo
+    a = 2.5
+    N = 10000000
+    k = np.arange(1, 21)
+    assert_allclose(zipfian.pmf(k, a, N), zipf.pmf(k, a))
+    assert_allclose(zipfian.cdf(k, a, N), zipf.cdf(k, a))
