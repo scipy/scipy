@@ -308,11 +308,16 @@ class ZoomFFT(CZT):
     Frequency resolution can only be increased by increasing acquisition
     time.
 
+    These functions are implemented using Bluestein's algorithm. [2]_
+
     References
     ----------
     .. [1] Steve Alan Shilling, "A study of the chirp z-transform and its
            applications", pg 29 (1970)
            https://krex.k-state.edu/dspace/bitstream/handle/2097/7844/LD2668R41972S43.pdf
+    .. [2] Leo I. Bluestein, "A linear filtering approach to the computation
+           of the discrete Fourier transform," Northeast Electronics Research
+           and Engineering Meeting Record 10, 218-219 (1968).
 
     Examples
     --------
