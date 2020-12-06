@@ -2087,18 +2087,18 @@ class truncweibull_min_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b, c) = \frac{a x^{a-1} \exp(-x^a)}{\exp(-b^a) - \exp(-c^a)}
+        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`b < x <= c`, :math:`a > 0`.
+    for :math:`a < x <= b`, :math:`c > 0`.
 
     `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
     parameters.
 
-    Notice that the truncation values, :math:`b` and :math:`c`, are defined in
+    Notice that the truncation values, :math:`a` and :math:`b`, is defined in
     standardized form::
 
-        b = (u_l - loc)/scale
-        c = (u_r - loc)/scale
+        a = (u_l - loc)/scale
+        b = (u_r - loc)/scale
 
     where :math:`u_l` and :math:`u_r` are the specific left and right truncation
     values, respectively.
@@ -2109,28 +2109,28 @@ class truncweibull_min_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b, c):
-        return (a > 0.) & (b >= 0.) & (c > b)
+        return (a >= 0.) & (b > a) & (c > 0.)
 
     def _get_support(self, a, b, c):
-        return b, c
+        return a, b
 
     def _pdf(self, x, a, b, c):
-        return (a * x**(a-1) * np.exp(-x**a)) / (np.exp(-b**a) - np.exp(-c**a))
+        return (c * x**(c-1) * np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
     def _logpdf(self, x, a, b, c):
-        return np.log(a) + sc.xlogy(a - 1, x) - x**a - np.log(np.exp(-b**a) - np.exp(-c**a))
+        return np.log(c) + sc.xlogy(c - 1, x) - x**c - np.log(np.exp(-a**c) - np.exp(-b**c))
 
     def _cdf(self, x, a, b, c):
-        return (np.exp(-b**a) - np.exp(-x**a)) / (np.exp(-b**a) - np.exp(-c**a))
+        return (np.exp(-a**c) - np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
     def _logcdf(self, x, a, b, c):
-        return np.log(np.exp(-b**a) - np.exp(-x**a)) - np.log(np.exp(-b**a) - np.exp(-c**a))
+        return np.log(np.exp(-a**c) - np.exp(-x**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
     def _sf(self, x, a, b, c):
-        return (np.exp(-x**a) - np.exp(-c**a)) / (np.exp(-b**a) - np.exp(-c**a))
+        return (np.exp(-x**c) - np.exp(-b**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
     def _logsf(self, x, a, b, c):
-        return np.log(np.exp(-x**a) - np.exp(-c**a)) - np.log(np.exp(-b**a) - np.exp(-c**a))
+        return np.log(np.exp(-x**c) - np.exp(-b**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
 #     def _ppf(self, q, a, c):
 #         return (a**c - sc.log1p(-q))**(1/c)
