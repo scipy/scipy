@@ -3811,11 +3811,13 @@ class TestTruncWeibull(object):
         lc_trunc = stats.truncweibull_min.logcdf(x, a, b, c, scale=scale)
         assert_allclose(lc, lc_trunc)
 
-        # s = stats.weibull_min.sf(x, a, scale=b)
-        # assert_allclose(s, np.exp(-0.25))
+        s = stats.weibull_min.sf(x, c, scale=scale)
+        s_trunc = stats.truncweibull_min.sf(x, a, b, c, scale=scale)
+        assert_allclose(s, s_trunc)
 
-        # ls = stats.weibull_min.logsf(x, a, scale=b)
-        # assert_allclose(ls, -0.25)
+        ls = stats.weibull_min.logsf(x, c, scale=scale)
+        ls_trunc = stats.truncweibull_min.logsf(x, a, b, c, scale=scale)
+        assert_allclose(ls, ls_trunc)
 
         # # Also test using a large value x, for which computing the survival
         # # function using the CDF would result in 0.

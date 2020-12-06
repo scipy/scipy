@@ -2126,11 +2126,11 @@ class truncweibull_min_gen(rv_continuous):
     def _logcdf(self, x, a, b, c):
         return np.log(np.exp(-a**c) - np.exp(-x**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
-#     def _sf(self, x, a, c):
-#         return np.exp(-x**c + a**c)
+    def _sf(self, x, a, b, c):
+        return (np.exp(-x**c) - np.exp(-b**c)) / (np.exp(-a**c) - np.exp(-b**c))
 
-#     def _logsf(self, x, a, c):
-#         return -x**c + a**c
+    def _logsf(self, x, a, b, c):
+        return np.log(np.exp(-x**c) - np.exp(-b**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
 #     def _ppf(self, q, a, c):
 #         return (a**c - sc.log1p(-q))**(1/c)
