@@ -9,7 +9,6 @@ from scipy.fft.czt import (czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
 fft = np.fft.fft
-fftshift = np.fft.fftshift
 
 
 def check_czt(x):
