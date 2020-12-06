@@ -229,8 +229,8 @@ class CZT:
         x : array
             The signal to transform.
         axis : int, optional
-            Array dimension to operate over.  Default is the final
-            dimension.
+            Axis over which to compute the FFT. If not given, the last axis is
+            used.
 
         Returns
         -------
@@ -372,8 +372,8 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     a : complex, optional
         The starting point in the complex plane.  Default is 1+0j.
     axis : int, optional
-        Array dimension to operate over.  Default is the final
-        dimension.
+        Axis over which to compute the FFT. If not given, the last axis is
+        used.
 
     Returns
     -------
@@ -404,7 +404,7 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     Parameters
     ----------
     x : array
-        The input signal.
+        The signal to transform.
     fn : array_like, optional
         A length-2 sequence [`f1`, `f2`] giving the frequency range, or a
         scalar, for which the range [0, `fn`] is assumed.
@@ -420,8 +420,8 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
         If True, `f2` is the last sample. Otherwise, it is not included.
         Default is True.
     axis : int, optional
-        The array dimension the transform operates over.  The default is the
-        final dimension.
+        Axis over which to compute the FFT. If not given, the last axis is
+        used.
 
     Returns
     -------
