@@ -2133,18 +2133,10 @@ class truncweibull_min_gen(rv_continuous):
         return np.log(np.exp(-x**c) - np.exp(-b**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
 
     def _isf(self, q, c, a, b):
-        return (-np.log(
-            np.exp(-b**c)
-            + np.exp(-a**c + np.log(q))
-            - np.exp(-b**c + np.log(q))
-            ))**(1/c)
+        return (-np.log((1 - q) * np.exp(-b**c) + q * np.exp(-a**c)))**(1/c)
 
     def _ppf(self, q, c, a, b):
-        return (-np.log(
-            np.exp(-a**c)
-            - np.exp(-a**c + np.log(q))
-            + np.exp(-b**c + np.log(q))
-            ))**(1/c)
+        return (-np.log((1 - q) * np.exp(-a**c) + q * np.exp(-b**c)))**(1/c)
 
 #     def _a_est(self, x, c):
 #         x_r = x.min()
