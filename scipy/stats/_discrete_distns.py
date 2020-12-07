@@ -1010,6 +1010,10 @@ class zipf_gen(rv_discrete):
 
     %(before_notes)s
 
+    See Also
+    --------
+    zipfian
+
     Notes
     -----
     The probability mass function for `zipf` is:
@@ -1030,10 +1034,15 @@ class zipf_gen(rv_discrete):
 
     References
     ----------
-    "Zeta Distribution", Wikipedia,
-    https://en.wikipedia.org/wiki/Zeta_distribution
+    [1] "Zeta Distribution", Wikipedia,
+        https://en.wikipedia.org/wiki/Zeta_distribution
 
     %(example)s
+
+    >>> from scipy.stats import zipfian
+    >>> k = np.array(0, n +1)
+    >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, 10000000))
+    True
 
     """
     def _rvs(self, a, size=None, random_state=None):
@@ -1060,6 +1069,7 @@ zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 def _gen_harmonic(n, a=1):
     """Generalized harmonic number"""
     # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
+    # todo - make this work for a < 1 (can't use zeta)
     return zeta(a, 1) - zeta(a, n+1)
 
 
@@ -1067,6 +1077,10 @@ class zipfian_gen(rv_discrete):
     r"""A Zipfian discrete random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    zipf
 
     Notes
     -----
@@ -1082,30 +1096,35 @@ class zipfian_gen(rv_discrete):
     :math:`H_{n,a}` is the :math:`n^{\mbox{th}}` generalized harmonic number
     of order :math:`a`.
 
-    The Zipfian distribution converges to the Zipf (zeta) distribution as
+    The Zipfian distribution reduces to the Zipf (zeta) distribution as
     :math:`n \rightarrow \infty`.
 
     %(after_notes)s
 
     References
     ----------
-    "Zipf's Law", Wikipedia, https://en.wikipedia.org/wiki/Zipf's_law
+    [1] "Zipf's Law", Wikipedia, https://en.wikipedia.org/wiki/Zipf's_law
+    [2] Larry Leemis, "Zipf Distribution", Univariate Distribution
+        Relationships. http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
 
     %(example)s
 
+    >>> from scipy.stats import zipf
+    >>> k = np.array(0, n +1)
+    >>> np.allclose(zipfian.pmf(k, a, 10000000), zipf.pmf(k, a))
+    True
     """
     def _argcheck(self, a, n):
         return (a >= 0) & (np.asarray(n) == np.asarray(n, dtype=int))
 
     def _pmf(self, k, a, n):
-        Pk = 1.0 / _gen_harmonic(n, a) / k**a
-        return Pk
+        return 1.0 / _gen_harmonic(n, a) / k**a
 
     def _cdf(self, k, a, n):
-        return  _gen_harmonic(k, a)/_gen_harmonic(n, a)
+        return  _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
-        k += 1  # # to match SciPy convention
+        k = k + 1  # # to match SciPy convention
         # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
         # implemented exactly as shown; please suggest improvements
         return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)

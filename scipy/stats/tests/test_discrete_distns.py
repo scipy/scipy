@@ -100,13 +100,90 @@ def test_betabinom_bernoulli():
     assert_almost_equal(p, expected)
 
 
-def test_zipfian():
-    # test limiting case that zipfian(a, n) -> zipf(a) as n-> oo
-    a = 6.5
-    N = 10000000
-    k = np.arange(1, 21)
-    assert_allclose(zipfian.pmf(k, a, N), zipf.pmf(k, a))
-    assert_allclose(zipfian.cdf(k, a, N), zipf.cdf(k, a))
-    assert_allclose(zipfian.sf(k, a, N), zipf.sf(k, a))
-    assert_allclose(zipfian.stats(a, N, moments='msvk'),
-                    zipf.stats(a, moments='msvk'))
+class TestZipfian:
+    def test_zipfian_asymptotic(self):
+        # test limiting case that zipfian(a, n) -> zipf(a) as n-> oo
+        a = 6.5
+        N = 10000000
+        k = np.arange(1, 21)
+        assert_allclose(zipfian.pmf(k, a, N), zipf.pmf(k, a))
+        assert_allclose(zipfian.cdf(k, a, N), zipf.cdf(k, a))
+        assert_allclose(zipfian.sf(k, a, N), zipf.sf(k, a))
+        assert_allclose(zipfian.stats(a, N, moments='msvk'),
+                        zipf.stats(a, moments='msvk'))
+
+    def test_zipfian_R(self):
+        # test against R VGAM package
+        # library(VGAM)
+        # k <- c(13, 16,  1,  4,  4,  8, 10, 19,  5,  7)
+        # a <- c(1.56712977, 3.72656295, 5.77665117, 9.12168729, 5.79977172,
+        #        4.92784796, 9.36078764, 4.3739616 , 7.48171872, 4.6824154)
+        # n <- c(70, 80, 48, 65, 83, 89, 50, 30, 20, 20)
+        # pmf <- dzipf(k, N = n, shape = a)
+        # cdf <- pzipf(k, N = n, shape = a)
+        # print(pmf)
+        # print(cdf)
+        np.random.seed(0)
+        k = np.random.randint(1, 20, size=10)
+        a = np.random.rand(10)*10 + 1
+        n = np.random.randint(1, 100, size=10)
+        pmf = [8.076972e-03, 2.950214e-05, 9.799333e-01, 3.216601e-06,
+               3.158895e-04, 3.412497e-05, 4.350472e-10, 2.405773e-06,
+               5.860662e-06, 1.053948e-04]
+        cdf = [0.8964133, 0.9998666, 0.9799333, 0.9999995, 0.9998584,
+               0.9999458, 1.0000000, 0.9999920, 0.9999977, 0.9998498]
+        # skip the first point; zipUC is not accurate for low a, n
+        assert_allclose(zipfian.pmf(k, a, n)[1:], pmf[1:], rtol=1e-6)
+        assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
+
+
+    def test_zipfian_naive(self):
+        def Hns(n, s):
+            """Naive implementation of harmonic sum"""
+            return (1/np.arange(1, n+1)**s).sum()
+
+        def pzip(k, a, n):
+            """Naive implementation of zipfian pmf"""
+            if k < 1 or k > n:
+                return 0
+            else:
+                return 1 / k**a / Hns(n, a)
+
+        # I can parametrize these after _gen_harmonic is implemented for a < 1
+        a, n = 1.01, 10
+        k = np.arange(n+1, dtype=int)
+        pmf = np.asarray([pzip(ki, a, n) for ki in k])
+        assert_allclose(zipfian.pmf(k, a, n), pmf)
+        assert_allclose(zipfian.cdf(k, a, n), np.cumsum(pmf))
+
+        a, n = 1.56712977, 70  # case that zipUC fails
+        k = np.arange(n+1, dtype=int)
+        pmf = np.asarray([pzip(ki, a, n) for ki in k])
+        assert_allclose(zipfian.pmf(k, a, n), pmf)
+        assert_allclose(zipfian.cdf(k, a, n), np.cumsum(pmf))
+
+        a, n = 3.681, 33
+        k = np.arange(n+1, dtype=int)
+        pmf = np.asarray([pzip(ki, a, n) for ki in k])
+        cdf = np.cumsum(pmf)
+        mean = np.average(k, weights=pmf)
+        var = np.average(k**2, weights=pmf) - mean**2
+        skew = np.average(k**3, weights=pmf) / var**(3/2)
+        assert_allclose(zipfian.pmf(k, a, n), pmf)
+        assert_allclose(zipfian.cdf(k, a, n), cdf)
+        assert_allclose(zipfian.mean(a, n), mean)
+        assert_allclose(zipfian.var(a, n), var)
+
+        a, n = 5.492, 66
+        k = np.arange(n+1, dtype=int)
+        pmf = np.asarray([pzip(ki, a, n) for ki in k])
+        cdf = np.cumsum(pmf)
+        mean = np.average(k, weights=pmf)
+        var = np.average((k - mean)**2, weights=pmf)
+        std = var**0.5
+        skew = np.average(((k-mean)/std)**3, weights=pmf)
+        kurtosis = np.average(((k-mean)/std)**4, weights=pmf)
+        assert_allclose(zipfian.pmf(k, a, n), pmf)
+        assert_allclose(zipfian.cdf(k, a, n), cdf)
+        assert_allclose(zipfian.stats(a, n, moments="mvsk"),
+                        [mean, var, skew, kurtosis])
