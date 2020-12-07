@@ -3,6 +3,7 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+import pytest
 
 
 def test_hypergeom_logpmf():
@@ -112,6 +113,18 @@ class TestZipfian:
         assert_allclose(zipfian.stats(a, N, moments='msvk'),
                         zipf.stats(a, moments='msvk'))
 
+    def test_zipfian_continuity(self):
+        # test that zipfian(0.999999, n) ~ zipfian(1.000001, n)
+        # (a = 1 switches between methods of calculating harmonic sum)
+        alt1, agt1 = 0.99999999, 1.00000001
+        N = 30
+        k = np.arange(1, N  + 1)
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+
     def test_zipfian_R(self):
         # test against R VGAM package
         # library(VGAM)
@@ -137,7 +150,10 @@ class TestZipfian:
         assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
 
 
-    def test_zipfian_naive(self):
+    @pytest.mark.parametrize("a, n", [(1.01, 10), (1.56712977, 70),
+                                      (3.681, 33), (5.492, 66)])
+    def test_zipfian_naive(self, a, n):
+        # test against bare-bones implementation of zipfian
         def Hns(n, s):
             """Naive implementation of harmonic sum"""
             return (1/np.arange(1, n+1)**s).sum()
@@ -149,32 +165,6 @@ class TestZipfian:
             else:
                 return 1 / k**a / Hns(n, a)
 
-        # I can parametrize these after _gen_harmonic is implemented for a < 1
-        a, n = 1.01, 10
-        k = np.arange(n+1, dtype=int)
-        pmf = np.asarray([pzip(ki, a, n) for ki in k])
-        assert_allclose(zipfian.pmf(k, a, n), pmf)
-        assert_allclose(zipfian.cdf(k, a, n), np.cumsum(pmf))
-
-        a, n = 1.56712977, 70  # case that zipUC fails
-        k = np.arange(n+1, dtype=int)
-        pmf = np.asarray([pzip(ki, a, n) for ki in k])
-        assert_allclose(zipfian.pmf(k, a, n), pmf)
-        assert_allclose(zipfian.cdf(k, a, n), np.cumsum(pmf))
-
-        a, n = 3.681, 33
-        k = np.arange(n+1, dtype=int)
-        pmf = np.asarray([pzip(ki, a, n) for ki in k])
-        cdf = np.cumsum(pmf)
-        mean = np.average(k, weights=pmf)
-        var = np.average(k**2, weights=pmf) - mean**2
-        skew = np.average(k**3, weights=pmf) / var**(3/2)
-        assert_allclose(zipfian.pmf(k, a, n), pmf)
-        assert_allclose(zipfian.cdf(k, a, n), cdf)
-        assert_allclose(zipfian.mean(a, n), mean)
-        assert_allclose(zipfian.var(a, n), var)
-
-        a, n = 5.492, 66
         k = np.arange(n+1, dtype=int)
         pmf = np.asarray([pzip(ki, a, n) for ki in k])
         cdf = np.cumsum(pmf)

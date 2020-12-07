@@ -1068,11 +1068,32 @@ class zipf_gen(rv_discrete):
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
-def _gen_harmonic(n, a=1):
-    """Generalized harmonic number"""
+def _gen_harmonic_gt1(n, a):
+    """Generalized harmonic number, a > 1"""
     # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    # todo - make this work for a < 1 (can't use zeta)
     return zeta(a, 1) - zeta(a, n+1)
+
+
+def _gen_harmonic_leq1(n, a):
+    """Generalized harmonic number, a <= 1"""
+    if not np.size(n):
+        return n
+    n_max = np.max(n)  # loop starts at maximum of all n
+    out = np.zeros_like(a, dtype=float)
+    # add terms of harmonic series; starting from smallest to avoid roundoff
+    for i in np.arange(n_max, 0, -1, dtype=float):
+        mask = i <= n  # don't add terms after nth
+        out[mask] += 1/i**a[mask]
+    if out.ndim == 0:
+        return out.item()
+    return out
+
+
+def _gen_harmonic(n, a):
+    """Generalized harmonic number"""
+    n, a = np.broadcast_arrays(n, a)
+    return _lazywhere(a > 1, (n, a),
+                      f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
 
 
 class zipfian_gen(rv_discrete):
@@ -1148,7 +1169,7 @@ class zipfian_gen(rv_discrete):
         mu2 = mu2n / mu2d
         g1 = (Hna3/Hna - 3*Hna1*Hna2/Hna**2 + 2*Hna1**3/Hna**3)/mu2**(3/2)
         g2 = (Hna**3*Hna4 - 4*Hna**2*Hna1*Hna3 + 6*Hna*Hna1**2*Hna2
-              - 3*Hna1**4) / mu2n**2 - 3
+              - 3*Hna1**4) / mu2n**2
         return mu1, mu2, g1, g2
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')
