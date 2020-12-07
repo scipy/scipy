@@ -6,7 +6,7 @@ SciPy 1.6.0 Release Notes
 
 .. contents::
 
-SciPy 1.6.0 is the culmination of X months of hard work. It contains
+SciPy 1.6.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
@@ -36,6 +36,17 @@ Highlights of this release
 New features
 ============
 
+`scipy.special` improvements
+----------------------------
+`scipy.special` now has improved support for 64-bit ``LAPACK`` backend
+
+`scipy.odr` improvements
+------------------------
+`scipy.odr` now has support for 64-bit integer ``BLAS``
+
+`scipy.odr.ODR` has gained an optional ``overwrite`` argument so that existing
+files may be overwritten.
+
 `scipy.integrate` improvements
 ------------------------------
 Some renames of functions with poor names were done, with the old names 
@@ -50,6 +61,9 @@ reasons:
 `scipy.cluster.hierarchy.DisjointSet` has been added for incremental 
 connectivity queries.
 
+`scipy.cluster.hierarchy.dendrogram` return value now also includes leaf color
+information in `leaves_color_list`.
+
 `scipy.interpolate` improvements
 --------------------------------
 `scipy.interpolate.interp1d` has a new method ``nearest-up``, similar to the 
@@ -57,12 +71,22 @@ existing method ``nearest`` but rounds half-integers up instead of down.
 
 `scipy.io` improvements
 -----------------------
-
+Support has been added for reading arbitrary bit depth integer PCM WAV files 
+from 1- to 32-bit, including the commonly-requested 24-bit depth.
 
 `scipy.linalg` improvements
 ---------------------------
 The new function `scipy.linalg.matmul_toeplitz` uses the FFT to compute the 
 product of a Toeplitz matrix with another matrix.
+
+`scipy.linalg.sqrtm` and `scipy.linalg.logm` have performance improvements
+thanks to additional Cython code.
+
+Python ``LAPACK`` wrappers have been added for ``pptrf``, ``pptrs``, ``ppsv``,
+``pptri``, and ``ppcon``.
+
+`scipy.linalg.norm` and the ``svd`` family of functions will now use 64-bit
+integer backends when available.
 
 `scipy.ndimage` improvements
 ----------------------------
@@ -72,7 +96,7 @@ convolution-based filters also now accept complex-valued inputs
 (e.g. ``gaussian_filter``, ``uniform_filter``, etc.).
 
 Multiple fixes and enhancements to boundary handling were introduced to 
-`scipy.ndimage.interpolation` functions (i.e. ``affine_transform``, 
+`scipy.ndimage` interpolation functions (i.e. ``affine_transform``,
 ``geometric_transform``, ``map_coordinates``, ``rotate``, ``shift``, ``zoom``).
 
 A new boundary mode, ``grid-wrap`` was added which wraps images periodically,
@@ -95,7 +119,7 @@ defaulting to mirror boundary conditions. The standalone functions
 ``spline_filter`` and ``spline_filter1d`` have analytical boundary conditions 
 that match modes ``mirror``, ``grid-wrap`` and ``reflect``.
 
-`scipy.ndimage.interpolation` functions now accept complex-valued inputs. In 
+`scipy.ndimage` interpolation functions now accept complex-valued inputs. In
 this case, the interpolation is applied independently to the real and 
 imaginary components.
 
@@ -122,6 +146,16 @@ specifying one of these three method values when using ``linprog``.
 `scipy.optimize.quadratic_assignment` has been added for approximate solution 
 of the quadratic assignment problem.
 
+`scipy.optimize.linear_sum_assignment` now has a substantially reduced overhead
+for small cost matrix sizes
+
+`scipy.optimize.least_squares` has improved performance when the user provides
+the jacobian as a sparse jacobian already in ``csr_matrix`` format
+
+`scipy.optimize.linprog` now has an ``rr_method`` argument for specification
+of the method used for redundancy handling, and a new method for this purpose
+is available based on the interpolative decomposition approach.
+
 `scipy.signal` improvements
 ---------------------------
 `scipy.signal.gammatone` has been added to design FIR or IIR filters that 
@@ -130,9 +164,40 @@ model the human auditory system.
 `scipy.signal.iircomb` has been added to design IIR peaking/notching comb 
 filters that can boost/attenuate a frequency from a signal.
 
+`scipy.signal.sosfilt` performance has been improved to avoid some previously-
+observed slowdowns
+
+`scipy.signal.windows.taylor` has been added--the Taylor window function is
+commonly used in radar digital signal processing
+
+`scipy.signal.gauss_spline` now supports ``list`` type input for consistency
+with other related SciPy functions
+
+`scipy.signal.correlation_lags` has been added to allow calculation of the lag/
+displacement indices array for 1D cross-correlation.
 
 `scipy.sparse` improvements
 ---------------------------
+A solver for the minimum weight full matching problem for bipartite graphs,
+also known as the linear assignment problem, has been added in
+`scipy.sparse.csgraph.min_weight_full_bipartite_matching`. In particular, this
+provides functionality analogous to that of
+`scipy.optimize.linear_sum_assignment`, but with improved performance for sparse
+inputs, and the ability to handle inputs whose dense representations would not
+fit in memory.
+
+The time complexity of `scipy.sparse.block_diag` has been improved dramatically
+from quadratic to linear.
+
+`scipy.sparse.linalg` improvements
+----------------------------------
+The vendored version of ``SuperLU`` has been updated
+
+`scipy.fft` improvements
+------------------------
+
+The vendored ``pocketfft`` library now supports compiling with ARM neon vector
+extensions and has improved thread pool behavior.
 
 `scipy.spatial` improvements
 ----------------------------
@@ -140,6 +205,15 @@ The python implementation of ``KDTree`` has been dropped and ``KDTree`` is now
 implemented in terms of ``cKDTree``. You can now expect ``cKDTree``-like 
 performance by default. This also means ``sys.setrecursionlimit`` no longer 
 needs to be increased for querying large trees.
+
+``transform.Rotation`` has been updated with support for Modified Rodrigues 
+Parameters alongside the existing rotation representations (PR gh-12667).
+
+`scipy.spatial.transform.Rotation` has been partially cythonized, with some
+performance improvements observed
+
+`scipy.spatial.distance.cdist` has improved performance with the ``minkowski``
+metric, especially for p-norm values of 1 or 2.
 
 `scipy.stats` improvements
 --------------------------
@@ -165,13 +239,24 @@ An option to compute one-sided p-values was added to `scipy.stats.ttest_1samp`,
 `scipy.stats.ttest_rel`.
 
 The function `scipy.stats.kendalltau` now has an option to compute Kendall's 
-tau-c (also known as Stuart's tau-c).
+tau-c (also known as Stuart's tau-c), and support has been added for exact
+p-value calculations for sample sizes ``> 171``.
 
 `stats.trapz` was renamed to `stats.trapezoid`, with the former name retained 
 as an alias for backwards compatibility reasons.
 
 The function `scipy.stats.linregress` now includes the standard error of the 
 intercept in its return value.
+
+The ``_logpdf``, ``_sf``, and ``_isf`` methods have been added to
+`scipy.stats.nakagami`; ``_sf`` and ``_isf`` methods also added to
+`scipy.stats.gumbel_r`
+
+The ``sf`` method has been added to `scipy.stats.levy` and `scipy.stats.levy_l`
+for improved precision.
+
+`scipy.stats.binned_statistic_dd` performance improvements for the following
+computed statistics: ``max``, ``min``, ``median``, and ``std``.
 
 We gratefully acknowledge the Chan-Zuckerberg Initiative Essential Open Source 
 Software for Science program for supporting many of these improvements to 
@@ -216,8 +301,6 @@ The window function ``slepian`` was removed. It had been deprecated since SciPy
 ``cKDTree.query`` now returns 64-bit rather than 32-bit integers on Windows,
 making behaviour consistent between platforms (PR gh-12673).
 
-``transform.Rotation`` has been updated with support for Modified Rodrigues 
-Parameters alongside the existing rotation representations (PR gh-12667).
 
 `scipy.stats` changes
 ---------------------
@@ -533,7 +616,7 @@ Pull requests for 1.6.0
 * `#12125 <https://github.com/scipy/scipy/pull/12125>`__: TST: Add a test for stats.gmean with negative input
 * `#12139 <https://github.com/scipy/scipy/pull/12139>`__: TST: Reduce flakiness in lsmr test
 * `#12142 <https://github.com/scipy/scipy/pull/12142>`__: DOC: add a note in poisson distribution when mu=0 and k=0 in...
-* `#12144 <https://github.com/scipy/scipy/pull/12144>`__: DOC: Update ndimage.morphology.distance_transform_\*
+* `#12144 <https://github.com/scipy/scipy/pull/12144>`__: DOC: Update ndimage.morphology.distance_transform\*
 * `#12154 <https://github.com/scipy/scipy/pull/12154>`__: ENH: scipy.signal: allow lists in gauss_spline
 * `#12170 <https://github.com/scipy/scipy/pull/12170>`__: ENH: scipy.stats: add negative hypergeometric distribution
 * `#12177 <https://github.com/scipy/scipy/pull/12177>`__: MAINT: Correctly add input line to ValueError
@@ -644,7 +727,7 @@ Pull requests for 1.6.0
 * `#12535 <https://github.com/scipy/scipy/pull/12535>`__: MAINT: Avoid sphinx deprecated aliases for SeeAlso and Only
 * `#12540 <https://github.com/scipy/scipy/pull/12540>`__: BUG: fix odr.output.work_ind key bug and add its test.
 * `#12541 <https://github.com/scipy/scipy/pull/12541>`__: ENH: add solver for minimum weight full bipartite matching
-* `#12550 <https://github.com/scipy/scipy/pull/12550>`__: PERF: pickling speed of rv_\*
+* `#12550 <https://github.com/scipy/scipy/pull/12550>`__: PERF: pickling speed of rv\*
 * `#12551 <https://github.com/scipy/scipy/pull/12551>`__: DOC: fix typo in cluster/_hierarchy.pyx
 * `#12552 <https://github.com/scipy/scipy/pull/12552>`__: CI: Cleanup travis pip installs
 * `#12556 <https://github.com/scipy/scipy/pull/12556>`__: BUG: Fix problem with Scipy.integrate.solve_bvp for big problems
@@ -757,7 +840,7 @@ Pull requests for 1.6.0
 * `#12911 <https://github.com/scipy/scipy/pull/12911>`__: Minor fixes to dendrogram plotting
 * `#12921 <https://github.com/scipy/scipy/pull/12921>`__: CI: don't run GitHub Actions on fork or in cron job
 * `#12927 <https://github.com/scipy/scipy/pull/12927>`__: MAINT: rename integrate.simps to simpson
-* `#12934 <https://github.com/scipy/scipy/pull/12934>`__: MAINT: rename trapz and cumtrapz to (cumulative_)trapezoid
+* `#12934 <https://github.com/scipy/scipy/pull/12934>`__: MAINT: rename trapz and cumtrapz to (cumulative\_)trapezoid
 * `#12936 <https://github.com/scipy/scipy/pull/12936>`__: MAINT: fix numerical precision in nct.stats
 * `#12938 <https://github.com/scipy/scipy/pull/12938>`__: MAINT: fix linter on master
 * `#12941 <https://github.com/scipy/scipy/pull/12941>`__: Update minimum AIX pinnings to match non AIX builds
