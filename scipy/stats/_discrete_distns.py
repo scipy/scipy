@@ -1034,13 +1034,15 @@ class zipf_gen(rv_discrete):
 
     References
     ----------
-    [1] "Zeta Distribution", Wikipedia,
-        https://en.wikipedia.org/wiki/Zeta_distribution
+    .. [1] "Zeta Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Zeta_distribution
 
     %(example)s
 
+    Confirm that `zipf` is the large `n` limit of `zipfian`.
+
     >>> from scipy.stats import zipfian
-    >>> k = np.array(0, n +1)
+    >>> k = np.array(0, n + 1)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, 10000000))
     True
 
@@ -1090,11 +1092,11 @@ class zipfian_gen(rv_discrete):
 
         f(k, a, n) = \frac{1}{H_{n,a} k^a}
 
-    for :math:`k \ge 1`, :math:`a \ge 0`, :math:`n \in {1, 2, 3, \dots}`.
+    for :math:`k \ge 1`, :math:`a \ge 0`, :math:`n \in \{1, 2, 3, \dots\}`.
 
     `zipfian` takes :math:`a` and :math:`n` as shape parameters.
-    :math:`H_{n,a}` is the :math:`n^{\mbox{th}}` generalized harmonic number
-    of order :math:`a`.
+    :math:`H_{n,a}` is the :math:`n\textsuperscript{th}` generalized harmonic
+    number of order :math:`a`.
 
     The Zipfian distribution reduces to the Zipf (zeta) distribution as
     :math:`n \rightarrow \infty`.
@@ -1103,16 +1105,19 @@ class zipfian_gen(rv_discrete):
 
     References
     ----------
-    [1] "Zipf's Law", Wikipedia, https://en.wikipedia.org/wiki/Zipf's_law
-    [2] Larry Leemis, "Zipf Distribution", Univariate Distribution
-        Relationships. http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+    .. [1] "Zipf's Law", Wikipedia, https://en.wikipedia.org/wiki/Zipf's_law
+    .. [2] Larry Leemis, "Zipf Distribution", Univariate Distribution
+           Relationships. http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
 
     %(example)s
 
+    Confirm that `zipfian` reduces to `zipf` for large `n`.
+
     >>> from scipy.stats import zipf
-    >>> k = np.array(0, n +1)
+    >>> k = np.array(0, n + 1)
     >>> np.allclose(zipfian.pmf(k, a, 10000000), zipf.pmf(k, a))
     True
+
     """
     def _argcheck(self, a, n):
         return (a >= 0) & (np.asarray(n) == np.asarray(n, dtype=int))
