@@ -2138,6 +2138,11 @@ class truncweibull_min_gen(rv_continuous):
     def _ppf(self, q, c, a, b):
         return (-np.log((1 - q) * np.exp(-a**c) + q * np.exp(-b**c)))**(1/c)
 
+    def _munp(self, n, c, a, b):
+        return sc.gamma(n/c + 1.) / (np.exp(-a**c) - np.exp(-b**c)) * (
+            sc.gammainc(n/c + 1., b**c) - sc.gammainc(n/c + 1., a**c)
+            )
+
 #     def _a_est(self, x, c):
 #         x_r = x.min()
 #         f_r = (1. - 0.3)/(len(x) + 0.4)

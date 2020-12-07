@@ -3803,6 +3803,30 @@ class TestTruncWeibull(object):
         q_out = stats.truncweibull_min.sf(x, 2., 0., 3.)
         assert_allclose(q, q_out)
 
+    def test_munp(self):
+        c = 2.
+        a = 1.
+        b = 3.
+
+        m0 = stats.truncweibull_min.moment(0, c, a, b)
+        assert_equal(m0, 1.)
+
+        m1 = stats.truncweibull_min.moment(1, c, a, b)
+        m1_expected, _ = quad(lambda x: x**1*stats.truncweibull_min.pdf(x, c, a, b), a, b)
+        assert_allclose(m1, m1_expected)
+
+        m2 = stats.truncweibull_min.moment(2, c, a, b)
+        m2_expected, _ = quad(lambda x: x**2*stats.truncweibull_min.pdf(x, c, a, b), a, b)
+        assert_allclose(m2, m2_expected)
+
+        m3 = stats.truncweibull_min.moment(3, c, a, b)
+        m3_expected, _ = quad(lambda x: x**3*stats.truncweibull_min.pdf(x, c, a, b), a, b)
+        assert_allclose(m3, m3_expected)
+
+        m4 = stats.truncweibull_min.moment(4, c, a, b)
+        m4_expected, _ = quad(lambda x: x**4*stats.truncweibull_min.pdf(x, c, a, b), a, b)
+        assert_allclose(m4, m4_expected)
+
     def test_compare_weibull_min(self):
         # Verify that the truncweibull_min distribution gives the same results
         # as the original weibull_min
