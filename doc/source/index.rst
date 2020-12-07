@@ -53,6 +53,7 @@ For a more detailed look at how the SciPy project works:
    :maxdepth: 1
 
    dev/core-dev/index
+   dev/api-dev/api-dev-toc
    dev/governance/governance
 
 .. This toctree defines previous/next for contributor guide documents

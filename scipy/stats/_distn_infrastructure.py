@@ -206,7 +206,9 @@ The probability density above is defined in the "standardized" form. To shift
 and/or scale the distribution use the ``loc`` and ``scale`` parameters.
 Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
 equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
-``y = (x - loc) / scale``.
+``y = (x - loc) / scale``. Note that shifting the location of a distribution
+does not make it a "noncentral" distribution; noncentral generalizations of
+some distributions are available in separate classes.
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -409,6 +411,19 @@ def _kurtosis(data):
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
     return m4 / m2**2 - 3
+
+
+def _fit_determine_optimizer(optimizer):
+    if not callable(optimizer) and isinstance(optimizer, str):
+        if not optimizer.startswith('fmin_'):
+            optimizer = "fmin_"+optimizer
+        if optimizer == 'fmin_':
+            optimizer = 'fmin'
+        try:
+            optimizer = getattr(optimize, optimizer)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+    return optimizer
 
 
 # Frozen RV class
@@ -2372,19 +2387,9 @@ class rv_continuous(rv_generic):
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
         x0, func, restore, args = self._reduce_func(args, kwds)
-
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, str):
-            if not optimizer.startswith('fmin_'):
-                optimizer = "fmin_"+optimizer
-            if optimizer == 'fmin_':
-                optimizer = 'fmin'
-            try:
-                optimizer = getattr(optimize, optimizer)
-            except AttributeError as e:
-                raise ValueError("%s is not a valid optimizer" % optimizer) from e
-
+        optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)

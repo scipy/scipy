@@ -51,6 +51,26 @@ def _invalid_origin(origin, lenw):
     return (origin < -(lenw // 2)) or (origin > (lenw - 1) // 2)
 
 
+def _complex_via_real_components(func, input, weights, output, **kwargs):
+    """Complex convolution via a linear combination of real convolutions."""
+    complex_input = input.dtype.kind == 'c'
+    complex_weights = weights.dtype.kind == 'c'
+    if complex_input and complex_weights:
+        # real component of the output
+        func(input.real, weights.real, output=output.real, **kwargs)
+        output.real -= func(input.imag, weights.imag, output=None, **kwargs)
+        # imaginary component of the output
+        func(input.real, weights.imag, output=output.imag, **kwargs)
+        output.imag += func(input.imag, weights.real, output=None, **kwargs)
+    elif complex_input:
+        func(input.real, weights, output=output.real, **kwargs)
+        func(input.imag, weights, output=output.imag, **kwargs)
+    else:
+        func(input, weights.real, output=output.real, **kwargs)
+        func(input, weights.imag, output=output.imag, **kwargs)
+    return output
+
+
 @_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
@@ -77,8 +97,18 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     array([ 8, 26,  8, 12,  7, 28, 36,  9])
     """
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+    weights = numpy.asarray(weights)
+    complex_input = input.dtype.kind == 'c'
+    complex_weights = weights.dtype.kind == 'c'
+    if complex_input or complex_weights:
+        if complex_weights:
+            weights = weights.conj()
+            weights = weights.astype(numpy.complex128, copy=False)
+        kwargs = dict(axis=axis, mode=mode, cval=cval, origin=origin)
+        output = _ni_support._get_output(output, input, complex_output=True)
+        return _complex_via_real_components(correlate1d, input, weights,
+                                            output, **kwargs)
+
     output = _ni_support._get_output(output, input)
     weights = numpy.asarray(weights, dtype=numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
@@ -130,6 +160,10 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     origin = -origin
     if not len(weights) & 1:
         origin -= 1
+    weights = numpy.asarray(weights)
+    if weights.dtype.kind == 'c':
+        # pre-conjugate here to counteract the conjugation in correlate1d
+        weights = weights.conj()
     return correlate1d(input, weights, axis, output, mode, cval, origin)
 
 
@@ -596,8 +630,21 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution):
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+    weights = numpy.asarray(weights)
+    complex_input = input.dtype.kind == 'c'
+    complex_weights = weights.dtype.kind == 'c'
+    if complex_input or complex_weights:
+        if complex_weights and not convolution:
+            # As for numpy.correlate, conjugate weights rather than input.
+            weights = weights.conj()
+        kwargs = dict(
+            mode=mode, cval=cval, origin=origin, convolution=convolution
+        )
+        output = _ni_support._get_output(output, input, complex_output=True)
+
+        return _complex_via_real_components(_correlate_or_convolve, input,
+                                            weights, output, **kwargs)
+
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     weights = numpy.asarray(weights, dtype=numpy.float64)
     wshape = [ii for ii in weights.shape if ii > 0]
@@ -828,17 +875,23 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
-    output = _ni_support._get_output(output, input)
+    complex_output = input.dtype.kind == 'c'
+    output = _ni_support._get_output(output, input,
+                                     complex_output=complex_output)
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
-    _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
-                               origin)
+    if not complex_output:
+        _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
+                                   origin)
+    else:
+        _nd_image.uniform_filter1d(input.real, size, axis, output.real, mode,
+                                   cval, origin)
+        _nd_image.uniform_filter1d(input.imag, size, axis, output.imag, mode,
+                                   cval, origin)
     return output
 
 
@@ -887,7 +940,8 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    output = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input,
+                                     complex_output=input.dtype.kind == 'c')
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)

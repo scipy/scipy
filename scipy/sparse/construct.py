@@ -316,7 +316,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
@@ -330,7 +330,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape)
+            return coo_matrix(output_shape).asformat(format)
 
         # expand entries of a into blocks
         row = A.row.repeat(B.nnz)
