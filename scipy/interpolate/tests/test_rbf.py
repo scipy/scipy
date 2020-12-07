@@ -1,7 +1,5 @@
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
-from __future__ import division, print_function, absolute_import
-
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
@@ -107,12 +105,6 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
-    # plt.plot(x, y, 'o', xi, yi-sin(xi), ':')
-    # plt.title(function)
-    # plt.show()
     msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
     assert_(allclose(yi, sin(xi), atol=atol), msg)
 
@@ -216,7 +208,7 @@ def test_two_arg_function_is_callable():
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, epsilon=None)
+    Rbf(x, y, epsilon=None)
 
 
 def test_rbf_epsilon_none_collinear():

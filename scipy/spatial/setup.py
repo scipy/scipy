@@ -1,20 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 from os.path import join, dirname
 import glob
-
-
-def pre_build_hook(build_ext, ext):
-    from scipy._build_utils.compiler_helper import get_cxx_std_flag
-    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
-    if std_flag is not None:
-        ext.extra_compile_args.append(std_flag)
 
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from numpy.distutils.misc_util import get_info as get_misc_info
-    from scipy._build_utils.system_info import get_info as get_sys_info
+    from scipy._build_utils.system_info import get_info
+    from scipy._build_utils import combine_dict, uses_blas64
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
     from distutils.sysconfig import get_python_inc
 
     config = Configuration('spatial', parent_package, top_path)
@@ -33,9 +26,14 @@ def configuration(parent_package='', top_path=None):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
     inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
+    inc_dirs.append(join(dirname(dirname(__file__)), '_build_utils', 'src'))
 
-    cfg = dict(get_sys_info('lapack_opt'))
-    cfg.setdefault('include_dirs', []).extend(inc_dirs)
+    if uses_blas64():
+        lapack_opt = get_info('lapack_ilp64_opt')
+    else:
+        lapack_opt = get_info('lapack_opt')
+
+    cfg = combine_dict(lapack_opt, include_dirs=inc_dirs)
     config.add_extension('qhull',
                          sources=['qhull.c', 'qhull_misc.c'] + qhull_src,
                          **cfg)
@@ -66,13 +64,15 @@ def configuration(parent_package='', top_path=None):
                          sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
                          include_dirs=inc_dirs + [join('ckdtree', 'src')])
-    ext._pre_build_hook = pre_build_hook
+    ext._pre_build_hook = set_cxx_flags_hook
 
     # _distance_wrap
     config.add_extension('_distance_wrap',
                          sources=[join('src', 'distance_wrap.c')],
                          depends=[join('src', 'distance_impl.h')],
-                         include_dirs=[get_numpy_include_dirs()],
+                         include_dirs=[
+                             get_numpy_include_dirs(),
+                             join(dirname(dirname(__file__)), '_lib')],
                          extra_info=get_misc_info("npymath"))
 
     config.add_extension('_voronoi',
@@ -83,6 +83,9 @@ def configuration(parent_package='', top_path=None):
 
     # Add license files
     config.add_data_files('qhull_src/COPYING.txt')
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

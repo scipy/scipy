@@ -6,8 +6,6 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
-from __future__ import division, print_function, absolute_import
-
 """
 BasSw 2006
 physical constants: imported from CODATA
@@ -58,8 +56,8 @@ yobi = 2**80
 
 # physical constants
 c = speed_of_light = _cd('speed of light in vacuum')
-mu_0 = 4e-7*pi
-epsilon_0 = 1 / (mu_0*c*c)
+mu_0 = _cd('vacuum mag. permeability')
+epsilon_0 = _cd('vacuum electric permittivity')
 h = Planck = _cd('Planck constant')
 hbar = h / (2 * pi)
 G = gravitational_constant = _cd('Newtonian constant of gravitation')
@@ -212,7 +210,7 @@ def convert_temperature(val, old_scale, new_scale):
     Examples
     --------
     >>> from scipy.constants import convert_temperature
-    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
+    >>> convert_temperature(np.array([-40, 40]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
     """
@@ -222,9 +220,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif old_scale.lower() in ['kelvin', 'k']:
         tempo = _np.asanyarray(val)
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = _np.asanyarray(val) * 5. / 9.
+        tempo = _np.asanyarray(val) * 5 / 9
     else:
         raise NotImplementedError("%s scale is unsupported: supported scales "
                                   "are Celsius, Kelvin, Fahrenheit, and "
@@ -235,9 +233,9 @@ def convert_temperature(val, old_scale, new_scale):
     elif new_scale.lower() in ['kelvin', 'k']:
         res = tempo
     elif new_scale.lower() in ['fahrenheit', 'f']:
-        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+        res = (tempo - zero_Celsius) * 9 / 5 + 32
     elif new_scale.lower() in ['rankine', 'r']:
-        res = tempo * 9. / 5.
+        res = tempo * 9 / 5
     else:
         raise NotImplementedError("'%s' scale is unsupported: supported "
                                   "scales are 'Celsius', 'Kelvin', "
@@ -275,7 +273,7 @@ def lambda2nu(lambda_):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda_
+    return c / _np.asanyarray(lambda_)
 
 
 def nu2lambda(nu):

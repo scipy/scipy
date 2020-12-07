@@ -2,8 +2,6 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
-from __future__ import division, print_function, absolute_import
-
 #
 # Author: Travis Oliphant 2001
 #
@@ -1219,7 +1217,7 @@ class StateSpace(LinearTimeInvariant):
     Parameters
     ----------
     *system: arguments
-        The `StateSpace` class can be instantiated with 1 or 3 arguments.
+        The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
@@ -1402,7 +1400,8 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1419,11 +1418,12 @@ class StateSpace(LinearTimeInvariant):
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
-        return StateSpace(self.A, self.B, -self.C, -self.D)
+        return StateSpace(self.A, self.B, -self.C, -self.D, **self._dt_dict)
 
     def __add__(self, other):
         """
@@ -1465,13 +1465,16 @@ class StateSpace(LinearTimeInvariant):
                 c = self.C
                 d = self.D + other
             else:
-                raise ValueError("Cannot add systems with incompatible dimensions")
+                raise ValueError("Cannot add systems with incompatible "
+                                 "dimensions ({} and {})"
+                                 .format(self.D.shape, other.shape))
 
         common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
-                          np.asarray(d, dtype=common_dtype))
+                          np.asarray(d, dtype=common_dtype),
+                          **self._dt_dict)
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
@@ -1793,6 +1796,72 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
+    See Also
+    --------
+    lsim
+
+    Examples
+    --------
+    We'll use `lsim2` to simulate an analog Bessel filter applied to
+    a signal.
+
+    >>> from scipy.signal import bessel, lsim2
+    >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 12 Hz.
+
+    >>> b, a = bessel(N=5, Wn=2*np.pi*12, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + 0.6*np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim2`.
+
+    >>> tout, yout, xout = lsim2((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
+    In a second example, we simulate a double integrator ``y'' = u``, with
+    a constant input ``u = 1``.  We'll use the state space representation
+    of the integrator.
+
+    >>> from scipy.signal import lti
+    >>> A = np.array([[0, 1], [0, 0]])
+    >>> B = np.array([[0], [1]])
+    >>> C = np.array([[1, 0]])
+    >>> D = 0
+    >>> system = lti(A, B, C, D)
+
+    `t` and `u` define the time and input signal for the system to
+    be simulated.
+
+    >>> t = np.linspace(0, 5, num=50)
+    >>> u = np.ones_like(t)
+
+    Compute the simulation, and then plot `y`.  As expected, the plot shows
+    the curve ``y = 0.5*t**2``.
+
+    >>> tout, y, x = lsim2(system, u, t)
+    >>> plt.plot(t, y)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1856,7 +1925,7 @@ def _cast_to_array_dtype(in1, in2):
 
     Those can be raised when casting complex to real.
     """
-    if numpy.issubdtype(in2.dtype, numpy.float):
+    if numpy.issubdtype(in2.dtype, numpy.float64):
         # dtype to cast to is not complex, so use .real
         in1 = in1.real.astype(in2.dtype)
     else:
@@ -1911,15 +1980,66 @@ def lsim(system, U, T, X0=None, interp=True):
 
     Examples
     --------
-    Simulate a double integrator y'' = u, with a constant input u = 1
+    We'll use `lsim` to simulate an analog Bessel filter applied to
+    a signal.
 
-    >>> from scipy import signal
-    >>> system = signal.lti([[0., 1.], [0., 0.]], [[0.], [1.]], [[1., 0.]], 0.)
-    >>> t = np.linspace(0, 5)
-    >>> u = np.ones_like(t)
-    >>> tout, y, x = signal.lsim(system, u, t)
+    >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
+
+    Create a low-pass Bessel filter with a cutoff of 12 Hz.
+
+    >>> b, a = bessel(N=5, Wn=2*np.pi*12, btype='lowpass', analog=True)
+
+    Generate data to which the filter is applied.
+
+    >>> t = np.linspace(0, 1.25, 500, endpoint=False)
+
+    The input signal is the sum of three sinusoidal curves, with
+    frequencies 4 Hz, 40 Hz, and 80 Hz.  The filter should mostly
+    eliminate the 40 Hz and 80 Hz components, leaving just the 4 Hz signal.
+
+    >>> u = (np.cos(2*np.pi*4*t) + 0.6*np.sin(2*np.pi*40*t) +
+    ...      0.5*np.cos(2*np.pi*80*t))
+
+    Simulate the filter with `lsim`.
+
+    >>> tout, yout, xout = lsim((b, a), U=u, T=t)
+
+    Plot the result.
+
+    >>> plt.plot(t, u, 'r', alpha=0.5, linewidth=1, label='input')
+    >>> plt.plot(tout, yout, 'k', linewidth=1.5, label='output')
+    >>> plt.legend(loc='best', shadow=True, framealpha=1)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
+    In a second example, we simulate a double integrator ``y'' = u``, with
+    a constant input ``u = 1``.  We'll use the state space representation
+    of the integrator.
+
+    >>> from scipy.signal import lti
+    >>> A = np.array([[0.0, 1.0], [0.0, 0.0]])
+    >>> B = np.array([[0.0], [1.0]])
+    >>> C = np.array([[1.0, 0.0]])
+    >>> D = 0.0
+    >>> system = lti(A, B, C, D)
+
+    `t` and `u` define the time and input signal for the system to
+    be simulated.
+
+    >>> t = np.linspace(0, 5, num=50)
+    >>> u = np.ones_like(t)
+
+    Compute the simulation, and then plot `y`.  As expected, the plot shows
+    the curve ``y = 0.5*t**2``.
+
+    >>> tout, y, x = lsim(system, u, t)
     >>> plt.plot(t, y)
+    >>> plt.grid(alpha=0.3)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -1939,7 +2059,7 @@ def lsim(system, U, T, X0=None, interp=True):
     n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
-    xout = zeros((n_steps, n_states), sys.A.dtype)
+    xout = np.empty((n_steps, n_states), sys.A.dtype)
 
     if T[0] == 0:
         xout[0] = X0
@@ -2100,11 +2220,12 @@ def impulse(system, X0=None, T=None, N=None):
 
     Examples
     --------
-    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = signal.impulse2(system)
+    >>> t, y = signal.impulse(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
@@ -2186,7 +2307,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Examples
     --------
-    Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
+    Compute the impulse response of a second order system with a repeated
+    root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
@@ -3238,10 +3360,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                           transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
-        except np.linalg.LinAlgError:
+        except np.linalg.LinAlgError as e:
             raise ValueError("The poles you've chosen can't be placed. "
                              "Check the controllability matrix and try "
-                             "another set of poles")
+                             "another set of poles") from e
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix

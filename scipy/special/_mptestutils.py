@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 import time
@@ -11,7 +9,7 @@ import pytest
 from scipy.special._testutils import assert_func_equal
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     pass
 

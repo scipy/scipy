@@ -1399,7 +1399,6 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "sigtools",
@@ -1422,29 +1421,3 @@ PyObject *PyInit_sigtools(void)
 
     return m;
 }
-#else
-/* Initialization function for the module (*must* be called initsigtools) */
-
-PyMODINIT_FUNC initsigtools(void) {
-    /* Create the module and add the functions */
-    Py_InitModule("sigtools", toolbox_module_methods);
-
-	/* Import the C API function pointers for the Array Object*/
-	import_array();
-
-	/* Make sure the multiarraymodule is loaded so that the zero
-	   and one objects are defined */
-	/* XXX: This should be updated for scipy. I think it's pulling in 
-	   Numeric's multiarray. */
-	PyImport_ImportModule("numpy.core.multiarray");
-	/* { PyObject *multi = PyImport_ImportModule("multiarray"); } */
-
-    scipy_signal_sigtools_linear_filter_module_init();
-
-	/* Check for errors */
-	if (PyErr_Occurred()) {
-	  PyErr_Print();
-	  Py_FatalError("can't initialize module array");
-	}
-}
-#endif

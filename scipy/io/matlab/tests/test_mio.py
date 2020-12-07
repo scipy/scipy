@@ -1,11 +1,9 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
 
 '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -18,7 +16,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, suppress_warnings)
+                           assert_equal, assert_)
 from pytest import raises as assert_raises
 
 import numpy as np
@@ -440,9 +438,9 @@ def test_warnings():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         # This should not generate a warning
-        mres = loadmat(fname, struct_as_record=True)
+        loadmat(fname, struct_as_record=True)
         # This neither
-        mres = loadmat(fname, struct_as_record=False)
+        loadmat(fname, struct_as_record=False)
 
 
 def test_regression_653():
@@ -999,12 +997,9 @@ def test_mat_struct_squeeze():
     in_d = {'st':{'one':1, 'two':2}}
     savemat(stream, in_d)
     # no error without squeeze
-    out_d = loadmat(stream, struct_as_record=False)
+    loadmat(stream, struct_as_record=False)
     # previous error was with squeeze, with mat_struct
-    out_d = loadmat(stream,
-                    struct_as_record=False,
-                    squeeze_me=True,
-                    )
+    loadmat(stream, struct_as_record=False, squeeze_me=True)
 
 
 def test_scalar_squeeze():
@@ -1029,7 +1024,7 @@ def test_str_round():
     stream.truncate(0)
     stream.seek(0)
     # Make Fortran ordered version of string
-    in_str = in_arr.tostring(order='F')
+    in_str = in_arr.tobytes(order='F')
     in_from_str = np.ndarray(shape=a.shape,
                              dtype=in_arr.dtype,
                              order='F',
@@ -1230,3 +1225,13 @@ def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(IOError, loadmat, "NotExistentFile00.mat")
     assert_raises(IOError, loadmat, "NotExistentFile00")
+
+
+def test_simplify_cells():
+    # Test output when simplify_cells=True
+    filename = pjoin(test_data_path, 'testsimplecell.mat')
+    res1 = loadmat(filename, simplify_cells=True)
+    res2 = loadmat(filename, simplify_cells=False)
+    assert_(isinstance(res1["s"], dict))
+    assert_(isinstance(res2["s"], np.ndarray))
+    assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))

@@ -10,8 +10,6 @@
 # References:
 #  http://math.nist.gov/MatrixMarket/
 #
-from __future__ import division, print_function, absolute_import
-
 import os
 import sys
 
@@ -101,7 +99,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
 
 
 ###############################################################################
-class MMFile (object):
+class MMFile:
     __slots__ = ('_rows',
                  '_cols',
                  '_entries',
@@ -242,23 +240,26 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith(b'%'):
+            # line.startswith('%')
+            while line and line[0] in ['%', 37]:
                 line = stream.readline()
 
             # skip empty lines
             while not line.strip():
                 line = stream.readline()
 
-            line = line.split()
+            split_line = line.split()
             if format == self.FORMAT_ARRAY:
-                if not len(line) == 2:
-                    raise ValueError("Header line not of length 2: " + line)
-                rows, cols = map(int, line)
+                if not len(split_line) == 2:
+                    raise ValueError("Header line not of length 2: " +
+                                     line.decode('ascii'))
+                rows, cols = map(int, split_line)
                 entries = rows * cols
             else:
-                if not len(line) == 3:
-                    raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(int, line)
+                if not len(split_line) == 3:
+                    raise ValueError("Header line not of length 3: " +
+                                     line.decode('ascii'))
+                rows, cols, entries = map(int, split_line)
 
             return (rows, cols, entries, format, field.lower(),
                     symmetry.lower())
@@ -290,40 +291,45 @@ class MMFile (object):
             True if the calling function should close this file when done,
             false otherwise.
         """
-        close_it = False
-        if isinstance(filespec, str):
-            close_it = True
+        # If 'filespec' is path-like (str, pathlib.Path, os.DirEntry, other class
+        # implementing a '__fspath__' method), try to convert it to str. If this
+        # fails by throwing a 'TypeError', assume it's an open file handle and
+        # return it as-is.
+        try:
+            filespec = os.fspath(filespec)
+        except TypeError:
+            return filespec, False
 
-            # open for reading
-            if mode[0] == 'r':
+        # 'filespec' is definitely a str now
 
-                # determine filename plus extension
-                if not os.path.isfile(filespec):
-                    if os.path.isfile(filespec+'.mtx'):
-                        filespec = filespec + '.mtx'
-                    elif os.path.isfile(filespec+'.mtx.gz'):
-                        filespec = filespec + '.mtx.gz'
-                    elif os.path.isfile(filespec+'.mtx.bz2'):
-                        filespec = filespec + '.mtx.bz2'
-                # open filename
-                if filespec.endswith('.gz'):
-                    import gzip
-                    stream = gzip.open(filespec, mode)
-                elif filespec.endswith('.bz2'):
-                    import bz2
-                    stream = bz2.BZ2File(filespec, 'rb')
-                else:
-                    stream = open(filespec, mode)
+        # open for reading
+        if mode[0] == 'r':
 
-            # open for writing
-            else:
-                if filespec[-4:] != '.mtx':
+            # determine filename plus extension
+            if not os.path.isfile(filespec):
+                if os.path.isfile(filespec+'.mtx'):
                     filespec = filespec + '.mtx'
+                elif os.path.isfile(filespec+'.mtx.gz'):
+                    filespec = filespec + '.mtx.gz'
+                elif os.path.isfile(filespec+'.mtx.bz2'):
+                    filespec = filespec + '.mtx.bz2'
+            # open filename
+            if filespec.endswith('.gz'):
+                import gzip
+                stream = gzip.open(filespec, mode)
+            elif filespec.endswith('.bz2'):
+                import bz2
+                stream = bz2.BZ2File(filespec, 'rb')
+            else:
                 stream = open(filespec, mode)
-        else:
-            stream = filespec
 
-        return stream, close_it
+        # open for writing
+        else:
+            if filespec[-4:] != '.mtx':
+                filespec = filespec + '.mtx'
+            stream = open(filespec, mode)
+
+        return stream, True
 
     # -------------------------------------------------------------------------
     @staticmethod
@@ -515,7 +521,8 @@ class MMFile (object):
                     i += 1
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%') or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 if is_integer:
                     aij = int(line)
@@ -560,7 +567,8 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(b'%') or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
                 l = line.split()
                 i, j = map(int, l[:2])
@@ -607,7 +615,8 @@ class MMFile (object):
 
             entry_number = 0
             for line in stream:
-                if not line or line.startswith(b'%') or not line.strip():
+                # line.startswith('%')
+                if not line or line[0] in ['%', 37] or not line.strip():
                     continue
 
                 if entry_number+1 > entries:

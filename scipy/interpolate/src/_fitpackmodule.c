@@ -11,6 +11,34 @@
 static PyObject *fitpack_error;
 #include "__fitpack.h"
 
+#ifdef HAVE_ILP64
+
+#define F_INT npy_int64
+#define F_INT_NPY NPY_INT64
+
+#if NPY_BITSOF_SHORT == 64
+#define F_INT_PYFMT   "h"
+#elif NPY_BITSOF_INT == 64
+#define F_INT_PYFMT   "i"
+#elif NPY_BITSOF_LONG == 64
+#define F_INT_PYFMT   "l"
+#elif NPY_BITSOF_LONGLONG == 64
+#define F_INT_PYFMT   "L"
+#else
+#error No compatible 64-bit integer size. \
+       Please contact NumPy maintainers and give detailed information about your \
+       compiler and platform, or set NPY_USE_BLAS64_=0
+#endif
+
+#else
+
+#define F_INT int
+#define F_INT_NPY NPY_INT
+#define F_INT_PYFMT   "i"
+
+#endif
+
+
 /*
  * Functions moved verbatim from __fitpack.h
  */
@@ -94,36 +122,36 @@ static PyObject *fitpack_error;
 	#endif
 #endif
 
-void CURFIT(int*,int*,double*,double*,double*,double*,
-        double*,int*,double*,int*,int*,double*,double*,
-        double*,double*,int*,int*,int*);
-void PERCUR(int*,int*,double*,double*,double*,int*,
-        double*,int*,int*,double*,double*,double*,
-        double*,int*,int*,int*);
-void SPALDE(double*,int*,double*,int*,double*,double*,int*);
-void SPLDER(double*,int*,double*,int*,int*,double*,
-        double*,int*,int*,double*,int*);
-void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*,int*);
-double SPLINT(double*,int*,double*,int*,double*,double*,double*);
-void SPROOT(double*,int*,double*,double*,int*,int*,int*);
-void PARCUR(int*,int*,int*,int*,double*,int*,double*,
-        double*,double*,double*,int*,double*,int*,int*,
-        double*,int*,double*,double*,double*,int*,int*,int*);
-void CLOCUR(int*,int*,int*,int*,double*,int*,double*,
-        double*,int*,double*,int*,int*,double*,int*,
-        double*,double*,double*,int*,int*,int*);
-void SURFIT(int*,int*,double*,double*,double*,double*,
-        double*,double*,double*,double*,int*,int*,double*,
-        int*,int*,int*,double*,int*,double*,int*,double*,
-        double*,double*,double*,int*,double*,int*,int*,int*,int*);
-void BISPEV(double*,int*,double*,int*,double*,int*,int*,
-        double*,int*,double*,int*,double*,double*,int*,
-        int*,int*,int*);
-void PARDER(double*,int*,double*,int*,double*,int*,int*,
-        int*,int*,double*,int*,double*,int*,double*,
-        double*,int*,int*,int*,int*);
-void INSERT(int*,double*,int*,double*,int*,double*,double*,
-        int*,double*,int*,int*);
+void CURFIT(F_INT*,F_INT*,double*,double*,double*,double*,
+        double*,F_INT*,double*,F_INT*,F_INT*,double*,double*,
+        double*,double*,F_INT*,F_INT*,F_INT*);
+void PERCUR(F_INT*,F_INT*,double*,double*,double*,F_INT*,
+        double*,F_INT*,F_INT*,double*,double*,double*,
+        double*,F_INT*,F_INT*,F_INT*);
+void SPALDE(double*,F_INT*,double*,F_INT*,double*,double*,F_INT*);
+void SPLDER(double*,F_INT*,double*,F_INT*,F_INT*,double*,
+        double*,F_INT*,F_INT*,double*,F_INT*);
+void SPLEV(double*,F_INT*,double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*);
+double SPLINT(double*,F_INT*,double*,F_INT*,double*,double*,double*);
+void SPROOT(double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*);
+void PARCUR(F_INT*,F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,
+        double*,double*,double*,F_INT*,double*,F_INT*,F_INT*,
+        double*,F_INT*,double*,double*,double*,F_INT*,F_INT*,F_INT*);
+void CLOCUR(F_INT*,F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,
+        double*,F_INT*,double*,F_INT*,F_INT*,double*,F_INT*,
+        double*,double*,double*,F_INT*,F_INT*,F_INT*);
+void SURFIT(F_INT*,F_INT*,double*,double*,double*,double*,
+        double*,double*,double*,double*,F_INT*,F_INT*,double*,
+        F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,F_INT*,double*,
+        double*,double*,double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,F_INT*);
+void BISPEV(double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,
+        double*,F_INT*,double*,F_INT*,double*,double*,F_INT*,
+        F_INT*,F_INT*,F_INT*);
+void PARDER(double*,F_INT*,double*,F_INT*,double*,F_INT*,F_INT*,
+        F_INT*,F_INT*,double*,F_INT*,double*,F_INT*,double*,
+        double*,F_INT*,F_INT*,F_INT*,F_INT*);
+void INSERT(F_INT*,double*,F_INT*,double*,F_INT*,double*,double*,
+        F_INT*,double*,F_INT*,F_INT*);
 
 /* Note that curev, cualde need no interface. */
 
@@ -131,15 +159,15 @@ static char doc_bispev[] = " [z,ier] = _bispev(tx,ty,c,kx,ky,x,y,nux,nuy)";
 static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
-    int nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
+    F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
     npy_intp mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
     PyObject *x_py = NULL, *y_py = NULL, *c_py = NULL, *tx_py = NULL, *ty_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OOOiiOOii",&tx_py,&ty_py,&c_py,&kx,&ky,
-                &x_py,&y_py,&nux,&nuy)) {
+    if (!PyArg_ParseTuple(args, ("OOO" F_INT_PYFMT F_INT_PYFMT "OO" F_INT_PYFMT F_INT_PYFMT),
+                          &tx_py,&ty_py,&c_py,&kx,&ky,&x_py,&y_py,&nux,&nuy)) {
         return NULL;
     }
     ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
@@ -223,8 +251,8 @@ static char doc_surfit[] = " [tx,ty,c,o] = _surfit(x, y, z, w, xb, xe, yb, ye,"\
 static PyObject *
 fitpack_surfit(PyObject *dummy, PyObject *args)
 {
-    int iopt, m, kx, ky, nxest, nyest, lwrk1, lwrk2, *iwrk, kwrk, ier;
-    int lwa, nxo, nyo, i, lcest, nmax, nx, ny, lc;
+    F_INT iopt, m, kx, ky, nxest, nyest, lwrk1, lwrk2, *iwrk, kwrk, ier;
+    F_INT lwa, nxo, nyo, i, lcest, nmax, nx, ny, lc;
     npy_intp dims[1];
     double *x, *y, *z, *w, xb, xe, yb, ye, s, *tx, *ty, *c, fp;
     double *wrk1, *wrk2, *wa = NULL, eps;
@@ -234,7 +262,9 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     PyObject *tx_py = NULL, *ty_py = NULL, *wrk_py = NULL;
 
     nx = ny = ier = nxo = nyo = 0;
-    if (!PyArg_ParseTuple(args, "OOOOddddiiiddOOiiOii",
+    if (!PyArg_ParseTuple(args, ("OOOOdddd" F_INT_PYFMT F_INT_PYFMT F_INT_PYFMT
+                                 "ddOO" F_INT_PYFMT F_INT_PYFMT "O"
+                                 F_INT_PYFMT F_INT_PYFMT),
                 &x_py, &y_py, &z_py, &w_py, &xb, &xe, &yb, &ye,
                 &kx, &ky, &iopt, &s, &eps, &tx_py, &ty_py, &nxest,
                 &nyest, &wrk_py, &lwrk1, &lwrk2)) {
@@ -245,7 +275,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     ap_z = (PyArrayObject *)PyArray_ContiguousFromObject(z_py, NPY_DOUBLE, 0, 1);
     ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
     ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
-    /*ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);*/
+    /*ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, F_INT_NPY, 0, 1);*/
     if (ap_x == NULL
             || ap_y == NULL
             || ap_z == NULL
@@ -278,7 +308,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     ty = tx + nmax;
     c = ty + nmax;
     wrk1 = c + lcest;
-    iwrk = (int *)(wrk1 + lwrk1);
+    iwrk = (F_INT *)(wrk1 + lwrk1);
     wrk2 = ((double *)iwrk) + kwrk;
     if (iopt) {
         ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, NPY_DOUBLE, 0, 1);
@@ -336,7 +366,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         if (ap_wrk == NULL) {
             goto fail;
         }
-        /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);*/
+        /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,F_INT_NPY);*/
     }
     if (ap_wrk->dimensions[0] < lc) {
         Py_XDECREF(ap_wrk);
@@ -383,8 +413,8 @@ static char doc_parcur[] = " [t,c,o] = _parcur(x,w,u,ub,ue,k,iopt,ipar,s,t,nest,
 static PyObject *
 fitpack_parcur(PyObject *dummy, PyObject *args)
 {
-    int k, iopt, ipar, nest, *iwrk, idim, m, mx, no=0, nc, ier, lwa, lwrk, i, per;
-    int n=0,  lc;
+    F_INT k, iopt, ipar, nest, *iwrk, idim, m, mx, no=0, nc, ier, lwa, lwrk, i, per;
+    F_INT n=0,  lc;
     npy_intp dims[1];
     double *x, *w, *u, *c, *t, *wrk, *wa=NULL, ub, ue, fp, s;
     PyObject *x_py = NULL, *u_py = NULL, *w_py = NULL, *t_py = NULL;
@@ -392,15 +422,17 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     PyArrayObject *ap_x = NULL, *ap_u = NULL, *ap_w = NULL, *ap_t = NULL, *ap_c = NULL;
     PyArrayObject *ap_wrk = NULL, *ap_iwrk = NULL;
 
-    if (!PyArg_ParseTuple(args,  "OOOddiiidOiOOi", &x_py, &w_py, &u_py, &ub, &ue,
-                &k, &iopt, &ipar, &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
+    if (!PyArg_ParseTuple(args, ("OOOdd" F_INT_PYFMT F_INT_PYFMT F_INT_PYFMT
+                                 "dO" F_INT_PYFMT "OO" F_INT_PYFMT),
+                          &x_py, &w_py, &u_py, &ub, &ue, &k, &iopt, &ipar,
+                          &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
         return NULL;
     }
     ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
     ap_u = (PyArrayObject *)PyArray_ContiguousFromObject(u_py, NPY_DOUBLE, 0, 1);
     ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
     ap_wrk=(PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
-    ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);
+    ap_iwrk=(PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, F_INT_NPY, 0, 1);
     if (ap_x == NULL
             || ap_u == NULL
             || ap_w == NULL
@@ -429,7 +461,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     t = wa;
     c = t + nest;
     wrk = c + nc;
-    iwrk = (int *)(wrk + lwrk);
+    iwrk = (F_INT *)(wrk + lwrk);
     if (iopt) {
         ap_t=(PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
         if (ap_t == NULL) {
@@ -442,7 +474,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     }
     if (iopt == 1) {
         memcpy(wrk, ap_wrk->data, n*sizeof(double));
-        memcpy(iwrk, ap_iwrk->data, n*sizeof(int));
+        memcpy(iwrk, ap_iwrk->data, n*sizeof(F_INT));
     }
     if (per) {
         CLOCUR(&iopt, &ipar, &idim, &m, u, &mx, x, w, &k, &s, &nest,
@@ -467,7 +499,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     if (ap_t == NULL || ap_c == NULL) {
         goto fail;
     }
-    if (iopt == 0|| n > no) {
+    if (iopt != 1|| n > no) {
         Py_XDECREF(ap_wrk);
         ap_wrk = NULL;
         Py_XDECREF(ap_iwrk);
@@ -478,7 +510,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
         if (ap_wrk == NULL) {
             goto fail;
         }
-        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INT);
+        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, F_INT_NPY);
         if (ap_iwrk == NULL) {
             goto fail;
         }
@@ -487,11 +519,11 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     for (i = 0; i < idim; i++)
         memcpy((double *)ap_c->data + i*(n - k - 1), c + i*n, (n - k - 1)*sizeof(double));
     memcpy(ap_wrk->data, wrk, n*sizeof(double));
-    memcpy(ap_iwrk->data, iwrk, n*sizeof(int));
+    memcpy(ap_iwrk->data, iwrk, n*sizeof(F_INT));
     free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_w);
-    return Py_BuildValue("NN{s:N,s:d,s:d,s:N,s:N,s:i,s:d}", PyArray_Return(ap_t),
+    return Py_BuildValue(("NN{s:N,s:d,s:d,s:N,s:N,s:" F_INT_PYFMT ",s:d}"), PyArray_Return(ap_t),
             PyArray_Return(ap_c), "u", PyArray_Return(ap_u), "ub", ub, "ue", ue,
             "wrk", PyArray_Return(ap_wrk), "iwrk", PyArray_Return(ap_iwrk),
             "ier", ier, "fp",fp);
@@ -510,8 +542,8 @@ static char doc_curfit[] = " [t,c,o] = _curfit(x,y,w,xb,xe,k,iopt,s,t,nest,wrk,i
 static PyObject *
 fitpack_curfit(PyObject *dummy, PyObject *args)
 {
-    int iopt, m, k, nest, lwrk, *iwrk, ier, lwa, no=0, per;
-    int n, lc;
+    F_INT iopt, m, k, nest, lwrk, *iwrk, ier, lwa, no=0, per;
+    F_INT n, lc;
     npy_intp dims[1];
     double *x, *y, *w, xb, xe, s, *t, *c, fp, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_w = NULL, *ap_t = NULL, *ap_c = NULL;
@@ -519,15 +551,17 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     PyObject *x_py = NULL, *y_py = NULL, *w_py = NULL, *t_py = NULL;
     PyObject *wrk_py=NULL, *iwrk_py=NULL;
 
-    if (!PyArg_ParseTuple(args, "OOOddiidOiOOi", &x_py, &y_py, &w_py, &xb, &xe,
-                &k, &iopt, &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
+    if (!PyArg_ParseTuple(args, ("OOOdd" F_INT_PYFMT F_INT_PYFMT
+                                 "dO" F_INT_PYFMT "OO" F_INT_PYFMT),
+                          &x_py, &y_py, &w_py, &xb, &xe, &k, &iopt,
+                          &s, &t_py, &nest, &wrk_py, &iwrk_py, &per)) {
         return NULL;
     }
     ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
     ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y_py, NPY_DOUBLE, 0, 1);
     ap_w = (PyArrayObject *)PyArray_ContiguousFromObject(w_py, NPY_DOUBLE, 0, 1);
     ap_wrk = (PyArrayObject *)PyArray_ContiguousFromObject(wrk_py, NPY_DOUBLE, 0, 1);
-    ap_iwrk = (PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, NPY_INT, 0, 1);
+    ap_iwrk = (PyArrayObject *)PyArray_ContiguousFromObject(iwrk_py, F_INT_NPY, 0, 1);
     if (ap_x == NULL
             || ap_y == NULL
             || ap_w == NULL
@@ -553,7 +587,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     t = wa;
     c = t + nest;
     wrk = c + nest;
-    iwrk = (int *)(wrk + lwrk);
+    iwrk = (F_INT *)(wrk + lwrk);
     if (iopt) {
         ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
         if (ap_t == NULL) {
@@ -564,7 +598,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     }
     if (iopt == 1) {
         memcpy(wrk, ap_wrk->data, n*sizeof(double));
-        memcpy(iwrk, ap_iwrk->data, n*sizeof(int));
+        memcpy(iwrk, ap_iwrk->data, n*sizeof(F_INT));
     }
     if (per)
         PERCUR(&iopt, &m, x, y, w, &k, &s, &nest, &n, t, c, &fp, wrk,
@@ -595,7 +629,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
         Py_XDECREF(ap_iwrk);
         dims[0] = n;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INT);
+        ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, F_INT_NPY);
         if (ap_wrk == NULL || ap_iwrk == NULL) {
             goto fail;
         }
@@ -603,12 +637,12 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     memcpy(ap_t->data, t, n*sizeof(double));
     memcpy(ap_c->data, c, lc*sizeof(double));
     memcpy(ap_wrk->data, wrk, n*sizeof(double));
-    memcpy(ap_iwrk->data, iwrk, n*sizeof(int));
+    memcpy(ap_iwrk->data, iwrk, n*sizeof(F_INT));
     free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_w);
-    return Py_BuildValue("NN{s:N,s:N,s:i,s:d}", PyArray_Return(ap_t),
+    return Py_BuildValue(("NN{s:N,s:N,s:" F_INT_PYFMT ",s:d}"), PyArray_Return(ap_t),
             PyArray_Return(ap_c), "wrk", PyArray_Return(ap_wrk),
             "iwrk", PyArray_Return(ap_iwrk), "ier", ier, "fp", fp);
 
@@ -627,13 +661,14 @@ static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k,e)";
 static PyObject *
 fitpack_spl_(PyObject *dummy, PyObject *args)
 {
-    int n, nu, ier, k, m, e=0;
+    F_INT n, nu, ier, k, m, e=0;
     npy_intp dims[1];
     double *x, *y, *t, *c, *wrk = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_t = NULL, *ap_c = NULL;
     PyObject *x_py = NULL, *t_py = NULL, *c_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OiOOii", &x_py, &nu, &t_py, &c_py, &k, &e)) {
+    if (!PyArg_ParseTuple(args, ("O" F_INT_PYFMT "OO" F_INT_PYFMT F_INT_PYFMT),
+                          &x_py, &nu, &t_py, &c_py, &k, &e)) {
         return NULL;
     }
     ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
@@ -667,7 +702,7 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
     Py_DECREF(ap_x);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
-    return Py_BuildValue("Ni", PyArray_Return(ap_y), ier);
+    return Py_BuildValue(("N" F_INT_PYFMT), PyArray_Return(ap_y), ier);
 
 fail:
     free(wrk);
@@ -681,14 +716,14 @@ static char doc_splint[] = " [aint,wrk] = _splint(t,c,k,a,b)";
 static PyObject *
 fitpack_splint(PyObject *dummy, PyObject *args)
 {
-    int k, n;
+    F_INT k, n;
     npy_intp dims[1];
     double *t, *c, *wrk = NULL, a, b, aint;
     PyArrayObject *ap_t = NULL, *ap_c = NULL;
     PyArrayObject *ap_wrk = NULL;
     PyObject *t_py = NULL, *c_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OOidd",&t_py,&c_py,&k,&a,&b)) {
+    if (!PyArg_ParseTuple(args, ("OO" F_INT_PYFMT "dd"),&t_py,&c_py,&k,&a,&b)) {
         return NULL;
     }
     ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
@@ -720,14 +755,15 @@ static char doc_sproot[] = " [z,ier] = _sproot(t,c,k,mest)";
 static PyObject *
 fitpack_sproot(PyObject *dummy, PyObject *args)
 {
-    int n, k, m, mest, ier;
+    F_INT n, k, m, mest, ier;
     npy_intp dims[1];
     double *t, *c, *z = NULL;
     PyArrayObject *ap_t = NULL, *ap_c = NULL;
     PyArrayObject *ap_z = NULL;
     PyObject *t_py = NULL, *c_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OOii",&t_py,&c_py,&k,&mest)) {
+    if (!PyArg_ParseTuple(args, ("OO" F_INT_PYFMT F_INT_PYFMT),
+                          &t_py,&c_py,&k,&mest)) {
         return NULL;
     }
     ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
@@ -756,7 +792,7 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
     free(z);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
-    return Py_BuildValue("Ni", PyArray_Return(ap_z), ier);
+    return Py_BuildValue(("N" F_INT_PYFMT), PyArray_Return(ap_z), ier);
 
 fail:
     free(z);
@@ -769,13 +805,14 @@ static char doc_spalde[] = " [d,ier] = _spalde(t,c,k,x)";
 static PyObject *
 fitpack_spalde(PyObject *dummy, PyObject *args)
 {
-    int n, k, ier, k1;
+    F_INT n, k, ier, k1;
     npy_intp dims[1];
     double *t, *c, *d = NULL, x;
     PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_d = NULL;
     PyObject *t_py = NULL, *c_py = NULL;
 
-    if (!PyArg_ParseTuple(args, "OOid",&t_py,&c_py,&k,&x)) {
+    if (!PyArg_ParseTuple(args, ("OO" F_INT_PYFMT "d"),
+                          &t_py,&c_py,&k,&x)) {
         return NULL;
     }
     ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
@@ -796,7 +833,7 @@ fitpack_spalde(PyObject *dummy, PyObject *args)
     SPALDE(t, &n, c, &k1, &x, d, &ier);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
-    return Py_BuildValue("Ni", PyArray_Return(ap_d), ier);
+    return Py_BuildValue(("N" F_INT_PYFMT), PyArray_Return(ap_d), ier);
 
 fail:
     Py_XDECREF(ap_c);
@@ -808,7 +845,7 @@ static char doc_insert[] = " [tt,cc,ier] = _insert(iopt,t,c,k,x,m)";
 static PyObject *
 fitpack_insert(PyObject *dummy, PyObject*args)
 {
-    int iopt, n, nn, k, ier, m, nest;
+    F_INT iopt, n, nn, k, ier, m, nest;
     npy_intp dims[1];
     double x;
     double *t_in, *c_in, *t_out, *c_out, *t_buf = NULL, *c_buf = NULL, *p;
@@ -817,7 +854,8 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     PyObject *t_py = NULL, *c_py = NULL;
     PyObject *ret = NULL;
 
-    if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) {
+    if (!PyArg_ParseTuple(args,(F_INT_PYFMT "OO" F_INT_PYFMT "d" F_INT_PYFMT),
+                          &iopt,&t_py,&c_py,&k, &x, &m)) {
         return NULL;
     }
     ap_t_in = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
@@ -890,7 +928,7 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     Py_DECREF(ap_t_in);
     free(t_buf);
     free(c_buf);
-    ret = Py_BuildValue("NNi", PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), ier);
+    ret = Py_BuildValue(("NN" F_INT_PYFMT), PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), ier);
     return ret;
 
 fail:
@@ -1497,7 +1535,6 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {NULL, NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_fitpack",
@@ -1529,19 +1566,3 @@ PyObject *PyInit__fitpack(void)
 
     return m;
 }
-#else
-PyMODINIT_FUNC init_fitpack(void) {
-    PyObject *m, *d, *s;
-    m = Py_InitModule("_fitpack", fitpack_module_methods);
-    import_array();
-    d = PyModule_GetDict(m);
-
-    s = PyString_FromString(" 1.7 ");
-    PyDict_SetItemString(d, "__version__", s);
-    fitpack_error = PyErr_NewException ("fitpack.error", NULL, NULL);
-    Py_DECREF(s);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module fitpack");
-    }
-}
-#endif 

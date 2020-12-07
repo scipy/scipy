@@ -17,7 +17,6 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
 import numpy as np
 from scipy.linalg import solve
 from .optimize import _check_unknown_options
@@ -310,6 +309,28 @@ def _display_iter(phase, iteration, slack, con, fun):
     print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
 
 
+def _display_and_callback(phase_one_n, x, postsolve_args, status,
+                          iteration, disp, callback):
+    if phase_one_n is not None:
+        phase = 1
+        x_postsolve = x[:phase_one_n]
+    else:
+        phase = 2
+        x_postsolve = x
+    x_o, fun, slack, con = _postsolve(x_postsolve,
+                                      postsolve_args)
+
+    if callback is not None:
+        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                              'con': con, 'nit': iteration,
+                              'phase': phase, 'complete': False,
+                              'status': status, 'message': "",
+                              'success': False})
+        callback(res)
+    if disp:
+        _display_iter(phase, iteration, slack, con, fun)
+
+
 def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
                maxupdate, mast, pivot, iteration=0, phase_one_n=None):
     """
@@ -334,28 +355,11 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
     else:
         B = LU(A, b)
 
-    for iteration in range(iteration, iteration + maxiter):
+    for iteration in range(iteration, maxiter):
 
         if disp or callback is not None:
-            if phase_one_n is not None:
-                phase = 1
-                x_postsolve = x[:phase_one_n]
-            else:
-                phase = 2
-                x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve,
-                                                    postsolve_args,
-                                                    tol=tol, copy=True)
-
-            if callback is not None:
-                res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                                      'con': con, 'nit': iteration,
-                                      'phase': phase, 'complete': False,
-                                      'status': 0, 'message': "",
-                                      'success': False})
-                callback(res)
-            else:
-                _display_iter(phase, iteration, slack, con, fun)
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
@@ -395,9 +399,17 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
         x[b] = x[b] - th_star*u     # take step
         x[j] = th_star
         B.update(ab[i][l], j)       # modify basis
-        b = B.b                     # similar to b[ab[i][l]] = j
+        b = B.b                     # similar to b[ab[i][l]] =
+
     else:
+        # If the end of the for loop is reached (without a break statement),
+        # then another step has been taken, so the iteration counter should
+        # increment, info should be displayed, and callback should be called.
+        iteration += 1
         status = 1
+        if disp or callback is not None:
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
     return x, b, status, iteration
 
@@ -414,6 +426,8 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
 
         subject to:  A @ x == b
                      0 <= x < oo
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------

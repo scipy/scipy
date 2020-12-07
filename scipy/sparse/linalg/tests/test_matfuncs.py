@@ -4,8 +4,6 @@
 """ Test functions for scipy.linalg.matfuncs module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import math
 
 import numpy as np
@@ -509,18 +507,17 @@ class TestExpM(object):
         # Nilpotent exponential, used to trigger a failure (gh-8029)
 
         for scale in [1.0, 1e-3, 1e-6]:
-            for n in range(120):
+            for n in range(0, 80, 3):
+                sc = scale ** np.arange(n, -1, -1)
+                if np.any(sc < 1e-300):
+                    break
+
                 A = np.diag(np.arange(1, n + 1), -1) * scale
                 B = expm(A)
-
-                sc = scale**np.arange(n, -1, -1)
-                if np.any(sc < 1e-300):
-                    continue
 
                 got = B
                 expected = binom(np.arange(n + 1)[:,None],
                                  np.arange(n + 1)[None,:]) * sc[None,:] / sc[:,None]
-                err = abs(expected - got).max()
                 atol = 1e-13 * abs(expected).max()
                 assert_allclose(got, expected, atol=atol)
 
@@ -534,6 +531,24 @@ class TestExpM(object):
             sup.filter(PendingDeprecationWarning, "the matrix subclass.*")
             B = expm(np.matrix(A))
         assert_allclose(B, B0)
+
+    def test_exp_sinch_overflow(self):
+        # Check overflow in intermediate steps is fixed (gh-11839)
+        L = np.array([[1.0, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0, -0.5, -0.5, 0.0, 0.0],
+                      [0.0, 0.0, 1.0, 0.0, 0.0, -0.5, -0.5],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+
+        E0 = expm(-L)
+        E1 = expm(-2**11 * L)
+        E2 = E0
+        for j in range(11):
+            E2 = E2 @ E2
+
+        assert_allclose(E1, E2)
 
 
 class TestOperators(object):

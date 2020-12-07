@@ -53,6 +53,7 @@ For a more detailed look at how the SciPy project works:
    :maxdepth: 1
 
    dev/core-dev/index
+   dev/api-dev/api-dev-toc
    dev/governance/governance
 
 .. This toctree defines previous/next for contributor guide documents
@@ -67,6 +68,7 @@ For a more detailed look at how the SciPy project works:
    dev/contributor/runtests
    dev/contributor/benchmarking
    dev/contributor/cython
+   dev/contributor/public_cython_api
    dev/contributor/adding_new
 
 .. These files are not intended to be in any toctree. because they have not

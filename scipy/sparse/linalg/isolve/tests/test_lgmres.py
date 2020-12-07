@@ -1,8 +1,6 @@
 """Tests for the linalg.isolve.lgmres module
 """
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            suppress_warnings)
 
@@ -93,7 +91,7 @@ class TestLGMRES(object):
     @pytest.mark.skipif(python_implementation() == 'PyPy',
                         reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
-        np.random.rand(1234)
+        np.random.seed(1234)
 
         A = eye(2000) + rand(2000, 2000, density=5e-4)
         b = np.random.rand(2000)
@@ -108,8 +106,8 @@ class TestLGMRES(object):
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
-        assert_(np.linalg.norm(A.dot(x0) - b) > 4e-4)
-
+        norm = np.linalg.norm(A.dot(x0) - b)
+        assert_(norm > 1e-4)
         assert_allclose(x0, x1)
 
     def test_cornercase(self):

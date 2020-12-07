@@ -1,28 +1,18 @@
 """
 Check the speed of the conjugate gradient solver.
 """
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 from numpy.testing import assert_equal
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import linalg, sparse
     from scipy.sparse.linalg import cg, minres, gmres, spsolve
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.sparse.linalg import lgmres
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.sparse.linalg import gcrotmk
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def _create_sparse_poisson1d(n):

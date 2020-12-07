@@ -18,8 +18,6 @@ Various utilities that don't have another home.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 from . import doccer
 from .common import *
 

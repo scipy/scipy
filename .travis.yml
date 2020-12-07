@@ -1,6 +1,7 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 language: python
+
 addons:
   apt:
     packages: &common_packages
@@ -13,173 +14,82 @@ addons:
     - ccache
     - swig
     - libmpc-dev
+
 env:
   global:
    # Wheelhouse for pre-release wheels
-   - PRE_WHEELS="https://7933911d6844c6c53a7d-47bd50c35cd79bd838daf386af554a83.ssl.cf2.rackcdn.com"
+   - PRE_WHEELS="https://pypi.anaconda.org/scipy-wheels-nightly/simple"
    # Using a single thread can actually speed up some computations on Travis
    - OPENBLAS_NUM_THREADS=1
+   - OTHERSPEC=""
+
 matrix:
   include:
-    - python: 3.6
-      if: type = pull_request
-      env:
-        - PYFLAKES=1
-        - PEP8=1
-        - NUMPYSPEC="--upgrade numpy"
-      before_install:
-        - pip install pycodestyle==2.5.0
-        - pip install pyflakes==1.1.0
-      script:
-        # pyflakes doesn't respect "# noqa" and cannot ignore files, so filter out six.py
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' | grep -E -v 'scipy/_lib/six.py' > test.out; cat test.out; test \! -s test.out
-        - pycodestyle scipy benchmarks/benchmarks
-        - |
-          grep -rlIP '[^\x00-\x7F]' scipy | grep '\.pyx\?' | sort > unicode.out; grep -rlI '# -\*- coding: \(utf-8\|latin-1\) -\*-' scipy | grep '\.pyx\?' | sort > coding.out; comm -23 unicode.out coding.out > test_code.out; cat test_code.out;  test \! -s test_code.out
     - python: 3.7
-      if: type = pull_request
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-        # Need a test with most recent Python version where we build from an
-        # sdist (uses pip build isolation), to check that the version we
-        # specify in pyproject.toml (will be older than --pre --upgrade) works
-        - USE_SDIST=1
-    - python: 3.7
-      if: type = pull_request
-      env:
-        - TESTMODE=full
-        - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="numpy==1.15.4"
-    # Test SciPy with the debug version of Python.
-    # However travis only specifies regular or development builds of Python
-    # so we must install python3.6-dbg using apt.
-    - language: generic
-      if: type = pull_request
+      name: "ARM - Test Group 1"
+      arch: arm64
       dist: bionic
       env:
-        - USE_DEBUG=python3.6-dbg
         - TESTMODE=fast
-        - NUMPYSPEC="--upgrade numpy"
-      addons:
-        apt:
-          packages:
-            - *common_packages
-            - python3.6-dbg
-            - python3.6-dev
-    - python: 3.8
-      if: type = pull_request
-      env:
-        - TESTMODE=full
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-    - python: 3.6
-      if: type = pull_request
+        - COVERAGE=
+        - USE_WHEEL=1
+        - PIP_NO_CACHE_DIR=off
+        - NUMPYSPEC="numpy"
+        - TEST_GROUP_COUNT=2
+        - TEST_GROUP=1
+    - python: 3.7
+      name: "ARM - Test Group 2"
+      arch: arm64
+      dist: bionic
       env:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
-        - REFGUIDE_CHECK=1
-        - NUMPYSPEC="--upgrade numpy"
-        - ASV_CHECK=1
-    - python: 3.6
-      if: type = pull_request
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="numpy==1.17.4"
-        - USE_SDIST=1
-    - python: 3.6
-      if: type = pull_request
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - USE_WHEEL=1
-        - NUMPYSPEC="numpy==1.14.6"
-        # The following is needed for optimized "-OO" test run but since we use
-        # pytest-xdist plugin for load scheduling its workers don't pick up the
-        # flag. This environment variable starts all Py instances in -OO mode.
-        - PYTHONOPTIMIZE=2
-    - os: osx
-      if: type = pull_request
-      language: generic
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--upgrade numpy"
-        - MB_PYTHON_VERSION=3.7
-    - python: 3.6
-      if: type = pull_request
+        - PIP_NO_CACHE_DIR=off
+        - NUMPYSPEC="numpy"
+        - TEST_GROUP_COUNT=2
+        - TEST_GROUP=2
+    - python: 3.7
+      name: "Power PC"
       os: linux
       arch: ppc64le
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="--upgrade numpy"
+        - NUMPYSPEC="--upgrade numpy --no-cache-dir"
+
 cache:
   directories:
     - $HOME/.ccache
     - $HOME/.cache/pip
     - $HOME/Library/Caches/pip
+
+
 before_install:
   - echo $TRAVIS_OS_NAME
   - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       free -m
       export PATH=/usr/lib/ccache:$PATH
-    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew cask uninstall oclint
-      brew install ccache libmpc gcc@6
-      # The openblas binary used here was built using a gfortran older than 7,
-      # so it needs the older abi libgfortran.
-      export FC=gfortran-6
-      export CC=gcc-6
-      export CXX=g++-6
-      mkdir gcc_aliases
-      pushd gcc_aliases
-      ln -s `which gcc-6` gcc
-      ln -s `which g++-6` g++
-      ln -s `which gfortran-6` gfortran
-      export PATH=$TRAVIS_BUILD_DIR/gcc_aliases:$PATH
-      popd
-      touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
-      source multibuild/common_utils.sh
-      source multibuild/travis_steps.sh
-      before_install
-      which ccache
-      export PATH=/usr/local/opt/ccache/libexec:$PATH
-      export USE_CCACHE=1
-      export CCACHE_MAXSIZE=200M
-      export CCACHE_CPP2=1
-      export CFLAGS="-arch x86_64"
-      export CXXFLAGS="-arch x86_64"
-      printenv
-      wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-macosx_10_9_x86_64-gf_1becaaa.tar.gz -O openblas.tar.gz
-      mkdir openblas
-      tar -xzf openblas.tar.gz -C openblas
-      # Modify the openblas dylib so it can be used in its current location
-      # Also make it use the current install location for libgfortran, libquadmath, and libgcc_s.
-      pushd openblas/usr/local/lib
-      install_name_tool -id $TRAVIS_BUILD_DIR/openblas/usr/local/lib/libopenblasp-r0.3.7.dylib libopenblas.dylib
-      install_name_tool -change /usr/local/gfortran/lib/libgfortran.3.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libgfortran.3.dylib libopenblas.dylib
-      install_name_tool -change /usr/local/gfortran/lib/libquadmath.0.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libquadmath.0.dylib libopenblas.dylib
-      install_name_tool -change /usr/local/gfortran/lib/libgcc_s.1.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libgcc_s.1.dylib libopenblas.dylib
-      popd
-      echo "[openblas]" > site.cfg
-      echo "libraries = openblas" >> site.cfg
-      echo "library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
-      echo "include_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/include" >> site.cfg
-      echo "runtime_library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
-      # remove a spurious gcc/gfortran toolchain install
-      rm -rf /usr/local/Cellar/gcc/9.2.0_2
+      ccache --zero-stats
+    fi
+  - |
+    if [[ "$NPY_USE_BLAS_ILP64" == "1" ]]; then
+      target=$(python tools/openblas_support.py)
+      echo "[openblas64_]" > site.cfg
+      echo "library_dirs = $target/lib" >> site.cfg
+      echo "include_dirs = $target/include" >> site.cfg
+      echo "runtime_library_dirs = $target/lib" >> site.cfg
     fi
   - export CCACHE_COMPRESS=1
+  - if [ -n "$CC" ]; then ln -s `which ccache` "/usr/lib/ccache/$CC" || true; fi
+  - if [ -n "$CXX" ]; then ln -s `which ccache` "/usr/lib/ccache/$CXX" || true; fi
   - python --version # just to check
   - export NPY_NUM_BUILD_JOBS=2
   - uname -a
   - df -h
   - ulimit -a
+  - set -e -o pipefail
   - mkdir builds
   - cd builds
   - |
@@ -188,35 +98,34 @@ before_install:
         virtualenv --python=$USE_DEBUG venv
         source venv/bin/activate
     fi
-  - python -V -V
+  - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  - travis_retry pip install --upgrade pip setuptools wheel
-  - travis_retry pip install cython
-  - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
-  - travis_retry pip install --upgrade pytest pytest-xdist mpmath argparse Pillow codecov
-  - |
-    if [ -n "${USE_DEBUG}" ]; then
-        # see gh-10676; need to pin pytest version with debug
-        # Python 3.6
-        travis_retry pip install pytest==5.0.1
-    fi
-  - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - travis_retry pip install pybind11
+  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+  - travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
-        travis_retry pip install --only-binary=:all: sparse
+        if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
+            # Install these only when not using Numpy prerelease
+            travis_retry pip install numba==0.49.1
+            travis_retry pip install --only-binary=:all: sparse
+        fi
+    fi
+  - |
+    if [ -n "${TEST_GROUP_COUNT}" ]; then
+        travis_retry pip install pytest-test-groups
+        export TEST_GROUP_ARGS="--test-group-count=${TEST_GROUP_COUNT} --test-group=${TEST_GROUP} --test-group-random-seed=1234"
     fi
   - |
     if [ "${TESTMODE}" == "full" ]; then
-        travis_retry pip install pytest-cov coverage matplotlib==3.2.0rc1 scikit-umfpack scikit-sparse
+        travis_retry pip install matplotlib scikit-umfpack scikit-sparse
+    fi
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        travis_retry pip install pytest-cov coverage codecov
     fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.7.2
-        # XXX: Install older numpy as a workaround for float printing changes.
-        # XXX: We'll remove this once numpy 1.14.1 is released to fix its printing
-        # XXX: bugs
-        travis_retry pip install 'numpy!=1.14.0'
     fi
   - |
     if [ "${ASV_CHECK}" == "1" ]; then
@@ -225,7 +134,8 @@ before_install:
   - pip uninstall -y nose
   - ccache -s
   - cd ..
-  - set -o pipefail
+
+
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
@@ -257,17 +167,34 @@ script:
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
-  - python -u runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
-  - tools/validate_runtests_log.py $TESTMODE < runtests.log
-  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
-  - if [ "${ASV_CHECK}" == "1" ]; then (cd benchmarks && python -masv check -E existing); fi
+  - python -u runtests.py -g -j2 --build-only $COVERAGE $USE_WHEEL_BUILD
+  # Only run tests against pull-requests
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+      python -u runtests.py -g -j2 -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX --durations=10 $TEST_GROUP_ARGS 2>&1 | tee runtests.log
+      tools/validate_runtests_log.py $TESTMODE < runtests.log
+    fi
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${REFGUIDE_CHECK}" == "1" ]; then
+      python runtests.py -g --refguide-check
+    fi
+  # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${ASV_CHECK}" == "1" ]; then
+      (cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null)
+    fi
   # Check dynamic symbol hiding works on Linux
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./tools/check_pyext_symbol_hiding.sh build; fi
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      ./tools/check_pyext_symbol_hiding.sh build
+    fi
+
+
 after_script:
   - ccache -s
   # Upload coverage information
   - |
-    if [ -n "${COVERAGE}" ]; then
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ -n "${COVERAGE}" ]; then
         RUN_DIR=`echo build/testenv/lib/python*/site-packages`
         # Produce gcov output for codecov to find
         find build -name '*.gcno' -type f -exec gcov -pb {} +
@@ -277,6 +204,8 @@ after_script:
         codecov -X gcov
         popd
     fi
+
+
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.

@@ -13,11 +13,153 @@ trigger:
       - './*.txt'
       - 'site.cfg.example'
 
-# the version of OpenBLAS used is currently 0.3.7
+pr:
+  branches:
+    include:
+    - '*'  # must quote since "*" is a YAML reserved character; we want a string
+
+# the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
+variables:
+    openblas_version: 0.3.9
+    pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
+    CCACHE_DIR: $(Pipeline.Workspace)/ccache
+    SCIPY_AVAILABLE_MEM: 3G
+    NPY_NUM_BUILD_JOBS: 2
+    CCACHE_COMPRESS: 1
+    # Using a single thread can actually speed up some computations
+    OPENBLAS_NUM_THREADS: 1
 
 jobs:
-- job: Linux_Python_36_32bit_full
+- job: pre_release_deps_source_dist
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "--pre --upgrade --timeout=60 -i $(PRE_WHEELS) numpy"
+      other_spec: "--pre --upgrade --timeout=60"
+- job: coverage_full_tests
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: full
+      coverage: true
+      numpy_spec: "numpy==1.18.5"
+- job: prerelease_deps_64bit_blas
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: full
+      numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
+      other_spec: "--pre --upgrade --timeout=60"
+      use_64bit_blas: true
+- job: refguide_asv_check
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "--upgrade numpy"
+      refguide_check: true
+      asv_check: true
+      use_wheel: true
+- job: source_distribution
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "numpy==1.17.4"
+      use_sdist: true
+- job: wheel_optimized_gcc48
+  pool:
+    vmImage: 'ubuntu-18.04'
+  variables:
+    # The following is needed for optimized "-OO" test run but since we use
+    # pytest-xdist plugin for load scheduling its workers don't pick up the
+    # flag. This environment variable starts all Py instances in -OO mode.
+    PYTHONOPTIMIZE: 2
+    # Use gcc version 4.8
+    CC: gcc-4.8
+    CXX: g++-4.8
+  steps:
+  - script: |
+      set -e
+      sudo apt update -y
+      sudo apt install -y g++-4.8 gcc-4.8
+    displayName: 'Install GCC 4.8'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      addToPath: true
+      architecture: 'x64'
+  - template: ci/azure-travis-template.yaml
+    parameters:
+      test_mode: fast
+      numpy_spec: "numpy==1.16.5"
+      use_wheel: true
+- job: Lint
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.8'
+      addToPath: true
+      architecture: 'x64'
+  - script: >-
+      python -m pip install
+      pycodestyle==2.5.0
+      pyflakes==2.1.1
+    displayName: 'Install tools'
+    failOnStderr: false
+  - script: |
+      PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
+      pycodestyle scipy benchmarks/benchmarks
+      # for Travis CI we used to do: git fetch --unshallow
+      # but apparently Azure clones are not as shallow
+      # so does not appear to be needed to fetch maintenance
+      # branches (which Azure logs show being checked out
+      # in Checkout stage)
+      python tools/lint_diff.py --branch origin/$(System.PullRequest.TargetBranch)
+      tools/unicode-check.py
+    displayName: 'Run Lint Checks'
+    failOnStderr: true
+- job: Linux_Python_37_32bit_full
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   pool:
     vmImage: 'ubuntu-16.04'
@@ -26,27 +168,28 @@ jobs:
            docker pull i386/ubuntu:bionic
            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
            apt-get -y update && \
-           apt-get -y install curl python3.6-dev python3.6 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+           apt-get -y install curl python3.7-dev python3.7 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-           python3.6 get-pip.py && \
+           python3.7 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib --user && \
-           apt-get -y install gfortran-5 wget && \
+           pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
+           apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
-           wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           tar zxvf openblas-v0.3.7-manylinux1_i686.tar.gz && \
-           cp -r ./usr/local/lib/* /usr/lib && \
-           cp ./usr/local/include/* /usr/include && \
+           target=\$(python3.7 ../scipy/tools/openblas_support.py) && \
+           cp -r \$target/lib/* /usr/lib && \
+           cp \$target/include/* /usr/include && \
            cd ../scipy && \
-           F77=gfortran-5 F90=gfortran-5 python3.6 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 setup.py install && \
+           python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
+           CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
     displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: '**/test-*.xml'
       failTaskOnFailedTests: true
-      testRunTitle: 'Publish test results for Python 3.6-32 bit full Linux'
+      testRunTitle: 'Publish test results for Python 3.7-32 bit full Linux'
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
@@ -57,34 +200,33 @@ jobs:
   pool:
     vmImage: 'VS2017-Win2016'
   variables:
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win32-gcc_7_1_0.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win_amd64-gcc_7_1_0.zip
+    # OPENBLAS64_ variable has same value
+    # but only needed for ILP64 build below
+    OPENBLAS: '$(Agent.HomeDirectory)\openblaslib'
   strategy:
     maxParallel: 4
     matrix:
-        Python36-32bit-full:
-          PYTHON_VERSION: '3.6'
+        Python37-32bit-fast:
+          PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x86'
-          TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_32)
+          TEST_MODE: fast
           BITS: 32
-        Python36-64bit-full:
-          PYTHON_VERSION: '3.6'
-          PYTHON_ARCH: 'x64'
-          TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
-          BITS: 64
         Python37-64bit-full:
           PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
           BITS: 64
-        Python38-64bit-full:
+        Python38-64bit-full-ilp64:
           PYTHON_VERSION: '3.8'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
-          OPENBLAS: $(OPENBLAS_64)
+          NPY_USE_BLAS_ILP64: 1
+          BITS: 64
+          OPENBLAS64_: $(OPENBLAS)
+        Python39-64bit-full:
+          PYTHON_VERSION: '3.9'
+          PYTHON_ARCH: 'x64'
+          TEST_MODE: full
           BITS: 64
   steps:
   - task: UsePythonVersion@0
@@ -92,18 +234,27 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       addToPath: true
       architecture: $(PYTHON_ARCH)
-  - script: python -m pip install --upgrade pip setuptools wheel
+  - script: |
+      python -m pip install --upgrade pip "setuptools<50.0" wheel
     displayName: 'Install tools'
   - powershell: |
-      $wc = New-Object net.webclient;
-      $wc.Downloadfile("$(OPENBLAS)", "openblas.zip")
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      Expand-Archive "openblas.zip" $tmpdir
-      $pyversion = python -c "from __future__ import print_function; import sys; print(sys.version.split()[0])"
+      $pyversion = python -c "import sys; print(sys.version.split()[0])"
       Write-Host "Python Version: $pyversion"
-      $target = "C:\\hostedtoolcache\\windows\\Python\\$pyversion\\$(PYTHON_ARCH)\\lib\\openblas.a"
-      Write-Host "target path: $target"
-      cp $tmpdir\$(BITS)\lib\libopenblas_v0.3.7-gcc_7_1_0.a $target
+      function Download-OpenBLAS($ilp64) {
+          if ($ilp64 -eq '1') { $target_name = "openblas64_.a" } else { $target_name = "openblas.a" }
+          $target = "$(OPENBLAS)\$target_name"
+          Write-Host "target path: $target"
+          $old_value = $env:NPY_USE_BLAS_ILP64
+          $env:NPY_USE_BLAS_ILP64 = $ilp64
+          $openblas = python tools/openblas_support.py
+          $env:NPY_USE_BLAS_ILP64 = $old_value
+          cp $openblas $target
+      }
+      mkdir $(OPENBLAS)
+      Download-OpenBLAS('0')
+      If ($env:NPY_USE_BLAS_ILP64 -eq '1') {
+          Download-OpenBLAS('1')
+      }
     displayName: 'Download / Install OpenBLAS'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
@@ -111,20 +262,20 @@ jobs:
       choco install -y mingw --forcex86 --force --version=6.4.0
     displayName: 'Install 32-bit mingw for 32-bit builds'
     condition: and(succeeded(), eq(variables['BITS'], 32))
-  - powershell: |
-      choco install -y mingw --force --version=6.4.0
-    displayName: 'Install 64-bit mingw for 64-bit builds'
-    condition: and(succeeded(), eq(variables['BITS'], 64))
-  - script: python -m pip install numpy cython==0.29.14 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath
+  - script: >-
+      python -m pip install
+      cython==0.29.18
+      matplotlib
+      mpmath
+      numpy
+      Pillow
+      pybind11
+      pytest==5.4.3
+      pytest-cov
+      pytest-env
+      pytest-timeout
+      pytest-xdist==1.34.0
     displayName: 'Install dependencies'
-  - powershell: |
-      If ($(PYTHON_VERSION) -ne '3.6') {
-          python -m pip install matplotlib==3.2.0rc1
-      }
-      else {
-          python -m pip install matplotlib
-      }
-    displayName: 'Install matplotlib'
   # DLL resolution mechanics were changed in
   # Python 3.8: https://bugs.python.org/issue36085
   # While we normally leave adjustment of _distributor_init.py
@@ -162,7 +313,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-      python runtests.py -n --mode=$(TEST_MODE) -- -n auto -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html
+      python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2
     condition: succeededOrFailed()

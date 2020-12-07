@@ -2,8 +2,6 @@
 Test SciPy functions versus mpmath, if available.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_, assert_allclose
 from numpy import pi
@@ -25,7 +23,7 @@ from scipy.special._ufuncs import (
     _igam_fac)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule('mpmath')
 
@@ -169,11 +167,8 @@ def test_hyp2f1_real_some_points():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
-    finally:
-        np.seterr(**olderr)
 
 
 @check_version(mpmath, '0.14')
@@ -212,12 +207,9 @@ def test_hyp2f1_real_some():
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9,
                  ignore_inf_sign=True).check()
-    finally:
-        np.seterr(**olderr)
 
 
 @check_version(mpmath, '0.12')
@@ -319,11 +311,8 @@ def test_lpmv():
     def evf(mu, nu, x):
         return sc.lpmv(mu.astype(int), nu, x)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()
-    finally:
-        np.seterr(**olderr)
 
 
 # ------------------------------------------------------------------------------
@@ -829,11 +818,8 @@ class TestSystematic(object):
             r = complex(mpmath.bessely(v, x, **HYPERKW))
             if abs(r) > 1e305:
                 # overflowing to inf a bit earlier is OK
-                olderr = np.seterr(invalid='ignore')
-                try:
+                with np.errstate(invalid='ignore'):
                     r = np.inf * np.sign(r)
-                finally:
-                    np.seterr(**olderr)
             return r
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
                             exception_to_nan(mpbessely),

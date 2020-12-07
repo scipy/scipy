@@ -1,14 +1,11 @@
 """benchmarks for the scipy.sparse.csgraph module"""
-from __future__ import print_function, absolute_import
 import numpy as np
 import scipy.sparse
 
-try:
-    from scipy.sparse.csgraph import dijkstra
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.sparse.csgraph import dijkstra
 
 
 class Dijkstra(Benchmark):
@@ -22,8 +19,8 @@ class Dijkstra(Benchmark):
         np.random.seed(1234)
         # make a random connectivity matrix
         data = scipy.sparse.rand(n, n, density=0.2, format='csc',
-                                 random_state=42, dtype=np.bool)
-        data.setdiag(np.zeros(n, dtype=np.bool))
+                                 random_state=42, dtype=np.bool_)
+        data.setdiag(np.zeros(n, dtype=np.bool_))
         self.data = data
         # choose some random vertices
         v = np.arange(n)

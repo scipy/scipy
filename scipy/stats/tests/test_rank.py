@@ -1,9 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 
 from scipy.stats import rankdata, tiecorrect
+import pytest
 
 
 class TestTieCorrect(object):
@@ -168,6 +167,30 @@ class TestRankData(object):
             expected_rank = 0.5 * (n + 1)
             assert_array_equal(r, expected_rank * data,
                                "test failed with n=%d" % n)
+
+    def test_axis(self):
+        data = [[0, 2, 1],
+                [4, 2, 2]]
+        expected0 = [[1., 1.5, 1.],
+                     [2., 1.5, 2.]]
+        r0 = rankdata(data, axis=0)
+        assert_array_equal(r0, expected0)
+        expected1 = [[1., 3., 2.],
+                     [3., 1.5, 1.5]]
+        r1 = rankdata(data, axis=1)
+        assert_array_equal(r1, expected1)
+
+    methods = ["average", "min", "max", "dense", "ordinal"]
+    dtypes = [np.float64] + [np.int_]*4
+
+    @pytest.mark.parametrize("axis", [0, 1])
+    @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
+    def test_size_0_axis(self, axis, method, dtype):
+        shape = (3, 0)
+        data = np.zeros(shape)
+        r = rankdata(data, method=method, axis=axis)
+        assert_equal(r.shape, shape)
+        assert_equal(r.dtype, dtype)
 
 
 _cases = (

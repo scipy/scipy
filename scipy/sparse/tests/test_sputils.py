@@ -1,7 +1,5 @@
 """unit tests for sparse utility functions"""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, suppress_warnings
 from pytest import raises as assert_raises
@@ -151,3 +149,33 @@ class TestSparseUtils(object):
             np.dtype(sputils.get_index_dtype((a1, a2), maxval=too_big)),
             np.dtype('int64')
         )
+
+    def test_check_shape_overflow(self):
+        new_shape = sputils.check_shape([(10, -1)], (65535, 131070))
+        assert_equal(new_shape, (10, 858967245))
+
+    def test_matrix(self):
+        a = [[1, 2, 3]]
+        b = np.array(a)
+
+        assert isinstance(sputils.matrix(a), np.matrix)
+        assert isinstance(sputils.matrix(b), np.matrix)
+
+        c = sputils.matrix(b)
+        c[:, :] = 123
+        assert_equal(b, a)
+
+        c = sputils.matrix(b, copy=False)
+        c[:, :] = 123
+        assert_equal(b, [[123, 123, 123]])
+
+    def test_asmatrix(self):
+        a = [[1, 2, 3]]
+        b = np.array(a)
+
+        assert isinstance(sputils.asmatrix(a), np.matrix)
+        assert isinstance(sputils.asmatrix(b), np.matrix)
+
+        c = sputils.asmatrix(b)
+        c[:, :] = 123
+        assert_equal(b, [[123, 123, 123]])

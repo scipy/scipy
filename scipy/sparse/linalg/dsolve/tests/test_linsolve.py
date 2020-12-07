@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import threading
 
@@ -20,6 +18,9 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
+import scipy.sparse
+
+from scipy._lib._testutils import check_free_memory
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -38,6 +39,19 @@ def toarray(a):
         return a.toarray()
     else:
         return a
+
+
+def setup_bug_8278():
+    N = 2 ** 6
+    h = 1/N
+    Ah1D = scipy.sparse.diags([-1, 2, -1], [-1, 0, 1],
+                              shape=(N-1, N-1))/(h**2)
+    eyeN = scipy.sparse.eye(N - 1)
+    A = (scipy.sparse.kron(eyeN, scipy.sparse.kron(eyeN, Ah1D))
+         + scipy.sparse.kron(eyeN, scipy.sparse.kron(Ah1D, eyeN))
+         + scipy.sparse.kron(Ah1D, scipy.sparse.kron(eyeN, eyeN)))
+    b = np.random.rand((N-1)**3)
+    return A, b
 
 
 class TestFactorized(object):
@@ -163,7 +177,17 @@ class TestFactorized(object):
 
         assert_equal(A.has_sorted_indices, 0)
         assert_array_almost_equal(factorized(A)(b), expected)
-        assert_equal(A.has_sorted_indices, 1)
+
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        A = A.tocsc()
+        f = factorized(A)
+        x = f(b)
+        assert_array_almost_equal(A @ x, b)
 
 
 class TestLinsolve(object):
@@ -400,6 +424,15 @@ class TestLinsolve(object):
         x = spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
+    def test_bug_8278(self):
+        check_free_memory(8000)
+        use_solver(useUmfpack=True)
+        A, b = setup_bug_8278()
+        x = spsolve(A, b)
+        assert_array_almost_equal(A @ x, b)
+
 
 class TestSplu(object):
     def setup_method(self):
@@ -544,6 +577,31 @@ class TestSplu(object):
         a_ = csc_matrix(a)
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
+
+    @pytest.mark.parametrize("splu_fun, rtol", [(splu, 1e-7), (spilu, 1e-1)])
+    def test_natural_permc(self, splu_fun, rtol):
+        # Test that the "NATURAL" permc_spec does not permute the matrix
+        np.random.seed(42)
+        n = 500
+        p = 0.01
+        A = scipy.sparse.random(n, n, p)
+        x = np.random.rand(n)
+        # Make A diagonal dominant to make sure it is not singular
+        A += (n+1)*scipy.sparse.identity(n)
+        A_ = csc_matrix(A)
+        b = A_ @ x
+
+        # without permc_spec, permutation is not identity
+        lu = splu_fun(A_)
+        assert_(np.any(lu.perm_c != np.arange(n)))
+
+        # with permc_spec="NATURAL", permutation is identity
+        lu = splu_fun(A_, permc_spec="NATURAL")
+        assert_array_equal(lu.perm_c, np.arange(n))
+
+        # Also, lu decomposition is valid
+        x2 = lu.solve(b)
+        assert_allclose(x, x2, rtol=rtol)
 
     @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):

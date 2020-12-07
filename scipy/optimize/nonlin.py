@@ -99,15 +99,13 @@ The solution can be found using the `newton_krylov` solver:
    # visualize
    import matplotlib.pyplot as plt
    x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-   plt.pcolor(x, y, sol)
+   plt.pcolormesh(x, y, sol, shading='gouraud')
    plt.colorbar()
    plt.show()
 
 """
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
-
-from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
@@ -117,7 +115,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -274,7 +272,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
-    dx = np.inf
+    dx = np.full_like(x, np.inf)
     Fx = func(x)
     Fx_norm = norm(Fx)
 
@@ -944,6 +942,21 @@ class BroydenFirst(GenericBroyden):
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden1(fun, [0, 0])
+    >>> sol
+    array([0.84116396, 0.15883641])
+
     """
 
     def __init__(self, alpha=None, reduction_method='restart', max_rank=None):
@@ -1039,6 +1052,21 @@ class BroydenSecond(BroydenFirst):
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden2(fun, [0, 0])
+    >>> sol
+    array([0.84116365, 0.15883529])
+
     """
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
@@ -1082,6 +1110,21 @@ class Anderson(GenericBroyden):
     References
     ----------
     .. [Ey] V. Eyert, J. Comp. Phys., 124, 271 (1996).
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.anderson(fun, [0, 0])
+    >>> sol
+    array([0.84116588, 0.15883789])
 
     """
 
@@ -1218,6 +1261,22 @@ class DiagBroyden(GenericBroyden):
     --------
     root : Interface to root finding algorithms for multivariate
            functions. See ``method=='diagbroyden'`` in particular.
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.diagbroyden(fun, [0, 0])
+    >>> sol
+    array([0.84116403, 0.15883384])
+
     """
 
     def __init__(self, alpha=None):
@@ -1373,6 +1432,10 @@ class KrylovJacobian(Jacobian):
         the iterative solvers in `scipy.sparse.linalg`.
 
         The default is `scipy.sparse.linalg.lgmres`.
+    inner_maxiter : int, optional
+        Parameter to pass to the "inner" Krylov solver: maximum number of
+        iterations. Iteration will stop after maxiter steps even if the
+        specified tolerance has not been achieved.
     inner_M : LinearOperator or InverseJacobian
         Preconditioner for the inner Krylov iteration.
         Note that you can use also inverse Jacobians as (adaptive)
@@ -1386,12 +1449,14 @@ class KrylovJacobian(Jacobian):
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving
         the current point, and ``f`` the current function value.
-    inner_tol, inner_maxiter, ...
-        Parameters to pass on to the \"inner\" Krylov solver.
-        See `scipy.sparse.linalg.gmres` for details.
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
+    inner_kwargs : kwargs
+        Keyword parameters for the "inner" Krylov solver
+        (defined with `method`). Parameter names must start with
+        the `inner_` prefix which will be stripped before passing on
+        the inner method. See, e.g., `scipy.sparse.linalg.gmres` for details.
     %(params_extra)s
 
     See Also
@@ -1429,6 +1494,21 @@ class KrylovJacobian(Jacobian):
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
            :doi:`10.1137/S0895479803422014`
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0] + 0.5 * x[1] - 1.0,
+    ...             0.5 * (x[1] - x[0]) ** 2]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.newton_krylov(fun, [0, 0])
+    >>> sol
+    array([0.66731771, 0.66536458])
 
     """
 
@@ -1536,7 +1616,8 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    args, varargs, varkw, defaults = _getargspec(jac.__init__)
+    signature = _getfullargspec(jac.__init__)
+    args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
@@ -1544,6 +1625,8 @@ def _nonlin_wrapper(name, jac):
     kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
+    if kwonlyargs:
+        raise ValueError('Unexpected signature %s' % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.

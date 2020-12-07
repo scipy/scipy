@@ -11,24 +11,19 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 #include <ctype.h>
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUObject methods
  */
 
 static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
-			       PyObject * kwds)
+                               PyObject * kwds)
 {
     volatile PyArrayObject *b, *x = NULL;
     volatile SuperMatrix B = { 0 };
-#ifndef NPY_PY3K
-    volatile char itrans = 'N';
-#else
     volatile int itrans = 'N';
-#endif
     volatile int info;
     volatile trans_t trans;
     volatile SuperLUStat_t stat = { 0 };
@@ -41,13 +36,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
-#ifndef NPY_PY3K
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
-                                     &PyArray_Type, &b, &itrans))
-#else
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
                                      &PyArray_Type, &b, &itrans))
-#endif
         return NULL;
 
     /* solve transposed system: matrix was passed row-wise instead of
@@ -80,7 +70,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-	goto fail;
+        goto fail;
     }
 
     StatInit((SuperLUStat_t *)&stat);
@@ -90,17 +80,17 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     SLU_BEGIN_THREADS;
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
-	goto fail;
+        goto fail;
     }
     gstrs(self->type,
-	  trans, &self->L, &self->U, self->perm_c, self->perm_r,
+          trans, &self->L, &self->U, self->perm_c, self->perm_r,
           (SuperMatrix *)&B, (SuperLUStat_t *)&stat, (int *)&info);
     SLU_END_THREADS;
 
     if (info) {
-	PyErr_SetString(PyExc_SystemError,
-			"gstrs was called with invalid arguments");
-	goto fail;
+        PyErr_SetString(PyExc_SystemError,
+                        "gstrs was called with invalid arguments");
+        goto fail;
     }
 
     /* free memory */
@@ -119,11 +109,11 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
-    {NULL, NULL}		/* sentinel */
+    {NULL, NULL}                /* sentinel */
 };
 
 
-/*********************************************************************** 
+/***********************************************************************
  * SuperLUType methods
  */
 
@@ -150,14 +140,14 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
     char *name = (char*)data;
 
     if (strcmp(name, "shape") == 0) {
-	return Py_BuildValue("(i,i)", self->m, self->n);
+        return Py_BuildValue("(i,i)", self->m, self->n);
     }
     else if (strcmp(name, "nnz") == 0)
-	return Py_BuildValue("i",
-			     ((SCformat *) self->L.Store)->nnz +
-			     ((SCformat *) self->U.Store)->nnz);
+        return Py_BuildValue("i",
+                             ((SCformat *) self->L.Store)->nnz +
+                             ((SCformat *) self->U.Store)->nnz);
     else if (strcmp(name, "perm_r") == 0) {
-	PyObject *perm_r;
+        PyObject *perm_r;
         perm_r = PyArray_SimpleNewFromData(
             1, (npy_intp *) (&self->n), NPY_INT,
             (void *) self->perm_r);
@@ -165,13 +155,13 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
             return NULL;
         }
 
-	/* For ref counting of the memory */
-	PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
-	Py_INCREF(self);
-	return perm_r;
+        /* For ref counting of the memory */
+        PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
+        Py_INCREF(self);
+        return perm_r;
     }
     else if (strcmp(name, "perm_c") == 0) {
-	PyObject *perm_c;
+        PyObject *perm_c;
 
         perm_c = PyArray_SimpleNewFromData(
             1, (npy_intp *) (&self->n), NPY_INT,
@@ -180,10 +170,10 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
             return NULL;
         }
 
-	/* For ref counting of the memory */
-	PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
-	Py_INCREF(self);
-	return perm_c;
+        /* For ref counting of the memory */
+        PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
+        Py_INCREF(self);
+        return perm_c;
     }
     else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
         int ok;
@@ -228,58 +218,53 @@ PyGetSetDef SuperLU_getset[] = {
 
 
 PyTypeObject SuperLUType = {
-#if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
-#else
-    PyObject_HEAD_INIT(NULL)
-    0,
-#endif
     "SuperLU",
     sizeof(SuperLUObject),
     0,
     (destructor) SuperLU_dealloc, /* tp_dealloc */
-    0,				/* tp_print */
-    0,	                        /* tp_getattr */
-    0,				/* tp_setattr */
-    0,				/* tp_compare / tp_reserved */
-    0,				/* tp_repr */
-    0,				/* tp_as_number */
-    0,				/* tp_as_sequence */
-    0,				/* tp_as_mapping */
-    0,				/* tp_hash */
-    0,				/* tp_call */
-    0,				/* tp_str */
-    0,				/* tp_getattro */
-    0,				/* tp_setattro */
-    0,				/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,		/* tp_flags */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_compare / tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,         /* tp_flags */
     NULL,                       /* tp_doc */
-    0,				/* tp_traverse */
-    0,				/* tp_clear */
-    0,				/* tp_richcompare */
-    0,				/* tp_weaklistoffset */
-    0,				/* tp_iter */
-    0,				/* tp_iternext */
-    SuperLU_methods,		/* tp_methods */
-    0,				/* tp_members */
-    SuperLU_getset,		/* tp_getset */
-    0,				/* tp_base */
-    0,				/* tp_dict */
-    0,				/* tp_descr_get */
-    0,				/* tp_descr_set */
-    0,				/* tp_dictoffset */
-    0,				/* tp_init */
-    0,				/* tp_alloc */
-    0,				/* tp_new */
-    0,				/* tp_free */
-    0,				/* tp_is_gc */
-    0,				/* tp_bases */
-    0,				/* tp_mro */
-    0,				/* tp_cache */
-    0,				/* tp_subclasses */
-    0,				/* tp_weaklist */
-    0,				/* tp_del */
-    0,				/* tp_version_tag */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    SuperLU_methods,            /* tp_methods */
+    0,                          /* tp_members */
+    SuperLU_getset,             /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    0,                          /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
+    0,                          /* tp_free */
+    0,                          /* tp_is_gc */
+    0,                          /* tp_bases */
+    0,                          /* tp_mro */
+    0,                          /* tp_cache */
+    0,                          /* tp_subclasses */
+    0,                          /* tp_weaklist */
+    0,                          /* tp_del */
+    0,                          /* tp_version_tag */
 };
 
 
@@ -310,14 +295,14 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
     nd = PyArray_NDIM((PyArrayObject*)aX);
 
     if (nd == 1) {
-	m = PyArray_DIM((PyArrayObject*)aX, 0);
-	n = 1;
-	ldx = m;
+        m = PyArray_DIM((PyArrayObject*)aX, 0);
+        n = 1;
+        ldx = m;
     }
     else if (nd == 2) {
-	m = PyArray_DIM((PyArrayObject*)aX, 0);
-	n = PyArray_DIM((PyArrayObject*)aX, 1);
-	ldx = m;
+        m = PyArray_DIM((PyArrayObject*)aX, 0);
+        n = PyArray_DIM((PyArrayObject*)aX, 1);
+        ldx = m;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "wrong number of dimensions in array");
@@ -326,13 +311,13 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-	return -1;
+        return -1;
     }
     else {
-	Create_Dense_Matrix(PyArray_TYPE((PyArrayObject*)aX), X, m, n,
-			    PyArray_DATA((PyArrayObject*)aX), ldx, SLU_DN,
-			    NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)aX)),
-			    SLU_GE);
+        Create_Dense_Matrix(PyArray_TYPE((PyArrayObject*)aX), X, m, n,
+                            PyArray_DATA((PyArrayObject*)aX), ldx, SLU_DN,
+                            NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)aX)),
+                            SLU_GE);
     }
     return 0;
 }
@@ -340,8 +325,8 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 /* Natively handles Compressed Sparse Row and CSC */
 
 int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
-			   PyArrayObject * nzvals, PyArrayObject * colind,
-			   PyArrayObject * rowptr, int typenum)
+                           PyArrayObject * nzvals, PyArrayObject * colind,
+                           PyArrayObject * rowptr, int typenum)
 {
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
@@ -359,36 +344,36 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
           nnz <= PyArray_DIM(colind, 0) &&
           m+1 <= PyArray_DIM(rowptr, 0));
     if (!ok) {
-	PyErr_SetString(PyExc_ValueError,
-			"sparse matrix arrays must be 1-D C-contiguous and of proper "
+        PyErr_SetString(PyExc_ValueError,
+                        "sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
-	return -1;
+        return -1;
     }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-	return -1;
+        return -1;
     }
     else {
-	if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
-	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
-	    return -1;
-	}
-	Create_CompRow_Matrix(PyArray_TYPE(nzvals),
-			      A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
-			      (int *) PyArray_DATA((PyArrayObject*)colind),
+        if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
+            PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
+            return -1;
+        }
+        Create_CompRow_Matrix(PyArray_TYPE(nzvals),
+                              A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
+                              (int *) PyArray_DATA((PyArrayObject*)colind),
                               (int *) PyArray_DATA((PyArrayObject*)rowptr),
-			      SLU_NR,
-			      NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
-			      SLU_GE);
+                              SLU_NR,
+                              NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
+                              SLU_GE);
     }
 
     return 0;
 }
 
 int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
-			   PyArrayObject * nzvals, PyArrayObject * rowind,
-			   PyArrayObject * colptr, int typenum)
+                           PyArrayObject * nzvals, PyArrayObject * rowind,
+                           PyArrayObject * colptr, int typenum)
 {
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
@@ -406,27 +391,27 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
           nnz <= PyArray_DIM(rowind, 0) &&
           n+1 <= PyArray_DIM(colptr, 0));
     if (!ok) {
-	PyErr_SetString(PyExc_ValueError,
-			"sparse matrix arrays must be 1-D C-contiguous and of proper "
+        PyErr_SetString(PyExc_ValueError,
+                        "sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
-	return -1;
+        return -1;
     }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-	return -1;
+        return -1;
     }
     else {
-	if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
-	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
-	    return -1;
-	}
-	Create_CompCol_Matrix(PyArray_TYPE(nzvals),
-			      A, m, n, nnz, PyArray_DATA(nzvals),
-			      (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
-			      SLU_NC,
-			      NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-			      SLU_GE);
+        if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
+            PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
+            return -1;
+        }
+        Create_CompCol_Matrix(PyArray_TYPE(nzvals),
+                              A, m, n, nnz, PyArray_DATA(nzvals),
+                              (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
+                              SLU_NC,
+                              NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                              SLU_GE);
     }
 
     return 0;
@@ -539,7 +524,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     result = 0;
-    
+
 fail:
     Py_XDECREF(U_indices);
     Py_XDECREF(U_indptr);
@@ -590,7 +575,7 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
         PyErr_SetString(PyExc_ValueError, "unknown dtype");
         return -1;
     }
-    
+
 #define IS_ZERO(p)                                                      \
     ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
      ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
@@ -692,7 +677,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     /* A must be in SLU_NC format used by the factorization routine. */
     volatile SuperLUObject *self;
-    volatile SuperMatrix AC = { 0 };	/* Matrix postmultiplied by Pc */
+    volatile SuperMatrix AC = { 0 };    /* Matrix postmultiplied by Pc */
     volatile int lwork = 0;
     volatile int *etree = NULL;
     volatile int info;
@@ -709,14 +694,14 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     n = A->ncol;
 
     if (!set_superlu_options_from_dict((superlu_options_t*)&options, ilu, option_dict,
-				       (int*)&panel_size, (int*)&relax)) {
-	return NULL;
+                                       (int*)&panel_size, (int*)&relax)) {
+        return NULL;
     }
 
     /* Create SLUObject */
     self = PyObject_New(SuperLUObject, &SuperLUType);
     if (self == NULL)
-	return PyErr_NoMemory();
+        return PyErr_NoMemory();
     self->m = A->nrow;
     self->n = n;
     self->perm_r = NULL;
@@ -730,7 +715,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-	goto fail;
+        goto fail;
     }
 
     /* Calculate and apply minimum degree ordering */
@@ -740,7 +725,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     StatInit((SuperLUStat_t *)&stat);
 
     /* calc column permutation */
-    get_perm_c(options.ColPerm, A, self->perm_c);	
+    get_perm_c(options.ColPerm, A, self->perm_c);
 
     /* apply column permutation */
     sp_preorder((superlu_options_t*)&options, A, self->perm_c, (int*)etree,
@@ -748,8 +733,8 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     /* Perform factorization */
     if (!CHECK_SLU_TYPE(SLU_TYPECODE_TO_NPY(A->Dtype))) {
-	PyErr_SetString(PyExc_ValueError, "Invalid type in SuperMatrix.");
-	goto fail;
+        PyErr_SetString(PyExc_ValueError, "Invalid type in SuperMatrix.");
+        goto fail;
     }
 
     if (options.Fact == SamePattern || options.Fact == SamePattern_SameRowPerm) {
@@ -774,27 +759,27 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
                (SuperLUStat_t*)&stat, (int*)&info);
     }
     else {
-	gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
-	      (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
-	      (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
-	      (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
+        gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
+              (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
+              (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
+              (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
               (SuperLUStat_t*)&stat, (int*)&info);
     }
 
     SLU_END_THREADS;
 
     if (info) {
-	if (info < 0)
-	    PyErr_SetString(PyExc_SystemError,
-			    "gstrf was called with invalid arguments");
-	else {
-	    if (info <= n)
-		PyErr_SetString(PyExc_RuntimeError,
-				"Factor is exactly singular");
-	    else
-		PyErr_NoMemory();
-	}
-	goto fail;
+        if (info < 0)
+            PyErr_SetString(PyExc_SystemError,
+                            "gstrf was called with invalid arguments");
+        else {
+            if (info <= n)
+                PyErr_SetString(PyExc_RuntimeError,
+                                "Factor is exactly singular");
+            else
+                PyErr_NoMemory();
+        }
+        goto fail;
     }
 
     Py_INCREF(py_csc_construct_func);
@@ -825,16 +810,16 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyString_Check(input)) {                \
-        s = PyString_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                \
+        s = PyBytes_AS_STRING(input);          \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyString_AS_STRING(tmpobj);         \
+        s = PyBytes_AS_STRING(tmpobj);         \
     }                                           \
-    else if (PyInt_Check(input)) {              \
-        i = PyInt_AsLong(input);                \
+    else if (PyLong_Check(input)) {              \
+        i = PyLong_AsLong(input);                \
     }
 
 #define ENUM_CHECK_FINISH(message)              \
@@ -859,16 +844,16 @@ static int my_strxcmp(const char *a, const char *b)
     int c;
 
     while (*a != '\0' && *b != '\0') {
-	while (*a == '_' || isspace(*a))
-	    ++a;
-	while (*b == '_' || isspace(*b))
-	    ++b;
-	c = (int) tolower(*a) - (int) tolower(*b);
-	if (c != 0) {
-	    return c;
-	}
-	++a;
-	++b;
+        while (*a == '_' || isspace(*a))
+            ++a;
+        while (*b == '_' || isspace(*b))
+            ++b;
+        c = (int) tolower(*a) - (int) tolower(*b);
+        if (c != 0) {
+            return c;
+        }
+        ++a;
+        ++b;
     }
     return (int) tolower(*a) - (int) tolower(*b);
 }
@@ -876,17 +861,17 @@ static int my_strxcmp(const char *a, const char *b)
 static int yes_no_cvt(PyObject * input, yes_no_t * value)
 {
     if (input == Py_None) {
-	return 1;
+        return 1;
     }
     else if (input == Py_True) {
-	*value = YES;
+        *value = YES;
     }
     else if (input == Py_False) {
-	*value = NO;
+        *value = NO;
     }
     else {
-	PyErr_SetString(PyExc_ValueError, "value not a boolean");
-	return 0;
+        PyErr_SetString(PyExc_ValueError, "value not a boolean");
+        return 0;
     }
     return 1;
 }
@@ -905,7 +890,6 @@ static int rowperm_cvt(PyObject * input, rowperm_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOROWPERM);
-    ENUM_CHECK(LargeDiag);
     ENUM_CHECK(MY_PERMR);
     ENUM_CHECK_FINISH("invalid value for 'RowPerm' parameter");
 }
@@ -928,16 +912,16 @@ static int trans_cvt(PyObject * input, trans_t * value)
     ENUM_CHECK(TRANS);
     ENUM_CHECK(CONJ);
     if (my_strxcmp(s, "N") == 0) {
-	*value = NOTRANS;
-	return 1;
+        *value = NOTRANS;
+        return 1;
     }
     if (my_strxcmp(s, "T") == 0) {
-	*value = TRANS;
-	return 1;
+        *value = TRANS;
+        return 1;
     }
     if (my_strxcmp(s, "H") == 0) {
-	*value = CONJ;
-	return 1;
+        *value = CONJ;
+        return 1;
     }
     ENUM_CHECK_FINISH("invalid value for 'Trans' parameter");
 }
@@ -978,32 +962,32 @@ static int droprule_one_cvt(PyObject * input, int *value)
 {
     ENUM_CHECK_INIT;
     if (my_strxcmp(s, "BASIC") == 0) {
-	*value = DROP_BASIC;
-	return 1;
+        *value = DROP_BASIC;
+        return 1;
     }
     if (my_strxcmp(s, "PROWS") == 0) {
-	*value = DROP_PROWS;
-	return 1;
+        *value = DROP_PROWS;
+        return 1;
     }
     if (my_strxcmp(s, "COLUMN") == 0) {
-	*value = DROP_COLUMN;
-	return 1;
+        *value = DROP_COLUMN;
+        return 1;
     }
     if (my_strxcmp(s, "AREA") == 0) {
-	*value = DROP_AREA;
-	return 1;
+        *value = DROP_AREA;
+        return 1;
     }
     if (my_strxcmp(s, "SECONDARY") == 0) {
-	*value = DROP_SECONDARY;
-	return 1;
+        *value = DROP_SECONDARY;
+        return 1;
     }
     if (my_strxcmp(s, "DYNAMIC") == 0) {
-	*value = DROP_DYNAMIC;
-	return 1;
+        *value = DROP_DYNAMIC;
+        return 1;
     }
     if (my_strxcmp(s, "INTERP") == 0) {
-	*value = DROP_INTERP;
-	return 1;
+        *value = DROP_INTERP;
+        return 1;
     }
     ENUM_CHECK_FINISH("invalid value for 'ILU_DropRule' parameter");
 }
@@ -1015,50 +999,48 @@ static int droprule_cvt(PyObject * input, int *value)
     int rule = 0;
 
     if (input == Py_None) {
-	/* Leave as default */
-	return 1;
+        /* Leave as default */
+        return 1;
     }
-    else if (PyInt_Check(input)) {
-	*value = PyInt_AsLong(input);
-	return 1;
+    else if (PyLong_Check(input)) {
+        *value = PyLong_AsLong(input);
+        return 1;
     }
-    else if (PyString_Check(input) || PyUnicode_Check(input)) {
+    else if (PyBytes_Check(input) || PyUnicode_Check(input)) {
         /* Comma-separated string */
         char *fmt = "s";
-#if PY_MAJOR_VERSION >= 3
         if (PyBytes_Check(input)) {
             fmt = "y";
         }
-#endif
-	seq = PyObject_CallMethod(input, "split", fmt, ",");
-	if (seq == NULL || !PySequence_Check(seq))
-	    goto fail;
+        seq = PyObject_CallMethod(input, "split", fmt, ",");
+        if (seq == NULL || !PySequence_Check(seq))
+            goto fail;
     }
     else if (PySequence_Check(input)) {
-	/* Sequence of strings or integers */
-	seq = input;
-	Py_INCREF(seq);
+        /* Sequence of strings or integers */
+        seq = input;
+        Py_INCREF(seq);
     }
     else {
-	PyErr_SetString(PyExc_ValueError, "invalid value for drop rule");
-	goto fail;
+        PyErr_SetString(PyExc_ValueError, "invalid value for drop rule");
+        goto fail;
     }
 
     /* OR multiple values together */
     for (i = 0; i < PySequence_Size(seq); ++i) {
-	PyObject *item;
-	int one_value = 0;
+        PyObject *item;
+        int one_value = 0;
 
-	item = PySequence_ITEM(seq, i);
-	if (item == NULL) {
-	    goto fail;
-	}
-	if (!droprule_one_cvt(item, &one_value)) {
-	    Py_DECREF(item);
-	    goto fail;
-	}
-	Py_DECREF(item);
-	rule |= one_value;
+        item = PySequence_ITEM(seq, i);
+        if (item == NULL) {
+            goto fail;
+        }
+        if (!droprule_one_cvt(item, &one_value)) {
+            Py_DECREF(item);
+            goto fail;
+        }
+        Py_DECREF(item);
+        rule |= one_value;
     }
     Py_DECREF(seq);
 
@@ -1073,45 +1055,45 @@ static int droprule_cvt(PyObject * input, int *value)
 static int double_cvt(PyObject * input, double *value)
 {
     if (input == Py_None)
-	return 1;
+        return 1;
     *value = PyFloat_AsDouble(input);
     if (PyErr_Occurred())
-	return 0;
+        return 0;
     return 1;
 }
 
 static int int_cvt(PyObject * input, int *value)
 {
     if (input == Py_None)
-	return 1;
-    *value = PyInt_AsLong(input);
+        return 1;
+    *value = PyLong_AsLong(input);
     if (PyErr_Occurred())
-	return 0;
+        return 0;
     return 1;
 }
 
 int set_superlu_options_from_dict(superlu_options_t * options,
-				  int ilu, PyObject * option_dict,
-				  int *panel_size, int *relax)
+                                  int ilu, PyObject * option_dict,
+                                  int *panel_size, int *relax)
 {
     PyObject *args;
     int ret;
     int _relax, _panel_size;
 
     static char *kwlist[] = {
-	"Fact", "Equil", "ColPerm", "Trans", "IterRefine",
-	"DiagPivotThresh", "PivotGrowth", "ConditionNumber",
-	"RowPerm", "SymmetricMode", "PrintStat", "ReplaceTinyPivot",
-	"SolveInitialized", "RefineInitialized", "ILU_Norm",
-	"ILU_MILU", "ILU_DropTol", "ILU_FillTol", "ILU_FillFactor",
-	"ILU_DropRule", "PanelSize", "Relax", NULL
+        "Fact", "Equil", "ColPerm", "Trans", "IterRefine",
+        "DiagPivotThresh", "PivotGrowth", "ConditionNumber",
+        "RowPerm", "SymmetricMode", "PrintStat", "ReplaceTinyPivot",
+        "SolveInitialized", "RefineInitialized", "ILU_Norm",
+        "ILU_MILU", "ILU_DropTol", "ILU_FillTol", "ILU_FillFactor",
+        "ILU_DropRule", "PanelSize", "Relax", NULL
     };
 
     if (ilu) {
-	ilu_set_default_options(options);
+        ilu_set_default_options(options);
     }
     else {
-	set_default_options(options);
+        set_default_options(options);
     }
 
     _panel_size = sp_ienv(1);
@@ -1156,11 +1138,11 @@ int set_superlu_options_from_dict(superlu_options_t * options,
     }
 
     if (panel_size != NULL) {
-	*panel_size = _panel_size;
+        *panel_size = _panel_size;
     }
 
     if (relax != NULL) {
-	*relax = _relax;
+        *relax = _relax;
     }
 
     return ret;

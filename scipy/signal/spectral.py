@@ -1,8 +1,6 @@
 """Tools for spectral analysis.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import signaltools
@@ -48,7 +46,7 @@ def lombscargle(x,
     freqs : array_like
         Angular frequencies for output periodogram.
     precenter : bool, optional
-        Pre-center amplitudes by subtracting the mean.
+        Pre-center measurement values by subtracting the mean.
     normalize : bool, optional
         Compute normalized periodogram.
 
@@ -717,7 +715,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Compute and plot the spectrogram.
 
     >>> f, t, Sxx = signal.spectrogram(x, fs)
-    >>> plt.pcolormesh(t, f, Sxx)
+    >>> plt.pcolormesh(t, f, Sxx, shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -725,7 +723,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Note, if using output that is not one sided, then use the following:
 
     >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
-    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0))
+    >>> plt.pcolormesh(t, fftshift(f), fftshift(Sxx, axes=0), shading='gouraud')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
@@ -839,29 +837,29 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     Confirm COLA condition for rectangular window of 75% (3/4) overlap:
 
-    >>> signal.check_COLA(signal.boxcar(100), 100, 75)
+    >>> signal.check_COLA(signal.windows.boxcar(100), 100, 75)
     True
 
     COLA is not true for 25% (1/4) overlap, though:
 
-    >>> signal.check_COLA(signal.boxcar(100), 100, 25)
+    >>> signal.check_COLA(signal.windows.boxcar(100), 100, 25)
     False
 
     "Symmetrical" Hann window (for filter design) is not COLA:
 
-    >>> signal.check_COLA(signal.hann(120, sym=True), 120, 60)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=True), 120, 60)
     False
 
     "Periodic" or "DFT-even" Hann window (for FFT analysis) is COLA for
     overlap of 1/2, 2/3, 3/4, etc.:
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 60)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 60)
     True
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 80)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 80)
     True
 
-    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 90)
+    >>> signal.check_COLA(signal.windows.hann(120, sym=False), 120, 90)
     True
 
     """
@@ -960,17 +958,17 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
     Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
 
-    >>> signal.check_NOLA(signal.boxcar(100), 100, 75)
+    >>> signal.check_NOLA(signal.windows.boxcar(100), 100, 75)
     True
 
     NOLA is also true for 25% (1/4) overlap:
 
-    >>> signal.check_NOLA(signal.boxcar(100), 100, 25)
+    >>> signal.check_NOLA(signal.windows.boxcar(100), 100, 25)
     True
 
     "Symmetrical" Hann window (for filter design) is also NOLA:
 
-    >>> signal.check_NOLA(signal.hann(120, sym=True), 120, 60)
+    >>> signal.check_NOLA(signal.windows.hann(120, sym=True), 120, 60)
     True
 
     As long as there is overlap, it takes quite a pathological window to fail
@@ -984,11 +982,11 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     If there is not enough overlap, a window with zeros at the ends will not
     work:
 
-    >>> signal.check_NOLA(signal.hann(64), 64, 0)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 0)
     False
-    >>> signal.check_NOLA(signal.hann(64), 64, 1)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 1)
     False
-    >>> signal.check_NOLA(signal.hann(64), 64, 2)
+    >>> signal.check_NOLA(signal.windows.hann(64), 64, 2)
     True
     """
 
@@ -1161,7 +1159,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Compute and plot the STFT's magnitude.
 
     >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000)
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
@@ -1306,7 +1304,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg)
     >>> plt.figure()
-    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
     >>> plt.ylim([f[1], f[-1]])
     >>> plt.title('STFT Magnitude')
     >>> plt.ylabel('Frequency [Hz]')
@@ -1703,8 +1701,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         youter.pop(axis)
         try:
             outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
-        except ValueError:
-            raise ValueError('x and y cannot be broadcast together.')
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
 
     if same_data:
         if x.size == 0:
@@ -1985,7 +1983,7 @@ def _median_bias(n):
     Returns the bias of the median of a set of periodograms relative to
     the mean.
 
-    See arXiv:gr-qc/0509116 Appendix B for details.
+    See Appendix B from [1]_ for details.
 
     Parameters
     ----------
@@ -1996,6 +1994,13 @@ def _median_bias(n):
     -------
     bias : float
         Calculated bias.
+
+    References
+    ----------
+    .. [1] B. Allen, W.G. Anderson, P.R. Brady, D.A. Brown, J.D.E. Creighton.
+           "FINDCHIRP: an algorithm for detection of gravitational waves from
+           inspiraling compact binaries", Physical Review D 85, 2012,
+           :arxiv:`gr-qc/0509116`
     """
     ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
     return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)

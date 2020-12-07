@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functions for FIR filter design."""
-from __future__ import division, print_function, absolute_import
 
 from math import ceil, log
 import operator
@@ -168,7 +167,7 @@ def kaiserord(ripple, width):
     -----
     There are several ways to obtain the Kaiser window:
 
-    - ``signal.kaiser(numtaps, beta, sym=True)``
+    - ``signal.windows.kaiser(numtaps, beta, sym=True)``
     - ``signal.get_window(beta, numtaps)``
     - ``signal.get_window(('kaiser', beta), numtaps)``
 
@@ -842,9 +841,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     # Convert type
     try:
         tnum = {'bandpass': 1, 'differentiator': 2, 'hilbert': 3}[type]
-    except KeyError:
+    except KeyError as e:
         raise ValueError("Type must be 'bandpass', 'differentiator', "
-                         "or 'hilbert'")
+                         "or 'hilbert'") from e
 
     # Convert weight
     if weight is None:
@@ -1008,7 +1007,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # Set up the linear matrix equation to be solved, Qa = b
 
     # We can express Q(k,n) = 0.5 Q1(k,n) + 0.5 Q2(k,n)
-    # where Q1(k,n)=q(k−n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
+    # where Q1(k,n)=q(k-n) and Q2(k,n)=q(k+n), i.e. a Toeplitz plus Hankel.
 
     # We omit the factor of 0.5 above, instead adding it during coefficient
     # calculation.
@@ -1198,7 +1197,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
            complex minimum phase digital FIR filters," Acoustics, Speech,
            and Signal Processing, 1999. Proceedings., 1999 IEEE International
            Conference on, Phoenix, AZ, 1999, pp. 1145-1148 vol.3.
-           doi: 10.1109/ICASSP.1999.756179
+           :doi:`10.1109/ICASSP.1999.756179`
     .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
            filters by direct factorization," Signal Processing,
            vol. 10, no. 4, pp. 369-383, Jun. 1986.

@@ -1,8 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import builtins
 import numpy as np
 from numpy.testing import suppress_warnings
+from operator import index
 from collections import namedtuple
 
 __all__ = ['binned_statistic',
@@ -106,7 +105,8 @@ def binned_statistic(x, values, statistic='mean',
 
     >>> values = [1.0, 1.0, 2.0, 1.5, 3.0]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
-    BinnedStatisticResult(statistic=array([4. , 4.5]), bin_edges=array([1., 4., 7.]), binnumber=array([1, 1, 1, 2, 2]))
+    BinnedStatisticResult(statistic=array([4. , 4.5]),
+            bin_edges=array([1., 4., 7.]), binnumber=array([1, 1, 1, 2, 2]))
 
     Multiple arrays of values can also be passed.  The statistic is calculated
     on each set independently:
@@ -114,11 +114,14 @@ def binned_statistic(x, values, statistic='mean',
     >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
     BinnedStatisticResult(statistic=array([[4. , 4.5],
-           [8. , 9. ]]), bin_edges=array([1., 4., 7.]), binnumber=array([1, 1, 1, 2, 2]))
+           [8. , 9. ]]), bin_edges=array([1., 4., 7.]),
+           binnumber=array([1, 1, 1, 2, 2]))
 
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
     ...                        bins=3)
-    BinnedStatisticResult(statistic=array([1., 2., 4.]), bin_edges=array([1., 2., 3., 4.]), binnumber=array([1, 2, 1, 2, 3]))
+    BinnedStatisticResult(statistic=array([1., 2., 4.]),
+            bin_edges=array([1., 2., 3., 4.]),
+            binnumber=array([1, 2, 1, 2, 3]))
 
     As a second example, we now generate some random data of sailing boat speed
     as a function of wind speed, and then determine how fast our boat is for
@@ -307,7 +310,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     >>> y = [2.1, 2.6, 2.1, 2.1]
     >>> binx = [0.0, 0.5, 1.0]
     >>> biny = [2.0, 2.5, 3.0]
-    >>> ret = stats.binned_statistic_2d(x, y, x, 'count', bins=[binx,biny])
+    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx, biny])
     >>> ret.statistic
     array([[2., 1.],
            [1., 0.]])
@@ -321,7 +324,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     The bin indices can also be expanded into separate entries for each
     dimension using the `expand_binnumbers` parameter:
 
-    >>> ret = stats.binned_statistic_2d(x, y, x, 'count', bins=[binx,biny],
+    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx, biny],
     ...                                 expand_binnumbers=True)
     >>> ret.binnumber
     array([[1, 1, 1, 2],
@@ -389,7 +392,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
           * 'std' : compute the standard deviation within each bin. This
-            is implicitly calculated with ddof=0.
+            is implicitly calculated with ddof=0. If the number of values
+            within a given bin is 0 or 1, the computed standard deviation value
+            will be 0 for the bin.
           * 'min' : compute the minimum of values for points within each bin.
             Empty bins will be represented by NaN.
           * 'max' : compute the maximum of values for point within each bin.
@@ -515,8 +520,16 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
 
-    if not np.isfinite(values).all() or not np.isfinite(sample).all:
-        raise ValueError('%r or %r contains non-finite values.' % (sample, values,))
+    try:
+        bins = index(bins)
+    except TypeError:
+        # bins is not an integer
+        pass
+    # If bins was an integer-like object, now it is an actual Python int.
+
+    # NOTE: for _bin_edges(), see e.g. gh-11365
+    if isinstance(bins, int) and not np.isfinite(sample).all():
+        raise ValueError('%r contains non-finite values.' % (sample,))
 
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
@@ -570,12 +583,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
-        flatcount = np.bincount(binnumbers, None)
-        a = flatcount.nonzero()
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                # NOTE: take std dev by bin, np.std() is 2-pass and stable
-                result[vv, i] = np.std(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.std)
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
@@ -589,19 +597,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.median(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.median)
     elif statistic == 'min':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.min(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.min)
     elif statistic == 'max':
         result.fill(np.nan)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = np.max(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, np.max)
     elif callable(statistic):
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
@@ -610,9 +612,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
             except Exception:
                 null = np.nan
         result.fill(null)
-        for i in np.unique(binnumbers):
-            for vv in builtins.range(Vdim):
-                result[vv, i] = statistic(values[vv, binnumbers == i])
+        _calc_binned_statistic(Vdim, binnumbers, result, values, statistic,
+                               is_callable=True)
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, nbin))
@@ -628,10 +629,36 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if np.any(result.shape[1:] != nbin - 2):
         raise RuntimeError('Internal Shape Error')
 
-    # Reshape to have output (`reulst`) match input (`values`) shape
+    # Reshape to have output (`result`) match input (`values`) shape
     result = result.reshape(input_shape[:-1] + list(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)
+
+
+def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
+                           is_callable=False):
+    unique_bin_numbers = np.unique(bin_numbers)
+    for vv in builtins.range(Vdim):
+        bin_map = _create_binned_data(bin_numbers, unique_bin_numbers, values, vv)
+        for i in unique_bin_numbers:
+            # if the stat_func is callable, all results should be updated
+            # if the stat_func is np.std, calc std only when binned data is 2
+            # or more for speed up.
+            if is_callable or not (stat_func is np.std and len(bin_map[i]) < 2):
+                result[vv, i] = stat_func(bin_map[i])
+
+
+def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
+    """ Create hashmap of bin ids to values in bins
+    key: bin number
+    value: list of binned data
+    """
+    bin_map = dict()
+    for i in unique_bin_numbers:
+        bin_map[i] = []
+    for i in builtins.range(len(bin_numbers)):
+        bin_map[bin_numbers[i]].append(values[vv, i])
+    return bin_map
 
 
 def _bin_edges(sample, bins=None, range=None):
@@ -649,9 +676,16 @@ def _bin_edges(sample, bins=None, range=None):
         smin = np.atleast_1d(np.array(sample.min(axis=0), float))
         smax = np.atleast_1d(np.array(sample.max(axis=0), float))
     else:
-        smin = np.zeros(Ndim)
-        smax = np.zeros(Ndim)
+        if len(range) != Ndim:
+            raise ValueError(
+                f"range given for {len(range)} dimensions; {Ndim} required")
+        smin = np.empty(Ndim)
+        smax = np.empty(Ndim)
         for i in builtins.range(Ndim):
+            if range[i][1] < range[i][0]:
+                raise ValueError(
+                    "In {}range, start must be <= stop".format(
+                        f"dimension {i + 1} of " if Ndim > 1 else ""))
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.

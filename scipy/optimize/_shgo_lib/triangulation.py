@@ -369,7 +369,7 @@ class Complex:
 
              To plot a single simplex S in a set C, use e.g., [C[0]]
         """
-        from matplotlib import pyplot
+        from matplotlib import pyplot  # type: ignore[import]
         if self.dim == 2:
             pyplot.figure()
             for C in self.H:

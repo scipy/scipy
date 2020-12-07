@@ -1,10 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
+from scipy._lib._util import check_random_state
 
 from .common_tests import check_named_results
 
@@ -13,13 +12,13 @@ class TestBinnedStatistic(object):
 
     @classmethod
     def setup_class(cls):
-        np.random.seed(9865)
-        cls.x = np.random.random(100)
-        cls.y = np.random.random(100)
-        cls.v = np.random.random(100)
-        cls.X = np.random.random((100, 3))
-        cls.w = np.random.random(100)
-        cls.u = np.random.random(100) + 1e6
+        rng = check_random_state(9865)
+        cls.x = rng.uniform(size=100)
+        cls.y = rng.uniform(size=100)
+        cls.v = rng.uniform(size=100)
+        cls.X = rng.uniform(size=(100, 3))
+        cls.w = rng.uniform(size=100)
+        cls.u = rng.uniform(size=100) + 1e6
 
     def test_1d_count(self):
         x = self.x
@@ -45,21 +44,26 @@ class TestBinnedStatistic(object):
         # see issue gh-10126 for more
         x = self.x
         u = self.u
-
         stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
 
         assert_allclose(stat1, stat2)
 
-    def test_non_finite_inputs(self):
+    def test_non_finite_inputs_and_int_bins(self):
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
         x = self.x
         u = self.u
+        orig = u[0]
         u[0] = np.inf
-        assert_raises(ValueError, binned_statistic, x, u, 'std', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
+        # need to test for non-python specific ints, e.g. np.int8, np.int64
+        assert_raises(ValueError, binned_statistic, u, x, 'std',
+                      bins=np.int64(10))
         u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, x, u, 'count', bins=10)
+        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
+        # replace original value, u belongs the class
+        u[0] = orig
 
     def test_1d_result_attributes(self):
         x = self.x
@@ -433,15 +437,16 @@ class TestBinnedStatistic(object):
         v = self.v
         w = self.w
 
-        stat1v, edges1v, bc1v = binned_statistic_dd(X, v, np.std, bins=8)
-        stat1w, edges1w, bc1w = binned_statistic_dd(X, w, np.std, bins=8)
-        stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], np.std, bins=8)
-
-        assert_allclose(stat2[0], stat1v)
-        assert_allclose(stat2[1], stat1w)
-        assert_allclose(edges1v, edges2)
-        assert_allclose(edges1w, edges2)
-        assert_allclose(bc1v, bc2)
+        for stat in ["count", "sum", "mean", "std", "min", "max", "median",
+                     np.std]:
+            stat1v, edges1v, bc1v = binned_statistic_dd(X, v, stat, bins=8)
+            stat1w, edges1w, bc1w = binned_statistic_dd(X, w, stat, bins=8)
+            stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], stat, bins=8)
+            assert_allclose(stat2[0], stat1v)
+            assert_allclose(stat2[1], stat1w)
+            assert_allclose(edges1v, edges2)
+            assert_allclose(edges1w, edges2)
+            assert_allclose(bc1v, bc2)
 
     def test_dd_binnumbers_unraveled(self):
         X = self.X
@@ -482,3 +487,26 @@ class TestBinnedStatistic(object):
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
+    
+    def test_dd_range_errors(self):
+        # Test that descriptive exceptions are raised as appropriate for bad
+        # values of the `range` argument. (See gh-12996)
+        with assert_raises(ValueError,
+                           match='In range, start must be <= stop'):
+            binned_statistic_dd([self.y], self.v,
+                                range=[[1, 0]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 1 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[1, 0], [0, 1]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 2 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1], [1, 0]])
+        with assert_raises(
+                ValueError,
+                match='range given for 1 dimensions; 2 required'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1]])

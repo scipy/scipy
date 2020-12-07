@@ -6,8 +6,6 @@ https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
-from __future__ import division, print_function, absolute_import
-
 '''
 =================================
  Note on functions and mat files
@@ -70,7 +68,8 @@ script I was working with.
 '''
 
 # Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann
+# Henkelmann; parts of the code for simplify_cells=True adapted from
+# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -100,9 +99,53 @@ from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct)
 
 from .streams import ZlibInputStream
+
+
+def _has_struct(elem):
+    """Determine if elem is an array and if first array item is a struct."""
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+            isinstance(elem[0], mat_struct))
+
+
+def _inspect_cell_array(ndarray):
+    """Construct lists from cell arrays (loaded as numpy ndarrays), recursing
+    into items if they contain mat_struct objects."""
+    elem_list = []
+    for sub_elem in ndarray:
+        if isinstance(sub_elem, mat_struct):
+            elem_list.append(_matstruct_to_dict(sub_elem))
+        elif _has_struct(sub_elem):
+            elem_list.append(_inspect_cell_array(sub_elem))
+        else:
+            elem_list.append(sub_elem)
+    return elem_list
+
+
+def _matstruct_to_dict(matobj):
+    """Construct nested dicts from mat_struct objects."""
+    d = {}
+    for f in matobj._fieldnames:
+        elem = matobj.__dict__[f]
+        if isinstance(elem, mat_struct):
+            d[f] = _matstruct_to_dict(elem)
+        elif _has_struct(elem):
+            d[f] = _inspect_cell_array(elem)
+        else:
+            d[f] = elem
+    return d
+
+
+def _simplify_cells(d):
+    """Convert mat objects in dict to nested dicts."""
+    for key in d:
+        if isinstance(d[key], mat_struct):
+            d[key] = _matstruct_to_dict(d[key])
+        elif _has_struct(d[key]):
+            d[key] = _inspect_cell_array(d[key])
+    return d
 
 
 class MatFile5Reader(MatFileReader):
@@ -135,8 +178,8 @@ class MatFile5Reader(MatFileReader):
                  matlab_compatible=False,
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
-                 uint16_codec=None
-                 ):
+                 uint16_codec=None,
+                 simplify_cells=False):
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
@@ -154,8 +197,8 @@ class MatFile5Reader(MatFileReader):
             chars_as_strings,
             matlab_compatible,
             struct_as_record,
-            verify_compressed_data_integrity
-            )
+            verify_compressed_data_integrity,
+            simplify_cells)
         # Set uint16 codec
         if not uint16_codec:
             uint16_codec = sys.getdefaultencoding()
@@ -302,7 +345,10 @@ class MatFile5Reader(MatFileReader):
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
-        return mdict
+        if self.simplify_cells:
+            return _simplify_cells(mdict)
+        else:
+            return mdict
 
     def list_variables(self):
         ''' list variables from stream '''
@@ -378,7 +424,7 @@ def varmats_from_mat(file_obj):
     # Initialize variable reading
     file_obj.seek(0)
     rdr.initialize_read()
-    mdict = rdr.read_file_header()
+    rdr.read_file_header()
     next_position = file_obj.tell()
     named_mats = []
     while not rdr.end_of_stream():
@@ -475,7 +521,7 @@ class VarWriter5(object):
         self._var_is_global = False
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        self.file_stream.write(arr.tobytes(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
@@ -497,8 +543,8 @@ class VarWriter5(object):
         # write tag with embedded data
         tag = np.zeros((), NDT_TAG_SMALL)
         tag['byte_count_mdtype'] = (byte_count << 16) + mdtype
-        # if arr.tostring is < 4, the element will be zero-padded as needed.
-        tag['data'] = arr.tostring(order='F')
+        # if arr.tobytes is < 4, the element will be zero-padded as needed.
+        tag['data'] = arr.tobytes(order='F')
         self.write_bytes(tag)
 
     def write_regular_element(self, arr, mdtype, byte_count):
@@ -804,7 +850,7 @@ class MatFile5Writer(object):
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
-        self.file_stream.write(hdr.tostring())
+        self.file_stream.write(hdr.tobytes())
 
     def put_variables(self, mdict, write_header=None):
         ''' Write variables in `mdict` to stream
@@ -841,7 +887,7 @@ class MatFile5Writer(object):
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
-                self.file_stream.write(tag.tostring())
+                self.file_stream.write(tag.tobytes())
                 self.file_stream.write(out_str)
             else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)

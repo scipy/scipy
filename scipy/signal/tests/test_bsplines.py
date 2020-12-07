@@ -1,23 +1,19 @@
 # pylint: disable=missing-docstring
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array
-from numpy.testing import (TestCase, assert_equal, run_module_suite,
+from numpy.testing import (assert_equal,
                            assert_allclose, assert_array_equal,
                            assert_almost_equal)
+import pytest
 from pytest import raises
 
 import scipy.signal.bsplines as bsp
+from scipy import signal
 
 
 class TestBSplines(object):
     """Test behaviors of B-splines. The values tested against were returned as of
     SciPy 1.1.0 and are included for regression testing purposes"""
-
-    def test_factorial(self):
-        # can't all be zero state
-        assert_equal(bsp.factorial(1), 1)
 
     def test_spline_filter(self):
         np.random.seed(12457)
@@ -125,6 +121,12 @@ class TestBSplines(object):
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
         assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
 
+    def test_gauss_spline_list(self):
+        # regression test for gh-12152 (accept array_like)
+        knots = [-1.0, 0.0, -1.0]
+        assert_almost_equal(bsp.gauss_spline(knots, 3),
+                            array([0.15418033, 0.6909883, 0.15418033]))
+
     def test_cubic(self):
         np.random.seed(12460)
         assert_array_equal(bsp.cubic([0]), array([0]))
@@ -222,3 +224,33 @@ class TestBSplines(object):
                       7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                       6.71900226, 6.203, 4.49418159])
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+
+
+def test_sepfir2d_invalid_filter():
+    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+    image = np.random.rand(7, 9)
+    # No error for odd lengths
+    signal.sepfir2d(image, filt, filt[2:])
+
+    # Row or column filter must be odd
+    with pytest.raises(ValueError, match="odd length"):
+        signal.sepfir2d(image, filt, filt[1:])
+    with pytest.raises(ValueError, match="odd length"):
+        signal.sepfir2d(image, filt[1:], filt)
+
+    # Filters must be 1-dimensional
+    with pytest.raises(ValueError, match="object too deep"):
+        signal.sepfir2d(image, filt.reshape(1, -1), filt)
+    with pytest.raises(ValueError, match="object too deep"):
+        signal.sepfir2d(image, filt, filt.reshape(1, -1))
+
+def test_sepfir2d_invalid_image():
+    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+    image = np.random.rand(8, 8)
+
+    # Image must be 2 dimensional
+    with pytest.raises(ValueError, match="object too deep"):
+        signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
+
+    with pytest.raises(ValueError, match="object of too small depth"):
+        signal.sepfir2d(image[0], filt, filt)

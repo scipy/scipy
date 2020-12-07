@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import datetime
 import os
 import sys
@@ -59,6 +57,10 @@ class TestData(object):
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
+        
+    def test4(self):
+        # Parsing trivial file with trailing spaces in attribute declaration.
+        self._test(test11)
 
     def _test(self, test_file):
         data, meta = loadarff(test_file)
@@ -76,8 +78,6 @@ class TestData(object):
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
-    @pytest.mark.skipif(sys.version_info < (3, 6),
-                        reason='Passing path-like objects to IO functions requires Python >= 3.6')
     def test_path(self):
         # Test reading from `pathlib.Path` object
         from pathlib import Path

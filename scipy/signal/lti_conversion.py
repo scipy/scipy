@@ -2,8 +2,6 @@
 ltisys -- a collection of functions to convert linear time invariant systems
 from one representation to another.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
@@ -248,7 +246,7 @@ def ss2tf(A, B, C, D, input=0):
 
     >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
-    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
+    (array([[1., 3., 3.]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
 
@@ -275,8 +273,8 @@ def ss2tf(A, B, C, D, input=0):
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:, 0] + B[:, 0] + C[0, :] + D
-    num = numpy.zeros((nout, num_states + 1), type_test.dtype)
+    type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
+    num = numpy.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den

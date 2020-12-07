@@ -10,8 +10,6 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
-from __future__ import absolute_import
-
 import threading
 import numpy as np
 cimport numpy as np
@@ -210,13 +208,14 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
+    ctypedef int CBLAS_INT   # actual type defined in the header file
     void qhull_misc_lib_check()
-    void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
-                   int *info) nogil
-    void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
-                   int *ipiv, double *b, int *ldb, int *info) nogil
-    void qh_dgecon(char *norm, int *n, double *a, int *lda, double *anorm,
-                   double *rcond, double *work, int *iwork, int *info) nogil
+    void qh_dgetrf(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv,
+                   CBLAS_INT *info) nogil
+    void qh_dgetrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda,
+                   CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info) nogil
+    void qh_dgecon(char *norm, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *anorm,
+                   double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -456,7 +455,7 @@ cdef class _Qhull:
 
             p = <realT*>arr.data
 
-            for j in xrange(arr.shape[0]):
+            for j in range(arr.shape[0]):
                 facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
                 if isoutside:
                     if not qh_addpoint(self._qh, p, facet, 0):
@@ -602,6 +601,7 @@ cdef class _Qhull:
 
         ncoplanar = 0
         coplanar = np.zeros((10, 3), dtype=np.intc)
+        coplanar_shape = coplanar.shape
 
         # Retrieve facet information
         with nogil:
@@ -619,7 +619,7 @@ cdef class _Qhull:
                     facet.toporient == qh_ORIENTclock and facet_ndim == 3):
                     # Swap the first and second indices to maintain a
                     # counter-clockwise orientation.
-                    for i in xrange(2):
+                    for i in range(2):
                         # Save the vertex info
                         swapped_index = 1 ^ i
                         vertex = <vertexT*>facet.vertices.e[i].p
@@ -632,7 +632,7 @@ cdef class _Qhull:
 
                     lower_bound = 2
 
-                for i in xrange(lower_bound, facet_ndim):
+                for i in range(lower_bound, facet_ndim):
                     # Save the vertex info
                     vertex = <vertexT*>facet.vertices.e[i].p
                     ipoint = qh_pointid(self._qh, vertex.point)
@@ -643,7 +643,7 @@ cdef class _Qhull:
                     neighbors[j, i] = id_map[neighbor.id]
 
                 # Save simplex equation info
-                for i in xrange(facet_ndim):
+                for i in range(facet_ndim):
                     equations[j, i] = facet.normal[i]
                 equations[j, facet_ndim] = facet.offset
 
@@ -653,7 +653,7 @@ cdef class _Qhull:
                         point = <pointT*>facet.coplanarset.e[i].p
                         vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
-                        if ncoplanar >= coplanar.shape[0]:
+                        if ncoplanar >= coplanar_shape[0]:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
@@ -704,7 +704,7 @@ cdef class _Qhull:
             point_ndim += 1
 
         numpoints = self._qh.num_points
-        points = np.zeros((numpoints, point_ndim))
+        points = np.empty((numpoints, point_ndim))
 
         with nogil:
             point = self._qh.first_point
@@ -756,7 +756,7 @@ cdef class _Qhull:
         while facet and facet.next:
             facetsi = []
             j = 0
-            for j in xrange(facet_ndim):
+            for j in range(facet_ndim):
                 equations[i, j] = facet.normal[j]
             equations[i, facet_ndim] = facet.offset
 
@@ -857,7 +857,7 @@ cdef class _Qhull:
 
             inf_seen = 0
             cur_region = []
-            for k in xrange(qh_setsize(self._qh, vertex.neighbors)):
+            for k in range(qh_setsize(self._qh, vertex.neighbors)):
                 neighbor = <facetT*>vertex.neighbors.e[k].p
                 i = neighbor.visitid - 1
                 if i == -1:
@@ -1017,7 +1017,7 @@ cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
 
     # Record which voronoi vertices constitute the ridge
     cur_vertices = []
-    for i in xrange(qh_setsize(_qh, centers)):
+    for i in range(qh_setsize(_qh, centers)):
         ix = (<facetT*>centers.e[i].p).visitid - 1
         cur_vertices.append(ix)
     qh._ridge_vertices.append(cur_vertices)
@@ -1078,9 +1078,10 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
-    cdef int i, j, n, nrhs, lda, ldb
-    cdef int info = 0
-    cdef int ipiv[NPY_MAXDIMS+1]
+    cdef int i, j
+    cdef CBLAS_INT n, nrhs, lda, ldb
+    cdef CBLAS_INT info = 0
+    cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double centroid[NPY_MAXDIMS]
     cdef double c[NPY_MAXDIMS+1]
@@ -1090,7 +1091,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
-    cdef int iwork[NPY_MAXDIMS]
+    cdef CBLAS_INT iwork[NPY_MAXDIMS]
 
     cdef double x1, x2, x3
     cdef double y1, y2, y3
@@ -1099,7 +1100,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
-    T = np.zeros((ndim, ndim), dtype=np.double)
+    T = np.empty((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
     # Maximum inverse condition number to allow: we want at least three
@@ -1107,10 +1108,10 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     rcond_limit = 1000*eps
 
     with nogil:
-        for isimplex in xrange(nsimplex):
-            for i in xrange(ndim):
+        for isimplex in range(nsimplex):
+            for i in range(ndim):
                 Tinvs[isimplex,ndim,i] = points[simplices[isimplex,ndim],i]
-                for j in xrange(ndim):
+                for j in range(ndim):
                     T[i,j] = (points[simplices[isimplex,j],i]
                               - Tinvs[isimplex,ndim,i])
                 Tinvs[isimplex,i,i] = 1
@@ -1173,9 +1174,9 @@ cdef int _barycentric_inside(int ndim, double *transform,
     """
     cdef int i, j
     c[ndim] = 1.0
-    for i in xrange(ndim):
+    for i in range(ndim):
         c[i] = 0
-        for j in xrange(ndim):
+        for j in range(ndim):
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
         c[ndim] -= c[i]
 
@@ -1198,11 +1199,11 @@ cdef void _barycentric_coordinate_single(int ndim, double *transform,
 
     if i == ndim:
         c[ndim] = 1.0
-        for j in xrange(ndim):
+        for j in range(ndim):
             c[ndim] -= c[j]
     else:
         c[i] = 0
-        for j in xrange(ndim):
+        for j in range(ndim):
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
 
 cdef void _barycentric_coordinates(int ndim, double *transform,
@@ -1213,9 +1214,9 @@ cdef void _barycentric_coordinates(int ndim, double *transform,
     """
     cdef int i, j
     c[ndim] = 1.0
-    for i in xrange(ndim):
+    for i in range(ndim):
         c[i] = 0
-        for j in xrange(ndim):
+        for j in range(ndim):
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
         c[ndim] -= c[i]
 
@@ -1227,7 +1228,7 @@ cdef void _barycentric_coordinates(int ndim, double *transform,
 cdef void _lift_point(DelaunayInfo_t *d, double *x, double *z) nogil:
     cdef int i
     z[d.ndim] = 0
-    for i in xrange(d.ndim):
+    for i in range(d.ndim):
         z[i] = x[i]
         z[d.ndim] += x[i]**2
     z[d.ndim] *= d.paraboloid_scale
@@ -1240,7 +1241,7 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
     cdef double dist
     cdef int k
     dist = d.equations[isimplex*(d.ndim+2) + d.ndim+1]
-    for k in xrange(d.ndim+1):
+    for k in range(d.ndim+1):
         dist += d.equations[isimplex*(d.ndim+2) + k] * point[k]
     return dist
 
@@ -1257,7 +1258,7 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
     """
 
     cdef int i
-    for i in xrange(d.ndim):
+    for i in range(d.ndim):
         if x[i] < d.min_bound[i] - eps or x[i] > d.max_bound[i] + eps:
             return 1
     return 0
@@ -1276,7 +1277,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
     if _is_point_fully_outside(d, x, eps):
         return -1
 
-    for isimplex in xrange(d.nsimplex):
+    for isimplex in range(d.nsimplex):
         transform = d.transform + isimplex*d.ndim*(d.ndim+1)
 
         if transform[0] == transform[0]:
@@ -1290,7 +1291,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
             # we replace this inside-check by a check of the neighbors
             # with a larger epsilon
 
-            for k in xrange(d.ndim+1):
+            for k in range(d.ndim+1):
                 ineighbor = d.neighbors[(d.ndim+1)*isimplex + k]
                 if ineighbor == -1:
                     continue
@@ -1305,7 +1306,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
                 # Check that the point lies (almost) inside the
                 # neigbor simplex
                 inside = 1
-                for m in xrange(d.ndim+1):
+                for m in range(d.ndim+1):
                     if d.neighbors[(d.ndim+1)*ineighbor + m] == isimplex:
                         # allow extra leeway towards isimplex
                         if not (-eps_broad <= c[m] <= 1 + eps):
@@ -1383,7 +1384,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
         transform = d.transform + isimplex*ndim*(ndim+1)
 
         inside = 1
-        for k in xrange(ndim+1):
+        for k in range(ndim+1):
             _barycentric_coordinate_single(ndim, transform, x, c, k)
 
             if c[k] < -eps:
@@ -1505,7 +1506,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         if best_dist > 0:
             break
         changed = 0
-        for k in xrange(ndim+1):
+        for k in range(ndim+1):
             ineigh = d.neighbors[(ndim+1)*isimplex + k]
             if ineigh == -1:
                 continue
@@ -1922,8 +1923,8 @@ class Delaunay(_QhullUser):
             ndim = self.ndim
 
             with nogil:
-                for isimplex in xrange(nsimplex):
-                    for k in xrange(ndim+1):
+                for isimplex in range(nsimplex):
+                    for k in range(ndim+1):
                         ivertex = simplices[isimplex, k]
                         if arr[ivertex] == -1:
                             arr[ivertex] = isimplex
@@ -1956,9 +1957,9 @@ class Delaunay(_QhullUser):
 
             try:
                 with nogil:
-                    for i in xrange(nsimplex):
-                        for j in xrange(ndim+1):
-                            for k in xrange(ndim+1):
+                    for i in range(nsimplex):
+                        for j in range(ndim+1):
+                            for k in range(ndim+1):
                                 if simplices[i,j] != simplices[i,k]:
                                     if setlist.add(&sets, simplices[i,j], simplices[i,k]):
                                         with gil:
@@ -2005,10 +2006,10 @@ class Delaunay(_QhullUser):
         arr = out
 
         m = 0
-        for isimplex in xrange(nsimplex):
-            for k in xrange(ndim+1):
+        for isimplex in range(nsimplex):
+            for k in range(ndim+1):
                 if neighbors[isimplex,k] == -1:
-                    for j in xrange(ndim+1):
+                    for j in range(ndim+1):
                         if j < k:
                             arr[m,j] = simplices[isimplex,j]
                         elif j > k:
@@ -2078,6 +2079,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         start = 0
 
@@ -2092,7 +2094,7 @@ class Delaunay(_QhullUser):
 
         if bruteforce:
             with nogil:
-                for k in xrange(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
@@ -2100,7 +2102,7 @@ class Delaunay(_QhullUser):
                     out_[k] = isimplex
         else:
             with nogil:
-                for k in xrange(x.shape[0]):
+                for k in range(x_shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
                                              &start, eps, eps_broad)
@@ -2129,6 +2131,7 @@ class Delaunay(_QhullUser):
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
+        x_shape = x.shape
 
         _get_delaunay_info(&info, self, 0, 0, 0)
 
@@ -2136,8 +2139,8 @@ class Delaunay(_QhullUser):
         out_ = out
 
         with nogil:
-            for i in xrange(x.shape[0]):
-                for j in xrange(info.nsimplex):
+            for i in range(x_shape[0]):
+                for j in range(info.nsimplex):
                     _lift_point(&info, (<double*>x.data) + info.ndim*i, z)
                     out_[i,j] = _distplane(&info, j, z)
 
@@ -2320,11 +2323,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Area of the convex hull.
+        Surface area of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull.
+        Volume of the convex hull when input dimension > 2. 
+        When input `points` are 2-dimensional, this is the area of the convex hull. 
 
         .. versionadded:: 0.17.0
 
@@ -2374,15 +2379,15 @@ class ConvexHull(_QhullUser):
     ...                        [0.4, 0.2],
     ...                        [0.3, 0.6]])
 
-    Call ConvexHull with the QG option. QG4 means 
+    Call ConvexHull with the QG option. QG4 means
     compute the portions of the hull not including
-    point 4, indicating the facets that are visible 
+    point 4, indicating the facets that are visible
     from point 4.
 
     >>> hull = ConvexHull(points=generators,
     ...                   qhull_options='QG4')
 
-    The "good" array indicates which facets are 
+    The "good" array indicates which facets are
     visible from point 4.
 
     >>> print(hull.simplices)
@@ -2719,7 +2724,7 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax = fig.add_subplot(1, 1, 1, aspect='equal')
     >>> xlim, ylim = (-1, 3), (-1, 3)
     >>> ax.set_xlim(xlim)
     >>> ax.set_ylim(ylim)
@@ -2766,7 +2771,7 @@ class HalfspaceIntersection(_QhullUser):
     >>> c[-1] = -1
     >>> A = np.hstack((halfspaces[:, :-1], norm_vector))
     >>> b = - halfspaces[:, -1:]
-    >>> res = linprog(c, A_ub=A, b_ub=b)
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(None, None))
     >>> x = res.x[:-1]
     >>> y = res.x[-1]
     >>> circle = Circle(x, radius=y, alpha=0.3)

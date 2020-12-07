@@ -74,11 +74,9 @@ References
 # Author:  Travis Oliphant 2000
 # Updated Sep. 2003 (fixed bugs --- tested to be accurate)
 
-from __future__ import division, print_function, absolute_import
-
 # SciPy imports.
 import numpy as np
-from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
+from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
@@ -140,15 +138,13 @@ class orthopoly1d(np.poly1d):
         poly = np.poly1d(roots, r=True)
         np.poly1d.__init__(self, poly.coeffs * float(kn))
 
-        # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
-        self.__dict__['weights'] = np.array(list(zip(roots,
-                                                     weights, equiv_weights)))
-        self.__dict__['weight_func'] = wfunc
-        self.__dict__['limits'] = limits
-        self.__dict__['normcoef'] = mu
+        self.weights = np.array(list(zip(roots, weights, equiv_weights)))
+        self.weight_func = wfunc
+        self.limits = limits
+        self.normcoef = mu
 
         # Note: eval_func will be discarded on arithmetic
-        self.__dict__['_eval_func'] = eval_func
+        self._eval_func = eval_func
 
     def __call__(self, v):
         if self._eval_func and not isinstance(v, np.poly1d):
@@ -159,18 +155,12 @@ class orthopoly1d(np.poly1d):
     def _scale(self, p):
         if p == 1.0:
             return
-        try:
-            self._coeffs
-        except AttributeError:
-            self.__dict__['coeffs'] *= p
-        else:
-            # the coeffs attr is be made private in future versions of NumPy
-            self._coeffs *= p
+        self._coeffs *= p
 
         evf = self._eval_func
         if evf:
-            self.__dict__['_eval_func'] = lambda x: evf(x) * p
-        self.__dict__['normcoef'] *= p
+            self._eval_func = lambda x: evf(x) * p
+        self.normcoef *= p
 
 
 def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
@@ -447,7 +437,7 @@ def sh_jacobi(n, p, q, monic=False):
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
     n1 = n
-    x, w, mu0 = roots_sh_jacobi(n1, p, q, mu=True)
+    x, w = roots_sh_jacobi(n1, p, q)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
     hn /= (2 * n + p) * (_gam(2 * n + p)**2)
     # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
@@ -575,7 +565,7 @@ def genlaguerre(n, alpha, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_genlaguerre(n1, alpha, mu=True)
+    x, w = roots_genlaguerre(n1, alpha)
     wfunc = lambda x: exp(-x) * x**alpha
     if n == 0:
         x, w = [], []
@@ -666,7 +656,7 @@ def laguerre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_laguerre(n1, mu=True)
+    x, w = roots_laguerre(n1)
     if n == 0:
         x, w = [], []
     hn = 1.0
@@ -1161,7 +1151,7 @@ def hermite(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermite(n1, mu=True)
+    x, w = roots_hermite(n1)
     wfunc = lambda x: exp(-x * x)
     if n == 0:
         x, w = [], []
@@ -1286,7 +1276,7 @@ def hermitenorm(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_hermitenorm(n1, mu=True)
+    x, w = roots_hermitenorm(n1)
     wfunc = lambda x: exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
@@ -1700,7 +1690,7 @@ def chebyc(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebyc(n1, mu=True)
+    x, w = roots_chebyc(n1)
     if n == 0:
         x, w = [], []
     hn = 4 * pi * ((n == 0) + 1)
@@ -1806,7 +1796,7 @@ def chebys(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_chebys(n1, mu=True)
+    x, w = roots_chebys(n1)
     if n == 0:
         x, w = [], []
     hn = pi
@@ -2084,7 +2074,7 @@ def legendre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = roots_legendre(n1, mu=True)
+    x, w = roots_legendre(n1)
     if n == 0:
         x, w = [], []
     hn = 2.0 / (2 * n + 1)
@@ -2174,7 +2164,7 @@ def sh_legendre(n, monic=False):
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
                            lambda x: eval_sh_legendre(n, x))
-    x, w, mu0 = roots_sh_legendre(n, mu=True)
+    x, w = roots_sh_legendre(n)
     hn = 1.0 / (2 * n + 1.0)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2
     p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,
@@ -2190,6 +2180,9 @@ def sh_legendre(n, monic=False):
 # module directly. (They shouldn't be; it's not in the public API).
 poch = cephes.poch
 
+# eval_chebyu, eval_sh_chebyt and eval_sh_chebyu: These functions are not
+# used in orthogonal.py, they are not in _rootfuns_map, but their names
+# do appear in _evalfuns, so they must be kept.
 from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
                       eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
                       eval_sh_chebyt, eval_sh_chebyu, eval_legendre,

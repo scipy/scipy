@@ -27,6 +27,7 @@ Contents
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_flow -- solve the maximum flow problem for a graph
    maximum_bipartite_matching -- compute a maximum matching of a bipartite graph
+   min_weight_full_bipartite_matching - compute a minimum weight full matching of a bipartite graph
    structural_rank -- compute the structural rank of a graph
    NegativeCycleError
 
@@ -150,8 +151,6 @@ The routines in this module accept as input either scipy.sparse representations
 with non-edges indicated by zeros, infinities, and NaN entries.
 """
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['connected_components',
@@ -169,6 +168,7 @@ __all__ = ['connected_components',
            'reverse_cuthill_mckee',
            'maximum_flow',
            'maximum_bipartite_matching',
+           'min_weight_full_bipartite_matching',
            'structural_rank',
            'construct_dist_matrix',
            'reconstruct_path',
@@ -180,17 +180,25 @@ __all__ = ['connected_components',
            'NegativeCycleError']
 
 from ._laplacian import laplacian
-from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
-    bellman_ford, johnson, NegativeCycleError
-from ._traversal import breadth_first_order, depth_first_order, \
-    breadth_first_tree, depth_first_tree, connected_components
+from ._shortest_path import (
+    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson,
+    NegativeCycleError
+)
+from ._traversal import (
+    breadth_first_order, depth_first_order, breadth_first_tree,
+    depth_first_tree, connected_components
+)
 from ._min_spanning_tree import minimum_spanning_tree
 from ._flow import maximum_flow
-from ._matching import maximum_bipartite_matching
+from ._matching import (
+    maximum_bipartite_matching, min_weight_full_bipartite_matching
+)
 from ._reordering import reverse_cuthill_mckee, structural_rank
-from ._tools import construct_dist_matrix, reconstruct_path,\
-    csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
-    csgraph_from_masked, csgraph_to_masked
+from ._tools import (
+    construct_dist_matrix, reconstruct_path, csgraph_from_dense,
+    csgraph_to_dense, csgraph_masked_from_dense, csgraph_from_masked,
+    csgraph_to_masked
+)
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

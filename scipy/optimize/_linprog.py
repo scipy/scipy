@@ -15,8 +15,6 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from .optimize import OptimizeResult, OptimizeWarning
@@ -24,14 +22,20 @@ from warnings import warn
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
+from ._linprog_highs import _linprog_highs
+from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
+                           _linprog_rs_doc, _linprog_simplex_doc,
+                           _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
 from ._linprog_util import (
-    _parse_linprog, _presolve, _get_Abc, _postprocess, _LPProblem, _autoscale, _unscale
-    )
+    _parse_linprog, _presolve, _get_Abc, _LPProblem, _autoscale,
+    _postsolve, _check_result, _display_summary)
 from copy import deepcopy
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
+
+LINPROG_METHODS = ['simplex', 'revised simplex', 'interior-point', 'highs', 'highs-ds', 'highs-ipm']
 
 
 def linprog_verbose_callback(res):
@@ -182,7 +186,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     :math:`b_{ub}`, :math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and
     :math:`A_{ub}` and :math:`A_{eq}` are matrices.
 
-    Informally, that's:
+    Alternatively, that's:
 
     minimize::
 
@@ -215,13 +219,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None`` to
-        indicate that there is no bound. By default, bounds are ``(0, None)``
-        (all decision variables are non-negative).
+        the minimum and maximum values of that decision variable. Use ``None``
+        to indicate that there is no bound. By default, bounds are
+        ``(0, None)`` (all decision variables are non-negative).
         If a single tuple ``(min, max)`` is provided, then ``min`` and
         ``max`` will serve as bounds for all decision variables.
-    method : {'interior-point', 'revised simplex', 'simplex'}, optional
+    method : str, optional
         The algorithm used to solve the standard form problem.
+        :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
+        :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
+        :ref:`'highs' <optimize.linprog-highs>`,
         :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
@@ -231,59 +238,95 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1-D array
-                The current solution vector.
-            fun : float
-                The current value of the objective function ``c @ x``.
-            success : bool
-                ``True`` when the algorithm has completed successfully.
-            slack : 1-D array
-                The (nominally positive) values of the slack,
-                ``b_ub - A_ub @ x``.
-            con : 1-D array
-                The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``.
-            phase : int
-                The phase of the algorithm being executed.
-            status : int
-                An integer representing the status of the algorithm.
+        x : 1-D array
+            The current solution vector.
+        fun : float
+            The current value of the objective function ``c @ x``.
+        success : bool
+            ``True`` when the algorithm has completed successfully.
+        slack : 1-D array
+            The (nominally positive) values of the slack,
+            ``b_ub - A_ub @ x``.
+        con : 1-D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        phase : int
+            The phase of the algorithm being executed.
+        status : int
+            An integer representing the status of the algorithm.
 
-                ``0`` : Optimization proceeding nominally.
+            ``0`` : Optimization proceeding nominally.
 
-                ``1`` : Iteration limit reached.
+            ``1`` : Iteration limit reached.
 
-                ``2`` : Problem appears to be infeasible.
+            ``2`` : Problem appears to be infeasible.
 
-                ``3`` : Problem appears to be unbounded.
+            ``3`` : Problem appears to be unbounded.
 
-                ``4`` : Numerical difficulties encountered.
+            ``4`` : Numerical difficulties encountered.
 
             nit : int
                 The current iteration number.
             message : str
                 A string descriptor of the algorithm status.
 
+        Callback functions are not currently supported by the HiGHS methods.
+
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         options:
 
-            maxiter : int
-                Maximum number of iterations to perform.
-                Default: see method-specific documentation.
-            disp : bool
-                Set to ``True`` to print convergence messages.
-                Default: ``False``.
-            autoscale : bool
-                Set to ``True`` to automatically perform equilibration.
-                Consider using this option if the numerical values in the
-                constraints are separated by several orders of magnitude.
-                Default: ``False``.
-            presolve : bool
-                Set to ``False`` to disable automatic presolve.
-                Default: ``True``.
-            rr : bool
-                Set to ``False`` to disable automatic redundancy removal.
-                Default: ``True``.
+        maxiter : int
+            Maximum number of iterations to perform.
+            Default: see method-specific documentation.
+        disp : bool
+            Set to ``True`` to print convergence messages.
+            Default: ``False``.
+        presolve : bool
+            Set to ``False`` to disable automatic presolve.
+            Default: ``True``.
+
+        All methods except the HiGHS solvers also accept:
+
+        tol : float
+            A tolerance which determines when a residual is "close enough" to
+            zero to be considered exactly zero.
+        autoscale : bool
+            Set to ``True`` to automatically perform equilibration.
+            Consider using this option if the numerical values in the
+            constraints are separated by several orders of magnitude.
+            Default: ``False``.
+        rr : bool
+            Set to ``False`` to disable automatic redundancy removal.
+            Default: ``True``.
+        rr_method : string
+            Method used to identify and remove redundant rows from the
+            equality constraint matrix after presolve. For problems with
+            dense input, the available methods for redundancy removal are:
+
+            "SVD":
+                Repeatedly performs singular value decomposition on
+                the matrix, detecting redundant rows based on nonzeros
+                in the left singular vectors that correspond with
+                zero singular values. May be fast when the matrix is
+                nearly full rank.
+            "pivot":
+                Uses the algorithm presented in [5]_ to identify
+                redundant rows.
+            "ID":
+                Uses a randomized interpolative decomposition.
+                Identifies columns of the matrix transpose not used in
+                a full-rank interpolative decomposition of the matrix.
+            None:
+                Uses "svd" if the matrix is nearly full rank, that is,
+                the difference between the matrix rank and the number
+                of rows is less than five. If not, uses "pivot". The
+                behavior of this default is subject to change without
+                prior notice.
+
+            Default: None.
+            For problems with sparse input, this option is ignored, and the
+            pivot-based algorithm presented in [5]_ is used.
 
         For method-specific options, see
         :func:`show_options('linprog') <show_options>`.
@@ -300,37 +343,37 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     res : OptimizeResult
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-            x : 1-D array
-                The values of the decision variables that minimizes the
-                objective function while satisfying the constraints.
-            fun : float
-                The optimal value of the objective function ``c @ x``.
-            slack : 1-D array
-                The (nominally positive) values of the slack variables,
-                ``b_ub - A_ub @ x``.
-            con : 1-D array
-                The (nominally zero) residuals of the equality constraints,
-                ``b_eq - A_eq @ x``.
-            success : bool
-                ``True`` when the algorithm succeeds in finding an optimal
-                solution.
-            status : int
-                An integer representing the exit status of the algorithm.
+        x : 1-D array
+            The values of the decision variables that minimizes the
+            objective function while satisfying the constraints.
+        fun : float
+            The optimal value of the objective function ``c @ x``.
+        slack : 1-D array
+            The (nominally positive) values of the slack variables,
+            ``b_ub - A_ub @ x``.
+        con : 1-D array
+            The (nominally zero) residuals of the equality constraints,
+            ``b_eq - A_eq @ x``.
+        success : bool
+            ``True`` when the algorithm succeeds in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the algorithm.
 
-                ``0`` : Optimization terminated successfully.
+            ``0`` : Optimization terminated successfully.
 
-                ``1`` : Iteration limit reached.
+            ``1`` : Iteration limit reached.
 
-                ``2`` : Problem appears to be infeasible.
+            ``2`` : Problem appears to be infeasible.
 
-                ``3`` : Problem appears to be unbounded.
+            ``3`` : Problem appears to be unbounded.
 
-                ``4`` : Numerical difficulties encountered.
+            ``4`` : Numerical difficulties encountered.
 
-            nit : int
-                The total number of iterations performed in all phases.
-            message : str
-                A string descriptor of the exit status of the algorithm.
+        nit : int
+            The total number of iterations performed in all phases.
+        message : str
+            A string descriptor of the exit status of the algorithm.
 
     See Also
     --------
@@ -341,12 +384,30 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     This section describes the available solvers that can be selected by the
     'method' parameter.
 
-    :ref:`'interior-point' <optimize.linprog-interior-point>` is the default
-    as it is typically the fastest and most robust method.
-    :ref:`'revised simplex' <optimize.linprog-revised_simplex>` is more
-    accurate for the problems it solves.
-    :ref:`'simplex' <optimize.linprog-simplex>` is the legacy method and is
+    `'highs-ds'` and
+    `'highs-ipm'` are interfaces to the
+    HiGHS simplex and interior-point method solvers [13]_, respectively.
+    `'highs'` chooses between
+    the two automatically. These are the fastest linear
+    programming solvers in SciPy, especially for large, sparse problems;
+    which of these two is faster is problem-dependent.
+    `'interior-point'` is the default
+    as it was the fastest and most robust method before the recent
+    addition of the HiGHS solvers.
+    `'revised simplex'` is more
+    accurate than interior-point for the problems it solves.
+    `'simplex'` is the legacy method and is
     included for backwards compatibility and educational purposes.
+
+    Method *highs-ds* is a wrapper of the C++ high performance dual
+    revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
+    is a wrapper of a C++ implementation of an **i**\ nterior-\ **p**\ oint
+    **m**\ ethod [13]_; it features a crossover routine, so it is as accurate
+    as a simplex solver. Method *highs* chooses between the two automatically.
+    For new code involving `linprog`, we recommend explicitly choosing one of
+    these three method values.
+
+    .. versionadded:: 1.5.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
@@ -371,7 +432,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     .. versionadded:: 0.15.0
 
-    Before applying any method, a presolve procedure based on [8]_ attempts
+    Before applying *interior-point*, *revised simplex*, or *simplex*,
+    a presolve procedure based on [8]_ attempts
     to identify trivial infeasibilities, trivial unboundedness, and potential
     problem simplifications. Specifically, it checks for:
 
@@ -451,6 +513,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Journal in  Numerische Mathematik 16.5 (1971): 414-434.
     .. [12] Tomlin, J. A. "On scaling linear programming problems."
             Mathematical Programming Study 4 (1975): 146-166.
+    .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
+            "HiGHS - high performance software for linear optimization."
+            Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+    .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
+            simplex method." Mathematical Programming Computation, 10 (1),
+            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
 
     Examples
     --------
@@ -508,7 +576,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            x: array([10., -3.]) # may vary
 
     """
+
     meth = method.lower()
+    methods = {"simplex", "revised simplex", "interior-point",
+               "highs", "highs-ds", "highs-ipm"}
+    if meth not in methods:
+        raise ValueError(f"Unknown solver '{method}'")
 
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
@@ -518,8 +591,24 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     lp, solver_options = _parse_linprog(lp, options)
     tol = solver_options.get('tol', 1e-9)
 
+    # Give unmodified problem to HiGHS
+    if meth.startswith('highs'):
+        if callback is not None:
+            raise NotImplementedError("HiGHS solvers do not support the "
+                                      "callback interface.")
+        highs_solvers = {'highs-ipm': 'ipm', 'highs-ds': 'simplex',
+                         'highs': None}
+
+        sol = _linprog_highs(lp, solver=highs_solvers[meth],
+                             **solver_options)
+        sol['status'], sol['message'] = (
+            _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
+                          sol['con'], lp.bounds, tol, sol['message']))
+        sol['success'] = sol['status'] == 0
+        return OptimizeResult(sol)
+
     iteration = 0
-    complete = False    # will become True if solved in presolve
+    complete = False  # will become True if solved in presolve
     undo = []
 
     # Keep the original arrays to calculate slack/residuals for original
@@ -527,16 +616,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     lp_o = deepcopy(lp)
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc.
+    rr_method = solver_options.pop('rr_method', None)  # need to pop these;
+    rr = solver_options.pop('rr', True)  # they're not passed to methods
     c0 = 0  # we might get a constant term in the objective
     if solver_options.pop('presolve', True):
-        rr = solver_options.pop('rr', True)
-        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr, tol)
+        (lp, c0, x, undo, complete, status, message) = _presolve(lp, rr,
+                                                                 rr_method,
+                                                                 tol)
 
     C, b_scale = 1, 1  # for trivial unscaling if autoscale is not used
     postsolve_args = (lp_o._replace(bounds=lp.bounds), undo, C, b_scale)
 
     if not complete:
-        A, b, c, c0, x0 = _get_Abc(lp, c0, undo)
+        A, b, c, c0, x0 = _get_Abc(lp, c0)
         if solver_options.pop('autoscale', False):
             A, b, c, x0, C, b_scale = _autoscale(A, b, c, x0)
             postsolve_args = postsolve_args[:-2] + (C, b_scale)
@@ -553,17 +645,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             x, status, message, iteration = _linprog_rs(
                 c, c0=c0, A=A, b=b, x0=x0, callback=callback,
                 postsolve_args=postsolve_args, **solver_options)
-        else:
-            raise ValueError('Unknown solver %s' % method)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc.
-    # need modified bounds here to translate variables appropriately
     disp = solver_options.get('disp', False)
 
-    x, fun, slack, con, status, message = _postprocess(x, postsolve_args,
-                                                       complete, status,
-                                                       message, tol,
-                                                       iteration, disp)
+    x, fun, slack, con = _postsolve(x, postsolve_args, complete)
+
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+
+    if disp:
+        _display_summary(message, status, fun, iteration)
 
     sol = {
         'x': x,

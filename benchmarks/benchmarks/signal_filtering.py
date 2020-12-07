@@ -1,15 +1,12 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 import timeit
 from concurrent.futures import ThreadPoolExecutor, wait
 
-try:
-    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
+
 
 class Decimate(Benchmark):
     param_names = ['q', 'ftype', 'zero_phase']
@@ -64,12 +61,12 @@ class ParallelSosfilt(Benchmark):
         self.chunks = np.array_split(self.data, threads)
 
     def time_sosfilt(self, n_samples, threads):
-        pool = ThreadPoolExecutor(max_workers=threads)
-        futures = []
-        for i in range(threads):
-            futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            futures = []
+            for i in range(threads):
+                futures.append(pool.submit(sosfilt, self.filt, self.chunks[i]))
 
-        wait(futures)
+            wait(futures)
 
 
 class Sosfilt(Benchmark):

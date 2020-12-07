@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 from collections import namedtuple
 import operator
@@ -374,11 +372,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     """
     # Explicitly copy `x0` as `p` will be modified inplace, but the
     # user's array should not be altered.
-    try:
-        p = np.array(x0, copy=True, dtype=float)
-    except TypeError:
-        # can't convert complex to float
-        p = np.array(x0, copy=True)
+    p = np.array(x0, copy=True)
 
     failures = np.ones_like(p, dtype=bool)
     nz_der = np.ones_like(failures)
@@ -402,6 +396,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 fder2 = np.asarray(fprime2(p, *args))
                 dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, dp, np.float64))
             p[nz_der] -= dp
             failures[nz_der] = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
@@ -423,6 +418,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
             # Secant Step
             dp = (q1 * (p1 - p))[nz_der] / (q1 - q0)[nz_der]
             # only update nonzero derivatives
+            p = np.asarray(p, dtype=np.result_type(p, p1, dp, np.float64))
             p[nz_der] = p1[nz_der] - dp
             active_zero_der = ~nz_der & active
             p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0

@@ -10,7 +10,8 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
+import functools
+from threading import RLock
 
 import numpy as np
 from scipy.optimize import _cobyla
@@ -20,10 +21,20 @@ try:
 except ImportError:
     izip = zip
 
-
 __all__ = ['fmin_cobyla']
 
+# Workarund as _cobyla.minimize is not threadsafe
+# due to an unknown f2py bug and can segfault,
+# see gh-9658.
+_module_lock = RLock()
+def synchronized(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _module_lock:
+            return func(*args, **kwargs)
+    return wrapper
 
+@synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
@@ -139,11 +150,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
           " callable function."
     try:
         len(cons)
-    except TypeError:
+    except TypeError as e:
         if callable(cons):
             cons = [cons]
         else:
-            raise TypeError(err)
+            raise TypeError(err) from e
     else:
         for thisfunc in cons:
             if not callable(thisfunc):
@@ -168,7 +179,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
-
+@synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):
@@ -205,13 +216,13 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         # check type
         try:
             ctype = con['type'].lower()
-        except KeyError:
-            raise KeyError('Constraint %d has no type defined.' % ic)
-        except TypeError:
+        except KeyError as e:
+            raise KeyError('Constraint %d has no type defined.' % ic) from e
+        except TypeError as e:
             raise TypeError('Constraints must be defined using a '
-                            'dictionary.')
-        except AttributeError:
-            raise TypeError("Constraint's type must be a string.")
+                            'dictionary.') from e
+        except AttributeError as e:
+            raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
                 raise ValueError("Constraints of type '%s' not handled by "

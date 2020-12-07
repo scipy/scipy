@@ -1,7 +1,5 @@
 """Dictionary Of Keys based matrix"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
@@ -88,7 +86,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 arg1 = arg1.todok()
 
             if dtype is not None:
-                arg1 = arg1.astype(dtype)
+                arg1 = arg1.astype(dtype, copy=False)
 
             dict.update(self, arg1)
             self._shape = check_shape(arg1.shape)
@@ -96,8 +94,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
-            except Exception:
-                raise TypeError('Invalid input format.')
+            except Exception as e:
+                raise TypeError('Invalid input format.') from e
 
             if len(arg1.shape) != 2:
                 raise TypeError('Expected rank <=2 dense array or matrix.')
@@ -149,8 +147,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         try:
             i, j = key
             assert isintlike(i) and isintlike(j)
-        except (AssertionError, TypeError, ValueError):
-            raise IndexError('Index must be a pair of integers.')
+        except (AssertionError, TypeError, ValueError) as e:
+            raise IndexError('Index must be a pair of integers.') from e
         if (i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]):
             raise IndexError('Index out of bounds.')
         return dict.get(self, key, default)

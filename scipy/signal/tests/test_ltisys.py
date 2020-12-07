@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
@@ -351,6 +349,15 @@ class TestSS2TF:
         assert_allclose(num, [[0, 1, -3], [1, 2, 3]], rtol=1e-13)
         assert_allclose(den, [1, 6, 5], rtol=1e-13)
 
+    def test_all_int_arrays(self):
+        A = [[0, 1, 0], [0, 0, 1], [-3, -4, -2]]
+        B = [[0], [0], [1]]
+        C = [[5, 1, 0]]
+        D = [[0]]
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[0.0, 0.0, 1.0, 5.0]], rtol=1e-13, atol=1e-14)
+        assert_allclose(den, [1.0, 2.0, 4.0, 3.0], rtol=1e-13)
+
     def test_multioutput(self):
         # Regression test for gh-2669.
 
@@ -420,9 +427,9 @@ class TestLsim(object):
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = matrix("0. 1.; 0. 0.")
-        B = matrix("0.; 1.")
-        C = matrix("2. 0.")
+        A = matrix([[0., 1.], [0., 0.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
@@ -438,9 +445,9 @@ class TestLsim(object):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = matrix("-1. 1.; 0. -1.")
-        B = matrix("0.; 1.")
-        C = matrix("1. 0.")
+        A = matrix([[-1., 1.], [0., -1.]])
+        B = matrix([[0.], [1.]])
+        C = matrix([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -759,10 +766,10 @@ class TestLti(object):
 class TestStateSpace(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = StateSpace(1, 1, 1, 1)
-        s = StateSpace([1], [2], [3], [4])
-        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
-                       np.array([[1, 0]]), np.array([[0]]))
+        StateSpace(1, 1, 1, 1)
+        StateSpace([1], [2], [3], [4])
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -805,6 +812,7 @@ class TestStateSpace(object):
 
         s_discrete = s1.to_discrete(0.1)
         s2_discrete = s2.to_discrete(0.2)
+        s3_discrete = s2.to_discrete(0.1)
 
         # Impulse response
         t = np.linspace(0, 1, 100)
@@ -900,13 +908,24 @@ class TestStateSpace(object):
         with assert_raises(TypeError):
             BadType() - s1
 
+        s = s_discrete + s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = s_discrete * s3_discrete
+        assert_(s.dt == 0.1)
+
+        s = 3 * s_discrete
+        assert_(s.dt == 0.1)
+
+        s = -s_discrete
+        assert_(s.dt == 0.1)
 
 class TestTransferFunction(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = TransferFunction(1, 1)
-        s = TransferFunction([1], [2])
-        s = TransferFunction(np.array([1]), np.array([2]))
+        TransferFunction(1, 1)
+        TransferFunction([1], [2])
+        TransferFunction(np.array([1]), np.array([2]))
 
     def test_conversion(self):
         # Check the conversion functions
@@ -932,9 +951,9 @@ class TestTransferFunction(object):
 class TestZerosPolesGain(object):
     def test_initialization(self):
         # Check that all initializations work
-        s = ZerosPolesGain(1, 1, 1)
-        s = ZerosPolesGain([1], [2], 1)
-        s = ZerosPolesGain(np.array([1]), np.array([2]), 1)
+        ZerosPolesGain(1, 1, 1)
+        ZerosPolesGain([1], [2], 1)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1)
 
     def test_conversion(self):
         #Check the conversion functions

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Author: Pearu Peterson, March 2002
 #
@@ -8,11 +9,9 @@
 # additions by Andrew D Straw, May 2007
 # additions by Tiziano Zito, November 2008
 #
-# April 2010: Functions for LU, QR, SVD, Schur, and Cholesky decompositions were
-# moved to their own files. Still in this file are functions for eigenstuff
-# and for the Hessenberg form.
-
-from __future__ import division, print_function, absolute_import
+# April 2010: Functions for LU, QR, SVD, Schur, and Cholesky decompositions
+# were moved to their own files. Still in this file are functions for
+# eigenstuff and for the Hessenberg form.
 
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
@@ -20,8 +19,8 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
 
 import numpy
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
-                   flatnonzero, conj, asarray, argsort, empty, newaxis,
-                   argwhere, iscomplex, eye, zeros, einsum)
+                   flatnonzero, conj, asarray, argsort, empty,
+                   iscomplex, zeros, einsum, eye, inf)
 # Local imports
 from scipy._lib._util import _asarray_validated
 from .misc import LinAlgError, _datacopied, norm
@@ -76,7 +75,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(numpy.int)
+    lwork = res[-2][0].real.astype(numpy.int_)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)
@@ -267,17 +266,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1,
-         check_finite=True):
+         check_finite=True, subset_by_index=None, subset_by_value=None,
+         driver=None):
     """
-    Solve an ordinary or generalized eigenvalue problem for a complex
+    Solve a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
-    Find eigenvalues w and optionally eigenvectors v of matrix `a`, where
-    `b` is positive definite::
+    Find eigenvalues array ``w`` and optionally eigenvectors array ``v`` of
+    array ``a``, where ``b`` is positive definite such that for every
+    eigenvalue λ (i-th entry of w) and its eigenvector ``vi`` (i-th column of
+    ``v``) satisfies::
 
-                      a v[:,i] = w[i] b v[:,i]
-        v[i,:].conj() a v[:,i] = w[i]
-        v[i,:].conj() b v[:,i] = 1
+                      a @ vi = λ * b @ vi
+        vi.conj().T @ a @ vi = λ
+        vi.conj().T @ b @ vi = 1
+
+    In the standard problem, ``b`` is assumed to be the identity matrix.
 
     Parameters
     ----------
@@ -289,76 +293,113 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
     eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
-    turbo : bool, optional
-        Use divide and conquer algorithm (faster but expensive in memory,
-        only for generalized eigenvalue problem and if eigvals=None)
-    eigvals : tuple (lo, hi), optional
-        Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
+    subset_by_index : iterable, optional
+        If provided, this two-element iterable defines the start and the end
+        indices of the desired eigenvalues (ascending order and 0-indexed).
+        To return only the second smallest to fifth smallest eigenvalues,
+        ``[1, 4]`` is used. ``[n-3, n-1]`` returns the largest three. Only
+        available with "evr", "evx", and "gvx" drivers. The entries are
+        directly converted to integers via ``int()``.
+    subset_by_value : iterable, optional
+        If provided, this two-element iterable defines the half-open interval
+        ``(a, b]`` that, if any, only the eigenvalues between these values
+        are returned. Only available with "evr", "evx", and "gvx" drivers. Use
+        ``np.inf`` for the unconstrained ends.
+    driver: str, optional
+        Defines which LAPACK driver should be used. Valid options are "ev",
+        "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
+        generalized (where b is not None) problems. See the Notes section.
     type : int, optional
-        Specifies the problem type to be solved:
+        For the generalized problems, this keyword specifies the problem type
+        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
+        inputs)::
 
-           type = 1: a   v[:,i] = w[i] b v[:,i]
+            1 =>     a @ v = w @ b @ v
+            2 => a @ b @ v = w @ v
+            3 => b @ a @ v = w @ v
 
-           type = 2: a b v[:,i] = w[i]   v[:,i]
-
-           type = 3: b a v[:,i] = w[i]   v[:,i]
+        This keyword is ignored for standard problems.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default
+        is False.
     overwrite_b : bool, optional
-        Whether to overwrite data in `b` (may improve performance)
+        Whether to overwrite data in ``b`` (may improve performance). Default
+        is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    turbo : bool, optional
+        *Deprecated since v1.5.0, use ``driver=gvd`` keyword instead*.
+        Use divide and conquer algorithm (faster but expensive in memory, only
+        for generalized eigenvalue problem and if full set of eigenvalues are
+        requested.). Has no significant effect if eigenvectors are not
+        requested.
+    eigvals : tuple (lo, hi), optional
+        *Deprecated since v1.5.0, use ``subset_by_index`` keyword instead*.
+        Indexes of the smallest and largest (in ascending order) eigenvalues
+        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
+        If omitted, all eigenvalues and eigenvectors are returned.
 
     Returns
     -------
-    w : (N,) float ndarray
+    w : (N,) ndarray
         The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
-    v : (M, N) complex ndarray
-        (if eigvals_only == False)
-
-        The normalized selected eigenvector corresponding to the
-        eigenvalue w[i] is the column v[:,i].
-
-        Normalization:
-
-            type 1 and 3: v.conj() a      v  = w
-
-            type 2: inv(v).conj() a  inv(v) = w
-
-            type = 1 or 2: v.conj() b      v  = I
-
-            type = 3: v.conj() inv(b) v  = I
+    v : (M, N) ndarray
+        (if ``eigvals_only == False``)
 
     Raises
     ------
     LinAlgError
-        If eigenvalue computation does not converge,
-        an error occurred, or b matrix is not definite positive. Note that
-        if input matrices are not symmetric or Hermitian, no error is reported
-        but results will be wrong.
+        If eigenvalue computation does not converge, an error occurred, or
+        b matrix is not definite positive. Note that if input matrices are
+        not symmetric or Hermitian, no error will be reported but results will
+        be wrong.
 
     See Also
     --------
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Notes
     -----
-    This function does not check the input array for being hermitian/symmetric
+    This function does not check the input array for being Hermitian/symmetric
     in order to allow for representing arrays with only their upper/lower
-    triangular parts.
+    triangular parts. Also, note that even though not taken into account,
+    finiteness check applies to the whole array and unaffected by "lower"
+    keyword.
+
+    This function uses LAPACK drivers for computations in all possible keyword
+    combinations, prefixed with ``sy`` if arrays are real and ``he`` if
+    complex, e.g., a float array with "evr" driver is solved via
+    "syevr", complex arrays with "gvx" driver problem is solved via "hegvx"
+    etc.
+
+    As a brief summary, the slowest and the most robust driver is the
+    classical ``<sy/he>ev`` which uses symmetric QR. ``<sy/he>evr`` is seen as
+    the optimal choice for the most general cases. However, there are certain
+    occasions that ``<sy/he>evd`` computes faster at the expense of more
+    memory usage. ``<sy/he>evx``, while still being faster than ``<sy/he>ev``,
+    often performs worse than the rest except when very few eigenvalues are
+    requested for large arrays though there is still no performance guarantee.
+
+
+    For the generalized problem, normalization with respect to the given
+    type argument::
+
+            type 1 and 3 :      v.conj().T @ a @ v = w
+            type 2       : inv(v).conj().T @ a @ inv(v) = w
+
+            type 1 or 2  :      v.conj().T @ b @ v  = I
+            type 3       : v.conj().T @ inv(b) @ v  = I
+
 
     Examples
     --------
@@ -368,98 +409,160 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
     True
 
+    Request only the eigenvalues
+
+    >>> w = eigh(A, eigvals_only=True)
+
+    Request eigenvalues that are less than 10.
+
+    >>> A = np.array([[34, -4, -10, -7, 2],
+    ...               [-4, 7, 2, 12, 0],
+    ...               [-10, 2, 44, 2, -19],
+    ...               [-7, 12, 2, 79, -34],
+    ...               [2, 0, -19, -34, 29]])
+    >>> eigh(A, eigvals_only=True, subset_by_value=[-np.inf, 10])
+    array([6.69199443e-07, 9.11938152e+00])
+
+    Request the largest second eigenvalue and its eigenvector
+
+    >>> w, v = eigh(A, subset_by_index=[1, 1])
+    >>> w
+    array([9.11938152])
+    >>> v.shape  # only a single column is returned
+    (5, 1)
+
     """
+    # set lower
+    uplo = 'L' if lower else 'U'
+    # Set job for Fortran routines
+    _job = 'N' if eigvals_only else 'V'
+
+    drv_str = [None, "ev", "evd", "evr", "evx", "gv", "gvd", "gvx"]
+    if driver not in drv_str:
+        raise ValueError('"{}" is unknown. Possible values are "None", "{}".'
+                         ''.format(driver, '", "'.join(drv_str[1:])))
+
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
+        raise ValueError('expected square "a" matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    if iscomplexobj(a1):
-        cplx = True
-    else:
-        cplx = False
+    cplx = True if iscomplexobj(a1) else False
+    n = a1.shape[0]
+    drv_args = {'overwrite_a': overwrite_a}
+
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
-            raise ValueError('expected square matrix')
+            raise ValueError('expected square "b" matrix')
 
         if b1.shape != a1.shape:
-            raise ValueError("wrong b dimensions %s, should "
-                             "be %s" % (str(b1.shape), str(a1.shape)))
-        if iscomplexobj(b1):
-            cplx = True
-        else:
-            cplx = cplx or False
-    else:
-        b1 = None
+            raise ValueError("wrong b dimensions {}, should "
+                             "be {}".format(b1.shape, a1.shape))
 
-    # Set job for Fortran routines
-    _job = (eigvals_only and 'N') or 'V'
+        if type not in [1, 2, 3]:
+            raise ValueError('"type" keyword only accepts 1, 2, and 3.')
 
-    # port eigenvalue range from Python to Fortran convention
-    if eigvals is not None:
-        lo, hi = eigvals
-        if lo < 0 or hi >= a1.shape[0]:
-            raise ValueError('The eigenvalue range specified is not valid.\n'
-                             'Valid range is [%s,%s]' % (0, a1.shape[0]-1))
-        lo += 1
-        hi += 1
-        eigvals = (lo, hi)
+        cplx = True if iscomplexobj(b1) else (cplx or False)
+        drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
-    # set lower
-    if lower:
-        uplo = 'L'
-    else:
-        uplo = 'U'
+    # backwards-compatibility handling
+    subset_by_index = subset_by_index if (eigvals is None) else eigvals
+
+    subset = (subset_by_index is not None) or (subset_by_value is not None)
+
+    # Both subsets can't be given
+    if subset_by_index and subset_by_value:
+        raise ValueError('Either index or value subset can be requested.')
+
+    # Take turbo into account if all conditions are met otherwise ignore
+    if turbo and b is not None:
+        driver = 'gvx' if subset else 'gvd'
+
+    # Check indices if given
+    if subset_by_index:
+        lo, hi = [int(x) for x in subset_by_index]
+        if not (0 <= lo <= hi < n):
+            raise ValueError('Requested eigenvalue indices are not valid. '
+                             'Valid range is [0, {}] and start <= end, but '
+                             'start={}, end={} is given'.format(n-1, lo, hi))
+        # fortran is 1-indexed
+        drv_args.update({'range': 'I', 'il': lo + 1, 'iu': hi + 1})
+
+    if subset_by_value:
+        lo, hi = subset_by_value
+        if not (-inf <= lo < hi <= inf):
+            raise ValueError('Requested eigenvalue bounds are not valid. '
+                             'Valid range is (-inf, inf) and low < high, but '
+                             'low={}, high={} is given'.format(lo, hi))
+
+        drv_args.update({'range': 'V', 'vl': lo, 'vu': hi})
 
     # fix prefix for lapack routines
-    if cplx:
-        pfx = 'he'
-    else:
-        pfx = 'sy'
+    pfx = 'he' if cplx else 'sy'
 
-    #  Standard Eigenvalue Problem
-    #  Use '*evr' routines
-    # FIXME: implement calculation of optimal lwork
-    #        for all lapack routines
-    if b1 is None:
-        driver = pfx+'evr'
-        (evr,) = get_lapack_funcs((driver,), (a1,))
-        if eigvals is None:
-            w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
-                             iu=a1.shape[0], overwrite_a=overwrite_a)
-        else:
-            (lo, hi) = eigvals
-            w_tot, v, info = evr(a1, uplo=uplo, jobz=_job, range="I",
-                                 il=lo, iu=hi, overwrite_a=overwrite_a)
-            w = w_tot[0:hi-lo+1]
+    # decide on the driver if not given
+    # first early exit on incompatible choice
+    if driver:
+        if b is None and (driver in ["gv", "gvd", "gvx"]):
+            raise ValueError('{} requires input b array to be supplied '
+                             'for generalized eigenvalue problems.'
+                             ''.format(driver))
+        if (b is not None) and (driver in ['ev', 'evd', 'evr', 'evx']):
+            raise ValueError('"{}" does not accept input b array '
+                             'for standard eigenvalue problems.'
+                             ''.format(driver))
+        if subset and (driver in ["ev", "evd", "gv", "gvd"]):
+            raise ValueError('"{}" cannot compute subsets of eigenvalues'
+                             ''.format(driver))
 
-    # Generalized Eigenvalue Problem
+    # Default driver is evr and gvd
     else:
-        # Use '*gvx' routines if range is specified
-        if eigvals is not None:
-            driver = pfx+'gvx'
-            (gvx,) = get_lapack_funcs((driver,), (a1, b1))
-            (lo, hi) = eigvals
-            w_tot, v, ifail, info = gvx(a1, b1, uplo=uplo, iu=hi,
-                                        itype=type, jobz=_job, il=lo,
-                                        overwrite_a=overwrite_a,
-                                        overwrite_b=overwrite_b)
-            w = w_tot[0:hi-lo+1]
-        # Use '*gvd' routine if turbo is on and no eigvals are specified
-        elif turbo:
-            driver = pfx+'gvd'
-            (gvd,) = get_lapack_funcs((driver,), (a1, b1))
-            v, w, info = gvd(a1, b1, uplo=uplo, itype=type, jobz=_job,
-                             overwrite_a=overwrite_a,
-                             overwrite_b=overwrite_b)
-        # Use '*gv' routine if turbo is off and no eigvals are specified
+        driver = "evr" if b is None else ("gvx" if subset else "gvd")
+
+    lwork_spec = {
+                  'syevd': ['lwork', 'liwork'],
+                  'syevr': ['lwork', 'liwork'],
+                  'heevd': ['lwork', 'liwork', 'lrwork'],
+                  'heevr': ['lwork', 'lrwork', 'liwork'],
+                  }
+
+    if b is None:  # Standard problem
+        drv, drvlw = get_lapack_funcs((pfx + driver, pfx+driver+'_lwork'),
+                                      [a1])
+        clw_args = {'n': n, 'lower': lower}
+        if driver == 'evd':
+            clw_args.update({'compute_v': 0 if _job == "N" else 1})
+
+        lw = _compute_lwork(drvlw, **clw_args)
+        # Multiple lwork vars
+        if isinstance(lw, tuple):
+            lwork_args = dict(zip(lwork_spec[pfx+driver], lw))
         else:
-            driver = pfx+'gv'
-            (gv,) = get_lapack_funcs((driver,), (a1, b1))
-            v, w, info = gv(a1, b1, uplo=uplo, itype=type, jobz=_job,
-                            overwrite_a=overwrite_a,
-                            overwrite_b=overwrite_b)
+            lwork_args = {'lwork': lw}
+
+        drv_args.update({'lower': lower, 'compute_v': 0 if _job == "N" else 1})
+        w, v, *other_args, info = drv(a=a1, **drv_args, **lwork_args)
+
+    else:  # Generalized problem
+        # 'gvd' doesn't have lwork query
+        if driver == "gvd":
+            drv = get_lapack_funcs(pfx + "gvd", [a1, b1])
+            lwork_args = {}
+        else:
+            drv, drvlw = get_lapack_funcs((pfx + driver, pfx+driver+'_lwork'),
+                                          [a1, b1])
+            # generalized drivers use uplo instead of lower
+            lw = _compute_lwork(drvlw, n, uplo=uplo)
+            lwork_args = {'lwork': lw}
+
+        drv_args.update({'uplo': uplo, 'jobz': _job})
+
+        w, v, *other_args, info = drv(a=a1, b=b1, **drv_args, **lwork_args)
+
+    # m is always the first extra argument
+    w = w[:other_args[0]] if subset else w
+    v = v[:, :other_args[0]] if (subset and not eigvals_only) else v
 
     # Check if we had a  successful exit
     if info == 0:
@@ -467,28 +570,38 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             return w
         else:
             return w, v
-    _check_info(info, driver, positive=False)  # triage more specifically
-    if info > 0 and b1 is None:
-        raise LinAlgError("unrecoverable internal error.")
-
-    # The algorithm failed to converge.
-    elif 0 < info <= b1.shape[0]:
-        if eigvals is not None:
-            raise LinAlgError("the eigenvectors %s failed to"
-                              " converge." % nonzero(ifail)-1)
-        else:
-            raise LinAlgError("internal fortran routine failed to converge: "
-                              "%i off-diagonal elements of an "
-                              "intermediate tridiagonal form did not converge"
-                              " to zero." % info)
-
-    # This occurs when b is not positive definite
     else:
-        raise LinAlgError("the leading minor of order %i"
-                          " of 'b' is not positive definite. The"
-                          " factorization of 'b' could not be completed"
-                          " and no eigenvalues or eigenvectors were"
-                          " computed." % (info-b1.shape[0]))
+        if info < -1:
+            raise LinAlgError('Illegal value in argument {} of internal {}'
+                              ''.format(-info, drv.typecode + pfx + driver))
+        elif info > n:
+            raise LinAlgError('The leading minor of order {} of B is not '
+                              'positive definite. The factorization of B '
+                              'could not be completed and no eigenvalues '
+                              'or eigenvectors were computed.'.format(info-n))
+        else:
+            drv_err = {'ev': 'The algorithm failed to converge; {} '
+                             'off-diagonal elements of an intermediate '
+                             'tridiagonal form did not converge to zero.',
+                       'evx': '{} eigenvectors failed to converge.',
+                       'evd': 'The algorithm failed to compute an eigenvalue '
+                              'while working on the submatrix lying in rows '
+                              'and columns {0}/{1} through mod({0},{1}).',
+                       'evr': 'Internal Error.'
+                       }
+            if driver in ['ev', 'gv']:
+                msg = drv_err['ev'].format(info)
+            elif driver in ['evx', 'gvx']:
+                msg = drv_err['evx'].format(info)
+            elif driver in ['evd', 'gvd']:
+                if eigvals_only:
+                    msg = drv_err['ev'].format(info)
+                else:
+                    msg = drv_err['evd'].format(info, n+1)
+            else:
+                msg = drv_err['evr']
+
+            raise LinAlgError(msg)
 
 
 _conv_dict = {0: 0, 1: 1, 2: 2,
@@ -502,8 +615,8 @@ def _check_select(select, select_range, max_ev, max_len):
         select = select.lower()
     try:
         select = _conv_dict[select]
-    except KeyError:
-        raise ValueError('invalid argument for select')
+    except KeyError as e:
+        raise ValueError('invalid argument for select') from e
     vl, vu = 0., 1.
     il = iu = 1
     if select != 0:  # (non-all)
@@ -613,7 +726,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eig : eigenvalues and right eigenvectors of general arrays.
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -769,66 +882,99 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1,
-             check_finite=True):
+             check_finite=True, subset_by_index=None, subset_by_value=None,
+             driver=None):
     """
-    Solve an ordinary or generalized eigenvalue problem for a complex
+    Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
-    Find eigenvalues w of matrix a, where b is positive definite::
+    Find eigenvalues array ``w`` of array ``a``, where ``b`` is positive
+    definite such that for every eigenvalue λ (i-th entry of w) and its
+    eigenvector vi (i-th column of v) satisfies::
 
-                      a v[:,i] = w[i] b v[:,i]
-        v[i,:].conj() a v[:,i] = w[i]
-        v[i,:].conj() b v[:,i] = 1
+                      a @ vi = λ * b @ vi
+        vi.conj().T @ a @ vi = λ
+        vi.conj().T @ b @ vi = 1
 
+    In the standard problem, b is assumed to be the identity matrix.
 
     Parameters
     ----------
     a : (M, M) array_like
-        A complex Hermitian or real symmetric matrix whose eigenvalues and
-        eigenvectors will be computed.
+        A complex Hermitian or real symmetric matrix whose eigenvalues will
+        be computed.
     b : (M, M) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, identity matrix is assumed.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of `a`. (Default: lower)
-    turbo : bool, optional
-        Use divide and conquer algorithm (faster but expensive in memory,
-        only for generalized eigenvalue problem and if eigvals=None)
-    eigvals : tuple (lo, hi), optional
-        Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
+        triangle of ``a`` and, if applicable, ``b``. (Default: lower)
+    eigvals_only : bool, optional
+        Whether to calculate only eigenvalues and no eigenvectors.
+        (Default: both are calculated)
+    subset_by_index : iterable, optional
+        If provided, this two-element iterable defines the start and the end
+        indices of the desired eigenvalues (ascending order and 0-indexed).
+        To return only the second smallest to fifth smallest eigenvalues,
+        ``[1, 4]`` is used. ``[n-3, n-1]`` returns the largest three. Only
+        available with "evr", "evx", and "gvx" drivers. The entries are
+        directly converted to integers via ``int()``.
+    subset_by_value : iterable, optional
+        If provided, this two-element iterable defines the half-open interval
+        ``(a, b]`` that, if any, only the eigenvalues between these values
+        are returned. Only available with "evr", "evx", and "gvx" drivers. Use
+        ``np.inf`` for the unconstrained ends.
+    driver: str, optional
+        Defines which LAPACK driver should be used. Valid options are "ev",
+        "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
+        generalized (where b is not None) problems. See the Notes section of
+        `scipy.linalg.eigh`.
     type : int, optional
-        Specifies the problem type to be solved:
+        For the generalized problems, this keyword specifies the problem type
+        to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
+        inputs)::
 
-           type = 1: a   v[:,i] = w[i] b v[:,i]
+            1 =>     a @ v = w @ b @ v
+            2 => a @ b @ v = w @ v
+            3 => b @ a @ v = w @ v
 
-           type = 2: a b v[:,i] = w[i]   v[:,i]
-
-           type = 3: b a v[:,i] = w[i]   v[:,i]
+        This keyword is ignored for standard problems.
     overwrite_a : bool, optional
-        Whether to overwrite data in `a` (may improve performance)
+        Whether to overwrite data in ``a`` (may improve performance). Default
+        is False.
     overwrite_b : bool, optional
-        Whether to overwrite data in `b` (may improve performance)
+        Whether to overwrite data in ``b`` (may improve performance). Default
+        is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    turbo : bool, optional
+        *Deprecated by ``driver=gvd`` option*. Has no significant effect for
+        eigenvalue computations since no eigenvectors are requested.
+
+        ..Deprecated in v1.5.0
+    eigvals : tuple (lo, hi), optional
+        *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
+        and largest (in ascending order) eigenvalues and corresponding
+        eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
+        eigenvalues and eigenvectors are returned.
+
+        .. Deprecated in v1.5.0
 
     Returns
     -------
-    w : (N,) float ndarray
-        The N (1<=N<=M) selected eigenvalues, in ascending order, each
+    w : (N,) ndarray
+        The ``N`` (``1<=N<=M``) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
     Raises
     ------
     LinAlgError
-        If eigenvalue computation does not converge,
-        an error occurred, or b matrix is not definite positive. Note that
-        if input matrices are not symmetric or hermitian, no error is reported
-        but results will be wrong.
+        If eigenvalue computation does not converge, an error occurred, or
+        b matrix is not definite positive. Note that if input matrices are
+        not symmetric or Hermitian, no error will be reported but results will
+        be wrong.
 
     See Also
     --------
@@ -844,8 +990,16 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     in order to allow for representing arrays with only their upper/lower
     triangular parts.
 
+    This function serves as a one-liner shorthand for `scipy.linalg.eigh` with
+    the option ``eigvals_only=True`` to get the eigenvalues and not the
+    eigenvectors. Here it is kept as a legacy convenience. It might be
+    beneficial to use the main function to have full control and to be a bit
+    more pythonic.
+
     Examples
     --------
+    For more examples see `scipy.linalg.eigh`.
+
     >>> from scipy.linalg import eigvalsh
     >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
     >>> w = eigvalsh(A)
@@ -856,7 +1010,8 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                 turbo=turbo, eigvals=eigvals, type=type,
-                check_finite=check_finite)
+                check_finite=check_finite, subset_by_index=subset_by_index,
+                subset_by_value=subset_by_value, driver=driver)
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
@@ -1255,7 +1410,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     # if 2x2 or smaller: already in Hessenberg
     if a1.shape[0] <= 2:
         if calc_q:
-            return a1, numpy.eye(a1.shape[0])
+            return a1, eye(a1.shape[0])
         return a1
 
     gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd', 'gebal',
@@ -1300,8 +1455,8 @@ def cdf2rdf(w, v):
         Complex or real eigenvalues, an array or stack of arrays
 
         Conjugate pairs must not be interleaved, else the wrong result
-        will be produced. So ``[1+1j, 1, 1-1j]`` will give a correct result, but
-        ``[1+1j, 2+1j, 1-1j, 2-1j]`` will not.
+        will be produced. So ``[1+1j, 1, 1-1j]`` will give a correct result,
+        but ``[1+1j, 2+1j, 1-1j, 2-1j]`` will not.
 
     v : (..., M, M) array_like
         Complex or real eigenvectors, a square array or stack of square arrays.
@@ -1403,7 +1558,8 @@ def cdf2rdf(w, v):
     stack_ind = ()
     for i in idx_stack:
         # should never happen, assuming nonzero orders by the last axis
-        assert (i[0::2] == i[1::2]).all(), "Conjugate pair spanned different arrays!"
+        assert (i[0::2] == i[1::2]).all(),\
+                "Conjugate pair spanned different arrays!"
         stack_ind += (i[0::2],)
 
     # all eigenvalues to diagonal form

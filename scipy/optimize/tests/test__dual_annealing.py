@@ -6,16 +6,18 @@
 Unit tests for the dual annealing global optimizer
 """
 from scipy.optimize import dual_annealing
-from scipy.optimize._dual_annealing import VisitingDistribution
-from scipy.optimize._dual_annealing import ObjectiveFunWrapper
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
+from scipy.optimize._dual_annealing import ObjectiveFunWrapper
+from scipy.optimize._dual_annealing import StrategyChain
+from scipy.optimize._dual_annealing import VisitingDistribution
 from scipy.optimize import rosen, rosen_der
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
+from scipy._lib._pep440 import Version
 
 
 class TestDualAnnealing:
@@ -141,6 +143,21 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_rand_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng(1)
+
+        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # seed again
+        rng = np.random.default_rng(1)
+        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        # If we have reproducible results, x components found has to
+        # be exactly the same, which is not the case with no seeding
+        assert_equal(res1.x, res2.x)
+
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
         assert_raises(ValueError, dual_annealing, self.func,
@@ -156,6 +173,26 @@ class TestDualAnnealing:
         invalid_bounds = [(-5, 5), (0, np.nan), (-5, 5)]
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
+
+    def test_local_search_option_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        dual_annealing(
+            func,
+            bounds=bounds,
+            local_search_options={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Method CG cannot handle ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                local_search_options={"method": "CG", "bounds": bounds})
+
+            # Verify warning happened for Method cannot handle bounds.
+            assert sup.log
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,
@@ -242,3 +279,45 @@ class TestDualAnnealing:
                          -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
                          -5.00668935e-09], atol=4e-8)
         assert_allclose(ret.fun, 0.000000, atol=5e-13)
+
+    @pytest.mark.parametrize('new_e, temp_step, accepted, accept_rate', [
+        (0, 100, 1000, 1.0097587941791923),
+        (0, 2, 1000, 1.2599210498948732),
+        (10, 100, 878, 0.8786035869128718),
+        (10, 60, 695, 0.6812920690579612),
+        (2, 100, 990, 0.9897404249173424),
+    ])
+    def test_accept_reject_probabilistic(
+            self, new_e, temp_step, accepted, accept_rate):
+        # Test accepts unconditionally with e < current_energy and
+        # probabilistically with e > current_energy
+
+        rs = check_random_state(123)
+
+        count_accepted = 0
+        iterations = 1000
+
+        accept_param = -5
+        current_energy = 1
+        for _ in range(iterations):
+            energy_state = EnergyState(lower=None, upper=None)
+            # Set energy state with current_energy, any location.
+            energy_state.update_current(current_energy, [0])
+
+            chain = StrategyChain(
+                accept_param, None, None, None, rs, energy_state)
+            # Normally this is set in run()
+            chain.temperature_step = temp_step
+
+            # Check if update is accepted.
+            chain.accept_reject(j=1, e=new_e, x_visit=[2])
+            if energy_state.current_energy == new_e:
+                count_accepted += 1
+
+        assert count_accepted == accepted
+
+        # Check accept rate
+        pqv = 1 - (1 - accept_param) * (new_e - current_energy) / temp_step
+        rate = 0 if pqv <= 0 else np.exp(np.log(pqv) / (1 - accept_param))
+
+        assert_allclose(rate, accept_rate)

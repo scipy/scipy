@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import io
 import numpy as np
@@ -198,14 +196,6 @@ class TestKrogh(object):
                                 np.zeros(len(self.test_xs)))
 
     def test_hermite(self):
-        xs = [0,0,0,1,1,1,2]
-        ys = [self.true_poly(0),
-              self.true_poly.deriv(1)(0),
-              self.true_poly.deriv(2)(0),
-              self.true_poly(1),
-              self.true_poly.deriv(1)(1),
-              self.true_poly.deriv(2)(1),
-              self.true_poly(2)]
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
 
@@ -361,6 +351,12 @@ class TestBarycentric(object):
         P = BarycentricInterpolator(self.xs, self.ys)
         values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
         assert_almost_equal(P(self.test_xs), values)
+
+    def test_int_input(self):
+        x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
+        y = np.arange(1, 11)
+        value = barycentric_interpolate(x, y, 1000 * 9.5)
+        assert_almost_equal(value, 9.5)
 
 
 class TestPCHIP(object):
@@ -607,6 +603,27 @@ class TestCubicSpline(object):
         y = np.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
         assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
+
+    def test_second_derivative_continuity_gh_11758(self):
+        # gh-11758: C2 continuity fail
+        x = np.array([0.9, 1.3, 1.9, 2.1, 2.6, 3.0, 3.9, 4.4, 4.7, 5.0, 6.0,
+                      7.0, 8.0, 9.2, 10.5, 11.3, 11.6, 12.0, 12.6, 13.0, 13.3])
+        y = np.array([1.3, 1.5, 1.85, 2.1, 2.6, 2.7, 2.4, 2.15, 2.05, 2.1,
+                      2.25, 2.3, 2.25, 1.95, 1.4, 0.9, 0.7, 0.6, 0.5, 0.4, 1.3])
+        S = CubicSpline(x, y, bc_type='periodic', extrapolate='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+
+    def test_three_points(self):
+        # gh-11758: Fails computing a_m2_m1
+        # In this case, s (first derivatives) could be found manually by solving
+        # system of 2 linear equations. Due to solution of this system,
+        # s[i] = (h1m2 + h2m1) / (h1 + h2), where h1 = x[1] - x[0], h2 = x[2] - x[1],
+        # m1 = (y[1] - y[0]) / h1, m2 = (y[2] - y[1]) / h2
+        x = np.array([1.0, 2.75, 3.0])
+        y = np.array([1.0, 15.0, 1.0])
+        S = CubicSpline(x, y, bc_type='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+        assert_allclose(S.derivative(1)(x), np.array([-48.0, -48.0, -48.0]))
 
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)

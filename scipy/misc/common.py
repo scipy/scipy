@@ -3,8 +3,6 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
@@ -27,9 +25,36 @@ def central_diff_weights(Np, ndiv=1):
     ndiv : int, optional
         Number of divisions. Default is 1.
 
+    Returns
+    -------
+    w : ndarray
+        Weights for an Np-point central derivative. Its size is `Np`.
+
     Notes
     -----
     Can be inaccurate for a large number of points.
+
+    Examples
+    --------
+    We can calculate a derivative value of a function.
+
+    >>> from scipy.misc import central_diff_weights
+    >>> def f(x):
+    ...     return 2 * x**2 + 3
+    >>> x = 3.0 # derivative point
+    >>> h = 0.1 # differential step
+    >>> Np = 3 # point number for central derivative
+    >>> weights = central_diff_weights(Np) # weights for first derivative
+    >>> vals = [f(x + (i - Np/2) * h) for i in range(Np)]
+    >>> sum(w * v for (w, v) in zip(weights, vals))/h
+    11.79999999999998
+
+    This value is close to the analytical solution:
+    f'(x) = 4x, so f'(3) = 12
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Finite_difference
 
     """
     if Np < ndiv + 1:

@@ -1,6 +1,4 @@
 """Base class for sparse matrix formats using compressed storage."""
-from __future__ import division, print_function, absolute_import
-
 __all__ = []
 
 from warnings import warn
@@ -80,9 +78,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
-            except Exception:
+            except Exception as e:
                 raise ValueError("unrecognized {}_matrix constructor usage"
-                                 "".format(self.format))
+                                 "".format(self.format)) from e
             from .coo import coo_matrix
             self._set_self(self.__class__(coo_matrix(arg1, dtype=dtype)))
 
@@ -95,14 +93,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 try:
                     major_dim = len(self.indptr) - 1
                     minor_dim = self.indices.max() + 1
-                except Exception:
-                    raise ValueError('unable to infer matrix dimensions')
+                except Exception as e:
+                    raise ValueError('unable to infer matrix dimensions') from e
                 else:
                     self._shape = check_shape(self._swap((major_dim,
                                                           minor_dim)))
 
         if dtype is not None:
-            self.data = np.asarray(self.data, dtype=dtype)
+            self.data = self.data.astype(dtype, copy=False)
 
         self.check_format(full_check=False)
 
@@ -347,7 +345,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes.')
+            raise ValueError('Incompatible shapes ({} and {})'
+                             .format(self.shape, other.shape))
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
@@ -501,27 +500,24 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         other = self.__class__(other)  # convert to this format
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=M*N)
-        indptr = np.empty(major_axis + 1, dtype=idx_dtype)
+                                     other.indptr, other.indices))
 
-        fn = getattr(_sparsetools, self.format + '_matmat_pass1')
-        fn(M, N,
-           np.asarray(self.indptr, dtype=idx_dtype),
-           np.asarray(self.indices, dtype=idx_dtype),
-           np.asarray(other.indptr, dtype=idx_dtype),
-           np.asarray(other.indices, dtype=idx_dtype),
-           indptr)
+        fn = getattr(_sparsetools, self.format + '_matmat_maxnnz')
+        nnz = fn(M, N,
+                 np.asarray(self.indptr, dtype=idx_dtype),
+                 np.asarray(self.indices, dtype=idx_dtype),
+                 np.asarray(other.indptr, dtype=idx_dtype),
+                 np.asarray(other.indices, dtype=idx_dtype))
 
-        nnz = indptr[-1]
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=nnz)
-        indptr = np.asarray(indptr, dtype=idx_dtype)
+
+        indptr = np.empty(major_axis + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
-        fn = getattr(_sparsetools, self.format + '_matmat_pass2')
+        fn = getattr(_sparsetools, self.format + '_matmat')
         fn(M, N, np.asarray(self.indptr, dtype=idx_dtype),
            np.asarray(self.indices, dtype=idx_dtype),
            self.data,
@@ -535,7 +531,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def diagonal(self, k=0):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            raise ValueError("k exceeds matrix dimensions")
+            return np.empty(0, dtype=self.data.dtype)
         fn = getattr(_sparsetools, self.format + "_diagonal")
         y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
                      dtype=upcast(self.dtype))
@@ -814,7 +810,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         broadcast_row = M != 1 and x.shape[0] == 1
         broadcast_col = N != 1 and x.shape[1] == 1
         r, c = x.row, x.col
+
         x = np.asarray(x.data, dtype=self.dtype)
+        if x.size == 0:
+            return
+
         if broadcast_row:
             r = np.repeat(np.arange(M), len(r))
             c = np.tile(c, M)
@@ -1050,7 +1050,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def eliminate_zeros(self):
         """Remove zero entries from the matrix
 
-        This is an *in place* operation
+        This is an *in place* operation.
         """
         M, N = self._swap(self.shape)
         _sparsetools.csr_eliminate_zeros(M, N, self.indptr, self.indices,
@@ -1089,7 +1089,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
-        The is an *in place* operation
+        This is an *in place* operation.
         """
         if self.has_canonical_format:
             return

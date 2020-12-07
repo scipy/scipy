@@ -1,8 +1,6 @@
 """ Test functions for linalg.decomp module
 
 """
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build linalg:
   python setup_linalg.py build
@@ -21,28 +19,51 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
-     schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
-     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
-     null_space, cdf2rdf)
-from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
-     dsbev, dsbevd, dsbevx, zhbevd, zhbevx
+                          schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
+                          hessenberg, rq, eig_banded, eigvals_banded, eigh,
+                          eigvalsh, qr_multiply, qz, orth, ordqz,
+                          subspace_angles, hadamard, eigvalsh_tridiagonal,
+                          eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
+
+from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
+                                 dsbevd, dsbevx, zhbevd, zhbevx)
+
 from scipy.linalg.misc import norm
 from scipy.linalg._decomp_qz import _select_function
+from scipy.stats import ortho_group
 
-from numpy import array, transpose, diag, ones, full, linalg, \
-     argsort, zeros, arange, float32, complex64, dot, conj, identity, \
-     ravel, sqrt, iscomplex, shape, sort, conjugate, sign, \
-     asarray, isfinite, ndarray, outer, eye, dtype, empty,\
-     triu, tril
+from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
+                   float32, complex64, ravel, sqrt, iscomplex, shape, sort,
+                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril)
 
-from numpy.random import normal, seed, random
+from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import bmat, matrix
+from scipy.sparse.sputils import matrix
 
-# digit precision to use in asserts for different types
-DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
+
+
+def _random_hermitian_matrix(n, posdef=False, dtype=float):
+    "Generate random sym/hermitian array of the given size n"
+    if dtype in COMPLEX_DTYPES:
+        A = np.random.rand(n, n) + np.random.rand(n, n)*1.0j
+        A = (A + A.conj().T)/2
+    else:
+        A = np.random.rand(n, n)
+        A = (A + A.T)/2
+
+    if posdef:
+        A += sqrt(2*n)*np.eye(n)
+
+    return A.astype(dtype)
+
+
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
 
 def clear_fuss(ar, fuss_binary_bits=7):
     """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
@@ -61,8 +82,6 @@ def clear_fuss(ar, fuss_binary_bits=7):
 
 
 # XXX: This function should be available through numpy.testing
-
-
 def assert_dtype_equal(act, des):
     if isinstance(act, ndarray):
         act = act.dtype
@@ -74,12 +93,12 @@ def assert_dtype_equal(act, des):
     else:
         des = dtype(des)
 
-    assert_(act == des, 'dtype mismatch: "%s" (should be "%s") ' % (act, des))
+    assert_(act == des,
+            'dtype mismatch: "{}" (should be "{}")'.format(act, des))
+
 
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
-
-
 def symrand(dim_or_eigv):
     """Return a random symmetric (Hermitian) matrix.
 
@@ -99,121 +118,98 @@ def symrand(dim_or_eigv):
     else:
         raise TypeError("input type not supported.")
 
-    v = random_rot(dim)
-    h = dot(dot(v.T.conj(), diag(d)), v)
+    v = ortho_group.rvs(dim)
+    h = v.T.conj() @ diag(d) @ v
     # to avoid roundoff errors, symmetrize the matrix (again)
     h = 0.5*(h.T+h)
     return h
 
-# XXX: This function should not be defined here, but somewhere in
-#      scipy.linalg namespace
 
-
-def random_rot(dim):
-    """Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(n)).
-    The algorithm is described in the paper
-    Stewart, G.W., 'The efficient generation of random orthogonal
-    matrices with an application to condition estimators', SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
-    H = eye(dim)
-    D = ones((dim,))
-    for n in range(1, dim):
-        x = normal(size=(dim-n+1,))
-        D[n-1] = sign(x[0])
-        x[0] -= D[n-1]*sqrt((x*x).sum())
-        # Householder transformation
-
-        Hx = eye(dim-n+1) - 2.*outer(x, x)/(x*x).sum()
-        mat = eye(dim)
-        mat[n-1:,n-1:] = Hx
-        H = dot(H, mat)
-    # Fix the last sign such that the determinant is 1
-    D[-1] = -D.prod()
-    H = (D*H.T).T
-    return H
+def _complex_symrand(dim, dtype):
+    a1, a2 = symrand(dim), symrand(dim)
+    # add antisymmetric matrix as imag part
+    a = a1 + 1j*(triu(a2)-tril(a2))
+    return a.astype(dtype)
 
 
 class TestEigVals(object):
 
     def test_simple(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
         w = eigvals(a)
-        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
-        assert_array_almost_equal(w,exact_w)
+        exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
+        assert_array_almost_equal(w, exact_w)
 
     def test_simple_tr(self):
-        a = array([[1,2,3],[1,2,3],[2,5,6]],'d')
-        a = transpose(a).copy()
-        a = transpose(a)
+        a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]], 'd').T
+        a = a.copy()
+        a = a.T
         w = eigvals(a)
-        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
-        assert_array_almost_equal(w,exact_w)
+        exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
+        assert_array_almost_equal(w, exact_w)
 
     def test_simple_complex(self):
-        a = [[1,2,3],[1,2,3],[2,5,6+1j]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]]
         w = eigvals(a)
         exact_w = [(9+1j+sqrt(92+6j))/2,
                    0,
                    (9+1j-sqrt(92+6j))/2]
-        assert_array_almost_equal(w,exact_w)
+        assert_array_almost_equal(w, exact_w)
 
     def test_finite(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
         w = eigvals(a, check_finite=False)
-        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
-        assert_array_almost_equal(w,exact_w)
+        exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
+        assert_array_almost_equal(w, exact_w)
 
 
 class TestEig(object):
 
     def test_simple(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
-        w,v = eig(a)
-        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
-        v0 = array([1,1,(1+sqrt(93)/3)/2])
-        v1 = array([3.,0,-1])
-        v2 = array([1,1,(1-sqrt(93)/3)/2])
-        v0 = v0 / sqrt(dot(v0,transpose(v0)))
-        v1 = v1 / sqrt(dot(v1,transpose(v1)))
-        v2 = v2 / sqrt(dot(v2,transpose(v2)))
-        assert_array_almost_equal(w,exact_w)
-        assert_array_almost_equal(v0,v[:,0]*sign(v[0,0]))
-        assert_array_almost_equal(v1,v[:,1]*sign(v[0,1]))
-        assert_array_almost_equal(v2,v[:,2]*sign(v[0,2]))
+        a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        w, v = eig(a)
+        exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
+        v0 = array([1, 1, (1+sqrt(93)/3)/2])
+        v1 = array([3., 0, -1])
+        v2 = array([1, 1, (1-sqrt(93)/3)/2])
+        v0 = v0 / norm(v0)
+        v1 = v1 / norm(v1)
+        v2 = v2 / norm(v2)
+        assert_array_almost_equal(w, exact_w)
+        assert_array_almost_equal(v0, v[:, 0]*sign(v[0, 0]))
+        assert_array_almost_equal(v1, v[:, 1]*sign(v[0, 1]))
+        assert_array_almost_equal(v2, v[:, 2]*sign(v[0, 2]))
         for i in range(3):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
-        w,v = eig(a,left=1,right=0)
+            assert_array_almost_equal(a @ v[:, i], w[i]*v[:, i])
+        w, v = eig(a, left=1, right=0)
         for i in range(3):
-            assert_array_almost_equal(dot(transpose(a),v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(a.T @ v[:, i], w[i]*v[:, i])
 
     def test_simple_complex_eig(self):
-        a = [[1,2],[-2,1]]
-        w,vl,vr = eig(a,left=1,right=1)
+        a = array([[1, 2], [-2, 1]])
+        w, vl, vr = eig(a, left=1, right=1)
         assert_array_almost_equal(w, array([1+2j, 1-2j]))
         for i in range(2):
-            assert_array_almost_equal(dot(a,vr[:,i]),w[i]*vr[:,i])
+            assert_array_almost_equal(a @ vr[:, i], w[i]*vr[:, i])
         for i in range(2):
-            assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
-                                      conjugate(w[i])*vl[:,i])
+            assert_array_almost_equal(a.conj().T @ vl[:, i],
+                                      w[i].conj()*vl[:, i])
 
     def test_simple_complex(self):
-        a = [[1,2,3],[1,2,3],[2,5,6+1j]]
-        w,vl,vr = eig(a,left=1,right=1)
+        a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
+        w, vl, vr = eig(a, left=1, right=1)
         for i in range(3):
-            assert_array_almost_equal(dot(a,vr[:,i]),w[i]*vr[:,i])
+            assert_array_almost_equal(a @ vr[:, i], w[i]*vr[:, i])
         for i in range(3):
-            assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
-                                      conjugate(w[i])*vl[:,i])
+            assert_array_almost_equal(a.conj().T @ vl[:, i],
+                                      w[i].conj()*vl[:, i])
 
     def test_gh_3054(self):
         a = [[1]]
         b = [[0]]
         w, vr = eig(a, b, homogeneous_eigvals=True)
-        assert_allclose(w[1,0], 0)
-        assert_(w[0,0] != 0)
+        assert_allclose(w[1, 0], 0)
+        assert_(w[0, 0] != 0)
         assert_allclose(vr, 1)
 
         w, vr = eig(a, b)
@@ -233,39 +229,43 @@ class TestEig(object):
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
         wt = eigvals(A, B0, homogeneous_eigvals=True)
-        val1 = dot(A, vr) * w[1,:]
-        val2 = dot(B, vr) * w[0,:]
+        val1 = A @ vr * w[1, :]
+        val2 = B @ vr * w[0, :]
         for i in range(val1.shape[1]):
-            assert_allclose(val1[:,i], val2[:,i], rtol=1e-13, atol=1e-13, err_msg=msg)
+            assert_allclose(val1[:, i], val2[:, i],
+                            rtol=1e-13, atol=1e-13, err_msg=msg)
 
         if B0 is None:
-            assert_allclose(w[1,:], 1)
-            assert_allclose(wt[1,:], 1)
+            assert_allclose(w[1, :], 1)
+            assert_allclose(wt[1, :], 1)
 
         perm = np.lexsort(w)
         permt = np.lexsort(wt)
-        assert_allclose(w[:,perm], wt[:,permt], atol=1e-7, rtol=1e-7,
+        assert_allclose(w[:, perm], wt[:, permt], atol=1e-7, rtol=1e-7,
                         err_msg=msg)
 
         length = np.empty(len(vr))
+
         for i in range(len(vr)):
-            length[i] = norm(vr[:,i])
+            length[i] = norm(vr[:, i])
+
         assert_allclose(length, np.ones(length.size), err_msg=msg,
                         atol=1e-7, rtol=1e-7)
 
         # Convert homogeneous coordinates
-        beta_nonzero = (w[1,:] != 0)
-        wh = w[0,beta_nonzero] / w[1,beta_nonzero]
+        beta_nonzero = (w[1, :] != 0)
+        wh = w[0, beta_nonzero] / w[1, beta_nonzero]
 
         # Eigenvalues in standard coordinates
         w, vr = eig(A, B0)
         wt = eigvals(A, B0)
-        val1 = dot(A, vr)
-        val2 = dot(B, vr) * w
+        val1 = A @ vr
+        val2 = B @ vr * w
         res = val1 - val2
         for i in range(res.shape[1]):
-            if np.all(isfinite(res[:,i])):
-                assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
+            if np.all(isfinite(res[:, i])):
+                assert_allclose(res[:, i], 0,
+                                rtol=1e-13, atol=1e-13, err_msg=msg)
 
         w_fin = w[isfinite(w)]
         wt_fin = wt[isfinite(wt)]
@@ -276,7 +276,7 @@ class TestEig(object):
 
         length = np.empty(len(vr))
         for i in range(len(vr)):
-            length[i] = norm(vr[:,i])
+            length[i] = norm(vr[:, i])
         assert_allclose(length, np.ones(length.size), err_msg=msg)
 
         # Compare homogeneous and nonhomogeneous versions
@@ -286,32 +286,32 @@ class TestEig(object):
     def test_singular(self):
         # Example taken from
         # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
-        A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
-            [27,31,26,21,15], [38,44,44,24,30]))
-        B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
-            [16,25,27,14,23], [24,35,18,21,22]))
+        A = array([[22, 34, 31, 31, 17],
+                   [45, 45, 42, 19, 29],
+                   [39, 47, 49, 26, 34],
+                   [27, 31, 26, 21, 15],
+                   [38, 44, 44, 24, 30]])
+        B = array([[13, 26, 25, 17, 24],
+                   [31, 46, 40, 26, 37],
+                   [26, 40, 19, 25, 25],
+                   [16, 25, 27, 14, 23],
+                   [24, 35, 18, 21, 22]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
-        M = diag(array(([1,0,3])))
-        K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
-        D = array(([1,-1,0],[-1,1,0],[0,0,0]))
-        Z = zeros((3,3))
-        I3 = identity(3)
-        A = bmat([[I3, Z], [Z, -K]])
-        B = bmat([[Z, I3], [M, D]])
+        M = diag(array(([1, 0, 3])))
+        K = array(([2, -1, -1], [-1, 2, -1], [-1, -1, 2]))
+        D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
+        Z = zeros((3, 3))
+        I3 = eye(3)
+        A = np.block([[I3, Z], [Z, -K]])
+        B = np.block([[Z, I3], [M, D]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_bad_geneig(self):
         # Ticket #709 (strange return values from DGGEV)
@@ -331,13 +331,10 @@ class TestEig(object):
 
         # With a buggy LAPACK, this can fail for different omega on different
         # machines -- so we need to test several values
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
@@ -354,31 +351,32 @@ class TestEig(object):
         self._check_gen_eig(A, B)
 
     def test_check_finite(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
-        w,v = eig(a, check_finite=False)
-        exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
-        v0 = array([1,1,(1+sqrt(93)/3)/2])
-        v1 = array([3.,0,-1])
-        v2 = array([1,1,(1-sqrt(93)/3)/2])
-        v0 = v0 / sqrt(dot(v0,transpose(v0)))
-        v1 = v1 / sqrt(dot(v1,transpose(v1)))
-        v2 = v2 / sqrt(dot(v2,transpose(v2)))
-        assert_array_almost_equal(w,exact_w)
-        assert_array_almost_equal(v0,v[:,0]*sign(v[0,0]))
-        assert_array_almost_equal(v1,v[:,1]*sign(v[0,1]))
-        assert_array_almost_equal(v2,v[:,2]*sign(v[0,2]))
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
+        w, v = eig(a, check_finite=False)
+        exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
+        v0 = array([1, 1, (1+sqrt(93)/3)/2])
+        v1 = array([3., 0, -1])
+        v2 = array([1, 1, (1-sqrt(93)/3)/2])
+        v0 = v0 / norm(v0)
+        v1 = v1 / norm(v1)
+        v2 = v2 / norm(v2)
+        assert_array_almost_equal(w, exact_w)
+        assert_array_almost_equal(v0, v[:, 0]*sign(v[0, 0]))
+        assert_array_almost_equal(v1, v[:, 1]*sign(v[0, 1]))
+        assert_array_almost_equal(v2, v[:, 2]*sign(v[0, 2]))
         for i in range(3):
-            assert_array_almost_equal(dot(a,v[:,i]),w[i]*v[:,i])
+            assert_array_almost_equal(a @ v[:, i], w[i]*v[:, i])
 
     def test_not_square_error(self):
         """Check that passing a non-square array raises a ValueError."""
-        A = np.arange(6).reshape(3,2)
+        A = np.arange(6).reshape(3, 2)
         assert_raises(ValueError, eig, A)
 
     def test_shape_mismatch(self):
-        """Check that passing arrays of with different shapes raises a ValueError."""
-        A = identity(2)
-        B = np.arange(9.0).reshape(3,3)
+        """Check that passing arrays of with different shapes
+        raises a ValueError."""
+        A = eye(2)
+        B = np.arange(9.0).reshape(3, 3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
 
@@ -396,36 +394,40 @@ class TestEigBanded(object):
 
         # symmetric band matrix
         self.sym_mat = (diag(full(N, 1.0))
-                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -1.0), 1)
-                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
+                        + diag(full(N-1, -1.0), -1) + diag(full(N-1, -1.0), 1)
+                        + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # hermitian band matrix
         self.herm_mat = (diag(full(N, -1.0))
-                     + 1j*diag(full(N-1, 1.0), -1) - 1j*diag(full(N-1, 1.0), 1)
-                     + diag(full(N-2, -2.0), -2) + diag(full(N-2, -2.0), 2))
+                         + 1j*diag(full(N-1, 1.0), -1)
+                         - 1j*diag(full(N-1, 1.0), 1)
+                         + diag(full(N-2, -2.0), -2)
+                         + diag(full(N-2, -2.0), 2))
 
         # general real band matrix
         self.real_mat = (diag(full(N, 1.0))
-                     + diag(full(N-1, -1.0), -1) + diag(full(N-1, -3.0), 1)
-                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
+                         + diag(full(N-1, -1.0), -1) + diag(full(N-1, -3.0), 1)
+                         + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
 
         # general complex band matrix
         self.comp_mat = (1j*diag(full(N, 1.0))
-                     + diag(full(N-1, -1.0), -1) + 1j*diag(full(N-1, -3.0), 1)
-                     + diag(full(N-2, 2.0), -2) + diag(full(N-2, -2.0), 2))
+                         + diag(full(N-1, -1.0), -1)
+                         + 1j*diag(full(N-1, -3.0), 1)
+                         + diag(full(N-2, 2.0), -2)
+                         + diag(full(N-2, -2.0), 2))
 
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
         ew = ew.real
         args = argsort(ew)
         self.w_sym_lin = ew[args]
-        self.evec_sym_lin = ev[:,args]
+        self.evec_sym_lin = ev[:, args]
 
         ew, ev = linalg.eig(self.herm_mat)
         ew = ew.real
         args = argsort(ew)
         self.w_herm_lin = ew[args]
-        self.evec_herm_lin = ev[:,args]
+        self.evec_herm_lin = ev[:, args]
 
         # Extract upper bands from symmetric and hermitian band matrices
         # (for use in dsbevd, dsbevx, zhbevd, zhbevx
@@ -434,27 +436,29 @@ class TestEigBanded(object):
         self.bandmat_sym = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
         for i in range(LDAB):
-            self.bandmat_sym[LDAB-i-1,i:N] = diag(self.sym_mat, i)
-            self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
+            self.bandmat_sym[LDAB-i-1, i:N] = diag(self.sym_mat, i)
+            self.bandmat_herm[LDAB-i-1, i:N] = diag(self.herm_mat, i)
 
         # Extract bands from general real and complex band matrix
         # (for use in dgbtrf, dgbtrs and their single precision versions)
         LDAB = 2*self.KL + self.KU + 1
         self.bandmat_real = zeros((LDAB, N), dtype=float)
-        self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
+        self.bandmat_real[2*self.KL, :] = diag(self.real_mat)  # diagonal
         for i in range(self.KL):
             # superdiagonals
-            self.bandmat_real[2*self.KL-1-i,i+1:N] = diag(self.real_mat, i+1)
+            self.bandmat_real[2*self.KL-1-i, i+1:N] = diag(self.real_mat, i+1)
             # subdiagonals
-            self.bandmat_real[2*self.KL+1+i,0:N-1-i] = diag(self.real_mat,-i-1)
+            self.bandmat_real[2*self.KL+1+i, 0:N-1-i] = diag(self.real_mat,
+                                                             -i-1)
 
         self.bandmat_comp = zeros((LDAB, N), dtype=complex)
-        self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
+        self.bandmat_comp[2*self.KL, :] = diag(self.comp_mat)  # diagonal
         for i in range(self.KL):
             # superdiagonals
-            self.bandmat_comp[2*self.KL-1-i,i+1:N] = diag(self.comp_mat, i+1)
+            self.bandmat_comp[2*self.KL-1-i, i+1:N] = diag(self.comp_mat, i+1)
             # subdiagonals
-            self.bandmat_comp[2*self.KL+1+i,0:N-1-i] = diag(self.comp_mat,-i-1)
+            self.bandmat_comp[2*self.KL+1+i, 0:N-1-i] = diag(self.comp_mat,
+                                                             -i-1)
 
         # absolute value for linear equation system A*x = b
         self.b = 1.0*arange(N)
@@ -466,7 +470,7 @@ class TestEigBanded(object):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
         w, evec, info = dsbev(self.bandmat_sym, compute_v=1)
-        evec_ = evec[:,argsort(w)]
+        evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
@@ -474,18 +478,18 @@ class TestEigBanded(object):
         """Compare dsbevd eigenvalues and eigenvectors with
            the result of linalg.eig."""
         w, evec, info = dsbevd(self.bandmat_sym, compute_v=1)
-        evec_ = evec[:,argsort(w)]
+        evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
     def test_dsbevx(self):
         """Compare dsbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
-        N,N = shape(self.sym_mat)
-        ## Achtung: Argumente 0.0,0.0,range?
+        N, N = shape(self.sym_mat)
+        # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = dsbevx(self.bandmat_sym, 0.0, 0.0, 1, N,
-                                       compute_v=1, range=2)
-        evec_ = evec[:,argsort(w)]
+                                           compute_v=1, range=2)
+        evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
@@ -493,18 +497,18 @@ class TestEigBanded(object):
         """Compare zhbevd eigenvalues and eigenvectors
            with the result of linalg.eig."""
         w, evec, info = zhbevd(self.bandmat_herm, compute_v=1)
-        evec_ = evec[:,argsort(w)]
+        evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
 
     def test_zhbevx(self):
         """Compare zhbevx eigenvalues and eigenvectors
            with the result of linalg.eig."""
-        N,N = shape(self.herm_mat)
-        ## Achtung: Argumente 0.0,0.0,range?
+        N, N = shape(self.herm_mat)
+        # Achtung: Argumente 0.0,0.0,range?
         w, evec, num, ifail, info = zhbevx(self.bandmat_herm, 0.0, 0.0, 1, N,
-                                       compute_v=1, range=2)
-        evec_ = evec[:,argsort(w)]
+                                           compute_v=1, range=2)
+        evec_ = evec[:, argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
 
@@ -522,7 +526,7 @@ class TestEigBanded(object):
         ind1 = 2
         ind2 = np.longlong(6)
         w_sym_ind = eigvals_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2))
+                                   select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         w_herm_ind = eigvals_banded(self.bandmat_herm,
@@ -534,14 +538,15 @@ class TestEigBanded(object):
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val = eigvals_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper))
+                                   select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val = eigvals_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper))
+                                    select='v',
+                                    select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
 
@@ -553,12 +558,12 @@ class TestEigBanded(object):
         """Compare eigenvalues and eigenvectors of eig_banded
            with those of linalg.eig. """
         w_sym, evec_sym = eig_banded(self.bandmat_sym)
-        evec_sym_ = evec_sym[:,argsort(w_sym.real)]
+        evec_sym_ = evec_sym[:, argsort(w_sym.real)]
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_sym_), abs(self.evec_sym_lin))
 
         w_herm, evec_herm = eig_banded(self.bandmat_herm)
-        evec_herm_ = evec_herm[:,argsort(w_herm.real)]
+        evec_herm_ = evec_herm[:, argsort(w_herm.real)]
         assert_array_almost_equal(sort(w_herm), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_herm_), abs(self.evec_herm_lin))
 
@@ -566,53 +571,57 @@ class TestEigBanded(object):
         ind1 = 2
         ind2 = 6
         w_sym_ind, evec_sym_ind = eig_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2))
+                                             select='i',
+                                             select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_ind),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
+                                  abs(self.evec_sym_lin[:, ind1:ind2+1]))
 
         w_herm_ind, evec_herm_ind = eig_banded(self.bandmat_herm,
-                                    select='i', select_range=(ind1, ind2))
+                                               select='i',
+                                               select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_herm_ind),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_ind),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
+                                  abs(self.evec_herm_lin[:, ind1:ind2+1]))
 
         # extracting eigenvalues with respect to a value range
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val, evec_sym_val = eig_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper))
+                                             select='v',
+                                             select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_val),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
+                                  abs(self.evec_sym_lin[:, ind1:ind2+1]))
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val, evec_herm_val = eig_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper))
+                                               select='v',
+                                               select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_val),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
+                                  abs(self.evec_herm_lin[:, ind1:ind2+1]))
 
         w_sym, evec_sym = eig_banded(self.bandmat_sym, check_finite=False)
-        evec_sym_ = evec_sym[:,argsort(w_sym.real)]
+        evec_sym_ = evec_sym[:, argsort(w_sym.real)]
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_sym_), abs(self.evec_sym_lin))
 
     def test_dgbtrf(self):
         """Compare dgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
-        M,N = shape(self.real_mat)
+        M, N = shape(self.real_mat)
         lu_symm_band, ipiv, info = dgbtrf(self.bandmat_real, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
-        u = diag(lu_symm_band[2*self.KL,:])
+        u = diag(lu_symm_band[2*self.KL, :])
         for i in range(self.KL + self.KU):
-            u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
+            u += diag(lu_symm_band[2*self.KL-1-i, i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
         assert_array_almost_equal(u, u_lin)
@@ -620,13 +629,13 @@ class TestEigBanded(object):
     def test_zgbtrf(self):
         """Compare zgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
-        M,N = shape(self.comp_mat)
+        M, N = shape(self.comp_mat)
         lu_symm_band, ipiv, info = zgbtrf(self.bandmat_comp, self.KL, self.KU)
 
         # extract matrix u from lu_symm_band
-        u = diag(lu_symm_band[2*self.KL,:])
+        u = diag(lu_symm_band[2*self.KL, :])
         for i in range(self.KL + self.KU):
-            u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
+            u += diag(lu_symm_band[2*self.KL-1-i, i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.comp_mat, permute_l=0)
         assert_array_almost_equal(u, u_lin)
@@ -763,125 +772,169 @@ class TestEigTridiagonal(object):
                                       abs(self.evec[:, ind1:ind2+1]))
 
 
-def test_eigh():
-    DIM = 6
-    v = {'dim': (DIM,),
-         'dtype': ('f','d','F','D'),
-         'overwrite': (True, False),
-         'lower': (True, False),
-         'turbo': (True, False),
-         'eigvals': (None, (2, DIM-2))}
+class TestEigh:
+    def setup_class(self):
+        seed(1234)
 
-    for dim in v['dim']:
-        for typ in v['dtype']:
-            for overwrite in v['overwrite']:
-                for turbo in v['turbo']:
-                    for eigenvalues in v['eigvals']:
-                        for lower in v['lower']:
-                            eigenhproblem_standard(
-                                   'ordinary',
-                                   dim, typ, overwrite, lower,
-                                   turbo, eigenvalues)
-                            eigenhproblem_general(
-                                   'general ',
-                                   dim, typ, overwrite, lower,
-                                   turbo, eigenvalues)
+    def test_wrong_inputs(self):
+        # Nonsquare a
+        assert_raises(ValueError, eigh, np.ones([1, 2]))
+        # Nonsquare b
+        assert_raises(ValueError, eigh, np.ones([2, 2]), np.ones([2, 1]))
+        # Incompatible a, b sizes
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([2, 2]))
+        # Wrong type parameter for generalized problem
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      type=4)
+        # Both value and index subsets requested
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      subset_by_value=[1, 2], eigvals=[2, 4])
+        # Invalid upper index spec
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[0, 4])
+        # Invalid lower index
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[-2, 2])
+        # Invalid index spec #2
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      eigvals=[2, 0])
+        # Invalid value spec
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      subset_by_value=[2, 0])
+        # Invalid driver name
+        assert_raises(ValueError, eigh, np.ones([2, 2]), driver='wrong')
+        # Generalized driver selection without b
+        assert_raises(ValueError, eigh, np.ones([3, 3]), None, driver='gvx')
+        # Standard driver with b
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='evr', turbo=False)
+        # Subset request from invalid driver
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='gvd', eigvals=[1, 2], turbo=False)
 
+    def test_nonpositive_b(self):
+        assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))
 
-def test_eigh_of_sparse():
-    # This tests the rejection of inputs that eigh cannot currently handle.
-    import scipy.sparse
-    a = scipy.sparse.identity(2).tocsc()
-    b = np.atleast_2d(a)
-    assert_raises(ValueError, eigh, a)
-    assert_raises(ValueError, eigh, b)
+    # index based subsets are done in the legacy test_eigh()
+    def test_value_subsets(self):
+        for ind, dt in enumerate(DTYPES):
 
+            a = _random_hermitian_matrix(20, dtype=dt)
+            w, v = eigh(a, subset_by_value=[-2, 2])
+            assert_equal(v.shape[1], len(w))
+            assert all((w > -2) & (w < 2))
 
-def _complex_symrand(dim, dtype):
-    a1, a2 = symrand(dim), symrand(dim)
-    # add antisymmetric matrix as imag part
-    a = a1 + 1j*(triu(a2)-tril(a2))
-    return a.astype(dtype)
+            b = _random_hermitian_matrix(20, posdef=True, dtype=dt)
+            w, v = eigh(a, b, subset_by_value=[-2, 2])
+            assert_equal(v.shape[1], len(w))
+            assert all((w > -2) & (w < 2))
 
+    def test_eigh_integer(self):
+        a = array([[1, 2], [2, 7]])
+        b = array([[3, 1], [1, 5]])
+        w, z = eigh(a)
+        w, z = eigh(a, b)
 
-def eigenhproblem_standard(desc, dim, dtype,
-                           overwrite, lower, turbo,
-                           eigenvalues):
-    """Solve a standard eigenvalue problem."""
-    if iscomplex(empty(1, dtype=dtype)):
-        a = _complex_symrand(dim, dtype)
-    else:
-        a = symrand(dim).astype(dtype)
+    def test_eigh_of_sparse(self):
+        # This tests the rejection of inputs that eigh cannot currently handle.
+        import scipy.sparse
+        a = scipy.sparse.identity(2).tocsc()
+        b = np.atleast_2d(a)
+        assert_raises(ValueError, eigh, a)
+        assert_raises(ValueError, eigh, b)
 
-    if overwrite:
-        a_c = a.copy()
-    else:
-        a_c = a
-    w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigenvalues)
-    assert_dtype_equal(z.dtype, dtype)
-    w = w.astype(dtype)
-    diag_ = diag(dot(z.T.conj(), dot(a_c, z))).real
-    assert_array_almost_equal(diag_, w, DIGITS[dtype])
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_various_drivers_standard(self, driver):
+        a = _random_hermitian_matrix(20)
+        w, v = eigh(a, driver=driver)
+        assert_allclose(a @ v - (v * w), 0., atol=1000*np.spacing(1.), rtol=0.)
 
+    @pytest.mark.parametrize('type', (1, 2, 3))
+    @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
+    def test_various_drivers_generalized(self, driver, type):
+        atol = np.spacing(5000.)
+        a = _random_hermitian_matrix(20)
+        b = _random_hermitian_matrix(20, posdef=True)
+        w, v = eigh(a=a, b=b, driver=driver, type=type)
+        if type == 1:
+            assert_allclose(a @ v - w*(b @ v), 0., atol=atol, rtol=0.)
+        elif type == 2:
+            assert_allclose(a @ b @ v - v * w, 0., atol=atol, rtol=0.)
+        else:
+            assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
-def eigenhproblem_general(desc, dim, dtype,
-                          overwrite, lower, turbo,
-                          eigenvalues):
-    """Solve a generalized eigenvalue problem."""
-    if iscomplex(empty(1, dtype=dtype)):
-        a = _complex_symrand(dim, dtype)
-        b = _complex_symrand(dim, dtype)+diag([2.1]*dim).astype(dtype)
-    else:
-        a = symrand(dim).astype(dtype)
-        b = symrand(dim).astype(dtype)+diag([2.1]*dim).astype(dtype)
+    # Old eigh tests kept for backwards compatibility
+    @pytest.mark.parametrize('eigvals', (None, (2, 4)))
+    @pytest.mark.parametrize('turbo', (True, False))
+    @pytest.mark.parametrize('lower', (True, False))
+    @pytest.mark.parametrize('overwrite', (True, False))
+    @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
+    @pytest.mark.parametrize('dim', (6,))
+    def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
+        atol = 1e-11 if dtype_ in ('dD') else 1e-4
+        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+        w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
+        assert_dtype_equal(z.dtype, dtype_)
+        w = w.astype(dtype_)
+        diag_ = diag(z.T.conj() @ a @ z).real
+        assert_allclose(diag_, w, rtol=0., atol=atol)
 
-    if overwrite:
-        a_c, b_c = a.copy(), b.copy()
-    else:
-        a_c, b_c = a, b
+        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+        b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
+        w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
+                    overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
+        assert_dtype_equal(z.dtype, dtype_)
+        w = w.astype(dtype_)
+        diag1_ = diag(z.T.conj() @ a @ z).real
+        assert_allclose(diag1_, w, rtol=0., atol=atol)
+        diag2_ = diag(z.T.conj() @ b @ z).real
+        assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
-    w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                overwrite_b=overwrite, turbo=turbo, eigvals=eigenvalues)
-    assert_dtype_equal(z.dtype, dtype)
-    w = w.astype(dtype)
-    diag1_ = diag(dot(z.T.conj(), dot(a_c, z))).real
-    assert_array_almost_equal(diag1_, w, DIGITS[dtype])
-    diag2_ = diag(dot(z.T.conj(), dot(b_c, z))).real
-    assert_array_almost_equal(diag2_, ones(diag2_.shape[0]), DIGITS[dtype])
+    def test_eigvalsh_new_args(self):
+        a = _random_hermitian_matrix(5)
+        w = eigvalsh(a, eigvals=[1, 2])
+        assert_equal(len(w), 2)
 
+        w2 = eigvalsh(a, subset_by_index=[1, 2])
+        assert_equal(len(w2), 2)
+        assert_allclose(w, w2)
 
-def test_eigh_integer():
-    a = array([[1,2],[2,7]])
-    b = array([[3,1],[1,5]])
-    w,z = eigh(a)
-    w,z = eigh(a,b)
+        b = np.diag([1, 1.2, 1.3, 1.5, 2])
+        w3 = eigvalsh(b, subset_by_value=[1, 1.4])
+        assert_equal(len(w3), 2)
+        assert_allclose(w3, np.array([1.2, 1.3]))
 
 
 class TestLU(object):
     def setup_method(self):
-        self.a = array([[1,2,3],[1,2,3],[2,5,6]])
-        self.ca = array([[1,2,3],[1,2,3],[2,5j,6]])
+        self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
         # Those matrices are more robust to detect problems in permutation
         # matrices than the ones above
-        self.b = array([[1,2,3],[4,5,6],[7,8,9]])
-        self.cb = array([[1j,2j,3j],[4j,5j,6j],[7j,8j,9j]])
+        self.b = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        self.cb = array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
 
         # Reectangular matrices
         self.hrect = array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
-        self.chrect = 1.j * array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
+        self.chrect = 1.j * array([[1, 2, 3, 4],
+                                   [5, 6, 7, 8],
+                                   [9, 10, 12, 12]])
 
         self.vrect = array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
-        self.cvrect = 1.j * array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
+        self.cvrect = 1.j * array([[1, 2, 3],
+                                   [4, 5, 6],
+                                   [7, 8, 9],
+                                   [10, 12, 12]])
 
         # Medium sizes matrices
         self.med = random((30, 40))
         self.cmed = random((30, 40)) + 1.j * random((30, 40))
 
     def _test_common(self, data):
-        p,l,u = lu(data)
-        assert_array_almost_equal(dot(dot(p,l),u),data)
-        pl,u = lu(data,permute_l=1)
-        assert_array_almost_equal(dot(pl,u),data)
+        p, l, u = lu(data)
+        assert_array_almost_equal(p @ l @ u, data)
+        pl, u = lu(data, permute_l=1)
+        assert_array_almost_equal(pl @ u, data)
 
     # Simple tests
     def test_simple(self):
@@ -920,12 +973,12 @@ class TestLU(object):
 
     def test_check_finite(self):
         p, l, u = lu(self.a, check_finite=False)
-        assert_array_almost_equal(dot(dot(p,l),u), self.a)
+        assert_array_almost_equal(p @ l @ u, self.a)
 
     def test_simple_known(self):
         # Ticket #1458
         for order in ['C', 'F']:
-            A = np.array([[2, 1],[0, 1.]], order=order)
+            A = np.array([[2, 1], [0, 1.]], order=order)
             LU, P = lu_factor(A)
             assert_array_almost_equal(LU, np.array([[2, 1], [0, 1]]))
             assert_array_equal(P, np.array([0, 1]))
@@ -933,6 +986,7 @@ class TestLU(object):
 
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
+
     def setup_method(self):
         TestLU.setup_method(self)
 
@@ -956,28 +1010,23 @@ class TestLUSolve(object):
         seed(1234)
 
     def test_lu(self):
-        a0 = random((10,10))
+        a0 = random((10, 10))
         b = random((10,))
 
         for order in ['C', 'F']:
             a = np.array(a0, order=order)
-
-            x1 = solve(a,b)
-
+            x1 = solve(a, b)
             lu_a = lu_factor(a)
-            x2 = lu_solve(lu_a,b)
-
-            assert_array_almost_equal(x1,x2)
+            x2 = lu_solve(lu_a, b)
+            assert_array_almost_equal(x1, x2)
 
     def test_check_finite(self):
-        a = random((10,10))
+        a = random((10, 10))
         b = random((10,))
-        x1 = solve(a,b)
-
+        x1 = solve(a, b)
         lu_a = lu_factor(a, check_finite=False)
-        x2 = lu_solve(lu_a,b, check_finite=False)
-
-        assert_array_almost_equal(x1,x2)
+        x2 = lu_solve(lu_a, b, check_finite=False)
+        assert_array_almost_equal(x1, x2)
 
 
 class TestSVD_GESDD(object):
@@ -990,95 +1039,97 @@ class TestSVD_GESDD(object):
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
     def test_simple(self):
-        a = [[1,2,3],[1,20,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices,
-                         lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(dot(transpose(u),u),identity(3))
-            assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
+            assert_array_almost_equal(u.T @ u, eye(3))
+            assert_array_almost_equal(vh.T @ vh, eye(3))
+            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
             for i in range(len(s)):
-                sigma[i,i] = s[i]
-            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                sigma[i, i] = s[i]
+            assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_simple_singular(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices,
-                         lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(dot(transpose(u),u),identity(3))
-            assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
+            assert_array_almost_equal(u.T @ u, eye(3))
+            assert_array_almost_equal(vh.T @ vh, eye(3))
+            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
             for i in range(len(s)):
-                sigma[i,i] = s[i]
-            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                sigma[i, i] = s[i]
+            assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_simple_underdet(self):
-        a = [[1,2,3],[4,5,6]]
+        a = [[1, 2, 3], [4, 5, 6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices,
-                         lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[0]))
-            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
+            assert_array_almost_equal(u.T @ u, eye(u.shape[0]))
+            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
             for i in range(len(s)):
-                sigma[i,i] = s[i]
-            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                sigma[i, i] = s[i]
+            assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_simple_overdet(self):
-        a = [[1,2],[4,5],[3,4]]
+        a = [[1, 2], [4, 5], [3, 4]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices,
-                         lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(dot(transpose(u),u), identity(u.shape[1]))
-            assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
-            sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
+            assert_array_almost_equal(u.T @ u, eye(u.shape[1]))
+            assert_array_almost_equal(vh.T @ vh, eye(2))
+            sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
             for i in range(len(s)):
-                sigma[i,i] = s[i]
-            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                sigma[i, i] = s[i]
+            assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_random(self):
         n = 20
         m = 15
         for i in range(3):
-            for a in [random([n,m]),random([m,n])]:
+            for a in [random([n, m]), random([m, n])]:
                 for full_matrices in (True, False):
-                    u,s,vh = svd(a, full_matrices=full_matrices,
-                                 lapack_driver=self.lapack_driver)
-                    assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[1]))
-                    assert_array_almost_equal(dot(vh, transpose(vh)),identity(vh.shape[0]))
-                    sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+                    u, s, vh = svd(a, full_matrices=full_matrices,
+                                   lapack_driver=self.lapack_driver)
+                    assert_array_almost_equal(u.T @ u, eye(u.shape[1]))
+                    assert_array_almost_equal(vh @ vh.T, eye(vh.shape[0]))
+                    sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
                     for i in range(len(s)):
-                        sigma[i,i] = s[i]
-                    assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                        sigma[i, i] = s[i]
+                    assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_simple_complex(self):
-        a = [[1,2,3],[1,2j,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2j, 3], [2, 5, 6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices,
-                         lapack_driver=self.lapack_driver)
-            assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
-            assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(vh.shape[0]))
-            sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+            u, s, vh = svd(a, full_matrices=full_matrices,
+                           lapack_driver=self.lapack_driver)
+            assert_array_almost_equal(u.conj().T @ u, eye(u.shape[1]))
+            assert_array_almost_equal(vh.conj().T @ vh, eye(vh.shape[0]))
+            sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
             for i in range(len(s)):
-                sigma[i,i] = s[i]
-            assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                sigma[i, i] = s[i]
+            assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_random_complex(self):
         n = 20
         m = 15
         for i in range(3):
             for full_matrices in (True, False):
-                for a in [random([n,m]),random([m,n])]:
+                for a in [random([n, m]), random([m, n])]:
                     a = a + 1j*random(list(a.shape))
-                    u,s,vh = svd(a, full_matrices=full_matrices,
-                                 lapack_driver=self.lapack_driver)
-                    assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
+                    u, s, vh = svd(a, full_matrices=full_matrices,
+                                   lapack_driver=self.lapack_driver)
+                    assert_array_almost_equal(u.conj().T @ u,
+                                              eye(u.shape[1]))
                     # This fails when [m,n]
-                    # assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
-                    sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
+                    # assert_array_almost_equal(vh.conj().T @ vh,
+                    #                        eye(len(vh),dtype=vh.dtype.char))
+                    sigma = zeros((u.shape[1], vh.shape[0]), s.dtype.char)
                     for i in range(len(s)):
-                        sigma[i,i] = s[i]
-                    assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+                        sigma[i, i] = s[i]
+                    assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_crash_1580(self):
         sizes = [(13, 23), (30, 50), (60, 100)]
@@ -1090,14 +1141,14 @@ class TestSVD_GESDD(object):
                 svd(a, lapack_driver=self.lapack_driver)
 
     def test_check_finite(self):
-        a = [[1,2,3],[1,20,3],[2,5,6]]
-        u,s,vh = svd(a, check_finite=False, lapack_driver=self.lapack_driver)
-        assert_array_almost_equal(dot(transpose(u),u),identity(3))
-        assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
-        sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
+        a = [[1, 2, 3], [1, 20, 3], [2, 5, 6]]
+        u, s, vh = svd(a, check_finite=False, lapack_driver=self.lapack_driver)
+        assert_array_almost_equal(u.T @ u, eye(3))
+        assert_array_almost_equal(vh.T @ vh, eye(3))
+        sigma = zeros((u.shape[0], vh.shape[0]), s.dtype.char)
         for i in range(len(s)):
-            sigma[i,i] = s[i]
-        assert_array_almost_equal(dot(dot(u,sigma),vh),a)
+            sigma[i, i] = s[i]
+        assert_array_almost_equal(u @ sigma @ vh, a)
 
     def test_gh_5039(self):
         # This is a smoke test for https://github.com/scipy/scipy/issues/5039
@@ -1116,6 +1167,16 @@ class TestSVD_GESDD(object):
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
         svd(b, lapack_driver=self.lapack_driver)
 
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
+    @pytest.mark.slow
+    def test_large_matrix(self):
+        check_free_memory(free_mb=17000)
+        A = np.zeros([1, 2**31], dtype=np.float32)
+        A[0, -1] = 1
+        u, s, vh = svd(A, full_matrices=False)
+        assert_allclose(s[0], 1.0)
+        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
+
 
 class TestSVD_GESVD(TestSVD_GESDD):
     def setup_method(self):
@@ -1131,43 +1192,43 @@ class TestSVDVals(object):
             assert_equal(s, np.empty(0))
 
     def test_simple(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
         s = svdvals(a)
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
     def test_simple_underdet(self):
-        a = [[1,2,3],[4,5,6]]
+        a = [[1, 2, 3], [4, 5, 6]]
         s = svdvals(a)
         assert_(len(s) == 2)
         assert_(s[0] >= s[1])
 
     def test_simple_overdet(self):
-        a = [[1,2],[4,5],[3,4]]
+        a = [[1, 2], [4, 5], [3, 4]]
         s = svdvals(a)
         assert_(len(s) == 2)
         assert_(s[0] >= s[1])
 
     def test_simple_complex(self):
-        a = [[1,2,3],[1,20,3j],[2,5,6]]
+        a = [[1, 2, 3], [1, 20, 3j], [2, 5, 6]]
         s = svdvals(a)
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
     def test_simple_underdet_complex(self):
-        a = [[1,2,3],[4,5j,6]]
+        a = [[1, 2, 3], [4, 5j, 6]]
         s = svdvals(a)
         assert_(len(s) == 2)
         assert_(s[0] >= s[1])
 
     def test_simple_overdet_complex(self):
-        a = [[1,2],[4,5],[3j,4]]
+        a = [[1, 2], [4, 5], [3j, 4]]
         s = svdvals(a)
         assert_(len(s) == 2)
         assert_(s[0] >= s[1])
 
     def test_check_finite(self):
-        a = [[1,2,3],[1,2,3],[2,5,6]]
+        a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
         s = svdvals(a, check_finite=False)
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
@@ -1183,7 +1244,8 @@ class TestSVDVals(object):
 class TestDiagSVD(object):
 
     def test_simple(self):
-        assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
+        assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
+                                  [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
 
 
 class TestQR(object):
@@ -1192,386 +1254,386 @@ class TestQR(object):
         seed(1234)
 
     def test_simple(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r = qr(a)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a)
 
     def test_simple_left(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r = qr(a)
         c = [1, 2, 3]
-        qc,r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r2 = qr_multiply(a, c, "left")
+        assert_array_almost_equal(q @ c, qc)
         assert_array_almost_equal(r, r2)
-        qc,r2 = qr_multiply(a, identity(3), "left")
+        qc, r2 = qr_multiply(a, eye(3), "left")
         assert_array_almost_equal(q, qc)
 
     def test_simple_right(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r = qr(a)
         c = [1, 2, 3]
-        qc,r2 = qr_multiply(a, c)
-        assert_array_almost_equal(dot(c, q), qc)
+        qc, r2 = qr_multiply(a, c)
+        assert_array_almost_equal(c @ q, qc)
         assert_array_almost_equal(r, r2)
-        qc,r = qr_multiply(a, identity(3))
+        qc, r = qr_multiply(a, eye(3))
         assert_array_almost_equal(q, qc)
 
     def test_simple_pivoting(self):
-        a = np.asarray([[8,2,3],[2,9,3],[5,3,6]])
-        q,r,p = qr(a, pivoting=True)
+        a = np.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
+        q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        q2,r2 = qr(a[:,p])
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a[:, p])
+        q2, r2 = qr(a[:, p])
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_left_pivoting(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r,jpvt = qr(a, pivoting=True)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r, jpvt = qr(a, pivoting=True)
         c = [1, 2, 3]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r, jpvt = qr_multiply(a, c, "left", True)
+        assert_array_almost_equal(q @ c, qc)
 
     def test_simple_right_pivoting(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r,jpvt = qr(a, pivoting=True)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r, jpvt = qr(a, pivoting=True)
         c = [1, 2, 3]
-        qc,r,jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(dot(c, q), qc)
+        qc, r, jpvt = qr_multiply(a, c, pivoting=True)
+        assert_array_almost_equal(c @ q, qc)
 
     def test_simple_trap(self):
-        a = [[8,2,3],[2,9,3]]
-        q,r = qr(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a)
+        a = [[8, 2, 3], [2, 9, 3]]
+        q, r = qr(a)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a)
 
     def test_simple_trap_pivoting(self):
-        a = np.asarray([[8,2,3],[2,9,3]])
-        q,r,p = qr(a, pivoting=True)
+        a = np.asarray([[8, 2, 3], [2, 9, 3]])
+        q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        q2,r2 = qr(a[:,p])
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a[:, p])
+        q2, r2 = qr(a[:, p])
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_tall(self):
         # full version
-        a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a)
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r = qr(a)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a)
 
     def test_simple_tall_pivoting(self):
         # full version pivoting
-        a = np.asarray([[8,2],[2,9],[5,3]])
-        q,r,p = qr(a, pivoting=True)
+        a = np.asarray([[8, 2], [2, 9], [5, 3]])
+        q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        q2,r2 = qr(a[:,p])
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a[:, p])
+        q2, r2 = qr(a[:, p])
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_tall_e(self):
         # economy version
-        a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a, mode='economic')
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a)
-        assert_equal(q.shape, (3,2))
-        assert_equal(r.shape, (2,2))
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r = qr(a, mode='economic')
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a)
+        assert_equal(q.shape, (3, 2))
+        assert_equal(r.shape, (2, 2))
 
     def test_simple_tall_e_pivoting(self):
         # economy version pivoting
-        a = np.asarray([[8,2],[2,9],[5,3]])
-        q,r,p = qr(a, pivoting=True, mode='economic')
+        a = np.asarray([[8, 2], [2, 9], [5, 3]])
+        q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        q2,r2 = qr(a[:,p], mode='economic')
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a[:, p])
+        q2, r2 = qr(a[:, p], mode='economic')
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_tall_left(self):
-        a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a, mode="economic")
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r = qr(a, mode="economic")
         c = [1, 2]
-        qc,r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r2 = qr_multiply(a, c, "left")
+        assert_array_almost_equal(q @ c, qc)
         assert_array_almost_equal(r, r2)
-        c = array([1,2,0])
-        qc,r2 = qr_multiply(a, c, "left", overwrite_c=True)
-        assert_array_almost_equal(dot(q, c[:2]), qc)
-        qc,r = qr_multiply(a, identity(2), "left")
+        c = array([1, 2, 0])
+        qc, r2 = qr_multiply(a, c, "left", overwrite_c=True)
+        assert_array_almost_equal(q @ c[:2], qc)
+        qc, r = qr_multiply(a, eye(2), "left")
         assert_array_almost_equal(qc, q)
 
     def test_simple_tall_left_pivoting(self):
-        a = [[8,2],[2,9],[5,3]]
-        q,r,jpvt = qr(a, mode="economic", pivoting=True)
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r, jpvt = qr(a, mode="economic", pivoting=True)
         c = [1, 2]
-        qc,r,kpvt = qr_multiply(a, c, "left", True)
+        qc, r, kpvt = qr_multiply(a, c, "left", True)
         assert_array_equal(jpvt, kpvt)
-        assert_array_almost_equal(dot(q, c), qc)
-        qc,r,jpvt = qr_multiply(a, identity(2), "left", True)
+        assert_array_almost_equal(q @ c, qc)
+        qc, r, jpvt = qr_multiply(a, eye(2), "left", True)
         assert_array_almost_equal(qc, q)
 
     def test_simple_tall_right(self):
-        a = [[8,2],[2,9],[5,3]]
-        q,r = qr(a, mode="economic")
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r = qr(a, mode="economic")
         c = [1, 2, 3]
-        cq,r2 = qr_multiply(a, c)
-        assert_array_almost_equal(dot(c, q), cq)
+        cq, r2 = qr_multiply(a, c)
+        assert_array_almost_equal(c @ q, cq)
         assert_array_almost_equal(r, r2)
-        cq,r = qr_multiply(a, identity(3))
+        cq, r = qr_multiply(a, eye(3))
         assert_array_almost_equal(cq, q)
 
     def test_simple_tall_right_pivoting(self):
-        a = [[8,2],[2,9],[5,3]]
-        q,r,jpvt = qr(a, pivoting=True, mode="economic")
+        a = [[8, 2], [2, 9], [5, 3]]
+        q, r, jpvt = qr(a, pivoting=True, mode="economic")
         c = [1, 2, 3]
-        cq,r,jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(dot(c, q), cq)
-        cq,r,jpvt = qr_multiply(a, identity(3), pivoting=True)
+        cq, r, jpvt = qr_multiply(a, c, pivoting=True)
+        assert_array_almost_equal(c @ q, cq)
+        cq, r, jpvt = qr_multiply(a, eye(3), pivoting=True)
         assert_array_almost_equal(cq, q)
 
     def test_simple_fat(self):
         # full version
-        a = [[8,2,5],[2,9,3]]
-        q,r = qr(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a)
-        assert_equal(q.shape, (2,2))
-        assert_equal(r.shape, (2,3))
+        a = [[8, 2, 5], [2, 9, 3]]
+        q, r = qr(a)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a)
+        assert_equal(q.shape, (2, 2))
+        assert_equal(r.shape, (2, 3))
 
     def test_simple_fat_pivoting(self):
         # full version pivoting
-        a = np.asarray([[8,2,5],[2,9,3]])
-        q,r,p = qr(a, pivoting=True)
+        a = np.asarray([[8, 2, 5], [2, 9, 3]])
+        q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        assert_equal(q.shape, (2,2))
-        assert_equal(r.shape, (2,3))
-        q2,r2 = qr(a[:,p])
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a[:, p])
+        assert_equal(q.shape, (2, 2))
+        assert_equal(r.shape, (2, 3))
+        q2, r2 = qr(a[:, p])
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_fat_e(self):
         # economy version
-        a = [[8,2,3],[2,9,5]]
-        q,r = qr(a, mode='economic')
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a)
-        assert_equal(q.shape, (2,2))
-        assert_equal(r.shape, (2,3))
+        a = [[8, 2, 3], [2, 9, 5]]
+        q, r = qr(a, mode='economic')
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a)
+        assert_equal(q.shape, (2, 2))
+        assert_equal(r.shape, (2, 3))
 
     def test_simple_fat_e_pivoting(self):
         # economy version pivoting
-        a = np.asarray([[8,2,3],[2,9,5]])
-        q,r,p = qr(a, pivoting=True, mode='economic')
+        a = np.asarray([[8, 2, 3], [2, 9, 5]])
+        q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        assert_equal(q.shape, (2,2))
-        assert_equal(r.shape, (2,3))
-        q2,r2 = qr(a[:,p], mode='economic')
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(q @ r, a[:, p])
+        assert_equal(q.shape, (2, 2))
+        assert_equal(r.shape, (2, 3))
+        q2, r2 = qr(a[:, p], mode='economic')
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_fat_left(self):
-        a = [[8,2,3],[2,9,5]]
-        q,r = qr(a, mode="economic")
+        a = [[8, 2, 3], [2, 9, 5]]
+        q, r = qr(a, mode="economic")
         c = [1, 2]
-        qc,r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r2 = qr_multiply(a, c, "left")
+        assert_array_almost_equal(q @ c, qc)
         assert_array_almost_equal(r, r2)
-        qc,r = qr_multiply(a, identity(2), "left")
+        qc, r = qr_multiply(a, eye(2), "left")
         assert_array_almost_equal(qc, q)
 
     def test_simple_fat_left_pivoting(self):
-        a = [[8,2,3],[2,9,5]]
-        q,r,jpvt = qr(a, mode="economic", pivoting=True)
+        a = [[8, 2, 3], [2, 9, 5]]
+        q, r, jpvt = qr(a, mode="economic", pivoting=True)
         c = [1, 2]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(dot(q, c), qc)
-        qc,r,jpvt = qr_multiply(a, identity(2), "left", True)
+        qc, r, jpvt = qr_multiply(a, c, "left", True)
+        assert_array_almost_equal(q @ c, qc)
+        qc, r, jpvt = qr_multiply(a, eye(2), "left", True)
         assert_array_almost_equal(qc, q)
 
     def test_simple_fat_right(self):
-        a = [[8,2,3],[2,9,5]]
-        q,r = qr(a, mode="economic")
+        a = [[8, 2, 3], [2, 9, 5]]
+        q, r = qr(a, mode="economic")
         c = [1, 2]
-        cq,r2 = qr_multiply(a, c)
-        assert_array_almost_equal(dot(c, q), cq)
+        cq, r2 = qr_multiply(a, c)
+        assert_array_almost_equal(c @ q, cq)
         assert_array_almost_equal(r, r2)
-        cq,r = qr_multiply(a, identity(2))
+        cq, r = qr_multiply(a, eye(2))
         assert_array_almost_equal(cq, q)
 
     def test_simple_fat_right_pivoting(self):
-        a = [[8,2,3],[2,9,5]]
-        q,r,jpvt = qr(a, pivoting=True, mode="economic")
+        a = [[8, 2, 3], [2, 9, 5]]
+        q, r, jpvt = qr(a, pivoting=True, mode="economic")
         c = [1, 2]
-        cq,r,jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(dot(c, q), cq)
-        cq,r,jpvt = qr_multiply(a, identity(2), pivoting=True)
+        cq, r, jpvt = qr_multiply(a, c, pivoting=True)
+        assert_array_almost_equal(c @ q, cq)
+        cq, r, jpvt = qr_multiply(a, eye(2), pivoting=True)
         assert_array_almost_equal(cq, q)
 
     def test_simple_complex(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        q,r = qr(a)
-        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        q, r = qr(a)
+        assert_array_almost_equal(q.conj().T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a)
 
     def test_simple_complex_left(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        q,r = qr(a)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        q, r = qr(a)
         c = [1, 2, 3+4j]
-        qc,r = qr_multiply(a, c, "left")
-        assert_array_almost_equal(dot(q, c), qc)
-        qc,r = qr_multiply(a, identity(3), "left")
+        qc, r = qr_multiply(a, c, "left")
+        assert_array_almost_equal(q @ c, qc)
+        qc, r = qr_multiply(a, eye(3), "left")
         assert_array_almost_equal(q, qc)
 
     def test_simple_complex_right(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        q,r = qr(a)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        q, r = qr(a)
         c = [1, 2, 3+4j]
-        qc,r = qr_multiply(a, c)
-        assert_array_almost_equal(dot(c, q), qc)
-        qc,r = qr_multiply(a, identity(3))
+        qc, r = qr_multiply(a, c)
+        assert_array_almost_equal(c @ q, qc)
+        qc, r = qr_multiply(a, eye(3))
         assert_array_almost_equal(q, qc)
 
     def test_simple_tall_complex_left(self):
-        a = [[8,2+3j],[2,9],[5+7j,3]]
-        q,r = qr(a, mode="economic")
+        a = [[8, 2+3j], [2, 9], [5+7j, 3]]
+        q, r = qr(a, mode="economic")
         c = [1, 2+2j]
-        qc,r2 = qr_multiply(a, c, "left")
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r2 = qr_multiply(a, c, "left")
+        assert_array_almost_equal(q @ c, qc)
         assert_array_almost_equal(r, r2)
-        c = array([1,2,0])
-        qc,r2 = qr_multiply(a, c, "left", overwrite_c=True)
-        assert_array_almost_equal(dot(q, c[:2]), qc)
-        qc,r = qr_multiply(a, identity(2), "left")
+        c = array([1, 2, 0])
+        qc, r2 = qr_multiply(a, c, "left", overwrite_c=True)
+        assert_array_almost_equal(q @ c[:2], qc)
+        qc, r = qr_multiply(a, eye(2), "left")
         assert_array_almost_equal(qc, q)
 
     def test_simple_complex_left_conjugate(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        q,r = qr(a)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        q, r = qr(a)
         c = [1, 2, 3+4j]
-        qc,r = qr_multiply(a, c, "left", conjugate=True)
-        assert_array_almost_equal(dot(q.conjugate(), c), qc)
+        qc, r = qr_multiply(a, c, "left", conjugate=True)
+        assert_array_almost_equal(q.conj() @ c, qc)
 
     def test_simple_complex_tall_left_conjugate(self):
-        a = [[3,3+4j],[5,2+2j],[3,2]]
-        q,r = qr(a, mode='economic')
+        a = [[3, 3+4j], [5, 2+2j], [3, 2]]
+        q, r = qr(a, mode='economic')
         c = [1, 3+4j]
-        qc,r = qr_multiply(a, c, "left", conjugate=True)
-        assert_array_almost_equal(dot(q.conjugate(), c), qc)
+        qc, r = qr_multiply(a, c, "left", conjugate=True)
+        assert_array_almost_equal(q.conj() @ c, qc)
 
     def test_simple_complex_right_conjugate(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        q,r = qr(a)
-        c = [1, 2, 3+4j]
-        qc,r = qr_multiply(a, c, conjugate=True)
-        assert_array_almost_equal(dot(c, q.conjugate()), qc)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        q, r = qr(a)
+        c = np.array([1, 2, 3+4j])
+        qc, r = qr_multiply(a, c, conjugate=True)
+        assert_array_almost_equal(c @ q.conj(), qc)
 
     def test_simple_complex_pivoting(self):
-        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
-        q,r,p = qr(a, pivoting=True)
+        a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
+        q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert_(np.all(d[1:] <= d[:-1]))
-        assert_array_almost_equal(dot(conj(transpose(q)),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a[:,p])
-        q2,r2 = qr(a[:,p])
-        assert_array_almost_equal(q,q2)
-        assert_array_almost_equal(r,r2)
+        assert_array_almost_equal(q.conj().T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a[:, p])
+        q2, r2 = qr(a[:, p])
+        assert_array_almost_equal(q, q2)
+        assert_array_almost_equal(r, r2)
 
     def test_simple_complex_left_pivoting(self):
-        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
-        q,r,jpvt = qr(a, pivoting=True)
+        a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
+        q, r, jpvt = qr(a, pivoting=True)
         c = [1, 2, 3+4j]
-        qc,r,jpvt = qr_multiply(a, c, "left", True)
-        assert_array_almost_equal(dot(q, c), qc)
+        qc, r, jpvt = qr_multiply(a, c, "left", True)
+        assert_array_almost_equal(q @ c, qc)
 
     def test_simple_complex_right_pivoting(self):
-        a = np.asarray([[3,3+4j,5],[5,2,2+7j],[3,2,7]])
-        q,r,jpvt = qr(a, pivoting=True)
+        a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
+        q, r, jpvt = qr(a, pivoting=True)
         c = [1, 2, 3+4j]
-        qc,r,jpvt = qr_multiply(a, c, pivoting=True)
-        assert_array_almost_equal(dot(c, q), qc)
+        qc, r, jpvt = qr_multiply(a, c, pivoting=True)
+        assert_array_almost_equal(c @ q, qc)
 
     def test_random(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            q,r = qr(a)
-            assert_array_almost_equal(dot(transpose(q),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a)
+            a = random([n, n])
+            q, r = qr(a)
+            assert_array_almost_equal(q.T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a)
 
     def test_random_left(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            q,r = qr(a)
+            a = random([n, n])
+            q, r = qr(a)
             c = random([n])
-            qc,r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(dot(q, c), qc)
-            qc,r = qr_multiply(a, identity(n), "left")
+            qc, r = qr_multiply(a, c, "left")
+            assert_array_almost_equal(q @ c, qc)
+            qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_right(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            q,r = qr(a)
+            a = random([n, n])
+            q, r = qr(a)
             c = random([n])
-            cq,r = qr_multiply(a, c)
-            assert_array_almost_equal(dot(c, q), cq)
-            cq,r = qr_multiply(a, identity(n))
+            cq, r = qr_multiply(a, c)
+            assert_array_almost_equal(c @ q, cq)
+            cq, r = qr_multiply(a, eye(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_pivoting(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            q,r,p = qr(a, pivoting=True)
+            a = random([n, n])
+            q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(dot(transpose(q),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a[:,p])
-            q2,r2 = qr(a[:,p])
-            assert_array_almost_equal(q,q2)
-            assert_array_almost_equal(r,r2)
+            assert_array_almost_equal(q.T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a[:, p])
+            q2, r2 = qr(a[:, p])
+            assert_array_almost_equal(q, q2)
+            assert_array_almost_equal(r, r2)
 
     def test_random_tall(self):
         # full version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r = qr(a)
-            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-            assert_array_almost_equal(dot(q,r),a)
+            a = random([m, n])
+            q, r = qr(a)
+            assert_array_almost_equal(q.T @ q, eye(m))
+            assert_array_almost_equal(q @ r, a)
 
     def test_random_tall_left(self):
         # full version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r = qr(a, mode="economic")
+            a = random([m, n])
+            q, r = qr(a, mode="economic")
             c = random([n])
-            qc,r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(dot(q, c), qc)
-            qc,r = qr_multiply(a, identity(n), "left")
+            qc, r = qr_multiply(a, c, "left")
+            assert_array_almost_equal(q @ c, qc)
+            qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(qc, q)
 
     def test_random_tall_right(self):
@@ -1579,12 +1641,12 @@ class TestQR(object):
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r = qr(a, mode="economic")
+            a = random([m, n])
+            q, r = qr(a, mode="economic")
             c = random([m])
-            cq,r = qr_multiply(a, c)
-            assert_array_almost_equal(dot(c, q), cq)
-            cq,r = qr_multiply(a, identity(m))
+            cq, r = qr_multiply(a, c)
+            assert_array_almost_equal(c @ q, cq)
+            cq, r = qr_multiply(a, eye(m))
             assert_array_almost_equal(cq, q)
 
     def test_random_tall_pivoting(self):
@@ -1592,140 +1654,141 @@ class TestQR(object):
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r,p = qr(a, pivoting=True)
+            a = random([m, n])
+            q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-            assert_array_almost_equal(dot(q,r),a[:,p])
-            q2,r2 = qr(a[:,p])
-            assert_array_almost_equal(q,q2)
-            assert_array_almost_equal(r,r2)
+            assert_array_almost_equal(q.T @ q, eye(m))
+            assert_array_almost_equal(q @ r, a[:, p])
+            q2, r2 = qr(a[:, p])
+            assert_array_almost_equal(q, q2)
+            assert_array_almost_equal(r, r2)
 
     def test_random_tall_e(self):
         # economy version
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r = qr(a, mode='economic')
-            assert_array_almost_equal(dot(transpose(q),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a)
-            assert_equal(q.shape, (m,n))
-            assert_equal(r.shape, (n,n))
+            a = random([m, n])
+            q, r = qr(a, mode='economic')
+            assert_array_almost_equal(q.T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a)
+            assert_equal(q.shape, (m, n))
+            assert_equal(r.shape, (n, n))
 
     def test_random_tall_e_pivoting(self):
         # economy version pivoting
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            q,r,p = qr(a, pivoting=True, mode='economic')
+            a = random([m, n])
+            q, r, p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(dot(transpose(q),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a[:,p])
-            assert_equal(q.shape, (m,n))
-            assert_equal(r.shape, (n,n))
-            q2,r2 = qr(a[:,p], mode='economic')
-            assert_array_almost_equal(q,q2)
-            assert_array_almost_equal(r,r2)
+            assert_array_almost_equal(q.T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a[:, p])
+            assert_equal(q.shape, (m, n))
+            assert_equal(r.shape, (n, n))
+            q2, r2 = qr(a[:, p], mode='economic')
+            assert_array_almost_equal(q, q2)
+            assert_array_almost_equal(r, r2)
 
     def test_random_trap(self):
         m = 100
         n = 200
         for k in range(2):
-            a = random([m,n])
-            q,r = qr(a)
-            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-            assert_array_almost_equal(dot(q,r),a)
+            a = random([m, n])
+            q, r = qr(a)
+            assert_array_almost_equal(q.T @ q, eye(m))
+            assert_array_almost_equal(q @ r, a)
 
     def test_random_trap_pivoting(self):
         m = 100
         n = 200
         for k in range(2):
-            a = random([m,n])
-            q,r,p = qr(a, pivoting=True)
+            a = random([m, n])
+            q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(dot(transpose(q),q),identity(m))
-            assert_array_almost_equal(dot(q,r),a[:,p])
-            q2,r2 = qr(a[:,p])
-            assert_array_almost_equal(q,q2)
-            assert_array_almost_equal(r,r2)
+            assert_array_almost_equal(q.T @ q, eye(m))
+            assert_array_almost_equal(q @ r, a[:, p])
+            q2, r2 = qr(a[:, p])
+            assert_array_almost_equal(q, q2)
+            assert_array_almost_equal(r, r2)
 
     def test_random_complex(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            q,r = qr(a)
-            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a)
+            a = random([n, n])+1j*random([n, n])
+            q, r = qr(a)
+            assert_array_almost_equal(q.conj().T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a)
 
     def test_random_complex_left(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            q,r = qr(a)
+            a = random([n, n])+1j*random([n, n])
+            q, r = qr(a)
             c = random([n])+1j*random([n])
-            qc,r = qr_multiply(a, c, "left")
-            assert_array_almost_equal(dot(q, c), qc)
-            qc,r = qr_multiply(a, identity(n), "left")
+            qc, r = qr_multiply(a, c, "left")
+            assert_array_almost_equal(q @ c, qc)
+            qc, r = qr_multiply(a, eye(n), "left")
             assert_array_almost_equal(q, qc)
 
     def test_random_complex_right(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            q,r = qr(a)
+            a = random([n, n])+1j*random([n, n])
+            q, r = qr(a)
             c = random([n])+1j*random([n])
-            cq,r = qr_multiply(a, c)
-            assert_array_almost_equal(dot(c, q), cq)
-            cq,r = qr_multiply(a, identity(n))
+            cq, r = qr_multiply(a, c)
+            assert_array_almost_equal(c @ q, cq)
+            cq, r = qr_multiply(a, eye(n))
             assert_array_almost_equal(q, cq)
 
     def test_random_complex_pivoting(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            q,r,p = qr(a, pivoting=True)
+            a = random([n, n])+1j*random([n, n])
+            q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            assert_array_almost_equal(dot(conj(transpose(q)),q),identity(n))
-            assert_array_almost_equal(dot(q,r),a[:,p])
-            q2,r2 = qr(a[:,p])
-            assert_array_almost_equal(q,q2)
-            assert_array_almost_equal(r,r2)
+            assert_array_almost_equal(q.conj().T @ q, eye(n))
+            assert_array_almost_equal(q @ r, a[:, p])
+            q2, r2 = qr(a[:, p])
+            assert_array_almost_equal(q, q2)
+            assert_array_almost_equal(r, r2)
 
     def test_check_finite(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a, check_finite=False)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(q,r),a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        q, r = qr(a, check_finite=False)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(q @ r, a)
 
     def test_lwork(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
         # Get comparison values
-        q,r = qr(a, lwork=None)
+        q, r = qr(a, lwork=None)
 
         # Test against minimum valid lwork
-        q2,r2 = qr(a, lwork=3)
-        assert_array_almost_equal(q2,q)
-        assert_array_almost_equal(r2,r)
+        q2, r2 = qr(a, lwork=3)
+        assert_array_almost_equal(q2, q)
+        assert_array_almost_equal(r2, r)
 
         # Test against larger lwork
-        q3,r3 = qr(a, lwork=10)
-        assert_array_almost_equal(q3,q)
-        assert_array_almost_equal(r3,r)
+        q3, r3 = qr(a, lwork=10)
+        assert_array_almost_equal(q3, q)
+        assert_array_almost_equal(r3, r)
 
         # Test against explicit lwork=-1
-        q4,r4 = qr(a, lwork=-1)
-        assert_array_almost_equal(q4,q)
-        assert_array_almost_equal(r4,r)
+        q4, r4 = qr(a, lwork=-1)
+        assert_array_almost_equal(q4, q)
+        assert_array_almost_equal(r4, r)
 
         # Test against invalid lwork
-        assert_raises(Exception, qr, (a,), {'lwork':0})
-        assert_raises(Exception, qr, (a,), {'lwork':2})
+        assert_raises(Exception, qr, (a,), {'lwork': 0})
+        assert_raises(Exception, qr, (a,), {'lwork': 2})
+
 
 class TestRQ(object):
 
@@ -1733,261 +1796,261 @@ class TestRQ(object):
         seed(1234)
 
     def test_simple(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        r,q = rq(a)
-        assert_array_almost_equal(dot(q, transpose(q)),identity(3))
-        assert_array_almost_equal(dot(r,q),a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        r, q = rq(a)
+        assert_array_almost_equal(q @ q.T, eye(3))
+        assert_array_almost_equal(r @ q, a)
 
     def test_r(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        r,q = rq(a)
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        r, q = rq(a)
         r2 = rq(a, mode='r')
         assert_array_almost_equal(r, r2)
 
     def test_random(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            r,q = rq(a)
-            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([n, n])
+            r, q = rq(a)
+            assert_array_almost_equal(q @ q.T, eye(n))
+            assert_array_almost_equal(r @ q, a)
 
     def test_simple_trap(self):
-        a = [[8,2,3],[2,9,3]]
-        r,q = rq(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(r,q),a)
+        a = [[8, 2, 3], [2, 9, 3]]
+        r, q = rq(a)
+        assert_array_almost_equal(q.T @ q, eye(3))
+        assert_array_almost_equal(r @ q, a)
 
     def test_simple_tall(self):
-        a = [[8,2],[2,9],[5,3]]
-        r,q = rq(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(2))
-        assert_array_almost_equal(dot(r,q),a)
+        a = [[8, 2], [2, 9], [5, 3]]
+        r, q = rq(a)
+        assert_array_almost_equal(q.T @ q, eye(2))
+        assert_array_almost_equal(r @ q, a)
 
     def test_simple_fat(self):
-        a = [[8,2,5],[2,9,3]]
-        r,q = rq(a)
-        assert_array_almost_equal(dot(transpose(q),q),identity(3))
-        assert_array_almost_equal(dot(r,q),a)
+        a = [[8, 2, 5], [2, 9, 3]]
+        r, q = rq(a)
+        assert_array_almost_equal(q @ q.T, eye(3))
+        assert_array_almost_equal(r @ q, a)
 
     def test_simple_complex(self):
-        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
-        r,q = rq(a)
-        assert_array_almost_equal(dot(q, conj(transpose(q))),identity(3))
-        assert_array_almost_equal(dot(r,q),a)
+        a = [[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]]
+        r, q = rq(a)
+        assert_array_almost_equal(q @ q.conj().T, eye(3))
+        assert_array_almost_equal(r @ q, a)
 
     def test_random_tall(self):
         m = 200
         n = 100
         for k in range(2):
-            a = random([m,n])
-            r,q = rq(a)
-            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([m, n])
+            r, q = rq(a)
+            assert_array_almost_equal(q @ q.T, eye(n))
+            assert_array_almost_equal(r @ q, a)
 
     def test_random_trap(self):
         m = 100
         n = 200
         for k in range(2):
-            a = random([m,n])
-            r,q = rq(a)
-            assert_array_almost_equal(dot(q, transpose(q)),identity(n))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([m, n])
+            r, q = rq(a)
+            assert_array_almost_equal(q @ q.T, eye(n))
+            assert_array_almost_equal(r @ q, a)
 
     def test_random_trap_economic(self):
         m = 100
         n = 200
         for k in range(2):
-            a = random([m,n])
-            r,q = rq(a, mode='economic')
-            assert_array_almost_equal(dot(q,transpose(q)),identity(m))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([m, n])
+            r, q = rq(a, mode='economic')
+            assert_array_almost_equal(q @ q.T, eye(m))
+            assert_array_almost_equal(r @ q, a)
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (m, m))
 
     def test_random_complex(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            r,q = rq(a)
-            assert_array_almost_equal(dot(q, conj(transpose(q))),identity(n))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([n, n])+1j*random([n, n])
+            r, q = rq(a)
+            assert_array_almost_equal(q @ q.conj().T, eye(n))
+            assert_array_almost_equal(r @ q, a)
 
     def test_random_complex_economic(self):
         m = 100
         n = 200
         for k in range(2):
-            a = random([m,n])+1j*random([m,n])
-            r,q = rq(a, mode='economic')
-            assert_array_almost_equal(dot(q,conj(transpose(q))),identity(m))
-            assert_array_almost_equal(dot(r,q),a)
+            a = random([m, n])+1j*random([m, n])
+            r, q = rq(a, mode='economic')
+            assert_array_almost_equal(q @ q.conj().T, eye(m))
+            assert_array_almost_equal(r @ q, a)
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (m, m))
 
     def test_check_finite(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        r,q = rq(a, check_finite=False)
-        assert_array_almost_equal(dot(q, transpose(q)),identity(3))
-        assert_array_almost_equal(dot(r,q),a)
-
-
-transp = transpose
+        a = [[8, 2, 3], [2, 9, 3], [5, 3, 6]]
+        r, q = rq(a, check_finite=False)
+        assert_array_almost_equal(q @ q.T, eye(3))
+        assert_array_almost_equal(r @ q, a)
 
 
 class TestSchur(object):
 
     def test_simple(self):
-        a = [[8,12,3],[2,9,3],[10,3,6]]
-        t,z = schur(a)
-        assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
-        tc,zc = schur(a,'complex')
+        a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
+        t, z = schur(a)
+        assert_array_almost_equal(z @ t @ z.conj().T, a)
+        tc, zc = schur(a, 'complex')
         assert_(np.any(ravel(iscomplex(zc))) and np.any(ravel(iscomplex(tc))))
-        assert_array_almost_equal(dot(dot(zc,tc),transp(conj(zc))),a)
-        tc2,zc2 = rsf2csf(tc,zc)
-        assert_array_almost_equal(dot(dot(zc2,tc2),transp(conj(zc2))),a)
+        assert_array_almost_equal(zc @ tc @ zc.conj().T, a)
+        tc2, zc2 = rsf2csf(tc, zc)
+        assert_array_almost_equal(zc2 @ tc2 @ zc2.conj().T, a)
 
     def test_sort(self):
-        a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
-        s,u,sdim = schur(a,sort='lhp')
-        assert_array_almost_equal([[0.1134,0.5436,0.8316,0.],
-                                   [-0.1134,-0.8245,0.5544,0.],
-                                   [-0.8213,0.1308,0.0265,-0.5547],
-                                   [-0.5475,0.0872,0.0177,0.8321]],
-                                  u,3)
-        assert_array_almost_equal([[-1.4142,0.1456,-11.5816,-7.7174],
-                                   [0.,-0.5000,9.4472,-0.7184],
-                                   [0.,0.,1.4142,-0.1456],
-                                   [0.,0.,0.,0.5]],
-                                  s,3)
-        assert_equal(2,sdim)
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
+        s, u, sdim = schur(a, sort='lhp')
+        assert_array_almost_equal([[0.1134, 0.5436, 0.8316, 0.],
+                                   [-0.1134, -0.8245, 0.5544, 0.],
+                                   [-0.8213, 0.1308, 0.0265, -0.5547],
+                                   [-0.5475, 0.0872, 0.0177, 0.8321]],
+                                  u, 3)
+        assert_array_almost_equal([[-1.4142, 0.1456, -11.5816, -7.7174],
+                                   [0., -0.5000, 9.4472, -0.7184],
+                                   [0., 0., 1.4142, -0.1456],
+                                   [0., 0., 0., 0.5]],
+                                  s, 3)
+        assert_equal(2, sdim)
 
-        s,u,sdim = schur(a,sort='rhp')
-        assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
-                                   [-0.4862,0.4930,-0.1434,-0.7071],
-                                   [0.6042,0.3944,-0.6924,0.],
-                                   [0.4028,0.5986,0.6924,0.]],
-                                  u,3)
-        assert_array_almost_equal([[1.4142,-0.9270,4.5368,-14.4130],
-                                   [0.,0.5,6.5809,-3.1870],
-                                   [0.,0.,-1.4142,0.9270],
-                                   [0.,0.,0.,-0.5]],
-                                  s,3)
-        assert_equal(2,sdim)
+        s, u, sdim = schur(a, sort='rhp')
+        assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
+                                   [-0.4862, 0.4930, -0.1434, -0.7071],
+                                   [0.6042, 0.3944, -0.6924, 0.],
+                                   [0.4028, 0.5986, 0.6924, 0.]],
+                                  u, 3)
+        assert_array_almost_equal([[1.4142, -0.9270, 4.5368, -14.4130],
+                                   [0., 0.5, 6.5809, -3.1870],
+                                   [0., 0., -1.4142, 0.9270],
+                                   [0., 0., 0., -0.5]],
+                                  s, 3)
+        assert_equal(2, sdim)
 
-        s,u,sdim = schur(a,sort='iuc')
-        assert_array_almost_equal([[0.5547,0.,-0.5721,-0.6042],
-                                   [-0.8321,0.,-0.3814,-0.4028],
-                                   [0.,0.7071,-0.5134,0.4862],
-                                   [0.,0.7071,0.5134,-0.4862]],
-                                  u,3)
-        assert_array_almost_equal([[-0.5000,0.0000,-6.5809,-4.0974],
-                                   [0.,0.5000,-3.3191,-14.4130],
-                                   [0.,0.,1.4142,2.1573],
-                                   [0.,0.,0.,-1.4142]],
-                                  s,3)
-        assert_equal(2,sdim)
+        s, u, sdim = schur(a, sort='iuc')
+        assert_array_almost_equal([[0.5547, 0., -0.5721, -0.6042],
+                                   [-0.8321, 0., -0.3814, -0.4028],
+                                   [0., 0.7071, -0.5134, 0.4862],
+                                   [0., 0.7071, 0.5134, -0.4862]],
+                                  u, 3)
+        assert_array_almost_equal([[-0.5000, 0.0000, -6.5809, -4.0974],
+                                   [0., 0.5000, -3.3191, -14.4130],
+                                   [0., 0., 1.4142, 2.1573],
+                                   [0., 0., 0., -1.4142]],
+                                  s, 3)
+        assert_equal(2, sdim)
 
-        s,u,sdim = schur(a,sort='ouc')
-        assert_array_almost_equal([[0.4862,-0.5134,0.7071,0.],
-                                   [-0.4862,0.5134,0.7071,0.],
-                                   [0.6042,0.5721,0.,-0.5547],
-                                   [0.4028,0.3814,0.,0.8321]],
-                                  u,3)
-        assert_array_almost_equal([[1.4142,-2.1573,14.4130,4.0974],
-                                   [0.,-1.4142,3.3191,6.5809],
-                                   [0.,0.,-0.5000,0.],
-                                   [0.,0.,0.,0.5000]],
-                                  s,3)
-        assert_equal(2,sdim)
+        s, u, sdim = schur(a, sort='ouc')
+        assert_array_almost_equal([[0.4862, -0.5134, 0.7071, 0.],
+                                   [-0.4862, 0.5134, 0.7071, 0.],
+                                   [0.6042, 0.5721, 0., -0.5547],
+                                   [0.4028, 0.3814, 0., 0.8321]],
+                                  u, 3)
+        assert_array_almost_equal([[1.4142, -2.1573, 14.4130, 4.0974],
+                                   [0., -1.4142, 3.3191, 6.5809],
+                                   [0., 0., -0.5000, 0.],
+                                   [0., 0., 0., 0.5000]],
+                                  s, 3)
+        assert_equal(2, sdim)
 
-        rhp_function = lambda x: x >= 0.0
-        s,u,sdim = schur(a,sort=rhp_function)
-        assert_array_almost_equal([[0.4862,-0.4930,0.1434,-0.7071],
-                                   [-0.4862,0.4930,-0.1434,-0.7071],
-                                   [0.6042,0.3944,-0.6924,0.],
-                                   [0.4028,0.5986,0.6924,0.]],
-                                  u,3)
-        assert_array_almost_equal([[1.4142,-0.9270,4.5368,-14.4130],
-                                   [0.,0.5,6.5809,-3.1870],
-                                   [0.,0.,-1.4142,0.9270],
-                                   [0.,0.,0.,-0.5]],
-                                  s,3)
-        assert_equal(2,sdim)
+        s, u, sdim = schur(a, sort=lambda x: x >= 0.0)
+        assert_array_almost_equal([[0.4862, -0.4930, 0.1434, -0.7071],
+                                   [-0.4862, 0.4930, -0.1434, -0.7071],
+                                   [0.6042, 0.3944, -0.6924, 0.],
+                                   [0.4028, 0.5986, 0.6924, 0.]],
+                                  u, 3)
+        assert_array_almost_equal([[1.4142, -0.9270, 4.5368, -14.4130],
+                                   [0., 0.5, 6.5809, -3.1870],
+                                   [0., 0., -1.4142, 0.9270],
+                                   [0., 0., 0., -0.5]],
+                                  s, 3)
+        assert_equal(2, sdim)
 
     def test_sort_errors(self):
-        a = [[4.,3.,1.,-1.],[-4.5,-3.5,-1.,1.],[9.,6.,-4.,4.5],[6.,4.,-3.,3.5]]
+        a = [[4., 3., 1., -1.],
+             [-4.5, -3.5, -1., 1.],
+             [9., 6., -4., 4.5],
+             [6., 4., -3., 3.5]]
         assert_raises(ValueError, schur, a, sort='unsupported')
         assert_raises(ValueError, schur, a, sort=1)
 
     def test_check_finite(self):
-        a = [[8,12,3],[2,9,3],[10,3,6]]
-        t,z = schur(a, check_finite=False)
-        assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
+        a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
+        t, z = schur(a, check_finite=False)
+        assert_array_almost_equal(z @ t @ z.conj().T, a)
 
 
 class TestHessenberg(object):
 
     def test_simple(self):
-        a = [[-149, -50,-154],
+        a = [[-149, -50, -154],
              [537, 180, 546],
              [-27, -9, -25]]
-        h1 = [[-149.0000,42.2037,-156.3165],
-              [-537.6783,152.5511,-554.9272],
-              [0,0.0728, 2.4489]]
-        h,q = hessenberg(a,calc_q=1)
-        assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
-        assert_array_almost_equal(h,h1,decimal=4)
+        h1 = [[-149.0000, 42.2037, -156.3165],
+              [-537.6783, 152.5511, -554.9272],
+              [0, 0.0728, 2.4489]]
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(q.T @ a @ q, h)
+        assert_array_almost_equal(h, h1, decimal=4)
 
     def test_simple_complex(self):
-        a = [[-149, -50,-154],
+        a = [[-149, -50, -154],
              [537, 180j, 546],
              [-27j, -9, -25]]
-        h,q = hessenberg(a,calc_q=1)
-        h1 = dot(transp(conj(q)),dot(a,q))
-        assert_array_almost_equal(h1,h)
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(q.conj().T @ a @ q, h)
 
     def test_simple2(self):
-        a = [[1,2,3,4,5,6,7],
-             [0,2,3,4,6,7,2],
-             [0,2,2,3,0,3,2],
-             [0,0,2,8,0,0,2],
-             [0,3,1,2,0,1,2],
-             [0,1,2,3,0,1,0],
-             [0,0,0,0,0,1,2]]
-        h,q = hessenberg(a,calc_q=1)
-        assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
+        a = [[1, 2, 3, 4, 5, 6, 7],
+             [0, 2, 3, 4, 6, 7, 2],
+             [0, 2, 2, 3, 0, 3, 2],
+             [0, 0, 2, 8, 0, 0, 2],
+             [0, 3, 1, 2, 0, 1, 2],
+             [0, 1, 2, 3, 0, 1, 0],
+             [0, 0, 0, 0, 0, 1, 2]]
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(q.T @ a @ q, h)
 
     def test_simple3(self):
         a = np.eye(3)
         a[-1, 0] = 2
         h, q = hessenberg(a, calc_q=1)
-        assert_array_almost_equal(dot(transp(q), dot(a, q)), h)
+        assert_array_almost_equal(q.T @ a @ q, h)
 
     def test_random(self):
         n = 20
         for k in range(2):
-            a = random([n,n])
-            h,q = hessenberg(a,calc_q=1)
-            assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
+            a = random([n, n])
+            h, q = hessenberg(a, calc_q=1)
+            assert_array_almost_equal(q.T @ a @ q, h)
 
     def test_random_complex(self):
         n = 20
         for k in range(2):
-            a = random([n,n])+1j*random([n,n])
-            h,q = hessenberg(a,calc_q=1)
-            h1 = dot(transp(conj(q)),dot(a,q))
-            assert_array_almost_equal(h1,h)
+            a = random([n, n])+1j*random([n, n])
+            h, q = hessenberg(a, calc_q=1)
+            assert_array_almost_equal(q.conj().T @ a @ q, h)
 
     def test_check_finite(self):
-        a = [[-149, -50,-154],
+        a = [[-149, -50, -154],
              [537, 180, 546],
              [-27, -9, -25]]
-        h1 = [[-149.0000,42.2037,-156.3165],
-              [-537.6783,152.5511,-554.9272],
-              [0,0.0728, 2.4489]]
-        h,q = hessenberg(a,calc_q=1, check_finite=False)
-        assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
-        assert_array_almost_equal(h,h1,decimal=4)
+        h1 = [[-149.0000, 42.2037, -156.3165],
+              [-537.6783, 152.5511, -554.9272],
+              [0, 0.0728, 2.4489]]
+        h, q = hessenberg(a, calc_q=1, check_finite=False)
+        assert_array_almost_equal(q.T @ a @ q, h)
+        assert_array_almost_equal(h, h1, decimal=4)
 
     def test_2x2(self):
         a = [[2, 1], [7, 12]]
@@ -2008,63 +2071,63 @@ class TestQZ(object):
 
     def test_qz_single(self):
         n = 5
-        A = random([n,n]).astype(float32)
-        B = random([n,n]).astype(float32)
-        AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A, decimal=5)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B, decimal=5)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n), decimal=5)
-        assert_array_almost_equal(dot(Z,Z.T), eye(n), decimal=5)
+        A = random([n, n]).astype(float32)
+        B = random([n, n]).astype(float32)
+        AA, BB, Q, Z = qz(A, B)
+        assert_array_almost_equal(Q @ AA @ Z.T, A, decimal=5)
+        assert_array_almost_equal(Q @ BB @ Z.T, B, decimal=5)
+        assert_array_almost_equal(Q @ Q.T, eye(n), decimal=5)
+        assert_array_almost_equal(Z @ Z.T, eye(n), decimal=5)
         assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double(self):
         n = 5
-        A = random([n,n])
-        B = random([n,n])
-        AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.T), eye(n))
+        A = random([n, n])
+        B = random([n, n])
+        AA, BB, Q, Z = qz(A, B)
+        assert_array_almost_equal(Q @ AA @ Z.T, A)
+        assert_array_almost_equal(Q @ BB @ Z.T, B)
+        assert_array_almost_equal(Q @ Q.T, eye(n))
+        assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
 
     def test_qz_complex(self):
         n = 5
-        A = random([n,n]) + 1j*random([n,n])
-        B = random([n,n]) + 1j*random([n,n])
-        AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.conjugate().T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B)
-        assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
+        A = random([n, n]) + 1j*random([n, n])
+        B = random([n, n]) + 1j*random([n, n])
+        AA, BB, Q, Z = qz(A, B)
+        assert_array_almost_equal(Q @ AA @ Z.conj().T, A)
+        assert_array_almost_equal(Q @ BB @ Z.conj().T, B)
+        assert_array_almost_equal(Q @ Q.conj().T, eye(n))
+        assert_array_almost_equal(Z @ Z.conj().T, eye(n))
         assert_(np.all(diag(BB) >= 0))
         assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_complex64(self):
         n = 5
-        A = (random([n,n]) + 1j*random([n,n])).astype(complex64)
-        B = (random([n,n]) + 1j*random([n,n])).astype(complex64)
-        AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.conjugate().T), A, decimal=5)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.conjugate().T), B, decimal=5)
-        assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n), decimal=5)
-        assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n), decimal=5)
+        A = (random([n, n]) + 1j*random([n, n])).astype(complex64)
+        B = (random([n, n]) + 1j*random([n, n])).astype(complex64)
+        AA, BB, Q, Z = qz(A, B)
+        assert_array_almost_equal(Q @ AA @ Z.conj().T, A, decimal=5)
+        assert_array_almost_equal(Q @ BB @ Z.conj().T, B, decimal=5)
+        assert_array_almost_equal(Q @ Q.conj().T, eye(n), decimal=5)
+        assert_array_almost_equal(Z @ Z.conj().T, eye(n), decimal=5)
         assert_(np.all(diag(BB) >= 0))
         assert_(np.all(diag(BB).imag == 0))
 
     def test_qz_double_complex(self):
         n = 5
-        A = random([n,n])
-        B = random([n,n])
-        AA,BB,Q,Z = qz(A,B, output='complex')
-        aa = dot(dot(Q,AA),Z.conjugate().T)
+        A = random([n, n])
+        B = random([n, n])
+        AA, BB, Q, Z = qz(A, B, output='complex')
+        aa = Q @ AA @ Z.conj().T
         assert_array_almost_equal(aa.real, A)
         assert_array_almost_equal(aa.imag, 0)
-        bb = dot(dot(Q,BB),Z.conjugate().T)
+        bb = Q @ BB @ Z.conj().T
         assert_array_almost_equal(bb.real, B)
         assert_array_almost_equal(bb.imag, 0)
-        assert_array_almost_equal(dot(Q,Q.conjugate().T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
+        assert_array_almost_equal(Q @ Q.conj().T, eye(n))
+        assert_array_almost_equal(Z @ Z.conj().T, eye(n))
         assert_(np.all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
@@ -2082,27 +2145,25 @@ class TestQZ(object):
         #              [1.0,   3.0,  -4.0,   3.0],
         #              [1.0,   3.0,  -4.0,   4.0]])
         A = np.array([[3.9, 12.5, -34.5, 2.5],
-                 [4.3, 21.5, -47.5, 7.5],
-                 [4.3, 1.5, -43.5, 3.5],
-                 [4.4, 6.0, -46.0, 6.0]])
+                      [4.3, 21.5, -47.5, 7.5],
+                      [4.3, 1.5, -43.5, 3.5],
+                      [4.4, 6.0, -46.0, 6.0]])
 
         B = np.array([[1.0, 1.0, -3.0, 1.0],
                       [1.0, 3.0, -5.0, 4.4],
                       [1.0, 2.0, -4.0, 1.0],
                       [1.2, 3.0, -4.0, 4.0]])
 
-        sort = lambda ar,ai,beta: ai == 0
-
-        assert_raises(ValueError, qz, A, B, sort=sort)
+        assert_raises(ValueError, qz, A, B, sort=lambda ar, ai, beta: ai == 0)
         if False:
-            AA,BB,Q,Z,sdim = qz(A,B,sort=sort)
+            AA, BB, Q, Z, sdim = qz(A, B, sort=lambda ar, ai, beta: ai == 0)
             # assert_(sdim == 2)
             assert_(sdim == 4)
-            assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-            assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
+            assert_array_almost_equal(Q @ AA @ Z.T, A)
+            assert_array_almost_equal(Q @ BB @ Z.T, B)
 
-            # test absolute values bc the sign is ambiguous and might be platform
-            # dependent
+            # test absolute values bc the sign is ambiguous and
+            # might be platform dependent
             assert_array_almost_equal(np.abs(AA), np.abs(np.array(
                             [[35.7864, -80.9061, -12.0629, -9.498],
                              [0., 2.7638, -2.3505, 7.3256],
@@ -2170,13 +2231,13 @@ class TestQZ(object):
 
     def test_check_finite(self):
         n = 5
-        A = random([n,n])
-        B = random([n,n])
-        AA,BB,Q,Z = qz(A,B,check_finite=False)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.T), eye(n))
+        A = random([n, n])
+        B = random([n, n])
+        AA, BB, Q, Z = qz(A, B, check_finite=False)
+        assert_array_almost_equal(Q @ AA @ Z.T, A)
+        assert_array_almost_equal(Q @ BB @ Z.T, B)
+        assert_array_almost_equal(Q @ Q.T, eye(n))
+        assert_array_almost_equal(Z @ Z.T, eye(n))
         assert_(np.all(diag(BB) >= 0))
 
 
@@ -2237,28 +2298,23 @@ class TestOrdQZ(object):
 
         # example with (alpha, beta) = (0, 0)
         A5 = np.diag([1, 0])
-        B5 = np.diag([1, 0])
 
         cls.A = [A1, A2, A3, A4, A5]
         cls.B = [B1, B2, B3, B4, A5]
 
     def qz_decomp(self, sort):
-        try:
-            olderr = np.seterr('raise')
+        with np.errstate(all='raise'):
             ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
-        finally:
-            np.seterr(**olderr)
-
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
         Id = np.eye(*A.shape)
         # make sure Q and Z are orthogonal
-        assert_array_almost_equal(Q.dot(Q.T.conj()), Id)
-        assert_array_almost_equal(Z.dot(Z.T.conj()), Id)
+        assert_array_almost_equal(Q @ Q.T.conj(), Id)
+        assert_array_almost_equal(Z @ Z.T.conj(), Id)
         # check factorization
-        assert_array_almost_equal(Q.dot(AA), A.dot(Z))
-        assert_array_almost_equal(Q.dot(BB), B.dot(Z))
+        assert_array_almost_equal(Q @ AA, A @ Z)
+        assert_array_almost_equal(Q @ BB, B @ Z)
         # check shape of AA and BB
         assert_array_equal(np.tril(AA, -2), np.zeros(AA.shape))
         assert_array_equal(np.tril(BB, -1), np.zeros(BB.shape))
@@ -2350,9 +2406,9 @@ class TestOrdQZ(object):
         A1 = np.eye(2)
         B1 = np.diag([-2, 0.5])
         expected1 = [('lhp', [-0.5, 2]),
-                    ('rhp', [2, -0.5]),
-                    ('iuc', [-0.5, 2]),
-                    ('ouc', [2, -0.5])]
+                     ('rhp', [2, -0.5]),
+                     ('iuc', [-0.5, 2]),
+                     ('ouc', [2, -0.5])]
         A2 = np.eye(2)
         B2 = np.diag([-2 + 1j, 0.5 + 0.5j])
         expected2 = [('lhp', [1/(-2 + 1j), 1/(0.5 + 0.5j)]),
@@ -2403,17 +2459,17 @@ class TestOrdQZWorkspaceSize(object):
 
         # raises error if lwork parameter to dtrsen is too small
         for ddtype in [np.float32, np.float64]:
-            A = random((N,N)).astype(ddtype)
-            B = random((N,N)).astype(ddtype)
-            # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
-            sort = lambda alpha, beta: alpha < beta
-            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
+            A = random((N, N)).astype(ddtype)
+            B = random((N, N)).astype(ddtype)
+            # sort = lambda ar, ai, b: ar**2 + ai**2 < b**2
+            _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
+                      output='real')
 
-        for ddtype in [np.complex, np.complex64]:
-            A = random((N,N)).astype(ddtype)
-            B = random((N,N)).astype(ddtype)
-            sort = lambda alpha, beta: alpha < beta
-            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
+        for ddtype in [np.complex128, np.complex64]:
+            A = random((N, N)).astype(ddtype)
+            B = random((N, N)).astype(ddtype)
+            _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
+                      output='complex')
 
     @pytest.mark.slow
     def test_decompose_ouc(self):
@@ -2421,10 +2477,10 @@ class TestOrdQZWorkspaceSize(object):
         N = 202
 
         # segfaults if lwork parameter to dtrsen is too small
-        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
-            A = random((N,N)).astype(ddtype)
-            B = random((N,N)).astype(ddtype)
-            [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
+        for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
+            A = random((N, N)).astype(ddtype)
+            B = random((N, N)).astype(ddtype)
+            S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')
 
 
 class TestDatacopied(object):
@@ -2432,7 +2488,7 @@ class TestDatacopied(object):
     def test_datacopied(self):
         from scipy.linalg.decomp import _datacopied
 
-        M = matrix([[0,1],[2,3]])
+        M = matrix([[0, 1], [2, 3]])
         A = asarray(M)
         L = M.tolist()
         M2 = M.copy()
@@ -2500,46 +2556,48 @@ def check_lapack_misaligned(func, args, kwargs):
     args = list(args)
     for i in range(len(args)):
         a = args[:]
-        if isinstance(a[i],np.ndarray):
+        if isinstance(a[i], np.ndarray):
             # Try misaligning a[i]
             aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
-            aa = np.frombuffer(aa.data, offset=4, count=a[i].size, dtype=a[i].dtype)
+            aa = np.frombuffer(aa.data, offset=4, count=a[i].size,
+                               dtype=a[i].dtype)
             aa.shape = a[i].shape
             aa[...] = a[i]
             a[i] = aa
-            func(*a,**kwargs)
+            func(*a, **kwargs)
             if len(a[i].shape) > 1:
                 a[i] = a[i].T
-                func(*a,**kwargs)
+                func(*a, **kwargs)
 
 
-@pytest.mark.xfail(run=False, reason="Ticket #1152, triggers a segfault in rare cases.")
+@pytest.mark.xfail(run=False,
+                   reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
-    M = np.eye(10,dtype=float)
+    M = np.eye(10, dtype=float)
     R = np.arange(100)
-    R.shape = 10,10
-    S = np.arange(20000,dtype=np.uint8)
+    R.shape = 10, 10
+    S = np.arange(20000, dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
     S.shape = 10, 10
     b = np.ones(10)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
-            (eig,(S,),dict(overwrite_a=True)),  # crash
-            (eigvals,(S,),dict(overwrite_a=True)),  # no crash
-            (lu,(S,),dict(overwrite_a=True)),  # no crash
-            (lu_factor,(S,),dict(overwrite_a=True)),  # no crash
-            (lu_solve,((LU,piv),b),dict(overwrite_b=True)),
-            (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)),
-            (svd,(M,),dict(overwrite_a=True)),  # no crash
-            (svd,(R,),dict(overwrite_a=True)),  # no crash
-            (svd,(S,),dict(overwrite_a=True)),  # crash
-            (svdvals,(S,),dict()),  # no crash
-            (svdvals,(S,),dict(overwrite_a=True)),  # crash
-            (cholesky,(M,),dict(overwrite_a=True)),  # no crash
-            (qr,(S,),dict(overwrite_a=True)),  # crash
-            (rq,(S,),dict(overwrite_a=True)),  # crash
-            (hessenberg,(S,),dict(overwrite_a=True)),  # crash
-            (schur,(S,),dict(overwrite_a=True)),  # crash
+            (eig, (S,), dict(overwrite_a=True)),  # crash
+            (eigvals, (S,), dict(overwrite_a=True)),  # no crash
+            (lu, (S,), dict(overwrite_a=True)),  # no crash
+            (lu_factor, (S,), dict(overwrite_a=True)),  # no crash
+            (lu_solve, ((LU, piv), b), dict(overwrite_b=True)),
+            (solve, (S, b), dict(overwrite_a=True, overwrite_b=True)),
+            (svd, (M,), dict(overwrite_a=True)),  # no crash
+            (svd, (R,), dict(overwrite_a=True)),  # no crash
+            (svd, (S,), dict(overwrite_a=True)),  # crash
+            (svdvals, (S,), dict()),  # no crash
+            (svdvals, (S,), dict(overwrite_a=True)),  # crash
+            (cholesky, (M,), dict(overwrite_a=True)),  # no crash
+            (qr, (S,), dict(overwrite_a=True)),  # crash
+            (rq, (S,), dict(overwrite_a=True)),  # crash
+            (hessenberg, (S,), dict(overwrite_a=True)),  # crash
+            (schur, (S,), dict(overwrite_a=True)),  # crash
             ]:
         check_lapack_misaligned(func, args, kwargs)
 # not properly tested
@@ -2548,58 +2606,58 @@ def test_lapack_misaligned():
 
 class TestOverwrite(object):
     def test_eig(self):
-        assert_no_overwrite(eig, [(3,3)])
-        assert_no_overwrite(eig, [(3,3), (3,3)])
+        assert_no_overwrite(eig, [(3, 3)])
+        assert_no_overwrite(eig, [(3, 3), (3, 3)])
 
     def test_eigh(self):
-        assert_no_overwrite(eigh, [(3,3)])
-        assert_no_overwrite(eigh, [(3,3), (3,3)])
+        assert_no_overwrite(eigh, [(3, 3)])
+        assert_no_overwrite(eigh, [(3, 3), (3, 3)])
 
     def test_eig_banded(self):
-        assert_no_overwrite(eig_banded, [(3,2)])
+        assert_no_overwrite(eig_banded, [(3, 2)])
 
     def test_eigvals(self):
-        assert_no_overwrite(eigvals, [(3,3)])
+        assert_no_overwrite(eigvals, [(3, 3)])
 
     def test_eigvalsh(self):
-        assert_no_overwrite(eigvalsh, [(3,3)])
+        assert_no_overwrite(eigvalsh, [(3, 3)])
 
     def test_eigvals_banded(self):
-        assert_no_overwrite(eigvals_banded, [(3,2)])
+        assert_no_overwrite(eigvals_banded, [(3, 2)])
 
     def test_hessenberg(self):
-        assert_no_overwrite(hessenberg, [(3,3)])
+        assert_no_overwrite(hessenberg, [(3, 3)])
 
     def test_lu_factor(self):
-        assert_no_overwrite(lu_factor, [(3,3)])
+        assert_no_overwrite(lu_factor, [(3, 3)])
 
     def test_lu_solve(self):
-        x = np.array([[1,2,3], [4,5,6], [7,8,8]])
+        x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 8]])
         xlu = lu_factor(x)
         assert_no_overwrite(lambda b: lu_solve(xlu, b), [(3,)])
 
     def test_lu(self):
-        assert_no_overwrite(lu, [(3,3)])
+        assert_no_overwrite(lu, [(3, 3)])
 
     def test_qr(self):
-        assert_no_overwrite(qr, [(3,3)])
+        assert_no_overwrite(qr, [(3, 3)])
 
     def test_rq(self):
-        assert_no_overwrite(rq, [(3,3)])
+        assert_no_overwrite(rq, [(3, 3)])
 
     def test_schur(self):
-        assert_no_overwrite(schur, [(3,3)])
+        assert_no_overwrite(schur, [(3, 3)])
 
     def test_schur_complex(self):
-        assert_no_overwrite(lambda a: schur(a, 'complex'), [(3,3)],
+        assert_no_overwrite(lambda a: schur(a, 'complex'), [(3, 3)],
                             dtypes=[np.float32, np.float64])
 
     def test_svd(self):
-        assert_no_overwrite(svd, [(3,3)])
-        assert_no_overwrite(lambda a: svd(a, lapack_driver='gesvd'), [(3,3)])
+        assert_no_overwrite(svd, [(3, 3)])
+        assert_no_overwrite(lambda a: svd(a, lapack_driver='gesvd'), [(3, 3)])
 
     def test_svdvals(self):
-        assert_no_overwrite(svdvals, [(3,3)])
+        assert_no_overwrite(svdvals, [(3, 3)])
 
 
 def _check_orth(n, dtype, skip_big=False):
@@ -2618,8 +2676,8 @@ def _check_orth(n, dtype, skip_big=False):
 
     if n > 5 and not skip_big:
         np.random.seed(1)
-        X = np.random.rand(n, 5).dot(np.random.rand(5, n))
-        X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+        X = np.random.rand(n, 5) @ np.random.rand(5, n)
+        X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
         X = X.astype(dtype)
 
         Y = orth(X, rcond=1e-3)
@@ -2630,7 +2688,8 @@ def _check_orth(n, dtype, skip_big=False):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(np.dtype(np.intp).itemsize < 8, reason="test only on 64-bit, else too slow")
+@pytest.mark.skipif(np.dtype(np.intp).itemsize < 8,
+                    reason="test only on 64-bit, else too slow")
 def test_orth_memory_efficiency():
     # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
     # Keep in mind that @pytest.mark.slow tests are likely to be running
@@ -2639,8 +2698,10 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n, np.float64, skip_big=True)
-    except MemoryError:
-        raise AssertionError('memory error perhaps caused by orth regression')
+    except MemoryError as e:
+        raise AssertionError(
+            'memory error perhaps caused by orth regression'
+        ) from e
 
 
 def test_orth():
@@ -2664,21 +2725,21 @@ def test_null_space():
 
         Y = null_space(X)
         assert_equal(Y.shape, (n, n-1))
-        assert_allclose(X.dot(Y), 0, atol=tol)
+        assert_allclose(X @ Y, 0, atol=tol)
 
         Y = null_space(X.T)
         assert_equal(Y.shape, (2, 1))
-        assert_allclose(X.T.dot(Y), 0, atol=tol)
+        assert_allclose(X.T @ Y, 0, atol=tol)
 
         X = np.random.randn(1 + n//2, n)
         Y = null_space(X)
         assert_equal(Y.shape, (n, n - 1 - n//2))
-        assert_allclose(X.dot(Y), 0, atol=tol)
+        assert_allclose(X @ Y, 0, atol=tol)
 
         if n > 5:
             np.random.seed(1)
-            X = np.random.rand(n, 5).dot(np.random.rand(5, n))
-            X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+            X = np.random.rand(n, 5) @ np.random.rand(5, n)
+            X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
             X = X.astype(dt)
 
             Y = null_space(X, rcond=1e-3)
@@ -2811,7 +2872,7 @@ class TestCDF2RDF(object):
 
     def test_not_square_error(self):
         # Check that passing a non-square array raises a ValueError.
-        w, v = np.arange(3), np.arange(6).reshape(3,2)
+        w, v = np.arange(3), np.arange(6).reshape(3, 2)
         assert_raises(ValueError, cdf2rdf, w, v)
 
     def test_swapped_v_w_error(self):
@@ -2822,7 +2883,7 @@ class TestCDF2RDF(object):
 
     def test_non_associated_error(self):
         # Check that passing non-associated eigenvectors raises a ValueError.
-        w, v = np.arange(3), np.arange(16).reshape(4,4)
+        w, v = np.arange(3), np.arange(16).reshape(4, 4)
         assert_raises(ValueError, cdf2rdf, w, v)
 
     def test_not_conjugate_pairs(self):

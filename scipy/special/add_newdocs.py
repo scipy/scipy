@@ -6,10 +6,9 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+from typing import Dict
 
-from __future__ import division, print_function, absolute_import
-
-docdict = {}
+docdict: Dict[str, str] = {}
 
 
 def get(name):
@@ -113,6 +112,10 @@ add_newdoc("voigt_profile",
     The Voigt profile is a convolution of a 1-D Normal distribution with
     standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
     half-maximum ``gamma``.
+
+    If ``sigma = 0``, PDF of Cauchy distribution is returned.
+    Conversely, if ``gamma = 0``, PDF of Normal distribution is returned.
+    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``, and ``0`` for all other ``x``.
 
     Parameters
     ----------
@@ -351,7 +354,8 @@ add_newdoc("airye",
     Returns
     -------
     eAi, eAip, eBi, eBip : array_like
-        Airy functions Ai and Bi, and their derivatives Aip and Bip
+        Exponentially scaled Airy functions eAi and eBi, and their derivatives 
+        eAip and eBip
 
     Notes
     -----
@@ -366,6 +370,45 @@ add_newdoc("airye",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+           
+    Examples
+    --------
+    We can compute exponentially scaled Airy functions and their derivatives:
+    
+    >>> from scipy.special import airye
+    >>> import matplotlib.pyplot as plt
+    >>> z = np.linspace(0, 50, 500)
+    >>> eAi, eAip, eBi, eBip = airye(z)
+    >>> f, ax = plt.subplots(2, 1, sharex=True)
+    >>> for ind, data in enumerate([[eAi, eAip, ["eAi", "eAip"]],
+    ...                             [eBi, eBip, ["eBi", "eBip"]]]):
+    ...     ax[ind].plot(z, data[0], "-r", z, data[1], "-b")
+    ...     ax[ind].legend(data[2])
+    ...     ax[ind].grid(True)
+    >>> plt.show()
+    
+    We can compute these using usual non-scaled Airy functions by:
+    
+    >>> from scipy.special import airy
+    >>> Ai, Aip, Bi, Bip = airy(z)
+    >>> np.allclose(eAi, Ai * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
+    True
+    >>> np.allclose(eAip, Aip * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
+    True
+    >>> np.allclose(eBi, Bi * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
+    True
+    >>> np.allclose(eBip, Bip * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
+    True
+    
+    Comparing non-scaled and exponentially scaled ones, the usual non-scaled 
+    function quickly underflows for large values, whereas the exponentially
+    scaled function does not.
+    
+    >>> airy(200)
+    (0.0, 0.0, nan, nan)
+    >>> airye(200)
+    (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
+    
     """)
 
 add_newdoc("bdtr",
@@ -377,7 +420,7 @@ add_newdoc("bdtr",
     Sum of the terms 0 through `floor(k)` of the Binomial probability density.
 
     .. math::
-        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^\lfloor k \rfloor {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtr}(k, n, p) = \sum_{j=0}^{\lfloor k \rfloor} {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -421,7 +464,7 @@ add_newdoc("bdtrc",
     density,
 
     .. math::
-        \mathrm{bdtrc}(k, n, p) = \sum_{j=k+1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
+        \mathrm{bdtrc}(k, n, p) = \sum_{j=\lfloor k \rfloor +1}^n {{n}\choose{j}} p^j (1-p)^{n-j}
 
     Parameters
     ----------
@@ -2908,6 +2951,43 @@ add_newdoc("eval_legendre",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import eval_legendre
+
+    Evaluate the zero-order Legendre polynomial at x = 0
+
+    >>> eval_legendre(0, 0)
+    1.0
+
+    Evaluate the first-order Legendre polynomial between -1 and 1
+
+    >>> import numpy as np
+    >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
+    >>> eval_legendre(1, X)
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
+
+    Evaluate Legendre polynomials of order 0 through 4 at x = 0
+
+    >>> N = range(0, 5)
+    >>> eval_legendre(N, 0)
+    array([ 1.   ,  0.   , -0.5  ,  0.   ,  0.375])
+
+    Plot Legendre polynomials of order 0 through 4
+
+    >>> X = np.linspace(-1, 1)
+
+    >>> import matplotlib.pyplot as plt
+    >>> for n in range(0, 5):
+    ...     y = eval_legendre(n, X)
+    ...     plt.plot(X, y, label=r'$P_{}(x)$'.format(n))
+
+    >>> plt.title("Legendre Polynomials")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel(r'$P_n(x)$')
+    >>> plt.legend(loc='lower right')
+    >>> plt.show()
+
     """)
 
 add_newdoc("eval_sh_legendre",
@@ -3757,8 +3837,8 @@ add_newdoc("fresnel",
 
     .. math::
 
-       S(z) &= \int_0^z \cos(\pi t^2 /2) dt \\
-       C(z) &= \int_0^z \sin(\pi t^2 /2) dt.
+       S(z) &= \int_0^z \sin(\pi t^2 /2) dt \\
+       C(z) &= \int_0^z \cos(\pi t^2 /2) dt.
 
     See [dlmf]_ for details.
 

@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal
@@ -161,6 +160,13 @@ def test_old_bounds_to_new():
     lb, ub = old_bound_to_new(bounds)
     assert_array_equal(lb, lb_true)
     assert_array_equal(ub, ub_true)
+
+    bounds = [(-np.inf, np.inf), (np.array([1]), np.array([1]))]
+    lb, ub = old_bound_to_new(bounds)
+
+    assert_array_equal(lb, [-np.inf, 1])
+    assert_array_equal(ub, [np.inf, 1])
+
 
 def test_bounds_repr():
     from numpy import array, inf  # so that eval works

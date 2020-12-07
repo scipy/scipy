@@ -13,7 +13,6 @@ wrapper named after the zero function. See the private ``_zeros`` Cython module
 in `scipy.optimize.cython_optimze` for more information.
 """
 
-from __future__ import division, print_function, absolute_import
 import numpy.testing as npt
 from scipy.optimize.cython_optimize import _zeros
 

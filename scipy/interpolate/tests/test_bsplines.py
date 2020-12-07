@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
                            suppress_warnings)
@@ -390,32 +388,45 @@ class TestBSpline(object):
         assert_equal(b.derivative().__class__, B)
         assert_equal(b.antiderivative().__class__, B)
 
-    def test_axis(self):
+    @pytest.mark.parametrize('axis', range(-4, 4))
+    def test_axis(self, axis):
         n, k = 22, 3
         t = np.linspace(0, 1, n + k + 1)
-        sh0 = [6, 7, 8]
-        for axis in range(4):
-            sh = sh0[:]
-            sh.insert(axis, n)   # [22, 6, 7, 8] etc
-            c = np.random.random(size=sh)
-            b = BSpline(t, c, k, axis=axis)
-            assert_equal(b.c.shape,
-                         [sh[axis],] + sh[:axis] + sh[axis+1:])
+        sh = [6, 7, 8]
+        # We need the positive axis for some of the indexing and slices used
+        # in this test.
+        pos_axis = axis % 4
+        sh.insert(pos_axis, n)   # [22, 6, 7, 8] etc
+        c = np.random.random(size=sh)
+        b = BSpline(t, c, k, axis=axis)
+        assert_equal(b.c.shape,
+                     [sh[pos_axis],] + sh[:pos_axis] + sh[pos_axis+1:])
 
-            xp = np.random.random((3, 4, 5))
-            assert_equal(b(xp).shape,
-                         sh[:axis] + list(xp.shape) + sh[axis+1:])
+        xp = np.random.random((3, 4, 5))
+        assert_equal(b(xp).shape,
+                     sh[:pos_axis] + list(xp.shape) + sh[pos_axis+1:])
 
-            #0 <= axis < c.ndim
-            for ax in [-1, c.ndim]:
-                assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
+        # -c.ndim <= axis < c.ndim
+        for ax in [-c.ndim - 1, c.ndim]:
+            assert_raises(np.AxisError, BSpline,
+                          **dict(t=t, c=c, k=k, axis=ax))
 
-            # derivative, antiderivative keeps the axis
-            for b1 in [BSpline(t, c, k, axis=axis).derivative(),
-                       BSpline(t, c, k, axis=axis).derivative(2),
-                       BSpline(t, c, k, axis=axis).antiderivative(),
-                       BSpline(t, c, k, axis=axis).antiderivative(2)]:
-                assert_equal(b1.axis, b.axis)
+        # derivative, antiderivative keeps the axis
+        for b1 in [BSpline(t, c, k, axis=axis).derivative(),
+                   BSpline(t, c, k, axis=axis).derivative(2),
+                   BSpline(t, c, k, axis=axis).antiderivative(),
+                   BSpline(t, c, k, axis=axis).antiderivative(2)]:
+            assert_equal(b1.axis, b.axis)
+
+    def test_neg_axis(self):
+        k = 2
+        t = [0, 1, 2, 3, 4, 5, 6]
+        c = np.array([[-1, 2, 0, -1], [2, 0, -3, 1]])
+
+        spl = BSpline(t, c, k, axis=-1)
+        spl0 = BSpline(t, c[0], k)
+        spl1 = BSpline(t, c[1], k)
+        assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
 
 def test_knots_multiplicity():

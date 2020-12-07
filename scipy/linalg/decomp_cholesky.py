@@ -1,7 +1,5 @@
 """Cholesky decomposition functions."""
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import asarray_chkfinite, asarray, atleast_2d
 
 # Local imports
@@ -201,7 +199,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
-        raise ValueError("incompatible dimensions.")
+        raise ValueError("incompatible dimensions ({} and {})"
+                         .format(c.shape, b1.shape))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
@@ -256,7 +255,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     See also
     --------
     cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
-                of a banded hermitian.
+                of a banded Hermitian.
 
     Examples
     --------
@@ -289,7 +288,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     """
     Solve the linear equations ``A x = b``, given the Cholesky factorization of
-    the banded hermitian ``A``.
+    the banded Hermitian ``A``.
 
     Parameters
     ----------

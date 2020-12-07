@@ -15,8 +15,6 @@ See the `WEKA website <http://weka.wikispaces.com/ARFF>`_
 for more details about the ARFF format and available datasets.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .arffread import *
 from . import arffread
 
