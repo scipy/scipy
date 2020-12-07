@@ -1170,6 +1170,7 @@ class zipfian_gen(rv_discrete):
         g1 = (Hna3/Hna - 3*Hna1*Hna2/Hna**2 + 2*Hna1**3/Hna**3)/mu2**(3/2)
         g2 = (Hna**3*Hna4 - 4*Hna**2*Hna1*Hna3 + 6*Hna*Hna1**2*Hna2
               - 3*Hna1**4) / mu2n**2
+        g2 -= 3
         return mu1, mu2, g1, g2
 
 zipfian = zipfian_gen(a=1, name='zipfian', longname='A Zipfian')

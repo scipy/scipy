@@ -172,7 +172,7 @@ class TestZipfian:
         var = np.average((k - mean)**2, weights=pmf)
         std = var**0.5
         skew = np.average(((k-mean)/std)**3, weights=pmf)
-        kurtosis = np.average(((k-mean)/std)**4, weights=pmf)
+        kurtosis = np.average(((k-mean)/std)**4, weights=pmf) - 3
         assert_allclose(zipfian.pmf(k, a, n), pmf)
         assert_allclose(zipfian.cdf(k, a, n), cdf)
         assert_allclose(zipfian.stats(a, n, moments="mvsk"),
