@@ -2143,46 +2143,6 @@ class truncweibull_min_gen(rv_continuous):
             sc.gammainc(n/c + 1., b**c) - sc.gammainc(n/c + 1., a**c)
             )
 
-#     def _a_est(self, x, c):
-#         x_r = x.min()
-#         f_r = (1. - 0.3)/(len(x) + 0.4)
-
-#         if -np.log(1 - f_r) > x_r**c:
-#             return 0
-#         else:
-#             return (np.log(1. - f_r) + x_r**c)**(1/c)
-
-#     def _penalized_nnlf_mod(self, theta, x):
-#         """
-#         Ignore provided `a` and estimate it using an alternative method. This
-#         modifies the resulting ML function sent to the optimizer.
-
-#         """
-#         loc, scale, (_, c) = self._unpack_loc_scale(theta)
-#         theta = (self._a_est((x - loc)/scale, c), c, loc, scale)
-#         return super()._penalized_nnlf(theta, x)
-
-#     def fit(self, data, *args, **kwds):
-
-#         f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
-#               kwds.get('fix_a', None))
-#         floc = kwds.get('floc', None)
-#         fscale = kwds.get('fscale', None)
-
-#         # MLE is well-behaved, use default fit method.
-#         if f0 is not None or (floc is not None and fscale is not None):
-#             return super().fit(data, *args, **kwds)
-
-#         else:  # MLE is non-existent - use a modified version. See notes
-#             penalized_nnlf = self._penalized_nnlf
-#             try:
-#                 self._penalized_nnlf = self._penalized_nnlf_mod
-#                 _, c, loc, scale = super().fit(
-#                     data, *args, **kwds)
-#                 a = self._a_est((data - loc)/scale, c)
-#             finally:  # revert back to default penalized_nnlf
-#                 self._penalized_nnlf = penalized_nnlf
-#             return a, c, loc, scale
 
 truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
 
