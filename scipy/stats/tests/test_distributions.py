@@ -3786,6 +3786,23 @@ class TestTruncWeibull(object):
         y = stats.truncweibull_min.logpdf(2.0, 1.0, 2.0, 4.0)
         assert_allclose(y, 0.14541345786885884)
 
+    def test_ppf_bounds(self):
+        # test bounds
+        y = stats.truncweibull_min.ppf([0.0, 1.0], 2.0, 0.1, 2.0)
+        assert_equal(y, [0.1, 2.0])
+
+    def test_cdf_to_ppf(self):
+        q = [0., 0.1, .25, 0.50, 0.75, 0.90, 1.]
+        x = stats.truncweibull_min.ppf(q, 2., 0., 3.)
+        q_out = stats.truncweibull_min.cdf(x, 2., 0., 3.)
+        assert_allclose(q, q_out)
+
+    def test_sf_to_isf(self):
+        q = [0., 0.1, .25, 0.50, 0.75, 0.90, 1.]
+        x = stats.truncweibull_min.isf(q, 2., 0., 3.)
+        q_out = stats.truncweibull_min.sf(x, 2., 0., 3.)
+        assert_allclose(q, q_out)
+
     def test_compare_weibull_min(self):
         # Verify that the truncweibull_min distribution gives the same results
         # as the original weibull_min
@@ -3821,11 +3838,11 @@ class TestTruncWeibull(object):
 
         # # Also test using a large value x, for which computing the survival
         # # function using the CDF would result in 0.
-        # s = stats.weibull_min.sf(30, 2, scale=3)
-        # assert_allclose(s, np.exp(-100))
+        s = stats.truncweibull_min.sf(30, 2, a, b, scale=3)
+        assert_allclose(s, np.exp(-100))
 
-        # ls = stats.weibull_min.logsf(30, 2, scale=3)
-        # assert_allclose(ls, -100)
+        ls = stats.truncweibull_min.logsf(30, 2, a, b, scale=3)
+        assert_allclose(ls, -100)
 
 
     # def test_logpdf(self):
