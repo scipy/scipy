@@ -3827,6 +3827,30 @@ class TestTruncWeibull(object):
         m4_expected, _ = quad(lambda x: x**4*stats.truncweibull_min.pdf(x, c, a, b), a, b)
         assert_allclose(m4, m4_expected)
 
+    def test_reference_values(self):
+        a = 1.
+        b = 3.
+        c = 2.
+        x_med = np.sqrt(1 - np.log(0.5 + np.exp(-(8. + np.log(2.)))))
+
+        cdf = stats.truncweibull_min.cdf(x_med, c, a, b)
+        assert_allclose(cdf, 0.5)
+
+        lc = stats.truncweibull_min.logcdf(x_med, c, a, b)
+        assert_allclose(lc, -np.log(2.))
+
+        ppf = stats.truncweibull_min.ppf(0.5, c, a, b)
+        assert_allclose(ppf, x_med)
+
+        sf = stats.truncweibull_min.sf(x_med, c, a, b)
+        assert_allclose(sf, 0.5)
+
+        ls = stats.truncweibull_min.logsf(x_med, c, a, b)
+        assert_allclose(ls, -np.log(2.))
+
+        isf = stats.truncweibull_min.isf(0.5, c, a, b)
+        assert_allclose(isf, x_med)
+
     def test_compare_weibull_min(self):
         # Verify that the truncweibull_min distribution gives the same results
         # as the original weibull_min
@@ -3867,48 +3891,6 @@ class TestTruncWeibull(object):
 
         ls = stats.truncweibull_min.logsf(30, 2, a, b, scale=3)
         assert_allclose(ls, -100)
-
-
-    # def test_logpdf(self):
-    #     y = stats.truncweibull_min.logpdf(2., 2., 1.)
-    #     assert_equal(y, 0)
-
-    # def test_with_maxima_distrib(self):
-    #     # Reference values for pdf and cdf calculated using symbolig software.
-    #     x = 1.5
-    #     a_ = 0.1
-    #     c_ = 2.1
-    #     s_ = 5.0
-
-    #     ref_val = -pow(x/s_, c_) + pow(a_, c_)
-
-    #     p = stats.truncweibull_min.pdf(x, a_, c_, scale=s_)
-    #     assert_allclose(p, 0.10396317764230598)
-
-    #     lp = stats.truncweibull_min.logpdf(x, a_, c_, scale=s_)
-    #     assert_allclose(lp, np.log(0.10396317764230598))
-
-    #     c = stats.truncweibull_min.cdf(x, a_, c_, scale=s_)
-    #     assert_allclose(c, -special.expm1(ref_val))
-
-    #     lc = stats.truncweibull_min.logcdf(x, a_, c_, scale=s_)
-    #     assert_allclose(lc, np.log(-special.expm1(ref_val)))
-
-    #     s = stats.truncweibull_min.sf(x, a_, c_, scale=s_)
-    #     assert_allclose(s, np.exp(ref_val))
-
-    #     ls = stats.truncweibull_min.logsf(x, a_, c_, scale=s_)
-    #     assert_allclose(ls, ref_val)
-
-    #     # Also test using a large value x, for which computing the survival
-    #     # function using the CDF would result in 0.
-    #     ref_val = -pow(30/s_, c_) + pow(a_, c_)
-
-    #     s = stats.truncweibull_min.sf(30, a_, c_, scale=s_)
-    #     assert_allclose(s, np.exp(ref_val))
-
-    #     ls = stats.truncweibull_min.logsf(30, a_, c_, scale=s_)
-    #     assert_allclose(ls, ref_val)
 
 
 class TestRdist(object):
