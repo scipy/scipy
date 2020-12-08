@@ -2099,8 +2099,8 @@ class truncweibull_min_gen(rv_continuous):
         a = (u_l - loc)/scale
         b = (u_r - loc)/scale
 
-    where :math:`u_l` and :math:`u_r` are the specific left and right truncation
-    values, respectively.
+    where :math:`u_l` and :math:`u_r` are the specific left and right
+    truncation values, respectively.
 
     %(after_notes)s
 
