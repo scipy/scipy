@@ -1488,7 +1488,7 @@ def cut_tree_balanced(Z, max_cluster_size):
     >>> cluster_id, cluster_level = hierarchy.cut_tree_balanced(
     ...                                              Z, max_cluster_size=10)
     >>> cluster_id[:10]
-    array([19,  4, 10, 12, 20, 12, 14,  9, 15,  2])
+    array([18,  3,  9, 11, 19, 11, 13,  8, 14,  1])
     >>> cluster_level[:10]
     array([array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
            array([0, 0, 0, 1]),
