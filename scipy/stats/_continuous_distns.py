@@ -6,7 +6,6 @@
 import warnings
 from collections.abc import Iterable
 import ctypes
-from contextlib import contextmanager
 
 import numpy as np
 
