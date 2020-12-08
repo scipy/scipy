@@ -192,6 +192,34 @@ class TestRankData(object):
         assert_equal(r.shape, shape)
         assert_equal(r.dtype, dtype)
 
+    def test_nan_policy(self):
+
+        assert_array_equal([2., 3., 4., 1., 5., 6.],
+                           rankdata([0, 2, 3, -2, np.nan, np.nan],
+                                    nan_policy="propagate"))
+
+        pytest.raises(ValueError, rankdata, [0, 2, 3, 2, np.nan],
+                      nan_policy='raise')
+
+        assert_array_equal([2., 3., 4., 1.],
+                           rankdata([0, 2, 3, -2, np.nan, np.nan],
+                                    nan_policy="omit"))
+
+        data0 = [[0, np.nan, 3],
+                 [4, 2, np.nan],
+                 [np.nan, 2, 2]]
+        expected0 = [[1., 1.5, 2.],
+                     [2., 1.5, 1.]]
+        r0 = rankdata(data0, axis=0, nan_policy="omit")
+        assert_array_equal(r0, expected0)
+
+        data1 = [[0, 2, 1, np.nan],
+                 [4, 2, 2, np.nan]]
+        expected1 = [[1., 3, 2],
+                     [3., 1.5, 1.5]]
+        r1 = rankdata(data1, axis=1, nan_policy="omit")
+        assert_array_equal(r1, expected1)
+
 
 _cases = (
     # values, method, expected
