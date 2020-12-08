@@ -3554,10 +3554,10 @@ class TestRice(object):
         assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
 
 
-    def test_rice_gh(self):
+    def test_rice_gh9836(self):
         # test that gh-9836 is resolved; previously jumped to 1 at the end
 
-        cdf = stats.rice.cdf(np.arange(10, 150, 10), np.arange(10, 150, 10))
+        cdf = stats.rice.cdf(np.arange(10, 160, 10), np.arange(10, 160, 10))
         # Generated in R
         # library(VGAM)
         # options(digits=16)
@@ -4487,7 +4487,7 @@ def test_ncx2_gh8665():
                    0.6646525582135460, 0.0000000000000000, 0.0000000000000000,
                    0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
                    0.0000000000000000]
-    assert_allclose(sf, sf_expected)
+    assert_allclose(sf, sf_expected, atol=1e-12)
 
 
 def test_foldnorm_zero():
