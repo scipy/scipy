@@ -2115,32 +2115,35 @@ class truncweibull_min_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, c, a, b):
-        return (c * x**(c-1) * np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
+        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _logpdf(self, x, c, a, b):
-        return np.log(c) + sc.xlogy(c - 1, x) - x**c - np.log(np.exp(-a**c) - np.exp(-b**c))
+        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _cdf(self, x, c, a, b):
-        return (np.exp(-a**c) - np.exp(-x**c)) / (np.exp(-a**c) - np.exp(-b**c))
+        return (np.exp(-pow(a, c)) - np.exp(-pow(x, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _logcdf(self, x, c, a, b):
-        return np.log(np.exp(-a**c) - np.exp(-x**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
+        return np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c))) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _sf(self, x, c, a, b):
-        return (np.exp(-x**c) - np.exp(-b**c)) / (np.exp(-a**c) - np.exp(-b**c))
+        return (np.exp(-pow(x, c)) - np.exp(-pow(b, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _logsf(self, x, c, a, b):
-        return np.log(np.exp(-x**c) - np.exp(-b**c)) - np.log(np.exp(-a**c) - np.exp(-b**c))
+        return np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c))) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
 
     def _isf(self, q, c, a, b):
-        return (-np.log((1 - q) * np.exp(-b**c) + q * np.exp(-a**c)))**(1/c)
+        return pow(-np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c)
 
     def _ppf(self, q, c, a, b):
-        return (-np.log((1 - q) * np.exp(-a**c) + q * np.exp(-b**c)))**(1/c)
+        return pow(-np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c)
 
     def _munp(self, n, c, a, b):
-        return sc.gamma(n/c + 1.) / (np.exp(-a**c) - np.exp(-b**c)) * (
-            sc.gammainc(n/c + 1., b**c) - sc.gammainc(n/c + 1., a**c)
+        """
+        Reference: H. Rinne, The Weibull Distribution: A Handbook, CRC Press, 2009.
+        """
+        return sc.gamma(n/c + 1.) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c))) * (
+            sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
             )
 
 
