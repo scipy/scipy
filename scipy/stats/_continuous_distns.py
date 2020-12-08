@@ -8854,6 +8854,66 @@ class rv_histogram(rv_continuous):
         return dct
 
 
+class studentized_t_gen(rv_continuous):
+    r"""The Studentized Range Distribution
+    TODO: DOCSTRING TAKEN FROM NORM
+    The location (``loc``) keyword specifies the mean.
+    The scale (``scale``) keyword specifies the standard deviation.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `norm` is:
+
+    .. math::
+
+        f(x) = \frac{\exp(-x^2/2)}{\sqrt{2\pi}}
+
+    for a real number :math:`x`.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+
+    def _argcheck(self, k, v):
+        return (k > 0) & (v > 0)
+
+    def _pdf(self, x, k, v):
+        #First attempt at a PDF. TODO: VERIFY!
+        user_data = np.array([x, k, v], float).ctypes.data_as(
+            ctypes.c_void_p)
+        llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_pdf',
+                                           user_data)
+        res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+
+        return np.sqrt(2 * np.pi) * k * (k - 1) * v ** (v / 2) / (
+                    sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
+
+    def _cdf(self, x, k, v):
+        if v < 120:
+            user_data = np.array([x, k, v], float).ctypes.data_as(
+                ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_cdf',
+                                               user_data)
+            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+
+            return np.sqrt(2 * np.pi) * k * v ** (v / 2) / (
+                    sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
+        else:  # Use asymptomatic method
+            user_data = np.array([x, k], float).ctypes.data_as(ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(_stats,
+                                               '_genstudentized_t_cdf_asymptomatic',
+                                               user_data)
+            res = integrate.quad(llc, -np.inf, np.inf)[0]
+            return k * res
+
+
+studentized_t = studentized_t_gen(name='studentized_t')
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)

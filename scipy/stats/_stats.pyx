@@ -513,6 +513,44 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
     return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
 
 
+cdef double _phi(double z) nogil:
+    cdef double inv_sqrt_2pi = 0.3989422804014327
+    return inv_sqrt_2pi * math.exp(-0.5 * z * z)
+
+
+cdef double _Phi(double z) nogil:
+    return 0.5 * math.erfc(-z * math.M_SQRT1_2)
+
+
+cdef double _genstudentized_t_cdf(int n, double[2] x, void *user_data) nogil:
+    # destined to be used in a LowLevelCallable
+    q = (<double *>user_data)[0]
+    k = (<double *>user_data)[1]
+    v = (<double *>user_data)[2]
+
+    s = x[1]
+    z = x[0]
+
+    return math.pow(s, (v - 1)) * _phi(math.sqrt(v) * s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
+
+cdef double _genstudentized_t_cdf_asymptomatic(double z, void *user_data) nogil:
+    # destined to be used in a LowLevelCallable
+    q = (<double *>user_data)[0]
+    k = (<double *>user_data)[1]
+
+    return _phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
+
+cdef double _genstudentized_t_pdf(int n, double[2] x, void *user_data) nogil:
+    # destined to be used in a LowLevelCallable
+    q = (<double *>user_data)[0]
+    k = (<double *>user_data)[1]
+    v = (<double *>user_data)[2]
+
+    s = x[1]
+    z = x[0]
+
+    return math.pow(s, v) * _phi(math.sqrt(v) * s) * _phi(z + q*s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 2)
+
 ctypedef fused real:
     float
     double
