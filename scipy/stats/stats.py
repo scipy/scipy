@@ -4433,8 +4433,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'auto': selects the appropriate method based on a trade-off
             between speed and accuracy
           * 'asymptotic': uses a normal approximation valid for large samples
-          * 'exact': computes the exact p-value, but is only available when
-            no ties are present
+          * 'exact': computes the exact p-value, but can only be used if no ties
+            are present. As the sample size increases, the 'exact' computation
+            time may grow and the result may lose some precision.
 
     variant: {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
@@ -4583,35 +4584,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation
-        # Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = min(dis, tot-dis)
-        if size <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > size*(size-1):
-            raise ValueError
-        elif size == 1:
-            pvalue = 1.0
-        elif size == 2:
-            pvalue = 1.0
-        elif c == 0:
-            pvalue = 2.0/float_factorial(size)
-        elif c == 1:
-            pvalue = 2.0/float_factorial(size-1)
-        elif 2*c == tot:
-            pvalue = 1.0
-        else:
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3, size+1):
-                old = new[:]
-                for k in range(1, min(j, c+1)):
-                    new[k] += new[k-1]
-                for k in range(j, c+1):
-                    new[k] += new[k-1] - old[k-j]
+        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
 
-            pvalue = 2.0*sum(new)/float_factorial(size)
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
