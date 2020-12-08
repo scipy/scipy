@@ -2155,7 +2155,7 @@ class truncweibull_min_gen(rv_continuous):
         """
         References
         ----------
-        [1] H. Rinne, The Weibull Distribution: A Handbook, CRC Press, 2009.
+        1. H. Rinne, The Weibull Distribution: A Handbook, CRC Press, 2009.
         """
         gamma_fun = sc.gamma(n/c + 1.) * (
             sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
