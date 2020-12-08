@@ -31,6 +31,8 @@ Highlights of this release
   ``rescale``.
 - `scipy.optimize.linprog` has fast, new methods for large, sparse problems 
   from the ``HiGHS`` library.
+- `scipy.stats` improvements including new distributions, a new test, and
+  enhancements to existing distributions and tests
 
 
 New features
@@ -341,22 +343,19 @@ Authors
 * CJ Carey
 * Thomas A Caswell
 * chapochn +
+* Lucía Cheung
 * Zach Colbert +
 * Coloquinte +
 * Yannick Copin +
 * Devin Crowley +
 * Terry Davis +
 * devonwp +
-* Diana +
 * Didier +
 * divenex +
 * Thomas Duvernay +
-* Egorz734 +
-* egorz734 +
 * Eoghan O'Connell +
 * Gökçen Eraslan
 * Kristian Eschenburg +
-* GitHub
 * Ralf Gommers
 * Thomas Grainger +
 * GreatV +
@@ -376,14 +375,11 @@ Authors
 * Marcin Konowalczyk +
 * Sam Van Kooten +
 * Sergey Koposov +
-* Peter Larsen +
 * Peter Mahler Larsen
 * Eric Larson
 * Antony Lee
 * Gregory R. Lee
-* ljwolf +
 * Loïc Estève
-* ludcila
 * Jean-Luc Margot +
 * MarkusKoebis +
 * Nikolay Mayorov
@@ -393,7 +389,6 @@ Authors
 * Sturla Molden
 * Denali Molitor +
 * Eric Moore
-* mreineck +
 * Shashaank N +
 * Prashanth Nadukandi +
 * nbelakovski +
@@ -413,6 +408,7 @@ Authors
 * Vladyslav Rachek
 * Ram Rachum +
 * Tyler Reddy
+* Martin Reinecke +
 * Simon Segerblom Rex +
 * Lucas Roberts
 * Benjamin Rowell +
@@ -421,10 +417,10 @@ Authors
 * Moritz Schulte +
 * Daniel B. Smith
 * Steve Smith +
+* Jan Soedingrekso +
 * Victor Stinner +
 * Jose Storopoli +
-* sudojan +
-* swallan +
+* Diana Sukhoverkhova +
 * Søren Fuglede Jørgensen
 * taoky +
 * Mike Taves +
@@ -437,21 +433,21 @@ Authors
 * Paul van Mulbregt
 * Saul Ivan Rivas Vega +
 * Pauli Virtanen
-* Vleeshouwers +
 * Jan Vleeshouwers
-* Sam Wallan
-* Samuel Wallan +
+* Samuel Wallan
 * Warren Weckesser
 * Ben West +
 * Eric Wieser
 * WillTirone +
+* Levi John Wolf +
 * Zhiqing Xiao
 * Rory Yorke +
 * Yun Wang (Maigo) +
+* Egor Zemlyanoy +
 * ZhihuiChen0903 +
 * Jacob Zhong +
 
-A total of 125 people contributed to this release.
+A total of 119 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
