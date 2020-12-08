@@ -955,25 +955,25 @@ class TestCorrSpearmanr2(object):
         assert_allclose(res_actual, res_expected)
 
         res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
-            alternative="less")
+                                     alternative="less")
         res_expected = stats.spearmanr(x1, x2, alternative="less")
         assert_allclose(res_actual, res_expected)
 
         res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
-            alternative="greater")
+                                     alternative="greater")
         res_expected = stats.spearmanr(x1, x2, alternative="greater")
         assert_allclose(res_actual, res_expected)
 
         # Test value raises
         assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-            nan_policy='raise', alternative="less")
+                      nan_policy='raise', alternative="less")
         assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-            nan_policy='raise', alternative="greater")
+                      nan_policy='raise', alternative="greater")
 
         assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-            nan_policy='foobar', alternative="less")
+                      nan_policy='foobar', alternative="less")
         assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-            nan_policy='foobar', alternative="greater")
+                      nan_policy='foobar', alternative="greater")
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values

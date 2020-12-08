@@ -4137,8 +4137,8 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(a, b=None, axis=0, nan_policy='propagate', 
-  alternative='two-sided'):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate',
+              alternative='two-sided'):
     """
     Calculate a Spearman correlation coefficient with associated p-value.
 
@@ -4196,7 +4196,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     pvalue : float
         The p-value for a hypothesis test whose alternative hypothesis is
         defined by the ``alternative`` parameter and whose null hypotheisis
-        is that two sets of data are uncorrelated, has same dimension as rho.
+        is that two sets of data are uncorrelated. ``pvalue`` has the same
+        shape as ``correlation``.
 
     References
     ----------
@@ -4284,8 +4285,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
-            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy, 
-              alternative=alternative)
+            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy,
+                                          alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
                 return SpearmanrResult(np.nan, np.nan)
@@ -4304,15 +4305,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    if alternative == 'less':
-        prob = distributions.t.cdf(t, dof)
-    elif alternative == 'greater':
-        prob = distributions.t.sf(t, dof)
-    elif alternative == 'two-sided':
-        prob = 2 * distributions.t.sf(np.abs(t), dof)
-    else:
-        raise ValueError("alternative should be "
-                         "'less', 'greater' or 'two-sided'")
+    t, prob = _ttest_finish(dof, t, alternative)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):

@@ -406,8 +406,8 @@ def pearsonr(x, y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate', 
-    alternative='two-sided'):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
+              alternative='two-sided'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
