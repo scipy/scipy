@@ -4420,6 +4420,33 @@ def test_ncx2_gh12731():
     assert_allclose(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
+def test_ncx2_gh8665():
+    # test that gh-8665 is resolved; previously this tended to nonzero value
+    x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
+                  4.99515382e+01, 1.07617327e+02, 2.31854502e+02,
+                  4.99515382e+02, 1.07617327e+03, 2.31854502e+03,
+                  4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+                  4.99515382e+04])
+    nu, lam = 20, 499.51538166556196
+
+    sf = stats.ncx2.sf(x, df=nu, nc=lam)
+    # computed in R. Couldn't find a survival function implementation
+    # options(digits=16)
+    # x <- c(4.99515382e+00, 1.07617327e+01, 2.31854502e+01, 4.99515382e+01,
+    #        1.07617327e+02, 2.31854502e+02, 4.99515382e+02, 1.07617327e+03,
+    #        2.31854502e+03, 4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+    #        4.99515382e+04)
+    # nu <- 20
+    # lam <- 499.51538166556196
+    # 1 - pchisq(x, df = nu, ncp = lam)
+    sf_expected = [1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
+                   1.0000000000000000, 1.0000000000000000, 0.9999999999999888,
+                   0.6646525582135460, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000]
+    assert_allclose(sf, sf_expected)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
