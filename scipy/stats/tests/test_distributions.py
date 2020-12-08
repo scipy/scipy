@@ -4414,6 +4414,12 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
+def test_ncx2_gh12731():
+    # test that gh-12731 is resolved; previously these were all 0.5
+    nc = 10**np.arange(5,10)
+    assert_allclose(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
