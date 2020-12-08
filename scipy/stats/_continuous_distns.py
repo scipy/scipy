@@ -2115,36 +2115,54 @@ class truncweibull_min_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, c, a, b):
-        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / denum
 
     def _logpdf(self, x, c, a, b):
-        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - logdenum
 
     def _cdf(self, x, c, a, b):
-        return (np.exp(-pow(a, c)) - np.exp(-pow(x, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        num = (np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
 
     def _logcdf(self, x, c, a, b):
-        return np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c))) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        lognum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
 
     def _sf(self, x, c, a, b):
-        return (np.exp(-pow(x, c)) - np.exp(-pow(b, c))) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        num = (np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
 
     def _logsf(self, x, c, a, b):
-        return np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c))) - np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        lognum = np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
 
     def _isf(self, q, c, a, b):
-        return pow(-np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c)
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c
+            )
 
     def _ppf(self, q, c, a, b):
-        return pow(-np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c)
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c
+            )
 
     def _munp(self, n, c, a, b):
         """
-        Reference: H. Rinne, The Weibull Distribution: A Handbook, CRC Press, 2009.
+        References
+        ----------
+        [1] H. Rinne, The Weibull Distribution: A Handbook, CRC Press, 2009.
         """
-        return sc.gamma(n/c + 1.) / (np.exp(-pow(a, c)) - np.exp(-pow(b, c))) * (
+        gamma_fun = sc.gamma(n/c + 1.) * (
             sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
             )
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return gamma_fun / denum
 
 
 truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
