@@ -45,9 +45,9 @@ distcont_extra = [
 ]
 
 
-distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
-            'genexpon', 'vonmises', 'vonmises_line', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
+            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
+            'geninvgauss']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
