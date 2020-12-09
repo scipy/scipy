@@ -10,7 +10,6 @@ Functions for creating and analyzing contingency tables.
    :toctree: generated/
 
    chi2_contingency
-   crosstab
    expected_freq
    margins
    association
