@@ -65,7 +65,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     method : {'auto', 'asymptotic', 'exact'}, optional
         Selects the method used to calculate the *p*-value. The following
-        options are available.
+        (case-insensitive) options are available.
 
         * 'auto': selects between 'exact' and 'asymptotic' to
           achieve reasonably accurate results in reasonable time
