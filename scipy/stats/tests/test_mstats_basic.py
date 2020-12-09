@@ -1108,6 +1108,30 @@ class TestTtest_1samp():
             assert_array_equal(p, (np.nan, np.nan))
 
 
+class TestDescribe:
+    """
+    Tests for mstats.describe.
+
+    Note that there are also tests for `mstats.describe` in the
+    class TestCompareWithStats.
+    """
+    def test_basic_with_axis(self):
+        # This is a basic test that is also a regression test for gh-7303.
+        a = np.ma.masked_array([[0, 1, 2, 3, 4, 9],
+                                [5, 5, 0, 9, 3, 3]],
+                               mask=[[0, 0, 0, 0, 0, 1],
+                                     [0, 0, 1, 1, 0, 0]])
+        result = mstats.describe(a, axis=1)
+        assert_equal(result.nobs, [5, 4])
+        amin, amax = result.minmax
+        assert_equal(amin, [0, 3])
+        assert_equal(amax, [4, 5])
+        assert_equal(result.mean, [2.0, 4.0])
+        assert_equal(result.variance, [2.0, 1.0])
+        assert_equal(result.skewness, [0.0, 0.0])
+        assert_allclose(result.kurtosis, [-1.3, -2.0])
+
+
 class TestCompareWithStats(object):
     """
     Class to compare mstats results with stats results.
