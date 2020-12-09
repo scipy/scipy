@@ -14,9 +14,9 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     Page's L is useful when:
 
-        * there are :math:`n \geq 3` treatments,
-        * :math:`m \geq 2` subjects are observed for each treatment, and
-        * the observations are hypothesized to have a particular order.
+    * there are :math:`n \geq 3` treatments,
+    * :math:`m \geq 2` subjects are observed for each treatment, and
+    * the observations are hypothesized to have a particular order.
 
     Specifically, the test considers the null hypothesis that
 
@@ -67,19 +67,19 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         Selects the method used to calculate the *p*-value. The following
         options are available.
 
-            * 'auto': selects between 'exact' and 'asymptotic' to
-              achieve reasonably accurate results in reasonable time
-            * 'asymptotic': compares the standardized test statistic against
-              the chi-square distribution with one degree of freedom
-            * 'exact': computes the exact *p*-value by comparing the observed
-              :math:`L` statistic against those realized by all possible
-              permutations of ranks (under the null hypothesis that each
-              permutation is equally likely)
+        * 'auto': selects between 'exact' and 'asymptotic' to
+          achieve reasonably accurate results in reasonable time
+        * 'asymptotic': compares the standardized test statistic against
+          the chi-square distribution with one degree of freedom
+        * 'exact': computes the exact *p*-value by comparing the observed
+          :math:`L` statistic against those realized by all possible
+          permutations of ranks (under the null hypothesis that each
+          permutation is equally likely)
 
     Returns
     -------
-    res : StatsTestResult
-        A :class:`scipy.stats.StatsTestResult` consisting of the fields:
+    res : PageLResult
+        An object containing attributes:
 
             statistic : float
                 Page's :math:`L` test statistic.
@@ -103,23 +103,23 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     The procedure for calculating the :math:`L` statistic, adapted from
     [1]_, is:
 
-        1. "Predetermine with careful logic the appropriate hypotheses
-           concerning the predicted ording of the experimental results.
-           If no reasonable basis for ordering any treatments is known, the
-           :math:`L` test is not appropriate."
-        2. "As in other experiments, determine at what level of confidence
-           you will reject the null hypothesis that there is no agreement of
-           experimental results with the monotonic hypothesis."
-        3. "Cast the experimental material into a two-way table of :math:`n`
-           columns (treatments, objects ranked, conditions) and :math:`m`
-           rows (subjects, replication groups, levels of control variables)."
-        4. "When experimental observations are recorded, rank them across each
-           row", e.g. ``ranks = scipy.stats.rankdata(data, axis=1)``.
-        5. "Add the ranks in each column", e.g.
-           ``colsums = np.sum(ranks, axis=0)``.
-        6. "Multiply each sum of ranks by the predicted rank for that same
-           column", e.g. ``products = predicted_ranks * colsums``.
-        7. "Sum all such products", e.g. ``L = products.sum()``.
+    1. "Predetermine with careful logic the appropriate hypotheses
+       concerning the predicted ording of the experimental results.
+       If no reasonable basis for ordering any treatments is known, the
+       :math:`L` test is not appropriate."
+    2. "As in other experiments, determine at what level of confidence
+       you will reject the null hypothesis that there is no agreement of
+       experimental results with the monotonic hypothesis."
+    3. "Cast the experimental material into a two-way table of :math:`n`
+       columns (treatments, objects ranked, conditions) and :math:`m`
+       rows (subjects, replication groups, levels of control variables)."
+    4. "When experimental observations are recorded, rank them across each
+       row", e.g. ``ranks = scipy.stats.rankdata(data, axis=1)``.
+    5. "Add the ranks in each column", e.g.
+       ``colsums = np.sum(ranks, axis=0)``.
+    6. "Multiply each sum of ranks by the predicted rank for that same
+       column", e.g. ``products = predicted_ranks * colsums``.
+    7. "Sum all such products", e.g. ``L = products.sum()``.
 
     [1]_ continues by suggesting use of the standardized statistic
 
@@ -303,7 +303,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     ranks = np.array(data, copy=False)
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
-        raise ValueError(f"`data` must be a 2d array.")
+        raise ValueError("`data` must be a 2d array.")
 
     m, n = ranks.shape
     if m < 2 or n < 3:
