@@ -2,6 +2,10 @@ from itertools import permutations
 import numpy as np
 from ._continuous_distns import norm
 import scipy.stats
+from dataclasses import make_dataclass
+
+
+PageLResult = make_dataclass("PageLResult", ("statistic", "pvalue", "method"))
 
 
 def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
@@ -344,10 +348,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     p_fun = methods[method]  # get the function corresponding with the method
     p = p_fun(L, m, n)
 
-    pagel_result = scipy.stats.StatsTestResult()
-    pagel_result['statistic'] = L
-    pagel_result['pvalue'] = p
-    pagel_result['method'] = method
+    pagel_result = PageLResult(statistic=L, pvalue=p, method=method)
     return pagel_result
 
 
