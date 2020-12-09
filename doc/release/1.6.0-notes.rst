@@ -349,6 +349,7 @@ Authors
 * Yannick Copin +
 * Devin Crowley +
 * Terry Davis +
+* Michaël Defferrard +
 * devonwp +
 * Didier +
 * divenex +
@@ -373,6 +374,7 @@ Authors
 * Jonas Jonker +
 * Julius Bier Kirkegaard
 * Marcin Konowalczyk +
+* Konrad0
 * Sam Van Kooten +
 * Sergey Koposov +
 * Peter Mahler Larsen
@@ -447,7 +449,7 @@ Authors
 * ZhihuiChen0903 +
 * Jacob Zhong +
 
-A total of 119 people contributed to this release.
+A total of 121 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -586,6 +588,7 @@ Issues closed for 1.6.0
 * `#13179 <https://github.com/scipy/scipy/issues/13179>`__: CI: lint is failing because of output to stderr
 * `#13182 <https://github.com/scipy/scipy/issues/13182>`__: Key appears twice in \`test_optimize.test_show_options\`
 * `#13191 <https://github.com/scipy/scipy/issues/13191>`__: \`scipy.linalg.lapack.dgesjv\` overwrites original arrays if...
+* `#13207 <https://github.com/scipy/scipy/issues/13207>`__: TST: Erratic test failure in test_cossin_separate
 
 Pull requests for 1.6.0
 -----------------------
@@ -598,6 +601,7 @@ Pull requests for 1.6.0
 * `#11249 <https://github.com/scipy/scipy/pull/11249>`__: ENH: optimize: interpolative decomposition redundancy removal...
 * `#11346 <https://github.com/scipy/scipy/pull/11346>`__: ENH: add fast toeplitz matrix multiplication using FFT
 * `#11413 <https://github.com/scipy/scipy/pull/11413>`__: ENH: Multivariate t-distribution (stale)
+* `#11563 <https://github.com/scipy/scipy/pull/11563>`__: ENH: exact p-value in stats.kendalltau() for sample sizes > 171
 * `#11691 <https://github.com/scipy/scipy/pull/11691>`__: ENH: add a stack of reversal functions to linprog
 * `#12043 <https://github.com/scipy/scipy/pull/12043>`__: ENH: optimize: add HiGHS methods to linprog - continued
 * `#12061 <https://github.com/scipy/scipy/pull/12061>`__: Check parameter consistensy in signal.iirdesign
@@ -923,3 +927,6 @@ Pull requests for 1.6.0
 * `#13190 <https://github.com/scipy/scipy/pull/13190>`__: BUG: optimize: fix a duplicate key bug for \`test_show_options\`
 * `#13192 <https://github.com/scipy/scipy/pull/13192>`__: BUG:linalg: Add overwrite option to gejsv wrapper
 * `#13194 <https://github.com/scipy/scipy/pull/13194>`__: BUG: slsqp should be able to use rel_step
+* `#13203 <https://github.com/scipy/scipy/pull/13203>`__: fix typos
+* `#13209 <https://github.com/scipy/scipy/pull/13209>`__: TST:linalg: set the seed for cossin test
+* `#13212 <https://github.com/scipy/scipy/pull/13212>`__: [DOC] Backtick and directive consistency.
