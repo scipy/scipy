@@ -107,6 +107,7 @@ Global optimization
 
    shgo - simplicial homology global optimisation
    dual_annealing - Dual annealing stochastic optimizer.
+   particle_swarm_optimization - Particle Swarm Optimization minimization algorithm.
 
 
 Least-squares and curve fitting
