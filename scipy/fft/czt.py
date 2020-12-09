@@ -444,6 +444,20 @@ def zoomfft(x, fn, m=None, fs=2, endpoint=True, axis=-1):
     If the transform needs to be repeated, use `ZoomFFT` to construct
     a specialized transform function which can be reused without
     recomputing constants.
+
+    Examples
+    --------
+    To plot the transform results use something like the following:
+
+    >>> from scipy.fft import zoomfft
+    >>> t = np.linspace(0, 1, 1021)
+    >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
+    >>> f1, f2 = 5, 27
+    >>> X = zoomfft(x, [f1, f2], len(x), 1021)
+    >>> f = np.linspace(f1, f2, len(x))
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(f, 20*np.log10(np.abs(X)))
+    >>> plt.show()
     """
     x = np.asarray(x)
     transform = ZoomFFT(x.shape[axis], fn, m=m, fs=fs, endpoint=endpoint)
