@@ -5841,15 +5841,45 @@ class TestPageL:
     ts = [
           (12805, 0.3886487053947608, False, 'asymptotic', data_3_25),
           (49140, 0.02888978556179862, False, 'asymptotic', data_10_26),
-          (12332, 0.7722477197436702, False, 'asymptotic', [[72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81, 43, 70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50], [68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31, 67, 69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43], [81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68, 17, 16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55]]),
-          (266, 4.121656378600823e-05, False, 'exact', [[1.5, 4., 8.3, 5, 19, 11], [5, 4, 3.5, 10, 20, 21], [8.4, 3.2, 10, 12,14, 15]]),
-          (332, 0.9566400920502488, True, 'exact', [[4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [3, 4, 1, 2], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]]),
-          (241, 0.9622210164861476, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
-          (197, 0.9619432897162209, True, 'exact', [[6, 5, 4, 3, 2, 1], [6, 5, 4, 3, 2, 1], [1, 3, 4, 5, 2, 6]]),
-          (423, 0.9590458306880073, True, 'exact', [[5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [4, 1, 3, 2, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]),
-          (217, 0.9693058575034678, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
-          (395, 0.991530289351305, True, 'exact', [[7, 6, 5, 4, 3, 2, 1], [7, 6, 5, 4, 3, 2, 1], [6, 5, 7, 4, 3, 2, 1], [1, 2, 3, 4, 5, 6, 7]]),
-          (117, 0.9997817843373017, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
+          (12332, 0.7722477197436702, False, 'asymptotic',
+           [[72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81,
+             43, 70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50],
+            [68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31,
+             67, 69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43],
+            [81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68,
+             17, 16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55]]),
+          (266, 4.121656378600823e-05, False, 'exact',
+           [[1.5, 4., 8.3, 5, 19, 11],
+            [5, 4, 3.5, 10, 20, 21],
+            [8.4, 3.2, 10, 12,14, 15]]),
+          (332, 0.9566400920502488, True, 'exact',
+           [[4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
+            [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
+            [3, 4, 1, 2], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4],
+            [1, 2, 3, 4], [1, 2, 3, 4]]),
+          (241, 0.9622210164861476, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3],
+            [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
+          (197, 0.9619432897162209, True, 'exact',
+           [[6, 5, 4, 3, 2, 1], [6, 5, 4, 3, 2, 1], [1, 3, 4, 5, 2, 6]]),
+          (423, 0.9590458306880073, True, 'exact',
+           [[5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1],
+            [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1],
+            [4, 1, 3, 2, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
+            [1, 2, 3, 4, 5]]),
+          (217, 0.9693058575034678, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3],
+            [1, 2, 3]]),
+          (395, 0.991530289351305, True, 'exact',
+           [[7, 6, 5, 4, 3, 2, 1], [7, 6, 5, 4, 3, 2, 1],
+            [6, 5, 7, 4, 3, 2, 1], [1, 2, 3, 4, 5, 6, 7]]),
+          (117, 0.9997817843373017, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
          ]
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
     def test_accuracy(self, L, p, ranked, method, data):
@@ -5860,9 +5890,22 @@ class TestPageL:
         assert_equal(method, res.method)
 
     ts2 = [
-           (542, 0.9481266260876332, True, 'exact', [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [1, 8, 4, 7, 6, 5, 9, 3, 2, 10]]),
-           (1322, 0.9993113928199309, True, 'exact', [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [9, 2, 8, 7, 6, 5, 4, 3, 10, 1], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]),
-           (2286, 0.9908688345484833, True, 'exact', [[8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [1, 3, 5, 6, 4, 7, 2, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]]),
+           (542, 0.9481266260876332, True, 'exact',
+            [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+             [1, 8, 4, 7, 6, 5, 9, 3, 2, 10]]),
+           (1322, 0.9993113928199309, True, 'exact',
+            [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+             [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [9, 2, 8, 7, 6, 5, 4, 3, 10, 1],
+             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]),
+           (2286, 0.9908688345484833, True, 'exact',
+            [[8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [1, 3, 5, 6, 4, 7, 2, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8]]),
           ]
     # only the first of these appears slow because intermediate data are
     # cached and used on the rest
@@ -5886,7 +5929,8 @@ class TestPageL:
         res2 = stats.pagel(ranks, ranked=True)
         res3 = stats.pagel(data, ranked=False)
         res4 = stats.pagel(ranks, predicted_ranks=predicted_ranks)
-        res5 = stats.pagel(ranks[:, perm], predicted_ranks=predicted_ranks[perm])
+        res5 = stats.pagel(ranks[:, perm],
+                           predicted_ranks=predicted_ranks[perm])
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.statistic, res3.statistic)
         assert_equal(res1.statistic, res4.statistic)
@@ -5896,44 +5940,66 @@ class TestPageL:
         # test from _pagel.py [2] page 151; data on page 144
         np.random.seed(42)
 
-        data = [[101, 117, 111], [91, 90, 107], [103, 133, 121], [136, 140, 144], [190, 161, 201], [146, 120, 116]]
+        data = [[101, 117, 111], [91, 90, 107], [103, 133, 121],
+                [136, 140, 144], [190, 161, 201], [146, 120, 116]]
         data = np.array(data).T
         predicted_ranks = np.arange(1, 7)
 
-        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="asymptotic")
+        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks,
+                          method="asymptotic")
         assert_equal(res.statistic, 257)
         assert_almost_equal(res.pvalue, 0.0035, decimal=4)
 
-        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks, method="exact")
+        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks,
+                          method="exact")
         assert_equal(res.statistic, 257)
         assert_almost_equal(res.pvalue, 0.0023, decimal=4)
 
     def test_input_validation(self):
         # test data not a 2d array
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, None)
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [])
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [1, 2])
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [[[1]]])
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
+                                 stats.pagel, None)
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
+                                 stats.pagel, [])
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
+                                 stats.pagel, [1, 2])
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
+                                 stats.pagel, [[[1]]])
 
         # test invalid dimensions
-        assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(1, 3))
-        assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(2, 2))
+        assert_raises_with_match(ValueError, "Page's L is only appropriate",
+                                 stats.pagel, np.random.rand(1, 3))
+        assert_raises_with_match(ValueError, "Page's L is only appropriate",
+                                 stats.pagel, np.random.rand(2, 2))
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
-        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[0, 1, 2])
-        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[1.1, 2, 3])
-        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks=[1, 2, 3, 3])
-        assert_raises_with_match(ValueError, "`predicted_ranks` must include each integer",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]], predicted_ranks="invalid")
+        message = "`predicted_ranks` must include each integer"
+        assert_raises_with_match(ValueError, message, stats.pagel,
+                                 data=[[1, 2, 3], [1, 2, 3]],
+                                 predicted_ranks=[0, 1, 2])
+        assert_raises_with_match(ValueError, message, stats.pagel,
+                                 data=[[1, 2, 3], [1, 2, 3]],
+                                 predicted_ranks=[1.1, 2, 3])
+        assert_raises_with_match(ValueError, message, stats.pagel,
+                                 data=[[1, 2, 3], [1, 2, 3]],
+                                 predicted_ranks=[1, 2, 3, 3])
+        assert_raises_with_match(ValueError, message, stats.pagel,
+                                 data=[[1, 2, 3], [1, 2, 3]],
+                                 predicted_ranks="invalid")
 
         # test improperly ranked data
-        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[0, 2, 3], [1, 2, 3]])
-        assert_raises_with_match(ValueError, "`data` is not properly ranked", stats.pagel, [[1, 2, 3], [1, 2, 4]])
+        assert_raises_with_match(ValueError, "`data` is not properly ranked",
+                                 stats.pagel, [[0, 2, 3], [1, 2, 3]])
+        assert_raises_with_match(ValueError, "`data` is not properly ranked",
+                                 stats.pagel, [[1, 2, 3], [1, 2, 4]])
 
         # various
-        assert_raises_with_match(ValueError, "`data` contains NaNs", stats.pagel, [[1, 2, 3], [1, 2, np.nan]], ranked=False)
-        assert_raises_with_match(ValueError, "`method` must be in", stats.pagel, data=[[1, 2, 3], [1, 2, 3]], method="ekki")
-        assert_raises_with_match(TypeError, "`ranked` must be boolean.", stats.pagel, data=[[1, 2, 3], [1, 2, 3]], ranked="ekki")
+        assert_raises_with_match(ValueError, "`data` contains NaNs",
+                                 stats.pagel, [[1, 2, 3], [1, 2, np.nan]],
+                                 ranked=False)
+        assert_raises_with_match(ValueError, "`method` must be in",
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]],
+                                 method="ekki")
+        assert_raises_with_match(TypeError, "`ranked` must be boolean.",
+                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]],
+                                 ranked="ekki")
