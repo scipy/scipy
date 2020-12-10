@@ -5,7 +5,7 @@ from scipy.linalg import qr, solve_triangular
 from scipy.linalg.decomp import _asarray_validated
 from scipy.linalg.misc import LinAlgError
 
-# Author : Rondall E. Jones, October 2020
+# Author : Rondall E. Jones, December 2020
 
 
 def checkAb(A, b, maxcols):
@@ -49,7 +49,7 @@ def decide_width(mg):
         return 2 * int(w / 2)  # 10 spans
 
 
-def splita(mg, g):
+def splita(g, mg):
     """ Determines a usable rank based on large rise in Picard Vector"""
     # initialize
     if mg < 2:
@@ -72,8 +72,8 @@ def splita(mg, g):
     return urank
 
 
-def compute_mov_sums(g, w, m):
-    numsums = m - w + 1
+def compute_mov_sums(g, mg, w):    # REORDER ARGS LIKE GOlang
+    numsums = mg - w + 1
     sums = np.zeros(numsums)
     for i in range(0, numsums):
         s = 0.0
@@ -83,7 +83,7 @@ def compute_mov_sums(g, w, m):
     return sums
 
 
-def splitb(mg, g):
+def splitb(g, mg):
     """ Determines a usable rank based on modest rise in Picard Vector
     after the low point in the PCV."""
     w = decide_width(mg)
@@ -101,7 +101,7 @@ def splitb(mg, g):
             gg[i] = 0.5 * min(gg[i - 1], gg[i + 1])
 
     # choose breakpoint as multiple of lowest moving average
-    sums = compute_mov_sums(gg, w, mg)
+    sums = compute_mov_sums(gg, mg, w)
     ilow = np.where(sums == min(sums))[0][0]
     bad = 20.0 * sums[ilow]
 
@@ -156,7 +156,7 @@ def discrep(A, b, U, S, Vt, ur, mysigma):
 def arlsusv(A, b, U, S, Vt):
     """ core solver when SVD is already available """
     if np.count_nonzero(A) == 0 or np.count_nonzero(b) == 0:
-        return np.zeros(A.shape[1])
+        return np.zeros(A.shape[1]), 0, 0, 0.0, 0.0
     m, n = A.shape
     mn = min(m, n)
     # compute contributions to norm of solution
@@ -178,11 +178,11 @@ def arlsusv(A, b, U, S, Vt):
         k = i + 1
     nr = k  # traditional numeric rank
     if k <= 0:
-        return np.zeros(n)  # failsave check
+        return np.zeros(n), 0, 0, 0.0, 0.0  # failsave check
 
     # two-stage search for divergence in Picard Condition Vector
-    ura = splita(k, g)
-    urb = splitb(ura, g)
+    ura = splita(g, k)
+    urb = splitb(g, ura)
     ur = min(ura, urb)
     if ur >= mn:
         # problem is not ill-conditioned
@@ -205,7 +205,7 @@ def arls(A, b):
 
     The system can be underdetermined, square, or over-determined.
     That is, A(m,n) can be such that m < n, m = n, or m > n.
-    Argument b is a matrix of size(n,p) of p right-hand-side columns.
+    Argument b is a matrix of size(m,p) of p right-hand-side columns.
     This solver automatically detects if each system is ill-conditioned or not.
 
     Then
@@ -352,7 +352,7 @@ def arls(A, b):
 
     # multiple right hand sides
     xx = np.zeros((n, nrhs))
-    nr = min(A.shape)   # track minimum numeric rank
+    nr = min(A.shape)
     mur = nr            # track minimum usable rank
     msigma = 0.0        # track maximum estimated RHS error
     mlamda = 0.0        # track maximum Tikhonov parameter
@@ -499,8 +499,8 @@ def prepeq(E, f, neglect):
         g = np.zeros(m)
         for k in range(0, m):
             g[k] = abs(ff[k])
-        m1 = splita(m, g)
-        mm = splitb(m1, g)
+        m1 = splita(g, m)
+        mm = splitb(g, m1)
         if mm < m:
             EE = np.resize(EE, (mm, n))
             ff = np.resize(ff, mm)
@@ -808,7 +808,7 @@ def arlsgt(A, b, G, h):
 
         # delete row from GGx=hh
         row = GG[p, :]
-        rhs = hh[p]
+        rhsp = hh[p]
         GG = np.delete(GG, p, 0)
         hh = np.delete(hh, p, 0)
 
@@ -817,7 +817,7 @@ def arlsgt(A, b, G, h):
             EE = np.zeros((1, ng))
             EE[0, :] = row
             ff = np.zeros(1)
-            ff[0] = rhs
+            ff[0] = rhsp
             me = 1
             ne = ng
         else:
@@ -825,7 +825,7 @@ def arlsgt(A, b, G, h):
             EE = np.resize(EE, (me, ne))
             EE[me - 1, :] = row[:]
             ff = np.resize(ff, me)
-            ff[me - 1] = rhs
+            ff[me - 1] = rhsp
         # re-solve modified system
         x = arlseq(A, b, EE, ff)[0]
     return x, nr, ur, sigma, lambdah
@@ -877,7 +877,7 @@ def arlsnn(A, b):
        x =  [1. ,1., -0.1]
     But arlsnn() produces  x = [ 1.0322, 0.9093, 0.].
 
-    arlsnn() tries to produce a small residual for the final solution,
+    Arlsnn() tries to produce a small residual for the final solution,
     while being based toward making the fewest changes feasible
     to the problem. Most older solvers try to minimize the residual
     at the expense of extra interference with the user's model.
