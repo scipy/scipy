@@ -5820,69 +5820,59 @@ class TestMGCStat(object):
 
 
 class TestPageL(object):
-    # I cannot find many published L test p-values. However, there is a table
-    # of critical L values corresponding with three different confidence levels
-    # `a` published in Page's original paper (_pagel.py [1]).
-    # Therefore, the approach here is to:
-    # - find arrays with the listed critical value of L,
-    # - check that `pagel` calculates a p-value less than 1-a%
-    # - find arrays with L one less than the listed critical value, and
-    # - check that `pagel` calculates a p-value greater than 1-a%
-    # We'll also check that `pagel` chose the appropriate method given m, n
-    # and, of course, that `pagel` calculates the correct L value.
+    # expected statistic and p-values generated using R at
+    # https://rdrr.io/cran/cultevo/, e.g.
+    # library(cultevo)
+    # data = rbind(c(72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81, 43,
+    #                   70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50),
+    #              c(68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31, 67,
+    #                69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43),
+    #              c(81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68, 17,
+    #                16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55))
+    # result = page.test(data, verbose=FALSE)
+    # Most test cases generated to achieve common critical p-values so that
+    # results could be checked (to limited precision) against tables in
+    # scipy.stats.pagel reference [1]
 
-    # The values in each tuple below are (in order)
-    # - the number of rows m,
-    # - the number of columns n,
-    # - the confidence level a,
-    # - the critical value of L given by Page,
-    # - whether the p-value calculated by `pagel` should be greater or less
-    #   than 1-a%, and
-    # - whether `pagel` should use the `asymptotic` or `mc` method to calculate
-    #   the p-value (based on whether page used the exact or asymptotic
-    #   distribution of L to generate the critical value)
+    np.random.seed(0)
+    data_3_25 = np.random.rand(3, 25)
+    data_10_26 = np.random.rand(10, 26)
 
-    # Note that the L values for m = 2, n = 10 and m = 5, n = 10, it seems
-    # that Page either intended to list conservative p-values or didn't
-    # evaluate the asymptotic p-values to sufficient accuracy.
-    # The asymptotic p-value corresponding with the m=2, n=10, L=669 is 0.04991
-    # The asymptotic p-value corresponding with m=5, n=10, L=1703 is 0.000974.
-    # Page must have been rounded upwards, causing the critical L value listed
-    # in the paper to be 1 greater than it should be. For these cases, I've
-    # decremented by one the critical L values listed in the paper
-
-    array = np.array
-    lt = np.less
-    gt = np.greater
     ts = [
-          (2, 10, 669, 95, lt, 'asymptotic', [array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([1, 5, 6, 7, 8, 9, 4, 3, 2, 10])]),
-          (2, 10, 668, 95, gt, 'asymptotic', [array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([1, 8, 4, 7, 6, 5, 9, 3, 2, 10])]),
-          (14, 4, 368, 95, lt, 'asymptotic', [array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([3, 4, 1, 2]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4])]),
-          (14, 4, 367, 95, gt, 'asymptotic', [array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([4, 3, 2, 1]), array([3, 2, 4, 1]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4]), array([1, 2, 3, 4])]),
-          (21, 3, 263, 95, lt, 'asymptotic', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (21, 3, 262, 95, gt, 'asymptotic', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (15, 8, 2574, 99, lt, 'asymptotic', [array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([1, 3, 5, 6, 4, 7, 2, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8])]),
-          (15, 8, 2573, 99, gt, 'asymptotic', [array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([8, 7, 6, 5, 4, 3, 2, 1]), array([1, 4, 3, 6, 5, 7, 2, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8]), array([1, 2, 3, 4, 5, 6, 7, 8])]),
-          (5, 10, 1703, 99.9, lt, 'asymptotic', [array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([9, 2, 8, 7, 6, 5, 4, 3, 10, 1]), array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])]),
-          (5, 10, 1702, 99.9, gt, 'asymptotic', [array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]), array([9, 2, 7, 8, 6, 5, 4, 3, 10, 1]), array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])]),
-          (3, 6, 244, 95, lt, 'exact', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 3, 4, 5, 2, 6])]),
-          (3, 6, 243, 95, gt, 'exact', [array([6, 5, 4, 3, 2, 1]), array([6, 5, 4, 3, 2, 1]), array([1, 4, 2, 5, 3, 6])]),
-          (10, 5, 477, 95, lt, 'exact', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 3, 2, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
-          (10, 5, 476, 95, gt, 'exact', [array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([5, 4, 3, 2, 1]), array([4, 1, 2, 3, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5]), array([1, 2, 3, 4, 5])]),
-          (19, 3, 239, 95, lt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (19, 3, 238, 95, gt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3]), array([1, 2, 3])]),
-          (4, 7, 501, 99, lt, 'exact', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([6, 5, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
-          (4, 7, 500, 99, gt, 'exact', [array([7, 6, 5, 4, 3, 2, 1]), array([7, 6, 5, 4, 3, 2, 1]), array([5, 6, 7, 4, 3, 2, 1]), array([1, 2, 3, 4, 5, 6, 7])]),
-          (11, 3, 147, 99.9, lt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([2, 1, 3]), array([1, 2, 3])]),
-          (11, 3, 146, 99.9, gt, 'exact', [array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([3, 2, 1]), array([1, 2, 3]), array([1, 2, 3])]),
+          (12805, 0.3886487053947608, False, 'asymptotic', data_3_25),
+          (49140, 0.02888978556179862, False, 'asymptotic', data_10_26),
+          (12332, 0.7722477197436702, False, 'asymptotic', [[72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81, 43, 70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50], [68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31, 67, 69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43], [81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68, 17, 16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55]]),
+          (266, 4.121656378600823e-05, False, 'exact', [[1.5, 4., 8.3, 5, 19, 11], [5, 4, 3.5, 10, 20, 21], [8.4, 3.2, 10, 12,14, 15]]),
+          (332, 0.9566400920502488, True, 'exact', [[4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [3, 4, 1, 2], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]]),
+          (241, 0.9622210164861476, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
+          (197, 0.9619432897162209, True, 'exact', [[6, 5, 4, 3, 2, 1], [6, 5, 4, 3, 2, 1], [1, 3, 4, 5, 2, 6]]),
+          (423, 0.9590458306880073, True, 'exact', [[5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [4, 1, 3, 2, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]]),
+          (217, 0.9693058575034678, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
+          (395, 0.991530289351305, True, 'exact', [[7, 6, 5, 4, 3, 2, 1], [7, 6, 5, 4, 3, 2, 1], [6, 5, 7, 4, 3, 2, 1], [1, 2, 3, 4, 5, 6, 7]]),
+          (117, 0.9997817843373017, True, 'exact', [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
          ]
-
-    @pytest.mark.parametrize("m, n, L, a, compare, method, ranks", ts)
-    def test_accuracy(self, m, n, L, a, compare, method, ranks):
+    @pytest.mark.parametrize("L, p, ranked, method, data", ts)
+    def test_accuracy(self, L, p, ranked, method, data):
         np.random.seed(42)
-        res = stats.pagel(np.asarray(ranks)[:, ::-1])
+        res = stats.pagel(data, ranked=ranked, method=method)
         assert_equal(L, res.statistic)
-        assert_(compare(res.pvalue, 1-a/100))
+        assert_allclose(p, res.pvalue)
+        assert_equal(method, res.method)
+
+    ts2 = [
+           (542, 0.9481266260876332, True, 'exact', [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [1, 8, 4, 7, 6, 5, 9, 3, 2, 10]]),
+           (1322, 0.9993113928199309, True, 'exact', [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [9, 2, 8, 7, 6, 5, 4, 3, 10, 1], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]),
+           (2286, 0.9908688345484833, True, 'exact', [[8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1], [1, 3, 5, 6, 4, 7, 2, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8]]),
+          ]
+    # only the first of these appears slow because intermediate data are
+    # cached and used on the rest
+    @pytest.mark.parametrize("L, p, ranked, method, data", ts)
+    @pytest.mark.slow()
+    def test_accuracy2(self, L, p, ranked, method, data):
+        np.random.seed(42)
+        res = stats.pagel(data, ranked=ranked, method=method)
+        assert_equal(L, res.statistic)
+        assert_allclose(p, res.pvalue)
         assert_equal(method, res.method)
 
     def test_options(self):
@@ -5921,6 +5911,7 @@ class TestPageL(object):
     def test_input_validation(self):
         # test data not a 2d array
         assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, None)
+        assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [])
         assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [1, 2])
         assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [[[1]]])
 

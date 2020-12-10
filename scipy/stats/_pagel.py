@@ -29,7 +29,9 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     .. math::
 
-        m_1 < m_2 < m_3 < \cdots < m_n.
+        m_1 \leq m_2 \leq m_3 \leq \cdots \leq m_n,
+
+    where at least one inequality is strict.
 
     As noted by [4]_, Page's :math:`L` test has greater statistical power than
     the Friedman test against the alternative that there is a difference in
@@ -65,7 +67,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     method : {'auto', 'asymptotic', 'exact'}, optional
         Selects the method used to calculate the *p*-value. The following
-        (case-insensitive) options are available.
+        options are available.
 
         * 'auto': selects between 'exact' and 'asymptotic' to
           achieve reasonably accurate results in reasonable time
@@ -301,7 +303,6 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     # Possible values of the method parameter and the corresponding function
     # used to evaluate the p value
-    method = method.lower()
     methods = {"asymptotic": _l_p_asymptotic,
                "exact": _l_p_exact,
                "auto": None}
