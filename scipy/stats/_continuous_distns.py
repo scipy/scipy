@@ -6298,29 +6298,58 @@ class powerlaw_gen(rv_continuous):
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
 
-        # methods for mle regardless of a
+        # the analytical formula for `fshape` is the same whether `fshape` is
+        # less than or greater than one.
         def get_a(floc, fscale, data):
-            return (- len(data) / (np.sum(np.log((data - floc)/fscale))))
+            mask = data != floc
+            return (len(data) / (np.sum(np.log(fscale / (data[mask] - floc)))))
 
-        def ll_comp(fshape, floc, fscale, data):
-            return ((fshape - 1) * np.sum(1 / (floc - data)) +
-                    len(data) * fshape / fscale)
-
-        # mle equation for when a > 1
-        def get_s_a_gt_1(floc, data):
+        # Analytical formulas to be used when `fshape > 1`
+        def get_s_a_gt(data, floc):
             return np.max(data) - floc
 
-        def get_u_a_gt_1(fscale, data):
+        def get_u_a_gt(data, fscale):
             return np.max(data) - fscale
 
-        # mle equation for when a < 1
-        def get_s_a_lt_1(data):
+        def all_free_gt(data, get_a, get_u, get_s):
+            def ll_comp(fshape, floc, fscale, data):
+                return ((fshape - 1) * np.sum(1 / (floc - data)) + len(data)
+                        * fshape / fscale)
+
+            def func(floc, fshape):
+                fscale = get_s(data, floc)
+                fshape = get_a(floc, fscale, data)
+                return ll_comp(fshape, floc, fscale, data)
+
+            s_max = np.max(data) - np.min(data)
+            u_min = np.min(data) - s_max
+            u_max = (1-np.finfo(float).eps)*np.min(data)
+            try:
+                floc = optimize.root_scalar(func, bracket=[u_min, u_max],
+                                            args=(None,)).root
+                fscale = get_s(data, floc)
+                fshape = get_a(floc, fscale, data)
+            except Exception:
+                fshape, floc, fscale = None, None, None
+            return fshape, floc, fscale
+
+        # Analytical formulas to be used when `fshape < 1`
+        def get_s_a_lt(data, *args):
             return np.max(data) - np.min(data)
 
-        def get_u_a_lt_1(data):
+        def get_u_a_lt(data, *args):
             return np.min(data)
 
-        def evaluate_a_gt_1(fshape, floc, fscale, data):
+        def all_free_lt(data, get_a, get_u, get_s):
+            floc = get_u_a_lt(data)
+            fscale = get_s_a_lt(data)
+            fshape = get_a(floc, fscale, data)
+            return fshape, floc, fscale
+
+        # a generic fitting routing that allows for parametrization of
+        # the methods to determine the shape, location, and scale.
+        def fit_with_multiple_funcs(fshape, floc, fscale, data, get_u, get_s,
+                                    all_free):
             if floc is not None:
                 # `floc` is fixed, `fshape` and `fscale` may be deterermined
                 # through analytical equations
@@ -6330,7 +6359,7 @@ class powerlaw_gen(rv_continuous):
                                      " likelihood estimation with 'powerlaw'"
                                      " requires loc < min(data).")
                 if fscale is None:
-                    fscale = get_s_a_gt_1(floc, data)
+                    fscale = get_s(data, floc)
                 else:
                     if fscale + floc <= np.max(data):
                         # fitting with fixed scale and fixed location requires
@@ -6342,70 +6371,26 @@ class powerlaw_gen(rv_continuous):
                     fshape = get_a(floc, fscale, data)
                 return fshape, floc, fscale
             if fscale is not None:
-                floc = get_u_a_gt_1(fscale, data)
+                floc = get_u(data, fscale)
                 if fshape is None:
                     fshape = get_a(floc, fscale, data)
                 return fshape, floc, fscale
             else:
-                try:
-                    def func(floc, fshape):
-                        fscale = get_s_a_gt_1(floc, data)
-                        fshape = get_a(floc, fscale, data)
-                        return ll_comp(fshape, floc, fscale, data)
+                return all_free(data, get_a, get_u, get_s)
 
-                    s_max = np.max(data) - np.min(data)
-                    u_min = np.min(data) - s_max
-                    # epsilon less than np.min(data)
-                    u_max = (1-np.finfo(float).eps)*np.min(data)
-                    floc = optimize.root_scalar(func, bracket=[u_min, u_max],
-                                                args=(fshape,)).root
-                    fscale = get_s_a_gt_1(floc, data)
-                    fshape = get_a(floc, fscale, data)
-                except Exception:
-                    fshape, floc, fscale = None, None, None
-            return fshape, floc, fscale
+        # fitting under the assumption that `fshape < 1` is fast and completely
+        # analytical, so it is performed first.
+        res = fit_with_multiple_funcs(fshape, floc, fscale, data, get_u_a_lt,
+                                      get_s_a_lt, all_free_lt)
+        # if the assumption that the shape < 1 is not consistent with the
+        # result of the fitting, try to fit under the assumption that the
+        # shape is >= 1.
+        if res[0] > 1 or res[0] is None:
+            res = fit_with_multiple_funcs(fshape, floc, fscale, data,
+                                          get_u_a_gt, get_s_a_gt,
+                                          all_free_gt)
 
-        def evaluate_a_lt_1(fshape, floc, fscale, data):
-            if floc is not None:
-                # `floc` is fixed, `fshape` and `fscale` may be deterermined
-                # through analytical equations
-                if floc > np.min(data):
-                    # a constraint to fitting is that loc < np.min
-                    raise ValueError("Invalid values in `data`.  Maximum"
-                                     " likelihood estimation with 'powerlaw'"
-                                     " requires loc < min(data).")
-                if fscale is None:
-                    fscale = get_s_a_lt_1(data)
-                else:
-                    if fscale + floc <= np.max(data):
-                        # fitting with fixed scale and fixed location requires
-                        # that loc + scale > max(data)
-                        raise ValueError("Invalid values in `data`.  Maximum"
-                                         " likelihood estimation with 'powerlaw'"
-                                         " requires loc + scale > max(data).")
-                if fshape is None:
-                    fshape = get_a((1-np.finfo(float).eps)*floc, fscale, data)
-                return fshape, floc, fscale
-            if fscale is not None:
-                floc = get_u_a_lt_1(data)
-                if fshape is None:
-                    fshape = get_a((1-np.finfo(float).eps)*floc, fscale, data)
-                return fshape, floc, fscale
-            else:
-                try:
-                    floc = get_u_a_lt_1(data)
-                    fscale = get_s_a_lt_1(data)
-                    # if `floc` is not modified with `(1-np.finfo(float).eps)*`
-                    # it is not able to determine a result.
-                    fshape = get_a((1-np.finfo(float).eps)*floc, fscale, data)
-                except Exception:
-                    fshape, floc, fscale = None, None, None
-            return fshape, floc, fscale
-
-        res_a_gt_1 = evaluate_a_gt_1(fshape, floc, fscale, data)
-        res_a_lt_1 = evaluate_a_lt_1(fshape, floc, fscale, data)
-
-        return(res_a_gt_1, res_a_lt_1)
+        return res
 
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
