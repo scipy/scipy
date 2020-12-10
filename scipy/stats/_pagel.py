@@ -8,7 +8,7 @@ from dataclasses import make_dataclass
 PageLResult = make_dataclass("PageLResult", ("statistic", "pvalue", "method"))
 
 
-def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
+def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
     r"""
     Compute Page's L, a measure of trend in observations between treatments.
 
@@ -50,14 +50,13 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     data : array-like
         A :math:`m \times n` array; the element in row :math:`i` and
         column :math:`j` is the observation corresponding with subject
-        :math:`i` and treatment :math:`j`. By default, the data
-        are assumed to be ranked, and the columns are assumed to
-        be arranged in order of increasing predicted mean.
+        :math:`i` and treatment :math:`j`. By default, the columns are
+        assumed to be arranged in order of increasing predicted mean.
 
-    ranked : boolean, default = ``True``
-        By default, the data are assumed to be ranked. If ``False``,
-        the ``data`` will be ranked with `scipy.stats.rankdata` along
-        ``axis=1``.
+    ranked : boolean, optional
+        By default, `data` is assumed to be observations rather than ranks;
+        it will be ranked with `scipy.stats.rankdata` along ``axis=1``. If
+        `data` is provided in the form of ranks, pass argument ``True``.
 
     predicted_ranks : array-like, optional
         The predicted ranks of the column means. If not specified,
@@ -70,9 +69,9 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
         options are available.
 
         * 'auto': selects between 'exact' and 'asymptotic' to
-          achieve reasonably accurate results in reasonable time
+          achieve reasonably accurate results in reasonable time (default)
         * 'asymptotic': compares the standardized test statistic against
-          the chi-square distribution with one degree of freedom
+          the normal distribution
         * 'exact': computes the exact *p*-value by comparing the observed
           :math:`L` statistic against those realized by all possible
           permutations of ranks (under the null hypothesis that each
@@ -159,7 +158,6 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     ``'asymptotic'``` *p*-values, however, tend to be smaller (i.e. less
     conservative) than the ``'exact'`` *p*-values.
 
-
     References
     ----------
     .. [1] Ellis Batten Page, "Ordered hypotheses for multiple treatments:
@@ -203,7 +201,25 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     ...          [2, 4, 5],
     ...          [1, 3, 4]]
 
-    We rank the data such that high scores correspond with high ranks, settling
+    Because the tutorial is hypothesized to have the lowest ratings, the
+    column corresponding with tutorial rankings should be first; the seminar
+    is hypothesized to have the highest ratings, so its column should be last.
+    Since the columns are already arranged in this order of increasing
+    predicted mean, we can pass the table directly into `pagel`.
+
+    >>> from scipy.stats import pagel
+    >>> res = pagel(table)
+    >>> res
+    PageLResult(statistic=133.5, pvalue=0.0018191161948127822,
+                method='exact')
+
+    This *p*-value indicates that there is a 0.1819% chance that
+    the :math:`L` statistic would reach such an extreme value under the null
+    hypothesis. Because 0.1819% is less than 1%, we have evidence to reject
+    the null hypothesis in favor of our alternative at a 99% confidence level.
+
+    The value of the :math:`L` statistic is 133.5. To check this manually,
+    we rank the data such that high scores correspond with high ranks, settling
     ties with an average rank:
 
     >>> from scipy.stats import rankdata
@@ -220,18 +236,8 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
            [1. , 2. , 3. ],
            [1. , 2. , 3. ]])
 
-    Because the tutorial is hypothesized to have the lowest
-    ratings and thus the lowest ranks, the column corresponding with
-    tutorial rankings should be first; that is, this table is already
-    arranged as it should be. We pass the table of ranks into `pagel`.
-
-    >>> from scipy.stats import pagel
-    >>> res = pagel(ranks, method='asymptotic')
-    >>> res
-    PageLResult(statistic=133.5, pvalue=0.0012693433690751756,
-                method='asymptotic')
-
-    The value of the :math:`L` statistic, 133.5, is as expected:
+    We add the ranks within each column, multiply the sums by the
+    predicted ranks, and sum the products.
 
     >>> import numpy as np
     >>> m, n = ranks.shape
@@ -240,64 +246,52 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     >>> res.statistic == L
     True
 
-    The *p*-value is the survival function of the normal distribution evaluated
-    at the standardized test statistic:
+    As presented in [3]_, the asymptotic approximation of the *p*-value is the
+    survival function of the normal distribution evaluated at the standardized
+    test statistic:
 
     >>> from scipy.stats import norm
     >>> E0 = (m*n*(n+1)**2)/4
     >>> V0 = (m*n**2*(n+1)*(n**2-1))/144
     >>> Lambda = (L-E0)/np.sqrt(V0)
     >>> p = norm.sf(Lambda)
-    >>> res.pvalue == p
-    True
+    >>> p
+    0.0012693433690751756
 
-    This value indicates that there is a 0.1269% chance that
-    the :math:`L` statistic would reach such an extreme value under the null
-    hypothesis. Because 0.1269% is less than 1%, we have evidence to reject
-    the null hypothesis in favor of our alternative at a 99% confidence level.
+    This does not precisely match the *p*-value reported by `pagel` above.
+    The asymptotic distribution is not very accurate, nor conservative, for
+    :math:`m \leq 12` and :math:`n \leq 8`, so `pagel` chose to use
+    ``method='exact'`` based on the dimensions of the table and the
+    recommendations in Page's original paper [1]_. To override `pagel`'s
+    choice, provide the `method` argument.
 
-    Note that the we can also pass in the raw data as originally tabulated if
-    we provide ``ranked=False`` as an argument.
-
-    >>> res = pagel(table,                      # data as originally tabulated
-    ...             ranked=False,               # original table is not ranked
-    ...             method="asymptotic"
-    ...             )
+    >>> res = pagel(table, method="asymptotic")
     >>> res
     PageLResult(statistic=133.5, pvalue=0.0012693433690751756,
                 method='asymptotic')
 
-    As presented in [3]_, the *p*-value was calculated based on the asymptotic
-    distribution of the :math:`L` statistic. However, the asymptotic
-    distribution is not very accurate, nor conservative, for :math:`m \leq 12`
-    and :math:`n \leq 8`. Rather than passing in ``method="asymptotic"``,
-    we can allow ``pagel`` to select the appropriate method.
+    If the data are already ranked, we can pass in the ``ranks`` instead of
+    the ``table`` to save computation time.
 
-    >>> res = pagel(table, ranked=False)
+    >>> res = pagel(ranks,                     # ranks of data
+    ...             ranked=True,               # data is already ranked
+    ...             )
     >>> res
     PageLResult(statistic=133.5, pvalue=0.0018191161948127822, method='exact')
 
-    Note that ``pagel`` chose to use ``method='exact'`` based on the dimensions
-    of the table and the recommendations in Page's original paper [1]_.
-    This exact *p*-value is greater than that given by the
-    asymptotic approach, but we can still reject the null hypothesis in favor
-    of our alternative at the 99% confidence level.
-
-    Suppose the raw data had been tabulated in another order, say
-    lecture, seminar, tutorial.
+    Suppose the raw data had been tabulated in an order different from the
+    order of predicted means, say lecture, seminar, tutorial.
 
     >>> table = np.asarray(table)[:, [1, 2, 0]]
 
     Since the arrangement of this table is not consistent with the assumed
     ordering, we can either rearrange the table or provide the
-    ``predicted_ranks`` argument. Remembering that the lecture is prediced
+    `predicted_ranks`. Remembering that the lecture is predicted
     to have the middle rank, the seminar the highest, and tutorial the lowest,
     we pass:
 
     >>> res = pagel(table,                      # data as originally tabulated
-    ...             ranked=False,               # original table is not ranked
     ...             predicted_ranks=[2, 3, 1],  # we predict these ranks
-    ...             method="exact"
     ...             )
     >>> res
     PageLResult(statistic=133.5, pvalue=0.0018191161948127822, method='exact')
