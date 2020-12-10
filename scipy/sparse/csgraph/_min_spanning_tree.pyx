@@ -1,8 +1,6 @@
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -45,6 +43,11 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     graph[i, j] and graph[j, i] are both zero, then nodes i and j do not
     have an edge connecting them.  If either is nonzero, then the two are
     connected by the minimum nonzero value of the two.
+
+    This routine loses precision when users input a dense matrix.
+    Small elements < 1E-8 of the dense matrix are rounded to zero.
+    All users should input sparse matrices if possible to avoid it.
+
 
     Examples
     --------

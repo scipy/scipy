@@ -1,7 +1,5 @@
 """Indexing mixin for sparse matrix classes.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from .sputils import isintlike
 
@@ -10,6 +8,21 @@ try:
 except NameError:
     # long is not defined in Python3
     INT_TYPES = (int, np.integer)
+
+
+def _broadcast_arrays(a, b):
+    """
+    Same as np.broadcast_arrays(a, b) but old writeability rules.
+
+    NumPy >= 1.17.0 transitions broadcast_arrays to return
+    read-only arrays. Set writeability explicitly to avoid warnings.
+    Retain the old writeability rules, as our Cython code assumes
+    the old behavior.
+    """
+    x, y = np.broadcast_arrays(a, b)
+    x.flags.writeable = a.flags.writeable
+    y.flags.writeable = b.flags.writeable
+    return x, y
 
 
 class IndexMixin(object):
@@ -47,12 +60,12 @@ class IndexMixin(object):
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 raise IndexError('index results in >2 dimensions')
-            elif row.shape[1] == 1 and col.ndim == 1:
+            elif row.shape[1] == 1 and (col.ndim == 1 or col.shape[0] == 1):
                 # special case for outer indexing
-                return self._get_columnXarray(row[:,0], col)
+                return self._get_columnXarray(row[:,0], col.ravel())
 
         # The only remaining case is inner (fancy) indexing
-        row, col = np.broadcast_arrays(row, col)
+        row, col = _broadcast_arrays(row, col)
         if row.shape != col.shape:
             raise IndexError('number of row and column indices differ')
         if row.size == 0:
@@ -81,7 +94,7 @@ class IndexMixin(object):
         else:
             col = np.atleast_1d(col)
 
-        i, j = np.broadcast_arrays(row, col)
+        i, j = _broadcast_arrays(row, col)
         if i.shape != j.shape:
             raise IndexError('number of row and column indices differ')
 
@@ -96,7 +109,7 @@ class IndexMixin(object):
             if not ((broadcast_row or x.shape[0] == i.shape[0]) and
                     (broadcast_col or x.shape[1] == i.shape[1])):
                 raise ValueError('shape mismatch in assignment')
-            if x.size == 0:
+            if x.shape[0] == 0 or x.shape[1] == 0:
                 return
             x = x.tocoo(copy=True)
             x.sum_duplicates()
@@ -104,11 +117,11 @@ class IndexMixin(object):
         else:
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
-            x, _ = np.broadcast_arrays(x, i)
-            if x.shape != i.shape:
-                raise ValueError("shape mismatch in assignment")
+            if x.squeeze().shape != i.squeeze().shape:
+                x = np.broadcast_to(x, i.shape)
             if x.size == 0:
                 return
+            x = x.reshape(i.shape)
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
@@ -142,8 +155,8 @@ class IndexMixin(object):
         """
         try:
             x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError):
-            raise IndexError('invalid index')
+        except (ValueError, TypeError, MemoryError) as e:
+            raise IndexError('invalid index') from e
 
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')
@@ -226,7 +239,7 @@ class IndexMixin(object):
     def _set_arrayXarray_sparse(self, row, col, x):
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, row)
+        x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
 
@@ -252,8 +265,13 @@ def _unpack_index(index):
         else:
             raise IndexError('invalid number of indices')
     else:
-        row, col = index, slice(None)
-
+        idx = _compatible_boolean_index(index)
+        if idx is None:
+            row, col = index, slice(None)
+        elif idx.ndim < 2:
+            return _boolean_index_to_array(idx), slice(None)
+        elif idx.ndim == 2:
+            return idx.nonzero()
     # Next, check for validity and transform the index as needed.
     if isspmatrix(row) or isspmatrix(col):
         # Supporting sparse boolean indexing with both row and col does
@@ -262,10 +280,12 @@ def _unpack_index(index):
             'Indexing with sparse matrices is not supported '
             'except boolean indexing where matrix and index '
             'are equal shapes.')
-    if isinstance(row, np.ndarray) and row.dtype.kind == 'b':
-        row = _boolean_index_to_array(row)
-    if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
-        col = _boolean_index_to_array(col)
+    bool_row = _compatible_boolean_index(row)
+    bool_col = _compatible_boolean_index(col)
+    if bool_row is not None:
+        row = _boolean_index_to_array(bool_row)
+    if bool_col is not None:
+        col = _boolean_index_to_array(bool_col)
     return row, col
 
 
@@ -308,8 +328,41 @@ def _check_ellipsis(index):
     return index[:first_ellipsis] + (slice(None),)*nslice + tuple(tail)
 
 
+def _maybe_bool_ndarray(idx):
+    """Returns a compatible array if elements are boolean.
+    """
+    idx = np.asanyarray(idx)
+    if idx.dtype.kind == 'b':
+        return idx
+    return None
+
+
+def _first_element_bool(idx, max_dim=2):
+    """Returns True if first element of the incompatible
+    array type is boolean.
+    """
+    if max_dim < 1:
+        return None
+    try:
+        first = next(iter(idx), None)
+    except TypeError:
+        return None
+    if isinstance(first, bool):
+        return True
+    return _first_element_bool(first, max_dim-1)
+
+
+def _compatible_boolean_index(idx):
+    """Returns a boolean index array that can be converted to
+    integer array. Returns None if no such array exists.
+    """
+    # Presence of attribute `ndim` indicates a compatible array type.
+    if hasattr(idx, 'ndim') or _first_element_bool(idx):
+        return _maybe_bool_ndarray(idx)
+    return None
+
+
 def _boolean_index_to_array(idx):
     if idx.ndim > 1:
         raise IndexError('invalid index shape')
-    return idx.nonzero()[0]
-
+    return np.where(idx)[0]

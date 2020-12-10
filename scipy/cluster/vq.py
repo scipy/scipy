@@ -3,7 +3,7 @@ K-means clustering and vector quantization (:mod:`scipy.cluster.vq`)
 ====================================================================
 
 Provides routines for k-means clustering, generating code books
-from k-means models, and quantizing vectors by comparing them with
+from k-means models and quantizing vectors by comparing them with
 centroids in a code book.
 
 .. autosummary::
@@ -11,20 +11,20 @@ centroids in a code book.
 
    whiten -- Normalize a group of observations so each feature has unit variance
    vq -- Calculate code book membership of a set of observation vectors
-   kmeans -- Performs k-means on a set of observation vectors forming k clusters
+   kmeans -- Perform k-means on a set of observation vectors forming k clusters
    kmeans2 -- A different implementation of k-means with more methods
            -- for initializing centroids
 
 Background information
 ----------------------
 The k-means algorithm takes as input the number of clusters to
-generate, k, and a set of observation vectors to cluster.  It
-returns a set of centroids, one for each of the k clusters.  An
+generate, k, and a set of observation vectors to cluster. It
+returns a set of centroids, one for each of the k clusters. An
 observation vector is classified with the cluster number or
 centroid index of the centroid closest to it.
 
 A vector v belongs to cluster i if it is closer to centroid i than
-any other centroids. If v belongs to i, we say centroid i is the
+any other centroid. If v belongs to i, we say centroid i is the
 dominating centroid of v. The k-means algorithm tries to
 minimize distortion, which is defined as the sum of the squared distances
 between each observation vector and its dominating centroid.
@@ -34,43 +34,40 @@ a configuration is reached in which the centroids are stable. One can
 also define a maximum number of iterations.
 
 Since vector quantization is a natural application for k-means,
-information theory terminology is often used.  The centroid index
+information theory terminology is often used. The centroid index
 or cluster index is also referred to as a "code" and the table
-mapping codes to centroids and vice versa is often referred as a
+mapping codes to centroids and, vice versa, is often referred to as a
 "code book". The result of k-means, a set of centroids, can be
 used to quantize vectors. Quantization aims to find an encoding of
 vectors that reduces the expected distortion.
 
-All routines expect obs to be a M by N array where the rows are
-the observation vectors. The codebook is a k by N array where the
-i'th row is the centroid of code word i. The observation vectors
+All routines expect obs to be an M by N array, where the rows are
+the observation vectors. The codebook is a k by N array, where the
+ith row is the centroid of code word i. The observation vectors
 and centroids have the same feature dimension.
 
 As an example, suppose we wish to compress a 24-bit color image
 (each pixel is represented by one byte for red, one for blue, and
-one for green) before sending it over the web.  By using a smaller
+one for green) before sending it over the web. By using a smaller
 8-bit encoding, we can reduce the amount of data by two
 thirds. Ideally, the colors for each of the 256 possible 8-bit
 encoding values should be chosen to minimize distortion of the
 color. Running k-means with k=256 generates a code book of 256
-codes, which fills up all possible 8-bit sequences.  Instead of
+codes, which fills up all possible 8-bit sequences. Instead of
 sending a 3-byte value for each pixel, the 8-bit centroid index
 (or code word) of the dominating centroid is transmitted. The code
 book is also sent over the wire so each 8-bit code can be
 translated back to a 24-bit pixel value representation. If the
 image of interest was of an ocean, we would expect many 24-bit
 blues to be represented by 8-bit codes. If it was an image of a
-human face, more flesh tone colors would be represented in the
+human face, more flesh-tone colors would be represented in the
 code book.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._util import _asarray_validated
-from scipy._lib.six import xrange
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -89,9 +86,10 @@ def whiten(obs, check_finite=True):
     Normalize a group of observations on a per feature basis.
 
     Before running k-means, it is beneficial to rescale each feature
-    dimension of the observation set with whitening. Each feature is
-    divided by its standard deviation across all observations to give
-    it unit variance.
+    dimension of the observation set by its standard deviation (i.e. "whiten"
+    it - as in "white noise" where each frequency has equal power).
+    Each feature is divided by its standard deviation across all observations
+    to give it unit variance.
 
     Parameters
     ----------
@@ -150,14 +148,14 @@ def vq(obs, code_book, check_finite=True):
     centroid.
 
     The features in `obs` should have unit variance, which can be
-    achieved by passing them through the whiten function.  The code
+    achieved by passing them through the whiten function. The code
     book can be created with the k-means algorithm or a different
     encoding algorithm.
 
     Parameters
     ----------
     obs : ndarray
-        Each row of the 'M' x 'N' array is an observation.  The columns are
+        Each row of the 'M' x 'N' array is an observation. The columns are
         the "features" seen during each observation. The features must be
         whitened first using the whiten function or something equivalent.
     code_book : ndarray
@@ -213,7 +211,7 @@ def vq(obs, code_book, check_finite=True):
 def py_vq(obs, code_book, check_finite=True):
     """ Python version of vq algorithm.
 
-    The algorithm computes the euclidian distance between each
+    The algorithm computes the Euclidean distance between each
     observation and every frame in the code_book.
 
     Parameters
@@ -222,7 +220,7 @@ def py_vq(obs, code_book, check_finite=True):
         Expects a rank 2 array. Each row is one observation.
     code_book : ndarray
         Code book to use. Same format than obs. Should have same number of
-        features (eg columns) than obs.
+        features (e.g., columns) than obs.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -232,7 +230,7 @@ def py_vq(obs, code_book, check_finite=True):
     Returns
     -------
     code : ndarray
-        code[i] gives the label of the ith obversation, that its code is
+        code[i] gives the label of the ith obversation; its code is
         code_book[code[i]].
     mind_dist : ndarray
         min_dist[i] gives the distance between the ith observation and its
@@ -241,7 +239,7 @@ def py_vq(obs, code_book, check_finite=True):
     Notes
     -----
     This function is slower than the C version but works for
-    all input types.  If the inputs have the wrong types for the
+    all input types. If the inputs have the wrong types for the
     C versions of the function, this one is called as a last resort.
 
     It is about 20 times slower than the C version.
@@ -273,9 +271,9 @@ def _kmeans(obs, guess, thresh=1e-5):
     Returns
     -------
     code_book
-        the lowest distortion codebook found.
+        The lowest distortion codebook found.
     avg_dist
-        the average distance a observation is from a code in the book.
+        The average distance a observation is from a code in the book.
         Lower means the code_book matches the data better.
 
     See Also
@@ -355,7 +353,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     thresh : float, optional
        Terminates the k-means algorithm if the change in
        distortion since the last k-means iteration is less than
-       or equal to thresh.
+       or equal to threshold.
 
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -366,7 +364,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     Returns
     -------
     codebook : ndarray
-       A k by N array of k centroids. The i'th centroid
+       A k by N array of k centroids. The ith centroid
        codebook[i] is represented with the code i. The centroids
        and codes generated represent the lowest distortion seen,
        not necessarily the globally minimal distortion.
@@ -374,7 +372,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     distortion : float
        The mean (non-squared) Euclidean distance between the observations
        passed and the centroids generated. Note the difference to the standard
-       definition of distortion in the context of the K-means algorithm, which
+       definition of distortion in the context of the k-means algorithm, which
        is the sum of the squared distances.
 
     See Also
@@ -451,7 +449,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     # initialize best distance value to a large value
     best_dist = np.inf
-    for i in xrange(iter):
+    for i in range(iter):
         # the initial code book is randomly selected from observations
         guess = _kpoints(obs, k)
         book, dist = _kmeans(obs, guess, thresh=thresh)
@@ -473,7 +471,7 @@ def _kpoints(data, k):
     k : int
         Number of samples to generate.
 
-   Returns
+    Returns
     -------
     x : ndarray
         A 'k' by 'N' containing the initial centroids
@@ -484,16 +482,16 @@ def _kpoints(data, k):
 
 
 def _krandinit(data, k):
-    """Returns k samples of a random variable which parameters depend on data.
+    """Returns k samples of a random variable whose parameters depend on data.
 
     More precisely, it returns k observations sampled from a Gaussian random
-    variable which mean and covariances are the one estimated from data.
+    variable whose mean and covariances are the ones estimated from the data.
 
     Parameters
     ----------
     data : ndarray
-        Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
-        dimensional data, rank 2 multidimensional data, in which case one
+        Expect a rank 1 or 2 array. Rank 1 is assumed to describe 1-D
+        data, rank 2 multidimensional data, in which case one
         row is one observation.
     k : int
         Number of samples to generate.
@@ -529,13 +527,13 @@ def _krandinit(data, k):
 
 
 def _kpp(data, k):
-    """ Picks k points in data based on the kmeans++ method
+    """ Picks k points in the data based on the kmeans++ method.
 
     Parameters
     ----------
     data : ndarray
-        Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
-        dimensional data, rank 2 multidimensional data, in which case one
+        Expect a rank 1 or 2 array. Rank 1 is assumed to describe 1-D
+        data, rank 2 multidimensional data, in which case one
         row is one observation.
     k : int
         Number of samples to generate.
@@ -543,7 +541,7 @@ def _kpp(data, k):
     Returns
     -------
     init : ndarray
-        A 'k' by 'N' containing the initial centroids
+        A 'k' by 'N' containing the initial centroids.
 
     References
     ----------
@@ -557,12 +555,10 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[np.random.randint(data.shape[0])]
 
         else:
-            D2 = np.array([min(
-                            [np.inner(init[j]-x, init[j]-x) for j in range(i)]
-                            ) for x in data])
+            D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
@@ -581,7 +577,7 @@ def _missing_warn():
 
 
 def _missing_raise():
-    """raise a ClusterError when called."""
+    """Raise a ClusterError when called."""
     raise ClusterError("One of the clusters is empty. "
                        "Re-run kmeans with a different initialization.")
 
@@ -594,7 +590,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
-    The algorithm attempts to minimize the Euclidian distance between
+    The algorithm attempts to minimize the Euclidean distance between
     observations and centroids. Several initialization methods are
     included.
 
@@ -602,7 +598,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     ----------
     data : ndarray
         A 'M' by 'N' array of 'M' observations in 'N' dimensions or a length
-        'M' array of 'M' one-dimensional observations.
+        'M' array of 'M' 1-D observations.
     k : int or ndarray
         The number of clusters to form as well as the number of
         centroids to generate. If `minit` initialization string is
@@ -628,7 +624,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         (careful seeding)
 
         'matrix': interpret the k parameter as a k by M (or length k
-        array for one-dimensional data) array of initial centroids.
+        array for 1-D data) array of initial centroids.
     missing : str, optional
         Method to deal with empty clusters. Available methods are
         'warn' and 'raise':
@@ -649,21 +645,68 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         k-means.
     label : ndarray
         label[i] is the code or index of the centroid the
-        i'th observation is closest to.
+        ith observation is closest to.
+
+    See Also
+    --------
+    kmeans
 
     References
     ----------
     .. [1] D. Arthur and S. Vassilvitskii, "k-means++: the advantages of
        careful seeding", Proceedings of the Eighteenth Annual ACM-SIAM Symposium
        on Discrete Algorithms, 2007.
+
+    Examples
+    --------
+    >>> from scipy.cluster.vq import kmeans2
+    >>> import matplotlib.pyplot as plt
+
+    Create z, an array with shape (100, 2) containing a mixture of samples
+    from three multivariate normal distributions.
+
+    >>> np.random.seed(12345678)
+    >>> a = np.random.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
+    >>> b = np.random.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
+    >>> c = np.random.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
+    >>> z = np.concatenate((a, b, c))
+    >>> np.random.shuffle(z)
+
+    Compute three clusters.
+
+    >>> centroid, label = kmeans2(z, 3, minit='points')
+    >>> centroid
+    array([[-0.35770296,  5.31342524],
+           [ 2.32210289, -0.50551972],
+           [ 6.17653859,  4.16719247]])
+
+    How many points are in each cluster?
+
+    >>> counts = np.bincount(label)
+    >>> counts
+    array([52, 27, 21])
+
+    Plot the clusters.
+
+    >>> w0 = z[label == 0]
+    >>> w1 = z[label == 1]
+    >>> w2 = z[label == 2]
+    >>> plt.plot(w0[:, 0], w0[:, 1], 'o', alpha=0.5, label='cluster 0')
+    >>> plt.plot(w1[:, 0], w1[:, 1], 'd', alpha=0.5, label='cluster 1')
+    >>> plt.plot(w2[:, 0], w2[:, 1], 's', alpha=0.5, label='cluster 2')
+    >>> plt.plot(centroid[:, 0], centroid[:, 1], 'k*', label='centroids')
+    >>> plt.axis('equal')
+    >>> plt.legend(shadow=True)
+    >>> plt.show()
+
     """
     if int(iter) < 1:
         raise ValueError("Invalid iter (%s), "
                          "must be a positive integer." % iter)
     try:
         miss_meth = _valid_miss_meth[missing]
-    except KeyError:
-        raise ValueError("Unknown missing method %r" % (missing,))
+    except KeyError as e:
+        raise ValueError("Unknown missing method %r" % (missing,)) from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -676,7 +719,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     if data.size < 1:
         raise ValueError("Empty input is not supported.")
 
-    # If k is not a single value it should be compatible with data's shape
+    # If k is not a single value, it should be compatible with data's shape
     if minit == 'matrix' or not np.isscalar(k):
         code_book = np.array(k, copy=True)
         if data.ndim != code_book.ndim:
@@ -695,12 +738,12 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         try:
             init_meth = _valid_init_meth[minit]
-        except KeyError:
-            raise ValueError("Unknown init method %r" % (minit,))
+        except KeyError as e:
+            raise ValueError("Unknown init method %r" % (minit,)) from e
         else:
             code_book = init_meth(data, k)
 
-    for i in xrange(iter):
+    for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book)[0]
         # Update the code book by computing centroids

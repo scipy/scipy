@@ -13,4 +13,9 @@ npy_cdouble wrightomega(npy_cdouble zp)
     return npy_cpack(real(w), imag(w));
 }
 
+double wrightomega_real(double x)
+{
+  return wright::wrightomega_real(x);
+}
+
 EXTERN_C_END

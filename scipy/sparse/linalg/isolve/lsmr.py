@@ -16,11 +16,9 @@ Dept of MS&E, Stanford University.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['lsmr']
 
-from numpy import zeros, infty, atleast_1d
+from numpy import zeros, infty, atleast_1d, result_type
 from numpy.linalg import norm
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
@@ -34,8 +32,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     lsmr solves the system of linear equations ``Ax = b``. If the system
     is inconsistent, it solves the least-squares problem ``min ||b - Ax||_2``.
-    A is a rectangular matrix of dimension m-by-n, where all cases are
-    allowed: m = n, m > n, or m < n. B is a vector of length m.
+    ``A`` is a rectangular matrix of dimension m-by-n, where all cases are
+    allowed: m = n, m > n, or m < n. ``b`` is a vector of length m.
     The matrix A may be dense or sparse (usually sparse).
 
     Parameters
@@ -43,10 +41,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     A : {matrix, sparse matrix, ndarray, LinearOperator}
         Matrix A in the linear system.
         Alternatively, ``A`` can be a linear operator which can
-        produce ``Ax`` and ``A^T x`` using, e.g.,
+        produce ``Ax`` and ``A^H x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : array_like, shape (m,)
-        Vector b in the linear system.
+        Vector ``b`` in the linear system.
     damp : float
         Damping factor for regularized least-squares. `lsmr` solves
         the regularized least-squares problem::
@@ -63,15 +61,15 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         residual vector for the current approximate solution ``x``.
         If ``Ax = b`` seems to be consistent, ``lsmr`` terminates
         when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
-        Otherwise, lsmr terminates when ``norm(A^{T} r) <=
+        Otherwise, lsmr terminates when ``norm(A^H r) <=
         atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (say),
         the final ``norm(r)`` should be accurate to about 6
-        digits. (The final x will usually have fewer correct digits,
+        digits. (The final ``x`` will usually have fewer correct digits,
         depending on ``cond(A)`` and the size of LAMBDA.)  If `atol`
         or `btol` is None, a default value of 1.0e-6 will be used.
         Ideally, they should be estimates of the relative error in the
-        entries of A and B respectively.  For example, if the entries
-        of `A` have 7 correct digits, set atol = 1e-7. This prevents
+        entries of ``A`` and ``b`` respectively.  For example, if the entries
+        of ``A`` have 7 correct digits, set ``atol = 1e-7``. This prevents
         the algorithm from doing unnecessary work beyond the
         uncertainty of the input data.
     conlim : float, optional
@@ -90,9 +88,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     show : bool, optional
         Print iterations logs if ``show=True``.
     x0 : array_like, shape (n,), optional
-        Initial guess of x, if None zeros are used.
+        Initial guess of ``x``, if None zeros are used.
 
         .. versionadded:: 1.0.0
+        
     Returns
     -------
     x : ndarray of float
@@ -119,7 +118,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     normr : float
         ``norm(b-Ax)``
     normar : float
-        ``norm(A^T (b - Ax))``
+        ``norm(A^H (b - Ax))``
     norma : float
         ``norm(A)``
     conda : float
@@ -137,7 +136,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     .. [1] D. C.-L. Fong and M. A. Saunders,
            "LSMR: An iterative algorithm for sparse least-squares problems",
            SIAM J. Sci. Comput., vol. 33, pp. 2950-2971, 2011.
-           https://arxiv.org/abs/1006.0758
+           :arxiv:`1006.0758`
     .. [2] LSMR Software, https://web.stanford.edu/group/SOL/software/lsmr/
 
     Examples
@@ -208,7 +207,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
          'Cond(Abar) seems to be too large for this machine         ',
          'The iteration limit has been reached                      ')
 
-    hdg1 = '   itn      x(1)       norm r    norm A''r'
+    hdg1 = '   itn      x(1)       norm r    norm Ar'
     hdg2 = ' compatible   LS      norm A   cond A'
     pfreq = 20   # print frequency (for repeating the heading)
     pcount = 0   # print counter
@@ -221,10 +220,15 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if maxiter is None:
         maxiter = minDim
 
+    if x0 is None:
+        dtype = result_type(A, b, float)
+    else:
+        dtype = result_type(A, b, x0, float)
+
     if show:
         print(' ')
         print('LSMR            Least-squares solution of  Ax = b\n')
-        print('The matrix A has %8g rows  and %8g cols' % (m, n))
+        print(f'The matrix A has {m} rows and {n} columns')
         print('damp = %20.14e\n' % (damp))
         print('atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim))
         print('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))
@@ -232,7 +236,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     u = b
     normb = norm(b)
     if x0 is None:
-        x = zeros(n)
+        x = zeros(n, dtype)
         beta = normb.copy()
     else:
         x = atleast_1d(x0)
@@ -244,7 +248,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         v = A.rmatvec(u)
         alpha = norm(v)
     else:
-        v = zeros(n)
+        v = zeros(n, dtype)
         alpha = 0
 
     if alpha > 0:
@@ -261,7 +265,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     sbar = 0
 
     h = v.copy()
-    hbar = zeros(n)
+    hbar = zeros(n, dtype)
 
     # Initialize variables for estimation of ||r||.
 

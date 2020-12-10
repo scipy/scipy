@@ -5,8 +5,6 @@ gh_lists.py MILESTONE
 
 Functions for Github API requests.
 """
-from __future__ import print_function, division, absolute_import
-
 import os
 import re
 import sys
@@ -165,9 +163,9 @@ class GithubGet(object):
     def get_multipage(self, url):
         data = []
         while url:
-            page_data, info = self.get(url)
+            page_data, info, next_url = self.get(url)
             data += page_data
-            url = info['Next']
+            url = next_url
         return data
 
     def get(self, url):
@@ -189,7 +187,7 @@ class GithubGet(object):
                 req = self.urlopen(url)
                 try:
                     code = req.getcode()
-                    info = dict(req.info())
+                    info = req.info()
                     data = json.loads(req.read().decode('utf-8'))
                 finally:
                     req.close()
@@ -202,11 +200,11 @@ class GithubGet(object):
                 raise RuntimeError()
 
             # Parse reply
-            info['Next'] = None
+            next_url = None
             if 'Link' in info:
                 m = re.search('<([^<>]*)>; rel="next"', info['Link'])
                 if m:
-                    info['Next'] = m.group(1)
+                    next_url = m.group(1)
 
             # Update rate limit info
             if 'X-RateLimit-Remaining' in info:
@@ -222,7 +220,7 @@ class GithubGet(object):
                     raise RuntimeError()
 
             # Done.
-            return data, info
+            return data, info, next_url
 
 
 if __name__ == "__main__":

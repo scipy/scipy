@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import csc_matrix, issparse, eye
@@ -98,6 +97,7 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
     dW_norm_old = None
     dW = np.empty_like(W)
     converged = False
+    rate = None
     for k in range(NEWTON_MAXITER):
         for i in range(3):
             F[i] = fun(t + ch[i], y + Z[i])
@@ -118,8 +118,6 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         dW_norm = norm(dW / scale)
         if dW_norm_old is not None:
             rate = dW_norm / dW_norm_old
-        else:
-            rate = None
 
         if (rate is not None and (rate >= 1 or
                 rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol)):
@@ -192,7 +190,7 @@ class Radau(OdeSolver):
         Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
         It can either have shape (n,); then ``fun`` must return array_like with
         shape (n,). Alternatively it can have shape (n, k); then ``fun``
-        must return an array_like with shape (n, k), i.e. each column
+        must return an array_like with shape (n, k), i.e., each column
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows a faster approximation of the Jacobian
@@ -208,7 +206,7 @@ class Radau(OdeSolver):
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step size is not
+        Maximum allowed step size. Default is np.inf, i.e., the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error

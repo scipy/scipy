@@ -1,19 +1,18 @@
 """ Utility functions for sparse matrix module
 """
 
-from __future__ import division, print_function, absolute_import
-
+import sys
 import operator
 import warnings
 import numpy as np
+from scipy._lib._util import prod
 
 __all__ = ['upcast', 'getdtype', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
-supported_dtypes = ['bool', 'int8', 'uint8', 'short', 'ushort', 'intc',
-                    'uintc', 'longlong', 'ulonglong', 'single', 'double',
-                    'longdouble', 'csingle', 'cdouble', 'clongdouble']
-supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
+supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
 
@@ -94,9 +93,9 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing.  If 'dtype' is not
+    """Function used to simplify argument processing. If 'dtype' is not
     specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument.  If 'dtype' and 'a'
+    object created from the specified dtype argument. If 'dtype' and 'a'
     are both None, construct a data type out of the 'default' parameter.
     Furthermore, 'dtype' must be in 'allowed' set.
     """
@@ -104,11 +103,11 @@ def getdtype(dtype, a=None, default=None):
     if dtype is None:
         try:
             newdtype = a.dtype
-        except AttributeError:
+        except AttributeError as e:
             if default is not None:
                 newdtype = np.dtype(default)
             else:
-                raise TypeError("could not interpret data type")
+                raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
@@ -286,18 +285,18 @@ def check_shape(args, current_shape=None):
 
     else:
         # Check the current size only if needed
-        current_size = np.prod(current_shape, dtype=int)
+        current_size = prod(current_shape)
 
         # Check for negatives
         negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
         if len(negative_indexes) == 0:
-            new_size = np.prod(new_shape, dtype=int)
+            new_size = prod(new_shape)
             if new_size != current_size:
                 raise ValueError('cannot reshape array of size {} into shape {}'
                                  .format(current_size, new_shape))
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
-            specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
+            specified = prod(new_shape[0:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
@@ -307,17 +306,8 @@ def check_shape(args, current_shape=None):
         else:
             raise ValueError('can only specify one unknown dimension')
 
-        # Add and remove ones like numpy.matrix.reshape
-        if len(new_shape) != 2:
-            new_shape = tuple(arg for arg in new_shape if arg != 1)
-
-            if len(new_shape) == 0:
-                new_shape = (1, 1)
-            elif len(new_shape) == 1:
-                new_shape = (1, new_shape[0])
-
-    if len(new_shape) > 2:
-        raise ValueError('shape too large to be a matrix')
+    if len(new_shape) != 2:
+        raise ValueError('matrix shape must be two-dimensional')
 
     return new_shape
 
@@ -339,25 +329,26 @@ def check_reshape_kwargs(kwargs):
     return order, copy
 
 
+def is_pydata_spmatrix(m):
+    """
+    Check whether object is pydata/sparse matrix, avoiding importing the module.
+    """
+    base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
+    return base_cls is not None and isinstance(m, base_cls)
+
+
 ###############################################################################
 # Wrappers for NumPy types that are deprecated
 
+# Numpy versions of these functions raise deprecation warnings, the
+# ones below do not.
+
+
 def matrix(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.matrix(*args, **kwargs)
+    return np.array(*args, **kwargs).view(np.matrix)
 
 
-def asmatrix(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.asmatrix(*args, **kwargs)
-
-
-def bmat(*args, **kwargs):
-    with warnings.catch_warnings(record=True):
-        warnings.filterwarnings(
-            'ignore', '.*the matrix subclass is not the recommended way.*')
-        return np.bmat(*args, **kwargs)
+def asmatrix(data, dtype=None):
+    if isinstance(data, np.matrix) and (dtype is None or data.dtype == dtype):
+        return data
+    return np.asarray(data, dtype=dtype).view(np.matrix)

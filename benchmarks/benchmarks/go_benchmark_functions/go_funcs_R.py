@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import abs, sum, sin, cos, asarray, arange, pi, exp, log, sqrt
 from scipy.optimize import rosen
 from .go_benchmark import Benchmark

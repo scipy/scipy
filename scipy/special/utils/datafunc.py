@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import csv
 
 import numpy as np

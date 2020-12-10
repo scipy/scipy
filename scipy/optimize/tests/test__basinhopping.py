@@ -1,10 +1,10 @@
 """
 Unit tests for the basin hopping global minimization algorithm.
 """
-from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import assert_almost_equal, assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
@@ -12,6 +12,7 @@ from numpy import cos, sin
 from scipy.optimize import basinhopping, OptimizeResult
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
+from scipy._lib._pep440 import Version
 
 
 def func1d(x):
@@ -87,7 +88,7 @@ class MyAcceptTest(object):
 class MyCallBack(object):
     """pass a custom callback function
 
-    This makes sure it's being used.  It also returns True after 10
+    This makes sure it's being used. It also returns True after 10
     steps to ensure that it's stopping early.
 
     """
@@ -134,7 +135,7 @@ class TestBasinHopping(object):
                       accept_test=1)
 
     def test_1d_grad(self):
-        # test 1d minimizations with gradient
+        # test 1-D minimizations with gradient
         i = 0
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
@@ -161,7 +162,7 @@ class TestBasinHopping(object):
         assert_equal(res.nfev, res.njev)
 
     def test_jac(self):
-        # test jacobian returned
+        # test Jacobian returned
         minimizer_kwargs = self.kwargs.copy()
         # BFGS returns a Jacobian
         minimizer_kwargs["method"] = "BFGS"
@@ -172,13 +173,13 @@ class TestBasinHopping(object):
 
         assert_(hasattr(res.lowest_optimization_result, "jac"))
 
-        # in this case, the jacobian is just [df/dx, df/dy]
+        # in this case, the Jacobian is just [df/dx, df/dy]
         _, jacobian = func2d_easyderiv(res.x)
         assert_almost_equal(res.lowest_optimization_result.jac, jacobian,
                             self.tol)
 
     def test_2d_nograd(self):
-        # test 2d minimizations without gradient
+        # test 2-D minimizations without gradient
         i = 1
         res = basinhopping(func2d_nograd, self.x0[i],
                            minimizer_kwargs=self.kwargs_nograd,
@@ -186,7 +187,7 @@ class TestBasinHopping(object):
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_minimizers(self):
-        # test 2d minimizations with gradient.  Nelder-Mead, Powell and COBYLA
+        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, and COBYLA
         # don't accept jac=True, so aren't included here.
         i = 1
         methods = ['CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'SLSQP']
@@ -199,7 +200,7 @@ class TestBasinHopping(object):
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_nograd_minimizers(self):
-        # test 2d minimizations without gradient.  Newton-CG requires jac=True,
+        # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.
         i = 1
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
@@ -226,7 +227,7 @@ class TestBasinHopping(object):
                            take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
-        # make sure that the built in adaptive step size has been used
+        # make sure that the build in adaptive step size has been used
         assert_(initial_step_size != takestep.stepsize)
 
     def test_pass_simple_takestep(self):
@@ -252,7 +253,7 @@ class TestBasinHopping(object):
 
     def test_pass_callback(self):
         # test passing a custom callback function
-        # This makes sure it's being used.  It also returns True after 10 steps
+        # This makes sure it's being used. It also returns True after 10 steps
         # to ensure that it's stopping early.
         callback = MyCallBack()
         i = 1
@@ -261,7 +262,10 @@ class TestBasinHopping(object):
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
-        assert_equal(res.nit, 10)
+        # One of the calls of MyCallBack is during BasinHoppingRunner
+        # construction, so there are only 9 remaining before MyCallBack stops
+        # the minimization.
+        assert_equal(res.nit, 9)
 
     def test_minimizer_fail(self):
         # test if a minimizer fails
@@ -301,8 +305,26 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_gen(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        rng = np.random.default_rng(1)
+
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        res1 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+
+        rng = np.random.default_rng(1)
+        res2 = basinhopping(func2d, [1.0, 1.0],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=10, seed=rng)
+        assert_equal(res1.x, res2.x)
+
     def test_monotonic_basin_hopping(self):
-        # test 1d minimizations with gradient and T=0
+        # test 1-D minimizations with gradient and T=0
         i = 0
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp, T=0)
@@ -366,7 +388,7 @@ class Test_Metropolis(object):
         self.met = Metropolis(self.T)
 
     def test_boolean_return(self):
-        # the return must be a bool.  else an error will be raised in
+        # the return must be a bool, else an error will be raised in
         # basinhopping
         ret = self.met(f_new=0., f_old=1.)
         assert isinstance(ret, bool)

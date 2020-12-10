@@ -2,17 +2,23 @@
 Unit tests for the differential global minimization algorithm.
 """
 import multiprocessing
+import platform
 
-from scipy.optimize import _differentialevolution
-from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
+from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
+                                                   _ConstraintWrapper)
 from scipy.optimize import differential_evolution
-from scipy.optimize._constraints import Bounds
-import numpy as np
+from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
+                                         LinearConstraint)
 from scipy.optimize import rosen
+from scipy.sparse import csr_matrix
+from scipy._lib._pep440 import Version
+
+import numpy as np
 from numpy.testing import (assert_equal, assert_allclose,
-                           assert_almost_equal,
-                           assert_string_equal, assert_)
+                           assert_almost_equal, assert_array_equal,
+                           assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
+import pytest
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -228,15 +234,26 @@ class TestDifferentialEvolutionSolver(object):
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
+        expected_msg = 'callback function requested stop early by returning True'
 
-        def callback(param, convergence=0.):
+        def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        assert_string_equal(result.message, expected_msg)
 
-        assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+        def callback_evaluates_true(param, convergence=0.):
+            # DE should stop if bool(self.callback) is True
+            return [10]
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
+        assert_string_equal(result.message, expected_msg)
+
+        def callback_evaluates_false(param, convergence=0.):
+            return []
+
+        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        assert result.success
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
@@ -375,6 +392,22 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
+                        reason='Generator not available for numpy, < 1.17')
+    def test_random_generator(self):
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        # obtain a np.random.Generator object
+        rng = np.random.default_rng()
+
+        inits = ['random', 'latinhypercube']
+        for init in inits:
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   seed=rng,
+                                   tol=0.5,
+                                   init=init)
+
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
         solver = DifferentialEvolutionSolver(rosen,
@@ -401,7 +434,7 @@ class TestDifferentialEvolutionSolver(object):
         differential_evolution(rosen, bounds, popsize=49, maxiter=1)
 
     def test_calculate_population_energies(self):
-        # if popsize is 3 then the overall generation has size (6,)
+        # if popsize is 3, then the overall generation has size (6,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3)
         solver._calculate_population_energies(solver.population)
         solver._promote_lowest_energy()
@@ -412,7 +445,7 @@ class TestDifferentialEvolutionSolver(object):
 
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
-        # if popsize is 3 then the overall generation has size (6,)
+        # if popsize is 3, then the overall generation has size (6,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
                                              maxfun=12)
         x, fun = next(solver)
@@ -427,11 +460,11 @@ class TestDifferentialEvolutionSolver(object):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        x_prev, fun_prev = next(solver)
+        _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
             assert(fun_prev >= fun_current)
-            x_prev, fun_prev = x_current, fun_current
+            _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:
                 break
@@ -474,7 +507,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-        # we should be able to initialise with our own array
+        # we should be able to initialize with our own array
         population = np.linspace(-1, 3, 10).reshape(5, 2)
         solver = DifferentialEvolutionSolver(rosen, self.bounds,
                                              init=population,
@@ -486,7 +519,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver.num_population_members == 5)
         assert_(solver.population_shape == (5, 2))
 
-        # check that the population was initialised correctly
+        # check that the population was initialized correctly
         unscaled_population = np.clip(solver._unscale_parameters(population),
                                       0, 1)
         assert_almost_equal(solver.population[:5], unscaled_population)
@@ -495,7 +528,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_almost_equal(np.min(solver.population[:5]), 0)
         assert_almost_equal(np.max(solver.population[:5]), 1)
 
-        # shouldn't be able to initialise with an array if it's the wrong shape
+        # shouldn't be able to initialize with an array if it's the wrong shape
         # this would have too many parameters
         population = np.linspace(-1, 3, 15).reshape(5, 3)
         assert_raises(ValueError,
@@ -511,9 +544,7 @@ class TestDifferentialEvolutionSolver(object):
                 return np.inf
             return x[1]
         bounds = [(0, 1), (0, 1)]
-        x_fit = differential_evolution(sometimes_inf,
-                                       bounds=[(0, 1), (0, 1)],
-                                       disp=False)
+        differential_evolution(sometimes_inf, bounds=bounds, disp=False)
 
     def test_deferred_updating(self):
         # check setting of deferred updating, with default workers
@@ -530,13 +561,14 @@ class TestDifferentialEvolutionSolver(object):
         assert_(solver._updating == 'immediate')
 
         # should raise a UserWarning because the updating='immediate'
-        # is being overriden by the workers keyword
+        # is being overridden by the workers keyword
         with warns(UserWarning):
-            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
-            assert_(solver._updating == 'deferred')
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+                pass
+        assert_(solver._updating == 'deferred')
 
     def test_parallel(self):
-        # smoke test for parallelisation with deferred updating
+        # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
                 rosen, bounds, updating='deferred', workers=p.map) as solver:
@@ -554,3 +586,615 @@ class TestDifferentialEvolutionSolver(object):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
         solver.solve()
         assert_(solver.converged())
+
+    def test_constraint_violation_fn(self):
+        def constr_f(x):
+            return [x[0] + x[1]]
+
+        def constr_f2(x):
+            return [x[0]**2 + x[1], x[0] - x[1]]
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        cv = solver._constraint_violation_fn([1.0, 1.0])
+        assert_almost_equal(cv, 0.1)
+
+        nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc, nlc2))
+
+        # for multiple constraints the constraint violations should
+        # be concatenated.
+        cv = solver._constraint_violation_fn([1.2, 1.])
+        assert_almost_equal(cv, [0.3, 0.64, 0])
+
+        cv = solver._constraint_violation_fn([2., 2.])
+        assert_almost_equal(cv, [2.1, 4.2, 0])
+
+        # should accept valid values
+        cv = solver._constraint_violation_fn([0.5, 0.5])
+        assert_almost_equal(cv, [0., 0., 0.])
+
+    def test_constraint_population_feasibilities(self):
+        def constr_f(x):
+            return [x[0] + x[1]]
+
+        def constr_f2(x):
+            return [x[0]**2 + x[1], x[0] - x[1]]
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        # are population feasibilities correct
+        # [0.5, 0.5] corresponds to scaled values of [1., 1.]
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [1., 1.]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1], [2.1]]))
+        assert cv.shape == (2, 1)
+
+        nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc, nlc2))
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [0.6, 0.5]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [0.3, 0.64, 0]]))
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.5, 0.5], [1., 1.]]))
+        assert_equal(feas, [False, False])
+        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [2.1, 4.2, 0]]))
+        assert cv.shape == (2, 3)
+
+        feas, cv = solver._calculate_population_feasibilities(
+            np.array([[0.25, 0.25], [1., 1.]]))
+        assert_equal(feas, [True, False])
+        assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
+        assert cv.shape == (2, 3)
+
+    def test_constraint_solve(self):
+        def constr_f(x):
+            return np.array([x[0] + x[1]])
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+
+        # trust-constr warns if the constraint function is linear
+        with warns(UserWarning):
+            res = solver.solve()
+
+        assert constr_f(res.x) <= 1.9
+        assert res.success
+
+    def test_impossible_constraint(self):
+        def constr_f(x):
+            return np.array([x[0] + x[1]])
+
+        nlc = NonlinearConstraint(constr_f, -np.inf, -1)
+
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc), popsize=3,
+                                             seed=1)
+
+        # a UserWarning is issued because the 'trust-constr' polishing is
+        # attempted on the least infeasible solution found.
+        with warns(UserWarning):
+            res = solver.solve()
+
+        assert res.maxcv > 0
+        assert not res.success
+
+        # test _promote_lowest_energy works when none of the population is
+        # feasible. In this case, the solution with the lowest constraint
+        # violation should be promoted.
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc), polish=False)
+        next(solver)
+        assert not solver.feasible.all()
+        assert not np.isfinite(solver.population_energies).all()
+
+        # now swap two of the entries in the population
+        l = 20
+        cv = solver.constraint_violation[0]
+
+        solver.population_energies[[0, l]] = solver.population_energies[[l, 0]]
+        solver.population[[0, l], :] = solver.population[[l, 0], :]
+        solver.constraint_violation[[0, l], :] = (
+            solver.constraint_violation[[l, 0], :])
+
+        solver._promote_lowest_energy()
+        assert_equal(solver.constraint_violation[0], cv)
+
+    def test_accept_trial(self):
+        # _accept_trial(self, energy_trial, feasible_trial, cv_trial,
+        #               energy_orig, feasible_orig, cv_orig)
+        def constr_f(x):
+            return [x[0] + x[1]]
+        nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc))
+        fn = solver._accept_trial
+        # both solutions are feasible, select lower energy
+        assert fn(0.1, True, np.array([0.]), 1.0, True, np.array([0.]))
+        assert (fn(1.0, True, np.array([0.]), 0.1, True, np.array([0.]))
+               == False)
+        assert fn(0.1, True, np.array([0.]), 0.1, True, np.array([0.]))
+
+        # trial is feasible, original is not
+        assert fn(9.9, True, np.array([0.]), 1.0, False, np.array([1.]))
+
+        # trial and original are infeasible
+        # cv_trial have to be <= cv_original to be better
+        assert (fn(0.1, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 1.0])))
+        assert (fn(0.1, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 0.50])))
+        assert (fn(1.0, False, np.array([0.5, 0.5]),
+                  1.0, False, np.array([1., 0.4])) == False)
+
+    def test_constraint_wrapper(self):
+        lb = np.array([0, 20, 30])
+        ub = np.array([0.5, np.inf, 70])
+        x0 = np.array([1, 2, 3])
+        pc = _ConstraintWrapper(Bounds(lb, ub), x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([0.25, 21, 31]) == 0).all()
+
+        x0 = np.array([1, 2, 3, 4])
+        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
+        pc = _ConstraintWrapper(LinearConstraint(A, -np.inf, 0), x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+        pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
+                                x0)
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+        def fun(x):
+            return A.dot(x)
+
+        nonlinear = NonlinearConstraint(fun, -np.inf, 0)
+        pc = _ConstraintWrapper(nonlinear, [-10, 2, -10, 4])
+        assert (pc.violation(x0) > 0).any()
+        assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+    def test_constraint_wrapper_violation(self):
+        def cons_f(x):
+            return np.array([x[0] ** 2 + x[1], x[0] ** 2 - x[1]])
+
+        nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
+        pc = _ConstraintWrapper(nlc, [0.5, 1])
+        assert np.size(pc.bounds[0]) == 2
+
+        assert_array_equal(pc.violation([0.5, 1]), [0., 0.])
+        assert_almost_equal(pc.violation([0.5, 1.2]), [0., 0.1])
+        assert_almost_equal(pc.violation([1.2, 1.2]), [0.64, 0])
+        assert_almost_equal(pc.violation([0.1, -1.2]), [0.19, 0])
+        assert_almost_equal(pc.violation([0.1, 2]), [0.01, 1.14])
+
+    def test_L1(self):
+        # Lampinen ([5]) test problem 1
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = np.sum(5*x[1:5]) - 5*x[1:5]@x[1:5] - np.sum(x[5:])
+            return fun
+
+        A = np.zeros((10, 14))  # 1-indexed to match reference
+        A[1, [1, 2, 10, 11]] = 2, 2, 1, 1
+        A[2, [1, 10]] = -8, 1
+        A[3, [4, 5, 10]] = -2, -1, 1
+        A[4, [1, 3, 10, 11]] = 2, 2, 1, 1
+        A[5, [2, 11]] = -8, 1
+        A[6, [6, 7, 11]] = -2, -1, 1
+        A[7, [2, 3, 11, 12]] = 2, 2, 1, 1
+        A[8, [3, 12]] = -8, 1
+        A[9, [8, 9, 12]] = -2, -1, 1
+        A = A[1:, 1:]
+
+        b = np.array([10, 0, 0, 10, 0, 0, 10, 0, 0])
+
+        L = LinearConstraint(A, -np.inf, b)
+
+        bounds = [(0, 1)]*9 + [(0, 100)]*3 + [(0, 1)]
+
+        # using a lower popsize to speed the test up
+        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
+                                     constraints=(L), popsize=2)
+
+        x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
+        f_opt = -15
+
+        assert_allclose(f(x_opt), f_opt)
+        assert res.success
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+        # now repeat the same solve, using the same overall constraints,
+        # but using a sparse matrix for the LinearConstraint instead of an
+        # array
+
+        L = LinearConstraint(csr_matrix(A), -np.inf, b)
+
+        # using a lower popsize to speed the test up
+        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
+                                     constraints=(L), popsize=2)
+
+        assert_allclose(f(x_opt), f_opt)
+        assert res.success
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+        # now repeat the same solve, using the same overall constraints,
+        # but specify half the constraints in terms of LinearConstraint,
+        # and the other half by NonlinearConstraint
+        def c1(x):
+            x = np.hstack(([0], x))
+            return [2*x[2] + 2*x[3] + x[11] + x[12],
+                    -8*x[3] + x[12]]
+
+        def c2(x):
+            x = np.hstack(([0], x))
+            return -2*x[8] - x[9] + x[12]
+
+        L = LinearConstraint(A[:5, :], -np.inf, b[:5])
+        L2 = LinearConstraint(A[5:6, :], -np.inf, b[5:6])
+        N = NonlinearConstraint(c1, -np.inf, b[6:8])
+        N2 = NonlinearConstraint(c2, -np.inf, b[8:9])
+        constraints = (L, N, L2, N2)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            res = differential_evolution(f, bounds, strategy='rand1bin',
+                                         seed=1234, constraints=constraints,
+                                         popsize=2)
+
+        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.fun, f_opt, atol=5e-3)
+        assert_(np.all(A@res.x <= b))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L2(self):
+        # Lampinen ([5]) test problem 2
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = ((x[1]-10)**2 + 5*(x[2]-12)**2 + x[3]**4 + 3*(x[4]-11)**2 +
+                   10*x[5]**6 + 7*x[6]**2 + x[7]**4 - 4*x[6]*x[7] - 10*x[6] -
+                   8*x[7])
+            return fun
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [127 - 2*x[1]**2 - 3*x[2]**4 - x[3] - 4*x[4]**2 - 5*x[5],
+                    196 - 23*x[1] - x[2]**2 - 6*x[6]**2 + 8*x[7],
+                    282 - 7*x[1] - 3*x[2] - 10*x[3]**2 - x[4] + x[5],
+                    -4*x[1]**2 - x[2]**2 + 3*x[1]*x[2] - 2*x[3]**2 -
+                    5*x[6] + 11*x[7]]
+
+        N = NonlinearConstraint(c1, 0, np.inf)
+        bounds = [(-10, 10)]*7
+        constraints = (N)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            res = differential_evolution(f, bounds, strategy='rand1bin',
+                                         seed=1234, constraints=constraints)
+
+        f_opt = 680.6300599487869
+        x_opt = (2.330499, 1.951372, -0.4775414, 4.365726,
+                 -0.6244870, 1.038131, 1.594227)
+
+        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(res.fun, f_opt)
+        assert_allclose(res.x, x_opt, atol=1e-5)
+        assert res.success
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L3(self):
+        # Lampinen ([5]) test problem 3
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (x[1]**2 + x[2]**2 + x[1]*x[2] - 14*x[1] - 16*x[2] +
+                   (x[3]-10)**2 + 4*(x[4]-5)**2 + (x[5]-3)**2 + 2*(x[6]-1)**2 +
+                   5*x[7]**2 + 7*(x[8]-11)**2 + 2*(x[9]-10)**2 +
+                   (x[10] - 7)**2 + 45
+                   )
+            return fun  # maximize
+
+        A = np.zeros((4, 11))
+        A[1, [1, 2, 7, 8]] = -4, -5, 3, -9
+        A[2, [1, 2, 7, 8]] = -10, 8, 17, -2
+        A[3, [1, 2, 9, 10]] = 8, -2, -5, 2
+        A = A[1:, 1:]
+        b = np.array([-105, 0, -12])
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [3*x[1] - 6*x[2] - 12*(x[9]-8)**2 + 7*x[10],
+                    -3*(x[1]-2)**2 - 4*(x[2]-3)**2 - 2*x[3]**2 + 7*x[4] + 120,
+                    -x[1]**2 - 2*(x[2]-2)**2 + 2*x[1]*x[2] - 14*x[5] + 6*x[6],
+                    -5*x[1]**2 - 8*x[2] - (x[3]-6)**2 + 2*x[4] + 40,
+                    -0.5*(x[1]-8)**2 - 2*(x[2]-4)**2 - 3*x[5]**2 + x[6] + 30]
+
+        L = LinearConstraint(A, b, np.inf)
+        N = NonlinearConstraint(c1, 0, np.inf)
+        bounds = [(-10, 10)]*10
+        constraints = (L, N)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            res = differential_evolution(f, bounds, seed=1234,
+                                         constraints=constraints, popsize=3)
+
+        x_opt = (2.171996, 2.363683, 8.773926, 5.095984, 0.9906548,
+                 1.430574, 1.321644, 9.828726, 8.280092, 8.375927)
+        f_opt = 24.3062091
+
+        assert_allclose(f(x_opt), f_opt, atol=1e-5)
+        assert_allclose(res.x, x_opt, atol=1e-6)
+        assert_allclose(res.fun, f_opt, atol=1e-5)
+        assert res.success
+        assert_(np.all(A @ res.x >= b))
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L4(self):
+        # Lampinen ([5]) test problem 4
+        def f(x):
+            return np.sum(x[:3])
+
+        A = np.zeros((4, 9))
+        A[1, [4, 6]] = 0.0025, 0.0025
+        A[2, [5, 7, 4]] = 0.0025, 0.0025, -0.0025
+        A[3, [8, 5]] = 0.01, -0.01
+        A = A[1:, 1:]
+        b = np.array([1, 1, 1])
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [x[1]*x[6] - 833.33252*x[4] - 100*x[1] + 83333.333,
+                    x[2]*x[7] - 1250*x[5] - x[2]*x[4] + 1250*x[4],
+                    x[3]*x[8] - 1250000 - x[3]*x[5] + 2500*x[5]]
+
+        L = LinearConstraint(A, -np.inf, 1)
+        N = NonlinearConstraint(c1, 0, np.inf)
+
+        bounds = [(100, 10000)] + [(1000, 10000)]*2 + [(10, 1000)]*5
+        constraints = (L, N)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            res = differential_evolution(f, bounds, strategy='rand1bin',
+                                     seed=1234, constraints=constraints,
+                                     popsize=3)
+
+        f_opt = 7049.248
+
+        x_opt = [579.306692, 1359.97063, 5109.9707, 182.0177, 295.601172,
+                217.9823, 286.416528, 395.601172]
+
+        assert_allclose(f(x_opt), f_opt, atol=0.001)
+        assert_allclose(res.fun, f_opt, atol=0.001)
+
+        # use higher tol here for 32-bit Windows, see gh-11693
+        if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
+            assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
+        else:
+            # tolerance determined from macOS + MKL failure, see gh-12701
+            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
+
+        assert res.success
+        assert_(np.all(A @ res.x <= b))
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L5(self):
+        # Lampinen ([5]) test problem 5
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (np.sin(2*np.pi*x[1])**3*np.sin(2*np.pi*x[2]) /
+                   (x[1]**3*(x[1]+x[2])))
+            return -fun  # maximize
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [x[1]**2 - x[2] + 1,
+                    1 - x[1] + (x[2]-4)**2]
+
+        N = NonlinearConstraint(c1, -np.inf, 0)
+        bounds = [(0, 10)]*2
+        constraints = (N)
+
+        res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
+                                     constraints=constraints)
+
+        x_opt = (1.22797135, 4.24537337)
+        f_opt = -0.095825
+        assert_allclose(f(x_opt), f_opt, atol=2e-5)
+        assert_allclose(res.fun, f_opt, atol=1e-4)
+        assert res.success
+        assert_(np.all(np.array(c1(res.x)) <= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L6(self):
+        # Lampinen ([5]) test problem 6
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (x[1]-10)**3 + (x[2] - 20)**3
+            return fun
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [(x[1]-5)**2 + (x[2] - 5)**2 - 100,
+                    -(x[1]-6)**2 - (x[2] - 5)**2 + 82.81]
+
+        N = NonlinearConstraint(c1, 0, np.inf)
+        bounds = [(13, 100), (0, 100)]
+        constraints = (N)
+        res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
+                                     constraints=constraints, tol=1e-7)
+        x_opt = (14.095, 0.84296)
+        f_opt = -6961.814744
+
+        assert_allclose(f(x_opt), f_opt, atol=1e-6)
+        assert_allclose(res.fun, f_opt, atol=0.001)
+        assert_allclose(res.x, x_opt, atol=1e-4)
+        assert res.success
+        assert_(np.all(np.array(c1(res.x)) >= 0))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L7(self):
+        # Lampinen ([5]) test problem 7
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = (5.3578547*x[3]**2 + 0.8356891*x[1]*x[5] +
+                   37.293239*x[1] - 40792.141)
+            return fun
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [
+                    85.334407 + 0.0056858*x[2]*x[5] + 0.0006262*x[1]*x[4] -
+                    0.0022053*x[3]*x[5],
+
+                    80.51249 + 0.0071317*x[2]*x[5] + 0.0029955*x[1]*x[2] +
+                    0.0021813*x[3]**2,
+
+                    9.300961 + 0.0047026*x[3]*x[5] + 0.0012547*x[1]*x[3] +
+                    0.0019085*x[3]*x[4]
+                    ]
+
+        N = NonlinearConstraint(c1, [0, 90, 20], [92, 110, 25])
+
+        bounds = [(78, 102), (33, 45)] + [(27, 45)]*3
+        constraints = (N)
+
+        res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
+                                     constraints=constraints)
+
+        # using our best solution, rather than Lampinen/Koziel. Koziel solution
+        # doesn't satisfy constraints, Lampinen f_opt just plain wrong.
+        x_opt = [78.00000686, 33.00000362, 29.99526064, 44.99999971,
+                 36.77579979]
+
+        f_opt = -30665.537578
+
+        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(res.x, x_opt, atol=1e-3)
+        assert_allclose(res.fun, f_opt, atol=1e-3)
+
+        assert res.success
+        assert_(np.all(np.array(c1(res.x)) >= np.array([0, 90, 20])))
+        assert_(np.all(np.array(c1(res.x)) <= np.array([92, 110, 25])))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    @pytest.mark.slow
+    @pytest.mark.xfail(platform.machine() == 'ppc64le',
+                       reason="fails on ppc64le")
+    def test_L8(self):
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            fun = 3*x[1] + 0.000001*x[1]**3 + 2*x[2] + 0.000002/3*x[2]**3
+            return fun
+
+        A = np.zeros((3, 5))
+        A[1, [4, 3]] = 1, -1
+        A[2, [3, 4]] = 1, -1
+        A = A[1:, 1:]
+        b = np.array([-.55, -.55])
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [
+                    1000*np.sin(-x[3]-0.25) + 1000*np.sin(-x[4]-0.25) +
+                    894.8 - x[1],
+                    1000*np.sin(x[3]-0.25) + 1000*np.sin(x[3]-x[4]-0.25) +
+                    894.8 - x[2],
+                    1000*np.sin(x[4]-0.25) + 1000*np.sin(x[4]-x[3]-0.25) +
+                    1294.8
+                    ]
+        L = LinearConstraint(A, b, np.inf)
+        N = NonlinearConstraint(c1, np.full(3, -0.001), np.full(3, 0.001))
+
+        bounds = [(0, 1200)]*2+[(-.55, .55)]*2
+        constraints = (L, N)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning)
+            # original Lampinen test was with rand1bin, but that takes a
+            # huge amount of CPU time. Changing strategy to best1bin speeds
+            # things up a lot
+            res = differential_evolution(f, bounds, strategy='best1bin',
+                                         seed=1234, constraints=constraints,
+                                         maxiter=5000)
+
+        x_opt = (679.9453, 1026.067, 0.1188764, -0.3962336)
+        f_opt = 5126.4981
+
+        assert_allclose(f(x_opt), f_opt, atol=1e-3)
+        assert_allclose(res.x[:2], x_opt[:2], atol=2e-3)
+        assert_allclose(res.x[2:], x_opt[2:], atol=2e-3)
+        assert_allclose(res.fun, f_opt, atol=2e-2)
+        assert res.success
+        assert_(np.all(A@res.x >= b))
+        assert_(np.all(np.array(c1(res.x)) >= -0.001))
+        assert_(np.all(np.array(c1(res.x)) <= 0.001))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_L9(self):
+        # Lampinen ([5]) test problem 9
+
+        def f(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return x[1]**2 + (x[2]-1)**2
+
+        def c1(x):
+            x = np.hstack(([0], x))  # 1-indexed to match reference
+            return [x[2] - x[1]**2]
+
+        N = NonlinearConstraint(c1, [-.001], [0.001])
+
+        bounds = [(-1, 1)]*2
+        constraints = (N)
+        res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
+                                     constraints=constraints)
+
+        x_opt = [np.sqrt(2)/2, 0.5]
+        f_opt = 0.75
+
+        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(np.abs(res.x), x_opt, atol=1e-3)
+        assert_allclose(res.fun, f_opt, atol=1e-3)
+        assert res.success
+        assert_(np.all(np.array(c1(res.x)) >= -0.001))
+        assert_(np.all(np.array(c1(res.x)) <= 0.001))
+        assert_(np.all(res.x >= np.array(bounds)[:, 0]))
+        assert_(np.all(res.x <= np.array(bounds)[:, 1]))

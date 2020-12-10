@@ -48,7 +48,6 @@ All functions
 .. autosummary::
    :toctree: generated/
 
-
    sgbsv
    dgbsv
    cgbsv
@@ -68,6 +67,21 @@ All functions
    dgebal
    cgebal
    zgebal
+
+   sgecon
+   dgecon
+   cgecon
+   zgecon
+
+   sgeequ
+   dgeequ
+   cgeequ
+   zgeequ
+
+   sgeequb
+   dgeequb
+   cgeequb
+   zgeequb
 
    sgees
    dgees
@@ -99,15 +113,18 @@ All functions
    cgehrd_lwork
    zgehrd_lwork
 
-   sgelss
-   dgelss
-   cgelss
-   zgelss
+   sgejsv
+   dgejsv
 
-   sgelss_lwork
-   dgelss_lwork
-   cgelss_lwork
-   zgelss_lwork
+   sgels
+   dgels
+   cgels
+   zgels
+
+   sgels_lwork
+   dgels_lwork
+   cgels_lwork
+   zgels_lwork
 
    sgelsd
    dgelsd
@@ -118,6 +135,16 @@ All functions
    dgelsd_lwork
    cgelsd_lwork
    zgelsd_lwork
+
+   sgelss
+   dgelss
+   cgelss
+   zgelss
+
+   sgelss_lwork
+   dgelss_lwork
+   cgelss_lwork
+   zgelss_lwork
 
    sgelsy
    dgelsy
@@ -139,6 +166,21 @@ All functions
    cgeqrf
    zgeqrf
 
+   sgeqrf_lwork
+   dgeqrf_lwork
+   cgeqrf_lwork
+   zgeqrf_lwork
+
+   sgeqrfp
+   dgeqrfp
+   cgeqrfp
+   zgeqrfp
+
+   sgeqrfp_lwork
+   dgeqrfp_lwork
+   cgeqrfp_lwork
+   zgeqrfp_lwork
+
    sgerqf
    dgerqf
    cgerqf
@@ -154,6 +196,11 @@ All functions
    cgesdd_lwork
    zgesdd_lwork
 
+   sgesv
+   dgesv
+   cgesv
+   zgesv
+
    sgesvd
    dgesvd
    cgesvd
@@ -164,75 +211,20 @@ All functions
    cgesvd_lwork
    zgesvd_lwork
 
-   sgesv
-   dgesv
-   cgesv
-   zgesv
-
    sgesvx
    dgesvx
    cgesvx
    zgesvx
 
-   sgecon
-   dgecon
-   cgecon
-   zgecon
-
-   ssysv
-   dsysv
-   csysv
-   zsysv
-
-   ssysv_lwork
-   dsysv_lwork
-   csysv_lwork
-   zsysv_lwork
-
-   ssysvx
-   dsysvx
-   csysvx
-   zsysvx
-
-   ssysvx_lwork
-   dsysvx_lwork
-   csysvx_lwork
-   zsysvx_lwork
-
-   ssygst
-   dsygst
-
-   ssytrd
-   dsytrd
-
-   ssytrd_lwork
-   dsytrd_lwork
-
-   chetrd
-   zhetrd
-
-   chetrd_lwork
-   zhetrd_lwork
-
-   chesv
-   zhesv
-
-   chesv_lwork
-   zhesv_lwork
-
-   chesvx
-   zhesvx
-
-   chesvx_lwork
-   zhesvx_lwork
-
-   chegst
-   zhegst
-
    sgetrf
    dgetrf
    cgetrf
    zgetrf
+
+   sgetc2
+   dgetc2
+   cgetc2
+   zgetc2
 
    sgetri
    dgetri
@@ -249,6 +241,11 @@ All functions
    cgetrs
    zgetrs
 
+   sgesc2
+   dgesc2
+   cgesc2
+   zgesc2
+
    sgges
    dgges
    cgges
@@ -259,29 +256,114 @@ All functions
    cggev
    zggev
 
+   sgglse
+   dgglse
+   cgglse
+   zgglse
+
+   sgglse_lwork
+   dgglse_lwork
+   cgglse_lwork
+   zgglse_lwork
+
+   sgtsv
+   dgtsv
+   cgtsv
+   zgtsv
+
+   sgtsvx
+   dgtsvx
+   cgtsvx
+   zgtsvx
+
    chbevd
    zhbevd
 
    chbevx
    zhbevx
 
+   checon
+   zhecon
+
+   cheequb
+   zheequb
+
    cheev
    zheev
+
+   cheev_lwork
+   zheev_lwork
 
    cheevd
    zheevd
 
+   cheevd_lwork
+   zheevd_lwork
+
    cheevr
    zheevr
 
+   cheevr_lwork
+   zheevr_lwork
+
+   cheevx
+   zheevx
+
+   cheevx_lwork
+   zheevx_lwork
+
+   chegst
+   zhegst
+
    chegv
    zhegv
+
+   chegv_lwork
+   zhegv_lwork
 
    chegvd
    zhegvd
 
    chegvx
    zhegvx
+
+   chegvx_lwork
+   zhegvx_lwork
+
+   chesv
+   zhesv
+
+   chesv_lwork
+   zhesv_lwork
+
+   chesvx
+   zhesvx
+
+   chesvx_lwork
+   zhesvx_lwork
+
+   chetrd
+   zhetrd
+
+   chetrd_lwork
+   zhetrd_lwork
+
+   chetrf
+   zhetrf
+
+   chetrf_lwork
+   zhetrf_lwork
+
+   chfrk
+   zhfrk
+
+   slamch
+   dlamch
+
+   slange
+   dlange
+   clange
+   zlange
 
    slarf
    dlarf
@@ -311,6 +393,31 @@ All functions
    clauum
    zlauum
 
+   sorcsd
+   dorcsd
+   sorcsd_lwork
+   dorcsd_lwork
+
+   sorghr
+   dorghr
+   sorghr_lwork
+   dorghr_lwork
+
+   sorgqr
+   dorgqr
+
+   sorgrq
+   dorgrq
+
+   sormqr
+   dormqr
+
+   sormrz
+   dormrz
+
+   sormrz_lwork
+   dormrz_lwork
+
    spbsv
    dpbsv
    cpbsv
@@ -325,54 +432,6 @@ All functions
    dpbtrs
    cpbtrs
    zpbtrs
-
-   sposv
-   dposv
-   cposv
-   zposv
-
-   sposvx
-   dposvx
-   cposvx
-   zposvx
-
-   spocon
-   dpocon
-   cpocon
-   zpocon
-
-   spotrf
-   dpotrf
-   cpotrf
-   zpotrf
-
-   spotri
-   dpotri
-   cpotri
-   zpotri
-
-   spotrs
-   dpotrs
-   cpotrs
-   zpotrs
-
-   crot
-   zrot
-
-   strsyl
-   dtrsyl
-   ctrsyl
-   ztrsyl
-
-   strtri
-   dtrtri
-   ctrtri
-   ztrtri
-
-   strtrs
-   dtrtrs
-   ctrtrs
-   ztrtrs
 
    spftrf
    dpftrf
@@ -389,53 +448,98 @@ All functions
    cpftrs
    zpftrs
 
-   cunghr
-   zunghr
+   spocon
+   dpocon
+   cpocon
+   zpocon
 
-   cungqr
-   zungqr
+   spstrf
+   dpstrf
+   cpstrf
+   zpstrf
 
-   cungrq
-   zungrq
+   spstf2
+   dpstf2
+   cpstf2
+   zpstf2
 
-   cunmqr
-   zunmqr
+   sposv
+   dposv
+   cposv
+   zposv
 
-   cunmrz
-   zunmrz
+   sposvx
+   dposvx
+   cposvx
+   zposvx
 
-   cunmrz_lwork
-   zunmrz_lwork
+   spotrf
+   dpotrf
+   cpotrf
+   zpotrf
 
-   sgtsv
-   dgtsv
-   cgtsv
-   zgtsv
+   spotri
+   dpotri
+   cpotri
+   zpotri
+
+   spotrs
+   dpotrs
+   cpotrs
+   zpotrs
+
+   sppcon
+   dppcon
+   cppcon
+   zppcon
+
+   sppsv
+   dppsv
+   cppsv
+   zppsv
+
+   spptrf
+   dpptrf
+   cpptrf
+   zpptrf
+
+   spptri
+   dpptri
+   cpptri
+   zpptri
+
+   spptrs
+   dpptrs
+   cpptrs
+   zpptrs
 
    sptsv
    dptsv
    cptsv
    zptsv
 
-   slamch
-   dlamch
+   sptsvx
+   dptsvx
+   cptsvx
+   zptsvx
 
-   sorghr
-   dorghr
-   sorgqr
-   dorgqr
+   spttrf
+   dpttrf
+   cpttrf
+   zpttrf
 
-   sorgrq
-   dorgrq
+   spttrs
+   dpttrs
+   cpttrs
+   zpttrs
 
-   sormqr
-   dormqr
+   spteqr
+   dpteqr
+   cpteqr
+   zpteqr
 
-   sormrz
-   dormrz
-
-   sormrz_lwork
-   dormrz_lwork
+   crot
+   zrot
 
    ssbev
    dsbev
@@ -446,32 +550,74 @@ All functions
    ssbevx
    dsbevx
 
+   ssfrk
+   dsfrk
+
    sstebz
    dstebz
-
-   sstemr
-   dstemr
-
-   ssterf
-   dsterf
 
    sstein
    dstein
 
+   sstemr
+   dstemr
+
+   sstemr_lwork
+   dstemr_lwork
+
+   ssterf
+   dsterf
+
    sstev
    dstev
+
+   ssycon
+   dsycon
+   csycon
+   zsycon
+
+   ssyconv
+   dsyconv
+   csyconv
+   zsyconv
+
+   ssyequb
+   dsyequb
+   csyequb
+   zsyequb
 
    ssyev
    dsyev
 
+   ssyev_lwork
+   dsyev_lwork
+
    ssyevd
    dsyevd
+
+   ssyevd_lwork
+   dsyevd_lwork
 
    ssyevr
    dsyevr
 
+   ssyevr_lwork
+   dsyevr_lwork
+
+   ssyevx
+   dsyevx
+
+   ssyevx_lwork
+   dsyevx_lwork
+
+   ssygst
+   dsygst
+
    ssygv
    dsygv
+
+   ssygv_lwork
+   dsygv_lwork
 
    ssygvd
    dsygvd
@@ -479,21 +625,59 @@ All functions
    ssygvx
    dsygvx
 
-   ssfrk
-   dsfrk
+   ssygvx_lwork
+   dsygvx_lwork
 
-   chfrk
-   zhfrk
+   ssysv
+   dsysv
+   csysv
+   zsysv
+
+   ssysv_lwork
+   dsysv_lwork
+   csysv_lwork
+   zsysv_lwork
+
+   ssysvx
+   dsysvx
+   csysvx
+   zsysvx
+
+   ssysvx_lwork
+   dsysvx_lwork
+   csysvx_lwork
+   zsysvx_lwork
+
+   ssytf2
+   dsytf2
+   csytf2
+   zsytf2
+
+   ssytrd
+   dsytrd
+
+   ssytrd_lwork
+   dsytrd_lwork
+
+   ssytrf
+   dsytrf
+   csytrf
+   zsytrf
+
+   ssytrf_lwork
+   dsytrf_lwork
+   csytrf_lwork
+   zsytrf_lwork
+
+   stbtrs
+   dtbtrs
+   ctbtrs
+   ztbtrs
 
    stfsm
    dtfsm
    ctfsm
    ztfsm
-
-   stpttf
-   dtpttf
-   ctpttf
-   ztpttf
 
    stfttp
    dtfttp
@@ -505,25 +689,45 @@ All functions
    ctfttr
    ztfttr
 
-   strttf
-   dtrttf
-   ctrttf
-   ztrttf
+   stgsen
+   dtgsen
+   ctgsen
+   ztgsen
+
+   stpttf
+   dtpttf
+   ctpttf
+   ztpttf
 
    stpttr
    dtpttr
    ctpttr
    ztpttr
 
+   strsyl
+   dtrsyl
+   ctrsyl
+   ztrsyl
+
+   strtri
+   dtrtri
+   ctrtri
+   ztrtri
+
+   strtrs
+   dtrtrs
+   ctrtrs
+   ztrtrs
+
+   strttf
+   dtrttf
+   ctrttf
+   ztrttf
+
    strttp
    dtrttp
    ctrttp
    ztrttp
-
-   stfsm
-   dtfsm
-   ctfsm
-   dtfsm
 
    stzrzf
    dtzrzf
@@ -535,10 +739,62 @@ All functions
    ctzrzf_lwork
    ztzrzf_lwork
 
-   slange
-   dlange
-   clange
-   zlange
+   cunghr
+   zunghr
+
+   cunghr_lwork
+   zunghr_lwork
+
+   cungqr
+   zungqr
+
+   cungrq
+   zungrq
+
+   cunmqr
+   zunmqr
+
+   sgeqrt
+   dgeqrt
+   cgeqrt
+   zgeqrt
+
+   sgemqrt
+   dgemqrt
+   cgemqrt
+   zgemqrt
+
+   sgttrf
+   dgttrf
+   cgttrf
+   zgttrf
+
+   sgttrs
+   dgttrs
+   cgttrs
+   zgttrs
+
+   stpqrt
+   dtpqrt
+   ctpqrt
+   ztpqrt
+
+   stpmqrt
+   dtpmqrt
+   ctpmqrt
+   ztpmqrt
+
+   cuncsd
+   zuncsd
+
+   cuncsd_lwork
+   zuncsd_lwork
+
+   cunmrz
+   zunmrz
+
+   cunmrz_lwork
+   zunmrz_lwork
 
    ilaver
 
@@ -547,22 +803,21 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
-__all__ = ['get_lapack_funcs']
-
 import numpy as _np
-
-from .blas import _get_funcs
-
-# Backward compatibility:
-from .blas import find_best_blas_type as find_best_lapack_type
-
+from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
+from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
+
+try:
+    from scipy.linalg import _flapack_64
+    HAS_ILP64 = True
+except ImportError:
+    HAS_ILP64 = False
+    _flapack_64 = None
 
 # Backward compatibility
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
@@ -574,6 +829,8 @@ empty_module = None
 from scipy.linalg._flapack import *
 del empty_module
 
+__all__ = ['get_lapack_funcs']
+
 _dep_message = """The `*gegv` family of routines has been deprecated in
 LAPACK 3.6.0 in favor of the `*ggev` family of routines.
 The corresponding wrappers will be removed from SciPy in
@@ -584,7 +841,7 @@ dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
 sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
 zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
 
-# Modyfy _flapack in this scope so the deprecation warnings apply to
+# Modify _flapack in this scope so the deprecation warnings apply to
 # functions returned by get_lapack_funcs.
 _flapack.cgegv = cgegv
 _flapack.dgegv = dgegv
@@ -601,7 +858,33 @@ _lapack_alias = {
 }
 
 
-def get_lapack_funcs(names, arrays=(), dtype=None):
+# Place guards against docstring rendering issues with special characters
+p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
+p2 = regex_compile(r'Default: (?P<d>.*?)\n')
+
+
+def backtickrepl(m):
+    if m.group('s'):
+        return ('with bounds ``{}`` with ``{}`` storage\n'
+                ''.format(m.group('b'), m.group('s')))
+    else:
+        return 'with bounds ``{}``\n'.format(m.group('b'))
+
+
+for routine in [ssyevr, dsyevr, cheevr, zheevr,
+                ssyevx, dsyevx, cheevx, zheevx,
+                ssygvd, dsygvd, chegvd, zhegvd]:
+    if routine.__doc__:
+        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
+        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
+    else:
+        continue
+
+del regex_compile, p1, p2, backtickrepl
+
+
+@_memoize_get_funcs
+def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     """Return available LAPACK function objects from names.
 
     Arrays are used to determine the optimal prefix of LAPACK routines.
@@ -619,6 +902,11 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
 
+    ilp64 : {True, False, 'preferred'}, optional
+        Whether to return ILP64 routine variant.
+        Choosing 'preferred' returns ILP64 routine if available, and
+        otherwise the 32-bit routine. Default: False
+
     Returns
     -------
     funcs : list
@@ -632,7 +920,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     In LAPACK, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
     types {float32, float64, complex64, complex128} respectively, and
     are stored in attribute ``typecode`` of the returned functions.
 
@@ -666,9 +954,29 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
 
     """
-    return _get_funcs(names, arrays, dtype,
-                      "LAPACK", _flapack, _clapack,
-                      "flapack", "clapack", _lapack_alias)
+    if isinstance(ilp64, str):
+        if ilp64 == 'preferred':
+            ilp64 = HAS_ILP64
+        else:
+            raise ValueError("Invalid value for 'ilp64'")
+
+    if not ilp64:
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack, _clapack,
+                          "flapack", "clapack", _lapack_alias,
+                          ilp64=False)
+    else:
+        if not HAS_ILP64:
+            raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
+                               "compiled only with 32-bit BLAS")
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack_64, None,
+                          "flapack_64", None, _lapack_alias,
+                          ilp64=True)
+
+
+_int32_max = _np.iinfo(_np.int32).max
+_int64_max = _np.iinfo(_np.int64).max
 
 
 def _compute_lwork(routine, *args, **kwargs):
@@ -692,27 +1000,40 @@ def _compute_lwork(routine, *args, **kwargs):
     32000
 
     """
-    wi = routine(*args, **kwargs)
-    if len(wi) < 2:
-        raise ValueError('')
-    info = wi[-1]
-    if info != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (info,))
-
-    lwork = [w.real for w in wi[:-1]]
-
     dtype = getattr(routine, 'dtype', None)
+    int_dtype = getattr(routine, 'int_dtype', None)
+    ret = routine(*args, **kwargs)
+    if ret[-1] != 0:
+        raise ValueError("Internal work array size computation failed: "
+                         "%d" % (ret[-1],))
+
+    if len(ret) == 2:
+        return _check_work_float(ret[0].real, dtype, int_dtype)
+    else:
+        return tuple(_check_work_float(x.real, dtype, int_dtype)
+                     for x in ret[:-1])
+
+
+def _check_work_float(value, dtype, int_dtype):
+    """
+    Convert LAPACK-returned work array size float to integer,
+    carefully for single-precision types.
+    """
+
     if dtype == _np.float32 or dtype == _np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        lwork = _np.nextafter(lwork, _np.inf, dtype=_np.float32)
+        value = _np.nextafter(value, _np.inf, dtype=_np.float32)
 
-    lwork = _np.array(lwork, _np.int64)
-    if _np.any(_np.logical_or(lwork < 0, lwork > _np.iinfo(_np.int32).max)):
-        raise ValueError("Too large work array required -- computation cannot "
-                         "be performed with standard 32-bit LAPACK.")
-    lwork = lwork.astype(_np.int32)
-    if lwork.size == 1:
-        return lwork[0]
-    return lwork
+    value = int(value)
+    if int_dtype.itemsize == 4:
+        if value < 0 or value > _int32_max:
+            raise ValueError("Too large work array required -- computation "
+                             "cannot be performed with standard 32-bit"
+                             " LAPACK.")
+    elif int_dtype.itemsize == 8:
+        if value < 0 or value > _int64_max:
+            raise ValueError("Too large work array required -- computation"
+                             " cannot be performed with standard 64-bit"
+                             " LAPACK.")
+    return value

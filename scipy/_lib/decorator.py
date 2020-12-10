@@ -31,8 +31,6 @@
 Decorator module, see https://pypi.python.org/pypi/decorator
 for the documentation.
 """
-from __future__ import print_function
-
 import re
 import sys
 import inspect
@@ -40,32 +38,14 @@ import operator
 import itertools
 import collections
 
+from inspect import getfullargspec
+
 __version__ = '4.0.5'
 
-if sys.version >= '3':
-    from inspect import getfullargspec
 
-    def get_init(cls):
-        return cls.__init__
-else:
-    class getfullargspec(object):
-        "A quick and dirty replacement for getfullargspec for Python 2.X"
-        def __init__(self, f):
-            self.args, self.varargs, self.varkw, self.defaults = \
-                inspect.getargspec(f)
-            self.kwonlyargs = []
-            self.kwonlydefaults = None
+def get_init(cls):
+    return cls.__init__
 
-        def __iter__(self):
-            yield self.args
-            yield self.varargs
-            yield self.varkw
-            yield self.defaults
-
-        getargspec = inspect.getargspec
-
-    def get_init(cls):
-        return cls.__init__.__func__
 
 # getargspec has been deprecated in Python 3.5
 ArgSpec = collections.namedtuple(
@@ -85,7 +65,7 @@ DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 class FunctionMaker(object):
     """
     An object with the ability to create functions with a given signature.
-    It has attributes name, doc, module, signature, defaults, dict and
+    It has attributes name, doc, module, signature, defaults, dict, and
     methods update and make.
     """
 
@@ -110,26 +90,21 @@ class FunctionMaker(object):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
                     setattr(self, 'arg%d' % i, arg)
-                if sys.version < '3':  # easy way
-                    self.shortsignature = self.signature = (
-                        inspect.formatargspec(
-                            formatvalue=lambda val: "", *argspec)[1:-1])
-                else:  # Python 3 way
-                    allargs = list(self.args)
-                    allshortargs = list(self.args)
-                    if self.varargs:
-                        allargs.append('*' + self.varargs)
-                        allshortargs.append('*' + self.varargs)
-                    elif self.kwonlyargs:
-                        allargs.append('*')  # single star syntax
-                    for a in self.kwonlyargs:
-                        allargs.append('%s=None' % a)
-                        allshortargs.append('%s=%s' % (a, a))
-                    if self.varkw:
-                        allargs.append('**' + self.varkw)
-                        allshortargs.append('**' + self.varkw)
-                    self.signature = ', '.join(allargs)
-                    self.shortsignature = ', '.join(allshortargs)
+                allargs = list(self.args)
+                allshortargs = list(self.args)
+                if self.varargs:
+                    allargs.append('*' + self.varargs)
+                    allshortargs.append('*' + self.varargs)
+                elif self.kwonlyargs:
+                    allargs.append('*')  # single star syntax
+                for a in self.kwonlyargs:
+                    allargs.append('%s=None' % a)
+                    allshortargs.append('%s=%s' % (a, a))
+                if self.varkw:
+                    allargs.append('**' + self.varkw)
+                    allshortargs.append('**' + self.varkw)
+                self.signature = ', '.join(allargs)
+                self.shortsignature = ', '.join(allshortargs)
                 self.dict = func.__dict__.copy()
         # func=None happens when decorating a caller
         if name:
@@ -147,7 +122,7 @@ class FunctionMaker(object):
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non function: %s' % func)
+            raise TypeError('You are decorating a non-function: %s' % func)
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -203,8 +178,8 @@ class FunctionMaker(object):
     def create(cls, obj, body, evaldict, defaults=None,
                doc=None, module=None, addsource=True, **attrs):
         """
-        Create a function from the strings name, signature and body.
-        evaldict is the evaluation dictionary. If addsource is true an
+        Create a function from the strings name, signature, and body.
+        evaldict is the evaluation dictionary. If addsource is true, an
         attribute __source__ is added to the result. The attributes attrs
         are added, if any.
         """

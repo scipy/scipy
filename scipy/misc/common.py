@@ -3,8 +3,6 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
@@ -25,11 +23,38 @@ def central_diff_weights(Np, ndiv=1):
     Np : int
         Number of points for the central derivative.
     ndiv : int, optional
-        Number of divisions.  Default is 1.
+        Number of divisions. Default is 1.
+
+    Returns
+    -------
+    w : ndarray
+        Weights for an Np-point central derivative. Its size is `Np`.
 
     Notes
     -----
-    Can be inaccurate for large number of points.
+    Can be inaccurate for a large number of points.
+
+    Examples
+    --------
+    We can calculate a derivative value of a function.
+
+    >>> from scipy.misc import central_diff_weights
+    >>> def f(x):
+    ...     return 2 * x**2 + 3
+    >>> x = 3.0 # derivative point
+    >>> h = 0.1 # differential step
+    >>> Np = 3 # point number for central derivative
+    >>> weights = central_diff_weights(Np) # weights for first derivative
+    >>> vals = [f(x + (i - Np/2) * h) for i in range(Np)]
+    >>> sum(w * v for (w, v) in zip(weights, vals))/h
+    11.79999999999998
+
+    This value is close to the analytical solution:
+    f'(x) = 4x, so f'(3) = 12
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Finite_difference
 
     """
     if Np < ndiv + 1:
@@ -49,17 +74,17 @@ def central_diff_weights(Np, ndiv=1):
 
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
-    Find the n-th derivative of a function at a point.
+    Find the nth derivative of a function at a point.
 
     Given a function, use a central difference formula with spacing `dx` to
-    compute the `n`-th derivative at `x0`.
+    compute the nth derivative at `x0`.
 
     Parameters
     ----------
     func : function
         Input function.
     x0 : float
-        The point at which `n`-th derivative is found.
+        The point at which the nth derivative is found.
     dx : float, optional
         Spacing.
     n : int, optional
@@ -206,7 +231,7 @@ def face(gray=False):
 
 def electrocardiogram():
     """
-    Load an electrocardiogram as an example for a one-dimensional signal.
+    Load an electrocardiogram as an example for a 1-D signal.
 
     The returned signal is a 5 minute long electrocardiogram (ECG), a medical
     recording of the heart's electrical activity, sampled at 360 Hz.
@@ -248,7 +273,7 @@ def electrocardiogram():
     ((108000,), -0.16510875, 0.5992473991177294)
 
     As stated the signal features several areas with a different morphology.
-    E.g. the first few seconds show the electrical activity of a heart in
+    E.g., the first few seconds show the electrical activity of a heart in
     normal sinus rhythm as seen below.
 
     >>> import matplotlib.pyplot as plt
@@ -261,7 +286,7 @@ def electrocardiogram():
     >>> plt.ylim(-1, 1.5)
     >>> plt.show()
 
-    After second 16 however, the first premature ventricular contractions, also
+    After second 16, however, the first premature ventricular contractions, also
     called extrasystoles, appear. These have a different morphology compared to
     typical heartbeats. The difference can easily be observed in the following
     plot.

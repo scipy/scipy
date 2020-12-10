@@ -22,8 +22,8 @@ subroutine <prefix>gemm(m,n,k,alpha,a,b,beta,c,trans_a,trans_b,lda,ka,ldb,kb)
 
   callstatement (*f2py_func)((trans_a?(trans_a==2?"C":"T"):"N"), &
        (trans_b?(trans_b==2?"C":"T"):"N"),&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&m)
-  callprotoargument char*,char*,int*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*, &
-       int*,<ctype>*,<ctype>*,int*
+  callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*, &
+       F_INT*,<ctype>*,<ctype>*,F_INT*
 
   integer optional,intent(in),check(trans_a>=0 && trans_a <=2) :: trans_a = 0
   integer optional,intent(in),check(trans_b>=0 && trans_b <=2) :: trans_b = 0
@@ -58,8 +58,8 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>mm(m, n, alpha, a, b, beta, c, side, lowe
 
   callstatement (*f2py_func)((side?"R":"L"), &
        (lower?"L":"U"),&m,&n,&alpha,a,&lda,b,&ldb,&beta,c,&m)
-  callprotoargument char*,char*,int*,int*,<ctype6>*,<ctype6>*,int*,<ctype6>*, &
-       int*,<ctype6>*,<ctype6>*,int*
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*, &
+       F_INT*,<ctype6>*,<ctype6>*,F_INT*
 
   integer optional, intent(in),check(side==0||side==1) :: side = 0
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
@@ -93,8 +93,8 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>rk(n,k,alpha,a,beta,c,trans,lower,lda,ka)
   !
   callstatement (*f2py_func)((lower?"L":"U"), &
         (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,&beta,c,&n)
-  callprotoargument char*,char*,int*,int*,<ctype6>*,<ctype6>*,int*,<ctype6>*, &
-        <ctype6>*,int*
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*, &
+        <ctype6>*,F_INT*
 
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
   integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
@@ -124,8 +124,8 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>r2k(n,k,alpha,a,b,beta,c,trans,lower,lda,
   !
   callstatement (*f2py_func)((lower?"L":"U"), &
         (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&n)
-  callprotoargument char*,char*,int*,int*,<ctype6>*,<ctype6>*,int*,<ctype6>*,int*, &
-        <ctype6>*, <ctype6>*,int*
+  callprotoargument char*,char*,F_INT*,F_INT*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*,F_INT*, &
+        <ctype6>*, <ctype6>*,F_INT*
 
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
   integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
@@ -163,9 +163,8 @@ subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, di
   !
   ! c = trmm(alpha, a, b, side=0, lower=0, trans_a=0, diag=0)
 
-  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"), &
-        (trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
-  callprotoargument char*, char*, char*, char*, int*, int*, <ctype>*,<ctype>*,int*,<ctype>*, int*
+  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"),(trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
+  callprotoargument char*, char*, char*, char*, F_INT*, F_INT*, <ctype>*,<ctype>*,F_INT*,<ctype>*, F_INT*
 
   integer optional, intent(in), check(side==0 || side==1) :: side = 0
   integer optional, intent(in), check(lower==0 || lower==1) :: lower = 0
@@ -174,16 +173,15 @@ subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, di
 
   <ftype> intent(in) :: alpha
 
-  <ftype> dimension(lda, k), intent(in) :: a
-  <ftype> dimension(ldb, n), intent(in, out, copy) :: b
+  <ftype> intent(in), dimension(lda, k) :: a
+  <ftype> intent(in, out, copy), dimension(ldb, n) :: b
 
-  integer depend(a), intent(hide) :: lda = shape(a, 0)
-  integer depend(a), intent(hide) :: k = shape(a, 1)
+  integer intent(hide), depend(a) :: lda = MAX(1,shape(a, 0))
+  integer intent(hide), depend(a, n, m, side), check(k>=(side?n:m) && k<=shape(a, 0)) :: k = shape(a, 1)
 
-  integer depend(b), intent(hide) :: ldb = shape(b, 0)
-  integer depend(b), intent(hide) :: n = shape(b, 1)
-
-  integer depend(side, a, b, n, k), intent(hide) :: m = (side ? n : k)
+  integer intent(hide), depend(b) :: ldb = MAX(1,shape(b, 0))
+  integer intent(hide), depend(b) :: m = shape(b, 0)
+  integer intent(hide), depend(b) :: n = shape(b, 1)
 
 end subroutine <prefix>trmm
 
@@ -202,7 +200,7 @@ subroutine <prefix>trsm(m, n, alpha, a, b, lda, ldb, side, lower, trans_a, diag)
 
   callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"), &
         (trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
-  callprotoargument char*, char*, char*, char*, int*, int*, <ctype>*,<ctype>*,int*,<ctype>*, int*
+  callprotoargument char*, char*, char*, char*, F_INT*, F_INT*, <ctype>*,<ctype>*,F_INT*,<ctype>*, F_INT*
 
   integer optional, intent(in), check(side==0 || side==1) :: side = 0
   integer optional, intent(in), check(lower==0 || lower==1) :: lower = 0

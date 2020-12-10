@@ -1,7 +1,5 @@
 """test sparse matrix construction functions"""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_equal, assert_,
@@ -9,6 +7,7 @@ from numpy.testing import (assert_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import check_random_state
 
 from scipy.sparse import csr_matrix, coo_matrix, construct
 from scipy.sparse.construct import rand as sprand
@@ -21,11 +20,8 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     # Helper function for testing.
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
-        random_state = np.random.RandomState(random_state)
-    data_rvs = random_state.randn
+    random_state = check_random_state(random_state)
+    data_rvs = random_state.standard_normal
     return construct.random(m, n, density, format, dtype,
                             random_state, data_rvs)
 
@@ -278,9 +274,19 @@ class TestConstructUtils(object):
 
         for a in cases:
             for b in cases:
-                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
-                expected = np.kron(a,b)
-                assert_array_equal(result,expected)
+                expected = np.kron(a, b)
+                for fmt in sparse_formats:
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    assert_equal(result.format, fmt)
+                    assert_array_equal(result.todense(), expected)
+
+    def test_kron_large(self):
+        n = 2**16
+        a = construct.eye(1, n, n-1)
+        b = construct.eye(n, 1, 1-n)
+
+        construct.kron(a, a)
+        construct.kron(b, b)
 
     def test_kronsum(self):
         cases = []
@@ -374,6 +380,7 @@ class TestConstructUtils(object):
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
@@ -419,6 +426,21 @@ class TestConstructUtils(object):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
+    def test_block_diag_sparse_matrices(self):
+        """ block_diag with sparse matrices """
+
+        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
+                               coo_matrix(([[4, 5]]), shape=(1, 2))]
+        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
+        assert_equal(block_sparse_cols_matrices.todense(),
+                     matrix([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
+
+        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
+                               coo_matrix(([[4], [5]]), shape=(2, 1))]
+        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
+        assert_equal(block_sparse_row_matrices.todense(),
+                     matrix([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
+
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
@@ -452,7 +474,14 @@ class TestConstructUtils(object):
 
     def test_rand(self):
         # Simple distributional checks for sparse.rand.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = sprand(10, 20, density=0.5, dtype=np.float64,
                        random_state=random_state)
             assert_(np.all(np.less_equal(0, x.data)))
@@ -462,7 +491,14 @@ class TestConstructUtils(object):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        for random_state in None, 4321, np.random.RandomState():
+        random_states = [None, 4321, np.random.RandomState()]
+        try:
+            gen = np.random.default_rng()
+            random_states.append(gen)
+        except AttributeError:
+            pass
+
+        for random_state in random_states:
             x = _sprandn(10, 20, density=0.5, dtype=np.float64,
                          random_state=random_state)
             assert_(np.any(np.less(x.data, 0)))
@@ -471,5 +507,11 @@ class TestConstructUtils(object):
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
-        a = construct.random(10, 10, dtype='d')
+        construct.random(10, 10, dtype='d')
+
+    def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
+        # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
+        # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
+        sparse_matrix = construct.random(10, 10, density=0.1265)
+        assert_equal(sparse_matrix.count_nonzero(),13)
 

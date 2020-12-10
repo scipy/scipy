@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import \
                           assert_array_almost_equal, assert_almost_equal, \
@@ -17,12 +15,12 @@ from scipy.signal import tf2ss, impulse2, dimpulse, step2, dstep
 class TestC2D(object):
     def test_zoh(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = 0.324360635350064 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.324360635350064)
         # c and d in discrete should be equal to their continuous counterparts
         dt_requested = 0.5
 
@@ -36,13 +34,13 @@ class TestC2D(object):
 
     def test_foh(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         # True values are verified with Matlab
         ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = 0.420839287058789 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.420839287058789)
         cd_truth = cc
         dd_truth = np.array([[0.260262223725224],
                              [0.297442541400256],
@@ -59,13 +57,13 @@ class TestC2D(object):
 
     def test_impulse(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [0.0]])
 
         # True values are verified with Matlab
         ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = 0.412180317675032 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.412180317675032)
         cd_truth = cc
         dd_truth = np.array([[0.4375], [0.5], [0.3125]])
         dt_requested = 0.5
@@ -81,7 +79,7 @@ class TestC2D(object):
 
     def test_gbt(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
@@ -89,7 +87,7 @@ class TestC2D(object):
         alpha = 1.0 / 3.0
 
         ad_truth = 1.6 * np.eye(2)
-        bd_truth = 0.3 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.3)
         cd_truth = np.array([[0.9, 1.2],
                              [1.2, 1.2],
                              [1.2, 0.3]])
@@ -107,14 +105,14 @@ class TestC2D(object):
 
     def test_euler(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = 1.5 * np.eye(2)
-        bd_truth = 0.25 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.25)
         cd_truth = np.array([[0.75, 1.0],
                              [1.0, 1.0],
                              [1.0, 0.25]])
@@ -131,14 +129,14 @@ class TestC2D(object):
 
     def test_backward_diff(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = 2.0 * np.eye(2)
-        bd_truth = 0.5 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.5)
         cd_truth = np.array([[1.5, 2.0],
                              [2.0, 2.0],
                              [2.0, 0.5]])
@@ -156,14 +154,14 @@ class TestC2D(object):
 
     def test_bilinear(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = (5.0 / 3.0) * np.eye(2)
-        bd_truth = (1.0 / 3.0) * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 1.0 / 3.0)
         cd_truth = np.array([[1.0, 4.0 / 3.0],
                              [4.0 / 3.0, 4.0 / 3.0],
                              [4.0 / 3.0, 1.0 / 3.0]])
@@ -183,7 +181,7 @@ class TestC2D(object):
         # Same continuous system again, but change sampling rate
 
         ad_truth = 1.4 * np.eye(2)
-        bd_truth = 0.2 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.2)
         cd_truth = np.array([[0.9, 1.2], [1.2, 1.2], [1.2, 0.3]])
         dd_truth = np.array([[0.175], [0.2], [-0.205]])
 
@@ -348,39 +346,6 @@ class TestC2D(object):
         # not be multidimensional like the numerator
         assert_allclose(den, den1, rtol=1e-13)
         assert_allclose(den, den2, rtol=1e-13)
-
-class TestC2dLti(object):
-    def test_c2d_ss(self):
-        # StateSpace
-        A = np.array([[-0.3, 0.1], [0.2, -0.7]])
-        B = np.array([[0], [1]])
-        C = np.array([[1, 0]])
-        D = 0
-
-        A_res = np.array([[0.985136404135682, 0.004876671474795],
-                          [0.009753342949590, 0.965629718236502]])
-        B_res = np.array([[0.000122937599964], [0.049135527547844]])
-
-        sys_ssc = lti(A, B, C, D)
-        sys_ssd = sys_ssc.to_discrete(0.05)
-
-        assert_allclose(sys_ssd.A, A_res)
-        assert_allclose(sys_ssd.B, B_res)
-        assert_allclose(sys_ssd.C, C)
-        assert_allclose(sys_ssd.D, D)
-
-    def test_c2d_tf(self):
-
-        sys = lti([0.5, 0.3], [1.0, 0.4])
-        sys = sys.to_discrete(0.005)
-
-        # Matlab results
-        num_res = np.array([0.5, -0.485149004980066])
-        den_res = np.array([1.0, -0.980198673306755])
-
-        # Somehow a lot of numerical errors
-        assert_allclose(sys.den, den_res, atol=0.02)
-        assert_allclose(sys.num, num_res, atol=0.02)
 
 class TestC2dLti(object):
     def test_c2d_ss(self):

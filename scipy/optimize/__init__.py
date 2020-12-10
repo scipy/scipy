@@ -1,6 +1,6 @@
 """
 =====================================================
-Optimization and Root Finding (:mod:`scipy.optimize`)
+Optimization and root finding (:mod:`scipy.optimize`)
 =====================================================
 
 .. currentmodule:: scipy.optimize
@@ -8,8 +8,8 @@ Optimization and Root Finding (:mod:`scipy.optimize`)
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing,  constrained
-and nonlinear least-squares, root finding and curve fitting.
+optimization algorithms), linear programing, constrained
+and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:
 
@@ -24,7 +24,7 @@ Common functions and objects, shared across different solvers, are:
 Optimization
 ============
 
-Scalar Functions Optimization
+Scalar functions optimization
 -----------------------------
 
 .. autosummary::
@@ -40,7 +40,7 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
 
-Local (Multivariate) Optimization
+Local (multivariate) optimization
 ---------------------------------
 
 .. autosummary::
@@ -95,7 +95,7 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
-Global Optimization
+Global optimization
 -------------------
 
 .. autosummary::
@@ -109,10 +109,10 @@ Global Optimization
    dual_annealing - Dual annealing stochastic optimizer.
 
 
-Least-squares and Curve Fitting
+Least-squares and curve fitting
 ===============================
 
-Nonlinear Least-Squares
+Nonlinear least-squares
 -----------------------
 
 .. autosummary::
@@ -120,7 +120,7 @@ Nonlinear Least-Squares
 
    least_squares - Solve a nonlinear least-squares problem with bounds on the variables.
 
-Linear Least-Squares
+Linear least-squares
 --------------------
 
 .. autosummary::
@@ -129,7 +129,7 @@ Linear Least-Squares
    nnls - Linear least-squares problem with non-negativity constraint.
    lsq_linear - Linear least-squares problem with bound constraints.
 
-Curve Fitting
+Curve fitting
 -------------
 
 .. autosummary::
@@ -151,7 +151,7 @@ Scalar functions
    ridder - Ridder's method.
    bisect - Bisection method.
    newton - Newton's method (also Secant and Halley's methods).
-   toms748 - Alefeld, Potra & Shi Algorithm 748
+   toms748 - Alefeld, Potra & Shi Algorithm 748.
    RootResults - The root finding result returned by some root finders.
 
 The `root_scalar` function supports the following methods:
@@ -232,7 +232,7 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear Programming
+Linear programming
 ==================
 
 .. autosummary::
@@ -247,25 +247,38 @@ The `linprog` function supports the following methods:
    optimize.linprog-simplex
    optimize.linprog-interior-point
    optimize.linprog-revised_simplex
+   optimize.linprog-highs-ipm
+   optimize.linprog-highs-ds
+   optimize.linprog-highs
 
-The simplex method supports callback functions, such as:
+The simplex, interior-point, and revised simplex methods support callback
+functions, such as:
 
 .. autosummary::
    :toctree: generated/
 
    linprog_verbose_callback -- Sample callback function for linprog (simplex).
 
-Assignment problems:
+Assignment problems
+===================
 
 .. autosummary::
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem.
+   quadratic_assignment -- Solves the quadratic assignment problem.
+
+The `quadratic_assignment` function supports the following methods:
+
+.. toctree::
+
+   optimize.qap-faq
+   optimize.qap-2opt
 
 Utilities
 =========
 
-Finite-Difference Approximation
+Finite-difference approximation
 -------------------------------
 
 .. autosummary::
@@ -275,7 +288,7 @@ Finite-Difference Approximation
    check_grad - Check the supplied derivative using finite differences.
 
 
-Line Search
+Line search
 -----------
 
 .. autosummary::
@@ -284,7 +297,7 @@ Line Search
    bracket - Bracket a minimum, given two starting points.
    line_search - Return a step that satisfies the strong Wolfe conditions.
 
-Hessian Approximation
+Hessian approximation
 ---------------------
 
 .. autosummary::
@@ -293,7 +306,7 @@ Hessian Approximation
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
    HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
-Benchmark Problems
+Benchmark problems
 ------------------
 
 .. autosummary::
@@ -304,7 +317,7 @@ Benchmark Problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
-Legacy Functions
+Legacy functions
 ================
 
 The functions below are not recommended for use in new scripts;
@@ -334,7 +347,6 @@ Constrained multivariate methods:
    fmin_tnc - Truncated Newton code.
    fmin_cobyla - Constrained optimization by linear approximation.
    fmin_slsqp - Minimization using sequential least-squares programming.
-   differential_evolution - stochastic minimization using differential evolution.
 
 Univariate (scalar) minimization methods:
 
@@ -345,7 +357,7 @@ Univariate (scalar) minimization methods:
    brent - 1-D function minimization using Brent method.
    golden - 1-D function minimization using Golden Section method.
 
-Least-Squares
+Least-squares
 -------------
 
 .. autosummary::
@@ -353,7 +365,7 @@ Least-Squares
 
    leastsq - Minimize the sum of squares of M equations in N unknowns.
 
-Root Finding
+Root finding
 ------------
 
 General nonlinear solvers:
@@ -361,7 +373,7 @@ General nonlinear solvers:
 .. autosummary::
    :toctree: generated/
 
-   fsolve - Non-linear multi-variable equation solver.
+   fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
 
@@ -385,8 +397,6 @@ Simple iteration solvers:
 :mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 """
 
-from __future__ import division, print_function, absolute_import
-
 from .optimize import *
 from ._minimize import *
 from ._root import *
@@ -398,10 +408,10 @@ from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
-from .nnls import nnls
+from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
-from ._hungarian import linear_sum_assignment
+from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
@@ -410,6 +420,7 @@ from ._constraints import (NonlinearConstraint,
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
+from ._qap import quadratic_assignment
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

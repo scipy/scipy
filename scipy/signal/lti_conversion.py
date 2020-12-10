@@ -2,8 +2,6 @@
 ltisys -- a collection of functions to convert linear time invariant systems
 from one representation to another.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
@@ -149,7 +147,7 @@ def _restore(M, shape):
 
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices and ensure they are two-dimensional.
+    """Check state-space matrices and ensure they are 2-D.
 
     If enough information on the system is provided, that is, enough
     properly-shaped arrays are passed to the function, the missing ones
@@ -217,11 +215,11 @@ def ss2tf(A, B, C, D, input=0):
     Returns
     -------
     num : 2-D ndarray
-        Numerator(s) of the resulting transfer function(s).  `num` has one row
+        Numerator(s) of the resulting transfer function(s). `num` has one row
         for each of the system's outputs. Each row is a sequence representation
         of the numerator polynomial.
     den : 1-D ndarray
-        Denominator of the resulting transfer function(s).  `den` is a sequence
+        Denominator of the resulting transfer function(s). `den` is a sequence
         representation of the denominator polynomial.
 
     Examples
@@ -238,8 +236,8 @@ def ss2tf(A, B, C, D, input=0):
         \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
 
     >>> A = [[-2, -1], [1, 0]]
-    >>> B = [[1], [0]]  # 2-dimensional column vector
-    >>> C = [[1, 2]]    # 2-dimensional row vector
+    >>> B = [[1], [0]]  # 2-D column vector
+    >>> C = [[1, 2]]    # 2-D row vector
     >>> D = 1
 
     to the transfer function:
@@ -248,7 +246,7 @@ def ss2tf(A, B, C, D, input=0):
 
     >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
-    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
+    (array([[1., 3., 3.]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
 
@@ -275,8 +273,8 @@ def ss2tf(A, B, C, D, input=0):
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:, 0] + B[:, 0] + C[0, :] + D
-    num = numpy.zeros((nout, num_states + 1), type_test.dtype)
+    type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
+    num = numpy.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
@@ -378,7 +376,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     Notes
     -----
     By default, the routine uses a Zero-Order Hold (zoh) method to perform
-    the transformation.  Alternatively, a generalized bilinear transformation
+    the transformation. Alternatively, a generalized bilinear transformation
     may be used, which includes the common Tustin's bilinear approximation,
     an Euler's method technique, or a backwards differencing technique.
 

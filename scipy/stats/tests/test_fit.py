@@ -1,10 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_allclose, suppress_warnings
 import pytest
 from scipy import stats
 
@@ -26,6 +23,7 @@ failing_fits = [
         'gengamma',
         'kappa4',
         'ksone',
+        'kstwo',
         'mielke',
         'ncf',
         'ncx2',
@@ -36,7 +34,7 @@ failing_fits = [
         'vonmises',
         'wrapcauchy',
         'levy_stable',
-        'trapz'
+        'trapezoid'
 ]
 
 # Don't run the fit test on these:
@@ -72,7 +70,7 @@ def test_cont_fit(distname, arg):
 
     truearg = np.hstack([arg, [0.0, 1.0]])
     diffthreshold = np.max(np.vstack([truearg*thresh_percent,
-                                      np.ones(distfn.numargs+2)*thresh_min]),
+                                      np.full(distfn.numargs+2, thresh_min)]),
                            0)
 
     for fit_size in fit_sizes:

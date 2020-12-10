@@ -36,7 +36,7 @@ bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
 bsr_transpose       v iiiiIIT*I*I*T
-bsr_matmat_pass2    v iiiiiIITIIT*I*I*T
+bsr_matmat          v iiiiiiIITIIT*I*I*T
 bsr_matvec          v iiiiIITT*T
 bsr_matvecs         v iiiiiIITT*T
 bsr_elmul_bsr       v iiiiIITIIT*I*I*T
@@ -56,8 +56,8 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 CSC_ROUTINES = """
 csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
-csc_matmat_pass1    v iiIIII*I
-csc_matmat_pass2    v iiIITIIT*I*I*T
+csc_matmat_maxnnz   l iiIIII
+csc_matmat          v iiIITIIT*I*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
 csc_elmul_csc       v iiIITIIT*I*I*T
@@ -75,8 +75,8 @@ csc_ge_csc          v iiIITIIT*I*I*B
 
 # csr.h
 CSR_ROUTINES = """
-csr_matmat_pass1    v iiIIII*I
-csr_matmat_pass2    v iiIITIIT*I*I*T
+csr_matmat_maxnnz   l iiIIII
+csr_matmat          v iiIITIIT*I*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
@@ -301,26 +301,19 @@ def parse_routine(name, args, types):
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
         arglist = get_arglist(I_type, T_type)
-        if T_type is None:
-            dispatch = "%s" % (I_type,)
-        else:
-            dispatch = "%s,%s" % (I_type, T_type)
-        if 'B' in arg_spec:
-            dispatch += ",npy_bool_wrapper"
 
         piece = """
         case %(j)s:"""
         if ret_spec == 'v':
             piece += """
-            (void)%(name)s<%(dispatch)s>(%(arglist)s);
+            (void)%(name)s(%(arglist)s);
             return 0;"""
         else:
             piece += """
-            return %(name)s<%(dispatch)s>(%(arglist)s);"""
+            return %(name)s(%(arglist)s);"""
         thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type,
                                       I_typenum=I_typenum, T_typenum=T_typenum,
-                                      arglist=arglist, name=name,
-                                      dispatch=dispatch)
+                                      arglist=arglist, name=name)
 
     thunk_content += """
     default:
@@ -361,8 +354,8 @@ def main():
 
             try:
                 name, args = line.split(None, 1)
-            except ValueError:
-                raise ValueError("Malformed line: %r" % (line,))
+            except ValueError as e:
+                raise ValueError("Malformed line: %r" % (line,)) from e
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:

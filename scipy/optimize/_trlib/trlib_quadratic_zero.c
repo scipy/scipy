@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,7 +38,7 @@ trlib_int_t trlib_quadratic_zero(trlib_flt_t c_abs, trlib_flt_t c_lin, trlib_flt
     *t2 = 0.0;    // second root
 
     if (fabs(c_abs) > tol*lin_sq) {
-        // well behaved non-degenerate quadratic
+        // well-behaved non-degenerate quadratic
         // compute discriminant
         q = lin_sq - 4.0 * c_abs;
         if ( fabs(q) <= (TRLIB_EPS*c_lin)*(TRLIB_EPS*c_lin) ) {

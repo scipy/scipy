@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from scipy import stats
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_,
@@ -318,6 +316,37 @@ def test_kde_integer_input():
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
 
 
+_ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
+
+@pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
+@pytest.mark.parametrize("weights_type", _ftypes)
+@pytest.mark.parametrize("dataset_type", _ftypes)
+@pytest.mark.parametrize("point_type", _ftypes)
+def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+    # Check whether the datatypes are available
+    point_type = getattr(np, point_type, None)
+    dataset_type = getattr(np, weights_type, None)
+    weights_type = getattr(np, weights_type, None)
+
+    if bw_type in ["scott", "silverman"]:
+        bw = bw_type
+    else:
+        bw_type = getattr(np, bw_type, None)
+        bw = bw_type(3) if bw_type else None
+
+    if any(dt is None for dt in [point_type, dataset_type, weights_type, bw]):
+        pytest.skip()
+
+    weights = np.arange(5, dtype=weights_type)
+    dataset = np.arange(5, dtype=dataset_type)
+    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    points = np.arange(5, dtype=point_type)
+    result = k(points)
+    # weights are always cast to float64
+    assert result.dtype == np.result_type(dataset, points, np.float64(weights),
+                                          k.factor)
+
+
 def test_pdf_logpdf():
     np.random.seed(1)
     n_basesample = 50
@@ -367,6 +396,23 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
+def test_logpdf_overflow():
+    # regression test for gh-12988; testing against linalg instability for
+    # very high dimensionality kde
+    np.random.seed(1)
+    n_dimensions = 2500
+    n_samples = 5000
+    xn = np.array([np.random.randn(n_samples) + (n) for n in range(
+        0, n_dimensions)])
+
+    # Default
+    gkde = stats.gaussian_kde(xn)
+
+    logpdf = gkde.logpdf(np.arange(0, n_dimensions))
+    np.testing.assert_equal(np.isneginf(logpdf[0]), False)
+    np.testing.assert_equal(np.isnan(logpdf[0]), False)
+
+
 def test_weights_intact():
     # regression test for gh-9709: weights are not modified
     np.random.seed(12345)
@@ -390,3 +436,52 @@ def test_weights_integer():
     assert_allclose(pdf_i.evaluate(xn),
                     pdf_f.evaluate(xn), atol=1e-14, rtol=1e-14)
 
+
+def test_seed():
+    # Test the seed option of the resample method
+    def test_seed_sub(gkde_trail):
+        n_sample = 200
+        # The results should be different without using seed
+        samp1 = gkde_trail.resample(n_sample)
+        samp2 = gkde_trail.resample(n_sample)
+        assert_raises(
+            AssertionError, assert_allclose, samp1, samp2, atol=1e-13
+        )
+        # Use integer seed
+        seed = 831
+        samp1 = gkde_trail.resample(n_sample, seed=seed)
+        samp2 = gkde_trail.resample(n_sample, seed=seed)
+        assert_allclose(samp1, samp2, atol=1e-13)
+        # Use RandomState
+        rstate1 = np.random.RandomState(seed=138)
+        samp1 = gkde_trail.resample(n_sample, seed=rstate1)
+        rstate2 = np.random.RandomState(seed=138)
+        samp2 = gkde_trail.resample(n_sample, seed=rstate2)
+        assert_allclose(samp1, samp2, atol=1e-13)
+
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        if hasattr(np.random, 'default_rng'):
+            # obtain a np.random.Generator object
+            rng = np.random.default_rng(1234)
+            gkde_trail.resample(n_sample, seed=rng)
+
+    np.random.seed(8765678)
+    n_basesample = 500
+    wn = np.random.rand(n_basesample)
+    # Test 1D case
+    xn_1d = np.random.randn(n_basesample)
+
+    gkde_1d = stats.gaussian_kde(xn_1d)
+    test_seed_sub(gkde_1d)
+    gkde_1d_weighted = stats.gaussian_kde(xn_1d, weights=wn)
+    test_seed_sub(gkde_1d_weighted)
+
+    # Test 2D case
+    mean = np.array([1.0, 3.0])
+    covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
+    xn_2d = np.random.multivariate_normal(mean, covariance, size=n_basesample).T
+
+    gkde_2d = stats.gaussian_kde(xn_2d)
+    test_seed_sub(gkde_2d)
+    gkde_2d_weighted = stats.gaussian_kde(xn_2d, weights=wn)
+    test_seed_sub(gkde_2d_weighted)

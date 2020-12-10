@@ -1,4 +1,6 @@
 """
+.. _statsrefmanual:
+
 ==========================================
 Statistical functions (:mod:`scipy.stats`)
 ==========================================
@@ -50,8 +52,6 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Deprecated. Alias for weibull_min
-   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -61,6 +61,7 @@ Continuous distributions
    gamma             -- Gamma
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
+   geninvgauss       -- Generalized Inverse Gaussian
    gilbrat           -- Gilbrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
@@ -77,9 +78,11 @@ Continuous distributions
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
    kappa3            -- Kappa 3 parameter
-   ksone             -- Kolmogorov-Smirnov one-sided (no stats)
-   kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
+   ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
+   kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
+   kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
    laplace           -- Laplace
+   laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
    levy_l
    levy_stable
@@ -87,6 +90,7 @@ Continuous distributions
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
+   loguniform        -- Log-Uniform
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
@@ -103,14 +107,13 @@ Continuous distributions
    powerlognorm      -- Power log normal
    powernorm         -- Power normal
    rdist             -- R-distribution
-   reciprocal        -- Reciprocal
    rayleigh          -- Rayleigh
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trapz              -- Trapezoidal
+   trapezoid         -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -129,16 +132,18 @@ Multivariate distributions
 .. autosummary::
    :toctree: generated/
 
-   multivariate_normal   -- Multivariate normal distribution
-   matrix_normal         -- Matrix normal distribution
-   dirichlet             -- Dirichlet
-   wishart               -- Wishart
-   invwishart            -- Inverse Wishart
-   multinomial           -- Multinomial distribution
-   special_ortho_group   -- SO(N) group
-   ortho_group           -- O(N) group
-   unitary_group         -- U(N) group
-   random_correlation    -- random correlation matrices
+   multivariate_normal    -- Multivariate normal distribution
+   matrix_normal          -- Matrix normal distribution
+   dirichlet              -- Dirichlet
+   wishart                -- Wishart
+   invwishart             -- Inverse Wishart
+   multinomial            -- Multinomial distribution
+   special_ortho_group    -- SO(N) group
+   ortho_group            -- O(N) group
+   unitary_group          -- U(N) group
+   random_correlation     -- random correlation matrices
+   multivariate_t         -- Multivariate t-distribution
+   multivariate_hypergeom -- Multivariate hypergeometric distribution
 
 Discrete distributions
 ======================
@@ -147,6 +152,7 @@ Discrete distributions
    :toctree: generated/
 
    bernoulli         -- Bernoulli
+   betabinom         -- Beta-Binomial
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian
@@ -154,6 +160,7 @@ Discrete distributions
    hypergeom         -- Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
+   nhypergeom        -- Negative Hypergeometric
    planck            -- Planck (Discrete Exponential)
    poisson           -- Poisson
    randint           -- Discrete Uniform
@@ -196,6 +203,7 @@ Summary statistics
    mvsdist
    entropy
    median_absolute_deviation
+   median_abs_deviation
 
 Frequency statistics
 ====================
@@ -231,6 +239,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
+   multiscale_graphcorr
 
 Statistical tests
 =================
@@ -242,9 +251,11 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   kstest
    chisquare
+   cramervonmises
    power_divergence
+   kstest
+   ks_1samp
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
@@ -361,12 +372,22 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+Warnings used in :mod:`scipy.stats`
+===================================
+
+.. autosummary::
+   :toctree: generated/
+
+   F_onewayConstantInputWarning
+   F_onewayBadInputSizesWarning
+   PearsonRConstantInputWarning
+   PearsonRNearConstantInputWarning
+   SpearmanRConstantInputWarning
+
 For many more stat related functions install the software R and the
 interface package rpy.
 
 """
-from __future__ import division, print_function, absolute_import
-
 from .stats import *
 from .distributions import *
 from .morestats import *
