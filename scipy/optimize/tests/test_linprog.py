@@ -736,9 +736,7 @@ class LinprogCommonTests(object):
         _assert_infeasible(res)
 
         # Infeasibility detected in presolve
-        # TODO: HiGHS presolve for simplex/ipx currently not finding this case;
-        #       see https://github.com/ERGO-Code/HiGHS/issues/425
-        if self.options.get('presolve', True) and 'highs' not in self.method:
+        if self.options.get('presolve', True):
             assert_equal(res.nit, 0)
 
     def test_singleton_row_eq_2(self):
