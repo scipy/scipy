@@ -427,7 +427,12 @@ target_include_directories(libhighs PUBLIC . ipm/ io/ lp_data/ mip/ simplex/
                            presolve/ util/ test/ interfaces/ ../external/)
 target_include_directories(libhighs PUBLIC ${HIGHS_BINARY_DIR})
 
-target_compile_options(libhighs PRIVATE "-O3" "-DNDEBUG")
+if (${HiGHSRELEASE} ON)
+    target_compile_options(libhighs PRIVATE "-O3" "-DNDEBUG")
+endif()
+
+# target_compile_options(libhighs PRIVATE "-Wall")
+# target_compile_options(libhighs PRIVATE "-Wunused")
 
 set_target_properties(libhighs PROPERTIES
     OUTPUT_NAME "highs"

@@ -30,7 +30,15 @@ endif()
 
 # Note: Not ON by default. Still need to fix the exe generation dir: rename from 
 # app/ to bin/
+option(EXP "Experimental mode: run unit tests with doctest." OFF)
 option(FAST_BUILD "Fast build: only build static lib and exe and quick test." OFF)
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HIGHS_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${HIGHS_BINARY_DIR}/lib)
+
+# set the correct rpath for OS X
+set(CMAKE_MACOSX_RPATH ON)
+
 if (NOT FAST_BUILD)
 
 set(HIGHS_VERSION_PATCH 0)
@@ -235,8 +243,6 @@ include_directories(
     ${HIGHS_SOURCE_DIR}/src/test
     ${HIGHS_SOURCE_DIR}/src/util)
 
-# set the correct rpath for OS X
-set(CMAKE_MACOSX_RPATH ON)
 
 # explicitly switch on colored output for ninja
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -334,12 +340,12 @@ set_tests_properties(highs-exe-build
                      RESOURCE_LOCK highs)
 
 set(successInstances
-    "25fv47\;2888\; 5.501846\;"
-    "80bau3b\;3760\; 9.872242\;"
-    "greenbea\;5249\;-7.255525\;")
+    "25fv47\;2888\; 5.5018458883\;"
+    "80bau3b\;3760\; 9.8722419241\;"
+    "greenbea\;5249\;-7.2555248130\;")
 
 set(optionsInstances
-    "adlittle\;81\; 2.254950\;")
+    "adlittle\;81\; 2.2549496316\;")
 
 set(infeasibleInstances
     "bgetam\;        infeasible")
@@ -403,6 +409,14 @@ add_instance_tests(unboundedInstances "Unbounded" " ")
 foreach(setting ${settings})
     add_instance_tests(optionsInstances "Optimal" ${setting})
 endforeach()
+
+if (EXP) 
+    add_executable(doctest)
+    #target_sources(doctest PRIVATE check/doctest/TestPresolveColumnSingletons.cpp)
+    target_sources(doctest PRIVATE check/doctest/TestPresolveIssue.cpp)
+    target_include_directories(doctest PRIVATE external)
+    target_link_libraries(doctest libhighs)
+endif()
 
 # Dashboards later on.
 # include(CTest)

@@ -2386,7 +2386,7 @@ void Presolve::addChange(PresolveRule type, int row, int col) {
 
 // when setting a value to a primal variable and eliminating row update b,
 // singleton Rows linked list, number of nonzeros in rows
-void Presolve::setPrimalValue(int j, double value) {
+void Presolve::setPrimalValue(const int j, const double value) {
   flagCol.at(j) = 0;
   if (!hasChange) hasChange = true;
   valuePrimal.at(j) = value;
@@ -2399,10 +2399,6 @@ void Presolve::setPrimalValue(int j, double value) {
 
       // update singleton row list
       if (nzRow.at(row) == 1) singRow.push_back(row);
-      if (nzRow.at(row) == 0) {
-        flagRow[row] = 0;
-        addChange(PresolveRule::EMPTY_ROW, row, j);
-      }
     }
   }
 
@@ -2414,6 +2410,8 @@ void Presolve::setPrimalValue(int j, double value) {
     for (int k = Astart.at(j); k < Aend.at(j); ++k)
       if (flagRow.at(Aindex.at(k))) {
         const int row = Aindex[k];
+        // std::cout << row << " " << rowLower[row] << " " << rowUpper[row] <<
+        // std::endl;
 
         if (iKKTcheck == 1) {
           bndsL.push_back(make_pair(row, rowLower.at(row)));
@@ -2429,7 +2427,19 @@ void Presolve::setPrimalValue(int j, double value) {
         if (implRowValueUpper.at(row) < HIGHS_CONST_INF)
           implRowValueUpper.at(row) -= Avalue.at(k) * value;
 
-        // std::cout << "Bounds of row " << row << " updated." << std::endl;
+        if (nzRow.at(row) == 0) {
+          if (rowLower[row] - rowUpper[row] > tol) {
+            status = Infeasible;
+            return;
+          }
+          if (rowLower[row] > tol || rowUpper[row] < -tol) {
+            status = Infeasible;
+            return;
+          }
+
+          flagRow[row] = 0;
+          addChange(PresolveRule::EMPTY_ROW, row, j);
+        }
       }
 
     if (iKKTcheck == 1) {
