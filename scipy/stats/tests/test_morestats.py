@@ -1118,6 +1118,24 @@ class TestWilcoxon(object):
         d = np.arange(1, 27)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
+    def test_nan_policy(self):
+
+        x1 = np.array([1, 2, 3])
+        x2 = np.array([1, 2, 3, np.nan])
+        assert_equal(stats.wilcoxon(x1), stats.wilcoxon(x2, nan_policy="omit"))
+        assert_equal((np.nan, np.nan),
+                     stats.wilcoxon(x2, nan_policy="propagate"))
+
+        assert_raises(ValueError, stats.wilcoxon, x2, nan_policy='raise')
+
+        x3 = np.array([5, 5, 5])
+        x4 = np.array([5, 5, 5, np.nan])
+
+        assert_equal(stats.wilcoxon(x1, x3),
+                     stats.wilcoxon(x2, x4, nan_policy="omit"))
+        assert_equal((np.nan, np.nan),
+                     stats.wilcoxon(x2, x4, nan_policy="propagate"))
+
 
 class TestKstat(object):
     def test_moments_normal_distribution(self):

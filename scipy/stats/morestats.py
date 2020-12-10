@@ -2807,7 +2807,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", mode='auto'):
+             alternative="two-sided", mode='auto', nan_policy='omit'):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -2844,6 +2844,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         "two-sided".
     mode : {"auto", "exact", "approx"}
         Method to calculate the p-value, see Notes. Default is "auto".
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' just return
+        nans, 'raise' throws an error, 'omit' performs the calculations
+        ignoring nan values. Default is 'omit'.
 
     Returns
     -------
@@ -2943,11 +2947,25 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         raise ValueError("Alternative must be either 'two-sided', "
                          "'greater' or 'less'")
 
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    if contains_nan:
+        if nan_policy == 'omit':
+            x = x[~np.isnan(x)]
+        elif nan_policy == 'propagate':
+            return WilcoxonResult(np.nan, np.nan)
+
     if y is None:
         d = asarray(x)
         if d.ndim > 1:
             raise ValueError('Sample x must be one-dimensional.')
     else:
+        contains_nan, nan_policy = _contains_nan(y, nan_policy)
+        if contains_nan:
+            if nan_policy == 'omit':
+                y = y[~np.isnan(y)]
+            elif nan_policy == 'propagate':
+                return WilcoxonResult(np.nan, np.nan)
+
         x, y = map(asarray, (x, y))
         if x.ndim > 1 or y.ndim > 1:
             raise ValueError('Samples x and y must be one-dimensional.')
