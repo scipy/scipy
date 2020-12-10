@@ -5851,7 +5851,7 @@ class TestPageL:
           (266, 4.121656378600823e-05, False, 'exact',
            [[1.5, 4., 8.3, 5, 19, 11],
             [5, 4, 3.5, 10, 20, 21],
-            [8.4, 3.2, 10, 12,14, 15]]),
+            [8.4, 3.2, 10, 12, 14, 15]]),
           (332, 0.9566400920502488, True, 'exact',
            [[4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
             [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
@@ -5881,6 +5881,7 @@ class TestPageL:
            [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
             [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
          ]
+
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
     def test_accuracy(self, L, p, ranked, method, data):
         np.random.seed(42)
@@ -5907,6 +5908,7 @@ class TestPageL:
              [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
              [1, 2, 3, 4, 5, 6, 7, 8]]),
           ]
+
     # only the first of these appears slow because intermediate data are
     # cached and used on the rest
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
