@@ -327,12 +327,6 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     Tschuprow's T the returned values can often be similar or even equivalent.
     They are likely to diverge more as the array shape diverges from a 2x2.
 
-    Lastly, all of the metrics are subject to the introduction of bias from
-    increased counts or increased number of groups among observed values.
-    In other words, as each value of N approaches infinity the association
-    statistic will approach 1.0.
-
-
     References
     ----------
     .. [1] "Tschuprow's T",
@@ -348,7 +342,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
 
     Examples
     --------
-    An example with 4x2 contingency table:
+    An example with a 4x2 contingency table:
 
     >>> from scipy.stats.contingency import association
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
@@ -356,42 +350,38 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     Pearson's contingency coefficient
     
     >>> association(obs4x2, method="pearson")
-    0.18303
+    0.18303298140595667
 
     Cramer's V
 
     >>> association(obs4x2, method="cramer")
-    0.18617
+    0.18617813077483678
 
     Tschuprow's T
 
     >>> association(obs4x2, method="tschuprow")
-    0.14146
+    0.14146478765062995
     """
-    try:
-        arr = np.asarray(observed, dtype=int)
-    except ValueError as err:
-        raise ValueError("All array values must be float or int")
+    arr = np.asarray(observed)
+    if not np.issubdtype(arr.dtype, np.integer):
+        raise ValueError("`observed` must be an integer array.")
 
     if len(arr.shape) != 2:
         raise ValueError("method only accepts 2d arrays")
 
-    try:
-        chi2_stat = chi2_contingency(arr, correction=correction,
-                                     lambda_=lambda_)
-    except Exception as err:
-        raise Exception(err)
-    else:
-        phi2 = chi2_stat[0] / arr.sum()
-        n_rows, n_cols = arr.shape
-        if method == "cramer":
-            value = phi2 / min(n_cols - 1, n_rows - 1)
-        elif method == "tschuprow":
-            value = phi2 / math.sqrt((n_rows - 1) * (n_cols - 1))
-        elif method == 'pearson':
-            value = phi2 / (1 + phi2)
-        else:
-            raise ValueError("Invalid argument value: 'method' argument must "
-                             "be 'cramer', 'tschuprow', 'pearson'")
+    chi2_stat = chi2_contingency(arr, correction=correction,
+                                 lambda_=lambda_)
 
-        return math.sqrt(value)
+    phi2 = chi2_stat[0] / arr.sum()
+    n_rows, n_cols = arr.shape
+    if method == "cramer":
+        value = phi2 / min(n_cols - 1, n_rows - 1)
+    elif method == "tschuprow":
+        value = phi2 / math.sqrt((n_rows - 1) * (n_cols - 1))
+    elif method == 'pearson':
+        value = phi2 / (1 + phi2)
+    else:
+        raise ValueError("Invalid argument value: 'method' argument must "
+                         "be 'cramer', 'tschuprow', 'pearson'")
+
+    return math.sqrt(value)
