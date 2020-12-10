@@ -164,6 +164,10 @@ class CZT:
     large prime-length Fourier transforms in O(N log N) time, rather than the
     O(N**2) time required by the direct DFT calculation.
 
+    (The name "chirp z-transform" comes from the use of a chirp in the
+    Bluestein algorithm.  It does not decompose signals into chirps, like
+    other transforms with "chirp" in the name.)
+
     References
     ----------
     .. [1] Leo I. Bluestein, "A linear filtering approach to the computation
