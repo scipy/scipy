@@ -1800,6 +1800,19 @@ class TestLaplace(object):
 
 
 class TestPowerlaw(object):
+    @pytest.mark.parametrize('a', [.5, 1.5, 5])
+    def test_fit_shape(self, a):
+        data = stats.powerlaw.rvs(size=1000, a=a)
+        # obtain the unpenalized log-likelihood function
+
+        def ll(args, data):
+            # to get the same behavior as `powerlaw.reduce_func`, negate and
+            # invert the log-likelihood function
+            return -1/np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
+
+        # compare the results of the LL
+        _assert_less_or_close_loglike(stats.powerlaw, data, ll)
+
     @pytest.mark.parametrize("shape_f,loc_f,scale_f", (
         [2, 3, None], [2, None, None], [None, None, None],
         [2, None, 4.5], [None, None, 4.5], [None, 3, 4.5]))
