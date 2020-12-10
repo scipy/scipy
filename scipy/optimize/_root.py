@@ -350,10 +350,9 @@ def _root_broyden1_doc():
 
             ``svd`` : Keep only the most significant SVD components.
 
-            Extra parameters:
-
-            ``to_retain`` : Number of SVD components to retain when rank
-              reduction is done. Default is ``max_rank - 2``.
+            If the method is ``svd``, the number of SVD components to retain
+            when rank reduction is done may also be specified as the second
+            element in the tuple. Default is ``max_rank - 2``.
 
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
@@ -411,10 +410,9 @@ def _root_broyden2_doc():
 
             ``svd`` : Keep only the most significant SVD components.
 
-            Extra parameters:
-
-            ``to_retain`` : Number of SVD components to retain when rank
-              reduction is done. Default is ``max_rank - 2``.
+            If the method is ``svd``, the number of SVD components to retain
+            when rank reduction is done may also be specified as the second
+            element in the tuple. Default is ``max_rank - 2``.
 
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
