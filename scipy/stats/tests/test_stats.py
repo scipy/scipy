@@ -5880,7 +5880,7 @@ class TestPageL(object):
     @pytest.mark.parametrize("m, n, L, a, compare, method, ranks", ts)
     def test_accuracy(self, m, n, L, a, compare, method, ranks):
         np.random.seed(42)
-        res = stats.pagel(ranks)
+        res = stats.pagel(np.asarray(ranks)[:, ::-1])
         assert_equal(L, res.statistic)
         assert_(compare(res.pvalue, 1-a/100))
         assert_equal(method, res.method)
@@ -5888,7 +5888,7 @@ class TestPageL(object):
     def test_options(self):
         np.random.seed(42)
         m, n = 10, 20
-        predicted_ranks = np.arange(n, 0, -1)
+        predicted_ranks = np.arange(1, n+1)
         perm = np.random.permutation(np.arange(n))
         data = np.random.rand(m, n)
         ranks = stats.rankdata(data, axis=1)
