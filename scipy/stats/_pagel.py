@@ -293,7 +293,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     >>> res = pagel(table,                      # data as originally tabulated
     ...             ranked=False,               # original table is not ranked
-    ...             predicted_ranks=[2, 3, 1]   # we predict these ranks
+    ...             predicted_ranks=[2, 3, 1],  # we predict these ranks
     ...             method="exact"
     ...             )
     >>> res
