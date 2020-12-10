@@ -228,14 +228,15 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     >>> from scipy.stats import pagel
     >>> res = pagel(ranks, method='asymptotic')
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
+    PageLResult(statistic=133.5, pvalue=0.0012693433690751756,
+                method='asymptotic')
 
     The value of the :math:`L` statistic, 133.5, is as expected:
 
     >>> import numpy as np
     >>> m, n = ranks.shape
     >>> predicted_ranks = np.arange(1, n+1)
-    >>> L = (predicted_ranks * np.sum(arranged_ranks, axis=0)).sum()
+    >>> L = (predicted_ranks * np.sum(ranks, axis=0)).sum()
     >>> res.statistic == L
     True
 
@@ -263,7 +264,8 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
     ...             method="asymptotic"
     ...             )
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0012693433690751756, method='asymptotic')
+    PageLResult(statistic=133.5, pvalue=0.0012693433690751756,
+                method='asymptotic')
 
     As presented in [3]_, the *p*-value was calculated based on the asymptotic
     distribution of the :math:`L` statistic. However, the asymptotic
@@ -283,6 +285,7 @@ def pagel(data, ranked=True, predicted_ranks=None, method='auto'):
 
     Suppose the raw data had been tabulated in another order, say
     lecture, seminar, tutorial.
+
     >>> table = np.asarray(table)[:, [1, 2, 0]]
 
     Since the arrangement of this table is not consistent with the assumed

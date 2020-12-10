@@ -5819,7 +5819,7 @@ class TestMGCStat(object):
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
 
-class TestPageL(object):
+class TestPageL:
     # expected statistic and p-values generated using R at
     # https://rdrr.io/cran/cultevo/, e.g.
     # library(cultevo)
@@ -5915,7 +5915,7 @@ class TestPageL(object):
         assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [1, 2])
         assert_raises_with_match(ValueError, "`data` must be a 2d array.", stats.pagel, [[[1]]])
 
-        # test invalid dimentions
+        # test invalid dimensions
         assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(1, 3))
         assert_raises_with_match(ValueError, "Page's L is only appropriate", stats.pagel, np.random.rand(2, 2))
 
