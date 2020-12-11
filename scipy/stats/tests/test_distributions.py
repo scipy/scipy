@@ -3412,7 +3412,6 @@ class TestExpect(object):
         assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
 
-
     def test_logser(self):
         # test a discrete distribution with infinite support and loc
         p, loc = 0.3, 3
@@ -3553,7 +3552,6 @@ class TestRice(object):
         assert_equal(rvs(b=3.).size, 1)
         assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
 
-
     def test_rice_gh9836(self):
         # test that gh-9836 is resolved; previously jumped to 1 at the end
 
@@ -3583,7 +3581,7 @@ class TestRice(object):
         assert_allclose(ppf, ppf_exp)
 
         ppf = scipy.stats.rice.ppf(0.5, np.arange(10, 150, 10))
-         # Generated in R
+        # Generated in R
         # library(VGAM)
         # options(digits=16)
         # b <- seq(10, 140, 10)
@@ -4459,8 +4457,8 @@ def test_ncx2_zero_nc_rvs():
 
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
-    nc = 10**np.arange(5,10)
-    assert_allclose(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
+    nc = 10**np.arange(5, 10)
+    assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
 def test_ncx2_gh8665():
