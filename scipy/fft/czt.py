@@ -83,7 +83,7 @@ def czt_points(m, w=None, a=1+0j):
     >>> from scipy.fft import czt_points
     >>> points = czt_points(16)
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(np.real(points), np.imag(points), 'o')
+    >>> plt.plot(points.real, points.imag, 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
 
@@ -91,7 +91,7 @@ def czt_points(m, w=None, a=1+0j):
 
     >>> m, w, a = 91, 0.995*np.exp(-1j*np.pi*.05), 0.8*np.exp(1j*np.pi/6)
     >>> points = czt_points(m, w, a)
-    >>> plt.plot(np.real(points), np.imag(points), 'o')
+    >>> plt.plot(points.real, points.imag, 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
     """
@@ -191,7 +191,7 @@ class CZT:
            -0.90096887-0.43388374j, -0.22252093-0.97492791j,
             0.62348980-0.78183148j])
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(np.real(czt_7.points()), np.imag(czt_7.points()), 'o')
+    >>> plt.plot(czt_7.points().real, czt_7.points().imag, 'o')
     >>> plt.show()
     """
 
