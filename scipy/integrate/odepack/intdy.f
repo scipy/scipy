@@ -46,7 +46,7 @@ c
       jj1 = l - k
       do 10 jj = jj1,nq
  10     ic = ic*jj
- 15   c = dfloat(ic)
+ 15   c = dble(ic)
       do 20 i = 1,n
  20     dky(i) = c*yh(i,l)
       if (k .eq. nq) go to 55
@@ -59,7 +59,7 @@ c
         jj1 = jp1 - k
         do 30 jj = jj1,j
  30       ic = ic*jj
- 35     c = dfloat(ic)
+ 35     c = dble(ic)
         do 40 i = 1,n
  40       dky(i) = c*yh(i,jp1) + s*dky(i)
  50     continue
