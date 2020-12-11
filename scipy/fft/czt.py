@@ -84,7 +84,8 @@ def czt_points(m, w=None, a=1+0j):
     >>> points = czt_points(16)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(points.real, points.imag, 'o')
-    >>> plt.margins(0.1, 0.1); plt.axis('equal')
+    >>> plt.gca().add_patch(plt.Circle((0,0), radius=1, fill=False, alpha=.3))
+    >>> plt.axis('equal')
     >>> plt.show()
 
     and a 91-point logarithmic spiral that crosses the unit circle:
@@ -92,7 +93,8 @@ def czt_points(m, w=None, a=1+0j):
     >>> m, w, a = 91, 0.995*np.exp(-1j*np.pi*.05), 0.8*np.exp(1j*np.pi/6)
     >>> points = czt_points(m, w, a)
     >>> plt.plot(points.real, points.imag, 'o')
-    >>> plt.margins(0.1, 0.1); plt.axis('equal')
+    >>> plt.gca().add_patch(plt.Circle((0,0), radius=1, fill=False, alpha=.3))
+    >>> plt.axis('equal')
     >>> plt.show()
     """
     m = _validate_sizes(1, m)
@@ -192,6 +194,8 @@ class CZT:
             0.62348980-0.78183148j])
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(czt_7.points().real, czt_7.points().imag, 'o')
+    >>> plt.gca().add_patch(plt.Circle((0,0), radius=1, fill=False, alpha=.3))
+    >>> plt.axis('equal')
     >>> plt.show()
     """
 
