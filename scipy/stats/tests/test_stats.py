@@ -1967,25 +1967,30 @@ class TestZmapZscore:
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
-    def test_zmap_nan_policy_omit(self):
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit(self, ddof):
         # nans in `scores` are propagated, regardless of `nan_policy`.
         # `nan_policy` only affects how nans in `compare` are handled.
         scores = np.array([-3, -1, 2, np.nan])
         compare = np.array([-8, -3, 2, 7, 12, np.nan])
-        z = stats.zmap(scores, compare, nan_policy='omit')
-        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)]))
+        z = stats.zmap(scores, compare, ddof=ddof, nan_policy='omit')
+        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)],
+                                      ddof=ddof))
 
-    def test_zmap_nan_policy_omit_with_axis(self):
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit_with_axis(self, ddof):
         scores = np.arange(-5.0, 9.0).reshape(2, -1)
         compare = np.linspace(-8, 6, 24).reshape(2, -1)
         compare[0, 4] = np.nan
         compare[0, 6] = np.nan
         compare[1, 1] = np.nan
-        z = stats.zmap(scores, compare, nan_policy='omit', axis=1)
+        z = stats.zmap(scores, compare, nan_policy='omit', axis=1, ddof=ddof)
         expected = np.array([stats.zmap(scores[0],
-                                        compare[0][~np.isnan(compare[0])]),
+                                        compare[0][~np.isnan(compare[0])],
+                                        ddof=ddof),
                              stats.zmap(scores[1],
-                                        compare[1][~np.isnan(compare[1])])])
+                                        compare[1][~np.isnan(compare[1])],
+                                        ddof=ddof)])
         assert_allclose(z, expected, rtol=1e-14)
 
     def test_zmap_nan_policy_raise(self):

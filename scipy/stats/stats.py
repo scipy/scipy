@@ -2457,7 +2457,7 @@ def _quiet_nanmean(x):
         return np.mean(y, keepdims=True)
 
 
-def _quiet_nanstd(x):
+def _quiet_nanstd(x, ddof=0):
     """
     Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
 
@@ -2468,7 +2468,7 @@ def _quiet_nanstd(x):
     if y.size == 0:
         return np.array([np.nan])
     else:
-        return np.std(y, keepdims=True)
+        return np.std(y, keepdims=True, ddof=ddof)
 
 
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
@@ -2602,11 +2602,11 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         if axis is None:
             mn = _quiet_nanmean(a.ravel())
-            std = _quiet_nanstd(a.ravel())
+            std = _quiet_nanstd(a.ravel(), ddof=ddof)
             isconst = _isconst(a.ravel())
         else:
             mn = np.apply_along_axis(_quiet_nanmean, axis, a)
-            std = np.apply_along_axis(_quiet_nanstd, axis, a)
+            std = np.apply_along_axis(_quiet_nanstd, axis, a, ddof=ddof)
             isconst = np.apply_along_axis(_isconst, axis, a)
     else:
         mn = a.mean(axis=axis, keepdims=True)
