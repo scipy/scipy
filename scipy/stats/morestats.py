@@ -2845,9 +2845,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     mode : {"auto", "exact", "approx"}
         Method to calculate the p-value, see Notes. Default is "auto".
     nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' just return
-        nans, 'raise' throws an error, 'omit' performs the calculations
-        ignoring nan values. Default is 'omit'.
+        Defines how to handle the occurrence of nans in `x` and `y`.
+        'propagate' returns nan, 'raise' raises an exception, 'omit'
+        performs the calculations ignoring nan values. Default is
+        'omit'.
 
     Returns
     -------

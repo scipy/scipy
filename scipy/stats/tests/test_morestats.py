@@ -1132,9 +1132,13 @@ class TestWilcoxon(object):
         x4 = np.array([5, 5, 5, np.nan])
 
         assert_equal(stats.wilcoxon(x1, x3),
-                     stats.wilcoxon(x2, x4, nan_policy="omit"))
+                     stats.wilcoxon(x1, x4, nan_policy="omit"))
         assert_equal((np.nan, np.nan),
-                     stats.wilcoxon(x2, x4, nan_policy="propagate"))
+                     stats.wilcoxon(x1, x4, nan_policy="propagate"))
+
+        x5 = np.array([6, 6, 6])
+        x6 = np.array([7, 7, np.nan])
+        assert_raises(ValueError, stats.wilcoxon, x5, x6, nan_policy='omit')
 
 
 class TestKstat(object):
