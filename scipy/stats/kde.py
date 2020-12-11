@@ -559,12 +559,19 @@ class gaussian_kde(object):
         """Computes the covariance matrix for each Gaussian kernel using
         covariance_factor().
         """
+
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
+            # Small multiple of identity added to covariance matrix for
+            # numerical stability. Fixes gh-10205. For justification, see
+            # https://juanitorduz.github.io/multivariate_normal/ and primary
+            # source http://www.gaussianprocess.org/gpml/chapters/RWA.pdf
+            eps_I = 1e-14*np.eye(self.d)
+            self._data_covariance += eps_I
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
