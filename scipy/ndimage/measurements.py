@@ -28,8 +28,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
-
 import numpy
 import numpy as np
 from . import _ni_support
@@ -40,7 +38,7 @@ from . import morphology
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
            'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift']
+           'histogram', 'watershed_ift', 'sum_labels']
 
 
 def label(input, structure=None, output=None):
@@ -50,7 +48,7 @@ def label(input, structure=None, output=None):
     Parameters
     ----------
     input : array_like
-        An array-like object to be labeled.  Any non-zero values in `input` are
+        An array-like object to be labeled. Any non-zero values in `input` are
         counted as features and zero values are considered the background.
     structure : array_like, optional
         A structuring element that defines feature connections.
@@ -188,7 +186,7 @@ def label(input, structure=None, output=None):
             raise ValueError('structure dimensions must be equal to 3')
 
     # Use 32 bits if it's large enough for this image.
-    # _ni_label.label()  needs two entries for background and
+    # _ni_label.label() needs two entries for background and
     # foreground tracking
     need_64bits = input.size >= (2**31 - 2)
 
@@ -203,14 +201,14 @@ def label(input, structure=None, output=None):
         else:
             output = np.empty(input.shape, output)
 
-    # handle scalars, 0-dim arrays
+    # handle scalars, 0-D arrays
     if input.ndim == 0 or input.size == 0:
         if input.ndim == 0:
             # scalar
             maxlabel = 1 if (input != 0) else 0
             output[...] = maxlabel
         else:
-            # 0-dim
+            # 0-D
             maxlabel = 0
         if caller_provided_output:
             return maxlabel
@@ -219,7 +217,7 @@ def label(input, structure=None, output=None):
 
     try:
         max_label = _ni_label._label(input, structure, output)
-    except _ni_label.NeedMoreBits:
+    except _ni_label.NeedMoreBits as e:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
         tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
@@ -227,7 +225,9 @@ def label(input, structure=None, output=None):
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
             # refuse to return bad results
-            raise RuntimeError("insufficient bit-depth in requested output type")
+            raise RuntimeError(
+                "insufficient bit-depth in requested output type"
+            ) from e
 
     if caller_provided_output:
         # result was written in-place
@@ -253,7 +253,7 @@ def find_objects(input, max_label=0):
     -------
     object_slices : list of tuples
         A list of tuples, with each tuple containing N slices (with N the
-        dimension of the input array).  Slices correspond to the minimal
+        dimension of the input array). Slices correspond to the minimal
         parallelepiped that contains the object. If a number is missing,
         None is returned instead of a slice.
 
@@ -310,7 +310,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     Roughly equivalent to [func(input[labels == i]) for i in index].
 
     Sequentially applies an arbitrary function (that works on array_like input)
-    to subsets of an n-D image array specified by `labels` and `index`.
+    to subsets of an N-D image array specified by `labels` and `index`.
     The option exists to provide the function with positional parameters as the
     second argument.
 
@@ -390,9 +390,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     try:
         input, labels = numpy.broadcast_arrays(input, labels)
-    except ValueError:
+    except ValueError as e:
         raise ValueError("input and labels must have the same shape "
-                            "(excepting dimensions with width 1)")
+                            "(excepting dimensions with width 1)") from e
 
     if index is None:
         if not pass_positions:
@@ -459,7 +459,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
 
 def _safely_castable_to_int(dt):
-    """Test whether the numpy data type `dt` can be safely cast to an int."""
+    """Test whether the NumPy data type `dt` can be safely cast to an int."""
     int_size = np.dtype(int).itemsize
     safe = ((np.issubdtype(dt, np.signedinteger) and dt.itemsize <= int_size) or
             (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
@@ -471,11 +471,11 @@ def _stats(input, labels=None, index=None, centered=False):
 
     Parameters
     ----------
-    input : array_like, n-dimensional
+    input : array_like, N-D
         The input data to be analyzed.
-    labels : array_like (n-dimensional), optional
-        The labels of the data in `input`.  This array must be broadcast
-        compatible with `input`; typically it is the same shape as `input`.
+    labels : array_like (N-D), optional
+        The labels of the data in `input`. This array must be broadcast
+        compatible with `input`; typically, it is the same shape as `input`.
         If `labels` is None, all nonzero values in `input` are treated as
         the single labeled group.
     index : label or sequence of labels, optional
@@ -484,7 +484,7 @@ def _stats(input, labels=None, index=None, centered=False):
         `labels` is greater than 0.
     centered : bool, optional
         If True, the centered sum of squares for each labeled group is
-        also returned.  Default is False.
+        also returned. Default is False.
 
     Returns
     -------
@@ -522,7 +522,7 @@ def _stats(input, labels=None, index=None, centered=False):
         # themselves).
         means = sums / counts
         centered_input = input - means[labels]
-        # bincount expects 1d inputs, so we ravel the arguments.
+        # bincount expects 1-D inputs, so we ravel the arguments.
         bc = numpy.bincount(labels.ravel(),
                               weights=(centered_input *
                                        centered_input.conjugate()).ravel())
@@ -534,14 +534,14 @@ def _stats(input, labels=None, index=None, centered=False):
     if (not _safely_castable_to_int(labels.dtype) or
             labels.min() < 0 or labels.max() > labels.size):
         # Use numpy.unique to generate the label indices.  `new_labels` will
-        # be 1-d, but it should be interpreted as the flattened n-d array of
+        # be 1-D, but it should be interpreted as the flattened N-D array of
         # label indices.
         unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
         counts = numpy.bincount(new_labels)
         sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:
             # Compute the sum of the mean-centered squares.
-            # We must reshape new_labels to the n-d shape of `input` before
+            # We must reshape new_labels to the N-D shape of `input` before
             # passing it _sum_centered.
             sums_c = _sum_centered(new_labels.reshape(labels.shape))
         idxs = numpy.searchsorted(unique_labels, index)
@@ -556,7 +556,7 @@ def _stats(input, labels=None, index=None, centered=False):
         if centered:
             sums_c = _sum_centered(labels)
         # make sure all index values are valid
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs < counts.size)
         idxs[~found] = 0
 
@@ -574,6 +574,20 @@ def _stats(input, labels=None, index=None, centered=False):
 
 
 def sum(input, labels=None, index=None):
+    """
+    Calculate the sum of the values of the array.
+
+    Notes
+    -----
+    This is an alias for `ndimage.sum_labels` kept for backwards compatibility
+    reasons, for new code please prefer `sum_labels`.  See the `sum_labels`
+    docstring for more details.
+
+    """
+    return sum_labels(input, labels, index)
+
+
+def sum_labels(input, labels=None, index=None):
     """
     Calculate the sum of the values of the array.
 
@@ -667,12 +681,12 @@ def mean(input, labels=None, index=None):
     """
 
     count, sum = _stats(input, labels, index)
-    return sum / numpy.asanyarray(count).astype(numpy.float)
+    return sum / numpy.asanyarray(count).astype(numpy.float64)
 
 
 def variance(input, labels=None, index=None):
     """
-    Calculate the variance of the values of an n-D image array, optionally at
+    Calculate the variance of the values of an N-D image array, optionally at
     specified sub-regions.
 
     Parameters
@@ -724,18 +738,18 @@ def variance(input, labels=None, index=None):
 
 def standard_deviation(input, labels=None, index=None):
     """
-    Calculate the standard deviation of the values of an n-D image array,
+    Calculate the standard deviation of the values of an N-D image array,
     optionally at specified sub-regions.
 
     Parameters
     ----------
     input : array_like
-        Nd-image data to process.
+        N-D image data to process.
     labels : array_like, optional
         Labels to identify sub-regions in `input`.
         If not None, must be same shape as `input`.
     index : int or sequence of ints, optional
-        `labels` to include in output.  If None (default), all values where
+        `labels` to include in output. If None (default), all values where
         `labels` is non-zero are used.
 
     Returns
@@ -832,8 +846,8 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         idxs[idxs >= unique_labels.size] = 0
         found = (unique_labels[idxs] == index)
     else:
-        # labels are an integer type, and there aren't too many.
-        idxs = numpy.asanyarray(index, numpy.int).copy()
+        # labels are an integer type, and there aren't too many
+        idxs = numpy.asanyarray(index, numpy.int_).copy()
         found = (idxs >= 0) & (idxs <= labels.max())
 
     idxs[~ found] = labels.max() + 1
@@ -866,9 +880,9 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         result += [maxpos[idxs]]
     if find_median:
         locs = numpy.arange(len(labels))
-        lo = numpy.zeros(labels.max() + 2, numpy.int)
+        lo = numpy.zeros(labels.max() + 2, numpy.int_)
         lo[labels[::-1]] = locs[::-1]
-        hi = numpy.zeros(labels.max() + 2, numpy.int)
+        hi = numpy.zeros(labels.max() + 2, numpy.int_)
         hi[labels] = locs
         lo = lo[idxs]
         hi = hi[idxs]
@@ -879,7 +893,12 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         step = (hi - lo) // 2
         lo += step
         hi -= step
-        result += [(input[lo] + input[hi]) / 2.0]
+        if (np.issubdtype(input.dtype, np.integer)
+                or np.issubdtype(input.dtype, np.bool_)):
+            # avoid integer overflow or boolean addition (gh-12836)
+            result += [(input[lo].astype('d') + input[hi].astype('d')) / 2.0]
+        else:
+            result += [(input[lo] + input[hi]) / 2.0]
 
     return result
 
@@ -1185,7 +1204,7 @@ def maximum_position(input, labels=None, index=None):
         The `labels` argument only works when `index` is specified.
     index : array_like, optional
         A list of region labels that are taken into account for finding the
-        location of the maxima.  If `index` is None, the first maximum
+        location of the maxima. If `index` is None, the first maximum
         over all elements where `labels` is non-zero is returned.
 
         The `index` argument only works when `labels` is specified.
@@ -1205,6 +1224,35 @@ def maximum_position(input, labels=None, index=None):
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
+
+    Examples
+    --------
+    >>> from scipy import ndimage
+    >>> a = np.array([[1, 2, 0, 0],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+    >>> ndimage.maximum_position(a)
+    (3, 0)
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> lbl = np.array([[0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3],
+    ...                 [0, 1, 2, 3]])
+    >>> ndimage.maximum_position(a, lbl, 1)
+    (1, 1)
+
+    If no index is given, non-zero `labels` are processed:
+
+    >>> ndimage.maximum_position(a, lbl)
+    (2, 3)
+
+    If there are no maxima, the position of the first element is returned:
+
+    >>> ndimage.maximum_position(a, lbl, 2)
+    (0, 2)
 
     """
     dims = numpy.array(numpy.asarray(input).shape)
@@ -1227,7 +1275,7 @@ def extrema(input, labels=None, index=None):
     Parameters
     ----------
     input : ndarray
-        Nd-image data to process.
+        N-D image data to process.
     labels : ndarray, optional
         Labels of features in input.
         If not None, must be same shape as `input`.
@@ -1240,7 +1288,7 @@ def extrema(input, labels=None, index=None):
     minimums, maximums : int or ndarray
         Values of minimums and maximums in each feature.
     min_positions, max_positions : tuple or list of tuples
-        Each tuple gives the n-D coordinates of the corresponding minimum
+        Each tuple gives the N-D coordinates of the corresponding minimum
         or maximum.
 
     See Also
@@ -1304,10 +1352,10 @@ def center_of_mass(input, labels=None, index=None):
         be positive or negative.
     labels : ndarray, optional
         Labels for objects in `input`, as generated by `ndimage.label`.
-        Only used with `index`.  Dimensions must be the same as `input`.
+        Only used with `index`. Dimensions must be the same as `input`.
     index : int or sequence of ints, optional
         Labels for which to calculate centers-of-mass. If not specified,
-        all labels greater than zero are used.  Only used with `labels`.
+        all labels greater than zero are used. Only used with `labels`.
 
     Returns
     -------
@@ -1435,14 +1483,14 @@ def watershed_ift(input, markers, structure=None, output=None):
         Input.
     markers : array_like
         Markers are points within each watershed that form the beginning
-        of the process.  Negative markers are considered background markers
+        of the process. Negative markers are considered background markers
         which are processed after the other markers.
     structure : structure element, optional
         A structuring element defining the connectivity of the object can be
         provided. If None, an element is generated with a squared
         connectivity equal to one.
     output : ndarray, optional
-        An output array can optionally be provided.  The same shape as input.
+        An output array can optionally be provided. The same shape as input.
 
     Returns
     -------

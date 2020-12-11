@@ -1,13 +1,11 @@
 """
-Preliminary module to handle fortran formats for IO. Does not use this outside
+Preliminary module to handle Fortran formats for IO. Does not use this outside
 scipy.sparse io for now, until the API is deemed reasonable.
 
-The *Format classes handle conversion between fortran and python format, and
-FortranFormatParser can create *Format instances from raw fortran format
+The *Format classes handle conversion between Fortran and Python format, and
+FortranFormatParser can create *Format instances from raw Fortran format
 strings (e.g. '(3I4)', '(10I3)', etc...)
 """
-from __future__ import division, print_function, absolute_import
-
 import re
 
 import numpy as np
@@ -192,7 +190,6 @@ class Tokenizer(object):
 
     def next_token(self):
         curpos = self.curpos
-        tokens = self.tokens
 
         while curpos < self.len:
             for i, r in enumerate(self.res):
@@ -222,7 +219,7 @@ class Tokenizer(object):
 
 # Naive fortran formatter - parser is hand-made
 class FortranFormatParser(object):
-    """Parser for fortran format strings. The parse method returns a *Format
+    """Parser for Fortran format strings. The parse method returns a *Format
     instance.
 
     Notes
@@ -247,7 +244,7 @@ class FortranFormatParser(object):
                     tokens.append(t)
             return self._parse_format(tokens)
         except SyntaxError as e:
-            raise BadFortranFormat(str(e))
+            raise BadFortranFormat(str(e)) from e
 
     def _get_min(self, tokens):
         next = tokens.pop(0)

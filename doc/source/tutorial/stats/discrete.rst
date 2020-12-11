@@ -256,6 +256,7 @@ Discrete Distributions in `scipy.stats`
    :maxdepth: 1
 
    discrete_bernoulli
+   discrete_betabinom
    discrete_binom
    discrete_boltzmann
    discrete_planck
@@ -263,6 +264,7 @@ Discrete Distributions in `scipy.stats`
    discrete_geom
    discrete_nbinom
    discrete_hypergeom
+   discrete_nhypergeom
    discrete_zipf
    discrete_logser
    discrete_randint

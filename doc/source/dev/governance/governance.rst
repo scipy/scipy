@@ -17,16 +17,16 @@ The Project
 
 The SciPy Project (The Project) is an open source software project.
 The goal of The Project is to develop open source software for scientific
-computing in Python, and in particular the ``scipy`` package.  The Software
+computing in Python, and, in particular, the ``scipy`` package. The Software
 developed by The Project is released under the BSD (or similar) open source
 license, developed openly and hosted on public GitHub repositories under
 the ``scipy`` GitHub organization.
 
 The Project is developed by a team of distributed developers, called
 Contributors. Contributors are individuals who have contributed code,
-documentation, designs or other work to the Project. Anyone can be a
+documentation, designs, or other work to the Project. Anyone can be a
 Contributor. Contributors can be affiliated with any legal entity or
-none. Contributors participate in the project by submitting, reviewing
+none. Contributors participate in the project by submitting, reviewing,
 and discussing GitHub Pull Requests and Issues and participating in open
 and public Project discussions on GitHub, mailing lists, and other
 channels. The foundation of Project participation is openness and
@@ -49,21 +49,21 @@ Project.
 
 The foundations of Project governance are:
 
--  Openness & Transparency
--  Active Contribution
--  Institutional Neutrality
+-  openness and transparency
+-  active contribution
+-  institutional neutrality
 
 
 Traditionally, Project leadership was provided by a subset of Contributors,
 called Core Developers, whose active and consistent contributions have been
 recognized by their receiving “commit rights” to the Project GitHub
-repositories. In general all Project decisions are made through consensus among
+repositories. In general, all Project decisions are made through consensus among
 the Core Developers with input from the Community.
 
-While this approach has served us well, as the Project grows we see a need for
-a more formal governance model.  The SciPy Core Developers expressed a
+While this approach has served us well, as the Project grows, we see a need for
+a more formal governance model. The SciPy Core Developers expressed a
 preference for a leadership model which includes a BDFL (Benevolent Dictator
-for Life).  Therefore, moving forward The Project leadership will consist of a
+for Life). Therefore, moving forward The Project leadership will consist of a
 BDFL and Steering Council.
 
 BDFL
@@ -71,7 +71,7 @@ BDFL
 
 The Project will have a BDFL (Benevolent Dictator for Life), who is currently
 Pauli Virtanen. As Dictator, the BDFL has the authority to make all final
-decisions for The Project. As Benevolent, the BDFL, in practice chooses to
+decisions for The Project. As Benevolent, the BDFL, in practice, chooses to
 defer that authority to the consensus of the community discussion channels and
 the Steering Council (see below). It is expected, and in the past has been the
 case, that the BDFL will only rarely assert his/her final authority. Because
@@ -87,10 +87,10 @@ any other Council member at his/her discretion.
 The BDFL can appoint his/her successor, but it is expected that the Steering
 Council would be consulted on this decision. If the BDFL is unable to appoint a
 successor, the Steering Council will make this decision - preferably by
-consensus, but if needed by a majority vote.
+consensus, but if needed, by a majority vote.
 
 Note that the BDFL can step down at any time, and acting in good faith, will
-also listen to serious calls to do so.  Also note that the BDFL is more a role
+also listen to serious calls to do so. Also note that the BDFL is more a role
 for fallback decision making rather than that of a director/CEO.
 
 Steering Council
@@ -102,40 +102,40 @@ and sustained over at least one year. The overall role of the Council is to
 ensure, through working with the BDFL and taking input from the Community, the
 long-term well-being of the project, both technically and as a community.
 
-The Council will have a Chair, who is tasked with keeping the organisational
-aspects of the functioning of the Council and the Project on track.  The
+The Council will have a Chair, who is tasked with keeping the organizational
+aspects of the functioning of the Council and the Project on track. The
 Council will also appoint a Release Manager for the Project, who has final
 responsibility for one or more releases.
 
-During the everyday project activities, council members participate in all
-discussions, code review and other project activities as peers with all other
+During the everyday project activities, Council Members participate in all
+discussions, code review, and other project activities as peers with all other
 Contributors and the Community. In these everyday activities, Council Members
 do not have any special power or privilege through their membership on the
 Council. However, it is expected that because of the quality and quantity of
 their contributions and their expert knowledge of the Project Software and
-Services that Council Members will provide useful guidance, both technical and
+Services, Council Members will provide useful guidance, both technical and
 in terms of project direction, to potentially less experienced contributors.
 
 The Steering Council and its Members play a special role in certain situations.
 In particular, the Council may:
 
--   Make decisions about the overall scope, vision and direction of the
+-   Make decisions about the overall scope, vision, and direction of the
     project.
 -   Make decisions about strategic collaborations with other organizations or
     individuals.
--   Make decisions about specific technical issues, features, bugs and pull
+-   Make decisions about specific technical issues, features, bugs, and pull
     requests. They are the primary mechanism of guiding the code review process
     and merging pull requests.
 -   Make decisions about the Services that are run by The Project and manage
     those Services for the benefit of the Project and Community.
 -   Make decisions when regular community discussion does not produce consensus
     on an issue in a reasonable time frame.
--  Update policy documents such as this one.
+-  Update policy documents, such as this one.
 
 Council membership
 ~~~~~~~~~~~~~~~~~~
 
-To become eligible for being a Steering Council Member an individual must be a
+To become eligible for being a Steering Council Member, an individual must be a
 Project Contributor who has produced contributions that are substantial in
 quality and quantity, and sustained over at least one year. Potential Council
 Members are nominated by existing Council members and voted upon by the
@@ -145,26 +145,26 @@ existing Core Developers who, as of January 2017, have been significantly
 active over the last two years.
 
 When considering potential Members, the Council will look at candidates with a
-comprehensive view of their contributions. This will include but is not limited
-to code, code review, infrastructure work, mailing list and chat participation,
+comprehensive view of their contributions. This will include, but is not limited
+to, code, code review, infrastructure work, mailing list and chat participation,
 community help/building, education and outreach, design work, etc. We are
 deliberately not setting arbitrary quantitative metrics (like “100 commits in
 this repo”) to avoid encouraging behavior that plays to the metrics rather than
 the project’s overall well-being. We want to encourage a diverse array of
-backgrounds, viewpoints and talents in our team, which is why we explicitly do
+backgrounds, viewpoints, and talents in our team, which is why we explicitly do
 not define code as the sole metric on which council membership will be
 evaluated.
 
-If a Council member becomes inactive in the project for a period of one year,
+If a Council Member becomes inactive in the project for a period of one year,
 they will be considered for removal from the Council. Before removal, inactive
 Member will be approached to see if they plan on returning to active
-participation. If not they will be removed immediately upon a Council
+participation. If not, they will be removed immediately upon a Council
 vote. If they plan on returning to active participation soon, they will be
 given a grace period of one year. If they don’t return to active participation
 within that time period they will be removed by vote of the Council without
-further grace period. All former Council members can be considered for
+further grace period. All former Council Members can be considered for
 membership again at any time in the future, like any other Project Contributor.
-Retired Council members will be listed on the project website, acknowledging
+Retired Council Members will be listed on the project website, acknowledging
 the period during which they were active in the Council.
 
 The Council reserves the right to eject current Members, other than the BDFL,
@@ -185,12 +185,12 @@ responsible for:
 - Starting a review of the technical direction of the project (as captured by
   the :ref:`scipy-roadmap`) bi-yearly, around mid-April and mid-October.
 - At the same times of the year, summarizing any relevant
-  organisational updates and issues in the preceding period, and asking for
+  organizational updates and issues in the preceding period, and asking for
   feedback/suggestions on the mailing list.
 - Ensuring the composition of the Steering Council stays current.
 - Ensuring matters discussed in private by the Steering Council get
   summarized on the mailing list to keep the Community informed.
-- Ensuring other important organisational documents (e.g. Code of Conduct,
+- Ensuring other important organizational documents (e.g., Code of Conduct,
   Fiscal Sponsorship Agreement) stay current after they are added.
 
 Release Manager
@@ -211,11 +211,11 @@ Conflict of interest
 ~~~~~~~~~~~~~~~~~~~~
 
 It is expected that the BDFL and Council Members will be employed at a wide
-range of companies, universities and non-profit organizations. Because of this,
-it is possible that Members will have conflict of interests. Such conflict of
-interests include, but are not limited to:
+range of companies, universities, and non-profit organizations. Because of this,
+it is possible that Members will have a conflict of interest. Such conflicts of
+interest include, but are not limited to:
 
--   Financial interests, such as investments, employment or contracting work,
+-   Financial interest, such as investments, employment or contracting work,
     outside of The Project that may influence their work on The Project.
 -   Access to proprietary information of their employer that could potentially
     leak into their work with the Project.
@@ -251,7 +251,7 @@ wishes to express an opinion without registering a full veto. These
 numeric votes are also often used informally as a way of getting a
 general sense of people's feelings on some issue, and should not
 normally be taken as formal votes. A formal vote only occurs if
-explicitly declared, and if this does occur then the vote should be held
+explicitly declared, and if this does occur, then the vote should be held
 open for long enough to give all interested Council Members a chance to
 respond -- at least one week.
 
@@ -259,12 +259,12 @@ In practice, we anticipate that for most Steering Council decisions
 (e.g., voting in new members) a more informal process will suffice.
 
 
-Institutional Partners and Funding
+Institutional Partners and funding
 ==================================
 
 The Steering Council is the primary leadership for the project. No
-outside institution, individual or legal entity has the ability to own,
-control, usurp or influence the project other than by participating in
+outside institution, individual, or legal entity has the ability to own,
+control, usurp, or influence the project other than by participating in
 the Project as Contributors and Council Members. However, because
 institutions can be an important funding mechanism for the project, it
 is important to formally acknowledge institutional participation in the
@@ -293,9 +293,9 @@ an Institutional Partner. Once an institution becomes eligible for
 Institutional Partnership, the Steering Council must nominate and
 approve the Partnership.
 
-If at some point an existing Institutional Partner stops having any
-contributing employees, then a one year grace period commences. If at
-the end of this one year period they continue not to have any
+If, at some point, an existing Institutional Partner stops having any
+contributing employees, then a one year grace period commences. If, at
+the end of this one-year period, they continue not to have any
 contributing employees, then their Institutional Partnership will
 lapse, and resuming it will require going through the normal process
 for new Partnerships.
@@ -309,19 +309,19 @@ Institutional Partners to work on The Project is called Institutional
 Funding. However, no funding obtained by an Institutional Partner can
 override the Steering Council. If a Partner has funding to do SciPy work
 and the Council decides to not pursue that work as a project, the
-Partner is free to pursue it on their own. However in this situation,
+Partner is free to pursue it on their own. However, in this situation,
 that part of the Partner’s work will not be under the SciPy umbrella and
-cannot use the Project trademarks in a way that suggests a formal
+cannot use the Project trademarks in any way that suggests a formal
 relationship.
 
 Institutional Partner benefits are:
 
--  Acknowledgement on the SciPy website and in talks.
--  Ability to acknowledge their own funding sources on the SciPy
-   website and in talks.
--  Ability to influence the project through the participation of their
-   Council Member.
--  Council Members invited to SciPy Developer Meetings.
+-  acknowledgement on the SciPy website and in talks
+-  ability to acknowledge their own funding sources on the SciPy
+   website and in talks
+-  ability to influence the project through the participation of their
+   Council Member
+-  invitation of the Council Members to SciPy Developer Meetings
 
 A list of current Institutional Partners is maintained at the page
 :ref:`governance-people`.

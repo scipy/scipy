@@ -40,14 +40,12 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 ``LinearOperator`` instances.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 
 from scipy.sparse import isspmatrix
-from scipy.sparse.sputils import isshape, isintlike, asmatrix
+from scipy.sparse.sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
@@ -99,6 +97,8 @@ class LinearOperator(object):
     args : tuple
         For linear operators describing products etc. of other linear
         operators, the operands of the binary operation.
+    ndim : int
+        Number of dimensions (this is always 2)
 
     See Also
     --------
@@ -136,6 +136,9 @@ class LinearOperator(object):
     array([ 2.,  3.])
 
     """
+
+    ndim = 2
+
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
@@ -801,7 +804,7 @@ def aslinearoperator(A):
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
-    elif isspmatrix(A):
+    elif isspmatrix(A) or is_pydata_spmatrix(A):
         return MatrixLinearOperator(A)
 
     else:

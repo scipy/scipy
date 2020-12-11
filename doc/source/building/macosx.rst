@@ -1,5 +1,5 @@
 ===============================
-Building From Source on Mac OSX
+Building from source on Mac OSX
 ===============================
 
 .. note::
@@ -26,9 +26,9 @@ Alternatively, use Python from one of the OS X package managers
 Compilers (C/C++/FORTRAN/Cython)
 --------------------------------
 
-Though virtually any commercial C/C++ compiler may be used with SciPy, OS X
-comes with GNU C compilers pre-installed. The only thing missing is the GNU
-FORTRAN compiler.
+Though virtually any commercial C/C++ compiler may be used with SciPy, Clang C/C++ compiler,
+which is a Xcode command line tool, can be used for OS X.
+The only thing missing is the GNU FORTRAN compiler.
 
 We recommend gfortran; this is a free, open source, F95 compiler. We suggest you
 use the following binaries:

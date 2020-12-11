@@ -1,7 +1,5 @@
 """Iterative methods for solving linear systems"""
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
 import warnings
@@ -131,7 +129,23 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                'The real or complex N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
                'produce ``Ax`` and ``A^T x`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+               '``scipy.sparse.linalg.LinearOperator``.',
+               footer="""
+               
+               Examples
+               --------
+               >>> from scipy.sparse import csc_matrix
+               >>> from scipy.sparse.linalg import bicg
+               >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+               >>> b = np.array([2, 4, -1], dtype=float)
+               >>> x, exitCode = bicg(A, b)
+               >>> print(exitCode)            # 0 indicates successful convergence
+               0
+               >>> np.allclose(A.dot(x), b)
+               True
+               
+               """
+               )
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A,M,x,b,postprocess = make_system(A, M, x0, b)

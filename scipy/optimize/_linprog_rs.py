@@ -17,7 +17,6 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
 import numpy as np
 from scipy.linalg import solve
 from .optimize import _check_unknown_options
@@ -140,7 +139,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     initial basic feasible solution and an objective that minimizes
     infeasibility in the original problem.
 
-    Conceptually this is done by stacking an identity matrix on the right of
+    Conceptually, this is done by stacking an identity matrix on the right of
     the original constraint matrix, adding artificial variables to correspond
     with each of these new columns, and generating a cost vector that is all
     zeros except for ones corresponding with each of the new variables.
@@ -240,7 +239,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
 def _select_singleton_columns(A, b):
     """
     Finds singleton columns for which the singleton entry is of the same sign
-    as the right hand side; these columns are eligible for inclusion in an
+    as the right-hand side; these columns are eligible for inclusion in an
     initial basis. Determines the rows in which the singleton entries are
     located. For each of these rows, returns the indices of the one singleton
     column and its corresponding row.
@@ -310,6 +309,28 @@ def _display_iter(phase, iteration, slack, con, fun):
     print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
 
 
+def _display_and_callback(phase_one_n, x, postsolve_args, status,
+                          iteration, disp, callback):
+    if phase_one_n is not None:
+        phase = 1
+        x_postsolve = x[:phase_one_n]
+    else:
+        phase = 2
+        x_postsolve = x
+    x_o, fun, slack, con = _postsolve(x_postsolve,
+                                      postsolve_args)
+
+    if callback is not None:
+        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                              'con': con, 'nit': iteration,
+                              'phase': phase, 'complete': False,
+                              'status': status, 'message': "",
+                              'success': False})
+        callback(res)
+    if disp:
+        _display_iter(phase, iteration, slack, con, fun)
+
+
 def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
                maxupdate, mast, pivot, iteration=0, phase_one_n=None):
     """
@@ -334,28 +355,11 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
     else:
         B = LU(A, b)
 
-    for iteration in range(iteration, iteration + maxiter):
+    for iteration in range(iteration, maxiter):
 
         if disp or callback is not None:
-            if phase_one_n is not None:
-                phase = 1
-                x_postsolve = x[:phase_one_n]
-            else:
-                phase = 2
-                x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve,
-                                                    postsolve_args,
-                                                    tol=tol, copy=True)
-
-            if callback is not None:
-                res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                                      'con': con, 'nit': iteration,
-                                      'phase': phase, 'complete': False,
-                                      'status': 0, 'message': "",
-                                      'success': False})
-                callback(res)
-            else:
-                _display_iter(phase, iteration, slack, con, fun)
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
@@ -395,9 +399,17 @@ def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
         x[b] = x[b] - th_star*u     # take step
         x[j] = th_star
         B.update(ab[i][l], j)       # modify basis
-        b = B.b                     # similar to b[ab[i][l]] = j
+        b = B.b                     # similar to b[ab[i][l]] =
+
     else:
+        # If the end of the for loop is reached (without a break statement),
+        # then another step has been taken, so the iteration counter should
+        # increment, info should be displayed, and callback should be called.
+        iteration += 1
         status = 1
+        if disp or callback is not None:
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
     return x, b, status, iteration
 
@@ -415,20 +427,22 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
         subject to:  A @ x == b
                      0 <= x < oo
 
+    User-facing documentation is in _linprog_doc.py.
+
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Currently unused.)
-    A : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
+    A : 2-D array
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
-    b : 1D array
-        1D array of values representing the RHS of each equality constraint
+    b : 1-D array
+        1-D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
-    x0 : 1D array, optional
+    x0 : 1-D array, optional
         Starting values of the independent variables, which will be refined by
         the optimization algorithm. For the revised simplex method, these must
         correspond with a basic feasible solution.
@@ -437,7 +451,7 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector.
             fun : float
                 Current value of the objective function ``c @ x``.
@@ -445,11 +459,11 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
                 True only when an algorithm has completed successfully,
                 so this is always False as the callback function is called
                 only while the algorithm is still iterating.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``.
             phase : int
@@ -500,7 +514,7 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

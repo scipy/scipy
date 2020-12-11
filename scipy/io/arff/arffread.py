@@ -1,13 +1,10 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
-from __future__ import division, print_function, absolute_import
-
 import re
 import datetime
 from collections import OrderedDict
 
 import numpy as np
 
-from scipy._lib.six import next
 import csv
 import ctypes
 
@@ -42,7 +39,7 @@ r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
 r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
-r_nominal = re.compile('{(.+)}')
+r_nominal = re.compile(r'{(.+)}')
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
@@ -478,7 +475,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-
+    
+    # Remove potential trailing whitespace
+    line = line.strip()
+    
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -501,7 +501,7 @@ def split_data_line(line, dialect=None):
 # Parsing header
 # --------------
 def tokenize_attribute(iterable, attribute):
-    """Parse a raw string in header (eg starts by @attribute).
+    """Parse a raw string in header (e.g., starts by @attribute).
 
     Given a raw string attribute, try to get the name and type of the
     attribute. Constraints:
@@ -576,8 +576,8 @@ def tokenize_single_comma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -591,8 +591,8 @@ def tokenize_single_wcomma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -676,7 +676,7 @@ class MetaData(object):
 
     Notes
     -----
-    Also maintains the list of attributes in order, i.e. doing for i in
+    Also maintains the list of attributes in order, i.e., doing for i in
     meta, where meta is an instance of MetaData, will return the
     different attribute names in the order they were defined.
     """
@@ -732,7 +732,7 @@ def loadarff(f):
     Read an arff file.
 
     The data is returned as a record array, which can be accessed much like
-    a dictionary of numpy arrays.  For example, if one of the attributes is
+    a dictionary of NumPy arrays. For example, if one of the attributes is
     called 'pressure', then its first 10 data points can be accessed from the
     ``data`` record array like so: ``data['pressure'][0:10]``
 
@@ -748,7 +748,7 @@ def loadarff(f):
        The data of the arff file, accessible by attribute names.
     meta : `MetaData`
        Contains information about the arff file such as name and
-       type of attributes, the relation (name of the dataset), etc...
+       type of attributes, the relation (name of the dataset), etc.
 
     Raises
     ------
@@ -766,8 +766,8 @@ def loadarff(f):
     * date type attributes
     * string type attributes
 
-    It can read files with numeric and nominal attributes.  It cannot read
-    files with sparse data ({} in the file).  However, this function can
+    It can read files with numeric and nominal attributes. It cannot read
+    files with sparse data ({} in the file). However, this function can
     read files with missing data (? in the file), representing the data
     points as NaNs.
 
@@ -814,7 +814,7 @@ def _loadarff(ofile):
         rel, attr = read_header(ofile)
     except ValueError as e:
         msg = "Error while parsing header, error was: " + str(e)
-        raise ParseArffError(msg)
+        raise ParseArffError(msg) from e
 
     # Check whether we have a string attribute (not supported yet)
     hasstr = False
@@ -840,7 +840,7 @@ def _loadarff(ofile):
     ni = len(attr)
 
     def generator(row_iter, delim=','):
-        # TODO: this is where we are spending times (~80%). I think things
+        # TODO: this is where we are spending time (~80%). I think things
         # could be made more efficiently:
         #   - We could for example "compile" the function, because some values
         #   do not change here.

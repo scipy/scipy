@@ -34,16 +34,14 @@ class complex_ode
 
 This class has the same generic interface as ode, except it can handle complex
 f, y and Jacobians by transparently translating them into the equivalent
-real valued system. It supports the real valued solvers (i.e not zvode) and is
+real-valued system. It supports the real-valued solvers (i.e., not zvode) and is
 an alternative to ode with the zvode solver, sometimes performing better.
 """
-from __future__ import division, print_function, absolute_import
-
 # XXX: Integrators must have:
 # ===========================
 # cvode - C version of vode and vodpk with many improvements.
-#   Get it from http://www.netlib.org/ode/cvode.tar.gz
-#   To wrap cvode to Python, one must write extension module by
+#   Get it from http://www.netlib.org/ode/cvode.tar.gz.
+#   To wrap cvode to Python, one must write the extension module by
 #   hand. Its interface is too much 'advanced C' that using f2py
 #   would be too complicated (or impossible).
 #
@@ -87,11 +85,16 @@ __docformat__ = "restructuredtext en"
 import re
 import warnings
 
-from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
+from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import vode as _vode
 from . import _dop
 from . import lsoda as _lsoda
+
+
+_dop_int_dtype = _dop.types.intvar.dtype
+_vode_int_dtype = _vode.types.intvar.dtype
+_lsoda_int_dtype = _lsoda.types.intvar.dtype
 
 
 # ------------------------------------------------------------------------------
@@ -169,7 +172,7 @@ class ode(object):
         - with_jacobian : bool
           This option is only considered when the user has not supplied a
           Jacobian function and has not indicated (by setting either band)
-          that the Jacobian is banded.  In this case, `with_jacobian` specifies
+          that the Jacobian is banded. In this case, `with_jacobian` specifies
           whether the iteration method of the ODE solver's correction step is
           chord iteration with an internally generated full Jacobian or
           functional iteration with no Jacobian.
@@ -187,7 +190,7 @@ class ode(object):
     "zvode"
 
         Complex-valued Variable-coefficient Ordinary Differential Equation
-        solver, with fixed-leading-coefficient implementation.  It provides
+        solver, with fixed-leading-coefficient implementation. It provides
         implicit Adams method (for non-stiff problems) and a method based on
         backward differentiation formulas (BDF) (for stiff problems).
 
@@ -205,10 +208,10 @@ class ode(object):
 
             When using ZVODE for a stiff system, it should only be used for
             the case in which the function f is analytic, that is, when each f(i)
-            is an analytic function of each y(j).  Analyticity means that the
+            is an analytic function of each y(j). Analyticity means that the
             partial derivative df(i)/dy(j) is a unique complex number, and this
             fact is critical in the way ZVODE solves the dense or banded linear
-            systems that arise in the stiff case.  For a complex stiff ODE system
+            systems that arise in the stiff case. For a complex stiff ODE system
             in which f is not analytic, ZVODE is likely to have convergence
             failures, and for this problem one should instead use DVODE on the
             equivalent real system (in the real and imaginary parts of y).
@@ -430,9 +433,11 @@ class ode(object):
             self._y, self.t = mth(self.f, self.jac or (lambda: None),
                                   self._y, self.t, t,
                                   self.f_params, self.jac_params)
-        except SystemError:
+        except SystemError as e:
             # f2py issue with tuple returns, see ticket 1187.
-            raise ValueError('Function to integrate must not return a tuple.')
+            raise ValueError(
+                'Function to integrate must not return a tuple.'
+            ) from e
 
         return self._y
 
@@ -448,7 +453,7 @@ class ode(object):
         """Extracts the return code for the integration to enable better control
         if the integration fails.
 
-        In general, a return code > 0 implies success while a return code < 0
+        In general, a return code > 0 implies success, while a return code < 0
         implies failure.
 
         Notes
@@ -887,7 +892,7 @@ class vode(IntegratorBase):
         In the Fortran code, the legal values of `MF` are:
             10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25,
             -11, -12, -14, -15, -21, -22, -24, -25
-        but this python wrapper does not use negative values.
+        but this Python wrapper does not use negative values.
 
         Returns
 
@@ -899,11 +904,11 @@ class vode(IntegratorBase):
 
         miter is the correction iteration method:
             miter == 0:  Functional iteraton; no Jacobian involved.
-            miter == 1:  Chord iteration with user-supplied full Jacobian
-            miter == 2:  Chord iteration with internally computed full Jacobian
-            miter == 3:  Chord iteration with internally computed diagonal Jacobian
-            miter == 4:  Chord iteration with user-supplied banded Jacobian
-            miter == 5:  Chord iteration with internally computed banded Jacobian
+            miter == 1:  Chord iteration with user-supplied full Jacobian.
+            miter == 2:  Chord iteration with internally computed full Jacobian.
+            miter == 3:  Chord iteration with internally computed diagonal Jacobian.
+            miter == 4:  Chord iteration with user-supplied banded Jacobian.
+            miter == 5:  Chord iteration with internally computed banded Jacobian.
 
         Side effects: If either self.mu or self.ml is not None and the other is None,
         then the one that is None is set to 0.
@@ -916,7 +921,7 @@ class vode(IntegratorBase):
             if self.ml is None:
                 self.ml = 0
 
-        # has_jac is True if the user provided a jacobian function.
+        # has_jac is True if the user provided a Jacobian function.
         if has_jac:
             if jac_is_banded:
                 miter = 4
@@ -971,7 +976,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _vode_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -994,7 +999,7 @@ class vode(IntegratorBase):
             self.acquire_new_handle()
 
         if self.ml is not None and self.ml > 0:
-            # Banded Jacobian.  Wrap the user-provided function with one
+            # Banded Jacobian. Wrap the user-provided function with one
             # that pads the Jacobian array with the extra `self.ml` rows
             # required by the f2py-generated wrapper.
             jac = _vode_banded_jac_wrapper(jac, self.ml, jac_params)
@@ -1084,7 +1089,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _vode_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1110,7 +1115,7 @@ class dopri5(IntegratorBase):
     supports_solout = True
 
     messages = {1: 'computation successful',
-                2: 'comput. successful (interrupted by solout)',
+                2: 'computation successful (interrupted by solout)',
                 -1: 'input is not consistent',
                 -2: 'larger nsteps is needed',
                 -3: 'step size becomes too small',
@@ -1159,7 +1164,7 @@ class dopri5(IntegratorBase):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), int32)
+        iwork = zeros((21,), _dop_int_dtype)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
@@ -1221,7 +1226,7 @@ class dop853(dopri5):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), int32)
+        iwork = zeros((21,), _dop_int_dtype)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
@@ -1316,7 +1321,7 @@ class lsoda(IntegratorBase):
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        iwork = zeros((liw,), int32)
+        iwork = zeros((liw,), _lsoda_int_dtype)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:

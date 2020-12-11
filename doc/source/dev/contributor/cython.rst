@@ -70,7 +70,7 @@ Exercise
 *See a video run-through of this exercise:* \ `Cythonizing SciPy Code`_ \
 
 #. Update Cython and create a new branch
-   (e.g. ``git checkout -b cython_test``) in which to make some
+   (e.g., ``git checkout -b cython_test``) in which to make some
    experimental changes to SciPy
 
 #. Add some simple Python code in a ``.py`` file in the
@@ -173,7 +173,7 @@ Exercise
 I get something like: ``68.6 ns ± 1.95 ns per loop``. The Cython code ran
 about 10 million times faster than the original Python code.
 
-In this case, the compiler probably optimized-away the loop, simply
+In this case, the compiler probably optimized away the loop, simply
 returning the final result. This sort of speedup is not typical for real
 code, but this exercise certainly illustrates the power of Cython when
 the alternative is many low-level operations in Python.

@@ -205,8 +205,6 @@ BLAS Level 3 functions
 #         refactoring by Fabian Pedregosa, March 2010
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as _np
@@ -217,6 +215,13 @@ try:
     from scipy.linalg import _cblas
 except ImportError:
     _cblas = None
+
+try:
+    from scipy.linalg import _fblas_64
+    HAS_ILP64 = True
+except ImportError:
+    HAS_ILP64 = False
+    _fblas_64 = None
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None
@@ -233,8 +238,8 @@ del empty_module
 _type_score = {x: 1 for x in '?bBhHef'}
 _type_score.update({x: 2 for x in 'iIlLqQd'})
 
-# Handle float128(g) and complex256(G) separately in case non-windows systems.
-# On windows, the values will be rewritten to the same key with the same value.
+# Handle float128(g) and complex256(G) separately in case non-Windows systems.
+# On Windows, the values will be rewritten to the same key with the same value.
 _type_score.update({'F': 3, 'D': 4, 'g': 2, 'G': 4})
 
 # Final mapping to the actual prefixes and dtypes
@@ -318,7 +323,8 @@ def find_best_blas_type(arrays=(), dtype=None):
 
 def _get_funcs(names, arrays, dtype,
                lib_name, fmodule, cmodule,
-               fmodule_name, cmodule_name, alias):
+               fmodule_name, cmodule_name, alias,
+               ilp64=False):
     """
     Return available BLAS/LAPACK functions.
 
@@ -353,6 +359,10 @@ def _get_funcs(names, arrays, dtype,
                 '%s function %s could not be found' % (lib_name, func_name))
         func.module_name, func.typecode = module_name, prefix
         func.dtype = dtype
+        if not ilp64:
+            func.int_dtype = _np.dtype(_np.intc)
+        else:
+            func.int_dtype = _np.dtype(_np.int64)
         func.prefix = prefix  # Backward compatibility
         funcs.append(func)
 
@@ -370,10 +380,10 @@ def _memoize_get_funcs(func):
     func.memo = memo
 
     @functools.wraps(func)
-    def getter(names, arrays=(), dtype=None):
-        key = (names, dtype)
+    def getter(names, arrays=(), dtype=None, ilp64=False):
+        key = (names, dtype, ilp64)
         for array in arrays:
-            # c.f. find_blas_funcs
+            # cf. find_blas_funcs
             key += (array.dtype.char, array.flags.fortran)
 
         try:
@@ -386,7 +396,7 @@ def _memoize_get_funcs(func):
         if value is not None:
             return value
 
-        value = func(names, arrays, dtype)
+        value = func(names, arrays, dtype, ilp64)
 
         if key is not None:
             memo[key] = value
@@ -397,7 +407,7 @@ def _memoize_get_funcs(func):
 
 
 @_memoize_get_funcs
-def get_blas_funcs(names, arrays=(), dtype=None):
+def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
     """Return available BLAS function objects from names.
 
     Arrays are used to determine the optimal prefix of BLAS routines.
@@ -415,6 +425,10 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
 
+    ilp64 : {True, False, 'preferred'}, optional
+        Whether to return ILP64 routine variant.
+        Choosing 'preferred' returns ILP64 routine if available,
+        and otherwise the 32-bit routine. Default: False
 
     Returns
     -------
@@ -430,7 +444,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
 
     In BLAS, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the NumPy
     types {float32, float64, complex64, complex128} respectively.
     The code and the dtype are stored in attributes `typecode` and `dtype`
     of the returned functions.
@@ -447,6 +461,20 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     'z'
 
     """
-    return _get_funcs(names, arrays, dtype,
-                      "BLAS", _fblas, _cblas, "fblas", "cblas",
-                      _blas_alias)
+    if isinstance(ilp64, str):
+        if ilp64 == 'preferred':
+            ilp64 = HAS_ILP64
+        else:
+            raise ValueError("Invalid value for 'ilp64'")
+
+    if not ilp64:
+        return _get_funcs(names, arrays, dtype,
+                          "BLAS", _fblas, _cblas, "fblas", "cblas",
+                          _blas_alias, ilp64=False)
+    else:
+        if not HAS_ILP64:
+            raise RuntimeError("BLAS ILP64 routine requested, but Scipy "
+                               "compiled only with 32-bit BLAS")
+        return _get_funcs(names, arrays, dtype,
+                          "BLAS", _fblas_64, None, "fblas_64", None,
+                          _blas_alias, ilp64=True)

@@ -1,8 +1,6 @@
 """
 Discrete Fourier Transforms - basic.py
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import functools
 from . import pypocketfft as pfft
@@ -11,8 +9,11 @@ from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
                      _workers)
 
 def c2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
-        workers=None):
+        workers=None, *, plan=None):
     """ Return discrete Fourier transform of real or complex sequence. """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
     overwrite_x = overwrite_x or _datacopied(tmp, x)
     norm = _normalization(norm, forward)
@@ -37,10 +38,13 @@ ifft.__name__ = 'ifft'
 
 
 def r2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
-        workers=None):
+        workers=None, *, plan=None):
     """
     Discrete Fourier transform of a real sequence.
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
     norm = _normalization(norm, forward)
     workers = _workers(workers)
@@ -65,10 +69,13 @@ ihfft.__name__ = 'ihfft'
 
 
 def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
-        workers=None):
+        workers=None, *, plan=None):
     """
     Return inverse discrete Fourier transform of real sequence x.
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
     norm = _normalization(norm, forward)
     workers = _workers(workers)
@@ -77,7 +84,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     if np.isrealobj(tmp):
         tmp = tmp + 0.j
 
-    # Last axis utilises hermitian symmetry
+    # Last axis utilizes hermitian symmetry
     if n is None:
         n = (tmp.shape[axis] - 1) * 2
         if n < 1:
@@ -86,7 +93,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     else:
         tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, (axis,), n, forward, norm, None, workers)
 
 
@@ -96,53 +103,80 @@ irfft = functools.partial(c2r, False)
 irfft.__name__ = 'irfft'
 
 
-def fft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def fft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+         *, plan=None):
     """
     2-D discrete Fourier transform.
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return fftn(x, s, axes, norm, overwrite_x, workers)
 
 
-def ifft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def ifft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+          *, plan=None):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return ifftn(x, s, axes, norm, overwrite_x, workers)
 
 
-def rfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def rfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+          *, plan=None):
     """
     2-D discrete Fourier transform of a real sequence
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return rfftn(x, s, axes, norm, overwrite_x, workers)
 
 
-def irfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def irfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+           *, plan=None):
     """
     2-D discrete inverse Fourier transform of a real sequence
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return irfftn(x, s, axes, norm, overwrite_x, workers)
 
 
-def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def hfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+          *, plan=None):
     """
     2-D discrete Fourier transform of a Hermitian sequence
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return hfftn(x, s, axes, norm, overwrite_x, workers)
 
 
-def ihfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None):
+def ihfft2(x, s=None, axes=(-2,-1), norm=None, overwrite_x=False, workers=None,
+           *, plan=None):
     """
     2-D discrete inverse Fourier transform of a Hermitian sequence
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     return ihfftn(x, s, axes, norm, overwrite_x, workers)
 
 
 def c2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
-         workers=None):
+         workers=None, *, plan=None):
     """
     Return multidimensional discrete Fourier transform.
     """
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
 
     shape, axes = _init_nd_shape_and_axes(tmp, s, axes)
@@ -167,8 +201,11 @@ ifftn = functools.partial(c2cn, False)
 ifftn.__name__ = 'ifftn'
 
 def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
-         workers=None):
-    """Return multi-dimensional discrete Fourier transform of real input"""
+         workers=None, *, plan=None):
+    """Return multidimensional discrete Fourier transform of real input"""
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
 
     if not np.isrealobj(tmp):
@@ -182,7 +219,7 @@ def r2cn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     if len(axes) == 0:
         raise ValueError("at least 1 axis must be transformed")
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.r2c(tmp, axes, forward, norm, None, workers)
 
 
@@ -193,8 +230,11 @@ ihfftn.__name__ = 'ihfftn'
 
 
 def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
-         workers=None):
-    """Multi-dimensional inverse discrete fourier transform with real output"""
+         workers=None, *, plan=None):
+    """Multidimensional inverse discrete fourier transform with real output"""
+    if plan is not None:
+        raise NotImplementedError('Passing a precomputed plan is not yet '
+                                  'supported by scipy.fft functions')
     tmp = _asfarray(x)
 
     # TODO: Optimize for hermitian and real?
@@ -213,13 +253,13 @@ def c2rn(forward, x, s=None, axes=None, norm=None, overwrite_x=False,
     norm = _normalization(norm, forward)
     workers = _workers(workers)
 
-    # Last axis utilises hermitian symmetry
+    # Last axis utilizes hermitian symmetry
     lastsize = shape[-1]
     shape[-1] = (shape[-1] // 2) + 1
 
     tmp, _ = _fix_shape(tmp, shape, axes)
 
-    # Note: overwrite_x is not utilised
+    # Note: overwrite_x is not utilized
     return pfft.c2r(tmp, axes, lastsize, forward, norm, None, workers)
 
 

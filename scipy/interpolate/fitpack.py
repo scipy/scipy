@@ -1,5 +1,3 @@
-from __future__ import print_function, division, absolute_import
-
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
@@ -7,6 +5,7 @@ import warnings
 
 import numpy as np
 
+# These are in the API for fitpack even if not used in fitpack.py itself.
 from ._fitpack_impl import bisplrep, bisplev, dblint
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
@@ -15,10 +14,10 @@ from ._bsplines import BSpline
 def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             full_output=0, nest=None, per=0, quiet=1):
     """
-    Find the B-spline representation of an N-dimensional curve.
+    Find the B-spline representation of an N-D curve.
 
     Given a list of N rank-1 arrays, `x`, which represent a curve in
-    N-dimensional space parametrized by `u`, find a smooth approximating
+    N-D space parametrized by `u`, find a smooth approximating
     spline curve g(`u`). Uses the FORTRAN routine parcur from FITPACK.
 
     Parameters
@@ -161,7 +160,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
            full_output=0, per=0, quiet=1):
     """
-    Find the B-spline representation of 1-D curve.
+    Find the B-spline representation of a 1-D curve.
 
     Given the set of data points ``(x[i], y[i])`` determine a smooth spline
     approximation of degree k on the interval ``xb <= x <= xe``.
@@ -274,6 +273,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     Examples
     --------
+    You can interpolate 1-D points with a B-spline curve.
+    Further examples are given in
+    :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
@@ -295,14 +297,14 @@ def splev(x, tck, der=0, ext=0):
     Evaluate a B-spline or its derivatives.
 
     Given the knots and coefficients of a B-spline representation, evaluate
-    the value of the smoothing polynomial and its derivatives.  This is a
+    the value of the smoothing polynomial and its derivatives. This is a
     wrapper around the FORTRAN routines splev and splder of FITPACK.
 
     Parameters
     ----------
     x : array_like
         An array of points at which to return the value of the smoothed
-        spline or its derivatives.  If `tck` was returned from `splprep`,
+        spline or its derivatives. If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
     tck : 3-tuple or a BSpline object
         If a tuple, then it should be a sequence of length 3 returned by
@@ -327,7 +329,7 @@ def splev(x, tck, der=0, ext=0):
     y : ndarray or list of ndarrays
         An array of values representing the spline function evaluated at
         the points in `x`.  If `tck` was returned from `splprep`, then this
-        is a list of arrays representing the curve in N-dimensional space.
+        is a list of arrays representing the curve in an N-D space.
 
     Notes
     -----
@@ -349,6 +351,10 @@ def splev(x, tck, der=0, ext=0):
     .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -359,9 +365,9 @@ def splev(x, tck, der=0, ext=0):
         # remap the out-of-bounds behavior
         try:
             extrapolate = {0: True, }[ext]
-        except KeyError:
+        except KeyError as e:
             raise ValueError("Extrapolation mode %s is not supported "
-                             "by BSpline." % ext)
+                             "by BSpline." % ext) from e
 
         return tck(x, der, extrapolate=extrapolate)
     else:
@@ -412,6 +418,10 @@ def splint(a, b, tck, full_output=0):
         J. Inst. Maths Applics, 17, p.37-41, 1976.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
@@ -473,6 +483,10 @@ def sproot(tck, mest=10):
     .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs
         on Numerical Analysis, Oxford University Press, 1993.
 
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
     """
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
@@ -526,6 +540,10 @@ def spalde(x, tck):
        applics 10 (1972) 134-149.
     .. [3] P. Dierckx : Curve and surface fitting with splines, Monographs on
        Numerical Analysis, Oxford University Press, 1993.
+
+    Examples
+    --------
+    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
@@ -581,6 +599,29 @@ def insert(x, tck, m=1, per=0):
         Computer Aided Design, 12, p.199-201, 1980.
     .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
         Numerical Analysis", Oxford University Press, 1993.
+
+    Examples
+    --------
+    You can insert knots into a B-spline.
+
+    >>> from scipy.interpolate import splrep, insert
+    >>> x = np.linspace(0, 10, 5)
+    >>> y = np.sin(x)
+    >>> tck = splrep(x, y)
+    >>> tck[0]
+    array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
+
+    A knot is inserted:
+
+    >>> tck_inserted = insert(3, tck)
+    >>> tck_inserted[0]
+    array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
+
+    Some knots are inserted:
+
+    >>> tck_inserted2 = insert(8, tck, m=3)
+    >>> tck_inserted2[0]
+    array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
 
     """
     if isinstance(tck, BSpline):

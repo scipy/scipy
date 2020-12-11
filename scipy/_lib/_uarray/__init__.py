@@ -4,7 +4,7 @@
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
 
-``uarray`` is built around a back-end protocol, and overridable multimethods.
+``uarray`` is built around a back-end protocol and overridable multimethods.
 It is necessary to define multimethods for back-ends to be able to override them.
 See the documentation of :obj:`generate_multimethod` on how to write multimethods.
 
@@ -36,9 +36,10 @@ is certainly helpful. We expect core API designers/specifiers to write the
 multimethods, and implementors to override them. But, as is often the case,
 similar people write both.
 
-Without further ado, here's an example multimethTrueod:
+Without further ado, here's an example multimethod:
 
 >>> import uarray as ua
+>>> from uarray import Dispatchable
 >>> def override_me(a, b):
 ...   return Dispatchable(a, int),
 >>> def override_replacer(args, kwargs, dispatchables):
@@ -96,7 +97,7 @@ converted at all and it's up to the backend to handle that.
 ('override_me', (1, '2'), {})
 
 You also have the option to return ``NotImplemented``, in which case processing moves on
-to the next back-end, which in this case, doesn't exist. The same applies to
+to the next back-end, which, in this case, doesn't exist. The same applies to
 ``__ua_convert__``.
 
 >>> be.__ua_function__ = lambda *a, **kw: NotImplemented
@@ -113,4 +114,4 @@ possible.
 
 from ._backend import *
 
-__version__ = '0.5.1+5.ga864a57.scipy'
+__version__ = '0.5.1+49.g4c3f1d7.scipy'

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import operator
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 import scipy.fft._pocketfft.helper as _helper
@@ -61,7 +59,7 @@ def next_fast_len(target):
     Parameters
     ----------
     target : int
-        Length to start searching from.  Must be a positive integer.
+        Length to start searching from. Must be a positive integer.
 
     Returns
     -------

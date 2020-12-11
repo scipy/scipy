@@ -1,28 +1,19 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
-try:
+from .common import Benchmark, LimitedParamBenchmark, safe_import
+
+with safe_import():
     from scipy.spatial import cKDTree, KDTree
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import distance
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import ConvexHull, Voronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import SphericalVoronoi
-except ImportError:
-    pass
-
-from .common import Benchmark, LimitedParamBenchmark
+with safe_import():
+    from scipy.spatial import geometric_slerp
+with safe_import():
+    from scipy.spatial.transform import Rotation
 
 
 class Build(Benchmark):
@@ -54,6 +45,63 @@ class Build(Benchmark):
             self.T = self.cls(self.data, leafsize=n)
         else:
             self.cls(self.data)
+
+
+class PresortedDataSetup(Benchmark):
+    params = [
+        [(3, 10 ** 4, 1000), (8, 10 ** 4, 1000), (16, 10 ** 4, 1000)],
+        [True, False],
+        ['random', 'sorted'],
+        [0.5]
+    ]
+    param_names = ['(m, n, r)', 'balanced', 'order', 'radius']
+
+    def setup(self, mnr, balanced, order, radius):
+        m, n, r = mnr
+
+        np.random.seed(1234)
+        self.data = {
+            'random': np.random.uniform(size=(n, m)),
+            'sorted': np.repeat(np.arange(n, 0, -1)[:, np.newaxis],
+                                m,
+                                axis=1) / n
+        }
+
+        self.queries = np.random.uniform(size=(r, m))
+        self.T = cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class BuildUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_build(self, mnr, balanced, order):
+        cKDTree(self.data.get(order), balanced_tree=balanced)
+
+
+class QueryUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:-1]
+    param_names = PresortedDataSetup.param_names[:-1]
+
+    def setup(self, *args):
+        super().setup(*args, None)
+
+    def time_query(self, mnr, balanced, order):
+        self.T.query(self.queries)
+
+
+class RadiusUnbalanced(PresortedDataSetup):
+    params = PresortedDataSetup.params[:]
+    params[0] = [(3, 1000, 30), (8, 1000, 30), (16, 1000, 30)]
+
+    def time_query_pairs(self, mnr, balanced, order, radius):
+        self.T.query_pairs(radius)
+
+    def time_query_ball_point(self, mnr, balanced, order, radius):
+        self.T.query_ball_point(self.queries, radius)
 
 
 LEAF_SIZES = [8, 128]
@@ -261,35 +309,54 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
+
+class SphericalVorAreas(Benchmark):
+    params = [10, 100, 1000, 5000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        self.points = generate_spherical_points(num_points)
+        self.sv = SphericalVoronoi(self.points, radius=1,
+                                   center=np.zeros(3))
+
+    def time_spherical_polygon_area_calculation(self, num_points):
+        """Time the area calculation in the Spherical Voronoi code."""
+        self.sv.calculate_areas()
+
+
 class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
     'yule', 'dice', 'kulsinski', 'rogerstanimoto', 'russellrao',
-    'sokalmichener', 'sokalsneath', 'wminkowski'])
+    'sokalmichener', 'sokalsneath', 'wminkowski', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
-        # use an equal weight vector to satisfy those metrics
-        # that require weights
-        if metric == 'wminkowski':
-            self.w = np.ones(3)
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'wminkowski':
+            # use an equal weight vector since weights are required
+            self.kwargs = {'w': np.ones(3)}
         else:
-            self.w = None
+            self.kwargs = {}
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric, w=self.w)
+        distance.cdist(self.points, self.points, self.metric, **self.kwargs)
 
     def time_pdist(self, num_points, metric):
         """Time scipy.spatial.distance.pdist over a range of input data
         sizes and metrics.
         """
-        distance.pdist(self.points, metric, w=self.w)
+        distance.pdist(self.points, self.metric, **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):
@@ -332,3 +399,49 @@ class Hausdorff(Benchmark):
     def time_directed_hausdorff(self, num_points):
         # time directed_hausdorff code in 3 D
         distance.directed_hausdorff(self.points1, self.points2)
+
+class GeometricSlerpBench(Benchmark):
+    params = [10, 1000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        points = generate_spherical_points(50)
+        # any two points from the random spherical points
+        # will suffice for the interpolation bounds:
+        self.start = points[0]
+        self.end = points[-1]
+        self.t = np.linspace(0, 1, num_points)
+
+    def time_geometric_slerp_3d(self, num_points):
+        # time geometric_slerp() for 3D interpolation
+        geometric_slerp(start=self.start,
+                        end=self.end,
+                        t=self.t)
+
+class RotationBench(Benchmark):
+    params = [1, 10, 1000, 10000]
+    param_names = ['num_rotations']
+
+    def setup(self, num_rotations):
+        np.random.seed(1234)
+        self.rotations = Rotation.random(num_rotations)
+
+    def time_matrix_conversion(self, num_rotations):
+        '''Time converting rotation from and to matrices'''
+        Rotation.from_matrix(self.rotations.as_matrix())
+
+    def time_euler_conversion(self, num_rotations):
+        '''Time converting rotation from and to euler angles'''
+        Rotation.from_euler("XYZ", self.rotations.as_euler("XYZ"))
+
+    def time_rotvec_conversion(self, num_rotations):
+        '''Time converting rotation from and to rotation vectors'''
+        Rotation.from_rotvec(self.rotations.as_rotvec())
+
+    def time_mrp_conversion(self, num_rotations):
+        '''Time converting rotation from and to Modified Rodrigues Parameters'''
+        Rotation.from_mrp(self.rotations.as_mrp())
+
+    def time_mul_inv(self, num_rotations):
+        '''Time multiplication and inverse of rotations'''
+        self.rotations * self.rotations.inv()

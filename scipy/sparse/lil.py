@@ -1,8 +1,6 @@
 """List of Lists sparse matrix class
 """
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix', 'isspmatrix_lil']
@@ -11,7 +9,6 @@ from bisect import bisect_left
 
 import numpy as np
 
-from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
@@ -97,7 +94,7 @@ class lil_matrix(spmatrix, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype)
+                A = A.astype(dtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -120,8 +117,8 @@ class lil_matrix(spmatrix, IndexMixin):
             # assume A is dense
             try:
                 A = asmatrix(arg1)
-            except TypeError:
-                raise TypeError('unsupported matrix type')
+            except TypeError as e:
+                raise TypeError('unsupported matrix type') from e
             else:
                 from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
@@ -219,8 +216,8 @@ class lil_matrix(spmatrix, IndexMixin):
         # LIL routines handle bounds-checking for us, so don't do it here.
         try:
             x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError):
-            raise IndexError('invalid index')
+        except (ValueError, TypeError, MemoryError) as e:
+            raise IndexError('invalid index') from e
         if x.ndim not in (1, 2):
             raise IndexError('Index dimension must be <= 2')
         return x
@@ -231,7 +228,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self.dtype.type(v)
 
     def _get_sliceXint(self, row, col):
-        row = xrange(*row.indices(self.shape[0]))
+        row = range(*row.indices(self.shape[0]))
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
@@ -241,7 +238,7 @@ class lil_matrix(spmatrix, IndexMixin):
         return self._get_row_ranges((row,), col)
 
     def _get_sliceXslice(self, row, col):
-        row = xrange(*row.indices(self.shape[0]))
+        row = range(*row.indices(self.shape[0]))
         return self._get_row_ranges(row, col)
 
     def _get_arrayXslice(self, row, col):
@@ -280,14 +277,14 @@ class lil_matrix(spmatrix, IndexMixin):
 
         Parameters
         ----------
-        rows : sequence or xrange
-            Rows indexed. If xrange, must be within valid bounds.
+        rows : sequence or range
+            Rows indexed. If range, must be within valid bounds.
         col_slice : slice
             Columns indexed
 
         """
         j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
-        col_range = xrange(j_start, j_stop, j_stride)
+        col_range = range(j_start, j_stop, j_stride)
         nj = len(col_range)
         new = lil_matrix((len(rows), nj), dtype=self.dtype)
 
@@ -364,7 +361,7 @@ class lil_matrix(spmatrix, IndexMixin):
         new = lil_matrix(self.shape, dtype=self.dtype)
         # This is ~14x faster than calling deepcopy() on rows and data.
         _csparsetools.lil_get_row_ranges(M, N, self.rows, self.data,
-                                         new.rows, new.data, xrange(M),
+                                         new.rows, new.data, range(M),
                                          0, N, 1, N)
         return new
 
@@ -450,14 +447,37 @@ class lil_matrix(spmatrix, IndexMixin):
     tolil.__doc__ = spmatrix.tolil.__doc__
 
     def tocsr(self, copy=False):
-        lst = [len(x) for x in self.rows]
-        idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
-
-        indptr = np.cumsum([0] + lst, dtype=idx_dtype)
-        indices = np.array([x for y in self.rows for x in y], dtype=idx_dtype)
-        data = np.array([x for y in self.data for x in y], dtype=self.dtype)
-
         from .csr import csr_matrix
+
+        M, N = self.shape
+        if M == 0 or N == 0:
+            return csr_matrix((M, N), dtype=self.dtype)
+
+        # construct indptr array
+        if M*N <= np.iinfo(np.int32).max:
+            # fast path: it is known that 64-bit indexing will not be needed.
+            idx_dtype = np.int32
+            indptr = np.empty(M + 1, dtype=idx_dtype)
+            indptr[0] = 0
+            _csparsetools.lil_get_lengths(self.rows, indptr[1:])
+            np.cumsum(indptr, out=indptr)
+            nnz = indptr[-1]
+        else:
+            idx_dtype = get_index_dtype(maxval=N)
+            lengths = np.empty(M, dtype=idx_dtype)
+            _csparsetools.lil_get_lengths(self.rows, lengths)
+            nnz = lengths.sum(dtype=np.int64)
+            idx_dtype = get_index_dtype(maxval=max(N, nnz))
+            indptr = np.empty(M + 1, dtype=idx_dtype)
+            indptr[0] = 0
+            np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])
+
+        indices = np.empty(nnz, dtype=idx_dtype)
+        data = np.empty(nnz, dtype=self.dtype)
+        _csparsetools.lil_flatten_to_array(self.rows, indices)
+        _csparsetools.lil_flatten_to_array(self.data, data)
+
+        # init csr matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__

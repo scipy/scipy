@@ -1,14 +1,9 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from scipy._lib.six import string_types
-
-from . import BPoly, PPoly
+from . import PPoly
 from .polyint import _isscalar
-from scipy._lib._util import _asarray_validated
 from scipy.linalg import solve_banded, solve
 
 
@@ -20,7 +15,7 @@ def prepare_input(x, y, axis, dydx=None):
     """Prepare input for cubic spline interpolators.
 
     All data are converted to numpy arrays and checked for correctness.
-    Axes equal to `axis` of arrays `y` and `dydx` are rolled to be the 0-th
+    Axes equal to `axis` of arrays `y` and `dydx` are rolled to be the 0th
     axis. The value of `axis` is converted to lie in
     [0, number of dimensions of `y`).
     """
@@ -80,7 +75,7 @@ class CubicHermiteSpline(PPoly):
     Parameters
     ----------
     x : array_like, shape (n,)
-        1-d array containing values of the independent variable.
+        1-D array containing values of the independent variable.
         Values must be real, finite and in strictly increasing order.
     y : array_like
         Array containing values of the dependent variable. It can have
@@ -106,7 +101,7 @@ class CubicHermiteSpline(PPoly):
     c : ndarray, shape (4, n-1, ...)
         Coefficients of the polynomials on each segment. The trailing
         dimensions match the dimensions of `y`, excluding ``axis``.
-        For example, if `y` is 1-d, then ``c[k, i]`` is a coefficient for
+        For example, if `y` is 1-D, then ``c[k, i]`` is a coefficient for
         ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
     axis : int
         Interpolation axis. The same axis which was passed to the
@@ -122,10 +117,10 @@ class CubicHermiteSpline(PPoly):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -159,7 +154,7 @@ class CubicHermiteSpline(PPoly):
 
 
 class PchipInterpolator(CubicHermiteSpline):
-    r"""PCHIP 1-d monotonic cubic interpolation.
+    r"""PCHIP 1-D monotonic cubic interpolation.
 
     ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
@@ -190,10 +185,10 @@ class PchipInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    CubicHermiteSpline
-    Akima1DInterpolator
-    CubicSpline
-    PPoly
+    CubicHermiteSpline : Piecewise-cubic interpolator.
+    Akima1DInterpolator : Akima 1D interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -309,7 +304,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     Convenience function for pchip interpolation.
 
     xi and yi are arrays of values used to approximate some function f,
-    with ``yi = f(xi)``.  The interpolant uses monotonic cubic splines
+    with ``yi = f(xi)``. The interpolant uses monotonic cubic splines
     to find the value of new points x and the derivatives there.
 
     See `scipy.interpolate.PchipInterpolator` for details.
@@ -319,25 +314,40 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     xi : array_like
         A sorted list of x-coordinates, of length N.
     yi :  array_like
-        A 1-D array of real values.  `yi`'s length along the interpolation
+        A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
     x : scalar or array_like
         Of length M.
     der : int or list, optional
-        Derivatives to extract.  The 0-th derivative can be included to
+        Derivatives to extract. The 0th derivative can be included to
         return the function value.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
     See Also
     --------
-    PchipInterpolator
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Returns
     -------
     y : scalar or array_like
         The result, of length R or length M or M by R,
+
+    Examples
+    --------
+    We can interpolate 2D observed data using pchip interpolation:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import pchip_interpolate
+    >>> x_observed = np.linspace(0.0, 10.0, 11)
+    >>> y_observed = np.sin(x_observed)
+    >>> x = np.linspace(min(x_observed), max(x_observed), num=100)
+    >>> y = pchip_interpolate(x_observed, y_observed, x)
+    >>> plt.plot(x_observed, y_observed, "o", label="observation")
+    >>> plt.plot(x, y, label="pchip interpolation")
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     P = PchipInterpolator(xi, yi, axis=axis)
@@ -379,9 +389,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     See Also
     --------
-    PchipInterpolator
-    CubicSpline
-    PPoly
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    CubicSpline : Cubic spline data interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints
 
     Notes
     -----
@@ -435,7 +445,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         self.axis = axis
 
     def extend(self, c, x, right=True):
-        raise NotImplementedError("Extending a 1D Akima interpolator is not "
+        raise NotImplementedError("Extending a 1-D Akima interpolator is not "
                                   "yet implemented")
 
     # These are inherited from PPoly, but they do not produce an Akima
@@ -461,7 +471,7 @@ class CubicSpline(CubicHermiteSpline):
     Parameters
     ----------
     x : array_like, shape (n,)
-        1-d array containing values of the independent variable.
+        1-D array containing values of the independent variable.
         Values must be real, finite and in strictly increasing order.
     y : array_like
         Array containing values of the dependent variable. It can have
@@ -500,8 +510,8 @@ class CubicSpline(CubicHermiteSpline):
         * `order`: the derivative order, 1 or 2.
         * `deriv_value`: array_like containing derivative values, shape must
           be the same as `y`, excluding ``axis`` dimension. For example, if
-          `y` is 1D, then `deriv_value` must be a scalar. If `y` is 3D with
-          the shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
+          `y` is 1-D, then `deriv_value` must be a scalar. If `y` is 3-D with
+          the shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2-D
           and have the shape (n0, n1).
     extrapolate : {bool, 'periodic', None}, optional
         If bool, determines whether to extrapolate to out-of-bounds points
@@ -532,9 +542,9 @@ class CubicSpline(CubicHermiteSpline):
 
     See Also
     --------
-    Akima1DInterpolator
-    PchipInterpolator
-    PPoly
+    Akima1DInterpolator : Akima 1D interpolator.
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
+    PPoly : Piecewise polynomial in terms of coefficients and breakpoints.
 
     Notes
     -----
@@ -662,6 +672,12 @@ class CubicSpline(CubicHermiteSpline):
 
             s = solve(A, b, overwrite_a=True, overwrite_b=True,
                       check_finite=False)
+        elif n == 3 and bc[0] == 'periodic':
+            # In case when number of points is 3 we should count derivatives
+            # manually
+            s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+            t = (slope / dxr).sum() / (1. / dxr).sum()
+            s.fill(t)
         else:
             # Find derivative values at each x[i] by solving a tridiagonal
             # system.
@@ -703,7 +719,7 @@ class CubicSpline(CubicHermiteSpline):
                 a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
                 a_m1_m2 = dx[-1]
                 a_m1_m1 = 2 * (dx[-1] + dx[-2])
-                a_m2_m1 = dx[-2]
+                a_m2_m1 = dx[-3]
                 a_0_m1 = dx[0]
 
                 b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
@@ -781,7 +797,7 @@ class CubicSpline(CubicHermiteSpline):
             y casted to complex dtype if one of the boundary conditions has
             complex dtype.
         """
-        if isinstance(bc_type, string_types):
+        if isinstance(bc_type, str):
             if bc_type == 'periodic':
                 if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
@@ -803,7 +819,7 @@ class CubicSpline(CubicHermiteSpline):
 
         validated_bc = []
         for bc in bc_type:
-            if isinstance(bc, string_types):
+            if isinstance(bc, str):
                 if bc == 'clamped':
                     validated_bc.append((1, np.zeros(expected_deriv_shape)))
                 elif bc == 'natural':
@@ -815,9 +831,11 @@ class CubicSpline(CubicHermiteSpline):
             else:
                 try:
                     deriv_order, deriv_value = bc
-                except Exception:
-                    raise ValueError("A specified derivative value must be "
-                                     "given in the form (order, value).")
+                except Exception as e:
+                    raise ValueError(
+                        "A specified derivative value must be "
+                        "given in the form (order, value)."
+                    ) from e
 
                 if deriv_order not in [1, 2]:
                     raise ValueError("The specified derivative order must "

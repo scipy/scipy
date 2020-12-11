@@ -3,8 +3,6 @@ Generic test utilities.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import re
 import sys
@@ -33,7 +31,7 @@ class PytestTester(object):
         module = sys.modules[self.module_name]
         module_path = os.path.abspath(module.__path__[0])
 
-        pytest_args = ['-l']
+        pytest_args = ['--showlocals', '--tb=short']
 
         if doctests:
             raise ValueError("Doctests not supported")
