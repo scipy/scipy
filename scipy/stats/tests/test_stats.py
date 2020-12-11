@@ -2060,6 +2060,12 @@ class TestZmapZscore:
                              ])
         assert_array_almost_equal(z, expected)
 
+    def test_zscore_nan_omit_with_ddof(self):
+        x = np.array([np.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+        z = stats.zscore(x, ddof=1, nan_policy='omit')
+        expected = np.r_[np.nan, stats.zscore(x[1:], ddof=1)]
+        assert_allclose(z, expected, rtol=1e-13)
+
     def test_zscore_nan_raise(self):
         x = np.array([1, 2, np.nan, 4, 5])
 
