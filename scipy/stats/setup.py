@@ -28,6 +28,9 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # add boost stats prototypes
+    config.add_subpackage('boost')
+
     return config
 
 
