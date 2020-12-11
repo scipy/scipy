@@ -3093,7 +3093,8 @@ def test_power_divergence_against_cressie_read_data():
     # Table 4 data recalculated for greater precision according to:
     # Shelby J. Haberman, Analysis of Qualitative Data: Volume 1
     # Introductory Topics, Academic Press, New York, USA (1978).
-    obs = np.array([15, 11, 14, 17, 5, 11, 10, 4, 8, 10, 7, 9, 11, 3, 6, 1, 1, 4])
+    obs = np.array([15, 11, 14, 17, 5, 11, 10, 4, 8,
+                    10, 7, 9, 11, 3, 6, 1, 1, 4])
     beta = -0.083769  # Haberman (1978), p. 15
     i = np.arange(1, len(obs) + 1)
     alpha = np.log(obs.sum() / np.exp(beta*i).sum())
