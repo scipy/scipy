@@ -676,3 +676,18 @@ def test_bug_11886():
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
+
+def test_gh11649():
+    def obj(x):
+        return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] +
+                2*x[1] + 1)
+    nce = lambda x: x[0]**2 + x[1]
+    nci = lambda x: x[0]*x[1]
+    x0 = np.array((0.99, -0.99)) 
+    nlcs = [NonlinearConstraint(nci, -10, np.inf), 
+            NonlinearConstraint(nce, 1, 1)]
+    bnds = Bounds(lb = np.array((-1, -1)), 
+            ub = np.array((1, 1)), keep_feasible=True)
+    res = minimize(fun =  obj, x0 = x0, method = 
+            'trust-constr',  bounds = bnds, constraints = nlcs)
+
