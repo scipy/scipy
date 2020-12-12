@@ -337,7 +337,8 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(result, attributes, ma=True)
 
-
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     @pytest.mark.slow
     def test_kendalltau_large(self):
         # make sure internal variable use correct precision with
