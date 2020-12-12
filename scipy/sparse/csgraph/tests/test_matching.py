@@ -3,16 +3,18 @@ from numpy.testing import assert_array_equal, assert_equal
 import pytest
 
 from scipy.sparse import csr_matrix, coo_matrix, diags
-from scipy.sparse.csgraph import maximum_bipartite_matching
+from scipy.sparse.csgraph import (
+    maximum_bipartite_matching, min_weight_full_bipartite_matching
+)
 
 
-def test_raises_on_dense_input():
+def test_maximum_bipartite_matching_raises_on_dense_input():
     with pytest.raises(TypeError):
         graph = np.array([[0, 1], [0, 0]])
         maximum_bipartite_matching(graph)
 
 
-def test_empty_graph():
+def test_maximum_bipartite_matching_empty_graph():
     graph = csr_matrix((0, 0))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
@@ -21,7 +23,7 @@ def test_empty_graph():
     assert_array_equal(expected_matching, y)
 
 
-def test_empty_left_partition():
+def test_maximum_bipartite_matching_empty_left_partition():
     graph = csr_matrix((2, 0))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
@@ -29,7 +31,7 @@ def test_empty_left_partition():
     assert_array_equal(np.array([-1, -1]), y)
 
 
-def test_empty_right_partition():
+def test_maximum_bipartite_matching_empty_right_partition():
     graph = csr_matrix((0, 3))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
@@ -37,7 +39,7 @@ def test_empty_right_partition():
     assert_array_equal(np.array([]), y)
 
 
-def test_graph_with_no_edges():
+def test_maximum_bipartite_matching_graph_with_no_edges():
     graph = csr_matrix((2, 2))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
@@ -45,7 +47,7 @@ def test_graph_with_no_edges():
     assert_array_equal(np.array([-1, -1]), y)
 
 
-def test_graph_that_causes_augmentation():
+def test_maximum_bipartite_matching_graph_that_causes_augmentation():
     # In this graph, column 1 is initially assigned to row 1, but it should be
     # reassigned to make room for row 2.
     graph = csr_matrix([[1, 1], [1, 0]])
@@ -56,7 +58,7 @@ def test_graph_that_causes_augmentation():
     assert_array_equal(expected_matching, y)
 
 
-def test_graph_with_more_rows_than_columns():
+def test_maximum_bipartite_matching_graph_with_more_rows_than_columns():
     graph = csr_matrix([[1, 1], [1, 0], [0, 1]])
     x = maximum_bipartite_matching(graph, perm_type='column')
     y = maximum_bipartite_matching(graph, perm_type='row')
@@ -64,7 +66,7 @@ def test_graph_with_more_rows_than_columns():
     assert_array_equal(np.array([0, 2]), y)
 
 
-def test_graph_with_more_columns_than_rows():
+def test_maximum_bipartite_matching_graph_with_more_columns_than_rows():
     graph = csr_matrix([[1, 1, 0], [0, 0, 1]])
     x = maximum_bipartite_matching(graph, perm_type='column')
     y = maximum_bipartite_matching(graph, perm_type='row')
@@ -72,7 +74,7 @@ def test_graph_with_more_columns_than_rows():
     assert_array_equal(np.array([0, -1, 1]), y)
 
 
-def test_explicit_zeros_count_as_edges():
+def test_maximum_bipartite_matching_explicit_zeros_count_as_edges():
     data = [0, 0]
     indices = [1, 0]
     indptr = [0, 1, 2]
@@ -84,7 +86,7 @@ def test_explicit_zeros_count_as_edges():
     assert_array_equal(expected_matching, y)
 
 
-def test_feasibility_of_result():
+def test_maximum_bipartite_matching_feasibility_of_result():
     # This is a regression test for GitHub issue #11458
     data = np.ones(50, dtype=int)
     indices = [11, 12, 19, 22, 23, 5, 22, 3, 8, 10, 5, 6, 11, 12, 13, 5, 13,
@@ -106,7 +108,7 @@ def test_feasibility_of_result():
             assert graph[u, v]
 
 
-def test_large_random_graph_with_one_edge_incident_to_each_vertex():
+def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
     np.random.seed(42)
     A = diags(np.ones(25), offsets=0, format='csr')
     rand_perm = np.random.permutation(25)
@@ -143,3 +145,30 @@ def test_large_random_graph_with_one_edge_incident_to_each_vertex():
     # Should get identity matrix back
     assert_equal(any(C1.diagonal() == 0), False)
     assert_equal(any(C2.diagonal() == 0), False)
+
+
+@pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
+def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
+    biadjacency_matrix = csr_matrix((num_cols, num_rows))
+    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency_matrix)
+    assert len(row_ind) == 0
+    assert len(col_ind) == 0
+
+
+@pytest.mark.parametrize('biadjacency_matrix',
+                         [
+                            [[1, 1, 1], [1, 0, 0], [1, 0, 0]],
+                            [[1, 1, 1], [0, 0, 1], [0, 0, 1]],
+                            [[1, 0, 0], [2, 0, 0]],
+                            [[0, 1, 0], [0, 2, 0]],
+                            [[1, 0], [2, 0], [5, 0]]
+                         ])
+def test_min_weight_full_matching_infeasible_problems(biadjacency_matrix):
+    with pytest.raises(ValueError):
+        min_weight_full_bipartite_matching(csr_matrix(biadjacency_matrix))
+
+
+def test_explicit_zero_causes_warning():
+    with pytest.warns(UserWarning):
+        biadjacency_matrix = csr_matrix(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
+        min_weight_full_bipartite_matching(biadjacency_matrix)

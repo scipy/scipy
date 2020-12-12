@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -137,12 +137,7 @@ case_table5.append(
      })
 st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
-# See
-#
-# https://github.com/numpy/numpy-stubs/issues/42
-#
-# for the reasoning behind the ignore.
-st1 = np.zeros((1,1), dtype)  # type: ignore[arg-type]
+st1 = np.zeros((1,1), dtype)
 st1['stringfield'][0,0] = array(['Rats live on no evil star.'])
 st1['doublefield'][0,0] = st_sub_arr
 st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
@@ -1029,7 +1024,7 @@ def test_str_round():
     stream.truncate(0)
     stream.seek(0)
     # Make Fortran ordered version of string
-    in_str = in_arr.tostring(order='F')
+    in_str = in_arr.tobytes(order='F')
     in_from_str = np.ndarray(shape=a.shape,
                              dtype=in_arr.dtype,
                              order='F',
@@ -1230,3 +1225,13 @@ def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(IOError, loadmat, "NotExistentFile00.mat")
     assert_raises(IOError, loadmat, "NotExistentFile00")
+
+
+def test_simplify_cells():
+    # Test output when simplify_cells=True
+    filename = pjoin(test_data_path, 'testsimplecell.mat')
+    res1 = loadmat(filename, simplify_cells=True)
+    res2 = loadmat(filename, simplify_cells=False)
+    assert_(isinstance(res1["s"], dict))
+    assert_(isinstance(res2["s"], np.ndarray))
+    assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))

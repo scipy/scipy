@@ -121,8 +121,8 @@ def norm(x, ord=None, axis=None):
         msg = "'axis' must be None, an integer or a tuple of integers"
         try:
             int_axis = int(axis)
-        except TypeError:
-            raise TypeError(msg)
+        except TypeError as e:
+            raise TypeError(msg) from e
         if axis != int_axis:
             raise TypeError(msg)
         axis = (int_axis,)
@@ -174,8 +174,8 @@ def norm(x, ord=None, axis=None):
         else:
             try:
                 ord + 1
-            except TypeError:
-                raise ValueError('Invalid norm order for vectors.')
+            except TypeError as e:
+                raise ValueError('Invalid norm order for vectors.') from e
             M = np.power(abs(x).power(ord).sum(axis=a), 1 / ord)
         return M.A.ravel()
     else:

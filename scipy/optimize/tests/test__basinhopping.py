@@ -262,7 +262,10 @@ class TestBasinHopping(object):
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
-        assert_equal(res.nit, 10)
+        # One of the calls of MyCallBack is during BasinHoppingRunner
+        # construction, so there are only 9 remaining before MyCallBack stops
+        # the minimization.
+        assert_equal(res.nit, 9)
 
     def test_minimizer_fail(self):
         # test if a minimizer fails

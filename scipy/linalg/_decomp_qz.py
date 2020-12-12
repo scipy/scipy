@@ -115,7 +115,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if lwork is None or lwork == -1:
         # get optimal work array size
         result = gges(lambda x: None, a1, b1, lwork=-1)
-        lwork = result[-2][0].real.astype(np.int)
+        lwork = result[-2][0].real.astype(np.int_)
 
     sfunction = lambda x: None
     result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
@@ -369,7 +369,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
 
     if lwork is None or lwork == -1:
         result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0].real.astype(np.int)
+        lwork = result[-3][0].real.astype(np.int_)
         # looks like wrong value passed to ZTGSYL if not
         lwork += 1
 

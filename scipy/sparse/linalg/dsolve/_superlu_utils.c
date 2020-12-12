@@ -6,7 +6,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 #include <setjmp.h>
 
 

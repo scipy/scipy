@@ -258,6 +258,7 @@ Continuous Distributions in `scipy.stats`
    continuous_kstwo
    continuous_kstwobign
    continuous_laplace
+   continuous_laplace_asymmetric
    continuous_levy_l
    continuous_levy
    continuous_logistic
@@ -284,7 +285,7 @@ Continuous Distributions in `scipy.stats`
    continuous_recipinvgauss
    continuous_semicircular
    continuous_t
-   continuous_trapz
+   continuous_trapezoid
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm

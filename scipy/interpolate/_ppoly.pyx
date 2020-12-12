@@ -458,6 +458,11 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in real_roots")
+
     workspace = NULL
 
     last_root = nan
@@ -552,8 +557,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
             # Construct roots
             roots.append(np.array(cur_roots, dtype=float))
     finally:
-        if workspace != NULL:
-            libc.stdlib.free(workspace)
+        libc.stdlib.free(workspace)
         libc.stdlib.free(wr)
         libc.stdlib.free(wi)
 
@@ -796,7 +800,7 @@ cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, in
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
-                      double* wr, double* wi, void **workspace):
+                      double* wr, double* wi, void **workspace) except -10:
     """
     Find all complex roots of a local polynomial.
 
@@ -909,6 +913,8 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
     if workspace[0] == NULL:
         nworkspace = n*n + lwork
         workspace[0] = libc.stdlib.malloc(nworkspace * sizeof(double))
+        if workspace[0] == NULL:
+            raise MemoryError("Failed to allocate memory in croots_poly1")
 
     a = <double*>workspace[0]
     work = a + n*n
@@ -980,6 +986,11 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
 
     wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
     wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    if not wr or not wi:
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+        raise MemoryError("Failed to allocate memory in _croots_poly1")
+
     workspace = NULL
 
     try:
@@ -999,8 +1010,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
                     w[k,i,j].real = wr[k]
                     w[k,i,j].imag = wi[k]
     finally:
-        if workspace != NULL:
-            libc.stdlib.free(workspace)
+        libc.stdlib.free(workspace)
         libc.stdlib.free(wr)
         libc.stdlib.free(wi)
 

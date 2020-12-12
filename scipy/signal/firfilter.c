@@ -1,9 +1,11 @@
 #define NO_IMPORT_ARRAY
 #include "numpy/ndarrayobject.h"
 #include "sigtools.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 static int elsizes[] = {sizeof(npy_bool),
-			            sizeof(npy_byte),
+                        sizeof(npy_byte),
                         sizeof(npy_ubyte),
                         sizeof(npy_short),
                         sizeof(npy_ushort),
@@ -22,13 +24,12 @@ static int elsizes[] = {sizeof(npy_bool),
                         sizeof(void *),
 			0,0,0,0};
 
-typedef void (OneMultAddFunction) (char *, char *, npy_intp, char **, npy_intp);
+typedef void (OneMultAddFunction) (char *, char *, int64_t, char **, int64_t);
 
 #define MAKE_ONEMULTADD(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, npy_intp str, char **pvals, npy_intp n) { \
-        npy_intp k; \
+static void fname ## _onemultadd(char *sum, char *term1, int64_t str, char **pvals, int64_t n) { \
         type dsum = *(type*)sum; \
-        for (k=0; k < n; k++) { \
+        for (int64_t k=0; k < n; k++) { \
           type tmp = *(type*)(term1 + k * str); \
           dsum += tmp * *(type*)pvals[k]; \
         } \
@@ -65,10 +66,9 @@ static void fname ## _onemultadd2(char *sum, char *term1, char *term2) { \
   return; }
 
 #define MAKE_C_ONEMULTADD2(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, npy_intp str, \
-                                 char **pvals, npy_intp n) { \
-        npy_intp k; \
-        for (k=0; k < n; k++) { \
+static void fname ## _onemultadd(char *sum, char *term1, int64_t str, \
+                                 char **pvals, int64_t n) { \
+        for (int64_t k=0; k < n; k++) { \
           fname ## _onemultadd2(sum, term1 + k * str, pvals[k]); \
         } \
 }
@@ -114,104 +114,97 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       int   flag,       /* convolution parameters */
 		       char  *fillvalue) /* fill value */
 {
-  int bounds_pad_flag = 0;
-  int m, n, j, ind0, ind1;
-  int Os[2];
-  int new_m, new_n, ind0_memory=0;
-  int boundary, outsize, convolve, type_num, type_size;
-  char ** indices;
-  OneMultAddFunction *mult_and_add;
-
-  boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
-  outsize = flag & OUTSIZE_MASK;
-  convolve = flag & FLIP_MASK;
-  type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
+  const int boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
+  const int outsize = flag & OUTSIZE_MASK;
+  const int convolve = flag & FLIP_MASK;
+  const int type_num = (flag & TYPE_MASK) >> TYPE_SHIFT;
   /*type_size*/
 
-  mult_and_add = OneMultAdd[type_num];
+  OneMultAddFunction *mult_and_add = OneMultAdd[type_num];
   if (mult_and_add == NULL) return -5;  /* Not available for this type */
 
   if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
-  type_size = elsizes[type_num];
+  const int type_size = elsizes[type_num];
 
+  int64_t Os[2];
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
   else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
   else return -1; /* Invalid output flag */
-  
+
   if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR))
     return -2; /* Invalid boundary flag */
 
-  indices = malloc(Nwin[1] * sizeof(indices[0]));
+  char **indices = malloc(Nwin[1] * sizeof(indices[0]));
   if (indices == NULL) return -3; /* No memory */
 
   /* Speed this up by not doing any if statements in the for loop.  Need 3*3*2=18 different
      loops executed for different conditions */
 
-  for (m=0; m < Os[0]; m++) {
+  for (int64_t m=0; m < Os[0]; m++) {
     /* Reposition index into input image based on requested output size */
+    int64_t new_m;
     if (outsize == FULL) new_m = convolve ? m : (m-Nwin[0]+1);
     else if (outsize == SAME) new_m = convolve ? (m+((Nwin[0]-1)>>1)) : (m-((Nwin[0]-1) >> 1));
     else new_m = convolve ? (m+Nwin[0]-1) : m; /* VALID */
 
-    for (n=0; n < Os[1]; n++) {  /* loop over columns */
+    for (int64_t n=0; n < Os[1]; n++) {  /* loop over columns */
       char * sum = out+m*outstr[0]+n*outstr[1];
       memset(sum, 0, type_size); /* sum = 0.0; */
 
+      int64_t new_n;
       if (outsize == FULL) new_n = convolve ? n : (n-Nwin[1]+1);
       else if (outsize == SAME) new_n = convolve ? (n+((Nwin[1]-1)>>1)) : (n-((Nwin[1]-1) >> 1));
       else new_n = convolve ? (n+Nwin[1]-1) : n;
 
       /* Sum over kernel, if index into image is out of bounds
 	 handle it according to boundary flag */
-      for (j=0; j < Nwin[0]; j++) {
-	ind0 = convolve ? (new_m-j): (new_m+j);
-	bounds_pad_flag = 0;
+      for (int64_t j=0; j < Nwin[0]; j++) {
+	int64_t ind0 = convolve ? (new_m-j): (new_m+j);
+	bool bounds_pad_flag = false;
 
 	if (ind0 < 0) {
 	  if (boundary == REFLECT) ind0 = -1-ind0;
 	  else if (boundary == CIRCULAR) ind0 = Ns[0] + ind0;
-	  else bounds_pad_flag = 1;
+	  else bounds_pad_flag = true;
 	}
 	else if (ind0 >= Ns[0]) {
 	  if (boundary == REFLECT) ind0 = Ns[0]+Ns[0]-1-ind0;
 	  else if (boundary == CIRCULAR) ind0 = ind0 - Ns[0];
-	  else bounds_pad_flag = 1;
+	  else bounds_pad_flag = true;
 	}
-	
-	if (!bounds_pad_flag) ind0_memory = ind0*instr[0];
 
-        if (bounds_pad_flag) {
-          npy_intp k;
-          for (k=0; k < Nwin[1]; k++) {
-              indices[k] = fillvalue;
-          }
-        }
-        else  {
-          npy_intp k;
-	  for (k=0; k < Nwin[1]; k++) {
-	    ind1 = convolve ? (new_n-k) : (new_n+k);
+	const int64_t ind0_memory = ind0*instr[0];
+
+	if (bounds_pad_flag) {
+	  for (int64_t k=0; k < Nwin[1]; k++) {
+	      indices[k] = fillvalue;
+	  }
+	}
+	else  {
+	  for (int64_t k=0; k < Nwin[1]; k++) {
+	    int64_t ind1 = convolve ? (new_n-k) : (new_n+k);
 	    if (ind1 < 0) {
 	      if (boundary == REFLECT) ind1 = -1-ind1;
 	      else if (boundary == CIRCULAR) ind1 = Ns[1] + ind1;
-	      else bounds_pad_flag = 1;
+	      else bounds_pad_flag = true;
 	    }
 	    else if (ind1 >= Ns[1]) {
 	      if (boundary == REFLECT) ind1 = Ns[1]+Ns[1]-1-ind1;
 	      else if (boundary == CIRCULAR) ind1 = ind1 - Ns[1];
-	      else bounds_pad_flag = 1;
+	      else bounds_pad_flag = true;
 	    }
 
 	    if (bounds_pad_flag) {
-              indices[k] = fillvalue;
-            }
+	      indices[k] = fillvalue;
+	    }
 	    else {
-              indices[k] = in+ind0_memory+ind1*instr[1];
-            }
-	    bounds_pad_flag = 0;
+	      indices[k] = in+ind0_memory+ind1*instr[1];
+	    }
+	    bounds_pad_flag = false;
 	  }
-        }
-        mult_and_add(sum, hvals+j*hstr[0], hstr[1], indices, Nwin[1]);
+	}
+	mult_and_add(sum, hvals+j*hstr[0], hstr[1], indices, Nwin[1]);
       }
     }
   }
