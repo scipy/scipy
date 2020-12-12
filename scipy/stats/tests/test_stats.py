@@ -3750,6 +3750,109 @@ class Test_ttest_ind_permutations():
         assert_equal(res.pvalue[i, :, j, k, :],
                      res2.pvalue)
 
+    def test_ttest_ind_exact_alternative(self):
+        np.random.seed(0)
+        N = 3
+        a = np.random.rand(2, N, 2)
+        b = np.random.rand(2, N, 2)
+
+        options_p = {'axis': 1, 'permutations': 1000}
+
+        options_p.update(alternative="greater")
+        res_g_ab = stats.ttest_ind(a, b, **options_p)
+        res_g_ba = stats.ttest_ind(b, a, **options_p)
+
+        options_p.update(alternative="less")
+        res_l_ab = stats.ttest_ind(a, b, **options_p)
+        res_l_ba = stats.ttest_ind(b, a, **options_p)
+
+        options_p.update(alternative="two-sided")
+        res_2_ab = stats.ttest_ind(a, b, **options_p)
+        res_2_ba = stats.ttest_ind(b, a, **options_p)
+
+        # Alternative doesn't affect the statistic
+        assert_equal(res_g_ab.statistic, res_l_ab.statistic)
+        assert_equal(res_g_ab.statistic, res_2_ab.statistic)
+
+        # Reversing order of inputs negates statistic
+        assert_equal(res_g_ab.statistic, -res_g_ba.statistic)
+        assert_equal(res_l_ab.statistic, -res_l_ba.statistic)
+        assert_equal(res_2_ab.statistic, -res_2_ba.statistic)
+
+        # Reversing order of inputs does not affect p-value of 2-sided test
+        assert_equal(res_2_ab.pvalue, res_2_ba.pvalue)
+
+        # In exact test, distribution is perfectly symmetric, so these
+        # identities are exactly satisfied.
+        assert_equal(res_g_ab.pvalue, res_l_ba.pvalue)
+        assert_equal(res_l_ab.pvalue, res_g_ba.pvalue)
+        mask = res_g_ab.pvalue <= 0.5
+        assert_equal(res_g_ab.pvalue[mask] + res_l_ba.pvalue[mask],
+                     res_2_ab.pvalue[mask])
+        assert_equal(res_l_ab.pvalue[~mask] + res_g_ba.pvalue[~mask],
+                     res_2_ab.pvalue[~mask])
+
+    def test_ttest_ind_randperm_alternative(self):
+        np.random.seed(0)
+        N = 50
+        a = np.random.rand(2, 3, N)
+        b = np.random.rand(3, N)
+        options_p = {'axis': -1, 'permutations': 1000, "random_state":0}
+
+        options_p.update(alternative="greater")
+        res_g_ab = stats.ttest_ind(a, b, **options_p)
+        res_g_ba = stats.ttest_ind(b, a, **options_p)
+
+        options_p.update(alternative="less")
+        res_l_ab = stats.ttest_ind(a, b, **options_p)
+        res_l_ba = stats.ttest_ind(b, a, **options_p)
+
+        # Alternative doesn't affect the statistic
+        assert_equal(res_g_ab.statistic, res_l_ab.statistic)
+
+        # Reversing order of inputs negates statistic
+        assert_equal(res_g_ab.statistic, -res_g_ba.statistic)
+        assert_equal(res_l_ab.statistic, -res_l_ba.statistic)
+
+        # For random permutations, the chance of ties between the observed
+        # test statistic and the population is small, so:
+        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
+        assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
+
+    @pytest.mark.slow()
+    def test_ttest_ind_randperm_alternative2(self):
+        np.random.seed(0)
+        N = 50
+        a = np.random.rand(N, 4)
+        b = np.random.rand(N, 4)
+        options_p = {'permutations': 500000, "random_state":0}
+
+        options_p.update(alternative="greater")
+        res_g_ab = stats.ttest_ind(a, b, **options_p)
+
+        options_p.update(alternative="less")
+        res_l_ab = stats.ttest_ind(a, b, **options_p)
+
+        options_p.update(alternative="two-sided")
+        res_2_ab = stats.ttest_ind(a, b, **options_p)
+
+        # For random permutations, the chance of ties between the observed
+        # test statistic and the population is small, so:
+        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
+        assert_equal(res_l_ab.pvalue + res_g_ab.pvalue, 1)
+
+        # For for large sample sizes, the distribution should be approximately
+        # symmetric, so these identities should be approximately satisfied
+        mask = res_g_ab.pvalue <= 0.5
+        assert_allclose(2 * res_g_ab.pvalue[mask],
+                        res_2_ab.pvalue[mask], atol=5e-3)
+        assert_allclose(2 * (1-res_g_ab.pvalue[~mask]),
+                        res_2_ab.pvalue[~mask], atol=5e-3)
+        assert_allclose(2 * res_l_ab.pvalue[~mask],
+                        res_2_ab.pvalue[~mask], atol=5e-3)
+        assert_allclose(2 * (1-res_l_ab.pvalue[mask]),
+                        res_2_ab.pvalue[mask], atol=5e-3)
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R

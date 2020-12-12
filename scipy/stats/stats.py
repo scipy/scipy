@@ -5781,7 +5781,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if permutations:
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
-                                 random_state=random_state)
+                                 random_state=random_state,
+                                 alternative=alternative)
 
     else:
         v1 = np.var(a, axis, ddof=1)
@@ -5859,7 +5860,7 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
 
 
 def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
-                       random_state=None):
+                       random_state=None, alternative="two-sided"):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -5907,8 +5908,12 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
+    compare = {"less": np.less_equal,
+               "greater": np.greater_equal,
+               "two-sided": lambda x, y: np.abs(x) >= np.abs(y)}
+
     # Calculate the p-values
-    cmps = abs(t_stat) >= abs(t_stat_observed)
+    cmps = compare[alternative](t_stat, t_stat_observed)
     pvalues = cmps.sum(axis=0) / permutations
 
     return (t_stat_observed, pvalues)
