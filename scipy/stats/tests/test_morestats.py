@@ -1150,6 +1150,7 @@ class TestWilcoxon(object):
         with assert_raises(ValueError, match="The input contains nan"):
             stats.wilcoxon(x1, x2, nan_policy='raise')
 
+
 class TestKstat(object):
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
