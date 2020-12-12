@@ -5636,6 +5636,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+        The 'omit' option is not currently available for permutation tests or
+        one-sided asympyotic tests.
+
     permutations : int or None (default), optional
         The number of random permutations that will be used to estimate
         p-values using a permutation test. If `permutations` equals or exceeds
@@ -5767,10 +5770,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
+        if permutations or alternative != 'two-sided':
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
+                             "supported by permutation tests or one-sided"
+                             "asymptotic tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
@@ -5781,6 +5785,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if permutations:
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
+                                 nan_policy=nan_policy,
                                  random_state=random_state,
                                  alternative=alternative)
 
@@ -5860,7 +5865,8 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
 
 
 def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
-                       random_state=None, alternative="two-sided"):
+                       nan_policy='propagate', random_state=None,
+                       alternative="two-sided"):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -5915,6 +5921,14 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
     pvalues = cmps.sum(axis=0) / permutations
+
+    # nans propagate naturally in statistic calculation, but need to be
+    # propagated manually into pvalues
+    if nan_policy == 'propagate' and np.isnan(t_stat_observed).any():
+        if np.ndim(pvalues) == 0:
+            pvalues = np.float64(np.nan)
+        else:
+            pvalues[np.isnan(t_stat_observed)] = np.nan
 
     return (t_stat_observed, pvalues)
 

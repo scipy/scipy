@@ -3853,6 +3853,46 @@ class Test_ttest_ind_permutations():
         assert_allclose(2 * (1-res_l_ab.pvalue[mask]),
                         res_2_ab.pvalue[mask], atol=5e-3)
 
+    def test_ttest_ind_permutation_nanpolicy(self):
+        np.random.seed(0)
+        N = 50
+        a = np.random.rand(N, 5)
+        b = np.random.rand(N, 5)
+        a[5, 1] = np.nan
+        b[8, 2] = np.nan
+        a[9, 3] = np.nan
+        b[9, 3] = np.nan
+        options_p = {'permutations': 1000, "random_state":0}
+
+        # Raise
+        options_p.update(nan_policy="raise")
+        with assert_raises(ValueError, match="The input contains nan values"):
+            res = stats.ttest_ind(a, b, **options_p)
+
+        # Propagate
+        options_p.update(nan_policy="propagate")
+        res = stats.ttest_ind(a, b, **options_p)
+
+        mask = np.isnan(a).any(axis=0) | np.isnan(b).any(axis=0)
+        res2 = stats.ttest_ind(a[:, ~mask], b[:, ~mask], **options_p)
+
+        assert_equal(res.pvalue[mask], np.nan)
+        assert_equal(res.statistic[mask], np.nan)
+
+        assert_allclose(res.pvalue[~mask], res2.pvalue)
+        assert_allclose(res.statistic[~mask], res2.statistic)
+
+        # Propagate 1d
+        res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
+        assert(np.isnan(res.pvalue)) # assert makes sure it's a scalar
+        assert(np.isnan(res.statistic))
+
+        # Omit
+        options_p.update(nan_policy="omit")
+        with assert_raises(ValueError,
+                           match="nan-containing/masked inputs with"):
+            res = stats.ttest_ind(a, b, **options_p)
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
