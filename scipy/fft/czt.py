@@ -305,7 +305,7 @@ class ZoomFFT(CZT):
     to the sampling frequency.  The default sampling frequency of 2
     means that `f1`, `f2` values up to the Nyquist frequency are in the
     range [0, 1). For `f1`, `f2` values expressed in radians, a sampling
-    frequency of 1/pi should be used.
+    frequency of 2*pi should be used.
 
     Remember that a zoom FFT can only interpolate the points of the existing
     FFT.  It cannot help to resolve two separate nearby frequencies.
