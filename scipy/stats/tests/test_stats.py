@@ -5187,6 +5187,19 @@ class TestKruskal(object):
         z = []
         assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
 
+    def test_nd_arrays(self):
+        # N-d arrays are OK...
+        x = [[1]]
+        y = [[2]]  # this is fine
+        h, p = stats.kruskal(x, y)
+        assert_equal(h, 1.0)
+        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
+
+        # but only one non-singleton dimension is allowed
+        z = np.random.rand(2, 2)
+        with assert_raises(ValueError, match="Samples may not have more"):
+            stats.kruskal(x, y, z)
+
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]
