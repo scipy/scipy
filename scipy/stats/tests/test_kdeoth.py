@@ -490,10 +490,9 @@ def test_seed():
 def test_gh10205():
     # check that bug reported in gh-10205 (not positive definite) is resolved
     np.random.seed(0)
-    mu = np.array([1,10,20])
-    sigma = np.matrix([[4,10,0],[10,25,0],[0,0,100]])
-    data = np.random.multivariate_normal(mu,sigma,1000)
-    values = data.T
-    stats.gaussian_kde(values)
+    mu = np.array([1, 10, 20])
+    sigma = np.array([[4, 10, 0], [10, 25, 0], [0, 0, 100]])
+    data = np.random.multivariate_normal(mu, sigma, 1000)
+    stats.gaussian_kde(data.T)
     # don't need to check for a particular result;
     # just shouldn't raise an error
