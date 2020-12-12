@@ -146,6 +146,12 @@ def _restore(M, shape):
         return M
 
 
+def _inexact(m):
+    if not np.issubdtype(m.dtype, np.inexact):
+        m = m.astype(np.float_)
+    return m
+
+
 def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices and ensure they are 2-D.
 
@@ -163,7 +169,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     Returns
     -------
     A, B, C, D : array
-        Properly shaped state-space matrices.
+        Properly shaped state-space matrices, with np.inexact dtypes.
 
     Raises
     ------
@@ -189,6 +195,8 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     B = _restore(B, (p, q))
     C = _restore(C, (r, p))
     D = _restore(D, (r, q))
+
+    A, B, C, D = map(_inexact, (A, B, C, D))
 
     return A, B, C, D
 

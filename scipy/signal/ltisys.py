@@ -174,10 +174,10 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti(1, 2, 3, 4)
     StateSpaceContinuous(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: None
     )
 
@@ -342,19 +342,19 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti(1, 2, 3, 4)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: True
     )
 
     >>> signal.dlti(1, 2, 3, 4, dt=0.1)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: 0.1
     )
 
@@ -1254,12 +1254,12 @@ class StateSpace(LinearTimeInvariant):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1269,8 +1269,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1283,8 +1283,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 

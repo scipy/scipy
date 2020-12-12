@@ -1091,6 +1091,15 @@ class Test_abcd_normalize(object):
     def test_missing_CD_fails(self):
         assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
 
+    def test_int_becomes_float(self):
+        # regression test for gh-13125
+        ABCD = [np.atleast_2d(m) for m in (1, 2, 3, 4)]
+        A, B, C, D = abcd_normalize(*ABCD)
+        assert_(np.issubdtype(A.dtype, np.inexact))
+        assert_(np.issubdtype(B.dtype, np.inexact))
+        assert_(np.issubdtype(C.dtype, np.inexact))
+        assert_(np.issubdtype(D.dtype, np.inexact))
+
 
 class Test_bode(object):
 
