@@ -8159,7 +8159,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
     >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
-    array([2., 3., 4., nan, 1., nan])
+    array([ 2.,  3.,  4., nan,  1., nan])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
