@@ -1119,27 +1119,36 @@ class TestWilcoxon(object):
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
     def test_nan_policy(self):
-
+        # 1 one-argument test
         x1 = np.array([1, 2, 3])
         x2 = np.array([1, 2, 3, np.nan])
+
+        # 1-1 omit test
         assert_equal(stats.wilcoxon(x1), stats.wilcoxon(x2, nan_policy="omit"))
+        # 1-2 propagate test
         assert_equal((np.nan, np.nan),
                      stats.wilcoxon(x2, nan_policy="propagate"))
+        # 1-3 raise test
+        with assert_raises(ValueError, match="The input contains nan"):
+            stats.wilcoxon(x2, nan_policy='raise')
 
-        assert_raises(ValueError, stats.wilcoxon, x2, nan_policy='raise')
-
+        # 2 two-argument test
         x3 = np.array([5, 5, 5])
         x4 = np.array([5, 5, 5, np.nan])
 
+        # 2-1 omit test
         assert_equal(stats.wilcoxon(x1, x3),
                      stats.wilcoxon(x1, x4, nan_policy="omit"))
+        # 2-2 propagate test
         assert_equal((np.nan, np.nan),
                      stats.wilcoxon(x1, x4, nan_policy="propagate"))
-
+        # 2-3 raise test
         x5 = np.array([6, 6, 6])
         x6 = np.array([7, 7, np.nan])
-        assert_raises(ValueError, stats.wilcoxon, x5, x6, nan_policy='omit')
-
+        with assert_raises(ValueError, match="The samples x and y must have"): 
+            stats.wilcoxon(x5, x6, nan_policy='omit')
+        with assert_raises(ValueError, match="The input contains nan"):
+            stats.wilcoxon(x1, x2, nan_policy='raise')
 
 class TestKstat(object):
     def test_moments_normal_distribution(self):
