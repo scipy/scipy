@@ -87,7 +87,7 @@ double aa, bb, xx;
 	if (xx == 1.0)
 	    return (1.0);
       domerr:
-	mtherr("incbet", DOMAIN);
+	sf_error("incbet", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -362,7 +362,7 @@ double a, b, x;
 
     u = a * log(x);
     if ((a + b) < MAXGAM && fabs(u) < MAXLOG) {
-        t = 1.0 / beta(a, b); 
+        t = 1.0 / beta(a, b);
 	s = s * t * pow(x, a);
     }
     else {

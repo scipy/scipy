@@ -9,8 +9,6 @@ features are:
     - exponential format for float values, and int format
 
 """
-from __future__ import division, print_function, absolute_import
-
 # TODO:
 #   - Add more support (symmetric/complex matrices, non-assembled matrices ?)
 
@@ -302,10 +300,10 @@ class HBInfo(object):
 def _expect_int(value, msg=None):
     try:
         return int(value)
-    except ValueError:
+    except ValueError as e:
         if msg is None:
             msg = "Expected an int, got %s"
-        raise ValueError(msg % value)
+        raise ValueError(msg % value) from e
 
 
 def _read_hb_data(content, header):
@@ -352,7 +350,7 @@ def _write_data(m, fid, header):
 
     fid.write(header.dump())
     fid.write("\n")
-    # +1 is for fortran one-based indexing
+    # +1 is for Fortran one-based indexing
     write_array(fid, m.indptr+1, header.pointer_nlines,
                 header.pointer_format)
     write_array(fid, m.indices+1, header.indices_nlines,
@@ -363,7 +361,7 @@ def _write_data(m, fid, header):
 
 class HBMatrixType(object):
     """Class to hold the matrix type."""
-    # q2f* translates qualified names to fortran character
+    # q2f* translates qualified names to Fortran character
     _q2f_type = {
         "real": "R",
         "complex": "C",
@@ -396,8 +394,8 @@ class HBMatrixType(object):
             structure = cls._f2q_structure[fmt[1]]
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
-        except KeyError:
-            raise ValueError("Unrecognized format %s" % fmt)
+        except KeyError as e:
+            raise ValueError("Unrecognized format %s" % fmt) from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type
@@ -475,7 +473,7 @@ def hb_read(path_or_open_file):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
 
     Returns
@@ -491,6 +489,19 @@ def hb_read(path_or_open_file):
         - assembled, non-symmetric, real matrices
         - integer for pointer/indices
         - exponential format for float values, and int format
+
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
 
     """
     def _get_matrix(fid):
@@ -510,7 +521,7 @@ def hb_write(path_or_open_file, m, hb_info=None):
     Parameters
     ----------
     path_or_open_file : path-like or file-like
-        If a file-like object, it is used as-is. Otherwise it is opened
+        If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
     m : sparse-matrix
         the sparse matrix to write
@@ -529,6 +540,19 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - assembled, non-symmetric, real matrices
         - integer for pointer/indices
         - exponential format for float values, and int format
+
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
 
     """
     m = m.tocsc(copy=False)

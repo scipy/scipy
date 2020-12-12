@@ -1,8 +1,6 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_equal, assert_allclose, assert_,
+                           suppress_warnings)
 from pytest import raises as assert_raises
 import pytest
 
@@ -10,7 +8,7 @@ from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
          sproot, splint, insert)
 import scipy.linalg as sl
-from scipy._lib._version import NumpyVersion
+from scipy._lib import _pep440
 
 from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.interpolate._fitpack_impl as _impl
@@ -20,7 +18,7 @@ from scipy.interpolate._fitpack import _splint
 class TestBSpline(object):
 
     def test_ctor(self):
-        # knots should be an ordered 1D array of finite real numbers
+        # knots should be an ordered 1-D array of finite real numbers
         assert_raises((TypeError, ValueError), BSpline,
                 **dict(t=[1, 1.j], c=[1.], k=0))
         with np.errstate(invalid='ignore'):
@@ -324,7 +322,7 @@ class TestBSpline(object):
         assert_allclose(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
-        # repeat with n-D array for c
+        # repeat with N-D array for c
         c = np.c_[c, c, c]
         c = np.dstack((c, c))
         b = BSpline(t, c, k)
@@ -390,32 +388,45 @@ class TestBSpline(object):
         assert_equal(b.derivative().__class__, B)
         assert_equal(b.antiderivative().__class__, B)
 
-    def test_axis(self):
+    @pytest.mark.parametrize('axis', range(-4, 4))
+    def test_axis(self, axis):
         n, k = 22, 3
         t = np.linspace(0, 1, n + k + 1)
-        sh0 = [6, 7, 8]
-        for axis in range(4):
-            sh = sh0[:]
-            sh.insert(axis, n)   # [22, 6, 7, 8] etc
-            c = np.random.random(size=sh)
-            b = BSpline(t, c, k, axis=axis)
-            assert_equal(b.c.shape,
-                         [sh[axis],] + sh[:axis] + sh[axis+1:])
+        sh = [6, 7, 8]
+        # We need the positive axis for some of the indexing and slices used
+        # in this test.
+        pos_axis = axis % 4
+        sh.insert(pos_axis, n)   # [22, 6, 7, 8] etc
+        c = np.random.random(size=sh)
+        b = BSpline(t, c, k, axis=axis)
+        assert_equal(b.c.shape,
+                     [sh[pos_axis],] + sh[:pos_axis] + sh[pos_axis+1:])
 
-            xp = np.random.random((3, 4, 5))
-            assert_equal(b(xp).shape,
-                         sh[:axis] + list(xp.shape) + sh[axis+1:])
+        xp = np.random.random((3, 4, 5))
+        assert_equal(b(xp).shape,
+                     sh[:pos_axis] + list(xp.shape) + sh[pos_axis+1:])
 
-            #0 <= axis < c.ndim
-            for ax in [-1, c.ndim]:
-                assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
+        # -c.ndim <= axis < c.ndim
+        for ax in [-c.ndim - 1, c.ndim]:
+            assert_raises(np.AxisError, BSpline,
+                          **dict(t=t, c=c, k=k, axis=ax))
 
-            # derivative, antiderivative keeps the axis
-            for b1 in [BSpline(t, c, k, axis=axis).derivative(),
-                       BSpline(t, c, k, axis=axis).derivative(2),
-                       BSpline(t, c, k, axis=axis).antiderivative(),
-                       BSpline(t, c, k, axis=axis).antiderivative(2)]:
-                assert_equal(b1.axis, b.axis)
+        # derivative, antiderivative keeps the axis
+        for b1 in [BSpline(t, c, k, axis=axis).derivative(),
+                   BSpline(t, c, k, axis=axis).derivative(2),
+                   BSpline(t, c, k, axis=axis).antiderivative(),
+                   BSpline(t, c, k, axis=axis).antiderivative(2)]:
+            assert_equal(b1.axis, b.axis)
+
+    def test_neg_axis(self):
+        k = 2
+        t = [0, 1, 2, 3, 4, 5, 6]
+        c = np.array([[-1, 2, 0, -1], [2, 0, -3, 1]])
+
+        spl = BSpline(t, c, k, axis=-1)
+        spl0 = BSpline(t, c[0], k)
+        spl1 = BSpline(t, c[1], k)
+        assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
 
 def test_knots_multiplicity():
@@ -565,7 +576,7 @@ class TestInterop(object):
     def test_splev(self):
         xnew, b, b2 = self.xnew, self.b, self.b2
 
-        # check that splev works with 1D array of coefficients
+        # check that splev works with 1-D array of coefficients
         # for array and scalar `x`
         assert_allclose(splev(xnew, b),
                         b(xnew), atol=1e-15, rtol=1e-15)
@@ -574,7 +585,7 @@ class TestInterop(object):
         assert_allclose([splev(x, b) for x in xnew],
                         b(xnew), atol=1e-15, rtol=1e-15)
 
-        # With n-D coefficients, there's a quirck:
+        # With N-D coefficients, there's a quirck:
         # splev(x, BSpline) is equivalent to BSpline(x)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
@@ -615,10 +626,10 @@ class TestInterop(object):
         b = BSpline(*tck)
         assert_allclose(y, b(x), atol=1e-15)
 
-    @pytest.mark.xfail(NumpyVersion(np.__version__) < '1.14.0',
+    @pytest.mark.xfail(_pep440.parse(np.__version__) < _pep440.Version('1.14.0'),
                        reason='requires NumPy >= 1.14.0')
     def test_splrep_errors(self):
-        # test that both "old" and "new" splrep raise for an n-D ``y`` array
+        # test that both "old" and "new" splrep raise for an N-D ``y`` array
         # with n > 1
         x, y = self.xx, self.yy
         y2 = np.c_[y, y]
@@ -680,11 +691,11 @@ class TestInterop(object):
     def test_sproot(self):
         b, b2 = self.b, self.b2
         roots = np.array([0.5, 1.5, 2.5, 3.5])*np.pi
-        # sproot accepts a BSpline obj w/ 1D coef array
+        # sproot accepts a BSpline obj w/ 1-D coef array
         assert_allclose(sproot(b), roots, atol=1e-7, rtol=1e-7)
         assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
-        # ... and deals with trailing dimensions if coef array is n-D
+        # ... and deals with trailing dimensions if coef array is N-D
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        "Calling sproot.. with BSpline objects with c.ndim > 1 is not recommended.")
@@ -694,7 +705,7 @@ class TestInterop(object):
         assert_equal(r.shape, (3, 2, 4))
         assert_allclose(r - roots, 0, atol=1e-12)
 
-        # and legacy behavior is preserved for a tck tuple w/ n-D coef
+        # and legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)
         rr = np.asarray(sproot((b2.t, c2r, b2.k), mest=50))
         assert_equal(rr.shape, (3, 2, 4))
@@ -708,13 +719,13 @@ class TestInterop(object):
         assert_allclose(splint(0, 1, b),
                         b.integrate(0, 1), atol=1e-14)
 
-        # ... and deals with n-D arrays of coefficients
+        # ... and deals with N-D arrays of coefficients
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning,
                        "Calling splint.. with BSpline objects with c.ndim > 1 is not recommended.")
             assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
 
-        # and the legacy behavior is preserved for a tck tuple w/ n-D coef
+        # and the legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)
         integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
         assert_equal(integr.shape, (3, 2))
@@ -765,7 +776,7 @@ class TestInterop(object):
         assert_(isinstance(bn, BSpline))
         assert_(isinstance(tck_n, tuple))   # back-compat: tck in, tck out
 
-        # for n-D array of coefficients, BSpline.c needs to be transposed
+        # for N-D array of coefficients, BSpline.c needs to be transposed
         # after that, the results are equivalent.
         sh = tuple(range(b2.c.ndim))
         c_ = b2.c.transpose(sh[1:] + (0,))
@@ -867,7 +878,7 @@ class TestInterp(object):
     def test_knots_not_data_sites(self):
         # Knots need not coincide with the data sites.
         # use a quadratic spline, knots are at data averages,
-        # two additional constraints are zero 2nd derivs at edges
+        # two additional constraints are zero 2nd derivatives at edges
         k = 2
         t = np.r_[(self.xx[0],)*(k+1),
                   (self.xx[1:] + self.xx[:-1]) / 2.,
@@ -935,14 +946,14 @@ class TestInterp(object):
         x = np.arange(10).astype(np.int_)
         y = np.arange(10).astype(np.int_)
 
-        # cython chokes on "buffer type mismatch" (construction) or
+        # Cython chokes on "buffer type mismatch" (construction) or
         # "no matching signature found" (evaluation)
         for k in (0, 1, 2, 3):
             b = make_interp_spline(x, y, k=k)
             b(x)
 
     def test_sliced_input(self):
-        # cython code chokes on non C contiguous arrays
+        # Cython code chokes on non C contiguous arrays
         xx = np.linspace(-1, 1, 100)
 
         x = xx[::5]
@@ -1030,7 +1041,7 @@ class TestInterp(object):
                                 bc_type=('clamped', 'natural'))
         assert_allclose(b1.c, b2.c, atol=1e-15)
 
-        # ... and for n-D values:
+        # ... and for N-D values:
         np.random.seed(1234)
         k, n = 3, 22
         x = np.sort(np.random.random(size=n))
@@ -1223,11 +1234,11 @@ class TestLSQ(object):
         x = np.arange(10).astype(np.int_)
         y = np.arange(10).astype(np.int_)
         t = _augknt(x, k=1)
-        # cython chokes on "buffer type mismatch"
+        # Cython chokes on "buffer type mismatch"
         make_lsq_spline(x, y, t, k=1)
 
     def test_sliced_input(self):
-        # cython code chokes on non C contiguous arrays
+        # Cython code chokes on non C contiguous arrays
         xx = np.linspace(-1, 1, 100)
 
         x = xx[::3]
@@ -1244,4 +1255,3 @@ class TestLSQ(object):
         for z in [np.nan, np.inf, -np.inf]:
             y[-1] = z
             assert_raises(ValueError, make_lsq_spline, x, y, t)
-

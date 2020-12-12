@@ -1,9 +1,8 @@
 """
 Tests for the stats.mstats module (support for masked arrays)
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
+import platform
 
 import numpy as np
 from numpy import nan
@@ -18,8 +17,8 @@ from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import suppress_warnings
+from scipy.stats import mstats_basic
 
 class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
@@ -80,21 +79,15 @@ class TestGeoMean(object):
         #  Test a 1d masked array with zero element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         desired = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(divide='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     def test_1d_ma_inf(self):
         #  Test a 1d masked array with negative element
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         desired = 41.4716627439
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
-        finally:
-            np.seterr(**olderr)
 
     @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1d_float96(self):
@@ -208,6 +201,16 @@ class TestCorr(object):
         assert_almost_equal(r, np.sqrt(3)/2)
         assert_almost_equal(p, 1.0/3)
 
+    def test_pearsonr_misaligned_mask(self):
+        mx = np.ma.masked_array([1, 2, 3, 4, 5, 6], mask=[0, 1, 0, 0, 0, 0])
+        my = np.ma.masked_array([9, 8, 7, 6, 5, 9], mask=[0, 0, 1, 0, 0, 0])
+        x = np.array([1, 4, 5, 6])
+        y = np.array([9, 6, 5, 9])
+        mr, mp = mstats.pearsonr(mx, my)
+        r, p = stats.pearsonr(x, y)
+        assert_equal(mr, r)
+        assert_equal(mp, p)
+
     def test_spearmanr(self):
         # Tests some computations of Spearman's rho
         (x, y) = ([5.05,6.75,3.21,2.66], [1.65,2.64,2.64,6.95])
@@ -246,7 +249,17 @@ class TestCorr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
+        # check case with with maximum disorder and p=1
+        x = ma.array(np.array([9, 2, 5, 6]))
+        y = ma.array(np.array([4, 7, 9, 11]))
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.0, 1.0]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x, y)), expected)
+
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))
@@ -344,6 +357,29 @@ class TestCorr(object):
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
 
+
+def test_kendall_p_exact_large():
+    # Test for the exact method with large samples (n >= 171)
+    # expected values generated using SymPy
+    expectations = {(100, 2393): 0.62822615287956040664,
+                    (101, 2436): 0.60439525773513602669,
+                    (170, 0): 2.755801935583541e-307,
+                    (171, 0): 0.0,
+                    (171, 1): 2.755801935583541e-307,
+                    (172, 1): 0.0,
+                    (200, 9797): 0.74753983745929675209,
+                    (201, 9656): 0.40959218958120363618,
+                    (400, 38965): 0.48444283672113314099,
+                    (401, 39516): 0.66363159823474837662,
+                    (800, 156772): 0.42265448483120932055,
+                    (801, 157849): 0.53437553412194416236,
+                    (1600, 637472): 0.84200727400323538419,
+                    (1601, 630304): 0.34465255088058593946}
+    
+    for nc, expected in expectations.items():
+        res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+        assert_almost_equal(res, expected)
+
     def test_pointbiserial(self):
         x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
              0,0,0,0,1,-1]
@@ -410,6 +446,14 @@ class TestTrimming(object):
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
+    def test_trimr(self):
+        x = ma.arange(10)
+        result = mstats.trimr(x, limits=(0.15, 0.14), inclusive=(False, False))
+        expected = ma.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                            mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 1])
+        assert_equal(result, expected)
+        assert_equal(result.mask, expected.mask)
+
     def test_trimmedmean(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
@@ -435,6 +479,19 @@ class TestTrimming(object):
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
 
+    def test_winsorization_nan(self):
+        data = ma.array([np.nan, np.nan, 0, 1, 2])
+        assert_raises(ValueError, mstats.winsorize, data, (0.05, 0.05),
+                      nan_policy='raise')
+        # Testing propagate (default behavior)
+        assert_equal(mstats.winsorize(data, (0.4, 0.4)),
+                     ma.array([2, 2, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8)),
+                     ma.array([np.nan, np.nan, np.nan, np.nan, np.nan]))
+        assert_equal(mstats.winsorize(data, (0.4, 0.4), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
+        assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
+                     ma.array([np.nan, np.nan, 2, 2, 2]))
 
 class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
@@ -556,7 +613,7 @@ class TestMoments(object):
         im[:50, :] += 1
         im[:, :50] += 1
         cp = im.copy()
-        a = mstats.mode(im, None)
+        mstats.mode(im, None)
         assert_equal(im, cp)
 
 
@@ -620,23 +677,23 @@ class TestMisc(object):
                 [6]+[7]*2+[8]*4+[9]*9+[10]*16]
         result = [5*[3.1828]+11*[0.5591]+9*[0.0344]+3*[1.6086]+2*[5.2817]+2*[11.0538],
                   [10.4352]+2*[4.8599]+4*[1.3836]+9*[0.0061]+16*[0.7277]]
-        assert_almost_equal(np.round(mstats.obrientransform(*args).T,4),
-                            result,4)
+        assert_almost_equal(np.round(mstats.obrientransform(*args).T, 4),
+                            result, 4)
 
-    def test_kstwosamp(self):
+    def test_ks_2samp(self):
         x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
              [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
-             [3, 2, 5, 6, 18, 4, 9, 1, 1,nan, 1, 1,nan],
-             [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
+             [3, 2, 5, 6, 18, 4, 9, 1, 1, nan, 1, 1, nan],
+             [nan, 6, 11, 4, 17, nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x).T
-        (winter,spring,summer,fall) = x.T
+        (winter, spring, summer, fall) = x.T
 
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
-                            (0.1818,0.9892))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
-                            (0.1469,0.7734))
-        assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
-                            (0.1818,0.6744))
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring), 4),
+                            (0.1818, 0.9628))
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring, 'g'), 4),
+                            (0.1469, 0.6886))
+        assert_almost_equal(np.round(mstats.ks_2samp(winter, spring, 'l'), 4),
+                            (0.1818, 0.6011))
 
     def test_friedmanchisq(self):
         # No missing values
@@ -667,15 +724,20 @@ def test_regress_simple():
     y = 0.2 * np.linspace(0, 100, 100) + 10
     y += np.sin(np.linspace(0, 20, 100))
 
-    slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    result = mstats.linregress(x, y)
 
-    # test for namedtuple attributes
-    res = mstats.linregress(x, y)
+    # Result is of a correct class and with correct fields
+    lr = stats._stats_mstats_common.LinregressResult
+    assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-    check_named_results(res, attributes, ma=True)
+    check_named_results(result, attributes, ma=True)
+    assert 'intercept_stderr' in dir(result)
 
+    # Slope and intercept are estimated correctly
+    assert_almost_equal(result.slope, 0.19644990055858422)
+    assert_almost_equal(result.intercept, 10.211269918932341)
+    assert_almost_equal(result.stderr, 0.002395781449783862)
+    assert_almost_equal(result.intercept_stderr, 0.13866936078570702)
 
 def test_theilslopes():
     # Test for basic slope and intercept.
@@ -714,9 +776,8 @@ def test_siegelslopes():
     assert_equal(mstats.siegelslopes(y, x), (5.0, -3.0))
 
     # if there are no outliers, results should be comparble to linregress
-    np.random.seed(231)
     x = np.arange(10)
-    y = -2.3 + 0.3*x + stats.norm.rvs(size=10)
+    y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
     slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
 
     slope, intercept = mstats.siegelslopes(y, x)
@@ -856,7 +917,7 @@ class TestKruskal():
         check_named_results(res, attributes, ma=True)
 
 
-#TODO: for all ttest functions, add tests with masked array inputs
+# TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel():
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
@@ -1004,9 +1065,10 @@ class TestTtest_1samp():
         res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
         assert_allclose(res1, res2)
+
         res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
         res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
-        assert_allclose(res1, res2)
+        assert_allclose(res1, res2, atol=1e-15)
 
         # Check default is axis=0
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
@@ -1046,6 +1108,30 @@ class TestTtest_1samp():
             assert_array_equal(p, (np.nan, np.nan))
 
 
+class TestDescribe:
+    """
+    Tests for mstats.describe.
+
+    Note that there are also tests for `mstats.describe` in the
+    class TestCompareWithStats.
+    """
+    def test_basic_with_axis(self):
+        # This is a basic test that is also a regression test for gh-7303.
+        a = np.ma.masked_array([[0, 1, 2, 3, 4, 9],
+                                [5, 5, 0, 9, 3, 3]],
+                               mask=[[0, 0, 0, 0, 0, 1],
+                                     [0, 0, 1, 1, 0, 0]])
+        result = mstats.describe(a, axis=1)
+        assert_equal(result.nobs, [5, 4])
+        amin, amax = result.minmax
+        assert_equal(amin, [0, 3])
+        assert_equal(amax, [4, 5])
+        assert_equal(result.mean, [2.0, 4.0])
+        assert_equal(result.variance, [2.0, 1.0])
+        assert_equal(result.skewness, [0.0, 0.0])
+        assert_allclose(result.kurtosis, [-1.3, -2.0])
+
+
 class TestCompareWithStats(object):
     """
     Class to compare mstats results with stats results.
@@ -1079,8 +1165,8 @@ class TestCompareWithStats(object):
         np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x) + 5) * 1e16
-        ym = np.ones(len(y) + 5) * 1e16
+        xm = np.full(len(x) + 5, 1e16)
+        ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x
         ym[0:len(y)] = y
         mask = xm > 9e15
@@ -1089,10 +1175,10 @@ class TestCompareWithStats(object):
         return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
-        x = np.ones((n, nx)) * np.nan
-        y = np.ones((n, nx)) * np.nan
-        xm = np.ones((n+5, nx)) * np.nan
-        ym = np.ones((n+5, nx)) * np.nan
+        x = np.full((n, nx), np.nan)
+        y = np.full((n, nx), np.nan)
+        xm = np.full((n+5, nx), np.nan)
+        ym = np.full((n+5, nx), np.nan)
 
         for i in range(nx):
             x[:, i], y[:, i], dx, dy = self.generate_xy_sample(n)
@@ -1106,9 +1192,9 @@ class TestCompareWithStats(object):
     def test_linregress(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            res1 = stats.linregress(x, y)
-            res2 = stats.mstats.linregress(xm, ym)
-            assert_allclose(np.asarray(res1), np.asarray(res2))
+            result1 = stats.linregress(x, y)
+            result2 = stats.mstats.linregress(xm, ym)
+            assert_allclose(np.asarray(result1), np.asarray(result2))
 
     def test_pearsonr(self):
         for n in self.get_n():
@@ -1330,12 +1416,7 @@ class TestCompareWithStats(object):
                 x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_allclose(r[0], rm[0], rtol=1e-15)
-                # TODO this test is not performed as it is a known issue that
-                # mstats returns a slightly different p-value what is a bit
-                # strange is that other tests like test_maskedarray_input don't
-                # fail!
-                #~ assert_almost_equal(r[1], rm[1])
+                assert_allclose(r, rm)
 
     def test_skewtest_result_attributes(self):
         x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
@@ -1362,8 +1443,7 @@ class TestCompareWithStats(object):
                 assert_equal(r[0][1], rm[0][1])
 
     def test_normaltest(self):
-        np.seterr(over='raise')
-        with suppress_warnings() as sup:
+        with np.errstate(over='raise'), suppress_warnings() as sup:
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:
@@ -1405,6 +1485,72 @@ class TestCompareWithStats(object):
             r = stats.obrientransform(x)
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
+
+    def test_ks_1samp(self):
+        """Checks that mstats.ks_1samp and stats.ks_1samp agree on masked arrays."""
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.ks_1samp(xm, stats.norm.cdf, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_kstest_1samp(self):
+        """Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.kstest(x, 'norm', alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.kstest(xm, 'norm', alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_ks_2samp(self):
+        """Checks that mstats.ks_2samp and stats.ks_2samp agree on masked arrays.
+        gh-8431"""
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                if mode in ['auto', 'exact']:
+                    sup.filter(RuntimeWarning,
+                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.ks_2samp(x, y, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.ks_2samp(xm, ym, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.ks_2samp(xm, y, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_kstest_2samp(self):
+        """Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays."""
+        for mode in ['auto', 'exact', 'asymp']:
+            with suppress_warnings() as sup:
+                if mode in ['auto', 'exact']:
+                    sup.filter(RuntimeWarning,
+                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                for alternative in ['less', 'greater', 'two-sided']:
+                    for n in self.get_n():
+                        x, y, xm, ym = self.generate_xy_sample(n)
+                        res1 = stats.kstest(x, y, alternative=alternative, mode=mode)
+                        res2 = stats.mstats.kstest(xm, ym, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res2))
+                        res3 = stats.kstest(xm, y, alternative=alternative, mode=mode)
+                        assert_equal(np.asarray(res1), np.asarray(res3))
+
+    def test_nametuples_agree(self):
+        result = stats.kstest([1, 2], [3, 4])
+        assert_(isinstance(result, stats.stats.KstestResult))
+        result2 = stats.stats.Ks_2sampResult(result.statistic, result.pvalue)
+        assert_(isinstance(result2, stats.stats.Ks_2sampResult))
+        assert_equal(result, result2)
 
 
 class TestBrunnerMunzel(object):

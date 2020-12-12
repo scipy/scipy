@@ -31,25 +31,31 @@ PREREQUISITES
 
 SciPy requires the following software installed for your platform:
 
-1) Python__ >= 3.5
+1) Python__ >= 3.7
 
 __ https://www.python.org
 
-2) NumPy__ >= 1.13.3
+2) NumPy__ >= 1.16.5
 
 __ https://www.numpy.org/
 
-3) For building from source: setuptools__
+If building from source, SciPy also requires:
+
+3) setuptools__
 
 __ https://github.com/pypa/setuptools
 
-4) If you want to build the documentation: Sphinx__ >= 1.2.1
+4) pybind11__ >= 2.4.3
+
+__ https://github.com/pybind/pybind11
+
+5) If you want to build the documentation: Sphinx__ >= 1.2.1
 
 __ http://www.sphinx-doc.org/
 
-5) If you want to build SciPy master or other unreleased version from source
+6) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
-   Cython__ >= 0.28.5
+   Cython__ >= 0.29.18
 
 __ http://cython.org/
 
@@ -59,28 +65,28 @@ Windows
 Compilers
 ~~~~~~~~~
 
-There are two ways to build Scipy on Windows:
+There are two ways to build SciPy on Windows:
 
 1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is what Anaconda
    and Enthought Canopy use.
-2. Use MSVC + gfortran with OpenBLAS.  This is how the SciPy Windows wheels are
+2. Use MSVC + GFortran with OpenBLAS.  This is how the SciPy Windows wheels are
    built.
 
 Mac OS X
 --------
 
-It is recommended to use gcc or clang, both work fine. Gcc is available for
+It is recommended to use GCC or Clang, both work fine. Gcc is available for
 free when installing Xcode, the developer toolsuite on Mac OS X. You also
-need a fortran compiler, which is not included with Xcode: you should use a
-recent gfortran from an OS X package manager (like Homebrew).
+need a Fortran compiler, which is not included with Xcode: you should use a
+recent GFortran from an OS X package manager (like Homebrew).
 
-Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
-it is known to generate buggy scipy binaries.
+Please do NOT use GFortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
+it is known to generate buggy SciPy binaries.
 
 You should also use a BLAS/LAPACK library from an OS X package manager.
 ATLAS, OpenBLAS, and MKL all work.
 
-As of Scipy version 1.2.0, we do not support compiling against the system
+As of SciPy version 1.2.0, we do not support compiling against the system
 Accelerate library for BLAS and LAPACK. It does not support a sufficiently
 recent LAPACK interface.
 
@@ -90,13 +96,13 @@ Linux
 Most common distributions include all the dependencies.  You will need to
 install a BLAS/LAPACK (all of ATLAS, OpenBLAS, MKL work fine) including
 development headers, as well as development headers for Python itself.  Those
-are typically packaged as python-dev
+are typically packaged as python-dev.
 
 
 INSTALLING SCIPY
 ================
 
-For the latest information, see the web site:
+For the latest information, see the website:
 
   https://www.scipy.org
 
@@ -110,7 +116,7 @@ Use the command::
   cd scipy
   git clean -xdf
   python setup.py install --user
- 
+
 Documentation
 -------------
 Type::
@@ -132,12 +138,12 @@ computer.
 TESTING
 =======
 
-To test SciPy after installation (highly recommended), execute in Python
+To test SciPy after installation (highly recommended), execute in Python::
 
    >>> import scipy
    >>> scipy.test()
 
-To run the full test suite use
+To run the full test suite use::
 
    >>> scipy.test('full')
 
@@ -164,16 +170,16 @@ To see a valid list of <Vendor> names, run::
 
   python setup.py config_fc --help-fcompiler
 
-IMPORTANT: It is highly recommended that all libraries that scipy uses (e.g.
+IMPORTANT: It is highly recommended that all libraries that SciPy uses (e.g.
 BLAS and ATLAS libraries) are built with the same Fortran compiler. In most
-cases, if you mix compilers, you will not be able to import Scipy at best, have
+cases, if you mix compilers, you will not be able to import SciPy at best, and will have
 crashes and random results at worst.
 
 UNINSTALLING
 ============
 
 When installing with ``python setup.py install`` or a variation on that, you do
-not get proper uninstall behavior for an older already installed Scipy version.
+not get proper uninstall behavior for an older already installed SciPy version.
 In many cases that's not a problem, but if it turns out to be an issue, you
 need to manually uninstall it first (remove from e.g. in
 ``/usr/lib/python3.4/site-packages/scipy`` or
@@ -192,7 +198,7 @@ can ask help from scipy-user@python.org or scipy-dev@python.org mailing
 lists. Please include the following information in your message:
 
 NOTE: You can generate some of the following information (items 1-5,7)
-in one command:: 
+in one command::
 
   python -c 'from numpy.f2py.diagnose import run; run()'
 
@@ -203,7 +209,7 @@ in one command::
      OS, its distribution name and version information
      etc.
 
-2) Information about C,C++,Fortran compilers/linkers as reported by
+2) Information about C, C++, Fortran compilers/linkers as reported by
    the compilers when requesting their version information, e.g.,
    the output of
    ::

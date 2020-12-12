@@ -1,16 +1,15 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import itertools
+import platform
+import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose)
+     assert_, assert_allclose, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
@@ -245,7 +244,7 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    D = spdiags([1.0/A.diagonal()], [0], M, N)
+    spdiags([1.0/A.diagonal()], [0], M, N)
 
     b = case.b
     x0 = 0*b
@@ -338,7 +337,7 @@ def test_gmres_basic():
     A = np.vander(np.arange(10) + 1)[:, ::-1]
     b = np.zeros(10)
     b[0] = 1
-    x = np.linalg.solve(A, b)
+    np.linalg.solve(A, b)
 
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -449,7 +448,12 @@ def test_zero_rhs(solver):
 
 
 @pytest.mark.parametrize("solver", [
-    gmres, qmr, lgmres,
+    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
+                                                and sys.version_info[1] == 9,
+                                                reason="gh-13019")),
+    qmr,
+    pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
+                                                 reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),
     pytest.param(bicg, marks=pytest.mark.xfail),
     pytest.param(bicgstab, marks=pytest.mark.xfail),
@@ -467,6 +471,7 @@ def test_maxiter_worsening(solver):
                   [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
     v = np.ones(4)
     best_error = np.inf
+    tol = 7 if platform.machine() == 'aarch64' else 5
 
     for maxiter in range(1, 20):
         x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
@@ -478,7 +483,31 @@ def test_maxiter_worsening(solver):
         best_error = min(best_error, error)
 
         # Check with slack
-        assert_(error <= 5*best_error)
+        assert_(error <= tol*best_error)
+
+
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_x0_working(solver):
+    # Easy problem
+    np.random.seed(1)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+    x0 = np.random.rand(n)
+
+    if solver is minres:
+        kw = dict(tol=1e-6)
+    else:
+        kw = dict(atol=0, tol=1e-6)
+
+    x, info = solver(A, b, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+    x, info = solver(A, b, x0=x0, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
 
 
 #------------------------------------------------------------------------------
@@ -633,3 +662,69 @@ class TestGMRES(object):
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
+
+    def test_callback_type(self):
+        # The legacy callback type changes meaning of 'maxiter'
+        np.random.seed(1)
+        A = np.random.rand(20, 20)
+        b = np.random.rand(20)
+
+        cb_count = [0]
+
+        def pr_norm_cb(r):
+            cb_count[0] += 1
+            assert_(isinstance(r, float))
+
+        def x_cb(x):
+            cb_count[0] += 1
+            assert_(isinstance(x, np.ndarray))
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            # 2 iterations is not enough to solve the problem
+            cb_count = [0]
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            assert info == 2
+            assert cb_count[0] == 2
+
+        # With `callback_type` specified, no warning should be raised
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='legacy')
+        assert info == 2
+        assert cb_count[0] == 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
+                        callback_type='pr_norm')
+        assert info == 0
+        assert cb_count[0] > 2
+
+        # 2 restart cycles is enough to solve the problem
+        cb_count = [0]
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
+                        callback_type='x')
+        assert info == 0
+        assert cb_count[0] == 2
+
+    def test_callback_x_monotonic(self):
+        # Check that callback_type='x' gives monotonic norm decrease
+        np.random.seed(1)
+        A = np.random.rand(20, 20) + np.eye(20)
+        b = np.random.rand(20)
+
+        prev_r = [np.inf]
+        count = [0]
+
+        def x_cb(x):
+            r = np.linalg.norm(A.dot(x) - b)
+            assert r <= prev_r[0]
+            prev_r[0] = r
+            count[0] += 1
+
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
+                        callback_type='x')
+        assert info == 20
+        assert count[0] == 21
+        x_cb(x)

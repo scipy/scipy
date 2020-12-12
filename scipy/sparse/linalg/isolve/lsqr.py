@@ -49,8 +49,6 @@ Adapted for SciPy by Stefan van der Walt.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['lsqr']
 
 import numpy as np
@@ -100,7 +98,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     """Find the least-squares solution to a large, sparse, linear system
     of equations.
 
-    The function solves ``Ax = b``  or  ``min ||b - Ax||^2`` or
+    The function solves ``Ax = b``  or  ``min ||Ax - b||^2`` or
     ``min ||Ax - b||^2 + d^2 ||x||^2``.
 
     The matrix A may be square or rectangular (over-determined or
@@ -330,7 +328,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     if show:
         print(' ')
         print('LSQR            Least-squares solution of  Ax = b')
-        str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
+        str1 = f'The matrix A has {m} rows and {n} columns'
         str2 = 'damp = %20.14e   calc_var = %8g' % (damp, calc_var)
         str3 = 'atol = %8.2e                 conlim = %8.2e' % (atol, conlim)
         str4 = 'btol = %8.2e               iter_lim = %8g' % (btol, iter_lim)

@@ -1,8 +1,6 @@
 """
 Simple benchmarks for the sparse module
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import time
 import timeit
@@ -15,14 +13,12 @@ import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import sparse
     from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse(m, n, nnz_per_row):
@@ -194,6 +190,38 @@ class Construction(Benchmark):
             T[i, j] = v
 
 
+class BlockDiagDenseConstruction(Benchmark):
+    param_names = ['num_matrices']
+    params = [1000, 5000, 10000, 15000, 20000]
+
+    def setup(self, num_matrices):
+        self.matrices = []
+        for i in range(num_matrices):
+            rows = np.random.randint(1, 4)
+            columns = np.random.randint(1, 4)
+            mat = np.random.randint(0, 10, (rows, columns))
+            self.matrices.append(mat)
+
+    def time_block_diag(self, num_matrices):
+        sparse.block_diag(self.matrices)
+
+
+class BlockDiagSparseConstruction(Benchmark):
+    param_names = ['num_matrices']
+    params = [100, 500, 1000, 1500, 2000]
+
+    def setup(self, num_matrices):
+        self.matrices = []
+        for i in range(num_matrices):
+            rows = np.random.randint(1, 20)
+            columns = np.random.randint(1, 20)
+            mat = np.random.randint(0, 10, (rows, columns))
+            self.matrices.append(mat)
+
+    def time_block_diag(self, num_matrices):
+        sparse.block_diag(self.matrices)
+
+
 class Conversion(Benchmark):
     params = [
         ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
@@ -313,6 +341,8 @@ class NullSlice(Benchmark):
         for density in self.params[0]:
             for fmt in self.params[1]:
                 self._setup(density, fmt)
+
+    setup_cache.timeout = 120
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...

@@ -1,19 +1,14 @@
-from __future__ import division, absolute_import, print_function
-
 from functools import partial
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy import array, r_, ones, arange, sort, diag, cos, rand, pi
     from scipy.linalg import eigh, orth, cho_factor, cho_solve
     import scipy.sparse
     from scipy.sparse.linalg import lobpcg
     from scipy.sparse.linalg.interface import LinearOperator
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def _sakurai(n):

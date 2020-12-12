@@ -6,7 +6,7 @@ Nonlinear solvers
 .. currentmodule:: scipy.optimize
 
 This is a collection of general-purpose nonlinear multidimensional
-solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
+solvers. These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
@@ -99,7 +99,7 @@ The solution can be found using the `newton_krylov` solver:
    # visualize
    import matplotlib.pyplot as plt
    x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-   plt.pcolor(x, y, sol)
+   plt.pcolormesh(x, y, sol, shading='gouraud')
    plt.colorbar()
    plt.show()
 
@@ -107,18 +107,15 @@ The solution can be found using the `newton_krylov` solver:
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 import numpy as np
-from scipy._lib.six import callable, exec_, xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -275,7 +272,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
-    dx = np.inf
+    dx = np.full_like(x, np.inf)
     Fx = func(x)
     Fx_norm = norm(Fx)
 
@@ -302,7 +299,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     eta_treshold = 0.1
     eta = 1e-3
 
-    for n in xrange(maxiter):
+    for n in range(maxiter):
         status = condition.check(Fx, x, dx)
         if status:
             break
@@ -484,7 +481,7 @@ class Jacobian(object):
     Common interface for Jacobians or Jacobian approximations.
 
     The optional methods come useful when implementing trust region
-    etc.  algorithms that often require evaluating transposes of the
+    etc., algorithms that often require evaluating transposes of the
     Jacobian.
 
     Methods
@@ -876,7 +873,7 @@ class LowRankMatrix(object):
         C = dot(C, inv(WH))
         D = dot(D, WH.T.conj())
 
-        for k in xrange(q):
+        for k in range(q):
             self.cs[k] = C[:,k].copy()
             self.ds[k] = D[:,k].copy()
 
@@ -904,7 +901,7 @@ _doc_parts['broyden_params'] = """
 
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
-        Default is infinity (ie., no rank reduction).
+        Default is infinity (i.e., no rank reduction).
     """.strip()
 
 
@@ -919,6 +916,11 @@ class BroydenFirst(GenericBroyden):
     %(params_basic)s
     %(broyden_params)s
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden1'`` in particular.
 
     Notes
     -----
@@ -939,6 +941,21 @@ class BroydenFirst(GenericBroyden):
        Universiteit Leiden, The Netherlands (2003).
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden1(fun, [0, 0])
+    >>> sol
+    array([0.84116396, 0.15883641])
 
     """
 
@@ -1013,6 +1030,11 @@ class BroydenSecond(BroydenFirst):
     %(broyden_params)s
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='broyden2'`` in particular.
+
     Notes
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
@@ -1029,6 +1051,21 @@ class BroydenSecond(BroydenFirst):
        Universiteit Leiden, The Netherlands (2003).
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden2(fun, [0, 0])
+    >>> sol
+    array([0.84116365, 0.15883529])
 
     """
 
@@ -1065,9 +1102,29 @@ class Anderson(GenericBroyden):
         Compared to unity, good values of the order of 0.01.
     %(params_extra)s
 
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='anderson'`` in particular.
+
     References
     ----------
     .. [Ey] V. Eyert, J. Comp. Phys., 124, 271 (1996).
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.anderson(fun, [0, 0])
+    >>> sol
+    array([0.84116588, 0.15883789])
 
     """
 
@@ -1079,7 +1136,7 @@ class Anderson(GenericBroyden):
     #     A      = W + dF^H dF
     #     W      = w0^2 diag(dF^H dF)
     #
-    # so that for w0 = 0 the secant condition applies for last M iterates, ie.,
+    # so that for w0 = 0 the secant condition applies for last M iterates, i.e.,
     #
     #     J^-1 df_j = dx_j
     #
@@ -1113,7 +1170,7 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         try:
@@ -1124,7 +1181,7 @@ class Anderson(GenericBroyden):
             del self.df[:]
             return dx
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.dx[m] + self.alpha*self.df[m])
         return dx
 
@@ -1136,18 +1193,18 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         b = np.empty((n, n), dtype=f.dtype)
-        for i in xrange(n):
-            for j in xrange(n):
+        for i in range(n):
+            for j in range(n):
                 b[i,j] = vdot(self.df[i], self.dx[j])
                 if i == j and self.w0 != 0:
                     b[i,j] -= vdot(self.df[i], self.df[i])*self.w0**2*self.alpha
         gamma = solve(b, df_f)
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.df[m] + self.dx[m]/self.alpha)
         return dx
 
@@ -1165,8 +1222,8 @@ class Anderson(GenericBroyden):
         n = len(self.dx)
         a = np.zeros((n, n), dtype=f.dtype)
 
-        for i in xrange(n):
-            for j in xrange(i, n):
+        for i in range(n):
+            for j in range(i, n):
                 if i == j:
                     wd = self.w0**2
                 else:
@@ -1199,6 +1256,27 @@ class DiagBroyden(GenericBroyden):
     alpha : float, optional
         Initial guess for the Jacobian is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='diagbroyden'`` in particular.
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.diagbroyden(fun, [0, 0])
+    >>> sol
+    array([0.84116403, 0.15883384])
+
     """
 
     def __init__(self, alpha=None):
@@ -1207,7 +1285,7 @@ class DiagBroyden(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.d = np.ones((self.shape[0],), dtype=self.dtype) / self.alpha
+        self.d = np.full((self.shape[0],), 1 / self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f / self.d
@@ -1243,6 +1321,12 @@ class LinearMixing(GenericBroyden):
     alpha : float, optional
         The Jacobian approximation is (-1/alpha).
     %(params_extra)s
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='linearmixing'`` in particular.
+
     """
 
     def __init__(self, alpha=None):
@@ -1278,6 +1362,11 @@ class ExcitingMixing(GenericBroyden):
 
        This algorithm may be useful for specific problems, but whether
        it will work may depend strongly on the problem.
+
+    See Also
+    --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1343,6 +1432,10 @@ class KrylovJacobian(Jacobian):
         the iterative solvers in `scipy.sparse.linalg`.
 
         The default is `scipy.sparse.linalg.lgmres`.
+    inner_maxiter : int, optional
+        Parameter to pass to the "inner" Krylov solver: maximum number of
+        iterations. Iteration will stop after maxiter steps even if the
+        specified tolerance has not been achieved.
     inner_M : LinearOperator or InverseJacobian
         Preconditioner for the inner Krylov iteration.
         Note that you can use also inverse Jacobians as (adaptive)
@@ -1356,16 +1449,20 @@ class KrylovJacobian(Jacobian):
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving
         the current point, and ``f`` the current function value.
-    inner_tol, inner_maxiter, ...
-        Parameters to pass on to the \"inner\" Krylov solver.
-        See `scipy.sparse.linalg.gmres` for details.
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
+    inner_kwargs : kwargs
+        Keyword parameters for the "inner" Krylov solver
+        (defined with `method`). Parameter names must start with
+        the `inner_` prefix which will be stripped before passing on
+        the inner method. See, e.g., `scipy.sparse.linalg.gmres` for details.
     %(params_extra)s
 
     See Also
     --------
+    root : Interface to root finding algorithms for multivariate
+           functions. See ``method=='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 
@@ -1397,6 +1494,21 @@ class KrylovJacobian(Jacobian):
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
            :doi:`10.1137/S0895479803422014`
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0] + 0.5 * x[1] - 1.0,
+    ...             0.5 * (x[1] - x[0]) ** 2]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.newton_krylov(fun, [0, 0])
+    >>> sol
+    array([0.66731771, 0.66536458])
 
     """
 
@@ -1432,7 +1544,7 @@ class KrylovJacobian(Jacobian):
             # the Jacobian changes a lot in the nonlinear step
             #
             # XXX: some trust-region inspired ideas might be more efficient...
-            #      See eg. Brown & Saad. But needs to be implemented separately
+            #      See e.g., Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
             self.method_kw.setdefault('atol', 0)
@@ -1497,14 +1609,15 @@ class KrylovJacobian(Jacobian):
 
 def _nonlin_wrapper(name, jac):
     """
-    Construct a solver wrapper with given name and jacobian approx.
+    Construct a solver wrapper with given name and Jacobian approx.
 
     It inspects the keyword arguments of ``jac.__init__``, and allows to
     use the same arguments in the wrapper function, in addition to the
     keyword arguments of `nonlin_solve`
 
     """
-    args, varargs, varkw, defaults = _getargspec(jac.__init__)
+    signature = _getfullargspec(jac.__init__)
+    args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
@@ -1512,6 +1625,8 @@ def _nonlin_wrapper(name, jac):
     kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
+    if kwonlyargs:
+        raise ValueError('Unexpected signature %s' % signature)
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.
@@ -1529,7 +1644,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec_(wrapper, ns)
+    exec(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

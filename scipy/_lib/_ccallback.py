@@ -40,9 +40,9 @@ class LowLevelCallable(tuple):
     Attributes
     ----------
     function
-        Callback function given
+        Callback function given.
     user_data
-        User data given
+        User data given.
     signature
         Signature of the function.
 
@@ -60,7 +60,7 @@ class LowLevelCallable(tuple):
     - ctypes function pointer
     - cffi function pointer
 
-    The signature of the low-level callback must match one of  those expected
+    The signature of the low-level callback must match one of those expected
     by the routine it is passed to.
 
     If constructing low-level functions from a PyCapsule, the name of the
@@ -124,10 +124,10 @@ class LowLevelCallable(tuple):
         """
         try:
             function = module.__pyx_capi__[name]
-        except AttributeError:
-            raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute")
-        except KeyError:
-            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name))
+        except AttributeError as e:
+            raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute") from e
+        except KeyError as e:
+            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name)) from e
         return cls(function, user_data, signature)
 
     @classmethod

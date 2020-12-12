@@ -1,12 +1,12 @@
 # Makefile for Sphinx documentation
-#
 
-PYVER ?= 3.6
-PYTHON = python$(PYVER)
+# If `python3` doesn't point to the Python you want to use (with Sphinx installed),
+# then you can use, e.g., `make html PYTHON=python3.7` to specify a Python executable
+PYTHON = python3
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
+SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 PAPER         =
 
 FILES=
@@ -17,7 +17,7 @@ PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
 ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
-        dist dist-build
+        dist dist-build version-check
 
 #------------------------------------------------------------------------------
 
@@ -31,7 +31,8 @@ help:
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  clean     to clean all build files/directories"
-	@echo "  dist PYVER=... to make a distribution-ready tree"
+	@echo "  dist      to make a distribution-ready tree (installing Scipy in venv)"
+	@echo "  doc-dist  to make a distribution-ready tree (assuming Scipy is installed)"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
 	@echo "  show      to show the html-scipyorg output"
 
@@ -51,16 +52,38 @@ clean:
 # - Different versions of easy_install install to different directories (!)
 #
 
-INSTALL_DIR = $(CURDIR)/build/inst-dist/
-INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(PYTHON)" SPHINXBUILD="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(SPHINXBUILD)"
+SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
+GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
+				print(git_version()[:10])")
+
+version-check:
+ifeq "$(GITVER)" "Unknown"
+	# @echo sdist build with unlabeled sources
+else ifeq ("", "$(SCIPYVER)")
+	@echo scipy not found, cannot build documentation without successful \"import scipy\"
+	@exit 1
+else ifneq ($(SCIPYVER),$(GITVER))
+	@echo installed scipy $(SCIPYVER) != current repo git version \'$(GITVER)\'
+	@echo use '"make dist"' or '"GITVER=$(SCIPYVER) make $(MAKECMDGOALS) ..."'
+	@exit 1
+else
+	# for testing
+	# @echo installed scipy $(SCIPYVER) matches git version $(GITVER); exit 1
+endif
 
 dist:
-	make $(DIST_VARS) real-dist
+	install -d build
+	rm -rf build/env
+	$(PYTHON) -mvenv --system-site-packages build/env
+	$(CURDIR)/build/env/bin/python -mpip install Sphinx
+	$(CURDIR)/build/env/bin/python -mpip install ..
+	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
-real-dist: dist-build html html-scipyorg
+doc-dist: VERSIONWARNING=-t versionwarning
+
+doc-dist: html-scipyorg html
 	test -d build/latex || make latex
 	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
@@ -74,17 +97,11 @@ real-dist: dist-build html html-scipyorg
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
 
-dist-build:
-	rm -f ../dist/*.egg
-	cd .. && $(PYTHON) setup.py bdist_egg
-	install -d $(subst :, ,$(INSTALL_PPH))
-	$(PYTHON) `which easy_install` --prefix=$(INSTALL_DIR) ../dist/*.egg
-
 upload:
 	# SSH must be correctly configured for this to work.
 	# Assumes that ``make dist`` was already run
 	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
-	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org mkdir -p $(UPLOAD_DIR)
 	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
 	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
 	    -zf $(UPLOAD_DIR)/dist.tar.gz
@@ -99,7 +116,8 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html:
+html: version-check html-build
+html-build:
 	mkdir -p build/html build/doctrees
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 	@echo
@@ -107,32 +125,12 @@ html:
 
 html-scipyorg:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going -t scipyorg -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
 
-pickle:
-	mkdir -p build/pickle build/doctrees
-	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) build/pickle $(FILES)
-	@echo
-	@echo "Build finished; now you can process the pickle files or run"
-	@echo "  sphinx-web build/pickle"
-	@echo "to start the sphinx-web server."
-
-web: pickle
-
-htmlhelp:
-	mkdir -p build/htmlhelp build/doctrees
-	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) build/htmlhelp $(FILES)
-	@echo
-	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      ".hhp project file in build/htmlhelp."
-
-htmlhelp-build: htmlhelp build/htmlhelp/scipy.chm
-%.chm: %.hhp
-	-hhc.exe $^
-
-latex:
+latex: version-check latex-build
+latex-build:
 	mkdir -p build/latex build/doctrees
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex $(FILES)
 	$(PYTHON) postprocess.py tex build/latex/*.tex
@@ -141,18 +139,18 @@ latex:
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
 	      "run these through (pdf)latex."
 
-coverage: build
+coverage: build version-check
 	mkdir -p build/coverage build/doctrees
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) build/coverage $(FILES)
 	@echo "Coverage finished; see c.txt and python.txt in build/coverage"
 
-changes:
+changes: version-check
 	mkdir -p build/changes build/doctrees
 	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) build/changes $(FILES)
 	@echo
 	@echo "The overview file is in build/changes."
 
-linkcheck:
+linkcheck: version-check
 	mkdir -p build/linkcheck build/doctrees
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) build/linkcheck $(FILES)
 	@echo

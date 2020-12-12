@@ -1,10 +1,6 @@
 """Base class for sparse matrices"""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis, check_reshape_kwargs,
                       check_shape, asmatrix)
@@ -29,7 +25,7 @@ class SparseEfficiencyWarning(SparseWarning):
 _formats = {'csc': [0, "Compressed Sparse Column"],
             'csr': [1, "Compressed Sparse Row"],
             'dok': [2, "Dictionary Of Keys"],
-            'lil': [3, "LInked List"],
+            'lil': [3, "List of Lists"],
             'dod': [4, "Dictionary of Dictionaries"],
             'sss': [5, "Symmetric Sparse Skyline"],
             'coo': [6, "COOrdinate"],
@@ -98,9 +94,9 @@ class spmatrix(object):
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
-            write the elements using C-like index order; e.g. read entire first
+            write the elements using C-like index order; e.g., read entire first
             row, then second row, etc. 'F' means to read and write the elements
-            using Fortran-like index order; e.g. read entire first column, then
+            using Fortran-like index order; e.g., read entire first column, then
             second column, etc.
         copy : bool, optional
             Indicates whether or not attributes of self should be copied
@@ -145,8 +141,8 @@ class spmatrix(object):
         Notes
         -----
         The semantics are not identical to `numpy.ndarray.resize` or
-        `numpy.resize`.  Here, the same data will be maintained at each index
-        before and after reshape, if that index is within the new bounds.  In
+        `numpy.resize`. Here, the same data will be maintained at each index
+        before and after reshape, if that index is within the new bounds. In
         numpy, resizing maintains contiguity of the array, moving elements
         around in the logical matrix but not within a flattened representation.
 
@@ -204,7 +200,7 @@ class spmatrix(object):
                             'point format' % self.dtype.name)
 
     def __iter__(self):
-        for r in xrange(self.shape[0]):
+        for r in range(self.shape[0]):
             yield self[r, :]
 
     def getmaxprint(self):
@@ -318,8 +314,8 @@ class spmatrix(object):
         else:
             try:
                 convert_method = getattr(self, 'to' + format)
-            except AttributeError:
-                raise ValueError('Format {} is unknown.'.format(format))
+            except AttributeError as e:
+                raise ValueError('Format {} is unknown.'.format(format)) from e
 
             # Forward the copy kwarg, if it's accepted.
             try:
@@ -330,7 +326,7 @@ class spmatrix(object):
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
     # Therefore a new sparse matrix format just needs to define a
-    # .tocsr() method to provide arithmetic support.  Any of these
+    # .tocsr() method to provide arithmetic support. Any of these
     # methods can be overridden for efficiency.
     ####################################################################
 
@@ -387,6 +383,9 @@ class spmatrix(object):
     def __abs__(self):
         return abs(self.tocsr())
 
+    def __round__(self, ndigits=0):
+        return round(self.tocsr(), ndigits=ndigits)
+
     def _add_sparse(self, other):
         return self.tocsr()._add_sparse(other)
 
@@ -415,7 +414,7 @@ class spmatrix(object):
                 raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._add_dense(other)
         else:
             return NotImplemented
@@ -434,7 +433,7 @@ class spmatrix(object):
                 raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._sub_dense(other)
         else:
             return NotImplemented
@@ -446,7 +445,7 @@ class spmatrix(object):
             raise NotImplementedError('subtracting a sparse matrix from a '
                                       'nonzero scalar is not supported')
         elif isdense(other):
-            other = broadcast_to(other, self.shape)
+            other = np.broadcast_to(other, self.shape)
             return self._rsub_dense(other)
         else:
             return NotImplemented
@@ -550,9 +549,9 @@ class spmatrix(object):
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
 
-    #####################################
-    # matmul (@) operator (Python 3.5+) #
-    #####################################
+    #######################
+    # matmul (@) operator #
+    #######################
 
     def __matmul__(self, other):
         if isscalarlike(other):
@@ -812,8 +811,25 @@ class spmatrix(object):
                                   shape=(1, m), dtype=self.dtype)
         return row_selector * self
 
+    # The following dunder methods cannot be implemented.
+    #
     # def __array__(self):
-    #    return self.toarray()
+    #     # Sparse matrices rely on NumPy wrapping them in object arrays under
+    #     # the hood to make unary ufuncs work on them. So we cannot raise
+    #     # TypeError here - which would be handy to not give users object
+    #     # arrays they probably don't want (they're looking for `.toarray()`).
+    #     #
+    #     # Conversion with `toarray()` would also break things because of the
+    #     # behavior discussed above, plus we want to avoid densification by
+    #     # accident because that can too easily blow up memory.
+    #
+    # def __array_ufunc__(self):
+    #     # We cannot implement __array_ufunc__ due to mismatching semantics.
+    #     # See gh-7707 and gh-7349 for details.
+    #
+    # def __array_function__(self):
+    #     # We cannot implement __array_function__ due to mismatching semantics.
+    #     # See gh-10362 for details.
 
     def todense(self, order=None, out=None):
         """
@@ -828,7 +844,7 @@ class spmatrix(object):
             Cannot be specified in conjunction with the `out`
             argument.
 
-        out : ndarray, 2-dimensional, optional
+        out : ndarray, 2-D, optional
             If specified, uses this array (or `numpy.matrix`) as the
             output buffer instead of allocating a new array to
             return. The provided array must have the same shape and
@@ -837,7 +853,7 @@ class spmatrix(object):
 
         Returns
         -------
-        arr : numpy.matrix, 2-dimensional
+        arr : numpy.matrix, 2-D
             A NumPy matrix object with the same shape and containing
             the same data represented by the sparse matrix, with the
             requested memory order. If `out` was passed and was an
@@ -854,13 +870,13 @@ class spmatrix(object):
         Parameters
         ----------
         order : {'C', 'F'}, optional
-            Whether to store multi-dimensional data in C (row-major)
+            Whether to store multidimensional data in C (row-major)
             or Fortran (column-major) order in memory. The default
             is 'None', indicating the NumPy default of C-ordered.
             Cannot be specified in conjunction with the `out`
             argument.
 
-        out : ndarray, 2-dimensional, optional
+        out : ndarray, 2-D, optional
             If specified, uses this array as the output buffer
             instead of allocating a new array to return. The provided
             array must have the same shape and dtype as the sparse
@@ -870,7 +886,7 @@ class spmatrix(object):
 
         Returns
         -------
-        arr : ndarray, 2-dimensional
+        arr : ndarray, 2-D
             An array with the same shape and containing the same
             data represented by the sparse matrix, with the requested
             memory order. If `out` was passed, the same object is
@@ -907,7 +923,7 @@ class spmatrix(object):
         return self.tocsr(copy=False).tocoo(copy=copy)
 
     def tolil(self, copy=False):
-        """Convert this matrix to LInked List format.
+        """Convert this matrix to List of Lists format.
 
         With copy=False, the data/indices may be shared between this matrix and
         the resultant lil_matrix.
@@ -958,7 +974,7 @@ class spmatrix(object):
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
             compute the sum of all the matrix elements, returning a scalar
-            (i.e. `axis` = `None`).
+            (i.e., `axis` = `None`).
         dtype : dtype, optional
             The type of the returned matrix and of the accumulator in which
             the elements are summed.  The dtype of `a` is used by default
@@ -1034,7 +1050,7 @@ class spmatrix(object):
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the mean is computed. The default is to compute
-            the mean of all elements in the matrix (i.e. `axis` = `None`).
+            the mean of all elements in the matrix (i.e., `axis` = `None`).
         dtype : data-type, optional
             Type to use in computing the mean. For integer inputs, the default
             is `float64`; for floating point inputs, it is the same as the
@@ -1095,12 +1111,12 @@ class spmatrix(object):
                 axis=1, dtype=res_dtype, out=out)
 
     def diagonal(self, k=0):
-        """Returns the k-th diagonal of the matrix.
+        """Returns the kth diagonal of the matrix.
 
         Parameters
         ----------
         k : int, optional
-            Which diagonal to set, corresponding to elements a[i, i+k].
+            Which diagonal to get, corresponding to elements a[i, i+k].
             Default: 0 (the main diagonal).
 
             .. versionadded:: 1.0
@@ -1129,8 +1145,8 @@ class spmatrix(object):
         values : array_like
             New values of the diagonal elements.
 
-            Values may have any length.  If the diagonal is longer than values,
-            then the remaining diagonal entries will not be set.  If values if
+            Values may have any length. If the diagonal is longer than values,
+            then the remaining diagonal entries will not be set. If values are
             longer than the diagonal, then the remaining values are ignored.
 
             If a scalar value is given, all of the diagonal is set to it.
@@ -1151,7 +1167,7 @@ class spmatrix(object):
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M+k, N)
-                for i in xrange(max_index):
+                for i in range(max_index):
                     self[i - k, i] = values
             else:
                 max_index = min(M+k, N, len(values))
@@ -1163,7 +1179,7 @@ class spmatrix(object):
             if values.ndim == 0:
                 # broadcast
                 max_index = min(M, N-k)
-                for i in xrange(max_index):
+                for i in range(max_index):
                     self[i, i + k] = values
             else:
                 max_index = min(M, N-k, len(values))

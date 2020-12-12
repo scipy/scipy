@@ -1,13 +1,10 @@
 """Compressed Sparse Row matrix format"""
 
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
-from scipy._lib.six import xrange
 
 from .base import spmatrix
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
@@ -52,7 +49,7 @@ class csr_matrix(_cs_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored values, including explicit zeros
     data
         CSR format data array of the matrix
     indices
@@ -103,6 +100,16 @@ class csr_matrix(_cs_matrix):
            [0, 0, 3],
            [4, 5, 6]])
 
+    Duplicate entries are summed together:
+
+    >>> row = np.array([0, 1, 2, 0])
+    >>> col = np.array([0, 1, 1, 0])
+    >>> data = np.array([1, 2, 4, 8])
+    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[9, 0, 0],
+           [0, 2, 0],
+           [0, 4, 0]])
+
     As an example of how to construct a CSR matrix incrementally,
     the following snippet builds a term-document matrix from texts:
 
@@ -147,7 +154,7 @@ class csr_matrix(_cs_matrix):
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data = lil.rows, lil.data
 
-        for n in xrange(self.shape[0]):
+        for n in range(self.shape[0]):
             start = ptr[n]
             end = ptr[n+1]
             rows[n] = ind[start:end].tolist()
@@ -224,7 +231,7 @@ class csr_matrix(_cs_matrix):
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_matrix
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """

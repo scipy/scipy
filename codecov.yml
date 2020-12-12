@@ -1,6 +1,5 @@
 codecov:
-  ci:
-    - !appveyor
+  require_ci_to_pass: false
   notify:
     require_ci_to_pass: no
     after_n_builds: 1
@@ -10,6 +9,11 @@ coverage:
       default:
         # Require 1% coverage, i.e., always succeed
         target: 1
-    patch: false
+    patch:
+      default:
+        target: 90
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: failure
     changes: false
 comment: off

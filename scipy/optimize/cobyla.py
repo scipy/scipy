@@ -10,10 +10,10 @@ Functions
 
 """
 
-from __future__ import division, print_function, absolute_import
+import functools
+from threading import RLock
 
 import numpy as np
-from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 try:
@@ -21,14 +21,24 @@ try:
 except ImportError:
     izip = zip
 
-
 __all__ = ['fmin_cobyla']
 
+# Workarund as _cobyla.minimize is not threadsafe
+# due to an unknown f2py bug and can segfault,
+# see gh-9658.
+_module_lock = RLock()
+def synchronized(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _module_lock:
+            return func(*args, **kwargs)
+    return wrapper
 
+@synchronized
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
-    Minimize a function using the Constrained Optimization BY Linear
+    Minimize a function using the Constrained Optimization By Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
     implementation of the algorithm.
 
@@ -79,13 +89,13 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Suppose the function is being minimized over k variables. At the
     jth iteration the algorithm has k+1 points v_1, ..., v_(k+1),
     an approximate solution x_j, and a radius RHO_j.
-    (i.e. linear plus a constant) approximations to the objective
+    (i.e., linear plus a constant) approximations to the objective
     function and constraint functions such that their function values
     agree with the linear approximation on the k+1 points v_1,.., v_(k+1).
     This gives a linear program to solve (where the linear approximations
     of the constraint functions are constrained to be non-negative).
 
-    However the linear approximations are likely only good
+    However, the linear approximations are likely only good
     approximations near the current simplex, so the linear program is
     given the further requirement that the solution, which
     will become x_(j+1), must be within RHO_j from x_j. RHO_j only
@@ -140,11 +150,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
           " callable function."
     try:
         len(cons)
-    except TypeError:
+    except TypeError as e:
         if callable(cons):
             cons = [cons]
         else:
-            raise TypeError(err)
+            raise TypeError(err) from e
     else:
         for thisfunc in cons:
             if not callable(thisfunc):
@@ -169,7 +179,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
-
+@synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):
@@ -206,13 +216,13 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         # check type
         try:
             ctype = con['type'].lower()
-        except KeyError:
-            raise KeyError('Constraint %d has no type defined.' % ic)
-        except TypeError:
+        except KeyError as e:
+            raise KeyError('Constraint %d has no type defined.' % ic) from e
+        except TypeError as e:
             raise TypeError('Constraints must be defined using a '
-                            'dictionary.')
-        except AttributeError:
-            raise TypeError("Constraint's type must be a string.")
+                            'dictionary.') from e
+        except AttributeError as e:
+            raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
                 raise ValueError("Constraints of type '%s' not handled by "
@@ -265,7 +275,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                                       'in COBYLA subroutine.',
                                    4: 'Did not converge to a solution '
                                       'satisfying the constraints. See '
-                                      '`maxcv` for magnitude of violation.'
+                                      '`maxcv` for magnitude of violation.',
+                                   5: 'NaN result encountered.'
                                    }.get(info[0], 'Unknown exit status.'),
                           nfev=int(info[1]),
                           fun=info[2],

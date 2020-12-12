@@ -29,10 +29,6 @@
  * Extension of the function definition for x < 1 is implemented.
  * Zero is returned for x > log2(NPY_INFINITY).
  *
- * An overflow error may occur for large negative x, due to the
- * Gamma function in the reflection formula, so nan is returned
- * for x < -30.8148.
- *
  * ACCURACY:
  *
  * Tabulated values have full machine accuracy.
@@ -181,7 +177,7 @@ static double TAYLOR0[10] = {
 
 extern double MACHEP;
 
-static double zetac_reflection(double);
+static double zeta_reflection(double);
 static double zetac_smallneg(double);
 static double zetac_positive(double);
 
@@ -201,11 +197,34 @@ double zetac(double x)
 	return zetac_smallneg(x);
     }
     else if (x < 0.0) {
-	return zetac_reflection(-x);
+	return zeta_reflection(-x) - 1;
     }
     else {
 	return zetac_positive(x);
     }
+}
+
+
+/*
+ * Riemann zeta function
+ */
+double riemann_zeta(double x)
+{
+  if (npy_isnan(x)) {
+    return x;
+  }
+  else if (x == -NPY_INFINITY) {
+    return NPY_NAN;
+  }
+  else if (x < 0.0 && x > -0.01) {
+    return 1 + zetac_smallneg(x);
+  }
+  else if (x < 0.0) {
+    return zeta_reflection(-x);
+  }
+  else {
+    return 1 + zetac_positive(x);
+  }
 }
 
 
@@ -289,21 +308,38 @@ static NPY_INLINE double zetac_smallneg(double x)
  * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
  * the Lanczos approximation for Gamma to avoid overflow.
  */
-static NPY_INLINE double zetac_reflection(double x)
+static NPY_INLINE double zeta_reflection(double x)
 {
-    double s, hx, x_shift;
+    double base, large_term, small_term, hx, x_shift;
 
     hx = x / 2;
     if (hx == floor(hx)) {
 	/* Hit a zero of the sine factor */
-	return -1.0;
+	return 0;
     }
 
-    /* Group large terms together to prevent overflow */
-    s = pow((x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E), x + 0.5);
     /* Reduce the argument to sine */
     x_shift = fmod(x, 4);
-    s *= -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
-    s *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
-    return s - 1.0;
+    small_term = -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
+    small_term *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
+
+    /* Group large terms together to prevent overflow */
+    base = (x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E);
+    large_term = pow(base, x + 0.5);
+    if (npy_isfinite(large_term)) {
+      return large_term * small_term;
+    }
+    /*
+     * We overflowed, but we might be able to stave off overflow by
+     * factoring in the small term earlier. To do this we compute
+     *
+     * (sqrt(large_term) * small_term) * sqrt(large_term)
+     *
+     * Since we only call this method for negative x bounded away from
+     * zero, the small term can only be as small sine on that region;
+     * i.e. about machine epsilon. This means that if the above still
+     * overflows, then there was truly no avoiding it.
+     */
+    large_term = pow(base, 0.5 * x + 0.25);
+    return (large_term * small_term) * large_term;
 }

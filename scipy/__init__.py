@@ -12,13 +12,14 @@ addition provides:
 
 Subpackages
 -----------
-Using any of these subpackages requires an explicit import.  For example,
+Using any of these subpackages requires an explicit import. For example,
 ``import scipy.cluster``.
 
 ::
 
  cluster                      --- Vector Quantization / Kmeans
- fftpack                      --- Discrete Fourier Transform algorithms
+ fft                          --- Discrete Fourier transforms
+ fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
@@ -27,7 +28,7 @@ Using any of these subpackages requires an explicit import.  For example,
  linalg.lapack                --- Wrappers to LAPACK library
  misc                         --- Various utilities that don't have
                                   another home.
- ndimage                      --- n-dimensional image package
+ ndimage                      --- N-D image package
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
@@ -55,37 +56,54 @@ Utility tools
  __numpy_version__ --- Numpy version string
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
     raise ImportError(
-        "Cannot import scipy when running from numpy source directory.")
+        "Cannot import SciPy when running from NumPy source directory.")
 from numpy import __version__ as __numpy_version__
 
-# Import numpy symbols to scipy name space
+# Import numpy symbols to scipy name space (DEPRECATED)
+from ._lib.deprecation import _deprecated
 import numpy as _num
 linalg = None
-from numpy import *
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.{0} instead')
+# deprecate callable objects, skipping classes
+for _key in _num.__all__:
+    _fun = getattr(_num, _key)
+    if callable(_fun) and not isinstance(_fun, type):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 from numpy.random import rand, randn
-from numpy.fft import fft, ifft
-from numpy.lib.scimath import *
-
-# Allow distributors to run custom init code
-from . import _distributor_init
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.random.{0} instead')
+rand = _deprecated(_msg.format('rand'))(rand)
+randn = _deprecated(_msg.format('randn'))(randn)
+# fft is especially problematic, so was removed in SciPy 1.6.0
+from numpy.fft import ifft
+ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
+                   '2.0.0, use scipy.fft.ifft instead')(ifft)
+import numpy.lib.scimath as _sci
+_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
+        'use numpy.lib.scimath.{0} instead')
+for _key in _sci.__all__:
+    _fun = getattr(_sci, _key)
+    if callable(_fun):
+        _fun = _deprecated(_msg.format(_key))(_fun)
+    globals()[_key] = _fun
 
 __all__ += _num.__all__
-__all__ += ['randn', 'rand', 'fft', 'ifft']
+__all__ += ['randn', 'rand', 'ifft']
 
 del _num
-# Remove the linalg imported from numpy so that the scipy.linalg package can be
+# Remove the linalg imported from NumPy so that the scipy.linalg package can be
 # imported.
 del linalg
 __all__.remove('linalg')
 
-# We first need to detect if we're being called as part of the scipy
+# We first need to detect if we're being called as part of the SciPy
 # setup procedure itself in a reliable manner.
 try:
     __SCIPY_SETUP__
@@ -95,29 +113,36 @@ except NameError:
 
 if __SCIPY_SETUP__:
     import sys as _sys
-    _sys.stderr.write('Running from scipy source directory.\n')
+    _sys.stderr.write('Running from SciPy source directory.\n')
     del _sys
 else:
     try:
         from scipy.__config__ import show as show_config
-    except ImportError:
-        msg = """Error importing scipy: you cannot import scipy while
-        being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python interpreter."""
-        raise ImportError(msg)
+    except ImportError as e:
+        msg = """Error importing SciPy: you cannot import SciPy while
+        being in scipy source directory; please exit the SciPy source
+        tree first and relaunch your Python interpreter."""
+        raise ImportError(msg) from e
 
     from scipy.version import version as __version__
-    from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.13.3':
+
+    # Allow distributors to run custom init code
+    from . import _distributor_init
+
+    from scipy._lib import _pep440
+    if _pep440.parse(__numpy_version__) < _pep440.Version('1.16.5'):
         import warnings
-        warnings.warn("Numpy 1.13.3 or above is required for this version of "
-                      "scipy (detected version %s)" % __numpy_version__,
+        warnings.warn("NumPy 1.16.5 or above is required for this version of "
+                      "SciPy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
-    del _NumpyVersion
+    del _pep440
 
     from scipy._lib._ccallback import LowLevelCallable
 
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
+
+    # This makes "from scipy import fft" return scipy.fft, not np.fft
+    del fft

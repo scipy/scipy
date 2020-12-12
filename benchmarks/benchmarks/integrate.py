@@ -1,33 +1,27 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
-from .common import Benchmark
+from .common import Benchmark, safe_import
 
 from scipy.integrate import quad
 
-try:
+with safe_import():
     import ctypes
     import scipy.integrate._test_multivariate as clib_test
     from scipy._lib import _ccallback_c
-except ImportError:
-    _ccallback_c = None
 
-try:
+with safe_import() as exc:
     from scipy import LowLevelCallable
     from_cython = LowLevelCallable.from_cython
-except ImportError:
+if exc.error:
     LowLevelCallable = lambda func, data: (func, data)
     from_cython = lambda *a: a
 
-try:
+with safe_import() as exc:
     import cffi
-except ImportError:
+if exc.error:
     cffi = None
 
-try:
+with safe_import():
     from scipy.integrate import solve_bvp
-except ImportError:
-    pass
 
 
 class SolveBVP(Benchmark):

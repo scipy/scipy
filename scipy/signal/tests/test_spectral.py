@@ -1,14 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp)
+                           assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib._numpy_compat import suppress_warnings
-from scipy import signal, fftpack
+from scipy import signal
+from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA)
 from scipy.signal.spectral import _spectral_helper
@@ -40,8 +38,8 @@ class TestPeriodogram(object):
         x = np.zeros(16)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -78,8 +76,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, dtype=int)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -87,8 +85,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = 5.0*np.ones(16)/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 5.0/16.0)
         q[0] = 0
         assert_allclose(p, q)
 
@@ -201,8 +199,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, 'f')
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = np.ones(16, 'f')/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 1/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
@@ -211,8 +209,8 @@ class TestPeriodogram(object):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        q = 5.0*np.ones(16, 'f')/16.0
+        assert_allclose(f, fftfreq(16, 1.0))
+        q = np.full(16, 5.0/16.0, 'f')
         q[0] = 0
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
@@ -244,7 +242,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -284,7 +282,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -294,7 +292,7 @@ class TestWelch(object):
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -447,7 +445,7 @@ class TestWelch(object):
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
@@ -459,7 +457,7 @@ class TestWelch(object):
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -470,7 +468,7 @@ class TestWelch(object):
         x = np.zeros(12)
 
         nfft = 24
-        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
@@ -478,7 +476,7 @@ class TestWelch(object):
         assert_allclose(f, feven)
 
         nfft = 25
-        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
@@ -584,7 +582,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -624,7 +622,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -634,7 +632,7 @@ class TestCSD:
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -812,7 +810,7 @@ class TestCSD:
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
@@ -824,7 +822,7 @@ class TestCSD:
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(f, fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
@@ -836,7 +834,7 @@ class TestCSD:
         y = np.ones(12)
 
         nfft = 24
-        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
@@ -844,7 +842,7 @@ class TestCSD:
         assert_allclose(f, feven)
 
         nfft = 25
-        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
         feven, _ = csd(x, y, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
@@ -1070,7 +1068,7 @@ class TestLombscargle(object):
         t = np.linspace(0, 10, 1000, endpoint=False)
         x = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        q = lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, x, f*2*np.pi)
 
 
 class TestSTFT(object):
@@ -1087,7 +1085,7 @@ class TestSTFT(object):
         assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
 
         x = np.zeros(1024)
-        z = stft(x)
+        z = np.array(stft(x), dtype=object)
 
         assert_raises(ValueError, stft, x, window=np.ones((2,2)))
         assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
@@ -1283,7 +1281,6 @@ class TestSTFT(object):
             assert_allclose(t, tr[:len(t)], err_msg=msg)
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
-    @pytest.mark.xfail(reason="Needs complex rfft from fftpack, see gh-2487 + gh-6058")
     def test_roundtrip_float32(self):
         np.random.seed(1234)
 
@@ -1302,7 +1299,7 @@ class TestSTFT(object):
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, t, err_msg=msg)
-            assert_allclose(x, xr, err_msg=msg, rtol=1e-4)
+            assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
     def test_roundtrip_complex(self):

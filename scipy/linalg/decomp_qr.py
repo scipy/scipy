@@ -1,6 +1,4 @@
 """QR decomposition functions."""
-from __future__ import division, print_function, absolute_import
-
 import numpy
 
 # Local imports
@@ -17,10 +15,10 @@ def safecall(f, name, *args, **kwargs):
     if lwork in (None, -1):
         kwargs['lwork'] = -1
         ret = f(*args, **kwargs)
-        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int)
+        kwargs['lwork'] = ret[-2][0].real.astype(numpy.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
-        raise ValueError("illegal value in %d-th argument of internal %s"
+        raise ValueError("illegal value in %dth argument of internal %s"
                          % (-ret[-1], name))
     return ret[:-2]
 
@@ -38,7 +36,9 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     a : (M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
-        Whether data in a is overwritten (may improve performance)
+        Whether data in `a` is overwritten (may improve performance if
+        `overwrite_a` is set to True by reusing the existing input data
+        structure rather than creating a new one.)
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
@@ -61,10 +61,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     Returns
     -------
     Q : float or complex ndarray
-        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned
+        Of shape (M, M), or (M, K) for ``mode='economic'``. Not returned
         if ``mode='r'``.
     R : float or complex ndarray
-        Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
+        Of shape (M, N), or (K, N) for ``mode='economic'``. ``K = min(M, N)``.
     P : int ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.
@@ -84,17 +84,17 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     Examples
     --------
-    >>> from scipy import random, linalg, dot, diag, all, allclose
-    >>> a = random.randn(9, 6)
+    >>> from scipy import linalg
+    >>> a = np.random.randn(9, 6)
 
     >>> q, r = linalg.qr(a)
-    >>> allclose(a, np.dot(q, r))
+    >>> np.allclose(a, np.dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))
 
     >>> r2 = linalg.qr(a, mode='r')
-    >>> allclose(r, r2)
+    >>> np.allclose(r, r2)
     True
 
     >>> q3, r3 = linalg.qr(a, mode='economic')
@@ -102,10 +102,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     ((9, 6), (6, 6))
 
     >>> q4, r4, p4 = linalg.qr(a, pivoting=True)
-    >>> d = abs(diag(r4))
-    >>> all(d[1:] <= d[:-1])
+    >>> d = np.abs(np.diag(r4))
+    >>> np.all(d[1:] <= d[:-1])
     True
-    >>> allclose(a[:, p4], dot(q4, r4))
+    >>> np.allclose(a[:, p4], np.dot(q4, r4))
     True
     >>> q4.shape, r4.shape, p4.shape
     ((9, 9), (9, 6), (6,))
@@ -127,7 +127,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     else:
         a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
-        raise ValueError("expected 2D array")
+        raise ValueError("expected a 2-D array")
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
@@ -348,9 +348,9 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     Returns
     -------
     R : float or complex ndarray
-        Of shape (M, N) or (M, K) for ``mode='economic'``.  ``K = min(M, N)``.
+        Of shape (M, N) or (M, K) for ``mode='economic'``. ``K = min(M, N)``.
     Q : float or complex ndarray
-        Of shape (N, N) or (K, N) for ``mode='economic'``.  Not returned
+        Of shape (N, N) or (K, N) for ``mode='economic'``. Not returned
         if ``mode='r'``.
 
     Raises

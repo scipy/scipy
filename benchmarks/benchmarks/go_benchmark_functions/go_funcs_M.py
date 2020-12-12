@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 from numpy import (abs, asarray, cos, exp, log, arange, pi, prod, sin, sqrt,
                    sum, tan)
-try:
+from .go_benchmark import Benchmark, safe_import
+
+with safe_import():
     from scipy.special import factorial
-except ImportError:
-    pass
-from .go_benchmark import Benchmark
 
 
 class Matyas(Benchmark):
@@ -210,7 +207,7 @@ class Mishra01(Benchmark):
 
        f_{\text{Mishra01}}(x) = (1 + x_n)^{x_n}
 
-     
+
     where
 
     .. math::
@@ -256,19 +253,19 @@ class Mishra02(Benchmark):
     .. math::
 
         f_{\text{Mishra02}}({x}) = (1 + x_n)^{x_n}
-     
+
 
      with
-     
+
      .. math::
-     
+
          x_n = n - \sum_{i=1}^{n-1} \frac{(x_i + x_{i+1})}{2}
 
 
-    Here, :math:`n` represents the number of dimensions and 
+    Here, :math:`n` represents the number of dimensions and
     :math:`x_i \in [0, 1]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1` 
+    *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1`
     for :math:`i = 1, ..., n`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -303,13 +300,13 @@ class Mishra03(Benchmark):
 
     .. math::
 
-       f_{\text{Mishra03}}(x) = \sqrt{\lvert \cos{\sqrt{\lvert x_1^2 
+       f_{\text{Mishra03}}(x) = \sqrt{\lvert \cos{\sqrt{\lvert x_1^2
        + x_2^2 \rvert}} \rvert} + 0.01(x_1 + x_2)
 
 
     with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x) = -0.1999` for 
+    *Global optimum*: :math:`f(x) = -0.1999` for
     :math:`x = [-9.99378322, -9.99918927]`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -475,7 +472,7 @@ class Mishra07(Benchmark):
     Here, :math:`n` represents the number of dimensions and
     :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \sqrt{n}` 
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \sqrt{n}`
     for :math:`i = 1, ..., n`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -610,7 +607,7 @@ class Mishra10(Benchmark):
 
     .. math::
     TODO - int(x) should be used instead of floor(x)!!!!!
-       f_{\text{Mishra10}}({x}) = \left[ \lfloor x_1 \perp x_2 \rfloor - 
+       f_{\text{Mishra10}}({x}) = \left[ \lfloor x_1 \perp x_2 \rfloor -
        \lfloor x_1 \rfloor - \lfloor x_2 \rfloor \right]^2
 
     with :math:`x_i \in [-10, 10]` for :math:`i =1, 2`.
@@ -693,7 +690,7 @@ class MultiModal(Benchmark):
 
     .. math::
 
-       f_{\text{MultiModal}}(x) = \left( \sum_{i=1}^n \lvert x_i \rvert 
+       f_{\text{MultiModal}}(x) = \left( \sum_{i=1}^n \lvert x_i \rvert
        \right) \left( \prod_{i=1}^n \lvert x_i \rvert \right)
 
 

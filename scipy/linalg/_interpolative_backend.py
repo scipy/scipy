@@ -37,6 +37,18 @@ import numpy as np
 _RETCODE_ERROR = RuntimeError("nonzero return code")
 
 
+def _asfortranarray_copy(A):
+    """
+    Same as np.asfortranarray, but ensure a copy
+    """
+    A = np.asarray(A)
+    if A.flags.f_contiguous:
+        A = A.copy(order="F")
+    else:
+        A = np.asfortranarray(A)
+    return A
+
+
 #------------------------------------------------------------------------------
 # id_rand.f
 #------------------------------------------------------------------------------
@@ -203,7 +215,7 @@ def iddp_id(eps, A):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     k, idx, rnorms = _id.iddp_id(eps, A)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -228,7 +240,7 @@ def iddr_id(A, k):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     idx, rnorms = _id.iddr_id(A, k)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -997,7 +1009,7 @@ def idzp_id(eps, A):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     k, idx, rnorms = _id.idzp_id(eps, A)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -1022,7 +1034,7 @@ def idzr_id(A, k):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     idx, rnorms = _id.idzr_id(A, k)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')

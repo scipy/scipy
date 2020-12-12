@@ -10,46 +10,36 @@
 #include <cstring>
 
 
-#ifndef NPY_UNLIKELY
-#define NPY_UNLIKELY(x) (x)
-#endif
-
-#ifndef NPY_LIKELY
-#define NPY_LIKELY(x) (x)
-#endif
-
-
 /* Interval arithmetic
  * ===================
  */
 
 struct Rectangle {
 
-    const npy_intp m;
+    const ckdtree_intp_t m;
 
     /* the last const is to allow const Rectangle to use these functions;
      * also notice we had to mark buf mutable to avoid writing non const version
      * of the same accessors. */
-    npy_float64 * const maxes() const { return &buf[0]; }
-    npy_float64 * const mins() const { return &buf[0] + m; }
+    double * const maxes() const { return &buf[0]; }
+    double * const mins() const { return &buf[0] + m; }
 
-    Rectangle(const npy_intp _m,
-              const npy_float64 *_mins,
-              const npy_float64 *_maxes) : m(_m), buf(2 * m) {
+    Rectangle(const ckdtree_intp_t _m,
+              const double *_mins,
+              const double *_maxes) : m(_m), buf(2 * m) {
 
         /* copy array data */
         /* FIXME: use std::vector ? */
-        std::memcpy((void*)mins(), (void*)_mins, m*sizeof(npy_float64));
-        std::memcpy((void*)maxes(), (void*)_maxes, m*sizeof(npy_float64));
+        std::memcpy((void*)mins(), (void*)_mins, m*sizeof(double));
+        std::memcpy((void*)maxes(), (void*)_maxes, m*sizeof(double));
     };
 
     Rectangle(const Rectangle& rect) : m(rect.m), buf(rect.buf) {};
 
     private:
-        mutable std::vector<npy_float64> buf;
+        mutable std::vector<double> buf;
 };
 
-#include "ckdtree_methods.h"
 #include "distance.h"
 
 /*
@@ -86,16 +76,16 @@ struct Rectangle {
  */
 
 struct RR_stack_item {
-    npy_intp    which;
-    npy_intp    split_dim;
-    npy_float64 min_along_dim;
-    npy_float64 max_along_dim;
-    npy_float64 min_distance;
-    npy_float64 max_distance;
+    ckdtree_intp_t    which;
+    ckdtree_intp_t    split_dim;
+    double min_along_dim;
+    double max_along_dim;
+    double min_distance;
+    double max_distance;
 };
 
-const npy_intp LESS = 1;
-const npy_intp GREATER = 2;
+const ckdtree_intp_t LESS = 1;
+const ckdtree_intp_t GREATER = 2;
 
 template<typename MinMaxDist>
     struct RectRectDistanceTracker {
@@ -103,22 +93,22 @@ template<typename MinMaxDist>
     const ckdtree * tree;
     Rectangle rect1;
     Rectangle rect2;
-    npy_float64 p;
-    npy_float64 epsfac;
-    npy_float64 upper_bound;
-    npy_float64 min_distance;
-    npy_float64 max_distance;
+    double p;
+    double epsfac;
+    double upper_bound;
+    double min_distance;
+    double max_distance;
 
-    npy_intp stack_size;
-    npy_intp stack_max_size;
+    ckdtree_intp_t stack_size;
+    ckdtree_intp_t stack_max_size;
     std::vector<RR_stack_item> stack_arr;
     RR_stack_item *stack;
 
     /* if min/max distance / adjustment is less than this,
      * we believe the incremental tracking is inaccurate */
-    npy_float64 inaccurate_distance_limit;
+    double inaccurate_distance_limit;
 
-    void _resize_stack(const npy_intp new_max_size) {
+    void _resize_stack(const ckdtree_intp_t new_max_size) {
         stack_arr.resize(new_max_size);
         stack = &stack_arr[0];
         stack_max_size = new_max_size;
@@ -126,8 +116,8 @@ template<typename MinMaxDist>
 
     RectRectDistanceTracker(const ckdtree *_tree,
                  const Rectangle& _rect1, const Rectangle& _rect2,
-                 const npy_float64 _p, const npy_float64 eps,
-                 const npy_float64 _upper_bound)
+                 const double _p, const double eps,
+                 const double _upper_bound)
         : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8) {
 
         if (rect1.m != rect2.m) {
@@ -138,16 +128,16 @@ template<typename MinMaxDist>
         p = _p;
 
         /* internally we represent all distances as distance ** p */
-        if (NPY_LIKELY(p == 2.0))
+        if (CKDTREE_LIKELY(p == 2.0))
             upper_bound = _upper_bound * _upper_bound;
-        else if ((!ckdtree_isinf(p)) && (!ckdtree_isinf(_upper_bound)))
+        else if ((!ckdtree_isinf(p)) && (!isinf(_upper_bound)))
             upper_bound = std::pow(_upper_bound,p);
         else
             upper_bound = _upper_bound;
 
         /* fiddle approximation factor */
-        if (NPY_LIKELY(p == 2.0)) {
-            npy_float64 tmp = 1. + eps;
+        if (CKDTREE_LIKELY(p == 2.0)) {
+            double tmp = 1. + eps;
             epsfac = 1. / (tmp*tmp);
         }
         else if (eps == 0.)
@@ -173,10 +163,10 @@ template<typename MinMaxDist>
     };
 
 
-    void push(const npy_intp which, const npy_intp direction,
-              const npy_intp split_dim, const npy_float64 split_val) {
+    void push(const ckdtree_intp_t which, const intptr_t direction,
+              const ckdtree_intp_t split_dim, const double split_val) {
 
-        const npy_float64 p = this->p;
+        const double p = this->p;
         /* subnomial is 1 if round-off is expected to taint the incremental distance tracking.
          * in that case we always recompute the distances.
          * Recomputing costs more calls to pow, thus if the round-off error does not seem
@@ -204,8 +194,8 @@ template<typename MinMaxDist>
         item->max_along_dim = rect->maxes()[split_dim];
 
         /* update min/max distances */
-        npy_float64 min1, max1;
-        npy_float64 min2, max2;
+        double min1, max1;
+        double min2, max2;
 
         MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min1, &max1);
 
@@ -222,7 +212,7 @@ template<typename MinMaxDist>
         subnomial = subnomial || ((min2 != 0 && min2 < inaccurate_distance_limit) || max2 < inaccurate_distance_limit);
         subnomial = subnomial || (min_distance < inaccurate_distance_limit || max_distance < inaccurate_distance_limit);
 
-        if (NPY_UNLIKELY(subnomial)) {
+        if (CKDTREE_UNLIKELY(subnomial)) {
             MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
         } else {
             min_distance += (min2 - min1);
@@ -230,12 +220,12 @@ template<typename MinMaxDist>
         }
     };
 
-    inline void push_less_of(const npy_intp which,
+    inline void push_less_of(const ckdtree_intp_t which,
                                  const ckdtreenode *node) {
         push(which, LESS, node->split_dim, node->split);
     };
 
-    inline void push_greater_of(const npy_intp which,
+    inline void push_greater_of(const ckdtree_intp_t which,
                                     const ckdtreenode *node) {
         push(which, GREATER, node->split_dim, node->split);
     };
@@ -245,7 +235,7 @@ template<typename MinMaxDist>
         --stack_size;
 
         /* assert stack_size >= 0 */
-        if (NPY_UNLIKELY(stack_size < 0)) {
+        if (CKDTREE_UNLIKELY(stack_size < 0)) {
             const char *msg = "Bad stack size. This error should never occur.";
             throw std::logic_error(msg);
         }

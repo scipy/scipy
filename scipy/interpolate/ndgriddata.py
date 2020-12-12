@@ -4,8 +4,6 @@ Convenience interface to N-D interpolation
 .. versionadded:: 0.9
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from .interpnd import LinearNDInterpolator, NDInterpolatorBase, \
      CloughTocher2DInterpolator, _ndim_coords_from_arrays
@@ -15,7 +13,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
            'CloughTocher2DInterpolator']
 
 #------------------------------------------------------------------------------
-# Nearest-neighbour interpolation
+# Nearest-neighbor interpolation
 #------------------------------------------------------------------------------
 
 
@@ -23,7 +21,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     """
     NearestNDInterpolator(x, y)
 
-    Nearest-neighbour interpolation in N dimensions.
+    Nearest-neighbor interpolation in N dimensions.
 
     .. versionadded:: 0.9
 
@@ -53,6 +51,37 @@ class NearestNDInterpolator(NDInterpolatorBase):
     -----
     Uses ``scipy.spatial.cKDTree``
 
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import NearestNDInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(0)
+    >>> x = np.random.random(10) - 0.5
+    >>> y = np.random.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = NearestNDInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+
     """
 
     def __init__(self, x, y, rescale=False, tree_options=None):
@@ -62,7 +91,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
-        self.values = y
+        self.values = np.asarray(y)
 
     def __call__(self, *args):
         """
@@ -70,8 +99,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array-like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
@@ -88,28 +119,27 @@ class NearestNDInterpolator(NDInterpolatorBase):
 def griddata(points, values, xi, method='linear', fill_value=np.nan,
              rescale=False):
     """
-    Interpolate unstructured D-dimensional data.
+    Interpolate unstructured D-D data.
 
     Parameters
     ----------
-    points : ndarray of floats, shape (n, D)
-        Data point coordinates. Can either be an array of
-        shape (n, D), or a tuple of `ndim` arrays.
+    points : 2-D ndarray of floats with shape (n, D), or length D tuple of 1-D ndarrays with shape (n,).
+        Data point coordinates.
     values : ndarray of float or complex, shape (n,)
         Data values.
-    xi : 2-D ndarray of float or tuple of 1-D array, shape (M, D)
+    xi : 2-D ndarray of floats with shape (m, D), or length D tuple of ndarrays broadcastable to the same shape.
         Points at which to interpolate data.
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
         ``nearest``
           return the value at the data point closest to
-          the point of interpolation.  See `NearestNDInterpolator` for
+          the point of interpolation. See `NearestNDInterpolator` for
           more details.
 
         ``linear``
-          tessellate the input point set to n-dimensional
-          simplices, and interpolate linearly on each simplex.  See
+          tessellate the input point set to N-D
+          simplices, and interpolate linearly on each simplex. See
           `LinearNDInterpolator` for more details.
 
         ``cubic`` (1-D)
@@ -123,7 +153,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
           `CloughTocher2DInterpolator` for more details.
     fill_value : float, optional
         Value used to fill in for requested points outside of the
-        convex hull of the input points.  If not provided, then the
+        convex hull of the input points. If not provided, then the
         default is ``nan``. This option has no effect for the
         'nearest' method.
     rescale : bool, optional
@@ -132,7 +162,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         incommensurable units and differ by many orders of magnitude.
 
         .. versionadded:: 0.14.0
-        
+
     Returns
     -------
     ndarray
@@ -188,6 +218,15 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.title('Cubic')
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
+
+    See also
+    --------
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     """
 

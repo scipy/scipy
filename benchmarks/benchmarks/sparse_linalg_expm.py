@@ -1,17 +1,12 @@
 """benchmarks for the scipy.sparse.linalg._expm_multiply module"""
-from __future__ import division, print_function, absolute_import
-
 import math
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.linalg
     from scipy.sparse.linalg import expm_multiply
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse_csr(m, n, nnz_per_row):

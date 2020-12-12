@@ -3,15 +3,13 @@ Routines for evaluating and manipulating B-splines.
 
 """
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as cnp
 
 cimport cython
 
 cdef extern from "src/__fitpack.h":
-    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result) nogil
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -197,7 +195,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
-    >>> plt.plot(xx, BSpline.basis_element(k:-k)(xx),
+    >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
     ...          'r-', lw=5, alpha=0.5)
     >>> c = ['b', 'g', 'c', 'k']
 

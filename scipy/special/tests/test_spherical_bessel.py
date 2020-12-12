@@ -1,18 +1,14 @@
 #
 # Tests of spherical Bessel functions.
 #
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_allclose,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal, suppress_warnings)
 import pytest
 from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 
 from scipy.special import spherical_jn, spherical_yn, spherical_in, spherical_kn
 from scipy.integrate import quad
-
-from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestSphericalJn:
@@ -113,7 +109,7 @@ class TestSphericalYn:
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0
-        assert_allclose(spherical_yn(n, x), -inf*np.ones(shape=n.shape))
+        assert_allclose(spherical_yn(n, x), np.full(n.shape, -inf))
 
     def test_spherical_yn_at_zero_complex(self):
         # Consistently with numpy:
@@ -123,7 +119,7 @@ class TestSphericalYn:
         # (-inf + nan*j)
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0 + 0j
-        assert_allclose(spherical_yn(n, x), nan*np.ones(shape=n.shape))
+        assert_allclose(spherical_yn(n, x), np.full(n.shape, nan))
 
 
 class TestSphericalJnYnCrossProduct:
@@ -232,13 +228,13 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0
-        assert_allclose(spherical_kn(n, x), inf*np.ones(shape=n.shape))
+        assert_allclose(spherical_kn(n, x), np.full(n.shape, inf))
 
     def test_spherical_kn_at_zero_complex(self):
         # https://dlmf.nist.gov/10.52.E2
         n = np.array([0, 1, 2, 5, 10, 100])
         x = 0 + 0j
-        assert_allclose(spherical_kn(n, x), nan*np.ones(shape=n.shape))
+        assert_allclose(spherical_kn(n, x), np.full(n.shape, nan))
 
 
 class SphericalDerivativesTestCase:
