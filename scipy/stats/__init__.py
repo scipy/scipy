@@ -280,6 +280,7 @@ Statistical tests
    ttest_rel
    chisquare
    cramervonmises
+   cramervonmises_2samp
    power_divergence
    kstest
    ks_1samp
