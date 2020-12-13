@@ -654,3 +654,11 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
+
+
+def test_burr_fisk_moment_gh13234_regression():
+    vals0 = stats.burr.moment(1, 5, 4)
+    npt.assert_(isinstance(vals0, float))
+
+    vals1 = stats.fisk.moment(1, 8)
+    npt.assert_(isinstance(vals1, float))

@@ -940,6 +940,7 @@ class burr_gen(rv_continuous):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _stats(self, c, d):
+        c, d = np.broadcast_arrays(c, d)
         nc = np.arange(1, 5).reshape(4,1) / c
         #ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
         e1, e2, e3, e4 = sc.beta(d + nc, 1. - nc) * d
@@ -957,6 +958,8 @@ class burr_gen(rv_continuous):
             lambda c, e1, e2, e3, e4, mu2_if_c: (
                 ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
             fillvalue=np.nan)
+        if c.ndim == 0:
+            return mu.item(), mu2.item(), g1.item(), g2.item()
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
