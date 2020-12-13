@@ -240,7 +240,7 @@ def _contains_nan(a, nan_policy='propagate'):
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    return contains_nan, nan_poli>>> master
+    return contains_nan, nan_policy
 
 
 def _chk_asarray(a, axis):
