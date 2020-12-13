@@ -3870,22 +3870,24 @@ class Test_ttest_ind_permutations():
             res = stats.ttest_ind(a, b, **options_p)
 
         # Propagate
-        options_p.update(nan_policy="propagate")
-        res = stats.ttest_ind(a, b, **options_p)
+        with suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "invalid value*")
+            options_p.update(nan_policy="propagate")
+            res = stats.ttest_ind(a, b, **options_p)
 
-        mask = np.isnan(a).any(axis=0) | np.isnan(b).any(axis=0)
-        res2 = stats.ttest_ind(a[:, ~mask], b[:, ~mask], **options_p)
+            mask = np.isnan(a).any(axis=0) | np.isnan(b).any(axis=0)
+            res2 = stats.ttest_ind(a[:, ~mask], b[:, ~mask], **options_p)
 
-        assert_equal(res.pvalue[mask], np.nan)
-        assert_equal(res.statistic[mask], np.nan)
+            assert_equal(res.pvalue[mask], np.nan)
+            assert_equal(res.statistic[mask], np.nan)
 
-        assert_allclose(res.pvalue[~mask], res2.pvalue)
-        assert_allclose(res.statistic[~mask], res2.statistic)
+            assert_allclose(res.pvalue[~mask], res2.pvalue)
+            assert_allclose(res.statistic[~mask], res2.statistic)
 
-        # Propagate 1d
-        res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-        assert(np.isnan(res.pvalue)) # assert makes sure it's a scalar
-        assert(np.isnan(res.statistic))
+            # Propagate 1d
+            res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
+            assert(np.isnan(res.pvalue)) # assert makes sure it's a scalar
+            assert(np.isnan(res.statistic))
 
         # Omit
         options_p.update(nan_policy="omit")
