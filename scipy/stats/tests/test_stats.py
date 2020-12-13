@@ -4140,7 +4140,18 @@ def test_normalitytests():
     assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
+def _suppress_warning_factory(*dargs, **dkwds):
+    def _suppress_warning_decorator(f):
+        def _suppress_warning_wrapper(*args, **kwds):
+            with suppress_warnings() as sup:
+                sup.filter(*dargs, **dkwds)
+                f(*args, **kwds)
+        return _suppress_warning_wrapper
+    return _suppress_warning_decorator
+
+
 class TestRankSums(object):
+    @_suppress_warning_factory(DeprecationWarning)
     def test_ranksums_result_attributes(self):
         res = stats.ranksums(np.arange(5), np.arange(25))
         attributes = ('statistic', 'pvalue')
@@ -4236,20 +4247,11 @@ class TestMann_Whitney_U():
     y = np.array(y)
 
     a = np.array([210.052110, 110.190630, 307.918612])
-
-    b = np.array([436.08811482466416,
-                       416.37397329768191,
-                       179.96975939463582,
-                       197.8118754228619,
-                       34.038757281225756,
-                       138.54220550921517,
-                       128.7769351470246,
-                       265.92721427951852,
-                       275.6617533155341,
-                       592.34083395416258,
-                       448.73177590617018,
-                       300.61495185038905,
-                       187.97508449019588])
+    b = np.array([436.08811482466416, 416.37397329768191, 179.96975939463582,
+                  197.8118754228619, 34.038757281225756, 138.54220550921517,
+                  128.7769351470246, 265.92721427951852, 275.6617533155341,
+                  592.34083395416258, 448.73177590617018, 300.61495185038905,
+                  187.97508449019588])
 
     alt_two = 'x and y are sampled from different populations'
     alt_less = 'x is sampled from a population of smaller values than y'
@@ -4327,6 +4329,7 @@ class TestMannWhitneyU(object):
 
     significant = 14
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_one_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
@@ -4343,6 +4346,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
         assert_approx_equal(p3, 4.5941632666275e-05, significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
@@ -4353,6 +4357,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_default(self):
         # The default value for alternative is None
         with suppress_warnings() as sup:
@@ -4370,6 +4375,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 4.5941632666275e-05,
                             significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_one_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='less')
@@ -4390,6 +4396,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
         assert_approx_equal(p3, 4.40940099958089e-05, significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='two-sided')
@@ -4402,6 +4409,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 8.81880199916178e-05,
                             significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_default(self):
         # The default value for alternative is None
         with suppress_warnings() as sup:
@@ -4420,6 +4428,7 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 4.40940099958089e-05,
                             significant=self.significant)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_ones(self):
         x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
                       1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
@@ -4459,6 +4468,7 @@ class TestMannWhitneyU(object):
                                   (16980.5, 2.8214327656317373e-005),
                                   decimal=12)
 
+    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
