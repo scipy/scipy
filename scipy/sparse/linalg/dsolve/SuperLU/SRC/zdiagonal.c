@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file zdiagonal.c
  * \brief Auxiliary routines to work with diagonal elements
@@ -21,7 +31,7 @@ int zfill_diag(int n, NCformat *Astore)
     int nnz = colptr[n];
     int fill = 0;
     doublecomplex *nzval_new;
-    doublecomplex zero = {1.0, 0.0};
+    doublecomplex zero = {0.0, 0.0};
     int *rowind_new;
     int i, j, diag;
 

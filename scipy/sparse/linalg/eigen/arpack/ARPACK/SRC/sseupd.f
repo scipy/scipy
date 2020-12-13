@@ -186,14 +186,14 @@ c     svout   ARPACK utility routine that prints vectors.
 c     sgeqr2  LAPACK routine that computes the QR factorization of
 c             a matrix.
 c     slacpy  LAPACK matrix copy routine.
-c     wslamch  LAPACK routine that determines machine constants.
+c     slamch  LAPACK routine that determines machine constants.
 c     sorm2r  LAPACK routine that applies an orthogonal matrix in
 c             factored form.
 c     ssteqr  LAPACK routine that computes eigenvalues and eigenvectors
 c             of a tridiagonal matrix.
 c     sger    Level 2 BLAS rank one update to a matrix.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
+c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     sswap   Level 1 BLAS that swaps the contents of two vectors.
 
@@ -283,8 +283,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           wsnrm2, wslamch
-      external   wsnrm2, wslamch
+     &           snrm2, slamch
+      external   snrm2, slamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -427,7 +427,7 @@ c     %---------------------------------%
 c     | Set machine dependent constant. |
 c     %---------------------------------%
 c
-      eps23 = wslamch('Epsilon-Machine') 
+      eps23 = slamch('Epsilon-Machine') 
       eps23 = eps23**(2.0E+0  / 3.0E+0 )
 c
 c     %---------------------------------------%
@@ -441,7 +441,7 @@ c
       if (bmat .eq. 'I') then
          bnorm2 = rnorm
       else if (bmat .eq. 'G') then
-         bnorm2 = wsnrm2(n, workd, 1)
+         bnorm2 = snrm2(n, workd, 1)
       end if
 c
       if (msglvl .gt. 2) then

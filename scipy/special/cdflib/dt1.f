@@ -2,7 +2,7 @@
 C**********************************************************************
 C
 C     DOUBLE PRECISION FUNCTION DT1(P,Q,DF)
-C     Double precision Initalize Approximation to
+C     Double precision Initialize Approximation to
 C           INVerse of the cumulative T distribution
 C
 C

@@ -2,7 +2,6 @@
 #define __COO_H__
 
 #include <algorithm>
-#include <set>
 
 /*
  * Compute B = A for COO matrix A, CSR matrix B
@@ -77,25 +76,13 @@ void coo_tocsr(const I n_row,
     //now Bp,Bj,Bx form a CSR representation (with possible duplicates)
 }
 
-template<class I, class T>
-void coo_tocsc(const I n_row,
-      	       const I n_col,
-      	       const I nnz,
-      	       const I Ai[],
-      	       const I Aj[],
-      	       const T Ax[],
-      	             I Bp[],
-      	             I Bi[],
-      	             T Bx[])
-{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
-
 /*
  * Compute B += A for COO matrix A, dense matrix B
  *
  * Input Arguments:
  *   I  n_row           - number of rows in A
  *   I  n_col           - number of columns in A
- *   I  nnz             - number of nonzeros in A
+ *   npy_int64  nnz     - number of nonzeros in A
  *   I  Ai[nnz(A)]      - row indices
  *   I  Aj[nnz(A)]      - column indices
  *   T  Ax[nnz(A)]      - nonzeros 
@@ -105,20 +92,20 @@ void coo_tocsc(const I n_row,
 template <class I, class T>
 void coo_todense(const I n_row,
                  const I n_col,
-                 const I nnz,
+                 const npy_int64 nnz,
                  const I Ai[],
                  const I Aj[],
                  const T Ax[],
                        T Bx[],
-		 int fortran)
+                 const int fortran)
 {
     if (!fortran) {
-        for(I n = 0; n < nnz; n++){
+        for(npy_int64 n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_col * Ai[n] + Aj[n] ] += Ax[n];
         }
     }
     else {
-        for(I n = 0; n < nnz; n++){
+        for(npy_int64 n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_row * Aj[n] + Ai[n] ] += Ax[n];
         }
     }
@@ -130,7 +117,7 @@ void coo_todense(const I n_row,
  *
  *
  * Input Arguments:
- *   I  nnz           - number of nonzeros in A
+ *   npy_int64  nnz   - number of nonzeros in A
  *   I  Ai[nnz]       - row indices
  *   I  Aj[nnz]       - column indices
  *   T  Ax[nnz]       - nonzero values
@@ -146,38 +133,16 @@ void coo_todense(const I n_row,
  * 
  */
 template <class I, class T>
-void coo_matvec(const I nnz,
-	            const I Ai[], 
-	            const I Aj[], 
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+void coo_matvec(const npy_int64 nnz,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
 {
-    for(I n = 0; n < nnz; n++){
+    for(npy_int64 n = 0; n < nnz; n++){
         Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
     }
 }
-
-/*
- * Count the number of occupied diagonals in COO matrix A
- *
- * Input Arguments:
- *   I  nnz             - number of nonzeros in A
- *   I  Ai[nnz(A)]      - row indices
- *   I  Aj[nnz(A)]      - column indices
- *
- */
-template <class I>
-I coo_count_diagonals(const I nnz,
-                      const I Ai[],
-                      const I Aj[])
-{
-    std::set<I> diagonals;
-    for(I n = 0; n < nnz; n++){
-        diagonals.insert(Aj[n] - Ai[n]);
-    }
-    return diagonals.size();
-}
-
 
 #endif

@@ -3,7 +3,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
 from numpy import zeros, asarray, complex128, float64
 from numpy.linalg import LinAlgError
-from numpy cimport npy_intp, complex128_t, float64_t
+from numpy cimport complex128_t, float64_t
 
 
 cdef fused dz:
@@ -53,7 +53,7 @@ def levinson(dz[::1] a, dz[::1] b):
     else:
         dtype = complex128
 
-    cdef npy_intp n, m, j, nmj, k, m2
+    cdef ssize_t n, m, j, nmj, k, m2
     n = b.shape[0]
     cdef dz x_num, g_num, h_num, x_den, g_den
     cdef dz gj, gk, hj, hk, c1, c2

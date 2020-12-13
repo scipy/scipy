@@ -1,19 +1,13 @@
-#!/usr/bin/env python
 ''' Jottings to work out format for __function_workspace__ matrix at end
 of mat file.
 
 '''
-from __future__ import division, print_function, absolute_import
-
 import os.path
-import sys
 import io
 
-from numpy.testing import run_module_suite
 from numpy.compat import asstr
 
-from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer,
-                                  MatFile5Reader, MatlabFunction)
+from scipy.io.matlab.mio5 import MatFile5Reader
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -41,7 +35,7 @@ def read_workspace_vars(fname):
     rdr = MatFile5Reader(fp, struct_as_record=True)
     vars = rdr.get_variables()
     fws = vars['__function_workspace__']
-    ws_bs = io.BytesIO(fws.tostring())
+    ws_bs = io.BytesIO(fws.tobytes())
     ws_bs.seek(2)
     rdr.mat_stream = ws_bs
     # Guess byte order.
@@ -56,7 +50,4 @@ def read_workspace_vars(fname):
 def test_jottings():
     # example
     fname = os.path.join(test_data_path, 'parabola.mat')
-    ws_vars = read_workspace_vars(fname)
-
-if __name__ == "__main__":
-    run_module_suite()
+    read_workspace_vars(fname)

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import svd
 
@@ -13,9 +11,9 @@ def polar(a, side="right"):
 
     Returns the factors of the polar decomposition [1]_ `u` and `p` such
     that ``a = up`` (if `side` is "right") or ``a = pu`` (if `side` is
-    "left"), where `p` is positive semidefinite.  Depending on the shape
-    of `a`, either the rows or columns of `u` are orthonormal.  When `a`
-    is a square array, `u` is a square unitary array.  When `a` is not
+    "left"), where `p` is positive semidefinite. Depending on the shape
+    of `a`, either the rows or columns of `u` are orthonormal. When `a`
+    is a square array, `u` is a square unitary array. When `a` is not
     square, the "canonical polar decomposition" [2]_ is computed.
 
     Parameters
@@ -30,18 +28,18 @@ def polar(a, side="right"):
     Returns
     -------
     u : (m, n) ndarray
-        If `a` is square, then `u` is unitary.  If m > n, then the columns
+        If `a` is square, then `u` is unitary. If m > n, then the columns
         of `a` are orthonormal, and if m < n, then the rows of `u` are
         orthonormal.
     p : ndarray
-        `p` is Hermitian positive semidefinite.  If `a` is nonsingular, `p`
-        is positive definite.  The shape of `p` is (n, n) or (m, m), depending
+        `p` is Hermitian positive semidefinite. If `a` is nonsingular, `p`
+        is positive definite. The shape of `p` is (n, n) or (m, m), depending
         on whether `side` is "right" or "left", respectively.
 
     References
     ----------
-    .. [1] R. A. Horn and C. R. Johnson, "Matrix Analysis", Cambridge University
-           Press, 1985.
+    .. [1] R. A. Horn and C. R. Johnson, "Matrix Analysis", Cambridge
+           University Press, 1985.
     .. [2] N. J. Higham, "Functions of Matrices: Theory and Computation",
            SIAM, 2008.
 

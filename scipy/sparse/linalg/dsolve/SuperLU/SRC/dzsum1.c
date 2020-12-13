@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file dzsum1.c
  * \brief Takes sum of the absolute values of a complex vector and returns a double precision result
  *
@@ -41,7 +51,7 @@
     ===================================================================== 
 </pre>
 */  
-double dzsum1_(int *n, doublecomplex *cx, int *incx)
+double dzsum1_slu(int *n, doublecomplex *cx, int *incx)
 {
 
     /* Builtin functions */
@@ -90,5 +100,5 @@ L20:
 
     /*     End of DZSUM1 */
 
-} /* dzsum1_ */
+} /* dzsum1_slu */
 

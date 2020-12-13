@@ -83,7 +83,7 @@ C     DiDinato, A. R. and Morris, A. H. Computation of the  incomplete
 C     gamma function  ratios  and their  inverse.   ACM  Trans.  Math.
 C     Softw. 12 (1986), 377-393.
 C
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired  value  of P.   The search relies  on  the
 C     monotinicity of P with the other parameter.
 C

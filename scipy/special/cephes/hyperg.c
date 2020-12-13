@@ -40,11 +40,6 @@
  * ranging from 0 to 30.
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC       0,30         2000       1.2e-15     1.3e-16
-  qtst1:
-  21800   max =  1.4200E-14   rms =  1.0841E-15  ave = -5.3640E-17 
-  ltstd:
-  25500   max = 1.2759e-14   rms = 3.7155e-16  ave = 1.5384e-18 
  *    IEEE      0,30        30000       1.8e-14     1.1e-15
  *
  * Larger errors can be observed when b is near a negative
@@ -65,11 +60,13 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 
-extern double MACHEP, MAXNUM;
+extern double MACHEP;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
+static double hyp2f0(double a, double b, double x, int type, double *err);
 
 double hyperg(a, b, x)
 double a, b, x;
@@ -105,7 +102,7 @@ double a, b, x;
 
   done:
     if (pcanc > 1.0e-12)
-	mtherr("hyperg", PLOSS);
+	sf_error("hyperg", SF_ERROR_LOSS, NULL);
 
     return (psum);
 }
@@ -140,7 +137,7 @@ double *err;
 
     while (t > MACHEP) {
 	if (bn == 0) {		/* check bn first since if both   */
-	    mtherr("hyperg", SING);
+	    sf_error("hyperg", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);	/* an and bn are zero it is     */
 	}
 	if (an == 0)		/* a singularity            */
@@ -154,7 +151,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp))) {
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp))) {
 	    *err = 1.0;		/* blowup: estimate 100% error */
 	    return sum;
 	}
@@ -195,11 +192,11 @@ double *err;
 /*                                                     hy1f1a()        */
 /* asymptotic formula for hypergeometric function:
  *
- *        (    -a                         
- *  --    ( |z|                           
+ *        (    -a
+ *  --    ( |z|
  * |  (b) ( -------- 2f0( a, 1+a-b, -1/x )
- *        (  --                           
- *        ( |  (b-a)                      
+ *        (  --
+ *        ( |  (b-a)
  *
  *
  *                                x    a-b                     )
@@ -311,7 +308,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp)))
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp)))
 	    goto error;
 
 	a0 *= u;
@@ -380,6 +377,6 @@ double *err;
     /* series blew up: */
   error:
     *err = NPY_INFINITY;
-    mtherr("hyperg", TLOSS);
+    sf_error("hyperg", SF_ERROR_NO_RESULT, NULL);
     return (sum);
 }

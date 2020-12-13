@@ -2,8 +2,6 @@
 Differential and pseudo-differential operators.
 """
 # Created by Pearu Peterson, September 2002
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['diff',
            'tilbert','itilbert','hilbert','ihilbert',
@@ -13,11 +11,7 @@ __all__ = ['diff',
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 from . import convolve
 
-from scipy.fftpack.basic import _datacopied
-
-import atexit
-atexit.register(convolve.destroy_convolve_cache)
-del atexit
+from scipy.fft._pocketfft.helper import _datacopied
 
 
 _cache = {}
@@ -25,7 +19,7 @@ _cache = {}
 
 def diff(x,order=1,period=None, _cache=_cache):
     """
-    Return k-th derivative (or integral) of a periodic sequence x.
+    Return kth derivative (or integral) of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then::
@@ -78,6 +72,8 @@ def diff(x,order=1,period=None, _cache=_cache):
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=order % 2,
                              overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -101,7 +97,7 @@ def tilbert(x, h, period=None, _cache=_cache):
     h : float
         Defines the parameter of the Tilbert transform.
     period : float, optional
-        The assumed period of the sequence.  Default period is ``2*pi``.
+        The assumed period of the sequence. Default period is ``2*pi``.
 
     Returns
     -------
@@ -110,7 +106,7 @@ def tilbert(x, h, period=None, _cache=_cache):
 
     Notes
     -----
-    If ``sum(x, axis=0) == 0`` and ``n = len(x)`` is odd then
+    If ``sum(x, axis=0) == 0`` and ``n = len(x)`` is odd, then
     ``tilbert(itilbert(x)) == x``.
 
     If ``2 * pi * h / period`` is approximately 10 or larger, then
@@ -146,6 +142,8 @@ def tilbert(x, h, period=None, _cache=_cache):
 
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -186,6 +184,8 @@ def itilbert(x,h,period=None, _cache=_cache):
         _cache[(n,h)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -214,6 +214,11 @@ def hilbert(x, _cache=_cache):
     y : ndarray
         The transformed input.
 
+    See Also
+    --------
+    scipy.signal.hilbert : Compute the analytic signal, using the Hilbert
+                           transform.
+
     Notes
     -----
     If ``sum(x, axis=0) == 0`` then ``hilbert(ihilbert(x)) == x``.
@@ -221,8 +226,8 @@ def hilbert(x, _cache=_cache):
     For even len(x), the Nyquist mode of x is taken zero.
 
     The sign of the returned transform does not have a factor -1 that is more
-    often than not found in the definition of the Hilbert transform.  Note also
-    that ``scipy.signal.hilbert`` does have an extra -1 factor compared to this
+    often than not found in the definition of the Hilbert transform. Note also
+    that `scipy.signal.hilbert` does have an extra -1 factor compared to this
     function.
 
     """
@@ -246,6 +251,8 @@ def hilbert(x, _cache=_cache):
         _cache[n] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -318,6 +325,8 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -372,6 +381,8 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -425,6 +436,8 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -480,6 +493,8 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -531,5 +546,6 @@ def shift(x, a, period=None, _cache=_cache):
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve_z(tmp,omega_real,omega_imag,
                                overwrite_x=overwrite_x)
+
 
 del _cache

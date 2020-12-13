@@ -28,7 +28,6 @@
  *
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC       0,30         3000       1.3e-9      5.8e-11
  *    IEEE      0,30        90000       1.8e-8      3.0e-10
  *
  *  Error is high only near the crossover point x = 9.55
@@ -44,44 +43,45 @@
 
 /*
  * Algorithm for Kn.
- * n-1 
- * -n   -  (n-k-1)!    2   k
+ *                        n-1
+ *                    -n   -  (n-k-1)!    2   k
  * K (x)  =  0.5 (x/2)     >  -------- (-x /4)
- * n                      -     k!
- * k=0
- * 
- * inf.                                   2   k
- * n         n   -                                   (x /4)
- * + (-1)  0.5(x/2)    >  {p(k+1) + p(n+k+1) - 2log(x/2)} ---------
- * -                                  k! (n+k)!
- * k=0
- * 
+ *  n                      -     k!
+ *                        k=0
+ *
+ *                     inf.                                   2   k
+ *        n         n   -                                   (x /4)
+ *  + (-1)  0.5(x/2)    >  {p(k+1) + p(n+k+1) - 2log(x/2)} ---------
+ *                      -                                  k! (n+k)!
+ *                     k=0
+ *
  * where  p(m) is the psi function: p(1) = -EUL and
- * 
- * m-1
- * -
- * p(m)  =  -EUL +  >  1/k
- * -
- * k=1
- * 
+ *
+ *                       m-1
+ *                        -
+ *       p(m)  =  -EUL +  >  1/k
+ *                        -
+ *                       k=1
+ *
  * For large x,
- * 2        2     2
- * u-1     (u-1 )(u-3 )
+ *                                          2        2     2
+ *                                       u-1     (u-1 )(u-3 )
  * K (z)  =  sqrt(pi/2z) exp(-z) { 1 + ------- + ------------ + ...}
- * v                                        1            2
- * 1! (8z)     2! (8z)
+ *  v                                        1            2
+ *                                     1! (8z)     2! (8z)
  * asymptotically, where
- * 
- * 2
- * u = 4 v .
- * 
+ *
+ *            2
+ *     u = 4 v .
+ *
  */
-
+
 #include "mconf.h"
+#include <float.h>
 
 #define EUL 5.772156649015328606065e-1
 #define MAXFAC 31
-extern double MACHEP, MAXNUM, MAXLOG;
+extern double MACHEP, MAXLOG;
 
 double kn(nn, x)
 int nn;
@@ -98,17 +98,17 @@ double x;
 
     if (n > MAXFAC) {
       overf:
-	mtherr("kn", OVERFLOW);
+	sf_error("kn", SF_ERROR_OVERFLOW, NULL);
 	return (NPY_INFINITY);
     }
 
     if (x <= 0.0) {
 	if (x < 0.0) {
-	    mtherr("kn", DOMAIN);
+	    sf_error("kn", SF_ERROR_DOMAIN, NULL);
 	    return NPY_NAN;
 	}
 	else {
-	    mtherr("kn", SING);
+	    sf_error("kn", SF_ERROR_SINGULAR, NULL);
 	    return NPY_INFINITY;
 	}
     }
@@ -151,17 +151,17 @@ double x;
 		zn *= z;
 		t = nk1f * zn / kf;
 		s += t;
-		if ((MAXNUM - fabs(t)) < fabs(s))
+		if ((DBL_MAX - fabs(t)) < fabs(s))
 		    goto overf;
-		if ((tox > 1.0) && ((MAXNUM / tox) < zmn))
+		if ((tox > 1.0) && ((DBL_MAX / tox) < zmn))
 		    goto overf;
 		zmn *= tox;
 	    }
 	    s *= 0.5;
 	    t = fabs(s);
-	    if ((zmn > 1.0) && ((MAXNUM / zmn) < t))
+	    if ((zmn > 1.0) && ((DBL_MAX / zmn) < t))
 		goto overf;
-	    if ((t > 1.0) && ((MAXNUM / t) < zmn))
+	    if ((t > 1.0) && ((DBL_MAX / t) < zmn))
 		goto overf;
 	    ans = s * zmn;
 	}
@@ -204,7 +204,7 @@ double x;
   asymp:
 
     if (x > MAXLOG) {
-	mtherr("kn", UNDERFLOW);
+	sf_error("kn", SF_ERROR_UNDERFLOW, NULL);
 	return (0.0);
     }
     k = n;

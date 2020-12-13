@@ -1,1 +1,1 @@
-.. include:: ../release/0.15.0-notes.rst
+.. include:: ../release/0.17.0-notes.rst

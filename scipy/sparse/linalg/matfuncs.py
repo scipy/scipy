@@ -8,24 +8,23 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['expm', 'inv']
-
-import math
 
 import numpy as np
 
-import scipy.misc
+import scipy.special
+from scipy._lib._util import float_factorial
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
+from scipy.sparse.sputils import is_pydata_spmatrix
 
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg.interface import LinearOperator
+
+from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 
 
 UPPER_TRIANGULAR = 'upper_triangular'
@@ -47,14 +46,34 @@ def inv(A):
 
     Notes
     -----
-    This computes the sparse inverse of `A`.  If the inverse of `A` is expected
+    This computes the sparse inverse of `A`. If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import inv
+    >>> A = csc_matrix([[1., 0.], [1., 2.]])
+    >>> Ainv = inv(A)
+    >>> Ainv
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv)
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 2 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv).todense()
+    matrix([[ 1.,  0.],
+            [ 0.,  1.]])
 
     .. versionadded:: 0.12.0
 
     """
-    I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
+    #check input
+    if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
+        raise TypeError('Input must be a sparse matrix')
+
+    I = _ident_like(A)
     Ainv = spsolve(A, I)
     return Ainv
 
@@ -89,50 +108,22 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
-
-
-def _onenorm(A):
-    # A compatibility function which should eventually disappear.
-    # This is copypasted from expm_action.
-    if scipy.sparse.isspmatrix(A):
-        return max(abs(A).sum(axis=0).flat)
-    else:
-        return np.linalg.norm(A, 1)
-
-
-def _ident_like(A):
-    # A compatibility function which should eventually disappear.
-    # This is copypasted from expm_action.
-    if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
-    else:
-        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
-
-
-def _count_nonzero(A):
-    # A compatibility function which should eventually disappear.
-    #XXX There should be a better way to do this when A is sparse
-    #    in the traditional sense.
-    if isspmatrix(A):
-        return np.sum(A.toarray() != 0)
-    else:
-        return np.count_nonzero(A)
+    return np.max(v)
 
 
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
     if isspmatrix(A):
         lower_part = scipy.sparse.tril(A, -1)
-        if lower_part.nnz == 0:
-            # structural upper triangularity
-            return True
-        else:
-            # coincidental upper triangularity
-            return _count_nonzero(lower_part) == 0
+        # Check structural upper triangularity,
+        # then coincidental upper triangularity if needed.
+        return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
+    elif is_pydata_spmatrix(A):
+        import sparse
+        lower_part = sparse.tril(A, -1)
+        return lower_part.nnz == 0
     else:
-        return _count_nonzero(np.tril(A, -1)) == 0
+        return not np.tril(A, -1).any()
 
 
 def _smart_matrix_product(A, B, alpha=None, structure=None):
@@ -163,7 +154,8 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
         raise ValueError('expected B to be a rectangular matrix')
     f = None
     if structure == UPPER_TRIANGULAR:
-        if not isspmatrix(A) and not isspmatrix(B):
+        if (not isspmatrix(A) and not isspmatrix(B)
+                and not is_pydata_spmatrix(A) and not is_pydata_spmatrix(B)):
             f, = scipy.linalg.get_blas_funcs(('trmm',), (A, B))
     if f is not None:
         if alpha is None:
@@ -578,6 +570,23 @@ def expm(A):
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm
+    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A.todense()
+    matrix([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]], dtype=int64)
+    >>> Aexp = expm(A)
+    >>> Aexp
+    <3x3 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> Aexp.todense()
+    matrix([[  2.71828183,   0.        ,   0.        ],
+            [  0.        ,   7.3890561 ,   0.        ],
+            [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
@@ -587,10 +596,34 @@ def _expm(A, use_exact_onenorm):
     # algorithms.
 
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
-    if isinstance(A, (list, tuple)):
+    if isinstance(A, (list, tuple, np.matrix)):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
+
+    # gracefully handle size-0 input,
+    # carefully handling sparse scenario
+    if A.shape == (0, 0):
+        out = np.zeros([0, 0], dtype=A.dtype)
+        if isspmatrix(A) or is_pydata_spmatrix(A):
+            return A.__class__(out)
+        return out
+
+    # Trivial case
+    if A.shape == (1, 1):
+        out = [[np.exp(A[0, 0])]]
+
+        # Avoid indiscriminate casting to ndarray to
+        # allow for sparse or other strange arrays
+        if isspmatrix(A) or is_pydata_spmatrix(A):
+            return A.__class__(out)
+
+        return np.array(out)
+
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A) or is_pydata_spmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
 
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
@@ -628,7 +661,13 @@ def _expm(A, use_exact_onenorm):
     eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
-    s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
+
+    # Choose smallest s>=0 such that 2**(-s) eta_5 <= theta_13
+    if eta_5 == 0:
+        # Nilpotent special case
+        s = 0
+    else:
+        s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
     s = s + _ell(2**-s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)
@@ -664,7 +703,7 @@ def _solve_P_Q(U, V, structure=None):
     """
     P = U + V
     Q = -U + V
-    if isspmatrix(U):
+    if isspmatrix(U) or is_pydata_spmatrix(U):
         return spsolve(Q, P)
     elif structure is None:
         return solve(Q, P)
@@ -674,9 +713,9 @@ def _solve_P_Q(U, V, structure=None):
         raise ValueError('unsupported matrix structure: ' + str(structure))
 
 
-def _sinch(x):
+def _exp_sinch(a, x):
     """
-    Stably evaluate sinch.
+    Stably evaluate exp(a)*sinh(x)/x
 
     Notes
     -----
@@ -698,11 +737,11 @@ def _sinch(x):
     # How small is small? I am using the point where the relative error
     # of the approximation is less than 1e-14.
     # If x is large then directly evaluate sinh(x) / x.
-    x2 = x*x
     if abs(x) < 0.0135:
-        return 1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.)))
+        x2 = x*x
+        return np.exp(a) * (1 + (x2/6.)*(1 + (x2/20.)*(1 + (x2/42.))))
     else:
-        return np.sinh(x) / x
+        return (np.exp(a + x) - np.exp(a - x)) / (2*x)
 
 
 def _eq_10_42(lam_1, lam_2, t_12):
@@ -726,7 +765,7 @@ def _eq_10_42(lam_1, lam_2, t_12):
     # will apparently work around the cancellation.
     a = 0.5 * (lam_1 + lam_2)
     b = 0.5 * (lam_1 - lam_2)
-    return t_12 * np.exp(a) * _sinch(b)
+    return t_12 * _exp_sinch(a, b)
 
 
 def _fragment_2_1(X, T, s):
@@ -746,7 +785,7 @@ def _fragment_2_1(X, T, s):
     # Form X = r_m(2^-s T)
     # Replace diag(X) by exp(2^-s diag(T)).
     n = X.shape[0]
-    diag_T = T.diagonal().copy()
+    diag_T = np.ravel(T.diagonal().copy())
 
     # Replace diag(X) by exp(2^-s diag(T)).
     scale = 2 ** -s
@@ -798,19 +837,17 @@ def _ell(A, m):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
 
-    p = 2*m + 1
-
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
-    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
+    choose_2m_m = scipy.special.comb(2*m, m, exact=True)
+    abs_c_recip = float(choose_2m_m) * float_factorial(2*m + 1)
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.
     # It is the "unit roundoff" of IEEE double precision arithmetic.
     u = 2**-53
 
     # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), p)
+    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2*m + 1)
 
     # Treat zero norm as a special case.
     if not A_abs_onenorm:

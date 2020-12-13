@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file ccopy_to_ucol.c
  * \brief Copy a computed column of U to the compressed data structure
@@ -52,7 +62,7 @@ ccopy_to_ucol(
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = Glu->ucol;
+    ucol    = (complex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;
@@ -76,7 +86,7 @@ ccopy_to_ucol(
 		while ( new_next > nzumax ) {
 		    if (mem_error = cLUMemXpand(jcol, nextu, UCOL, &nzumax, Glu))
 			return (mem_error);
-		    ucol = Glu->ucol;
+		    ucol = (complex *) Glu->ucol;
 		    if (mem_error = cLUMemXpand(jcol, nextu, USUB, &nzumax, Glu))
 			return (mem_error);
 		    usub = Glu->usub;

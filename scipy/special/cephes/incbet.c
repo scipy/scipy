@@ -61,11 +61,7 @@
 
 #include "mconf.h"
 
-#ifdef DEC
-#define MAXGAM 34.84425627277176174
-#else
 #define MAXGAM 171.624376956302725
-#endif
 
 extern double MACHEP, MINLOG, MAXLOG;
 
@@ -91,7 +87,7 @@ double aa, bb, xx;
 	if (xx == 1.0)
 	    return (1.0);
       domerr:
-	mtherr("incbet", DOMAIN);
+	sf_error("incbet", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -366,7 +362,7 @@ double a, b, x;
 
     u = a * log(x);
     if ((a + b) < MAXGAM && fabs(u) < MAXLOG) {
-        t = 1.0 / beta(a, b); 
+        t = 1.0 / beta(a, b);
 	s = s * t * pow(x, a);
     }
     else {

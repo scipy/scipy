@@ -11,7 +11,7 @@ References
 
 .. [LP] P. Levrie & R. Piessens, A note on the evaluation of orthogonal
         polynomials using recurrence relations, Internal Report TW74 (1985)
-        Dept. of Computer Science, K.U. Leuven, Belgium 
+        Dept. of Computer Science, K.U. Leuven, Belgium
         https://lirias.kuleuven.be/handle/123456789/131600
 
 """
@@ -26,24 +26,18 @@ cimport cython
 from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 
 from numpy cimport npy_cdouble
-from _complexstuff cimport nan, inf, number_t
+from ._complexstuff cimport (
+    nan, inf, number_t, npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble)
 
-cimport sf_error
-
-cdef extern from "cephes.h":
-    double Gamma(double x) nogil
-    double lgam(double x) nogil
-    double beta (double a, double b) nogil
-    double lbeta (double a, double b) nogil
-    double hyp2f1_wrap "hyp2f1" (double a, double b, double c, double x) nogil 
+from . cimport sf_error
+from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
+from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
-    npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil 
+    npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
-
-cdef extern from "c_misc/misc.h":
-    double gammasgn(double x) nogil
 
 # Fused type wrappers
 
@@ -52,16 +46,19 @@ cdef inline number_t hyp2f1(double a, double b, double c, number_t z) nogil:
     if number_t is double:
         return hyp2f1_wrap(a, b, c, z)
     else:
-        r = chyp2f1_wrap(a, b, c, (<npy_cdouble*>&z)[0])
-        return (<number_t*>&r)[0]
+        r = chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(r)
 
 cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
     cdef npy_cdouble r
     if number_t is double:
         return hyp1f1_wrap(a, b, z)
     else:
-        r = chyp1f1_wrap(a, b, (<npy_cdouble*>&z)[0])
-        return (<number_t*>&r)[0]
+        r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(r)
+
+cdef extern from "numpy/npy_math.h":
+    double npy_isnan(double x) nogil
 
 #-----------------------------------------------------------------------------
 # Binomial coefficient
@@ -126,16 +123,16 @@ cdef inline double binom(double n, double k) nogil:
             else:
                 return num * sin(k*pi)
     else:
-        return 1/beta(1 + n - k, 1 + k)/(n + 1)
+        return 1/(n + 1)/beta(1 + n - k, 1 + k)
 
 #-----------------------------------------------------------------------------
 # Jacobi
 #-----------------------------------------------------------------------------
 
 cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x) nogil:
-    cdef double a, b, c, d 
+    cdef double a, b, c, d
     cdef number_t g
-    
+
     d = binom(n+alpha, n)
     a = -n
     b = n + alpha + beta + 1
@@ -154,10 +151,10 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
     elif n == 0:
         return 1.0
     elif n == 1:
-        return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1)) 
+        return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1))
     else:
         d = (alpha+beta+2)*(x - 1) / (2*(alpha+1))
-        p = d + 1 
+        p = d + 1
         for kk in range(n-1):
             k = kk+1.0
             t = 2*k+alpha+beta
@@ -200,6 +197,9 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef double p, d
     cdef double k
 
+    if npy_isnan(alpha) or npy_isnan(x):
+        return nan
+
     if n < 0:
         return 0.0
     elif n == 0:
@@ -231,7 +231,7 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         return p
     else:
         d = x - 1
-        p = x 
+        p = x
         for kk in range(n-1):
             k = kk+1.0
             d = (2*(k+alpha)/(k+2*alpha))*(x-1)*p + (k/(k+2*alpha)) * d
@@ -407,7 +407,7 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
         return p
     else:
         d = x - 1
-        p = x 
+        p = x
         for kk in range(n-1):
             k = kk+1.0
             d = ((2*k+1)/(k+1))*(x-1)*p + (k/(k+1)) * d
@@ -454,6 +454,9 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
                        "polynomial defined only for alpha > -1")
         return nan
 
+    if npy_isnan(alpha) or npy_isnan(x):
+        return nan
+
     if n < 0:
         return 0.0
     elif n == 0:
@@ -461,8 +464,8 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     elif n == 1:
         return -x+alpha+1
     else:
-        d = -x/(alpha+1) 
-        p = d + 1 
+        d = -x/(alpha+1)
+        p = d + 1
         for kk in range(n-1):
             k = kk+1.0
             d = -x/(k+alpha+1)*p + (k/(k+alpha+1)) * d
@@ -487,8 +490,16 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
     cdef long k
     cdef double y1, y2, y3
 
+    if npy_isnan(x):
+        return x
+
     if n < 0:
-        return 0.0
+        sf_error.error(
+            "eval_hermitenorm",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -508,5 +519,11 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
+    if n < 0:
+        sf_error.error(
+            "eval_hermite",
+            sf_error.DOMAIN,
+            "polynomial only defined for nonnegative n",
+        )
+        return nan
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)
-

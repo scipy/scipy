@@ -4,7 +4,8 @@
 R-distribution Distribution
 ===========================
 
-A general-purpose distribution with a variety of shapes controlled by :math:`c>0.` Range of standard distribution is :math:`x\in\left[-1,1\right]`
+A general-purpose distribution with a variety of shapes controlled by one shape parameter :math:`c>0.`
+The support of the standard distribution is :math:`x\in\left[-1,1\right]`.
 
 .. math::
    :nowrap:
@@ -15,9 +16,10 @@ A general-purpose distribution with a variety of shapes controlled by :math:`c>0
 
      \mu_{n}^{\prime}=\frac{\left(1+\left(-1\right)^{n}\right)}{2}B\left(\frac{n+1}{2},\frac{c}{2}\right)
 
-The R-distribution with parameter :math:`n` is the distribution of the correlation coefficient of a random sample
-of size :math:`n` drawn from a bivariate normal distribution with :math:`\rho=0.` The mean of the standard distribution is always zero and as the sample
-size grows, the distribution's mass concentrates more closely about
-this mean.
+The R-distribution with parameter :math:`n` is the distribution of the
+correlation coefficient of a random sample of size :math:`n` drawn from a
+bivariate normal distribution with :math:`\rho=0.` The mean of the standard
+distribution is always zero and as the sample size grows, the distribution's
+mass concentrates more closely about this mean.
 
 Implementation: `scipy.stats.rdist`

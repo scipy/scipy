@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file dutil.c
  * \brief Matrix utility functions
@@ -297,9 +307,9 @@ dprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (double *) Glu->lusup;
     xlusup  = Glu->xlusup;
-    ucol    = Glu->ucol;
+    ucol    = (double *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     
@@ -460,7 +470,7 @@ dPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 
-
+int
 print_double_vec(char *what, int n, double *vec)
 {
     int i;
@@ -468,4 +478,3 @@ print_double_vec(char *what, int n, double *vec)
     for (i = 0; i < n; ++i) printf("%d\t%f\n", i, vec[i]);
     return 0;
 }
-

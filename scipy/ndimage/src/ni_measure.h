@@ -2,7 +2,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met: 
+ * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -15,7 +15,7 @@
  * 3. The name of the author may not be used to endorse or promote
  *    products derived from this software without specific prior
  *    written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
  * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,33 +26,15 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.      
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef NI_MEASURE_H
 #define NI_MEASURE_H
 
-#include "nd_image.h"
-
-/* structure for array regions to find objects: */
-typedef struct {
-    int start[NI_MAXDIM], end[NI_MAXDIM];
-} NI_ObjectRegion;
-
 int NI_FindObjects(PyArrayObject*, npy_intp, npy_intp*);
 
-int NI_CenterOfMass(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                    npy_intp*, npy_intp, double*);
-
-int NI_Histogram(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                 npy_intp*, npy_intp, PyArrayObject**, double, double,
-                 npy_intp);
-
-int NI_Statistics(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                  npy_intp*, npy_intp, double*, npy_intp*, double*,
-                  double*, double*, npy_intp*, npy_intp*);
-
-int NI_WatershedIFT(PyArrayObject*, PyArrayObject*, PyArrayObject*, 
-                                        PyArrayObject*);
+int NI_WatershedIFT(PyArrayObject*, PyArrayObject*, PyArrayObject*,
+                    PyArrayObject*);
 
 #endif
