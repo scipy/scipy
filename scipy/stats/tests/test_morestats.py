@@ -624,53 +624,37 @@ class TestBinomP:
     binom_test_func = staticmethod(stats.binom_test)
 
     def test_data(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message='.*`binom_test` is deprecated.*')
-            pval = self.binom_test_func(100, 250)
-            assert_almost_equal(pval, 0.0018833009350757682, 11)
-            pval = self.binom_test_func(201, 405)
-            assert_almost_equal(pval, 0.92085205962670713, 11)
-            pval = self.binom_test_func([682, 243], p=3/4)
-            assert_almost_equal(pval, 0.38249155957481695, 11)
+        pval = self.binom_test_func(100, 250)
+        assert_almost_equal(pval, 0.0018833009350757682, 11)
+        pval = self.binom_test_func(201, 405)
+        assert_almost_equal(pval, 0.92085205962670713, 11)
+        pval = self.binom_test_func([682, 243], p=3/4)
+        assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
         # Length of x must be 1 or 2.
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
+        assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
         # Missing n
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError, self.binom_test_func, [100])
-            # n less than x[0]
-            assert_raises(ValueError, self.binom_test_func, [100], n=50)
+        assert_raises(ValueError, self.binom_test_func, [100])
+        # n less than x[0]
+        assert_raises(ValueError, self.binom_test_func, [100], n=50)
 
     def test_bad_p(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message='.*`binom_test` is deprecated.*')
-            assert_raises(ValueError,
-                          self.binom_test_func, [50, 50], p=2.0)
+        assert_raises(ValueError,
+                      self.binom_test_func, [50, 50], p=2.0)
 
     def test_alternatives(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       message='.*`binom_test` is deprecated.*')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='less')
+        assert_almost_equal(res, 0.982022657605858)
 
-            res = self.binom_test_func(51, 235, p=1/6, alternative='less')
-            assert_almost_equal(res, 0.982022657605858)
+        res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
+        assert_almost_equal(res, 0.02654424571169085)
 
-            res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
-            assert_almost_equal(res, 0.02654424571169085)
-
-            res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
-            assert_almost_equal(res, 0.0437479701823997)
+        res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
+        assert_almost_equal(res, 0.0437479701823997)
 
 
 class TestBinomTestP(TestBinomP):
