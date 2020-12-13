@@ -943,7 +943,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x, lmbda=None, bounds=None, alpha=None):
+def boxcox(x, lmbda=None, alpha=None, bounds=None):
     r"""
     Return a dataset transformed by a Box-Cox power transformation.
 
@@ -956,15 +956,13 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
 
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
-    bounds : sequence, optional
-       Optional bounds for lmbda. Must have two items
-        corresponding to the optimization bounds. For more details,
-        see :func:`boxcox_normmax`.
     alpha : {None, float}, optional
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
-
+    bounds : sequence, optional
+       Optional bounds for lmbda. Must have two items corresponding to the
+       optimization bounds. For more details, see :func:`boxcox_normmax`.
     Returns
     -------
     boxcox : ndarray
@@ -1050,7 +1048,7 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
         return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    optimize_method = "bounded" if bounds is not None else "brent"
+    optimize_method = "brent" if bounds is None else "bounded"
     lmax = boxcox_normmax(x, bounds=bounds, method='mle',
                           optimize_method=optimize_method)
     y = boxcox(x, lmax)
@@ -1063,7 +1061,7 @@ def boxcox(x, lmbda=None, bounds=None, alpha=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
+def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
                    optimize_method='brent', tol=None, options=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1071,13 +1069,13 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
     ----------
     x : array_like
         Input array.
-    bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
-        corresponding to the optimization bounds.
-    bracket : 2-tuple, optional
-        The starting interval for a downhill bracket search with
-        `optimize.brent`.  Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket.
+    brack : sequence, optional
+        For `optimize_method` 'brent' and 'golden', `bracket` defines the bracketing
+        interval and can either have three items ``(a, b, c)`` so that
+        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
+        ``c`` which are assumed to be a starting interval for a downhill
+        bracket search; it doesn't always mean that the obtained solution will
+        satisfy ``a <= x <= c``. See func:`minimize_scalar` for more details.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:
@@ -1094,15 +1092,8 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
         'all'
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
-    bracket : sequence, optional
-        For methods 'brent' and 'golden', `bracket` defines the bracketing
-        interval and can either have three items ``(a, b, c)`` so that
-        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
-        ``c`` which are assumed to be a starting interval for a downhill
-        bracket search (see `bracket`); it doesn't always mean that the
-        obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
-        For method 'bounded', `bounds` is mandatory and must have two items
+        For `optimize_method` 'bounded', `bounds` is mandatory and must have two items
         corresponding to the optimization bounds.
     optimize_method : str or callable, optional
         Type of solver.  Should be one of:
@@ -1110,7 +1101,7 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
             - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
             - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
             - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
-            - custom - a callable object (added in version 0.14.0), see below
+            - custom - a callable object
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options. See func:`minimize_scalar` for more details.
@@ -1162,9 +1153,9 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
 
     """
 
-    def optimizer(func, args):
+    def _optimizer(func, args):
         return optimize.minimize_scalar(
-            func, bounds=bounds, method=optimize_method, bracket=bracket,
+            func, bounds=bounds, method=optimize_method, bracket=brack,
             args=args, tol=tol, options=options).x.item()
 
     def _pearsonr(x):
@@ -1181,19 +1172,19 @@ def boxcox_normmax(x, bracket=None, bounds=None, method='pearsonr',
             r, prob = stats.pearsonr(xvals, yvals)
             return 1 - r
 
-        return optimizer(_eval_pearsonr, args=(xvals, x))
+        return _optimizer(_eval_pearsonr, args=(xvals, x))
 
     def _mle(x):
         def _eval_mle(lmb, data):
             # function to minimize
             return -boxcox_llf(lmb, data)
 
-        return optimizer(_eval_mle, args=(x,))
+        return _optimizer(_eval_mle, args=(x,))
 
-    def _all(x, brack):
+    def _all(x):
         maxlog = np.empty(2, dtype=float)
-        maxlog[0] = _pearsonr(x, brack)
-        maxlog[1] = _mle(x, brack)
+        maxlog[0] = _pearsonr(x)
+        maxlog[1] = _mle(x)
         return maxlog
 
     methods = {'pearsonr': _pearsonr,
@@ -2872,7 +2863,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         two sets of measurements.)  Must be one-dimensional.
     zero_method : {"pratt", "wilcox", "zsplit"}, optional
         The following options are available (default is "wilcox"):
-     
+
           * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
           * "wilcox": Discards all zero-differences, the default.
