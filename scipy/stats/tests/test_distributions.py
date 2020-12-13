@@ -3990,6 +3990,11 @@ class TestBurr(object):
         assert_(np.isfinite(e4))
 
 
+class TestStudentizedT(object):
+    def test_against_tables(self):
+        return
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,

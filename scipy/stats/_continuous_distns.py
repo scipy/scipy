@@ -8879,36 +8879,72 @@ class studentized_t_gen(rv_continuous):
     """
 
     def _argcheck(self, k, v):
-        return (k > 0) & (v > 0)
+        return True#(k > 0) and (v > 0)
+    # """
+    #     def _pdf(self, x, *args):
+    #         #First attempt at a PDF. TODO: VERIFY!
+    #         user_data = np.array([x, k, v], float).ctypes.data_as(
+    #             ctypes.c_void_p)
+    #         llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_pdf',
+    #                                            user_data)
+    #         res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+    #
+    #         return np.sqrt(2 * np.pi) * k * (k - 1) * v ** (v / 2) / (
+    #                     sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
+    # """
 
-    def _pdf(self, x, k, v):
-        #First attempt at a PDF. TODO: VERIFY!
-        user_data = np.array([x, k, v], float).ctypes.data_as(
-            ctypes.c_void_p)
-        llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_pdf',
-                                           user_data)
-        res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+    def _ppf(self, p, k, v):
+        # Credit to swallan
 
-        return np.sqrt(2 * np.pi) * k * (k - 1) * v ** (v / 2) / (
-                    sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
+        guess = 3 # TODO: Better guess.
+
+        @np.vectorize
+        def _p_calc(p, k, v):
+            def wrapper_cdf(q, k, v, alpha):
+                return alpha - (1 - self._cdf(q, k, v))
+
+            res = optimize.root_scalar(wrapper_cdf, bracket=[0, 50], args=(k, v, p), maxiter=100)
+            return res.root
+        return _p_calc(p, k, v)
 
     def _cdf(self, x, k, v):
-        if v < 120:
-            user_data = np.array([x, k, v], float).ctypes.data_as(
-                ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_cdf',
-                                               user_data)
-            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
 
-            return np.sqrt(2 * np.pi) * k * v ** (v / 2) / (
-                    sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
-        else:  # Use asymptomatic method
-            user_data = np.array([x, k], float).ctypes.data_as(ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(_stats,
-                                               '_genstudentized_t_cdf_asymptomatic',
-                                               user_data)
-            res = integrate.quad(llc, -np.inf, np.inf)[0]
-            return k * res
+        @np.vectorize
+        def _single(x, k, v):
+            if v < 120:
+                user_data = np.array([x, k, v], float).ctypes.data_as(
+                    ctypes.c_void_p)
+                llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_cdf',
+                                                   user_data)
+                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+
+                return res * np.sqrt(2 * np.pi) * k * v ** (v / 2) / (
+                            sc.gamma(v / 2) * 2 ** (v / 2 - 1))
+
+            else:  # Use asymptomatic method
+                user_data = np.array([x, k], float).ctypes.data_as(ctypes.c_void_p)
+                llc = LowLevelCallable.from_cython(_stats,
+                                                   '_genstudentized_t_cdf_asymptomatic',
+                                                   user_data)
+                res = integrate.quad(llc, -np.inf, np.inf)[0]
+                return k * res
+
+        return _single(x, k, v)
+
+
+    # def _cdf(self, x, *args):
+    #     _a, _b = self._get_support(*args)
+    #
+    #     @np.vectorize
+    #     def _cdf_single(x, *args):
+    #         p, b = args
+    #         user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
+    #         llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf', user_data)
+    #
+    #         return integrate.quad(llc, _a, x)[0]
+    #
+    #     return _cdf_single(x, *args)
+
 
 
 studentized_t = studentized_t_gen(name='studentized_t')
