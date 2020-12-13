@@ -26,7 +26,7 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
 
     integer intent(hide), depend(a), check(m>=n), depend(n) :: m = shape(a, 0)
     integer intent(hide), depend(a) :: n = shape(a, 1)
-    <ftype2> intent(in), dimension(lda, n) :: a
+    <ftype2> intent(in,copy), dimension(lda, n) :: a
     integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
     <ftype2> intent(out), depend(n), dimension(n) :: sva
     <ftype2> intent(out), depend(ldu, n, jobt, jobu, m), dimension(((jobt == 0)&&(jobu == 3)?0:m), ((jobt == 0)&&(jobu == 3)?0:(jobu == 1?m:n))) :: u

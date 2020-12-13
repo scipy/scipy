@@ -18,8 +18,7 @@ from libcpp.algorithm cimport sort
 from libcpp cimport bool
 
 cimport cython
-
-from multiprocessing import cpu_count
+import os
 import threading
 import operator
 import warnings
@@ -27,7 +26,6 @@ import warnings
 cdef extern from "<limits.h>":
     long LONG_MAX
 
-cdef int number_of_processors = cpu_count()
 
 __all__ = ['cKDTree']
 
@@ -400,7 +398,12 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 
     cdef np.intp_t n = operator.index(workers)
     if n == -1:
-        n = number_of_processors
+        num = os.cpu_count()
+        if num is None:
+            raise NotImplementedError(
+                'Cannot determine the number of cpus using os.cpu_count(), '
+                'cannot use -1 for the number of workers')
+        n = num
     elif n <= 0:
         raise ValueError(f'Invalid number of workers {workers}, must be -1 or > 0')
     return n
@@ -419,25 +422,6 @@ cdef class cKDTree:
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
     point.
-
-    The algorithm used is described in Maneewongvatana and Mount 1999.
-    The general idea is that the kd-tree is a binary tree, each of whose
-    nodes represents an axis-aligned hyperrectangle. Each node specifies
-    an axis and splits the set of points based on whether their coordinate
-    along that axis is greater than or less than a particular value.
-
-    During construction, the axis and splitting point are chosen by the
-    "sliding midpoint" rule, which ensures that the cells do not all
-    become long and thin.
-
-    The tree can be queried for the r closest neighbors of any given point
-    (optionally returning only those within some maximum distance of the
-    point). It can also be queried, with a substantial gain in efficiency,
-    for the r approximate closest neighbors.
-
-    For large dimensions (20 is already large) do not expect this to run
-    significantly faster than brute force. High-dimensional nearest-neighbor
-    queries are a substantial open problem in computer science.
 
     Parameters
     ----------
@@ -469,6 +453,27 @@ cdef class cKDTree:
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
 
+    Notes
+    -----
+    The algorithm used is described in Maneewongvatana and Mount 1999.
+    The general idea is that the kd-tree is a binary tree, each of whose
+    nodes represents an axis-aligned hyperrectangle. Each node specifies
+    an axis and splits the set of points based on whether their coordinate
+    along that axis is greater than or less than a particular value.
+
+    During construction, the axis and splitting point are chosen by the
+    "sliding midpoint" rule, which ensures that the cells do not all
+    become long and thin.
+
+    The tree can be queried for the r closest neighbors of any given point
+    (optionally returning only those within some maximum distance of the
+    point). It can also be queried, with a substantial gain in efficiency,
+    for the r approximate closest neighbors.
+
+    For large dimensions (20 is already large) do not expect this to run
+    significantly faster than brute force. High-dimensional nearest-neighbor
+    queries are a substantial open problem in computer science.
+
     Attributes
     ----------
     data : ndarray, shape (n,m)
@@ -488,16 +493,12 @@ cdef class cKDTree:
     mins : ndarray, shape (m,)
         The minimum value in each dimension of the n data points.
     tree : object, class cKDTreeNode
-        This attribute exposes a Python view of the root node in the cKDTree 
-        object. A full Python view of the kd-tree is created dynamically 
-        on the first access. This attribute allows you to create your own 
+        This attribute exposes a Python view of the root node in the cKDTree
+        object. A full Python view of the kd-tree is created dynamically
+        on the first access. This attribute allows you to create your own
         query functions in Python.
     size : int
         The number of nodes in the tree.
-
-    See Also
-    --------
-    KDTree : Implementation of `cKDTree` in pure Python
 
     """
     cdef:
@@ -512,13 +513,13 @@ cdef class cKDTree:
 
     property n:
         def __get__(self): return self.cself.n
-    
+
     property m:
         def __get__(self): return self.cself.m
-    
+
     property leafsize:
         def __get__(self): return self.cself.leafsize
-    
+
     property size:
         def __get__(self): return self.cself.size
 
@@ -705,7 +706,7 @@ cdef class cKDTree:
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
-            The locations of the neighbors in ``self.data``.
+            The index of each neighbor in ``self.data``.
             If ``x`` has shape ``tuple+(self.m,)``, then ``i`` has shape ``tuple+(k,)``.
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with ``self.n``.
@@ -896,6 +897,17 @@ cdef class cKDTree:
         >>> tree = spatial.cKDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
         [4, 8, 9, 12]
+
+        Query multiple points and plot the results:
+
+        >>> import matplotlib.pyplot as plt
+        >>> points = np.asarray(points)
+        >>> plt.plot(points[:,0], points[:,1], '.')
+        >>> for results in tree.query_ball_point(([2, 0], [3, 3]), 1):
+        ...     nearby_points = points[results]
+        ...     plt.plot(nearby_points[:,0], nearby_points[:,1], 'o')
+        >>> plt.margins(0.1, 0.1)
+        >>> plt.show()
 
         """
 
@@ -1177,16 +1189,17 @@ cdef class cKDTree:
         """
         count_neighbors(self, other, r, p=2., weights=None, cumulative=True)
 
-        Count how many nearby pairs can be formed. (pair-counting)
+        Count how many nearby pairs can be formed.
 
-        Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from ``other``, and where
+        Count the number of pairs ``(x1,x2)`` can be formed, with ``x1`` drawn
+        from ``self`` and ``x2`` drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
 
-        Data points on self and other are optionally weighted by the ``weights``
-        argument. (See below)
+        Data points on ``self`` and ``other`` are optionally weighted by the
+        ``weights`` argument. (See below)
 
-        The algorithm we implement here is based on [1]_. See notes for further discussion.
+        This is adapted from the "two-point correlation" algorithm described by
+        Gray and Moore [1]_.  See notes for further discussion.
 
         Parameters
         ----------

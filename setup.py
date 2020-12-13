@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 6):
-    raise RuntimeError("Python version >= 3.6 required.")
+if sys.version_info[:2] < (3, 7):
+    raise RuntimeError("Python version >= 3.7 required.")
 
 import builtins
 
@@ -41,7 +41,6 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
@@ -55,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 6
+MINOR = 7
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -542,7 +541,7 @@ def setup_package():
         install_requires=[
             'numpy>=1.16.5',
         ],
-        python_requires='>=3.6',
+        python_requires='>=3.7',
     )
 
     if "--force" in sys.argv:

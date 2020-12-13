@@ -493,6 +493,7 @@ class DTRunner(doctest.DocTestRunner):
 
     def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
         self._item_name = item_name
+        self._had_unexpected_error = False
         doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
                                        optionflags=optionflags)
 
@@ -512,9 +513,15 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_success(self, out, test, example, got)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
+        # Ignore name errors after failing due to an unexpected exception
+        exception_type = exc_info[0]
+        if self._had_unexpected_error and exception_type is NameError:
+            return
+        self._had_unexpected_error = True
+
         self._report_item_name(out)
-        return doctest.DocTestRunner.report_unexpected_exception(
-            self, out, test, example, exc_info)
+        return super().report_unexpected_exception(
+            out, test, example, exc_info)
 
     def report_failure(self, out, test, example, got):
         self._report_item_name(out)

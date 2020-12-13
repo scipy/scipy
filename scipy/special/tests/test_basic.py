@@ -19,6 +19,7 @@
 
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -1822,6 +1823,13 @@ class TestFactorialFunctions(object):
         result = special.factorial(x, exact=exact)
         assert_(np.isnan(result))
 
+    # GH-13122: special.factorial() argument should be an array of integers.
+    # On Python 3.10, math.factorial() reject float.
+    # On Python 3.9, a DeprecationWarning is emitted.
+    # A numpy array casts all integers to float if the array contains a
+    # single NaN.
+    @pytest.mark.skipif(sys.version_info >= (3, 10),
+                        reason="Python 3.10+ math.factorial() requires int")
     def test_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
         with suppress_warnings() as sup:

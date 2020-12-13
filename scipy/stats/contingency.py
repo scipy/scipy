@@ -10,9 +10,12 @@ Functions for creating and analyzing contingency tables.
    :toctree: generated/
 
    chi2_contingency
-   expected_freq
    margins
    relative_risk
+   crosstab
+
+   expected_freq
+   margins
 
 """
 
@@ -21,9 +24,9 @@ from functools import reduce
 import numpy as np
 from .stats import power_divergence
 from ._relative_risk import relative_risk
+from ._crosstab import crosstab
 
-
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'relative_risk']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab', 'relative_risk']
 
 
 def margins(a):

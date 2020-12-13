@@ -1,19 +1,14 @@
 import warnings
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.stats as stats
-except ImportError:
-    pass
-
-from .common import Benchmark
-try:
+with safe_import():
     from scipy.stats._distr_params import distcont
-except ImportError:
-    pass
 
-try:
+try:  # builtin lib
     from itertools import compress
 except ImportError:
     pass
@@ -188,7 +183,8 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh", "invgauss"]
+    dists = ["pareto", "laplace", "rayleigh",
+             "invgauss", "gumbel_r", "gumbel_l"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
     # and shapes
