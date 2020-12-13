@@ -208,24 +208,39 @@ linear_sum_assignment_test_cases = product(
           [300, 225, 300]],
          [150, 400, 300]),
 
-        # Rectangular variant
+        # Wide rectangular variant
         ([[400, 150, 400, 1],
           [400, 450, 600, 2],
           [300, 225, 300, 3]],
          [150, 2, 300]),
 
+        # Tall rectangular variant
+        ([[400, 400, 300],
+          [150, 450, 225],
+          [400, 600, 300],
+          [1, 2, 3]],
+          [150, 300, 2]),
+
+        # Square
         ([[10, 10, 8],
           [9, 8, 1],
           [9, 7, 4]],
          [10, 1, 7]),
 
-        # Square
+        # Wide rectangular variant
         ([[10, 10, 8, 11],
           [9, 8, 1, 1],
           [9, 7, 4, 10]],
          [10, 1, 4]),
 
-        # Rectangular variant
+        # Tall rectangular variant
+        ([[10, 9, 9],
+          [10, 8, 7],
+          [8, 1, 4],
+          [11, 1, 10]],
+          [10, 4, 1]),
+
+        # Square with positive infinities
         ([[10, float("inf"), float("inf")],
           [float("inf"), float("inf"), 1],
           [float("inf"), 7, float("inf")]],
