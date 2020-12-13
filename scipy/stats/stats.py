@@ -7323,6 +7323,8 @@ def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided')
         else:
             smallu = u2
         p = sum(u <= smallu) / len(u)
+        if alternative != 'two-sided':
+            p = 1-p
         u = smallu
     else:
         u1 = n1*n2 + n1*(n1+1)/2.0 - np.sum(rankx, axis=0)  # calc U for x
@@ -7351,7 +7353,7 @@ def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided')
         alt = 'x is sampled from a population of smaller values than y'
     else:
         alt = 'x is sampled from a population of larger values than y'
-    s = Bunch(statistic=u, pvalue=p, alternative=alt, u1=u1, u2=u2)
+    s = Bunch(statistic=u, pvalue=p, alternative=alt, u1=u1, u2=u2, exact=exact)
     return s
 
 
