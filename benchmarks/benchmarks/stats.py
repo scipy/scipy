@@ -62,9 +62,12 @@ class Distribution(Benchmark):
 
     param_names = ['distribution', 'properties']
     params = [
-        dists, ['pdf', 'cdf', 'rvs', 'fit']
+        dists, ['pdf', 'logpdf', 'cdf', 'logcdf', 'rvs', 'fit', 'sf', 'logsf',
+                'ppf', 'isf', 'moment', 'stats', 'entropy', 'median', 'mean',
+                'var', 'std']
     ]
     distcont = dict(distcont)
+    # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
@@ -77,9 +80,22 @@ class Distribution(Benchmark):
         kwds = dict(zip(names, values))
 
         if properties == 'fit':
+            # provide only the data to fit in args
             self.args = args[:1]
         elif properties == 'rvs':
+            # add size for creation of data
             kwds['size'] = 1000
+            self.args = args[1:]
+        elif properties == 'ppf' or properties == 'isf':
+            # picking arbitrary value for this
+            self.args = [.99, *args[1:]]
+        elif properties == 'moment':
+            self.args = [10, *args[1:]]
+        elif properties == 'stats':
+            self.args = args[1:]
+            kwds['moments'] = 'mv'
+            self.kwds = kwds
+        elif properties in ['entropy', 'median', 'mean', 'var', 'std']:
             self.args = args[1:]
         else:
             self.args = [*args]
