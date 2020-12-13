@@ -281,7 +281,7 @@ def _validate_int(k, name, minimum=None):
 
     Parameters
     ----------
-    k : int (presumably!)
+    k : int
         The value to be validated.
     name : str
         The name of the parameter.

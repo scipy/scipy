@@ -252,6 +252,10 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         proportion_ci(confidence_level=0.95, method='exact') :
             Compute the confidence interval for ``proportion_estimate``.
 
+    Notes
+    -----
+    .. versionadded:: 1.7.0
+
     References
     ----------
     .. [1] Binomial test, https://en.wikipedia.org/wiki/Binomial_test

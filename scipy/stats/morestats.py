@@ -2442,7 +2442,7 @@ def levene(*args, center='median', proportiontocut=0.05):
 
 
 @np.deprecate(new_name='binomtest',
-              message='`binom_test` will be removed from SciPy 1.8.')
+              message='`binom_test` will be removed from SciPy 1.9.')
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
