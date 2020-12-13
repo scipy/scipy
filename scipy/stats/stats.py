@@ -7099,7 +7099,6 @@ def tiecorrect(rankvals):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
-@np.deprecate(new_name="mann_whitney_u")
 def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     """
     Compute the Mann-Whitney rank test on samples x and y.
@@ -7358,7 +7357,6 @@ def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided')
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@np.deprecate(new_name='mann_whitney_u')
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
