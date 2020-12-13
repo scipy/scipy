@@ -57,44 +57,36 @@ class InferentialStats(Benchmark):
 
 
 class Distribution(Benchmark):
+    # add distributions here
+    dists = ['cauchy', 'gamma', 'beta']
+
     param_names = ['distribution', 'properties']
     params = [
-        ['cauchy', 'gamma', 'beta'],
-        ['pdf', 'cdf', 'rvs', 'fit']
+        dists, ['pdf', 'cdf', 'rvs', 'fit']
     ]
+    distcont = dict(distcont)
+    custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
-        np.random.seed(12345678)
-        self.x = np.random.rand(100)
+        self.method = getattr(getattr(stats, distribution), properties)
+        x = np.random.rand(100)
+        shapes = self.distcont[distribution]
+        args = [x, *self.custom_input.get(distribution, shapes)]
+        names = ['loc', 'scale']
+        values = [4, 10]
+        kwds = dict(zip(names, values))
+
+        if properties == 'fit':
+            self.args = args[:1]
+        elif properties == 'rvs':
+            kwds['size'] = 1000
+            self.args = args[1:]
+        else:
+            self.args = [*args]
+        self.kwds = kwds
 
     def time_distribution(self, distribution, properties):
-        if distribution == 'gamma':
-            if properties == 'pdf':
-                stats.gamma.pdf(self.x, a=5, loc=4, scale=10)
-            elif properties == 'cdf':
-                stats.gamma.cdf(self.x, a=5, loc=4, scale=10)
-            elif properties == 'rvs':
-                stats.gamma.rvs(size=1000, a=5, loc=4, scale=10)
-            elif properties == 'fit':
-                stats.gamma.fit(self.x, loc=4, scale=10)
-        elif distribution == 'cauchy':
-            if properties == 'pdf':
-                stats.cauchy.pdf(self.x, loc=4, scale=10)
-            elif properties == 'cdf':
-                stats.cauchy.cdf(self.x, loc=4, scale=10)
-            elif properties == 'rvs':
-                stats.cauchy.rvs(size=1000, loc=4, scale=10)
-            elif properties == 'fit':
-                stats.cauchy.fit(self.x, loc=4, scale=10)
-        elif distribution == 'beta':
-            if properties == 'pdf':
-                stats.beta.pdf(self.x, a=5, b=3, loc=4, scale=10)
-            elif properties == 'cdf':
-                stats.beta.cdf(self.x, a=5, b=3, loc=4, scale=10)
-            elif properties == 'rvs':
-                stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
-            elif properties == 'fit':
-                stats.beta.fit(self.x, loc=4, scale=10)
+        self.method(*self.args, **self.kwds)
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
