@@ -1918,18 +1918,16 @@ class TestSEM:
 
 class TestZmapZscore:
 
-    # Expected values were computed independently "by hand"
-    # using the formula for the z-score.
     @pytest.mark.parametrize(
-        'x, y, expected',
-        [([1, 2, 3, 4], [1, 2, 3, 4],
-          [-1.3416407864999, -0.44721359549996, 0.44721359549996,
-           1.3416407864999]),
-         ([1, 2, 3], [0, 1, 2, 3, 4],
-          [-0.7071067811865476, 0, 0.7071067811865476]),]
+        'x, y',
+        [([1, 2, 3, 4], [1, 2, 3, 4]),
+         ([1, 2, 3], [0, 1, 2, 3, 4])]
     )
-    def test_zmap(self, x, y, expected):
+    def test_zmap(self, x, y):
         z = stats.zmap(x, y)
+        # For these simple cases, calculate the expected result directly
+        # by using the formula for the z-score.
+        expected = (x - np.mean(y))/np.std(y)
         assert_allclose(z, expected, rtol=1e-12)
 
     def test_zmap_axis(self):
