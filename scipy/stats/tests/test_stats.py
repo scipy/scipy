@@ -4328,13 +4328,15 @@ class TestMannWhitneyU(object):
          19.00596360572, 19.201561539032, 19.0487501090183, 19.0847908674356]
 
     significant = 14
+    def mwu_fun(self, *args, **kwds):
+        return stats.mannwhitneyu(*args, **kwds)
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_one_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
-        u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
-        u4, p4 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
+        u1, p1 = self.mwu_fun(self.X, self.Y, alternative='less')
+        u2, p2 = self.mwu_fun(self.Y, self.X, alternative='greater')
+        u3, p3 = self.mwu_fun(self.X, self.Y, alternative='greater')
+        u4, p4 = self.mwu_fun(self.Y, self.X, alternative='less')
 
         assert_equal(p1, p2)
         assert_equal(p3, p4)
@@ -4348,8 +4350,8 @@ class TestMannWhitneyU(object):
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_two_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
+        u1, p1 = self.mwu_fun(self.X, self.Y, alternative='two-sided')
+        u2, p2 = self.mwu_fun(self.Y, self.X, alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -4357,34 +4359,35 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
-    @_suppress_warning_factory(DeprecationWarning)
-    def test_mannwhitneyu_default(self):
-        # The default value for alternative is None
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling `mannwhitneyu` without .*`alternative`")
-            u1, p1 = stats.mannwhitneyu(self.X, self.Y)
-            u2, p2 = stats.mannwhitneyu(self.Y, self.X)
-            u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative=None)
+    # This behavior has been deprecated; remove the test?
+    # @_suppress_warning_factory(DeprecationWarning)
+    # def test_mannwhitneyu_default(self):
+    #     # The default value for alternative is None
+    #     with suppress_warnings() as sup:
+    #         sup.filter(DeprecationWarning,
+    #                    "Calling `mannwhitneyu` without .*`alternative`")
+    #         u1, p1 = self.mwu_fun(self.X, self.Y)
+    #         u2, p2 = self.mwu_fun(self.Y, self.X)
+    #         u3, p3 = self.mwu_fun(self.X, self.Y, alternative=None)
 
-        assert_equal(p1, p2)
-        assert_equal(p1, p3)
-        assert_equal(u1, 102)
-        assert_equal(u2, 102)
-        assert_equal(u3, 102)
-        assert_approx_equal(p1, 4.5941632666275e-05,
-                            significant=self.significant)
+    #     assert_equal(p1, p2)
+    #     assert_equal(p1, p3)
+    #     assert_equal(u1, 102)
+    #     assert_equal(u2, 102)
+    #     assert_equal(u3, 102)
+    #     assert_approx_equal(p1, 4.5941632666275e-05,
+    #                         significant=self.significant)
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_one_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='less')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='greater')
-        u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='greater')
-        u4, p4 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='less')
+        u1, p1 = self.mwu_fun(self.X, self.Y, False,
+                              alternative='less')
+        u2, p2 = self.mwu_fun(self.Y, self.X, False,
+                              alternative='greater')
+        u3, p3 = self.mwu_fun(self.X, self.Y, False,
+                              alternative='greater')
+        u4, p4 = self.mwu_fun(self.Y, self.X, False,
+                              alternative='less')
 
         assert_equal(p1, p2)
         assert_equal(p3, p4)
@@ -4398,10 +4401,10 @@ class TestMannWhitneyU(object):
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_two_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='two-sided')
+        u1, p1 = self.mwu_fun(self.X, self.Y, False,
+                              alternative='two-sided')
+        u2, p2 = self.mwu_fun(self.Y, self.X, False,
+                              alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -4409,24 +4412,25 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 8.81880199916178e-05,
                             significant=self.significant)
 
-    @_suppress_warning_factory(DeprecationWarning)
-    def test_mannwhitneyu_no_correct_default(self):
-        # The default value for alternative is None
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling `mannwhitneyu` without .*`alternative`")
-            u1, p1 = stats.mannwhitneyu(self.X, self.Y, False)
-            u2, p2 = stats.mannwhitneyu(self.Y, self.X, False)
-            u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
-                                        alternative=None)
+    # This behavior has been deprecated; remove the test?
+    # @_suppress_warning_factory(DeprecationWarning)
+    # def test_mannwhitneyu_no_correct_default(self):
+    #     # The default value for alternative is None
+    #     with suppress_warnings() as sup:
+    #         sup.filter(DeprecationWarning,
+    #                    "Calling `mannwhitneyu` without .*`alternative`")
+    #         u1, p1 = self.mwu_fun(self.X, self.Y, False)
+    #         u2, p2 = self.mwu_fun(self.Y, self.X, False)
+    #         u3, p3 = self.mwu_fun(self.X, self.Y, False,
+    #                               alternative=None)
 
-        assert_equal(p1, p2)
-        assert_equal(p1, p3)
-        assert_equal(u1, 102)
-        assert_equal(u2, 102)
-        assert_equal(u3, 102)
-        assert_approx_equal(p1, 4.40940099958089e-05,
-                            significant=self.significant)
+    #     assert_equal(p1, p2)
+    #     assert_equal(p1, p3)
+    #     assert_equal(u1, 102)
+    #     assert_equal(u2, 102)
+    #     assert_equal(u3, 102)
+    #     assert_approx_equal(p1, 4.40940099958089e-05,
+    #                         significant=self.significant)
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_ones(self):
@@ -4463,8 +4467,7 @@ class TestMannWhitneyU(object):
                       1., 1., 1., 1.])
 
         # p-value verified with matlab and R to 5 significant digits
-        assert_array_almost_equal(stats.stats.mannwhitneyu(x, y,
-                                                           alternative='less'),
+        assert_array_almost_equal(self.mwu_fun(x, y, alternative='less'),
                                   (16980.5, 2.8214327656317373e-005),
                                   decimal=12)
 
@@ -4472,8 +4475,13 @@ class TestMannWhitneyU(object):
     def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.mannwhitneyu(self.X, self.Y, alternative="less")
+        res = self.mwu_fun(self.X, self.Y, alternative="less")
         check_named_results(res, attributes)
+
+
+class TestMannWhitneyU2(TestMannWhitneyU):
+    def mwu_fun(self, *args, **kwds):
+        return stats.mannwhitneyu2(*args, **kwds)
 
 
 def test_pointbiserial():
