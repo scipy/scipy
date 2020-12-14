@@ -47,7 +47,7 @@ distcont_extra = [
 
 distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
             'genexpon', 'vonmises', 'vonmises_line', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+            'powerlognorm', 'johnsonsu', 'kstwobign', 'studentized_t']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -56,7 +56,7 @@ skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf', 'nct',
                  'powerlognorm', 'powernorm', 'recipinvgauss', 'trapezoid',
                  'vonmises', 'vonmises_line',
-                 'levy_stable', 'rv_histogram_instance']
+                 'levy_stable', 'rv_histogram_instance', 'studentized_t']
 
 # skip check_fit_args_fix (test is slow)
 skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
@@ -64,7 +64,8 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
                      'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
                      'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
                      'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapezoid', 'vonmises', 'vonmises_line']
+                     'recipinvgauss', 'trapezoid', 'vonmises', 'vonmises_line',
+                     'studentized_t']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -74,11 +75,12 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+                   'logistic', 'loguniform', 'maxwell', 'nakagami', 'ncf',
+                   'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'studentized_t'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)

@@ -3991,8 +3991,12 @@ class TestBurr(object):
 
 
 class TestStudentizedT(object):
-    def test_against_tables(self):
+    def test_cdf_against_tables(self):
         return
+
+    def test_ppf_against_cdf(self):
+        return
+
 
 
 def test_540_567():

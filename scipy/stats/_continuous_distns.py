@@ -8879,10 +8879,13 @@ class studentized_t_gen(rv_continuous):
     """
 
     def _argcheck(self, k, v):
-        return True#(k > 0) and (v > 0)
-    # """
-    #     def _pdf(self, x, *args):
-    #         #First attempt at a PDF. TODO: VERIFY!
+        return np.all(k > 1) and np.all(v > 0)
+
+    # def _pdf(self, x, k, v):
+    #Errors with 'The occurrence of roundoff error is detected...'
+    #     #First attempt at a PDF. TODO: VERIFY!
+    #
+    #     def _single_pdf(q, k, v):
     #         user_data = np.array([x, k, v], float).ctypes.data_as(
     #             ctypes.c_void_p)
     #         llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_pdf',
@@ -8891,28 +8894,26 @@ class studentized_t_gen(rv_continuous):
     #
     #         return np.sqrt(2 * np.pi) * k * (k - 1) * v ** (v / 2) / (
     #                     sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
-    # """
+    #
+    #     return _single_pdf(x, k, v)
 
     def _ppf(self, p, k, v):
-        # Credit to swallan
-
-        guess = 3 # TODO: Better guess.
-
+        # Credit to swallan for the concept
+        # TODO: Select a bracket that won't fail for extremely high Pvals
         @np.vectorize
-        def _p_calc(p, k, v):
+        def _single_p_calc(p, k, v):
             def wrapper_cdf(q, k, v, alpha):
-                return alpha - (1 - self._cdf(q, k, v))
+                return alpha - self.cdf(q, k, v)
 
             res = optimize.root_scalar(wrapper_cdf, bracket=[0, 50], args=(k, v, p), maxiter=100)
             return res.root
-        return _p_calc(p, k, v)
+        return _single_p_calc(p, k, v)
 
     def _cdf(self, x, k, v):
-
         @np.vectorize
-        def _single(x, k, v):
+        def _single_cdf(q, k, v):
             if v < 120:
-                user_data = np.array([x, k, v], float).ctypes.data_as(
+                user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_cdf',
                                                    user_data)
@@ -8922,14 +8923,14 @@ class studentized_t_gen(rv_continuous):
                             sc.gamma(v / 2) * 2 ** (v / 2 - 1))
 
             else:  # Use asymptomatic method
-                user_data = np.array([x, k], float).ctypes.data_as(ctypes.c_void_p)
+                user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats,
                                                    '_genstudentized_t_cdf_asymptomatic',
                                                    user_data)
                 res = integrate.quad(llc, -np.inf, np.inf)[0]
                 return k * res
 
-        return _single(x, k, v)
+        return _single_cdf(x, k, v)
 
 
     # def _cdf(self, x, *args):
