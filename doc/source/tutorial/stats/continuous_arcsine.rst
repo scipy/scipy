@@ -4,7 +4,7 @@
 Arcsine Distribution
 ====================
 
-Defined over :math:`x\in\left[0,1\right]`.  To get the definition in [1], substitute :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
+Defined over :math:`x\in\left[0,1\right]`.  To get the definition presented in Johnson, Kotz, and Balakrishnan, substitute :math:`x=\frac{u+1}{2}.` i.e. :math:`L=-1` and :math:`S=2.`
 
 .. math::
    :nowrap:
@@ -37,8 +37,8 @@ Defined over :math:`x\in\left[0,1\right]`.  To get the definition in [1], substi
 References
 ----------
 
-.. [1] Norman Johnson, Samuel Kotz, and N. Balakrishnan, Continuous Univariate Distributions, second edition, Volumes I and II, Wiley & Sons, 1994.
+- Norman Johnson, Samuel Kotz, and N. Balakrishnan, Continuous Univariate Distributions, second edition, Volumes I and II, Wiley & Sons, 1994.
 
-.. [2] "Arcsine Distribution", Wikipedia, https://en.wikipedia.org/wiki/Student%27s_t-distribution
+.. - "Arcsine Distribution", Wikipedia, https://en.wikipedia.org/wiki/Arcsine_distribution
 
 Implementation: `scipy.stats.arcsine`
