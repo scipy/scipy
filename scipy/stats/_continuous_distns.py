@@ -957,6 +957,8 @@ class burr_gen(rv_continuous):
             lambda c, e1, e2, e3, e4, mu2_if_c: (
                 ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
             fillvalue=np.nan)
+        if np.ndim(c) == 0:
+            return mu.item(), mu2.item(), g1.item(), g2.item()
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
