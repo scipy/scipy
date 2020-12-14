@@ -2199,7 +2199,8 @@ class rv_continuous(rv_generic):
                                         axis=1)
         data_moments = self._data_moments
 
-        return np.linalg.norm(data_moments - dist_moments)
+        return (((data_moments - dist_moments) /
+                 np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
         """
