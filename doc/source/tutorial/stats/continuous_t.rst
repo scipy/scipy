@@ -42,6 +42,6 @@ As :math:`\nu\rightarrow\infty,` this distribution approaches the standard norma
 References
 ----------
 
-.. - "Student's t-distribution", Wikipedia, https://en.wikipedia.org/wiki/Student%27s_t-distribution
+- "Student's t-distribution", Wikipedia, https://en.wikipedia.org/wiki/Student%27s_t-distribution
 
 Implementation: `scipy.stats.t`

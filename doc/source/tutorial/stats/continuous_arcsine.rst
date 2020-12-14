@@ -39,6 +39,6 @@ References
 
 - Norman Johnson, Samuel Kotz, and N. Balakrishnan, Continuous Univariate Distributions, second edition, Volumes I and II, Wiley & Sons, 1994.
 
-.. - "Arcsine Distribution", Wikipedia, https://en.wikipedia.org/wiki/Arcsine_distribution
+- "Arcsine Distribution", Wikipedia, https://en.wikipedia.org/wiki/Arcsine_distribution
 
 Implementation: `scipy.stats.arcsine`
