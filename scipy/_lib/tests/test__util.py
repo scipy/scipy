@@ -2,6 +2,7 @@ from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import os
 import math
+from fractions import Fraction
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
@@ -250,13 +251,15 @@ def test_rng_integers():
 
 class TestValidateInt:
 
-    def test_validate_int(self):
-        n = _validate_int(4, 'n')
+    @pytest.mark.parametrize('n', [4, np.uint8(4), np.int16(4), np.array(4)])
+    def test_validate_int(self, n):
+        n = _validate_int(n, 'n')
         assert n == 4
 
-    def test_validate_int_bad1(self):
+    @pytest.mark.parametrize('n', [4.0, np.array([4]), Fraction(4, 1)])
+    def test_validate_int_bad(self, n):
         with pytest.raises(TypeError, match='n must be an integer'):
-            _validate_int(4.0, 'n')
+            _validate_int(n, 'n')
 
     def test_validate_int_below_min(self):
         with pytest.raises(ValueError, match='n must be an integer not '
