@@ -1104,7 +1104,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
             - custom - a callable object
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
-        options. See func:`minimize_scalar` for more details.
+        options. See `scipy.optimize.minimize_scalar` for more details.
     options : dict, optional
         A dictionary of solver options.
 
@@ -1113,7 +1113,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
             disp : bool
                 Set to True to print convergence messages.
 
-        See func:`minimize_scalar` for more details.
+        See `scipy.optimize.minimize_scalar` for more details.
     Returns
     -------
     maxlog : float or ndarray
@@ -1122,7 +1122,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
 
     See Also
     --------
-    boxcox, boxcox_llf, boxcox_normplot, minimize_scalar
+    boxcox, boxcox_llf, boxcox_normplot, scipy.optimize.minimize_scalar
 
     Examples
     --------
