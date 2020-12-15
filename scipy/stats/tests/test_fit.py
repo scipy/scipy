@@ -45,12 +45,12 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kstwo', 'levy', 'levy_l', 'levy_stable', 'loglaplace',
                    'lomax', 'mielke', 'nakagami', 'ncf', 'nct', 'ncx2',
                    'pareto', 'pearson3', 'powerlognorm', 'powernorm', 't',
-                   'tukeylambda', 'wrapcauchy']
+                   'trapezoid', 'triang', 'tukeylambda', 'wrapcauchy']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm', 'trapz',
+                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
