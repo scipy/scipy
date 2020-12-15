@@ -961,7 +961,7 @@ def boxcox(x, lmbda=None, alpha=None, bounds=None):
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
     bounds : sequence, optional
-       Optional bounds for lmbda. Must have two items corresponding to the
+       Optional bounds for `lmbda`. Must have two items corresponding to the
        optimization bounds. For more details, see :func:`boxcox_normmax`.
     Returns
     -------
