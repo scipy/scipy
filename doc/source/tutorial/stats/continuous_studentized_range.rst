@@ -1,9 +1,9 @@
 
-.. _continuous-studentized_t:
+.. _continuous-studentized_range:
 
-Studentized t Distribution
-==========================
-
+Studentized Range Distribution
+==============================
+THIS IS A PLACEHOLDER
 There is one shape parameter :math:`\nu>0` and the support is :math:`x\in\mathbb{R}`.
 
 .. math::
@@ -45,4 +45,4 @@ where
 
      Z\left(c\right)=\,_{3}F_{2}\left(1,1,1+\frac{c}{2};\frac{3}{2},2;1\right)=\sum_{k=0}^{\infty}\frac{k!}{k+1}\frac{\Gamma\left(\frac{c}{2}+1+k\right)}{\Gamma\left(\frac{c}{2}+1\right)}\frac{\Gamma\left(\frac{3}{2}\right)}{\Gamma\left(\frac{3}{2}+k\right)}
 
-Implementation: `scipy.stats.studentized_t`
+Implementation: `scipy.stats.studentized_range`

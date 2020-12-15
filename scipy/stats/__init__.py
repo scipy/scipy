@@ -112,7 +112,7 @@ Continuous distributions
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
-   studentized_t     -- Studentized T
+   studentized_range -- Studentized Range
    t                 -- Student's T
    trapezoid         -- Trapezoidal
    triang            -- Triangular

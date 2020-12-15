@@ -95,7 +95,7 @@ distcont = [
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
-    ['studentized_t', (3.0, 10.0)],
+    ['studentized_range', (3.0, 10.0)],
     ['t', (2.7433514990818093,)],
     ['trapezoid', (0.2, 0.8)],
     ['triang', (0.15785029824528218,)],

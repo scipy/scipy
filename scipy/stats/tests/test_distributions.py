@@ -3990,7 +3990,7 @@ class TestBurr(object):
         assert_(np.isfinite(e4))
 
 
-class TestStudentizedT(object):
+class TestStudentizedRange(object):
     # Tables are arranged with the first number in each subarray
     # indicating v, with the second value ([1]) at k=2. k increases by
     # 6 for each new value to test a range of values.
@@ -4012,7 +4012,7 @@ class TestStudentizedT(object):
             for k_ind in range(3):
                 k = 2 + k_ind * 6
                 q = set[1 + k_ind]
-                res_p = stats.distributions.studentized_t.cdf(q, k, v)
+                res_p = stats.distributions.studentized_range.cdf(q, k, v)
 
                 # In assertion, only expect as many sig-figs as we have input
                 assert_allclose(res_p, significance, rtol=1e-4)
@@ -4031,8 +4031,8 @@ class TestStudentizedT(object):
             for k_ind in range(3):
                 k = 2 + k_ind * 6
                 q = set[1 + k_ind]
-                res_q = stats.distributions.studentized_t.ppf(significance, k,
-                                                              v)
+                res_q = stats.distributions.studentized_range.ppf(significance,
+                                                                  k, v)
                 # Accuracy is somthing to be improved on.
                 assert_allclose(res_q, q, rtol=2e-3)
 
