@@ -107,10 +107,14 @@ class FrozenDistribution(Benchmark):
         np.random.seed(4321)
         if distribution == 'multivariate_normal':
             mean = np.random.rand(dim)
-            eigvals = np.random.rand(dim)
-            eigvals *= dim / np.sum(eigvals)
-            cov = stats.random_correlation.rvs(eigvals)
+            scale = np.diag(np.random.rand(dim))
+            cov = stats.wishart(df=dim + 1, scale=scale).rvs()
             self.dist = stats.multivariate_normal(mean, cov)
+            if method == 'rvs':
+                # Call the `rvs` method once to compute the necessary matrix
+                # factor. Subsequent calls to `rvs` don't have to compute this
+                # factor and get accelerated.
+                self.dist.rvs()
 
     def time_frozen_distribution(self, distribution, method, dim):
         if distribution == 'multivariate_normal':
