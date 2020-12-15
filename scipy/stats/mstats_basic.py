@@ -4,17 +4,14 @@ An extension of scipy.stats.stats to support masked arrays
 """
 # Original author (2007): Pierre GF Gerard-Marchant
 
-# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-# TODO : ttest_rel looks botched:  what are x1,x2,v1,v2 for ?
-# TODO : reimplement ksonesamp
-
 
 __all__ = ['argstoarray',
            'count_tied_groups',
            'describe',
            'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
-           'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
+           'ks_twosamp', 'ks_2samp', 'kurtosis', 'kurtosistest',
+           'ks_1samp', 'kstest',
            'linregress',
            'mannwhitneyu', 'meppf','mode','moment','mquantiles','msign',
            'normaltest',
@@ -44,13 +41,16 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
+import scipy.stats.stats
+from scipy._lib._util import float_factorial
+
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
+        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
-
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
@@ -85,35 +85,6 @@ def _chk_size(a, b):
     return (a, b, na)
 
 
-def _contains_nan(a, nan_policy='propagate'):
-    policies = ['propagate', 'raise', 'omit']
-    if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
-    try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
-            contains_nan = np.isnan(np.sum(a))
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.nan in set(a.ravel())
-        except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly checked for nan "
-                          "values. nan values will be ignored.", RuntimeWarning)
-
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
-
-    return contains_nan, nan_policy
-
-
 def argstoarray(*args):
     """
     Constructs a 2D array from a group of sequences.
@@ -136,6 +107,30 @@ def argstoarray(*args):
     -----
     `numpy.ma.row_stack` has identical behavior, but is called with a sequence
     of sequences.
+
+    Examples
+    --------
+    A 2D masked array constructed from a group of sequences is returned.
+
+    >>> from scipy.stats.mstats import argstoarray
+    >>> argstoarray([1, 2, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 2.0, 3.0],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False, False],
+           [False, False, False]],
+     fill_value=1e+20)
+
+    The returned masked array filled with missing values when the lengths of
+    sequences are different.
+
+    >>> argstoarray([1, 3], [4, 5, 6])
+    masked_array(
+     data=[[1.0, 3.0, --],
+           [4.0, 5.0, 6.0]],
+     mask=[[False, False,  True],
+           [False, False, False]],
+     fill_value=1e+20)
 
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
@@ -360,7 +355,7 @@ def msign(x):
     return ma.filled(np.sign(x), 0)
 
 
-def pearsonr(x,y):
+def pearsonr(x, y):
     """
     Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
@@ -404,24 +399,8 @@ def pearsonr(x,y):
     if df < 0:
         return (masked, masked)
 
-    (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)
-
-    r_num = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
-    r = r_num / r_den
-    # Presumably, if r > 1, then it is only some small artifact of floating
-    # point arithmetic.
-    r = min(r, 1.0)
-    r = max(r, -1.0)
-
-    if r is masked or abs(r) == 1.0:
-        prob = 0.
-    else:
-        t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        prob = _betai(0.5*df, 0.5, df/(df + t_squared))
-
-    return r, prob
+    return scipy.stats.stats.pearsonr(ma.masked_array(x, mask=m).compressed(),
+                                      ma.masked_array(y, mask=m).compressed())
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
@@ -507,6 +486,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
 
+        # If either column is entirely NaN or Inf
+        if not np.any(x.data):
+            return SpearmanrResult(np.nan, np.nan)
+
         m = ma.getmask(x)
         n_obs = x.shape[0]
         dof = n_obs - 2 - int(m.sum(axis=0)[0])
@@ -518,13 +501,10 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         rs = ma.corrcoef(x_ranked, rowvar=False).data
 
         # rs can have elements equal to 1, so avoid zero division warnings
-        olderr = np.seterr(divide='ignore')
-        try:
+        with np.errstate(divide='ignore'):
             # clip the small negative values possibly caused by rounding
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
-        finally:
-            np.seterr(**olderr)
 
         prob = 2 * distributions.t.sf(np.abs(t), dof)
 
@@ -553,6 +533,42 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         return SpearmanrResult(rs, prob)
 
 
+def _kendall_p_exact(n, c):
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+    if n <= 0:
+        raise ValueError('n ({n}) must be positive')
+    elif c < 0 or 4*c > n*(n-1):
+        raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
+    elif n == 1:
+        prob = 1.0
+    elif n == 2:
+        prob = 1.0
+    elif c == 0:
+        prob = 2.0/np.math.factorial(n) if n < 171 else 0.0
+    elif c == 1:
+        prob = 2.0/np.math.factorial(n-1) if n < 172 else 0.0
+    elif 4*c == n*(n-1):
+        prob = 1.0
+    elif n < 171:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3,n+1):
+            new = np.cumsum(new)
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = 2.0*np.sum(new)/np.math.factorial(n)
+    else:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3, n+1):
+            new = np.cumsum(new)/j
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = np.sum(new)
+
+    return np.clip(prob, 0, 1)
+
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -575,7 +591,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
+        are present. As the sample size increases, the 'exact' computation
+        time may grow and the result may lose some precision.
+        'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -633,34 +651,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = int(min(C, (n*(n-1))/2-C))
-        if n <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > n*(n-1):
-            raise ValueError
-        elif n == 1:
-            prob = 1.0
-        elif n == 2:
-            prob = 1.0
-        elif c == 0:
-            prob = 2.0/np.math.factorial(n)
-        elif c == 1:
-            prob = 2.0/np.math.factorial(n-1)
-        elif 2*c == (n*(n-1))//2:
-            prob = 1.0
-        else:
-            old = [0.0]*(c+1)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                for k in range(1,min(j,c+1)):
-                    new[k] += new[k-1]
-                for k in range(j,c+1):
-                    new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/np.math.factorial(n)
+        prob = _kendall_p_exact(n, int(min(C, (n*(n-1))//2-C)))
+
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
@@ -685,7 +677,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         z = (C-D)/np.sqrt(var_s)
         prob = special.erfc(abs(z)/np.sqrt(2))
     else:
-        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+        raise ValueError("Unknown method "+str(method)+" specified, please "
+                         "use auto, exact or asymptotic.")
 
     return KendalltauResult(tau, prob)
 
@@ -809,13 +802,8 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                   'rvalue', 'pvalue',
-                                                   'stderr'))
-
-
 def linregress(x, y=None):
-    """
+    r"""
     Linear regression calculation
 
     Note that the non-masked version is used, and that this docstring is
@@ -829,9 +817,9 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = ("If only `x` is given as input, it has to be of shape "
-                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
-            raise ValueError(msg)
+            raise ValueError("If only `x` is given as input, "
+                             "it has to be of shape (2, N) or (N, 2), "
+                             f"provided shape was {x.shape}")
     else:
         x = ma.array(x)
         y = ma.array(y)
@@ -844,15 +832,17 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
-                                                                   y.data[~m])
+            result = stats_linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            return None, None, None, None, None
+            result = stats_LinregressResult(slope=None, intercept=None,
+                                            rvalue=None, pvalue=None,
+                                            stderr=None,
+                                            intercept_stderr=None)
     else:
-        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
+        result = stats_linregress(x.data, y.data)
 
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return result
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -1259,20 +1249,30 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_twosamp(data1, data2, alternative="two-sided"):
+def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     """
-    Computes the Kolmogorov-Smirnov test on two samples.
+    Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
-    Missing values are discarded.
+    Missing values in `x` are discarded.
 
     Parameters
     ----------
-    data1 : array_like
-        First data set
-    data2 : array_like
-        Second data set
+    x : array_like
+        a 1-D array of observations of random variables.
+    cdf : str or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If a callable, that callable is used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -1282,34 +1282,73 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         Corresponding p-value.
 
     """
-    (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
-    (n1, n2) = (data1.count(), data2.count())
-    n = (n1*n2/float(n1+n2))
-    mix = ma.concatenate((data1.compressed(), data2.compressed()))
-    mixsort = mix.argsort(kind='mergesort')
-    csum = np.where(mixsort < n1, 1./n1, -1./n2).cumsum()
-    # Check for ties
-    if len(np.unique(mix)) < (n1+n2):
-        csum = csum[np.r_[np.diff(mix[mixsort]).nonzero()[0],-1]]
-
-    alternative = str(alternative).lower()[0]
-    if alternative == 't':
-        d = ma.abs(csum).max()
-        prob = special.kolmogorov(np.sqrt(n)*d)
-    elif alternative == 'l':
-        d = -csum.min()
-        prob = np.exp(-2*n*d**2)
-    elif alternative == 'g':
-        d = csum.max()
-        prob = np.exp(-2*n*d**2)
-    else:
-        raise ValueError("Invalid value for the alternative hypothesis: "
-                         "should be in 'two-sided', 'less' or 'greater'")
-
-    return (d, prob)
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_1samp(
+        x, cdf, args=args, alternative=alternative, mode=mode)
 
 
-ks_2samp = ks_twosamp
+def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+    """
+    Computes the Kolmogorov-Smirnov test on two samples.
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    data1 : array_like
+        First data set
+    data2 : array_like
+        Second data set
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Indicates the alternative hypothesis.  Default is 'two-sided'.
+    mode : {'auto', 'exact', 'asymp'}, optional
+        Defines the method used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+          * 'exact' : use approximation to exact distribution of test statistic
+          * 'asymp' : use asymptotic distribution of test statistic
+
+    Returns
+    -------
+    d : float
+        Value of the Kolmogorov Smirnov test
+    p : float
+        Corresponding p-value.
+
+    """
+    # Ideally this would be accomplished by
+    # ks_2samp = scipy.stats.stats.ks_2samp
+    # but the circular dependencies between mstats_basic and stats prevent that.
+    alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
+       alternative.lower()[0], alternative)
+    return scipy.stats.stats.ks_2samp(data1, data2, alternative=alternative,
+                                      mode=mode)
+
+
+ks_twosamp = ks_2samp
+
+
+def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+    """
+
+    Parameters
+    ----------
+    data1 : array_like
+    data2 : str, callable or array_like
+    args : tuple, sequence, optional
+        Distribution parameters, used if `data1` or `data2` are strings.
+    alternative : str, as documented in stats.kstest
+    mode : str, as documented in stats.kstest
+
+    Returns
+    -------
+    tuple of (K-S statistic, probability)
+
+    """
+    return scipy.stats.stats.kstest(data1, data2, args,
+                                    alternative=alternative, mode=mode)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -1713,7 +1752,8 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
-            raise ValueError("Array 'a' must be at most two dimensional, but got a.ndim = %d" % a.ndim)
+            raise ValueError("Array 'a' must be at most two dimensional, "
+                             "but got a.ndim = %d" % a.ndim)
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 
@@ -2086,7 +2126,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan, nan_policy = scipy.stats.stats._contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2196,11 +2236,11 @@ def variation(a, axis=0):
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-    
+
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
-    
+
     Examples
     --------
     >>> from scipy.stats.mstats import variation
@@ -2213,7 +2253,7 @@ def variation(a, axis=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    `stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
@@ -2250,11 +2290,8 @@ def skew(a, axis=0, bias=True):
     n = a.count(axis)
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
@@ -2306,11 +2343,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     a, axis = _chk_asarray(a, axis)
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
-    olderr = np.seterr(all='ignore')
-    try:
+    with np.errstate(all='ignore'):
         vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
-    finally:
-        np.seterr(**olderr)
 
     if not bias:
         n = a.count(axis)
@@ -2386,7 +2420,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
-    mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
+    mm = (ma.minimum.reduce(a, axis=axis), ma.maximum.reduce(a, axis=axis))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)

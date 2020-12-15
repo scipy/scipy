@@ -34,7 +34,7 @@ mle_failing_fits = [
         'vonmises',
         'wrapcauchy',
         'levy_stable',
-        'trapz'
+        'trapezoid'
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',

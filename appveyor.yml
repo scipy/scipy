@@ -10,10 +10,7 @@ cache:
 
 environment:
   global:
-      MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
       MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win32-gcc_7_1_0.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.3.7-win_amd64-gcc_7_1_0.zip
       NUMPY_HEAD: https://github.com/numpy/numpy.git
       NUMPY_BRANCH: master
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
@@ -66,34 +63,15 @@ install:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
       $PYTHON = $env:PYTHON
-      If ($PYTHON_ARCH -eq 32) {
-          $OPENBLAS = $env:OPENBLAS_32
-      } Else {
-          $OPENBLAS = $env:OPENBLAS_64
-      }
-      $clnt = new-object System.Net.WebClient
-      $file = "$(New-TemporaryFile).zip"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
+
+      $lib = python tools/openblas_support.py
       $destination = "$PYTHON\lib\openblas.a"
-
-      echo $file
-      echo $tmpdir
-      echo $OPENBLAS
-
-      $clnt.DownloadFile($OPENBLAS,$file)
-      Get-FileHash $file | Format-List
-
-      Expand-Archive $file $tmpdir      
-
-      rm $tmpdir\$PYTHON_ARCH\lib\*.dll.a
-      $lib = ls $tmpdir\$PYTHON_ARCH\lib\*.a | ForEach { ls $_ } | Select-Object -first 1
-      echo $lib
 
       cp $lib $destination
       ls $destination
 
   # Upgrade to the latest pip.
-  - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
+  - '%CMD_IN_ENV% python -m pip install -U pip "setuptools<50.0" wheel'
 
   # Install the scipy test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
@@ -101,11 +79,7 @@ install:
 build_script:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
-      If ($PYTHON_ARCH -eq 32) {
-          $MINGW = $env:MINGW_32 
-      } Else {
-          $MINGW = $env:MINGW_64
-      }
+      $MINGW = $env:MINGW_64
       $env:Path += ";$MINGW"
       $env:NPY_NUM_BUILD_JOBS = "4"
       mkdir dist

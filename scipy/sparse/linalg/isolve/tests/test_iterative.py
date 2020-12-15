@@ -3,6 +3,7 @@
 
 import itertools
 import platform
+import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -447,7 +448,10 @@ def test_zero_rhs(solver):
 
 
 @pytest.mark.parametrize("solver", [
-    gmres, qmr,
+    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
+                                                and sys.version_info[1] == 9,
+                                                reason="gh-13019")),
+    qmr,
     pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
                                                  reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),
@@ -480,6 +484,30 @@ def test_maxiter_worsening(solver):
 
         # Check with slack
         assert_(error <= tol*best_error)
+
+
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_x0_working(solver):
+    # Easy problem
+    np.random.seed(1)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+    x0 = np.random.rand(n)
+
+    if solver is minres:
+        kw = dict(tol=1e-6)
+    else:
+        kw = dict(atol=0, tol=1e-6)
+
+    x, info = solver(A, b, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+    x, info = solver(A, b, x0=x0, **kw)
+    assert_equal(info, 0)
+    assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
 
 
 #------------------------------------------------------------------------------

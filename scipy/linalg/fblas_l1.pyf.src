@@ -125,7 +125,7 @@ subroutine <tchar>rot(n,x,offx,incx,y,offy,incy,c,s)
   !
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*
 
   <ftype> dimension(*),intent(in,out,copy) :: x,y
   <ftypereal> intent(in) :: c, s
@@ -156,7 +156,7 @@ subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
   ! in the param(2) through param(5) array.
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,param)
-  callprotoargument int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*
+  callprotoargument F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
 
   <ftype2> dimension(*), intent(in,out,copy) :: x, y
   <ftype2> dimension(5), intent(in) :: param
@@ -178,7 +178,7 @@ subroutine <prefix>swap(n,x,offx,incx,y,offy,incy)
   ! Swap two arrays: x <-> y
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in,out) :: x, y
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
@@ -199,7 +199,7 @@ subroutine <prefix>scal(n,a,x,offx,incx)
   ! Computes the product of a vector by a scalar: y = a*x
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
-  callprotoargument int*,<ctype>*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*
 
   <ftype> intent(in):: a
   <ftype> dimension(*), intent(in,out) :: x
@@ -218,7 +218,7 @@ subroutine <tchar2c>scal(n,a,x,offx,incx)
   ! y = a*x
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
-  callprotoargument int*,<float,double>*,<complex_float, complex_double>*,int*
+  callprotoargument F_INT*,<float,double>*,<complex_float, complex_double>*,F_INT*
 
   <real,double precision> intent(in) :: a
   <complex, double complex> dimension(*), intent(in,out,copy) :: x
@@ -235,7 +235,7 @@ subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
   ! Copy y <- x
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in) :: x
   <ftype> dimension(*), intent(in,out) :: y
@@ -257,7 +257,7 @@ subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
   ! Calculate z = a*x+y, where a is scalar.
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in) :: x
   <ftype> dimension(*), intent(in,out,out=z) :: y
@@ -282,7 +282,7 @@ function sdot(n,x,offx,incx,y,offy,incy) result (xy)
   fortranname sdot
 
   callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument float*,int*,float*,int*,float*,int*
+  callprotoargument float*,F_INT*,float*,F_INT*,float*,F_INT*
 
   real dimension(*), intent(in) :: x
   real dimension(*), intent(in) :: y
@@ -305,7 +305,7 @@ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
   callstatement (*f2py_func)(&ddot,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument double*,int*,double*,int*,double*,int*
+  callprotoargument double*,F_INT*,double*,F_INT*,double*,F_INT*
 
   double precision dimension(*), intent(in) :: x
   double precision dimension(*), intent(in) :: y
@@ -330,7 +330,7 @@ function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
   fortranname w<prefix2c>dotu
 
   callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
   <ftype2c> dimension(*),intent(in) :: x
   <ftype2c> dimension(*),intent(in) :: y
@@ -357,7 +357,7 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
   fortranname w<prefix2c>dotc
 
   callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
   <ftype2c> dimension(*),intent(in) :: x
   <ftype2c> dimension(*),intent(in) :: y
@@ -382,7 +382,7 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
   <ftypereal3> <prefix3>nrm2, n2
 
   callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
-  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
+  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
   <ftype3> dimension(*),intent(in) :: x
 
@@ -402,7 +402,7 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
   <ftypereal4> <prefix4>nrm2, n2
 
   callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
-  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
   <ftype4> dimension(*),intent(in) :: x
 
@@ -421,7 +421,7 @@ function <prefix3>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
   callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
-  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
+  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
   <ftype3> dimension(*), intent(in) :: x
   <ftypereal3> <prefix3>asum,s
@@ -438,7 +438,7 @@ function <prefix4>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
   callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
-  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
   <ftype4> dimension(*), intent(in) :: x
   <ftypereal4> <prefix4>asum,s
@@ -455,7 +455,7 @@ function i<prefix>amax(n,x,offx,incx) result(k)
   ! Finds the index of the element with maximum absolute value.
 
   callstatement i<prefix>amax_return_value = (*f2py_func)(&n,x+offx,&incx) - 1
-  callprotoargument int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*
 
   ! This is to avoid Fortran wrappers.
   integer i<prefix>amax,k

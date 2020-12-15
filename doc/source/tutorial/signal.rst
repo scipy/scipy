@@ -17,6 +17,7 @@ transfer-function formalism to provide a fast B-spline transform. To
 understand this section, you will need to understand that a signal in
 SciPy is an array of real or complex numbers.
 
+.. _tutorial-signal-bsplines:
 
 B-splines
 ---------
@@ -359,7 +360,7 @@ which is often used for blurring.
    >>> import matplotlib.pyplot as plt
 
    >>> image = misc.ascent()
-   >>> w = signal.gaussian(50, 10.0)
+   >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
 
    >>> plt.figure()

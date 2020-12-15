@@ -13,14 +13,24 @@
     // benchmarked
     "repo": "..",
     "dvcs": "git",
-    "branches": ["master"],
+    "branches": ["HEAD"],
+
+    // Customizable commands for building, installing, and
+    // uninstalling the project. See asv.conf.json documentation.
+    //
+    // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}"],
+    // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
+    // "build_command": [
+    //     "python setup.py build",
+    //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
+    // ],
 
     // The base URL to "how a commit for the project.
     "show_commit_url": "https://github.com/scipy/scipy/commit/",
 
     // The Pythons you'd like to test against.  If not provided, defaults
     // to the current version of Python used to run `asv`.
-    "pythons": ["3.6"],
+    // "pythons": ["3.6"],
 
     // The matrix of dependencies to test.  Each key is the name of a
     // package (in PyPI) and the values are version numbers.  An empty
@@ -28,11 +38,9 @@
     // version.
     "matrix": {
         "numpy": [],
-        "Tempita": [],
-        "Cython": ["0.29.13"],
+        "Cython": ["0.29.21"],
         "pytest": [],
         "pybind11": [],
-        "six": [],
     },
 
     // The directory (relative to the current directory) that benchmarks are
@@ -43,7 +51,12 @@
     // environments in.  If not provided, defaults to "env"
     "env_dir": "env",
 
-    "environment_type": "virtualenv",
+    // The tool to use to create environments.  May be "conda",
+    // "virtualenv" or other value depending on the plugins in use.
+    // If missing or the empty string, the tool will be automatically
+    // determined by looking for tools on the PATH environment
+    // variable.
+    // "environment_type": "virtualenv",
     "build_cache_size": 10,
 
     // The directory (relative to the current directory) that raw benchmark

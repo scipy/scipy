@@ -43,7 +43,6 @@
 #include "ni_measure.h"
 
 #include "ccallback.h"
-#include "numpy/npy_3kcompat.h"
 
 #if NPY_API_VERSION >= 0x0000000c
     #define HAVE_WRITEBACKIFCOPY
@@ -725,7 +724,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     PyArrayObject *input = NULL, *output = NULL;
     PyArrayObject *coordinates = NULL, *matrix = NULL, *shift = NULL;
     PyObject *fnc = NULL, *extra_arguments = NULL, *extra_keywords = NULL;
-    int mode, order;
+    int mode, order, nprepad;
     double cval;
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
@@ -751,14 +750,14 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     callback.py_function = NULL;
     callback.c_function = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidOO",
+    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidiOO",
                           NI_ObjectToInputArray, &input,
                           &fnc,
                           NI_ObjectToOptionalInputArray, &coordinates,
                           NI_ObjectToOptionalInputArray, &matrix,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval,
+                          &order, &mode, &cval, &nprepad,
                           &extra_arguments, &extra_keywords))
         goto exit;
 
@@ -799,7 +798,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     }
 
     NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
-                          output, order, (NI_ExtendMode)mode, cval);
+                          output, order, (NI_ExtendMode)mode, cval, nprepad);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif
@@ -820,18 +819,19 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *shift = NULL;
     PyArrayObject *zoom = NULL;
-    int mode, order;
+    int mode, order, nprepad, grid_mode;
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&O&O&O&iid",
+    if (!PyArg_ParseTuple(args, "O&O&O&O&iidii",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToOptionalInputArray, &zoom,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval))
+                          &order, &mode, &cval, &nprepad, &grid_mode))
         goto exit;
 
-    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
+    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval,
+                 nprepad, grid_mode);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif
@@ -1059,7 +1059,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
         goto exit;
     }
     if (return_coordinates) {
-        cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
+        cobj = PyCapsule_New(coordinate_list, NULL, _FreeCoordinateList);
     }
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
@@ -1102,8 +1102,8 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     if (!_validate_origin(array, origin)) {
         goto exit;
     }
-    if (NpyCapsule_Check(cobj)) {
-        NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
+    if (PyCapsule_CheckExact(cobj)) {
+        NI_CoordinateList *cobj_data = PyCapsule_GetPointer(cobj, NULL);
         if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
                                &cobj_data)) {
             goto exit;

@@ -1,20 +1,20 @@
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_array_almost_equal, assert_)
+from numpy.testing import assert_allclose
 
 import pytest
 
 import scipy.special as sc
 
+
 @pytest.mark.parametrize('x, expected', [
     (np.array([1000, 1]), np.array([0, -999])),
-    
+
     # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
     # converted to float.
     (np.arange(4), np.array([-3.4401896985611953,
-                         -2.4401896985611953,
-                         -1.4401896985611953,
-                         -0.44018969856119533]))
+                             -2.4401896985611953,
+                             -1.4401896985611953,
+                             -0.44018969856119533]))
 ])
 def test_log_softmax(x, expected):
     assert_allclose(sc.log_softmax(x), expected, rtol=1e-13)
@@ -62,7 +62,7 @@ def test_axes(axis_2d, expected_2d):
         sc.log_softmax([[1000, 1], [1000, 1]], axis=axis_2d),
         expected_2d,
         rtol=1e-13,
-)
+    )
 
 
 @pytest.fixture
@@ -90,8 +90,8 @@ def test_log_softmax_2d_axis1(log_softmax_2d_x, log_softmax_2d_expected):
     x = log_softmax_2d_x
     expected = log_softmax_2d_expected
     assert_allclose(sc.log_softmax(x, axis=1), expected, rtol=1e-13)
-    
-    
+
+
 def test_log_softmax_2d_axis0(log_softmax_2d_x, log_softmax_2d_expected):
     x = log_softmax_2d_x.T
     expected = log_softmax_2d_expected.T
@@ -103,7 +103,7 @@ def test_log_softmax_3d(log_softmax_2d_x, log_softmax_2d_expected):
     x_3d = log_softmax_2d_x.reshape(2, 2, 2)
     expected_3d = log_softmax_2d_expected.reshape(2, 2, 2)
     assert_allclose(sc.log_softmax(x_3d, axis=(1, 2)), expected_3d, rtol=1e-13)
-    
-    
+
+
 def test_log_softmax_scalar():
     assert_allclose(sc.log_softmax(1.0), 0.0, rtol=1e-13)

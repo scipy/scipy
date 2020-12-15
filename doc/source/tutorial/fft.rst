@@ -18,14 +18,6 @@ known to Gauss (1805) and was brought to light in its current form by Cooley
 and Tukey [CT65]_. Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
-.. note::
-
-   PyFFTW_ provides a way to replace a number of functions in `scipy.fft`
-   with its own functions, which are usually significantly faster, via
-   pyfftw.interfaces_. Because PyFFTW_ relies on the GPL-licensed FFTW_ it
-   cannot be included in SciPy. Users for whom the speed of FFT routines is
-   critical should consider installing PyFFTW_.
-
 
 Fast Fourier transforms
 -----------------------
@@ -89,15 +81,15 @@ The example plots the FFT of the sum of two sines.
 
 .. plot::
 
-    >>> from scipy.fft import fft
+    >>> from scipy.fft import fft, fftfreq
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
-    >>> x = np.linspace(0.0, N*T, N)
+    >>> x = np.linspace(0.0, N*T, N, endpoint=False)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
-    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+    >>> xf = fftfreq(N, T)[:N//2]
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
     >>> plt.grid()
@@ -116,18 +108,18 @@ truncated for illustrative purposes).
 
 .. plot::
 
-    >>> from scipy.fft import fft
+    >>> from scipy.fft import fft, fftfreq
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
-    >>> x = np.linspace(0.0, N*T, N)
+    >>> x = np.linspace(0.0, N*T, N, endpoint=False)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
     >>> from scipy.signal import blackman
     >>> w = blackman(N)
     >>> ywf = fft(y*w)
-    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+    >>> xf = fftfreq(N, T)[:N//2]
     >>> import matplotlib.pyplot as plt
     >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(yf[1:N//2]), '-b')
     >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(ywf[1:N//2]), '-r')
@@ -165,7 +157,7 @@ asymmetric spectrum.
     >>> N = 400
     >>> # sample spacing
     >>> T = 1.0 / 800.0
-    >>> x = np.linspace(0.0, N*T, N)
+    >>> x = np.linspace(0.0, N*T, N, endpoint=False)
     >>> y = np.exp(50.0 * 1.j * 2.0*np.pi*x) + 0.5*np.exp(-80.0 * 1.j * 2.0*np.pi*x)
     >>> yf = fft(y)
     >>> xf = fftfreq(N, T)
@@ -272,7 +264,7 @@ Discrete Cosine Transforms
 
 SciPy provides a DCT with the function :func:`dct` and a corresponding IDCT
 with the function :func:`idct`. There are 8 types of the DCT [WPC]_, [Mak]_;
-however, only the first 3 types are implemented in scipy. "The" DCT generally
+however, only the first 4 types are implemented in scipy. "The" DCT generally
 refers to DCT type 2, and "the" Inverse DCT generally refers to DCT type 3. In
 addition, the DCT coefficients can be normalized differently (for most types,
 scipy provides ``None`` and ``ortho``). Two parameters of the dct/idct
@@ -340,6 +332,25 @@ or, for ``norm='ortho'``:
 
     y[k] = {x_0\over\sqrt{N}} + {2\over\sqrt{N}} \sum_{n=1}^{N-1} x[n]
     \cos\left({\pi n(2k+1) \over 2N}\right) \qquad 0 \le k < N.
+
+
+Type IV DCT
+___________
+
+SciPy uses the following definition of the unnormalized DCT-IV
+(``norm=None``):
+
+.. math::
+
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
+
+or, for ``norm='ortho'``:
+
+.. math::
+
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \cos\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N
 
 
 DCT and IDCT
@@ -420,21 +431,21 @@ provides a five-fold compression rate.
     >>> from scipy.fft import dct, idct
     >>> import matplotlib.pyplot as plt
     >>> N = 100
-    >>> t = np.linspace(0,20,N)
+    >>> t = np.linspace(0,20,N, endpoint=False)
     >>> x = np.exp(-t/3)*np.cos(2*t)
     >>> y = dct(x, norm='ortho')
     >>> window = np.zeros(N)
     >>> window[:20] = 1
     >>> yr = idct(y*window, norm='ortho')
     >>> sum(abs(x-yr)**2) / sum(abs(x)**2)
-    0.0010901402257
+    0.0009872817275276098
     >>> plt.plot(t, x, '-bx')
     >>> plt.plot(t, yr, 'ro')
     >>> window = np.zeros(N)
     >>> window[:15] = 1
     >>> yr = idct(y*window, norm='ortho')
     >>> sum(abs(x-yr)**2) / sum(abs(x)**2)
-    0.0718818065008
+    0.06196643004256714
     >>> plt.plot(t, yr, 'g+')
     >>> plt.legend(['x', '$x_{20}$', '$x_{15}$'])
     >>> plt.grid()
@@ -447,7 +458,7 @@ SciPy provides a DST [Mak]_ with the function :func:`dst` and a corresponding ID
 with the function :func:`idst`.
 
 There are, theoretically, 8 types of the DST for different combinations of
-even/odd boundary conditions and boundary off sets [WPS]_, only the first 3
+even/odd boundary conditions and boundary offsets [WPS]_, only the first 4
 types are implemented in scipy.
 
 Type I DST
@@ -485,6 +496,24 @@ the following definition of the unnormalized DST-III (``norm=None``):
 
     y[k] = (-1)^k x[N-1] + 2 \sum_{n=0}^{N-2} x[n] \sin \left( {\pi
     (n+1)(k+1/2)} \over N \right), \qquad 0 \le k < N.
+
+Type IV DST
+___________
+
+SciPy uses the following definition of the unnormalized DST-IV
+(``norm=None``):
+
+.. math::
+
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
+
+or, for ``norm='ortho'``:
+
+.. math::
+
+    y[k] = \sqrt{2\over N}\sum_{n=0}^{N-1} x[n] \sin\left({\pi (2n+1)(2k+1) \over 4N}\right)
+    \qquad 0 \le k < N,
 
 
 DST and IDST
@@ -558,8 +587,3 @@ References
 .. [WPC] https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] https://en.wikipedia.org/wiki/Discrete_sine_transform
-
-
-.. _FFTW: http://www.fftw.org/
-.. _PyFFTW: https://hgomersall.github.io/pyFFTW/
-.. _pyfftw.interfaces: https://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

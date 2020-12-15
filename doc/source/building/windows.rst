@@ -1,3 +1,5 @@
+.. _build-windows:
+
 ===============================
 Building from source on Windows
 ===============================
@@ -16,7 +18,7 @@ call a one-liner on the command prompt as you would on other platforms via
 ``sudo apt install`` machinery.
 
 This document describes one option to build OpenBLAS and SciPy from source
-that was validated for scipy 1.4.0. However, in light of all the work
+that was validated for SciPy 1.6.0. However, in light of all the work
 currently being done, please **do not expect** these instructions to be
 accurate in the long-run and be sure to check up on any of the open source
 projects mentioned for the most up-to-date information. For more information
@@ -31,7 +33,7 @@ in-depth information than this document will provide.
 Building the Released SciPy
 ---------------------------
 
-This section provides the step-by-step process to build the released scipy.
+This section provides the step-by-step process to build the released SciPy.
 If you want to build completely from source, you should estimate at least
 three hours to build all libraries and compile SciPy. Feel free to stop and
 inspect any step at any time, but for this section, we'll just mention the
@@ -64,16 +66,17 @@ place. First, download the MSYS2 installer from `msysintaller`_ via choosing
 32 or 64 bit. Make sure to install the correct architecture for the SciPy
 that you want to build (e.g., 32 or 64 bit). If you are not sure which one to use,
 proceed with 64bit. Please follow the installation instructions carefully,
-especially step 6 of running the same command a few times until you get update
-all components.
+especially step 6 and 7 to update all components.
 
-Just to emphasize what is already mentioned in the instructions: occasionally,
-during the updates, the terminal might ask you to close the terminal but then
-might refuse to be closed and hang. If this happens, you can kill it via Task
-Manager and continue with the instructions.
+.. note::
 
-Now, next step is to install some more package bundles that we will need. Open
-a MSYS2 MinGW (64 or 32 bit) terminal and type the following depending on the
+    Occasionally,
+    during the updates, the terminal might ask you to close the terminal but then
+    might refuse to be closed and hang. If this happens, you can kill it via Task
+    Manager and continue with the instructions.
+
+Now, the next step is to install some more package bundles that we will need. Open
+a MSYS2 **MinGW** (64 or 32 bit) terminal and type the following depending on the
 architecture of your choice; run the following for the common 64-bit build
 
 .. code:: shell
@@ -91,14 +94,14 @@ step.
 
 It will prompt to whether install everything in these packages and you can
 simply accept all via hitting enter key at each step which also takes some time
-to complete. Once you install everything, just to have a fresh start, close and
-reopen the same terminal.
+to complete. Once you install everything, close and
+reopen the MSYS2 MinGW terminal.
 
 If you already have a GitHub repository folder where you keep your own repos,
 it is better to use that location to keep things nice and tidy since we are
 going to clone yet another repository to obtain the source code. It should be
 somewhere convenient and with write permissions. If this is your first time then
-you can pick "My Documents\GitHub" as a viable option. We will assume that you
+you can pick "Documents\GitHub" as a viable option. We will assume that you
 picked this folder in the rest of this document. You can create a folder in "My
 Documents" using Windows Explorer. To make sure that we're ready to build, type
 the following in the terminal one-by-one:
@@ -111,26 +114,28 @@ the following in the terminal one-by-one:
    git
 
 Each of these commands should fail as we have not provided any arguments
-to them. However a failure also implies that they are accessible on the path
+to them. However, an explicit failure from the program rather than from
+the command prompt implies that the program is accessible on the path,
 which is what we wanted to test. In turn, if an error about the command being
-not found is returned then installation of the packages didn't complete
-succesfully. If any of these are missing, you're not ready to build. Go back
+not found is returned, then installation of the packages didn't complete
+successfully. If any of these are missing, you're not ready to build. Go back
 and make sure that MSYS2 is installed correctly and has the required packages
 enabled.
 
-Now time to clone the OpenBLAS repository somewhere convenient; run the
-following line-by-line separately.
+Now it's time to clone the OpenBLAS repository somewhere convenient. Run the
+following line-by-line separately, modifying the path to your GitHub repo
+folder as appropriate.
 
 .. code:: shell
 
-   cd /c/Users/<user name>/Documents/GitHub
+   cd C:\Users\<user name>\Documents\GitHub
    git clone https://github.com/xianyi/OpenBLAS.git
    cd OpenBLAS
    git submodule update --init --recursive
    git fetch --all --tags --prune
 
-Now we are going to switch to a release of our choice. At the time of writing
-newest OpenBLAS release version is 0.3.7 hence we will use that.
+Now we are going to switch to a release of our choice. At the time of writing,
+the newest OpenBLAS release version is 0.3.7, hence we will use that.
 
 .. code:: shell
 
@@ -151,7 +156,7 @@ type
     touch build_openblas.sh
 
 Of course, you can still also use Windows Explorer to create a new txt file at
-that location and then renaming it. So resulting structure would be
+that location and then rename it. So the resulting structure would be
 
 .. code:: shell
 
@@ -160,13 +165,15 @@ that location and then renaming it. So resulting structure would be
         ├─── OpenBLAS
                 ├─── ...
 
-Then open this file in any text editor like Notepad++ and paste the following
+Then open this file in any text editor, like Notepad++, and paste the following
 content in this empty file:
 
 .. code:: shell
 
-    # Adjust the following to your liking and your MSYS installation status
+    # You may adjust to your preferred output directory
     OPENBLAS_ROOT=/c/opt
+
+    # Adjust to match the MSYS2 version you installed
     BUILD_BITS=64
 
     # Print some gcc info that MSYS2 discovered in the path
@@ -201,9 +208,10 @@ content in this empty file:
     make install PREFIX=$OPENBLAS_ROOT/$BUILD_BITS
 
 This is the automation script that will make sure the right variables are used
-in the right place. Linux users are very familiar to such scripts but for
+in the right place. Linux users are very familiar to such scripts, but for
 Windows users it might be a bit awkward. You can think of these as ``.bat``
-files. You can change the variables to your situation. After you've created
+files. The script should work as-in for MSYS2 64-bit, but you can change the
+variables to your situation as needed. After you've created
 this file and you are one directory up the OpenBLAS repo of that, start the
 OpenBLAS build with:
 
@@ -247,15 +255,15 @@ terminal:
 
    Copying the static library to /c/opt/64/lib
 
-This is very good news, you have succesfully built OpenBLAS!
+This is very good news: you have successfully built OpenBLAS!
 
 
 Installing OpenBLAS
 ===================
 
-Look for the `lib` folder in the folder you used as a parameter to
-:code:`OPENBLAS_ROOT` (It's `/c/opt/64/lib` if you didn't change anything in
-the script. You will find three `.a` files such as (the names can differ):
+Look for the ``lib`` folder in the folder you used as a parameter to
+:code:`OPENBLAS_ROOT`. (It's ``/c/opt/64/lib`` if you didn't change anything in
+the script.) You will find three ``.a`` files such as (the names can differ):
 
 .. code:: shell
 
@@ -268,9 +276,10 @@ rename it to :code:`openblas.a`.
 
 If you don't have that file, you'll probably need to find
 out what happened and then build OpenBLAS again. We know this is **very**
-annoying however unfortunately we have no other alternatives. The first place
-to look for is inside the OpenBLAS directory. Because the build succeds but for
-some reason auto-moving files fail and the artifacts stay inside the repo
+annoying, but unfortunately we have no other alternatives. The first place
+to look for is inside the OpenBLAS directory. If the build succeeds but (for
+some reason) auto-moving files to :code:`OPENBLAS_ROOT` fails, the artifacts
+will stay inside the OpenBLAS repo
 folder. But if you have that file, that's great and we'll assume that you've
 completed this step correctly. Proceeding on that assumption, let's build
 SciPy.
@@ -278,13 +287,13 @@ SciPy.
 Before continuing, make sure that you don't have other copies of either
 :code:`openblas.a` or :code:`libopenblas.a` from previous attempts or via
 previous downloads. Multiple copies could result in later build errors that
-will be difficult to debug. If this is the first attempt you don't need to
+will be difficult to debug. If this is the first attempt, you don't need to
 worry about this step.
 
 Building SciPy
 ==============
 
-Once you have built OpenBLAS, it's time to build SciPy. Before continuing make
+Once you have built OpenBLAS, it's time to build SciPy. Before continuing, make
 sure to install the following software for building on the latest Python
 version. For building on other Python versions, see the WindowsCompilers_ page.
 We are also assuming that your Python is on the system path. That is to say,
@@ -294,7 +303,7 @@ executed.
 Install Microsoft Visual Studio 2017 or 2019 Community Edition (use the
 `build tools`_ from Microsoft). If you feel that it is too bloated to install
 everything in that bundle (which we do feel a bit so) then here are a subset
-which are tested during the build of SciPy 1.4.0 and VS 2019. You can switch
+which are tested during the build of SciPy 1.6.0 and VS 2019. You can switch
 to the individual items view at the top and select only the following
 
 .. code:: shell
@@ -307,7 +316,7 @@ to the individual items view at the top and select only the following
     C++ Clang-cl for 142 build tools (x64/x86)
     C++ Clang Compiler for Windows (8.0.1)
 
-Just like before pick a convenient place to
+Just like before, pick a convenient place to
 clone SciPy. Next to OpenBLAS is often a convenient option (note: not inside
 OpenBLAS folder but next to). Continuing the example from above
 
@@ -323,7 +332,7 @@ Again using the same generic example folder from above
 
 .. code:: shell
 
-   cd C:\Users\Ilhan\Documents\GitHub
+   cd C:\Users\<user name>\Documents\GitHub
    git clone https://github.com/scipy/scipy.git
    cd scipy
 
@@ -347,35 +356,41 @@ At this stage, we are done with the OpenBLAS part and hopefully we will not need
 to build OpenBLAS anytime soon. But we tend to build SciPy more often as it is
 on a quicker release cycle. Hence it makes sense to use Windows ``cmd`` or
 Powershell for the the build as it is a more native tool. This requires placing
-the MinGW compilers on the path.  Hence make sure that the following
+the MinGW compilers on the path.  Hence, make sure that the following
 folder (or the folder you have installed MSYS to) is on the system path
-variables sufficiently high.
+variable sufficiently close to the top.
 
 .. code:: shell
 
     C:\MSYS64\MINGW64\BIN
 
-Hence for a sanity check restart ``cmd`` or Powershell and type:
+For a sanity check, restart ``cmd`` or Powershell and type:
 
 .. code:: shell
 
     gfortran
 
 If you see a missing command error with the above, :code:`gfortran` is not
-correctly installed or still not on the path. However, we assume that it is now
+correctly installed or is still not on the path. However, we assume that it is now
 on the path and accessible.
 
 Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.14.5 Cython>=0.29.14 pybind11>=2.4.3 pytest pytest-xdist
+    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pytest pytest-xdist
 
-The last two are for using SciPy's test suite which is handy if you want to test
+.. note::
+
+    These instructions use ``pip`` as the package manager. You can also use ``conda``
+    according to the instructions in the :ref:`quickstart-ubuntu` with minimal modifications
+    (e.g. you don't need to install ``gfortran`` and ``git`` because you already have them).
+
+The last two are for using SciPy's test suite, which is handy if you want to test
 some new change locally.
 
 Please note that this is a simpler procedure than what is used for the official
-binaries. **Your binaries will only work with the latest NumPy**. 
+binaries. **Your binaries will only work with the latest NumPy**.
 For building against older NumPy versions, see
 `Building Against an Older NumPy Version`_.
 
@@ -387,7 +402,7 @@ are ready to build. Run the following commands:
 
     python setup.py build
 
-You may verify that the openblas library was correctly picked up by looking for
+You may verify that the OpenBLAS library was correctly picked up by looking for
 the following in your build log:
 
 .. code:: shell
@@ -401,10 +416,10 @@ the following in your build log:
 Notice that there will be multiple lines similar to these. You only need to
 track the OpenBLAS one.
 
-When everything finishes without an error, congratulatations, you've built
+When everything finishes without an error, congratulations! You've built
 SciPy!
 
-You can further install the build SciPy via
+You can further install the built SciPy via
 
 .. code:: shell
 
@@ -425,9 +440,9 @@ there were any (by the regular ``pip uninstall scipy`` machinery).
 Building Against an Older NumPy Version
 ---------------------------------------
 
-If you want to build SciPy to work with an older numpy version, then you will need
+If you want to build SciPy to work with an older NumPy version, then you will need
 to replace the NumPy "distutils" folder with the folder from the latest numpy.
-The following powershell snippet can upgrade NumPy distutils while retaining an older
+The following Powershell snippet can upgrade NumPy distutils while retaining an older
 NumPy ABI_.
 
 .. code:: shell
@@ -448,6 +463,6 @@ NumPy and SciPy on Windows. This is largely because currently, there is no singl
 and because the process for building these libraries on Windows is under development. It is likely that any
 information will go out of date relatively soon. If you wish to receive more assistance, please reach out to the NumPy
 and SciPy mailing lists, which can be found `here <https://www.scipy.org/scipylib/mailing-lists.html>`__.  There are many
-developers out there, working on this issue right now, and they would certainly be happy to help you out!  Google is also
+developers out there working on this issue right now, and they would certainly be happy to help you out!  Google is also
 a good resource, as there are many people out there who use NumPy and SciPy on Windows, so it would not be surprising if
 your question or problem has already been addressed.

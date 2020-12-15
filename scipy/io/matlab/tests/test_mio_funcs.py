@@ -35,7 +35,7 @@ def read_workspace_vars(fname):
     rdr = MatFile5Reader(fp, struct_as_record=True)
     vars = rdr.get_variables()
     fws = vars['__function_workspace__']
-    ws_bs = io.BytesIO(fws.tostring())
+    ws_bs = io.BytesIO(fws.tobytes())
     ws_bs.seek(2)
     rdr.mat_stream = ws_bs
     # Guess byte order.

@@ -321,8 +321,8 @@ class TestShift(object):
 class TestOverwrite(object):
     """Check input overwrite behavior """
 
-    real_dtypes = [np.float32, np.float64]
-    dtypes = real_dtypes + [np.complex64, np.complex128]
+    real_dtypes = (np.float32, np.float64)
+    dtypes = real_dtypes + (np.complex64, np.complex128)
 
     def _check(self, x, routine, *args, **kwargs):
         x2 = x.copy()

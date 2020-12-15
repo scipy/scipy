@@ -31,7 +31,7 @@ int cfill_diag(int n, NCformat *Astore)
     int nnz = colptr[n];
     int fill = 0;
     complex *nzval_new;
-    complex zero = {1.0, 0.0};
+    complex zero = {0.0, 0.0};
     int *rowind_new;
     int i, j, diag;
 

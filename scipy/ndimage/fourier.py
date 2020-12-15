@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy
+from numpy.core.multiarray import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 
@@ -117,7 +118,7 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     sigmas = numpy.asarray(sigmas, dtype=numpy.float64)
     if not sigmas.flags.contiguous:
@@ -176,7 +177,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
@@ -237,8 +238,10 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     >>> plt.show()
     """
     input = numpy.asarray(input)
+    if input.ndim > 3:
+        raise NotImplementedError("Only 1d, 2d and 3d inputs are supported")
     output = _get_output_fourier(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
@@ -295,7 +298,7 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """
     input = numpy.asarray(input)
     output = _get_output_fourier_complex(output, input)
-    axis = _ni_support._check_axis(axis, input.ndim)
+    axis = normalize_axis_index(axis, input.ndim)
     shifts = _ni_support._normalize_sequence(shift, input.ndim)
     shifts = numpy.asarray(shifts, dtype=numpy.float64)
     if not shifts.flags.contiguous:

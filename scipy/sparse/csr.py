@@ -100,6 +100,16 @@ class csr_matrix(_cs_matrix):
            [0, 0, 3],
            [4, 5, 6]])
 
+    Duplicate entries are summed together:
+
+    >>> row = np.array([0, 1, 2, 0])
+    >>> col = np.array([0, 1, 1, 0])
+    >>> data = np.array([1, 2, 4, 8])
+    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[9, 0, 0],
+           [0, 2, 0],
+           [0, 4, 0]])
+
     As an example of how to construct a CSR matrix incrementally,
     the following snippet builds a term-document matrix from texts:
 
@@ -221,7 +231,7 @@ class csr_matrix(_cs_matrix):
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_matrix
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """

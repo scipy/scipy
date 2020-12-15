@@ -9,30 +9,11 @@ Optimization (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. contents::
+
 The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
-
-The module contains:
-
-1. Unconstrained and constrained minimization of multivariate scalar
-   functions (:func:`minimize`) using a variety of algorithms (e.g., BFGS,
-   Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP).
-
-2. Global optimization routines  (e.g., :func:`basinhopping`,
-   :func:`differential_evolution`, :func:`shgo`, :func:`dual_annealing`).
-
-3. Least-squares minimization (:func:`least_squares`) and curve fitting
-   (:func:`curve_fit`) algorithms.
-
-4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
-   root finders (:func:`root_scalar`).
-
-5. Multivariate equation system solvers (:func:`root`) using a variety of
-   algorithms (e.g., hybrid Powell, Levenberg-Marquardt or large-scale
-   methods such as Newton-Krylov [KK]_).
-
-Below, several examples demonstrate their basic usage.
 
 
 Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
@@ -45,7 +26,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
 
-    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -388,12 +369,12 @@ Hessian product example:
 
 .. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
            implementation of the GLTR method for iterative solution of
-           the trust region problem", https://arxiv.org/abs/1611.04718
+           the trust region problem", :arxiv:`1611.04718`
 
 .. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
            Trust-Region Subproblem using the Lanczos Method",
            SIAM J. Optim., 9(2), 504--525, (1999).
-           https://doi.org/10.1137/S1052623497322735
+           :doi:`10.1137/S1052623497322735`
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
@@ -1252,7 +1233,7 @@ The problem we have can now be solved as follows:
     # visualize
     import matplotlib.pyplot as plt
     x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-    plt.pcolor(x, y, sol.x)
+    plt.pcolormesh(x, y, sol.x, shading='gouraud')
     plt.colorbar()
     plt.show()
 
@@ -1347,13 +1328,227 @@ Preconditioning is an art, science, and industry. Here, we were lucky
 in making a simple choice that worked reasonably well, but there is a
 lot more depth to this topic than is shown here.
 
+Linear programming (:func:`linprog`)
+------------------------------------
+
+The function :func:`linprog` can minimize a linear objective function
+subject to linear equality and inequality constraints. This kind of
+problem is well known as linear programming. Linear programming solves
+problems of the following form:
+
+.. math::
+
+        \min_x \ & c^T x \\
+        \mbox{such that} \ & A_{ub} x \leq b_{ub},\\
+        & A_{eq} x = b_{eq},\\
+        & l \leq x \leq u ,
+
+where :math:`x` is a vector of decision variables; :math:`c`, :math:`b_{ub}`,
+:math:`b_{eq}`, :math:`l`, and :math:`u` are vectors; and :math:`A_{ub}` and
+:math:`A_{eq}` are matrices.
+
+In this tutorial, we will try to solve a typical linear programming
+problem using :func:`linprog`.
+
+Linear programming example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider the following simple linear programming problem:
+
+.. math::
+        \max_{x_1, x_2, x_3, x_4} \ & 29x_1 + 45x_2 \\
+        \mbox{such that} \
+        & x_1 -x_2 -3x_3 \leq 5\\
+        & 2x_1 -3x_2 -7x_3 + 3x_4 \geq 10\\
+        & 2x_1 + 8x_2 + x_3 = 60\\
+        & 4x_1 + 4x_2 + x_4 = 60\\
+        & 0 \leq x_0\\
+        & 0 \leq x_1 \leq 5\\
+        & x_2 \leq 0.5\\
+        & -3 \leq x_3\\
+
+We need some mathematical manipulations to convert the target problem to the form accepted by :func:`linprog`.
+
+First of all, let's consider the objective function.
+We want to maximize the objective
+function, but :func:`linprog` can only accept a minimization problem. This is easily remedied by converting the maximize
+:math:`29x_1 + 45x_2` to minimizing :math:`-29x_1 -45x_2`. Also, :math:`x_3, x_4` are not shown in the objective
+function. That means the weights corresponding with :math:`x_3, x_4` are zero. So, the objective function can be
+converted to:
+
+.. math::
+        \min_{x_1, x_2, x_3, x_4} \ -29x_1 -45x_2 + 0x_3 + 0x_4
+
+If we define the vector of decision variables :math:`x = [x_1, x_2, x_3, x_4]^T`, the objective weights vector :math:`c` of :func:`linprog` in this problem
+should be
+
+.. math::
+        c = [-29, -45, 0, 0]^T
+
+Next, let's consider the two inequality constraints. The first one is a "less than" inequality, so it is already in the form accepted by `linprog`.
+The second one is a "greater than" inequality, so we need to multiply both sides by :math:`-1` to convert it to a "less than" inequality.
+Explicitly showing zero coefficients, we have:
+
+.. math::
+        x_1 -x_2 -3x_3 + 0x_4  &\leq 5\\
+        -2x_1 + 3x_2 + 7x_3 - 3x_4 &\leq -10\\
+
+These equations can be converted to matrix form:
+
+.. math::
+    A_{ub} x \leq b_{ub}\\
+
+where
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} A_{ub} =
+    \begin{bmatrix} 1 & -1 & -3 & 0 \\
+                    -2 & 3 & 7 & -3
+    \end{bmatrix}
+    \end{equation*}
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} b_{ub} =
+    \begin{bmatrix} 5 \\
+                    -10
+    \end{bmatrix}
+    \end{equation*}
+
+Next, let's consider the two equality constraints. Showing zero weights explicitly, these are:
+
+.. math::
+        2x_1 + 8x_2 + 1x_3 + 0x_4 &= 60\\
+        4x_1 + 4x_2 + 0x_3 + 1x_4 &= 60\\
+
+These equations can be converted to matrix form:
+
+.. math::
+    A_{eq} x = b_{eq}\\
+
+where
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} A_{eq} =
+    \begin{bmatrix} 2 & 8 & 1 & 0 \\
+                    4 & 4 & 0 & 1
+    \end{bmatrix}
+    \end{equation*}
+
+.. math::
+   :nowrap:
+
+    \begin{equation*} b_{eq} =
+    \begin{bmatrix} 60 \\
+                    60
+    \end{bmatrix}
+    \end{equation*}
+
+Lastly, let's consider the separate inequality constraints on individual decision variables, which are known as
+"box constraints" or "simple bounds". These constraints can be applied using the bounds argument of :func:`linprog`.
+As noted in the :func:`linprog` documentation, the default value of bounds is ``(0, None)``, meaning that the
+lower bound on each decision variable is 0, and the upper bound on each decision variable is infinity:
+all the decision variables are non-negative. Our bounds are different, so we will need to specify the lower and upper bound on each
+decision variable as a tuple and group these tuples into a list.
+
+
+Finally, we can solve the transformed problem using :func:`linprog`.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy.optimize import linprog
+    >>> c = np.array([-29.0, -45.0, 0.0, 0.0])
+    >>> A_ub = np.array([[1.0, -1.0, -3.0, 0.0],
+    ...                 [-2.0, 3.0, 7.0, -3.0]])
+    >>> b_ub = np.array([5.0, -10.0])
+    >>> A_eq = np.array([[2.0, 8.0, 1.0, 0.0],
+    ...                 [4.0, 4.0, 0.0, 1.0]])
+    >>> b_eq = np.array([60.0, 60.0])
+    >>> x0_bounds = (0, None)
+    >>> x1_bounds = (0, 5.0)
+    >>> x2_bounds = (-np.inf, 0.5)  # +/- np.inf can be used instead of None
+    >>> x3_bounds = (-3.0, None)
+    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    >>> print(result)
+         con: array([15.5361242 , 16.61288005])  # may vary
+         fun: -370.2321976308326  # may vary
+     message: 'The algorithm terminated successfully and determined that the problem is infeasible.'
+         nit: 6  # may vary
+       slack: array([ 0.79314989, -1.76308532])  # may vary
+      status: 2
+     success: False
+           x: array([ 6.60059391,  3.97366609, -0.52664076,  1.09007993])  # may vary
+
+The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
+constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
+Suppose, however, that we were to decide that our bound constraint on :math:`x_1` was too tight and that it could be loosened
+to :math:`0 \leq x_1 \leq 6`. After adjusting our code ``x1_bounds = (0, 6)`` to reflect the change and executing it again:
+
+::
+
+    >>> x1_bounds = (0, 6)
+    >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    >>> print(result)
+        con: array([9.78840831e-09, 1.04662945e-08])  # may vary
+        fun: -505.97435889013434  # may vary
+    message: 'Optimization terminated successfully.'
+        nit: 4  # may vary
+      slack: array([ 6.52747190e-10, -2.26730279e-09])  # may vary
+     status: 0
+    success: True
+          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+
+The result shows the optimization was successful.
+We can check the objective value (``result.fun``) is same as :math:`c^Tx`:
+
+::
+
+    >>> x = np.array(result.x)
+    >>> print(c @ x)
+    -505.97435889013434  # may vary
+
+We can also check that all constraints are satisfied within reasonable tolerances:
+
+::
+
+    >>> print(b_ub - (A_ub @ x).flatten())  # this is equivalent to result.slack
+    [ 6.52747190e-10, -2.26730279e-09]  # may vary
+    >>> print(b_eq - (A_eq @ x).flatten())  # this is equivalent to result.con
+    [ 9.78840831e-09, 1.04662945e-08]]  # may vary
+    >>> print([0 <= result.x[0], 0 <= result.x[1] <= 6.0, result.x[2] <= 0.5, -3.0 <= result.x[3]])
+    [True, True, True, True]
+
+If we need greater accuracy, typically at the expense of speed, we can solve using the ``revised simplex`` method:
+
+::
+
+    >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='revised simplex')
+    >>> print(result)
+        con: array([0.00000000e+00, 7.10542736e-15])  # may vary
+        fun: -505.97435897435895    # may vary
+    message: 'Optimization terminated successfully.'
+        nit: 5  # may vary
+      slack: array([ 1.77635684e-15, -3.55271368e-15])  # may vary
+     status: 0
+    success: True
+          x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
+
+
 .. rubric:: References
 
 Some further reading and related software, such as Newton-Krylov [KK]_,
 PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
-        J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
+        J. Comp. Phys. 193, 357 (2004). :doi:`10.1016/j.jcp.2003.08.010`
 
 .. [PP] PETSc https://www.mcs.anl.gov/petsc/ and its Python bindings
         https://bitbucket.org/petsc/petsc4py/
