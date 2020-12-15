@@ -5,10 +5,8 @@ A unit test module for czt.py
 '''
 from numpy.testing import (run_module_suite, assert_allclose,
                            assert_raises, dec)
-from scipy.fft.czt import (czt, zoomfft, czt_points, CZT, ZoomFFT)
+from scipy.fft import (fft, czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
-
-fft = np.fft.fft
 
 
 def check_czt(x):
