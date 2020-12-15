@@ -8911,8 +8911,7 @@ class studentized_range_gen(rv_continuous):
                                                    user_data)
                 res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
 
-                return res * np.sqrt(2 * np.pi) * k * v ** (v / 2) / (
-                            sc.gamma(v / 2) * 2 ** (v / 2 - 1))
+                return res
 
             else:  # Use asymptomatic method
                 user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
@@ -8920,7 +8919,7 @@ class studentized_range_gen(rv_continuous):
                                                    '_genstudentized_range_cdf_asymptomatic',
                                                    user_data)
                 res = integrate.quad(llc, -np.inf, np.inf)[0]
-                return k * res
+                return res
 
         return _single_cdf(x, k, v)
 
