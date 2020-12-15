@@ -1102,19 +1102,19 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
         - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
         - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
         - custom - a callable object
-        
+
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options. See `scipy.optimize.minimize_scalar` for more details.
     options : dict, optional
         A dictionary of solver options.
 
-            maxiter : int
-                Maximum number of iterations to perform.
-            disp : bool
-                Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        disp : bool
+            Set to True to print convergence messages.
 
-        See `scipy.optimize.minimize_scalar` for more details.
+        See :func:`minimize_scalar` for more details.
     Returns
     -------
     maxlog : float or ndarray
