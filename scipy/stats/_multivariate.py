@@ -11,6 +11,7 @@ from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg.misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+import warnings
 
 from ._discrete_distns import binom
 from . import mvn
@@ -165,12 +166,10 @@ class _PSD(object):
             raise np.linalg.LinAlgError('singular matrix')
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
-        L = np.multiply(u, np.sqrt(np.where(s > eps, s, 0)))
 
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
-        self.L = L
         self.log_pdet = np.sum(np.log(d))
 
         # Initialize an attribute to be lazily computed.
@@ -181,6 +180,58 @@ class _PSD(object):
         if self._pinv is None:
             self._pinv = np.dot(self.U, self.U.T)
         return self._pinv
+
+
+def _compute_sqrt_cov(cov, check_valid='warn', tol=1e-8):
+    """
+    Compute a matrix `A` such that `A @ A.T == cov` using the singular value
+    decomposition (SVD).
+
+    Parameters
+    ------
+    cov : array_like
+        Covariance matrix (2-D).
+    check_valid : {'warn', 'raise', 'ignore'}, optional
+        Behavior when `cov` is not positive semi-definite. (Default: True)
+    tol : float, optional
+        Tolerance when checking whether the matrix is positive semi-definite.
+        Note that `cov` is cast to double before checking the tolerance.
+
+    Returns
+    -------
+    numpy.ndarray
+        Matrix `A` such that `A @ A.T == cov`.
+
+    Note
+    ----
+    This function is mainly intended for use by the multivariate normal
+    distribution, or distributions which produce samples by generating a
+    multivariate normal sample as an intermediate step (e.g. multivariate t
+    distribution). Although other methods to compute the square root (such as
+    an eigenvalue or Cholesky decomposition) could potentially be faster, we
+    use the SVD to maintain backward compatibility. In effect, this method
+    performs part of the computation in
+    `numpy.random.RandomState.multivariate_normal` (which is in turn equivalent
+    to `numpy.random.Generator.multivariate_normal`).
+
+    """
+    # Cast to double to ensure `tol` remains meaningful.
+    cov = cov.astype(np.double)
+    u, s, v = np.linalg.svd(cov)
+    # Check if the matrix is positive semi-definite. If so, v.T should be close
+    # (up to round-off error) to u if the singular value of the corresponding
+    # row isn't zero. Note that this also checks whether `cov` is symmetric.
+    if check_valid not in ('warn', 'raise', 'ignore'):
+        raise ValueError("check_valid must equal 'warn', 'raise', or 'ignore'")
+    if check_valid != 'ignore':
+        is_psd = np.allclose((v.T * s) @ v, cov, rtol=tol, atol=tol)
+        if not is_psd:
+            if check_valid == 'warn':
+                warnings.warn("covariance is not positive semi-definite",
+                              RuntimeWarning)
+            else:
+                raise ValueError("covariance is not positive semi-definite")
+    return u * np.sqrt(s)
 
 
 class multi_rv_generic(object):
@@ -638,29 +689,41 @@ class multivariate_normal_gen(multi_rv_generic):
         out = self._cdf(x, mean, cov, maxpts, abseps, releps)
         return out
 
-    def _rvs(self, mean, cov_L, size, random_state=None):
+    def _rvs(self, mean, cov_A, size, random_state=None):
         """
         Parameters
         ----------
         mean : ndarray
             Mean of the distribution
-        cov_L : ndarray
-            A decomposition such that np.dot(cov_L, cov_L.T)
+        cov_A : ndarray
+            A decomposition such that np.dot(cov_A, cov_A.T)
             is the covariance matrix.
-        size : integer
+        size : int or tuple of ints
             Number of samples to draw.
         %(_doc_random_state)s
 
         Notes
         -----
         As this function does no argument checking, it should not be
-        called directly; use 'rvs' instead.
+        called directly; use `rvs` instead.
 
         """
         random_state = self._get_random_state(random_state)
-        std_norm = random_state.standard_normal((size, mean.size))
-        out = mean + np.dot(std_norm, cov_L.T)
-        return _squeeze_output(out)
+        is_size_int = isinstance(size, (int, np.integer))
+        if is_size_int:
+            shape = (size, mean.size)
+        else:
+            shape = (*size, mean.size)
+        std_norm = random_state.standard_normal(shape).reshape(
+            -1, mean.size)
+        out = mean + np.dot(std_norm, cov_A.T)
+        out.shape = shape
+        if is_size_int:
+            return _squeeze_output(out)
+        else:
+            # Don't squeeze if size is explicitly specified. Necessary for
+            # compatibility with numpy.
+            return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """
@@ -685,8 +748,12 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov = self._process_parameters(None, mean, cov)
-        cov_info = _PSD(cov, allow_singular=True)
-        return self._rvs(mean, cov_info.L, size, random_state)
+        # Compute a matrix `_cov_A` such that `_cov_A @ _cov_A.T == cov` using
+        # the singular value decomposition. Although other methods (such as an
+        # eigenvalue or Cholesky decomposition) could be used to compute such a
+        # matrix, we use SVD to maintain backward compatibility.
+        _cov_A = _compute_sqrt_cov(cov, check_valid='warn')
+        return self._rvs(mean, _cov_A, size, random_state)
 
     def entropy(self, mean=None, cov=1):
         """
@@ -765,6 +832,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
         self.dim, self.mean, self.cov = self._dist._process_parameters(
                                                             None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
+        # Matrix `_cov_A` such that `_cov_A @ _cov_A.T == cov`.
+        self._cov_A = None
         if not maxpts:
             maxpts = 1000000 * self.dim
         self.maxpts = maxpts
@@ -790,7 +859,16 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist._rvs(self.mean, self.cov_info.L, size, random_state)
+        # Compute a matrix `_cov_A` such that `_cov_A @ _cov_A.T == cov` using the
+        # singular value decomposition. Although other methods (such as an
+        # eigenvalue or Cholesky decomposition) could be used to compute such a
+        # matrix, we use SVD to maintain backward compatibility.
+        if self._cov_A is None:
+            # No need to check if `self.cov` is positive semi-definite. Those
+            # checks were performed when instantiating the `_PSD` object in the
+            # constructor.
+            self._cov_A = _compute_sqrt_cov(self.cov, check_valid='ignore')
+        return self._dist._rvs(self.mean, self._cov_A, size, random_state)
 
     def entropy(self):
         """
