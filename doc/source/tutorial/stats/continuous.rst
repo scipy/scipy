@@ -284,6 +284,7 @@ Continuous Distributions in `scipy.stats`
    continuous_rice
    continuous_recipinvgauss
    continuous_semicircular
+   continuous_studentized_t
    continuous_t
    continuous_trapezoid
    continuous_triang

@@ -8855,49 +8855,38 @@ class rv_histogram(rv_continuous):
 
 
 class studentized_t_gen(rv_continuous):
-    r"""The Studentized Range Distribution
-    TODO: DOCSTRING TAKEN FROM NORM
-    The location (``loc``) keyword specifies the mean.
-    The scale (``scale``) keyword specifies the standard deviation.
+    """
+    The upper half of a generalized normal continuous random variable.
 
     %(before_notes)s
 
+    See Also
+    --------
+    gennorm : generalized normal distribution
+    expon : exponential distribution
+    halfnorm : half normal distribution
+
     Notes
     -----
-    The probability density function for `norm` is:
+    The probability density function for `halfgennorm` is:
 
-    .. math::
+    References
+    ----------
 
-        f(x) = \frac{\exp(-x^2/2)}{\sqrt{2\pi}}
-
-    for a real number :math:`x`.
-
-    %(after_notes)s
+    .. [1] "Generalized normal distribution, Version 1",
+           https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
 
     %(example)s
 
     """
 
     def _argcheck(self, k, v):
+        """Verify args"""
         return np.all(k > 1) and np.all(v > 0)
 
-    # def _pdf(self, x, k, v):
-    #Errors with 'The occurrence of roundoff error is detected...'
-    #     #First attempt at a PDF. TODO: VERIFY!
-    #
-    #     def _single_pdf(q, k, v):
-    #         user_data = np.array([x, k, v], float).ctypes.data_as(
-    #             ctypes.c_void_p)
-    #         llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_pdf',
-    #                                            user_data)
-    #         res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
-    #
-    #         return np.sqrt(2 * np.pi) * k * (k - 1) * v ** (v / 2) / (
-    #                     sc.gamma(v / 2) * 2 ** (v / 2 - 1)) * res
-    #
-    #     return _single_pdf(x, k, v)
-
     def _ppf(self, p, k, v):
+        """the ppf"""
+
         # Credit to swallan for the concept
         @np.vectorize
         def _single_p_calc(p, k, v):
@@ -8911,6 +8900,8 @@ class studentized_t_gen(rv_continuous):
         return _single_p_calc(p, k, v)
 
     def _cdf(self, x, k, v):
+        """The cdf"""
+
         @np.vectorize
         def _single_cdf(q, k, v):
             if v < 120:
@@ -8932,21 +8923,6 @@ class studentized_t_gen(rv_continuous):
                 return k * res
 
         return _single_cdf(x, k, v)
-
-
-    # def _cdf(self, x, *args):
-    #     _a, _b = self._get_support(*args)
-    #
-    #     @np.vectorize
-    #     def _cdf_single(x, *args):
-    #         p, b = args
-    #         user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
-    #         llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf', user_data)
-    #
-    #         return integrate.quad(llc, _a, x)[0]
-    #
-    #     return _cdf_single(x, *args)
-
 
 
 studentized_t = studentized_t_gen(name='studentized_t')
