@@ -1935,6 +1935,13 @@ def test_gejsv_edge_arguments(dtype):
     assert_equal(v.shape, (1, 0))
     assert_equal(sva, np.array([], dtype=dtype))
 
+    # make sure "overwrite_a" is respected - user reported in gh-13191
+    A = np.sin(np.arange(100).reshape(10, 10)).astype(dtype)
+    A = np.asfortranarray(A + A.T)  # make it symmetric and column major
+    Ac = A.copy('A')
+    _ = gejsv(A)
+    assert_allclose(A, Ac)
+
 
 @pytest.mark.parametrize(('kwargs'),
                          ({'joba': 9},

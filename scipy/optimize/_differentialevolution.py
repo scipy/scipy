@@ -962,14 +962,7 @@ class DifferentialEvolutionSolver(object):
         return self
 
     def __exit__(self, *args):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
-
-    def __del__(self):
-        # to make sure resources are closed down
-        self._mapwrapper.close()
-        self._mapwrapper.terminate()
+        return self._mapwrapper.__exit__(*args)
 
     def _accept_trial(self, energy_trial, feasible_trial, cv_trial,
                       energy_orig, feasible_orig, cv_orig):

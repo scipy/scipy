@@ -1,13 +1,29 @@
-"""Some functions for working with contingency tables (i.e. cross tabulations).
+"""
+Contingency table functions (:mod:`scipy.stats.contingency`)
+============================================================
+
+Functions for creating and analyzing contingency tables.
+
+.. currentmodule:: scipy.stats.contingency
+
+.. autosummary::
+   :toctree: generated/
+
+   chi2_contingency
+   crosstab
+   expected_freq
+   margins
+
 """
 
 
 from functools import reduce
 import numpy as np
 from .stats import power_divergence
+from ._crosstab import crosstab
 
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab']
 
 
 def margins(a):

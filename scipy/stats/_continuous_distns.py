@@ -65,6 +65,10 @@ class ksone_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    kstwobign, kstwo, kstest
+
     Notes
     -----
     :math:`D_n^+` and :math:`D_n^-` are given by
@@ -80,10 +84,6 @@ class ksone_gen(rv_continuous):
     with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -122,6 +122,10 @@ class kstwo_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
     Notes
     -----
     :math:`D_n` is given by
@@ -136,10 +140,6 @@ class kstwo_gen(rv_continuous):
     with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    kstwobign, ksone, kstest
 
     References
     ----------
@@ -184,6 +184,10 @@ class kstwobign_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    ksone, kstwo, kstest
+
     Notes
     -----
     :math:`\sqrt{n} D_n` is given by
@@ -198,10 +202,6 @@ class kstwobign_gen(rv_continuous):
     empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    ksone, kstwo, kstest
 
     References
     ----------
@@ -957,6 +957,8 @@ class burr_gen(rv_continuous):
             lambda c, e1, e2, e3, e4, mu2_if_c: (
                 ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
             fillvalue=np.nan)
+        if np.ndim(c) == 0:
+            return mu.item(), mu2.item(), g1.item(), g2.item()
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
@@ -1056,6 +1058,10 @@ class fisk_gen(burr_gen):
 
     %(before_notes)s
 
+    See Also
+    --------
+    burr
+
     Notes
     -----
     The probability density function for `fisk` is:
@@ -1071,10 +1077,6 @@ class fisk_gen(burr_gen):
     `fisk` is a special case of `burr` or `burr12` with ``d=1``.
 
     %(after_notes)s
-
-    See Also
-    --------
-    burr
 
     %(example)s
 
@@ -1234,7 +1236,13 @@ chi = chi_gen(a=0.0, name='chi')
 class chi2_gen(rv_continuous):
     r"""A chi-squared continuous random variable.
 
+    For the noncentral chi-square distribution, see `ncx2`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    ncx2
 
     Notes
     -----
@@ -1846,7 +1854,13 @@ foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy')
 class f_gen(rv_continuous):
     r"""An F continuous random variable.
 
+    For the noncentral F distribution, see `ncf`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    ncf
 
     Notes
     -----
@@ -3299,8 +3313,8 @@ class gausshyper_gen(rv_continuous):
 
         f(x, a, b, c, z) = C x^{a-1} (1-x)^{b-1} (1+zx)^{-c}
 
-    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, and
-    :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
+    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, :math:`z > -1`,
+    and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
     :math:`F[2, 1]` is the Gauss hypergeometric function
     `scipy.special.hyp2f1`.
 
@@ -3309,11 +3323,19 @@ class gausshyper_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
+           Queues." *Journal of the Royal Statistical Society*. Series D (The
+           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+
     %(example)s
 
     """
+
     def _argcheck(self, a, b, c, z):
-        return (a > 0) & (b > 0) & (c == c) & (z == z)
+        # z > -1 per gh-10134
+        return (a > 0) & (b > 0) & (c == c) & (z > -1)
 
     def _pdf(self, x, a, b, c, z):
         # gausshyper.pdf(x, a, b, c, z) =
@@ -4074,6 +4096,97 @@ class laplace_gen(rv_continuous):
 
 
 laplace = laplace_gen(name='laplace')
+
+
+class laplace_asymmetric_gen(rv_continuous):
+    r"""An asymmetric Laplace continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    laplace : Laplace distribution
+
+    Notes
+    -----
+    The probability density function for `laplace_asymmetric` is
+
+    .. math::
+
+       f(x, \kappa) &= \frac{1}{\kappa+\kappa^{-1}}\exp(-x\kappa),\quad x\ge0\\
+                    &= \frac{1}{\kappa+\kappa^{-1}}\exp(x/\kappa),\quad x<0\\
+
+    for :math:`-\infty < x < \infty`, :math:`\kappa > 0`.
+
+    `laplace_asymmetric` takes ``kappa`` as a shape parameter for
+    :math:`\kappa`. For :math:`\kappa = 1`, it is identical to a
+    Laplace distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Asymmetric Laplace distribution", Wikipedia
+            https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
+
+    .. [2] Kozubowski TJ and Podgórski K. A Multivariate and
+           Asymmetric Generalization of Laplace Distribution,
+           Computational Statistics 15, 531--540 (2000).
+           :doi:`10.1007/PL00022717`
+
+    %(example)s
+
+    """
+    def _pdf(self, x, kappa):
+        return np.exp(self._logpdf(x, kappa))
+
+    def _logpdf(self, x, kappa):
+        kapinv = 1/kappa
+        lPx = x * np.where(x >= 0, -kappa, kapinv)
+        lPx -= np.log(kappa+kapinv)
+        return lPx
+
+    def _cdf(self, x, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(x >= 0,
+                        1 - np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        np.exp(x*kapinv)*(kappa/kappkapinv))
+
+    def _sf(self, x, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(x >= 0,
+                        np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        1 - np.exp(x*kapinv)*(kappa/kappkapinv))
+
+    def _ppf(self, q, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(q >= kappa/kappkapinv,
+                        -np.log((1 - q)*kappkapinv*kappa)*kapinv,
+                        np.log(q*kappkapinv/kappa)*kappa)
+
+    def _isf(self, q, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(q <= kapinv/kappkapinv,
+                        -np.log(q*kappkapinv*kappa)*kapinv,
+                        np.log((1 - q)*kappkapinv/kappa)*kappa)
+
+    def _stats(self, kappa):
+        kapinv = 1/kappa
+        mn = kapinv - kappa
+        var = kapinv*kapinv + kappa*kappa
+        g1 = 2.0*(1-np.power(kappa, 6))/np.power(1+np.power(kappa, 4), 1.5)
+        g2 = 6.0*(1+np.power(kappa, 8))/np.power(1+np.power(kappa, 4), 2)
+        return mn, var, g1, g2
+
+    def _entropy(self, kappa):
+        return 1 + np.log(kappa+1/kappa)
+
+
+laplace_asymmetric = laplace_asymmetric_gen(name='laplace_asymmetric')
 
 
 def _check_fit_input_parameters(dist, data, args, kwds):
@@ -5732,6 +5845,10 @@ class ncf_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    scipy.stats.f : Fisher distribution
+
     Notes
     -----
     The probability density function for `ncf` is:
@@ -5760,10 +5877,6 @@ class ncf_gen(rv_continuous):
     the distribution becomes equivalent to the Fisher distribution.
 
     %(after_notes)s
-
-    See Also
-    --------
-    scipy.stats.f : Fisher distribution
 
     %(example)s
 
@@ -5828,7 +5941,13 @@ ncf = ncf_gen(a=0.0, name='ncf')
 class t_gen(rv_continuous):
     r"""A Student's t continuous random variable.
 
+    For the noncentral t distribution, see `nct`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    nct
 
     Notes
     -----
@@ -6815,6 +6934,10 @@ class semicircular_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    rdist
+
     Notes
     -----
     The probability density function for `semicircular` is:
@@ -6828,10 +6951,6 @@ class semicircular_gen(rv_continuous):
     The distribution is a special case of `rdist` with `c = 3`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    rdist
 
     References
     ----------
@@ -8158,6 +8277,11 @@ class gennorm_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    laplace : Laplace distribution
+    norm : normal distribution
+
     Notes
     -----
     The probability density function for `gennorm` is [1]_:
@@ -8172,11 +8296,6 @@ class gennorm_gen(rv_continuous):
     For :math:`\beta = 1`, it is identical to a Laplace distribution.
     For :math:`\beta = 2`, it is identical to a normal distribution
     (with ``scale=1/sqrt(2)``).
-
-    See Also
-    --------
-    laplace : Laplace distribution
-    norm : normal distribution
 
     References
     ----------
@@ -8226,6 +8345,12 @@ class halfgennorm_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    gennorm : generalized normal distribution
+    expon : exponential distribution
+    halfnorm : half normal distribution
+
     Notes
     -----
     The probability density function for `halfgennorm` is:
@@ -8241,12 +8366,6 @@ class halfgennorm_gen(rv_continuous):
     For :math:`\beta = 1`, it is identical to an exponential distribution.
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with ``scale=1/sqrt(2)``).
-
-    See Also
-    --------
-    gennorm : generalized normal distribution
-    expon : exponential distribution
-    halfnorm : half normal distribution
 
     References
     ----------

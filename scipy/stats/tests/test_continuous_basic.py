@@ -45,9 +45,9 @@ distcont_extra = [
 ]
 
 
-distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
-            'genexpon', 'vonmises', 'vonmises_line', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
+            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
+            'geninvgauss']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -429,7 +429,7 @@ def check_sample_var(sv, n, popvar):
     # two-sided chisquare test for sample variance equal to
     # hypothesized variance
     df = n-1
-    chi2 = (n-1)*popvar/float(popvar)
+    chi2 = (n - 1)*sv/popvar
     pval = stats.distributions.chi2.sf(chi2, df) * 2
     npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
                 (chi2, pval, popvar, sv))
@@ -656,7 +656,15 @@ def test_methods_with_lists(method, distname, args):
                         rtol=1e-14, atol=5e-14)
 
 
-def test_moments_with_array_gh12192():
+def test_burr_fisk_moment_gh13234_regression():
+    vals0 = stats.burr.moment(1, 5, 4)
+    assert isinstance(vals0, float)
+
+    vals1 = stats.fisk.moment(1, 8)
+    assert isinstance(vals1, float)
+
+
+def test_moments_with_array_gh12192_regression():
     # array loc and scalar scale
     vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=1)
     expected0 = np.array([1., 2., 3.])
@@ -716,7 +724,7 @@ def test_moments_with_array_gh12192():
     npt.assert_equal(vals10, expected10)
 
 
-def test_broadcasting_in_moments_gh12192():
+def test_broadcasting_in_moments_gh12192_regression():
     vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[[1]])
     expected0 = np.array([[1., 2., 3.]])
     npt.assert_equal(vals0, expected0)

@@ -3339,7 +3339,8 @@ class special_ortho_group_gen(multi_rv_generic):
     For more information see
     https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
 
-    See also the similar `ortho_group`.
+    See also the similar `ortho_group`. For a random rotation in three
+    dimensions, see `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
@@ -3357,6 +3358,10 @@ class special_ortho_group_gen(multi_rv_generic):
 
     This generates one random matrix from SO(3). It is orthogonal and
     has a determinant of 1.
+
+    See Also
+    --------
+    ortho_group, scipy.spatial.transform.Rotation.random
 
     """
 
@@ -3895,7 +3900,7 @@ mvt_docdict_noparams = {
 class multivariate_t_gen(multi_rv_generic):
     r"""
     A multivariate t-distributed random variable.
-    
+
     The `loc` parameter specifies the location. The `shape` parameter specifies
     the positive semidefinite shape matrix. The `df` parameter specifies the
     degrees of freedom.
@@ -3979,7 +3984,7 @@ class multivariate_t_gen(multi_rv_generic):
         """
         if df == np.inf:
             return multivariate_normal_frozen(mean=loc, cov=shape,
-                                              allow_singular=allow_singular, 
+                                              allow_singular=allow_singular,
                                               seed=seed)
         return multivariate_t_frozen(loc=loc, shape=shape, df=df,
                                      allow_singular=allow_singular, seed=seed)
@@ -4072,7 +4077,7 @@ class multivariate_t_gen(multi_rv_generic):
         dim : int
             Dimension of the quantiles x.
         rank : int
-            Rank of the shape matrix.   
+            Rank of the shape matrix.
 
         Notes
         -----
