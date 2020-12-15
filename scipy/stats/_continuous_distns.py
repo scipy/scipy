@@ -8854,7 +8854,7 @@ class rv_histogram(rv_continuous):
         return dct
 
 
-class studentized_t_gen(rv_continuous):
+class studentized_range_gen(rv_continuous):
     """
     The upper half of a generalized normal continuous random variable.
 
@@ -8907,7 +8907,7 @@ class studentized_t_gen(rv_continuous):
             if v < 120:
                 user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
-                llc = LowLevelCallable.from_cython(_stats, '_genstudentized_t_cdf',
+                llc = LowLevelCallable.from_cython(_stats, '_genstudentized_range_cdf',
                                                    user_data)
                 res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
 
@@ -8917,7 +8917,7 @@ class studentized_t_gen(rv_continuous):
             else:  # Use asymptomatic method
                 user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats,
-                                                   '_genstudentized_t_cdf_asymptomatic',
+                                                   '_genstudentized_range_cdf_asymptomatic',
                                                    user_data)
                 res = integrate.quad(llc, -np.inf, np.inf)[0]
                 return k * res
@@ -8925,7 +8925,7 @@ class studentized_t_gen(rv_continuous):
         return _single_cdf(x, k, v)
 
 
-studentized_t = studentized_t_gen(name='studentized_t')
+studentized_range = studentized_range_gen(name='studentized_range')
 
 
 # Collect names of classes and objects in this module.
