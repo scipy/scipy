@@ -1075,7 +1075,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
         ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
         ``c`` which are assumed to be a starting interval for a downhill
         bracket search; it doesn't always mean that the obtained solution will
-        satisfy ``a <= x <= c``. See func:`minimize_scalar` for more details.
+        satisfy ``a <= x <= c``. See `scipy.optimize.minimize_scalar` for more details.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:
