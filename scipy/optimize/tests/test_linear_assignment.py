@@ -52,6 +52,14 @@ def test_constant_cost_matrix():
     assert_array_equal(col_ind, np.arange(n))
 
 
+@pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
+def test_linear_sum_assignment_trivial_cost(num_rows, num_cols):
+    C = np.empty(shape=(num_cols, num_rows))
+    row_ind, col_ind = linear_sum_assignment(C)
+    assert len(row_ind) == 0
+    assert len(col_ind) == 0
+
+
 @pytest.mark.parametrize('sign,test_case', linear_sum_assignment_test_cases)
 def test_linear_sum_assignment_small_inputs(sign, test_case):
     linear_sum_assignment_assertions(
