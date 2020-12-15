@@ -1098,10 +1098,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
     optimize_method : str or callable, optional
         Type of solver.  Should be one of:
 
-            - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
-            - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
-            - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
-            - custom - a callable object
+        - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
+        - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
+        - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
+        - custom - a callable object
+        
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options. See `scipy.optimize.minimize_scalar` for more details.
