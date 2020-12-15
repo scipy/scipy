@@ -411,6 +411,10 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     specialized transform function which can be reused without
     recomputing constants.
 
+    An example application is in system identification, repeatedly evaluating
+    small slices of the z-transform of a system, around where a pole is
+    expected to exist, to refine the estimate of the pole's true location. [1]_
+
     References
     ----------
     .. [1] Steve Alan Shilling, "A study of the chirp z-transform and its
@@ -471,11 +475,6 @@ def czt(x, m=None, w=None, a=1+0j, axis=-1):
     >>> plt.plot(freqs, abs(z_vals))
     >>> plt.margins(0, 0.1)
     >>> plt.show()
-
-    A similar process can be used for system identification purposes,
-    repeatedly evaluating small slices of the z-transform of a system, around
-    where a pole is expected to exist, to refine the estimate of the pole's
-    true location. [1]_
     """
     x = np.asarray(x)
     transform = CZT(x.shape[axis], m=m, w=w, a=a)
