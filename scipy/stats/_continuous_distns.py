@@ -8899,13 +8899,14 @@ class studentized_t_gen(rv_continuous):
 
     def _ppf(self, p, k, v):
         # Credit to swallan for the concept
-        # TODO: Select a bracket that won't fail for extremely high Pvals
         @np.vectorize
         def _single_p_calc(p, k, v):
             def wrapper_cdf(q, k, v, alpha):
                 return alpha - self.cdf(q, k, v)
 
-            res = optimize.root_scalar(wrapper_cdf, bracket=[0, 50], args=(k, v, p), maxiter=100)
+            #Increase max possible q with very low treatments
+            bracket_max = 1000 if v < 3 else 100
+            res = optimize.root_scalar(wrapper_cdf, bracket=[0, bracket_max], args=(k, v, p))
             return res.root
         return _single_p_calc(p, k, v)
 
