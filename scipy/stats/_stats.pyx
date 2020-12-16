@@ -539,7 +539,7 @@ cdef double _genstudentized_range_cdf_asymptomatic(double z, void *user_data) no
     q = (<double *>user_data)[0]
     k = (<double *>user_data)[1]
 
-    return k * phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
+    return k * _phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
 
 cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
