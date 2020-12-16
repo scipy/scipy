@@ -4866,9 +4866,9 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
                      size=4, dtype=np.uint32)) for _ in range(reps)]
 
     # parallelizes with specified workers over number of reps and set seeds
-    mapwrapper = MapWrapper(workers)
     parallelp = _ParallelP(x=x, y=y, random_states=random_states)
-    null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
+    with MapWrapper(workers) as mapwrapper:
+        null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
     pvalue = (null_dist >= stat).sum() / reps

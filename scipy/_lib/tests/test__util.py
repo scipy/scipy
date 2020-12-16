@@ -124,8 +124,7 @@ def test_mapwrapper_parallel():
     assert_(excinfo.type is ValueError)
 
     # can also set a PoolWrapper up with a map-like callable instance
-    try:
-        p = Pool(2)
+    with Pool(2) as p:
         q = MapWrapper(p.map)
 
         assert_(q._own_pool is False)
@@ -135,8 +134,6 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
-    finally:
-        p.close()
 
 
 # get our custom ones and a few from the "import *" cases
