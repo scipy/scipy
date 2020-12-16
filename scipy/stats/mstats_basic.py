@@ -2290,8 +2290,9 @@ def skew(a, axis=0, bias=True):
     n = a.count(axis)
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
+    zero = (np.abs(m2) <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+        vals = ma.where(zero, 0, m3 / m2**1.5)
 
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
@@ -2343,8 +2344,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     a, axis = _chk_asarray(a, axis)
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
+    zero = (np.abs(m2) <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(zero, 0, m4 / m2**2.0)
 
     if not bias:
         n = a.count(axis)

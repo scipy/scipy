@@ -1229,10 +1229,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
-    zero = (m2 == 0)
-    vals = _lazywhere(~zero, (m2, m3),
-                      lambda m2, m3: m3 / m2**1.5,
-                      0.)
+    zero = (np.abs(m2) <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
+    with np.errstate(all='ignore'):
+        vals = np.where(zero, 0, m3 / m2**1.5)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
         if can_correct.any():
@@ -1339,7 +1338,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
-    zero = (m2 == 0)
+    zero = (np.abs(m2) <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
     with np.errstate(all='ignore'):
         vals = np.where(zero, 0, m4 / m2**2.0)
 
