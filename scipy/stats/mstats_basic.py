@@ -355,7 +355,7 @@ def msign(x):
     return ma.filled(np.sign(x), 0)
 
 
-def pearsonr(x,y):
+def pearsonr(x, y):
     """
     Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
@@ -399,24 +399,8 @@ def pearsonr(x,y):
     if df < 0:
         return (masked, masked)
 
-    (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)
-
-    r_num = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
-    r = r_num / r_den
-    # Presumably, if r > 1, then it is only some small artifact of floating
-    # point arithmetic.
-    r = min(r, 1.0)
-    r = max(r, -1.0)
-
-    if r is masked or abs(r) == 1.0:
-        prob = 0.
-    else:
-        t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        prob = _betai(0.5*df, 0.5, df/(df + t_squared))
-
-    return r, prob
+    return scipy.stats.stats.pearsonr(ma.masked_array(x, mask=m).compressed(),
+                                      ma.masked_array(y, mask=m).compressed())
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
@@ -549,6 +533,42 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         return SpearmanrResult(rs, prob)
 
 
+def _kendall_p_exact(n, c):
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+    if n <= 0:
+        raise ValueError('n ({n}) must be positive')
+    elif c < 0 or 4*c > n*(n-1):
+        raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
+    elif n == 1:
+        prob = 1.0
+    elif n == 2:
+        prob = 1.0
+    elif c == 0:
+        prob = 2.0/np.math.factorial(n) if n < 171 else 0.0
+    elif c == 1:
+        prob = 2.0/np.math.factorial(n-1) if n < 172 else 0.0
+    elif 4*c == n*(n-1):
+        prob = 1.0
+    elif n < 171:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3,n+1):
+            new = np.cumsum(new)
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = 2.0*np.sum(new)/np.math.factorial(n)
+    else:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3, n+1):
+            new = np.cumsum(new)/j
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = np.sum(new)
+
+    return np.clip(prob, 0, 1)
+
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -571,7 +591,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
+        are present. As the sample size increases, the 'exact' computation
+        time may grow and the result may lose some precision.
+        'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -629,35 +651,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods"
-        # (4th Edition), Charles Griffin & Co., 1970.
-        c = int(min(C, (n*(n-1))/2-C))
-        if n <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > n*(n-1):
-            raise ValueError
-        elif n == 1:
-            prob = 1.0
-        elif n == 2:
-            prob = 1.0
-        elif c == 0:
-            prob = 2.0/float_factorial(n)
-        elif c == 1:
-            prob = 2.0/float_factorial(n-1)
-        elif 2*c == (n*(n-1))//2:
-            prob = 1.0
-        else:
-            old = [0.0]*(c+1)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                for k in range(1,min(j,c+1)):
-                    new[k] += new[k-1]
-                for k in range(j,c+1):
-                    new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/float_factorial(n)
+        prob = _kendall_p_exact(n, int(min(C, (n*(n-1))//2-C)))
+
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
@@ -2241,11 +2236,11 @@ def variation(a, axis=0):
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-    
+
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
-    
+
     Examples
     --------
     >>> from scipy.stats.mstats import variation
@@ -2258,7 +2253,7 @@ def variation(a, axis=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    `stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
@@ -2425,7 +2420,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
-    mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
+    mm = (ma.minimum.reduce(a, axis=axis), ma.maximum.reduce(a, axis=axis))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)

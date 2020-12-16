@@ -595,6 +595,18 @@ class TestCorrSpearmanr(object):
         assert_allclose(corx, cory, atol=1e-14)
         assert_allclose(px, py, atol=1e-14)
 
+    def test_nan_policy_bug_12411(self):
+        np.random.seed(5)
+        m = 5
+        n = 10
+        x = np.random.randn(m, n)
+        x[1, 0] = np.nan
+        x[3, -1] = np.nan
+        corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
+        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation for i in range(m)]
+               for j in range(m)]
+        assert_allclose(corr, res)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -1140,6 +1152,7 @@ def test_kendalltau():
     y = np.concatenate((y[1000:], y[:1000]))
     assert_(np.isfinite(stats.kendalltau(x,y)[1]))
 
+
 def test_kendalltau_vs_mstats_basic():
     np.random.seed(42)
     for s in range(2,10):
@@ -1261,17 +1274,6 @@ def test_segfault_issue_9710():
 
 def test_kendall_tau_large():
     n = 172
-    x = np.arange(n)
-    y = np.arange(n)
-    _, pval = stats.kendalltau(x, y, method='exact')
-    assert_equal(pval, 0.0)
-    y[-1], y[-2] = y[-2], y[-1]
-    _, pval = stats.kendalltau(x, y, method='exact')
-    assert_equal(pval, 0.0)
-    y[-3], y[-4] = y[-4], y[-3]
-    _, pval = stats.kendalltau(x, y, method='exact')
-    assert_equal(pval, 0.0)
-
     # Test omit policy
     x = np.arange(n + 1).astype(float)
     y = np.arange(n + 1).astype(float)
@@ -1876,7 +1878,7 @@ class TestMode(object):
 
 class TestVariability(object):
 
-    testcase = [1,2,3,4]
+    testcase = [1, 2, 3, 4]
     scalar_testcase = 4.
 
     def test_sem(self):
@@ -2009,6 +2011,61 @@ class TestVariability(object):
         x = np.array([1, 2, np.nan, 4, 5])
 
         assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
+
+    def test_zscore_constant_input_1d(self):
+        x = [-0.087] * 3
+        z = stats.zscore(x)
+        assert_equal(z, np.full(len(x), np.nan))
+
+    def test_zscore_constant_input_2d(self):
+        x = np.array([[10.0, 10.0, 10.0, 10.0],
+                      [10.0, 11.0, 12.0, 13.0]])
+        z0 = stats.zscore(x, axis=0)
+        assert_equal(z0, np.array([[np.nan, -1.0, -1.0, -1.0],
+                                   [np.nan, 1.0, 1.0, 1.0]]))
+        z1 = stats.zscore(x, axis=1)
+        assert_equal(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                   stats.zscore(x[1])]))
+        z = stats.zscore(x, axis=None)
+        assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
+
+        y = np.ones((3, 6))
+        z = stats.zscore(y, axis=None)
+        assert_equal(z, np.full(y.shape, np.nan))
+
+    def test_zscore_constant_input_2d_nan_policy_omit(self):
+        x = np.array([[10.0, 10.0, 10.0, 10.0],
+                      [10.0, 11.0, 12.0, np.nan],
+                      [10.0, 12.0, np.nan, 10.0]])
+        z0 = stats.zscore(x, nan_policy='omit', axis=0)
+        s = np.sqrt(3/2)
+        s2 = np.sqrt(2)
+        assert_allclose(z0, np.array([[np.nan, -s, -1.0, np.nan],
+                                      [np.nan, 0, 1.0, np.nan],
+                                      [np.nan, s, np.nan, np.nan]]))
+        z1 = stats.zscore(x, nan_policy='omit', axis=1)
+        assert_allclose(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                      [-s, 0, s, np.nan],
+                                      [-s2/2, s2, np.nan, -s2/2]]))
+
+    def test_zscore_2d_all_nan_row(self):
+        # A row is all nan, and we use axis=1.
+        x = np.array([[np.nan, np.nan, np.nan, np.nan],
+                      [10.0, 10.0, 12.0, 12.0]])
+        z = stats.zscore(x, nan_policy='omit', axis=1)
+        assert_equal(z, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                  [-1.0, -1.0, 1.0, 1.0]]))
+
+    def test_zscore_2d_all_nan(self):
+        # The entire 2d array is nan, and we use axis=None.
+        y = np.full((2, 3), np.nan)
+        z = stats.zscore(y, nan_policy='omit', axis=None)
+        assert_equal(z, y)
+
+    @pytest.mark.parametrize('x', [np.array([]), np.zeros((3, 0, 5))])
+    def test_zscore_empty_input(self, x):
+        z = stats.zscore(x)
+        assert_equal(z, x)
 
 
 class TestMedianAbsDeviation(object):
@@ -3406,6 +3463,8 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+
+    @pytest.mark.slow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
         # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).

@@ -339,6 +339,7 @@ Contingency table functions
    :toctree: generated/
 
    chi2_contingency
+   contingency.crosstab
    contingency.expected_freq
    contingency.margins
    contingency.association

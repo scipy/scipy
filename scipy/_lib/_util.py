@@ -387,10 +387,6 @@ class MapWrapper(object):
     def __enter__(self):
         return self
 
-    def __del__(self):
-        self.close()
-        self.terminate()
-
     def terminate(self):
         if self._own_pool:
             self.pool.terminate()

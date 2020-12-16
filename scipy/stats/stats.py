@@ -1369,41 +1369,44 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-       Input data.
+        Input data.
     axis : int or None, optional
-       Axis along which statistics are calculated. Default is 0.
-       If None, compute over the whole array `a`.
+        Axis along which statistics are calculated. Default is 0.
+        If None, compute over the whole array `a`.
     ddof : int, optional
         Delta degrees of freedom (only for variance).  Default is 1.
     bias : bool, optional
-        If False, then the skewness and kurtosis calculations are corrected for
-        statistical bias.
+        If False, then the skewness and kurtosis calculations are corrected
+        for statistical bias.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
     nobs : int or ndarray of ints
-       Number of observations (length of data along `axis`).
-       When 'omit' is chosen as nan_policy, each column is counted separately.
+        Number of observations (length of data along `axis`).
+        When 'omit' is chosen as nan_policy, the length along each axis
+        slice is counted separately.
     minmax: tuple of ndarrays or floats
-       Minimum and maximum value of data array.
+        Minimum and maximum value of `a` along the given axis.
     mean : ndarray or float
-       Arithmetic mean of data along axis.
+        Arithmetic mean of `a` along the given axis.
     variance : ndarray or float
-       Unbiased variance of the data along axis, denominator is number of
-       observations minus one.
+        Unbiased variance of `a` along the given axis; denominator is number
+        of observations minus one.
     skewness : ndarray or float
-       Skewness, based on moment calculations with denominator equal to
-       the number of observations, i.e. no degrees of freedom correction.
+        Skewness of `a` along the given axis, based on moment calculations
+        with denominator equal to the number of observations, i.e. no degrees
+        of freedom correction.
     kurtosis : ndarray or float
-       Kurtosis (Fisher).  The kurtosis is normalized so that it is
-       zero for the normal distribution.  No degrees of freedom are used.
+        Kurtosis (Fisher) of `a` along the given axis.  The kurtosis is
+        normalized so that it is zero for the normal distribution.  No
+        degrees of freedom are used.
 
     See Also
     --------
@@ -1414,8 +1417,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)
-    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.166666666666666,
-                   skewness=0.0, kurtosis=-1.2242424242424244)
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5,
+                   variance=9.166666666666666, skewness=0.0,
+                   kurtosis=-1.2242424242424244)
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
     DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
@@ -2427,6 +2431,50 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     return s
 
 
+def _isconst(x):
+    """
+    Check if all values in x are the same.  nans are ignored.
+
+    x must be a 1d array.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([True])
+    else:
+        return (y[0] == y).all(keepdims=True)
+
+
+def _quiet_nanmean(x):
+    """
+    Compute nanmean for the 1d array x, but quietly return nan if x is all nan.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([np.nan])
+    else:
+        return np.mean(y, keepdims=True)
+
+
+def _quiet_nanstd(x):
+    """
+    Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
+
+    The return value is a 1d array with length 1, so it can be used
+    in np.apply_along_axis.
+    """
+    y = x[~np.isnan(x)]
+    if y.size == 0:
+        return np.array([np.nan])
+    else:
+        return np.std(y, keepdims=True)
+
+
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2447,7 +2495,9 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'.  Note that when the value is 'omit',
+        nans in the input also propagate to the output, but they do not affect
+        the z-scores computed for the non-nan values.
 
     Returns
     -------
@@ -2485,19 +2535,44 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
 
+    An example with `nan_policy='omit'`:
+
+    >>> x = np.array([[25.11, 30.10, np.nan, 32.02, 43.15],
+    ...               [14.95, 16.06, 121.25, 94.35, 29.81]])
+    >>> stats.zscore(x, axis=1, nan_policy='omit')
+    array([[-1.13490897, -0.37830299,         nan, -0.08718406,  1.60039602],
+           [-0.91611681, -0.89090508,  1.4983032 ,  0.88731639, -0.5785977 ]])
     """
     a = np.asanyarray(a)
+
+    if a.size == 0:
+        return np.empty(a.shape)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        mns = np.nanmean(a=a, axis=axis, keepdims=True)
-        sstd = np.nanstd(a=a, axis=axis, ddof=ddof, keepdims=True)
+        if axis is None:
+            mn = _quiet_nanmean(a.ravel())
+            std = _quiet_nanstd(a.ravel())
+            isconst = _isconst(a.ravel())
+        else:
+            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
+            std = np.apply_along_axis(_quiet_nanstd, axis, a)
+            isconst = np.apply_along_axis(_isconst, axis, a)
     else:
-        mns = a.mean(axis=axis, keepdims=True)
-        sstd = a.std(axis=axis, ddof=ddof, keepdims=True)
+        mn = a.mean(axis=axis, keepdims=True)
+        std = a.std(axis=axis, ddof=ddof, keepdims=True)
+        if axis is None:
+            isconst = (a.item(0) == a).all()
+        else:
+            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
 
-    return (a - mns) / sstd
+    # Set std deviations that are 0 to 1 to avoid division by 0.
+    std[isconst] = 1.0
+    z = (a - mn) / std
+    # Set the outputs associated with a constant input to nan.
+    z[np.broadcast_to(isconst, z.shape)] = np.nan
+    return z
 
 
 def zmap(scores, compare, axis=0, ddof=0):
@@ -3457,12 +3532,7 @@ def _first(arr, axis):
     """
     Return arr[..., 0:1, ...] where 0:1 is in the `axis` position.
     """
-    # When the oldest version of numpy supported by scipy is at
-    # least 1.15.0, this function can be replaced by np.take_along_axis
-    # (with appropriately configured arguments).
-    axis = np.core.multiarray.normalize_axis_index(axis, arr.ndim)
-    return arr[tuple(slice(None) if k != axis else slice(0, 1)
-               for k in range(arr.ndim))]
+    return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
 def f_oneway(*args, axis=0):
@@ -4214,7 +4284,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             else:
                 # Keep track of variables with NaNs, set the outputs to NaN
                 # only for those variables
-                variable_has_nan = np.isnan(a).sum(axis=axisout)
+                variable_has_nan = np.isnan(a).any(axis=axisout)
 
     a_ranked = np.apply_along_axis(rankdata, axisout, a)
     rs = np.corrcoef(a_ranked, rowvar=axisout)
@@ -4367,8 +4437,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'auto': selects the appropriate method based on a trade-off
             between speed and accuracy
           * 'asymptotic': uses a normal approximation valid for large samples
-          * 'exact': computes the exact p-value, but is only available when
-            no ties are present
+          * 'exact': computes the exact p-value, but can only be used if no ties
+            are present. As the sample size increases, the 'exact' computation
+            time may grow and the result may lose some precision.
 
     variant: {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
@@ -4517,35 +4588,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             method = 'asymptotic'
 
     if xtie == 0 and ytie == 0 and method == 'exact':
-        # Exact p-value, see p. 68 of Maurice G. Kendall, "Rank Correlation
-        # Methods" (4th Edition), Charles Griffin & Co., 1970.
-        c = min(dis, tot-dis)
-        if size <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > size*(size-1):
-            raise ValueError
-        elif size == 1:
-            pvalue = 1.0
-        elif size == 2:
-            pvalue = 1.0
-        elif c == 0:
-            pvalue = 2.0/float_factorial(size)
-        elif c == 1:
-            pvalue = 2.0/float_factorial(size-1)
-        elif 2*c == tot:
-            pvalue = 1.0
-        else:
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3, size+1):
-                old = new[:]
-                for k in range(1, min(j, c+1)):
-                    new[k] += new[k-1]
-                for k in range(j, c+1):
-                    new[k] += new[k-1] - old[k-j]
+        pvalue = mstats_basic._kendall_p_exact(size, min(dis, tot-dis))
 
-            pvalue = 2.0*sum(new)/float_factorial(size)
 
     elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_

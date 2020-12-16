@@ -206,7 +206,9 @@ The probability density above is defined in the "standardized" form. To shift
 and/or scale the distribution use the ``loc`` and ``scale`` parameters.
 Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
 equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
-``y = (x - loc) / scale``.
+``y = (x - loc) / scale``. Note that shifting the location of a distribution
+does not make it a "noncentral" distribution; noncentral generalizations of
+some distributions are available in separate classes.
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
