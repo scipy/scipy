@@ -23,9 +23,9 @@ SciPy
   :target: https://anaconda.org/conda-forge/scipy
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
-science, and engineering. It includes modules for statistics, optimization,
-integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.
+science, and engineering. It includes modules for [statistics](https://en.wikipedia.org/wiki/Statistics), [optimization](https://en.wikipedia.org/wiki/Mathematical_optimization),
+[integration](https://en.wikipedia.org/wiki/Integral), [linear algebra](https://en.wikipedia.org/wiki/Linear_algebra), [Fourier transforms](https://en.wikipedia.org/wiki/Fourier_transform), signal and image processing,
+[ODE solvers](https://en.wikipedia.org/wiki/Ordinary_differential_equation), and more.
 
 - **Website:** https://www.scipy.org/
 - **Documentation:** https://docs.scipy.org/
@@ -35,7 +35,7 @@ ODE solvers, and more.
 - **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
 
-SciPy depends on NumPy, which provides convenient and fast
+SciPy depends on [NumPy](https://www.numpy.org), which provides convenient and fast
 N-dimensional array manipulation. SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines,
 such as routines for numerical integration and optimization. Together, they
