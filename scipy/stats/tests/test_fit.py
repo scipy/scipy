@@ -38,14 +38,14 @@ mle_failing_fits = [
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
-                   'chi2', 'crystalball', 'dweibull', 'f', 'fatiguelife',
-                   'fisk', 'foldcauchy', 'genextreme', 'genextreme',
-                   'genextreme', 'gengamma', 'genpareto', 'halfcauchy',
-                   'invgamma', 'invweibull', 'johnsonsu', 'kappa3', 'ksone',
-                   'kstwo', 'levy', 'levy_l', 'levy_stable', 'loglaplace',
-                   'lomax', 'mielke', 'nakagami', 'ncf', 'nct', 'ncx2',
-                   'pareto', 'pearson3', 'powerlognorm', 'powernorm', 't',
-                   'trapezoid', 'triang', 'tukeylambda', 'wrapcauchy']
+                   'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
+                   'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
+                   'gengamma', 'gennorm', 'genpareto', 'halfcauchy',
+                   'invgamma', 'invweibull', 'johnsonsu',
+                   'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
+                   'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
+                   'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm', 't',
+                   'trapezoid', 'tukeylambda', 'wrapcauchy']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',

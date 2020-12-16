@@ -2215,7 +2215,7 @@ class rv_continuous(rv_generic):
         loc, scale = self._fit_loc_scale_support(data, *args)
         return args + (loc, scale)
 
-    def _reduce_func(self, args, kwds):
+    def _reduce_func(self, args, kwds, data=None):
         """
         Return the (possibly reduced) function to optimize in order to find MLE
         estimates for the .fit method.
@@ -2224,6 +2224,7 @@ class rv_continuous(rv_generic):
         # stats.beta, shapes='a, b'. To fix `a`, the caller can give a value
         # for `f0`, `fa` or 'fix_a'.  The following converts the latter two
         # into the first (numeric) form.
+        shapes = []
         if self.shapes:
             shapes = self.shapes.replace(',', ' ').split()
             for j, s in enumerate(shapes):
@@ -2244,11 +2245,16 @@ class rv_continuous(rv_generic):
                 args[n] = kwds.pop(key)
             else:
                 x0.append(args[n])
-        self._fixedn = fixedn  # used in method of moments
 
         # use lower for consistency, although upper would be more streamlined
+        n_params = len(shapes) + 2 - len(fixedn)
+        exponents = (np.arange(1, n_params+1))[:, np.newaxis]
+        data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+        def moment_error_wrapped(theta, x):
+            return self._moment_error(theta, x, data_moments)
+
         objectives = {"mle": self._penalized_nnlf,
-                      "mm": self._moment_error_norm}
+                      "mm": moment_error_wrapped}
         method = kwds.pop('method', "mle").lower()
         methods = str({key.upper() for key in objectives.keys()})
         try:
@@ -2282,27 +2288,28 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-    def _moment_error_norm(self, theta, x):
+    def _moment_error(self, theta, x, data_moments):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
 
-        n = len(theta) - len(self._fixedn)
-        dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
-                                 for i in range(n)])
-        if not np.all(np.isfinite(dist_moments)):
-            raise ValueError("Method of moments encountered a non-finite "
-                             "distribution moment and cannot continue. "
-                             "Consider trying method='MLE'.")
+        # penalty approach from _nnlf_and_penalty
+        a, b = self.support(*theta)
+        cond0 = (x < a) | (x > b)
+        n_bad = np.count_nonzero(cond0, axis=0)
+        if n_bad > 0:
+            x = argsreduce(~cond0, x)[0]
+        penalty = n_bad * log(_XMAX) * 100
 
-        if self._data_moments is None:
-            exponents = (np.arange(1, n+1))[:, np.newaxis]
-            self._data_moments = np.sum(x[np.newaxis, :]**exponents/len(x),
-                                        axis=1)
-        data_moments = self._data_moments
+        dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
+                                 for i in range(len(data_moments))])
+        if np.any(np.isnan(dist_moments)):
+            raise ValueError("Method of moments encountered a non-finite "
+                              "distribution moment and cannot continue. "
+                              "Consider trying method='MLE'.")
 
         return (((data_moments - dist_moments) /
-                 np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+                  np.maximum(np.abs(data_moments), 1e-8))**2).sum() + penalty
 
     def fit(self, data, *args, **kwds):
         """
@@ -2418,10 +2425,10 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
         """
+        data = np.asarray(data)
+        method = kwds.get('method', "mle").lower()
 
         # memory for method of moments
-        self._data_moments = None
-
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
@@ -2438,7 +2445,7 @@ class rv_continuous(rv_generic):
         loc = kwds.pop('loc', start[-2])
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
-        x0, func, restore, args = self._reduce_func(args, kwds)
+        x0, func, restore, args = self._reduce_func(args, kwds, data=data)
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
         optimizer = _fit_determine_optimizer(optimizer)
@@ -2449,11 +2456,37 @@ class rv_continuous(rv_generic):
         # method of moments could be done with fsolve/root instead of an
         # optimizer, but using an optimizer reduces maintains the structure of
         # MM/MLE and paves the way for Generalized Method of Moments
-        vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        vals, obj = optimizer(func, x0, args=(ravel(data),), disp=0,
+                              full_output=True)[:2]
 
         if restore is not None:
             vals = restore(args, vals)
         vals = tuple(vals)
+
+        a, b = self.support(*vals)
+        beyond_support = np.count_nonzero((data < a) | (data > b))
+        if beyond_support:
+            raise Exception(f"Optimization converged to parameters that are "
+                            f"inconsistent with the data: {beyond_support} "
+                            f"data points are outside the support of the "
+                            f"fitted distribution.")
+
+        loc, scale, shapes = self._unpack_loc_scale(vals)
+        if not (np.all(self._argcheck(*shapes)) and scale > 0):
+            raise Exception("Optimization converged to parameters that are "
+                            "invalid for the distribution.")
+
+        if method == 'mm':
+            if not np.isfinite(obj):
+                raise Exception("Optimization failed: either a data moment "
+                                "or fitted distribution moment is "
+                                "non-finite.")
+
+            if obj > 1e-1:
+                raise Exception("Optimization did not converge to parameters "
+                                "for which the moments of the fitted "
+                                "distribution match the data moments.")
+
         return vals
 
     def _fit_loc_scale_support(self, data, *args):
