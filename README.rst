@@ -23,7 +23,7 @@ SciPy
   :target: https://anaconda.org/conda-forge/scipy
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
-science, and engineering. It includes modules for [statistics](https://en.wikipedia.org/wiki/Statistics), [optimization](https://en.wikipedia.org/wiki/Mathematical_optimization),
+science, and engineering. It includes modules for statistics_, [optimization](https://en.wikipedia.org/wiki/Mathematical_optimization),
 [integration](https://en.wikipedia.org/wiki/Integral), [linear algebra](https://en.wikipedia.org/wiki/Linear_algebra), [Fourier transforms](https://en.wikipedia.org/wiki/Fourier_transform), signal and image processing,
 [ODE solvers](https://en.wikipedia.org/wiki/Ordinary_differential_equation), and more.
 
@@ -50,6 +50,6 @@ For the installation instructions, see INSTALL.rst.txt_.
 We appreciate and welcome contributions. If you would like to take part in
 SciPy development, take a look at the file CONTRIBUTING.rst_.
 
-
+.. _statistics:  https://en.wikipedia.org/wiki/Statistics
 .. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
 .. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt
