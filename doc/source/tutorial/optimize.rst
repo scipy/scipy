@@ -1541,6 +1541,63 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
     success: True
           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
+Linear sum assignment problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider planning a swimming medley relay team assignment problem.
+We have a table showing the individual medley times of five students:
+
+==========  ===========  ============  ===========  ===============================
+ Student    backstroke   breaststroke  butterfly    freestyle
+==========  ===========  ============  ===========  ===============================
+ A          43.5           47.1         48.4        38.2
+ B          45.5           42.1         49.6        36.8
+ C          43.4           39.1         42.1        43.2
+ D          46.5           44.1         44.5        41.2
+ E          46.3           47.8         50.4        37.2
+==========  ===========  ============  ===========  ===============================
+
+We need to choose best four students for each swimming style.
+This is a typical linear sum assignment problem, we can use :func:`linear_sum_assignment` to solve it.
+
+First of all, we need to setup a cost matrix.
+:func:`linear_sum_assignment` can assign each row to the best column.
+We can setup the cost matrix based on the upper table:
+
+::
+
+    >>> import numpy as np
+    >>> cost = np.array([[43.5, 45.5, 43.4, 46.5, 46.3],
+    ...                  [47.1, 42.1, 39.1, 44.1, 47.8],
+    ...                  [48.4, 49.6, 42.1, 44.5, 50.4],
+    ...                  [38.2, 36.8, 43.2, 41.2, 37.2]])
+
+We can solve the assignment problem with :func:`linear_sum_assignment`:
+
+::
+
+    >>> from scipy.optimize import linear_sum_assignment
+    >>> row_ind, col_ind = linear_sum_assignment(cost)
+    >>> col_ind
+    array([0, 2, 3, 1])
+
+The optimal assignment is:
+
+::
+
+    >>> dict(zip(["backstroke", "breaststroke", "butterfly", "freestyle"],
+    ...          np.array(["A", "B", "C", "D", "E"])[col_ind]))
+    {'backstroke': 'A', 'breaststroke': 'C', 'butterfly': 'D', 'freestyle': 'B'}
+
+The optimal times for each swimming style and the total time are:
+
+::
+
+    >>> cost[row_ind, col_ind]
+    array([43.5, 39.1, 44.5, 36.8])
+    >>> cost[row_ind, col_ind].sum()
+    163.89999999999998
+
 
 .. rubric:: References
 
