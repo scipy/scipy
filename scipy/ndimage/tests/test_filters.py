@@ -556,8 +556,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
-                                           dtype_output):
+    def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
+                                             dtype_output):
         kernel = numpy.array([1, 1 + 1j], dtype_kernel)
         array = numpy.array([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(array, kernel, dtype_output, mode='constant',
