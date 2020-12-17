@@ -90,4 +90,4 @@ jobs:
       run: |
         export PATH=$PWD/gcc_aliases:$PATH
         export DYLD_LIBRARY_PATH=/usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/:$DYLD_LIBRARY_PATH
-        python -u runtests.py
+        python -u runtests.py -v
