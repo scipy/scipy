@@ -2886,60 +2886,6 @@ class genhalflogistic_gen(rv_continuous):
 genhalflogistic = genhalflogistic_gen(a=0.0, name='genhalflogistic')
 
 
-class genhyperbolic_gen(rv_continuous):
-    r"""A generalized hyperbolic continuous random variable.
-
-    %(before_notes)s
-
-    Notes
-    -----
-    The probability density function for `genhyperbolic` is:
-
-    .. math::
-
-        f(x, \nu, \alpha, \beta, \delta, \mu) = 
-           \frac{(\gamma/\delta)^\nu}{\sqrt{2\pi}K_\nu(\delta \gamma)}
-           e^{\beta (x - \mu)} \times \frac{K_{\nu - 1/2}
-           (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
-           {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \nu}}
-
-    for :math:`x \in (-\infty; \infty)`,
-    and :math:`\nu, \mu \in \mathbb{R}`
-    ans :math: `0 \le |\beta| < \alpha ` \beta,
-    and :math: `\delta \in \mathbb{R}_{>0}`.
-    
-    Where: :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
-    :math: `K_{\nu}(.)` denotes the modified Bessel function of the third
-    kind and order :math: `\nu` (`scipy.special.kn`)
-
-    `genhyperbolic` takes ``nu`` as a tail parameter for :math:`\nu`.
-    takes ``alpha`` as a shape parameter for :math:`\alpha`.
-    takes ``beta`` as a skeweness parameter for :math:`\beta`.
-    takes ``delta`` as a scale parameter for :math:`\delta`.
-    takes ``mu`` as a location parameter for :math:`\mu`.
-
-    %(after_notes)s
-
-    %(example)s
-
-    """
-    def _argcheck(self, alpha, beta, delta):
-        return 0 <= abs(beta) < alpha and delta > 0
-
-    def _pdf(self, x, nu, alpha, beta, gamma, delta, mu):
-        gamma = np.sqrt(np.power(alpha,2)-np.power(beta,2))
-        t0 = np.power(gamma/delta, nu)
-        t1 = 1/(np.sqrt(2*np.pi)*sc.kn(nu, delta*gamma))
-        t2 = np.exp(beta*(x-mu))
-        t3 = np.sqrt(np.power(delta,2) + np.sqrt(x-mu,2))
-        t4 = sc.kn(nu-0.5, alpha*tmp3)
-        t5 = 1/np.power(tmp3/alpha, 0.5-nu)
-        return t0*t1*t2*t4*t5
-
-
-genhyperbolic = genhyperbolicc_gen(name='genhyperbolic')
-
-
 class gompertz_gen(rv_continuous):
     r"""A Gompertz (or truncated Gumbel) continuous random variable.
 
