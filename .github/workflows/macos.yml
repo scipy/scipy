@@ -94,6 +94,7 @@ jobs:
         export PATH=$PWD/gcc_aliases:$PATH
         echo "-----"
         env
+        ls -l gcc_aliases
         which gfortran-6
         which gfortran
         echo "-----"
