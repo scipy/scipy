@@ -16,6 +16,12 @@ jobs:
     name: macOS Test Matrix
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     runs-on: macos-latest
+    # The openblas binary used here was built using a gfortran older than 7,
+    # so it needs the older abi libgfortran.
+    env:
+      FC: gfortran-6
+      CC: gcc-6
+      CXX: g++-6
     strategy:
       max-parallel: 3
       matrix:
@@ -36,19 +42,7 @@ jobs:
         # virtualenv needed for the multibuild steps
         pip install virtualenv
         brew install libmpc gcc@6 suitesparse swig
-        # The openblas binary used here was built using a gfortran older than 7,
-        # so it needs the older abi libgfortran.
-        export FC=gfortran-6
-        export CC=gcc-6
-        export CXX=g++-6
-        mkdir gcc_aliases
-        pushd gcc_aliases
-        # make gcc aliases in current dir
-        ln -s `which gcc-6` gcc
-        ln -s `which g++-6` g++
-        ln -s `which gfortran-6` gfortran
-        export PATH=$PWD:$PATH
-        popd
+
         touch config.sh
         git clone --depth=1 https://github.com/matthew-brett/multibuild.git
 
@@ -88,6 +82,5 @@ jobs:
 
     - name: Test SciPy
       run: |
-        export PATH=$PWD/gcc_aliases:$PATH
         export DYLD_LIBRARY_PATH=/usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/:$DYLD_LIBRARY_PATH
         python -u runtests.py -v
