@@ -19,7 +19,8 @@ jobs:
     # The openblas binary used here was built using a gfortran older than 7,
     # so it needs the older abi libgfortran.
     env:
-      FC: gfortran-6
+      F77: gfortran-6
+      F90: gfortran-6
       CC: gcc-6
       CXX: g++-6
     strategy:
