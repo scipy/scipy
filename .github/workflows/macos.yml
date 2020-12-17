@@ -35,6 +35,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Create gcc aliases
+      run: |
+        mkdir gcc_aliases
+        pushd gcc_aliases
+        ln -s `which gcc-6` gcc
+        ln -s `which g++-6` g++
+        ln -s `which gfortran-6` gfortran
+        popd
+
     - name: Setup openblas
       run: |
         # this setup is originally taken from the .travis.yml
@@ -82,9 +91,11 @@ jobs:
 
     - name: Test SciPy
       run: |
+        export PATH=$PWD/gcc_aliases:$PATH
         echo "-----"
         env
         which gfortran-6
+        which gfortran
         echo "-----"
         export DYLD_LIBRARY_PATH=/usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/:$DYLD_LIBRARY_PATH
         python -u runtests.py -v
