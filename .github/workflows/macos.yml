@@ -75,30 +75,13 @@ jobs:
         echo "runtime_library_dirs = $PWD/openblas/lib" >> site.cfg
         # remove a spurious gcc/gfortran toolchain install
         rm -rf /usr/local/Cellar/gcc/9.2.0_2
-        #
 
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
         pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2
 
-    #- name: Create gcc aliases
-    #  run: |
-    #    mkdir gcc_aliases
-    #    pushd gcc_aliases
-    #    ln -s `which gcc-6` gcc
-    #    ln -s `which g++-6` g++
-    #    ln -s `which gfortran-6` gfortran
-    #    popd
-
     - name: Test SciPy
       run: |
-        # export PATH=$PWD/gcc_aliases:$PATH
-        echo "-----"
-        env
-        # ls -l gcc_aliases
-        which gfortran-6
-        # which gfortran
-        echo "-----"
         export DYLD_LIBRARY_PATH=/usr/local/Cellar/gcc@6/6.5.0_5/lib/gcc/6/:$DYLD_LIBRARY_PATH
         python -u runtests.py -v
