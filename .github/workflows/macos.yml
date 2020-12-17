@@ -88,8 +88,6 @@ jobs:
         ln -s `which gcc-6` gcc
         ln -s `which g++-6` g++
         ln -s `which gfortran-6` gfortran
-        ln -s `which gcc-ar-6` ar
-        ln -s `which gcc-ranlib-6` ranlib
         popd
 
     - name: Test SciPy
