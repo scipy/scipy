@@ -2562,6 +2562,10 @@ class TestMoments(object):
         assert stats.skew(a * float(2**50)) == 0.0
         assert stats.skew(a / float(2**50)) == 0.0
 
+        # similarly, from gh-11086:
+        assert stats.skew([14.3]*7) == 0.0
+        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
+
     def test_kurtosis(self):
         # Scalar test case
         y = stats.kurtosis(self.scalar_testcase)
