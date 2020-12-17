@@ -5,6 +5,7 @@ import subprocess
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
 
     config = Configuration('sparse',parent_package,top_path)
 
@@ -41,7 +42,7 @@ def configuration(parent_package='',top_path=None):
                'sparsetools.h',
                'util.h']
     depends = [os.path.join('sparsetools', hdr) for hdr in depends],
-    config.add_extension('_sparsetools',
+    sparsetools = config.add_extension('_sparsetools',
                          define_macros=[('__STDC_FORMAT_MACROS', 1)],
                          depends=depends,
                          include_dirs=['sparsetools'],
@@ -52,6 +53,7 @@ def configuration(parent_package='',top_path=None):
                                   os.path.join('sparsetools', 'other.cxx'),
                                   get_sparsetools_sources]
                          )
+    sparsetools._pre_build_hook = set_cxx_flags_hook
 
     return config
 

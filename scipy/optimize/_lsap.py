@@ -36,6 +36,11 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     columns, then not every row needs to be assigned to a column, and vice
     versa.
 
+    The problem is also solved for sparse inputs in
+    :func:`scipy.sparse.csgraph.min_weight_full_bipartite_matching` which
+    may perform better if the input is sparse, or for certain classes of
+    problems, such as uniformly distributed costs.
+
     Parameters
     ----------
     cost_matrix : array
@@ -77,7 +82,7 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     5
     """
     cost_matrix = np.asarray(cost_matrix)
-    if len(cost_matrix.shape) != 2:
+    if cost_matrix.ndim != 2:
         raise ValueError("expected a matrix (2-D array), got a %r array"
                          % (cost_matrix.shape,))
 
@@ -89,17 +94,12 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     if maximize:
         cost_matrix = -cost_matrix
 
-    if np.any(np.isneginf(cost_matrix) | np.isnan(cost_matrix)):
-        raise ValueError("matrix contains invalid numeric entries")
-
     cost_matrix = cost_matrix.astype(np.double)
-    a = np.arange(np.min(cost_matrix.shape))
 
     # The algorithm expects more columns than rows in the cost matrix.
     if cost_matrix.shape[1] < cost_matrix.shape[0]:
-        b = _lsap_module.calculate_assignment(cost_matrix.T)
+        a, b = _lsap_module.calculate_assignment(cost_matrix.T)
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        b = _lsap_module.calculate_assignment(cost_matrix)
-        return (a, b)
+        return _lsap_module.calculate_assignment(cost_matrix)

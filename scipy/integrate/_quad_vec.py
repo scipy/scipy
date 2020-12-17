@@ -267,7 +267,6 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     else:
         norm_func = norm_funcs[norm]
 
-    mapwrapper = MapWrapper(workers)
 
     parallel_count = 128
     min_intervals = 2
@@ -341,7 +340,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     }
 
     # Process intervals
-    with mapwrapper:
+    with MapWrapper(workers) as mapwrapper:
         ier = NOT_CONVERGED
 
         while intervals and len(intervals) < limit:

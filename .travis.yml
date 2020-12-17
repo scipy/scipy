@@ -25,24 +25,6 @@ env:
 
 matrix:
   include:
-    - python: 3.6
-      name: "Lint"
-      env:
-        - PYFLAKES=1
-        - PEP8=1
-        - NUMPYSPEC="--upgrade numpy"
-      before_install:
-        - pip install pycodestyle==2.5.0
-        - pip install pyflakes==2.1.1
-      script:
-        # TODO: remove "ignore[import]" filter below when moving to pyflakes==2.1.2 or above
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks 2>&1 | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports|syntax error in type comment .ignore.import.' > test.out; cat test.out; test \! -s test.out
-        - pycodestyle scipy benchmarks/benchmarks
-        - |
-          if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
-             python tools/lint_diff.py --branch $TRAVIS_BRANCH
-          fi
-        - tools/unicode-check.py
     - python: 3.7
       name: "ARM - Test Group 1"
       arch: arm64
@@ -68,84 +50,6 @@ matrix:
         - TEST_GROUP_COUNT=2
         - TEST_GROUP=2
     - python: 3.7
-      name: "Pre-release Dependencies, Source Dist"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        - OTHERSPEC="--pre --upgrade --timeout=60"
-        # Need a test with most recent Python version where we build from an
-        # sdist (uses pip build isolation), to check that the version we
-        # specify in pyproject.toml (will be older than --pre --upgrade) works
-        - USE_SDIST=1
-    - python: 3.7
-      name: "Coverage, Full test suite"
-      env:
-        - TESTMODE=full
-        - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC="numpy==1.18.5"
-    # Test SciPy with the debug version of Python.
-    # However travis only specifies regular or development builds of Python
-    # so we must install python3.6-dbg using apt.
-    - language: generic
-      name: "Python 3.7 Debug"
-      dist: bionic
-      env:
-        - USE_DEBUG=python3.7-dbg
-        - TESTMODE=fast
-        - NUMPYSPEC="--upgrade numpy"
-      addons:
-        apt:
-          packages:
-            - *common_packages
-            - python3.7-dbg
-            - python3.7-dev
-    - python: 3.8
-      name: "Pre-release Deps, 64-bit BLAS"
-      env:
-        - TESTMODE=full
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        - OTHERSPEC="--pre --upgrade --timeout=60"
-        - NPY_USE_BLAS_ILP64=1
-    - python: 3.6
-      name: "Refguide-check, Latest NumPy"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - USE_WHEEL=1
-        - REFGUIDE_CHECK=1
-        - NUMPYSPEC="--upgrade numpy"
-        - ASV_CHECK=1
-    - python: 3.6
-      name: "Source Distribution"
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="numpy==1.17.4"
-        - USE_SDIST=1
-    - python: 3.6
-      name: "Wheel, Optimised, GCC 4.8"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - *common_packages
-            - g++-4.8
-            - gcc-4.8
-      env:
-        # GCC 4.8 is used by manylinux1 wheel builds
-        - CC="gcc-4.8"
-        - CXX="g++-4.8"
-        - TESTMODE=fast
-        - COVERAGE=
-        - USE_WHEEL=1
-        - NUMPYSPEC="numpy==1.16.5"
-        # The following is needed for optimized "-OO" test run but since we use
-        # pytest-xdist plugin for load scheduling its workers don't pick up the
-        # flag. This environment variable starts all Py instances in -OO mode.
-        - PYTHONOPTIMIZE=2
-    - python: 3.6
       name: "Power PC"
       os: linux
       arch: ppc64le
@@ -196,9 +100,8 @@ before_install:
     fi
   - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  - |
-    travis_retry pip install --upgrade pip setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
-    travis_retry pip install --upgrade $NUMPYSPEC
+  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+  - travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then
         if ! expr "$NUMPYSPEC" : ".*--pre.*" > /dev/null; then
@@ -275,9 +178,10 @@ script:
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${REFGUIDE_CHECK}" == "1" ]; then
       python runtests.py -g --refguide-check
     fi
+  # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
   - |
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ] && [ "${ASV_CHECK}" == "1" ]; then
-      (cd benchmarks && python -masv check -E existing)
+      (cd benchmarks && python -masv check -E existing && ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null)
     fi
   # Check dynamic symbol hiding works on Linux
   - |

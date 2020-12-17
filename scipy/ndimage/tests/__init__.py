@@ -8,4 +8,6 @@ integer_types = [
 
 float_types = [numpy.float32, numpy.float64]
 
+complex_types = [numpy.complex64, numpy.complex128]
+
 types = integer_types + float_types

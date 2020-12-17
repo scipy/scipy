@@ -27,8 +27,8 @@ import sysconfig
 from distutils.version import LooseVersion
 
 
-if sys.version_info[:2] < (3, 6):
-    raise RuntimeError("Python version >= 3.6 required.")
+if sys.version_info[:2] < (3, 7):
+    raise RuntimeError("Python version >= 3.7 required.")
 
 import builtins
 
@@ -41,7 +41,6 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
@@ -55,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 6
+MINOR = 7
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -376,8 +375,9 @@ def parse_setuppy_commands():
     # useful messages to the user
     if 'install' in args:
         print(textwrap.dedent("""
-            Note: if you need reliable uninstall behavior, then install
-            with pip instead of using `setup.py install`:
+            Note: for reliable uninstall behaviour and dependency installation
+            and uninstallation, please use pip instead of using
+            `setup.py install`:
 
               - `pip install .`       (from a git repo or downloaded source
                                        release)
@@ -463,6 +463,20 @@ def parse_setuppy_commands():
                   ' '.join(sys.argv[1:])))
     return True
 
+def check_setuppy_command():
+    run_build = parse_setuppy_commands()
+    if run_build:
+        try:
+            import numpy
+            import pybind11
+        except ImportError as exc:  # We do not have our build deps installed
+            print(textwrap.dedent(
+                    """Error: '%s' must be installed before running the build.
+                    """
+                    % (exc.name,)))
+            sys.exit(1)
+
+    return run_build
 
 def configuration(parent_package='', top_path=None):
     from scipy._build_utils.system_info import get_info, NotFoundError
@@ -506,24 +520,6 @@ def setup_package():
     if HAVE_SPHINX:
         cmdclass['build_sphinx'] = ScipyBuildDoc
 
-    # Figure out whether to add ``*_requires = ['numpy']``.
-    # We don't want to do that unconditionally, because we risk updating
-    # an installed numpy which fails too often.  Just if it's not installed, we
-    # may give it a try.  See gh-3379.
-    try:
-        import numpy
-    except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.16.5']
-    else:
-        # If we're building a wheel, assume there already exist numpy wheels
-        # for this platform, so it is safe to add numpy to build requirements.
-        # See gh-5184.
-        build_requires = (['numpy>=1.16.5'] if 'bdist_wheel' in sys.argv[1:]
-                          else [])
-
-    install_requires = build_requires
-    setup_requires = build_requires + ['pybind11>=2.4.3']
-
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -542,9 +538,10 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        setup_requires=setup_requires,
-        install_requires=install_requires,
-        python_requires='>=3.6',
+        install_requires=[
+            'numpy>=1.16.5',
+        ],
+        python_requires='>=3.7',
     )
 
     if "--force" in sys.argv:
@@ -552,7 +549,7 @@ def setup_package():
         sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
-        run_build = parse_setuppy_commands()
+        run_build = check_setuppy_command()
 
     # Disable OSX Accelerate, it has too old LAPACK
     os.environ['ACCELERATE'] = 'None'
