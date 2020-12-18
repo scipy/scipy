@@ -1826,8 +1826,7 @@ class TestPowerlaw(object):
                                                 fscale):
         if False not in {fa, floc, fscale}:
             pytest.skip()
-        data = stats.powerlaw.rvs(size=250, a=a, loc=loc,
-                                  scale=scale)
+        data = stats.powerlaw.rvs(size=2500, a=a, loc=loc, scale=scale)
         
         def ll(args, data):
             # to get the same behavior as `powerlaw.reduce_func`, negate the

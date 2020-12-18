@@ -6403,10 +6403,15 @@ class powerlaw_gen(rv_continuous):
         # if the assumption that the shape < 1 is not consistent with the
         # result of the fitting, try to fit under the assumption that the
         # shape is >= 1.
-        if res[0] > 1 or res[0] is None:
-            res = fit_with_multiple_funcs(fshape, floc, fscale, data,
+        if (not np.allclose(res[0], 1)) and (res[0] > 1 or res[0] is None):
+
+            res1 = fit_with_multiple_funcs(fshape, floc, fscale, data,
                                           get_u_a_gt, get_s_a_gt,
                                           all_free_gt, all_free_gt)
+            if res1[0] is not None:
+                # make sure that this was successful, otherwise, revert to
+                # other determination.
+                res = res1
 
         return res
 
