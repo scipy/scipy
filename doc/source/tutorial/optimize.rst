@@ -1544,7 +1544,7 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
 Linear sum assignment problem example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Consider planning a swimming medley relay team assignment problem.
+Consider the problem of selecting students for a swimming medley relay team.
 We have a table showing the individual medley times of five students:
 
 ==========  ===========  ============  ===========  ===============================
