@@ -1557,7 +1557,7 @@ We have a table showing the individual medley times of five students:
  E          46.3           47.8         50.4        37.2
 ==========  ===========  ============  ===========  ===============================
 
-We need to choose best four students for each swimming style.
+We need to choose the best student for each of the four swimming styles.
 This is a typical linear sum assignment problem, we can use :func:`linear_sum_assignment` to solve it.
 
 First of all, we need to setup a cost matrix.
