@@ -1811,27 +1811,52 @@ class TestPowerlaw(object):
             return -np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
 
         # compare the results of the LL
+        # a warning is raised when data is generated in some situations, so
+        # it will be supressed.
         with np.errstate(divide='ignore'):
             _assert_less_or_close_loglike(stats.powerlaw, data, ll)
 
-    @pytest.mark.parametrize("shape_f,loc_f,scale_f", (
-        [2, 3, None], [2, None, None], [None, None, None],
-        [2, None, 4.5], [None, None, 4.5], [None, 3, 4.5]))
-    def test_fit_MLE_comp_optimzer_combinations(self, shape_f, loc_f, scale_f):
-        data = stats.powerlaw.rvs(size=1000, a=2, loc=3,
-                                  scale=4.5)
-        args = [data, (stats.powerlaw._fitstart(data), )]
-        ll = stats.powerlaw._reduce_func(args, {})[1]
+    @pytest.mark.parametrize("a", [.5, 1, 1.5])
+    @pytest.mark.parametrize("loc", [0, 1])
+    @pytest.mark.parametrize("scale", [1, 5])
+    @pytest.mark.parametrize("fa", [True, False])
+    @pytest.mark.parametrize("floc", [True, False])
+    @pytest.mark.parametrize("fscale", [True, False])
+    def test_fit_MLE_comp_optimzer_combinations(self, a, loc, scale, fa, floc,
+                                                fscale):
+        if False not in {fa, floc, fscale}:
+            pytest.skip()
+        data = stats.powerlaw.rvs(size=250, a=a, loc=loc,
+                                  scale=scale)
+        
+        def ll(args, data):
+            # to get the same behavior as `powerlaw.reduce_func`, negate the
+            # log-likelihood function
+            return -np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
 
         # build kwds based on which arguments are indicated to be fixed
         kwds = dict()
-        if shape_f:
-            kwds['f0'] = shape_f
-        if loc_f:
-            kwds['floc'] = loc_f
-        if scale_f:
-            kwds['fscale'] = scale_f
-        _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
+        if fa:
+            kwds['f0'] = a
+        if floc:
+            kwds['floc'] = loc
+        if fscale:
+            kwds['fscale'] = scale
+        with np.errstate(divide='ignore'):
+            mle_analytical = stats.powerlaw.fit(data, **kwds)
+            numerical_opt = super(type(stats.powerlaw),
+                                  stats.powerlaw).fit(data, **kwds)
+            ll_mle_analytical = ll(mle_analytical, data)
+            ll_numerical_opt = ll(numerical_opt, data)
+            try:
+                assert (ll_mle_analytical <= ll_numerical_opt)
+            except Exception as e1:
+                try:
+                    np.testing.assert_almost_equal(ll_mle_analytical,
+                                                   ll_numerical_opt)
+                except Exception as e2:
+                    np.testing.assert_almost_equal(mle_analytical,
+                                                   numerical_opt, decimal=3)
 
 
 class TestInvGamma(object):

@@ -6297,14 +6297,13 @@ class powerlaw_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
-
         # the analytical formula for `fshape` is the same whether `fshape` is
         # less than or greater than one.
         def get_a(floc, fscale, data):
             mask = data != floc
             return (len(data) / (np.sum(np.log(fscale / (data[mask] - floc)))))
 
-        # Analytical formulas to be used when `fshape > 1`
+        # Formulas to be used under the assumption that `fshape > 1`
         def get_s_a_gt(data, floc):
             return np.max(data) - floc
 
@@ -6341,7 +6340,7 @@ class powerlaw_gen(rv_continuous):
                 fshape, floc, fscale = None, None, None
             return fshape, floc, fscale
 
-        # Analytical formulas to be used when `fshape < 1`
+        # Analytical formulas to be used under the assumption that `fshape < 1`
         def get_s_a_lt(data, *args):
             return np.max(data) - np.min(data)
 
@@ -6367,7 +6366,7 @@ class powerlaw_gen(rv_continuous):
                 # `floc` is fixed, `fshape` and `fscale` may be deterermined
                 # through analytical equations
                 if floc > np.min(data):
-                    # a constraint to fitting is that loc < np.min
+                    # a constraint to fitting is that the location < np.min
                     raise ValueError("Invalid values in `data`.  Maximum"
                                      " likelihood estimation with 'powerlaw'"
                                      " requires loc < min(data).")
@@ -6385,6 +6384,8 @@ class powerlaw_gen(rv_continuous):
                     fshape = get_a(floc, fscale, data)
                 return fshape, floc, fscale
             elif fscale is not None:
+                # When the scale is fixed, the location can be analytically
+                # determined.
                 floc = get_u(data, fscale)
                 if fshape is None:
                     fshape = get_a(floc, fscale, data)
