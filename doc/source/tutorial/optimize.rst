@@ -1541,6 +1541,9 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
     success: True
           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
+Assignment problems
+-------------------
+
 Linear sum assignment problem example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
