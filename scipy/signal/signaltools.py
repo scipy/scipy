@@ -1826,6 +1826,14 @@ def medfilt2d(input, kernel_size=3):
     efficient implementation of a median filter and therefore runs much faster.
     """
     image = np.asarray(input)
+
+    # see sigtools_median2d in sigtoolsmodule.c for supported types
+    # for sigtools._medfilt2d
+
+    # checking dtype.type is necessary for Windows
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)

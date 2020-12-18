@@ -1059,6 +1059,7 @@ class TestMedFilt(object):
         # volume input and output types match
         in_typed = np.array(self.IN, dtype=dtype)
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
