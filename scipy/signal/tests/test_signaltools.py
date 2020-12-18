@@ -1062,9 +1062,9 @@ class TestMedFilt(object):
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
     def test_none(self):
-        # Ticket #1124. Ensure this does not segfault.
+        # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
-            signal.medfilt(None)
+            assert_raises(TypeError, signal.medfilt, None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1089,6 +1089,11 @@ class TestMedFilt(object):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])
 
+    def test_object(self,):
+        in_object = np.array(self.IN, dtype=object)
+        out_object = np.array(self.OUT, dtype=object)
+        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                           out_object)
 
 class TestWiener(object):
 
