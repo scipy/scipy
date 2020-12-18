@@ -19,7 +19,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        python-version: [3.7]
+        python-version: [3.7, 3.8, 3.9]
         numpy-version: ['--upgrade numpy']
 
     steps:
@@ -31,7 +31,7 @@ jobs:
 
     - name: Setup gfortran
       run: |
-        # this is based on the numpy azure pipeline setup.
+        # this is taken verbatim from the numpy azure pipeline setup.
         set -xe
         # same version of gfortran as the open-libs and numpy-wheel builds
         curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
@@ -51,7 +51,7 @@ jobs:
 
     - name: Setup openblas
       run: |
-        # this is based on the numpy azure pipeline setup.
+        # this is taken verbatim from the numpy azure pipeline setup.
         set -xe
         target=$(python tools/openblas_support.py)
         ls -lR $target
@@ -66,6 +66,10 @@ jobs:
         echo "library_dirs = /usr/local/lib" >> site.cfg
         echo "include_dirs = /usr/local/include" >> site.cfg
         echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
+
+    - name: A few other packages
+      run: |
+        brew install libmpc suitesparse swig
 
     - name: Install packages
       run: |
