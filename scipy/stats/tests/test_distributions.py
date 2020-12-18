@@ -4034,7 +4034,7 @@ class TestStudentizedRange(object):
                 res_q = stats.distributions.studentized_range.ppf(significance,
                                                                   k, v)
                 # Accuracy is somthing to be improved on.
-                assert_allclose(res_q, q, rtol=2e-3)
+                assert_allclose(res_q, q, rtol=5e-4)
 
         for test_set in self.alpha05:
             _test_set_ppf(test_set, 0.95)
