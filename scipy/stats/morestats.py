@@ -1742,7 +1742,7 @@ def anderson(x, dist='norm'):
     -----
     Critical values provided are for the following significance levels:
 
-    normal/exponenential
+    normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
