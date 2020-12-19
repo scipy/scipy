@@ -1971,7 +1971,7 @@ def test_t_entropy():
     # Expected values were computed with mpmath.
     expected = [2.5310242469692907, 1.9602792291600821,
                 1.459327578078393, 1.4289633653182439]
-    assert_allclose(stats.t.entropy(df), expected, rtol=1e-14)
+    assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
 
 class TestRvDiscrete(object):
