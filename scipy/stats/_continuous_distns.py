@@ -6018,8 +6018,8 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         half = df/2
         half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half)) +
-                np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+        return (half1*(sc.digamma(half1) - sc.digamma(half))
+                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
 
 t = t_gen(name='t')
