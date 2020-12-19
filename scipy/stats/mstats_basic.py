@@ -2294,8 +2294,8 @@ def skew(a, axis=0, bias=True):
     with np.errstate(all='ignore'):
         vals = ma.where(zero, 0, m3 / m2**1.5)
 
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
+        can_correct = ~zero & (n > 2) & (m2 > 0)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -2348,9 +2348,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     with np.errstate(all='ignore'):
         vals = ma.where(zero, 0, m4 / m2**2.0)
 
-    if not bias:
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
         n = a.count(axis)
-        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
+        can_correct = ~zero & (n > 3) & (m2 > 0)
         if can_correct.any():
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)

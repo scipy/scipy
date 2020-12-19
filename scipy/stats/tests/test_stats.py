@@ -2561,6 +2561,7 @@ class TestMoments(object):
         assert stats.skew(a) == 0.0
         assert stats.skew(a * float(2**50)) == 0.0
         assert stats.skew(a / float(2**50)) == 0.0
+        assert stats.skew(a, bias=False) == 0.0
 
         # similarly, from gh-11086:
         assert stats.skew([14.3]*7) == 0.0
@@ -2611,6 +2612,7 @@ class TestMoments(object):
         assert stats.kurtosis(a, fisher=False) == 0.0
         assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
         assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
