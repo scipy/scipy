@@ -39,6 +39,9 @@ As :math:`\nu\rightarrow\infty,` this distribution approaches the standard norma
 
      h\left[X\right]=\frac{\nu+1}{2} \left[\psi \left(\frac{1+\nu}{2} \right) -\psi \left(\frac{\nu}{2} \right) \right] + \ln \left[ \sqrt{\nu} B \left( \frac{\nu}{2}, \frac{1}{2} \right) \right]
 
+where :math:`\psi(x)` is the digamma function and :math:`B(x, y)` is the
+beta function.
+
 References
 ----------
 
