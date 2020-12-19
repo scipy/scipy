@@ -1548,7 +1548,7 @@ Linear sum assignment problem example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Consider the problem of selecting students for a swimming medley relay team.
-We have a table showing the individual times for each style of five students:
+We have a table showing times for each swimming style of five students:
 
 ==========  ===========  ============  ===========  ===============================
  Student    backstroke   breaststroke  butterfly    freestyle
@@ -1569,16 +1569,17 @@ we need to find a combinations of a row and a column which the sum of the corres
 (or maximized).
 
 Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is assigned to column j.
-Then the optimal assignment of the linear sum assignment problem has cost
+Then the optimal assignment has cost
 
 .. math::
-    \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
+
+    \min \sum_i \sum_j C_{i,j} X_{i,j}
 
 First of all, we need to setup a cost matrix.
 :func:`linear_sum_assignment` can assign each row to the best column.
 In this example, we want to assign each swimming style to a student.
 This means that rows of the cost matrix show each swimming style and columns show each student.
-In other word, the upper table needs to be transposed for the cost matrix:
+In other words, the upper table needs to be transposed for the cost matrix:
 
 ::
 
@@ -1607,6 +1608,7 @@ The ``row_ind`` and ``col_ind`` are optimal assigned matrix indexes of the cost 
 The optimal assignment is:
 
 ::
+
     >>> styles = np.array(["backstroke", "breaststroke", "butterfly", "freestyle"])[row_ind]
     >>> students = np.array(["A", "B", "C", "D", "E"])[col_ind]
     >>> dict(zip(styles, students))
@@ -1627,7 +1629,7 @@ Note that this result is not the same as the sum of the minimum times for each s
     161.39999999999998
 
 Because, student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
-We need to decide either style is assigned to "C" based on the total time.
+We need to decide either style is assigned to student "C" based on the total time.
 
 .. rubric:: References
 
