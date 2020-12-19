@@ -1548,7 +1548,7 @@ Linear sum assignment problem example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Consider the problem of selecting students for a swimming medley relay team.
-We have a table showing the individual medley times of five students:
+We have a table showing the individual times for each style of five students:
 
 ==========  ===========  ============  ===========  ===============================
  Student    backstroke   breaststroke  butterfly    freestyle
@@ -1563,9 +1563,22 @@ We have a table showing the individual medley times of five students:
 We need to choose the best student for each of the four swimming styles.
 This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
 
+The linear sum assignment problem is one of the most famous combinatorial optimization problems.
+When we are given a matrix :math:`C` known as a "cost matrix" and we want to match each row to a different column,
+we need to find a combinations of a row and a column which the sum of the corresponding entries is minimized
+(or maximized).
+
+Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is assigned to column j.
+Then the optimal assignment of the linear sum assignment problem has cost
+
+.. math::
+    \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
+
 First of all, we need to setup a cost matrix.
 :func:`linear_sum_assignment` can assign each row to the best column.
-We can setup the cost matrix based on the upper table:
+In this example, we want to assign each swimming style to a student.
+This means that rows of the cost matrix show each swimming style and columns show each student.
+In other word, the upper table needs to be transposed for the cost matrix:
 
 ::
 
@@ -1581,26 +1594,40 @@ We can solve the assignment problem with :func:`linear_sum_assignment`:
 
     >>> from scipy.optimize import linear_sum_assignment
     >>> row_ind, col_ind = linear_sum_assignment(cost)
+
+The ``row_ind`` and ``col_ind`` are optimal assigned matrix indexes of the cost matrix:
+
+::
+
+    >>> row_ind
+    array([0, 1, 2, 3])
     >>> col_ind
     array([0, 2, 3, 1])
 
 The optimal assignment is:
 
 ::
-
-    >>> dict(zip(["backstroke", "breaststroke", "butterfly", "freestyle"],
-    ...          np.array(["A", "B", "C", "D", "E"])[col_ind]))
+    >>> styles = np.array(["backstroke", "breaststroke", "butterfly", "freestyle"])[row_ind]
+    >>> students = np.array(["A", "B", "C", "D", "E"])[col_ind]
+    >>> dict(zip(styles, students))
     {'backstroke': 'A', 'breaststroke': 'C', 'butterfly': 'D', 'freestyle': 'B'}
 
-The optimal times for each swimming style and the total time are:
+The optimal total medley time is:
 
 ::
 
-    >>> cost[row_ind, col_ind]
-    array([43.5, 39.1, 44.5, 36.8])
     >>> cost[row_ind, col_ind].sum()
     163.89999999999998
 
+Note that this result is not the same as the sum of the minimum times for each swimming style:
+
+::
+
+    >>> np.min(cost, axis=1).sum()
+    161.39999999999998
+
+Because, student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
+We need to decide either style is assigned to "C" based on the total time.
 
 .. rubric:: References
 
