@@ -859,8 +859,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        # Compute a matrix `_cov_A` such that `_cov_A @ _cov_A.T == cov` using the
-        # singular value decomposition. Although other methods (such as an
+        # Compute a matrix `_cov_A` such that `_cov_A @ _cov_A.T == cov` using
+        # the singular value decomposition. Although other methods (such as an
         # eigenvalue or Cholesky decomposition) could be used to compute such a
         # matrix, we use SVD to maintain backward compatibility.
         if self._cov_A is None:
