@@ -10,7 +10,7 @@ cache:
 
 environment:
   global:
-      MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
+      MINGW_64: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
       NUMPY_HEAD: https://github.com/numpy/numpy.git
       NUMPY_BRANCH: master
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
