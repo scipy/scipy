@@ -3,6 +3,7 @@ import sys
 from os.path import join, dirname
 from distutils.sysconfig import get_python_inc
 import subprocess
+import platform
 import numpy
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
@@ -11,6 +12,19 @@ try:
 except ImportError as e:
     raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
                      (numpy.__version__, numpy.__file__)) from e
+
+
+def sc_specfun_pre_build_hook(cmd, ext):
+    from scipy._build_utils import generic_pre_build_hook
+
+    # f2py -c --help-fcompiler
+    ifort_names = ['intel', 'intele', 'intelem', 'intelev', 'intelv', 'intelvem']
+    f_compiler_type = cmd._f_compiler.compiler_type
+    if f_compiler_type in ifort_names:
+        ifort_minus0_flag = '/assume:' if platform.system() == 'Windows' else '-assume '
+        ifort_minus0_flag += 'minus0'
+        ifort_flags = {f_compiler_type : [ifort_minus0_flag]}
+        return generic_pre_build_hook(cmd, ext, fcompiler_flags=ifort_flags)
 
 
 def configuration(parent_package='',top_path=None):
@@ -57,7 +71,8 @@ def configuration(parent_package='',top_path=None):
                        config_fc={'noopt':(__file__,1)})
     config.add_library('sc_amos',sources=amos_src)
     config.add_library('sc_cdf',sources=cdf_src)
-    config.add_library('sc_specfun',sources=specfun_src)
+    config.add_library('sc_specfun',sources=specfun_src,
+                       _pre_build_hook=sc_specfun_pre_build_hook)
 
     # Extension specfun
     config.add_extension('specfun',
