@@ -2461,7 +2461,7 @@ def _quiet_nanmean(x):
         return np.mean(y, keepdims=True)
 
 
-def _quiet_nanstd(x):
+def _quiet_nanstd(x, ddof=0):
     """
     Compute nanstd for the 1d array x, but quietly return nan if x is all nan.
 
@@ -2472,7 +2472,7 @@ def _quiet_nanstd(x):
     if y.size == 0:
         return np.array([np.nan])
     else:
-        return np.std(y, keepdims=True)
+        return np.std(y, keepdims=True, ddof=ddof)
 
 
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
@@ -2543,39 +2543,10 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     array([[-1.13490897, -0.37830299,         nan, -0.08718406,  1.60039602],
            [-0.91611681, -0.89090508,  1.4983032 ,  0.88731639, -0.5785977 ]])
     """
-    a = np.asanyarray(a)
-
-    if a.size == 0:
-        return np.empty(a.shape)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        if axis is None:
-            mn = _quiet_nanmean(a.ravel())
-            std = _quiet_nanstd(a.ravel())
-            isconst = _isconst(a.ravel())
-        else:
-            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
-            std = np.apply_along_axis(_quiet_nanstd, axis, a)
-            isconst = np.apply_along_axis(_isconst, axis, a)
-    else:
-        mn = a.mean(axis=axis, keepdims=True)
-        std = a.std(axis=axis, ddof=ddof, keepdims=True)
-        if axis is None:
-            isconst = (a.item(0) == a).all()
-        else:
-            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
-
-    # Set std deviations that are 0 to 1 to avoid division by 0.
-    std[isconst] = 1.0
-    z = (a - mn) / std
-    # Set the outputs associated with a constant input to nan.
-    z[np.broadcast_to(isconst, z.shape)] = np.nan
-    return z
+    return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-def zmap(scores, compare, axis=0, ddof=0):
+def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
 
@@ -2597,6 +2568,13 @@ def zmap(scores, compare, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle the occurrence of nans in `compare`.
+        'propagate' returns nan, 'raise' raises an exception, 'omit'
+        performs the calculations ignoring nan values. Default is
+        'propagate'. Note that when the value is 'omit', nans in `scores`
+        also propagate to the output, but they do not affect the z-scores
+        computed for the non-nan values.
 
     Returns
     -------
@@ -2618,10 +2596,36 @@ def zmap(scores, compare, axis=0, ddof=0):
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
 
     """
-    scores, compare = map(np.asanyarray, [scores, compare])
-    mns = compare.mean(axis=axis, keepdims=True)
-    sstd = compare.std(axis=axis, ddof=ddof, keepdims=True)
-    return (scores - mns) / sstd
+    a = np.asanyarray(compare)
+
+    if a.size == 0:
+        return np.empty(a.shape)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        if axis is None:
+            mn = _quiet_nanmean(a.ravel())
+            std = _quiet_nanstd(a.ravel(), ddof=ddof)
+            isconst = _isconst(a.ravel())
+        else:
+            mn = np.apply_along_axis(_quiet_nanmean, axis, a)
+            std = np.apply_along_axis(_quiet_nanstd, axis, a, ddof=ddof)
+            isconst = np.apply_along_axis(_isconst, axis, a)
+    else:
+        mn = a.mean(axis=axis, keepdims=True)
+        std = a.std(axis=axis, ddof=ddof, keepdims=True)
+        if axis is None:
+            isconst = (a.item(0) == a).all()
+        else:
+            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
+
+    # Set std deviations that are 0 to 1 to avoid division by 0.
+    std[isconst] = 1.0
+    z = (scores - mn) / std
+    # Set the outputs associated with a constant input to nan.
+    z[np.broadcast_to(isconst, z.shape)] = np.nan
+    return z
 
 
 def gstd(a, axis=0, ddof=1):
