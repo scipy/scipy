@@ -329,12 +329,14 @@ def geometric_transform(input, mapping, output_shape=None,
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
     if complex_output:
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter,
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter,
                       output_shape=output_shape,
                       extra_arguments=extra_arguments,
                       extra_keywords=extra_keywords)
-        geometric_transform(input.real, mapping, output=output.real, **kwargs)
-        geometric_transform(input.imag, mapping, output=output.imag, **kwargs)
+        geometric_transform(input.real, mapping, output=output.real,
+                            cval=numpy.real(cval), **kwargs)
+        geometric_transform(input.imag, mapping, output=output.imag,
+                            cval=numpy.imag(cval), **kwargs)
         return output
 
     if prefilter and order > 1:
@@ -437,9 +439,11 @@ def map_coordinates(input, coordinates, output=None, order=3,
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
     if complex_output:
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        map_coordinates(input.real, coordinates, output=output.real, **kwargs)
-        map_coordinates(input.imag, coordinates, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        map_coordinates(input.real, coordinates, output=output.real,
+                        cval=numpy.real(cval), **kwargs)
+        map_coordinates(input.imag, coordinates, output=output.imag,
+                        cval=numpy.imag(cval), **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -554,9 +558,11 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
                                      complex_output=complex_output)
     if complex_output:
         kwargs = dict(offset=offset, output_shape=output_shape, order=order,
-                      mode=mode, cval=cval, prefilter=prefilter)
-        affine_transform(input.real, matrix, output=output.real, **kwargs)
-        affine_transform(input.imag, matrix, output=output.imag, **kwargs)
+                      mode=mode, prefilter=prefilter)
+        affine_transform(input.real, matrix, output=output.real,
+                         cval=numpy.real(cval), **kwargs)
+        affine_transform(input.imag, matrix, output=output.imag,
+                         cval=numpy.imag(cval), **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -658,9 +664,11 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         # import under different name to avoid confusion with shift parameter
         from scipy.ndimage.interpolation import shift as _shift
 
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        _shift(input.real, shift, output=output.real, **kwargs)
-        _shift(input.imag, shift, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        _shift(input.real, shift, output=output.real, cval=numpy.real(cval),
+               **kwargs)
+        _shift(input.imag, shift, output=output.imag, cval=numpy.imag(cval),
+               **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -766,9 +774,11 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         # import under different name to avoid confusion with zoom parameter
         from scipy.ndimage.interpolation import zoom as _zoom
 
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        _zoom(input.real, zoom, output=output.real, **kwargs)
-        _zoom(input.imag, zoom, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        _zoom(input.real, zoom, output=output.real, cval=numpy.real(cval),
+              **kwargs)
+        _zoom(input.imag, zoom, output=output.imag, cval=numpy.imag(cval),
+              **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
