@@ -45,6 +45,12 @@ def initialize_direction_numbers():
     up to the dimension 21201. This is the recommended choice by the authors.
 
     Original data can be found at https://web.maths.unsw.edu.au/~fkuo/sobol/.
+    For additional details on the quantities involved, see [1].
+
+    [1] S. Joe and F. Y. Kuo. Remark on algorithm 659: Implementing sobol’s
+        quasirandom sequence generator. ACM Trans. Math. Softw., 29(1):49–57,
+        Mar. 2003.
+
     The C-code generated from putting the numbers in as literals is obscenely
     large/inefficient. The data file was thus packaged and save as an .npz data
     file for fast loading using the following code (this assumes that the file
@@ -72,7 +78,7 @@ def initialize_direction_numbers():
         df = pd.DataFrame(rows).fillna(0).astype(int)
 
         # peform conversion
-        df["poly"] = 2 ** df["a"] + 2** df["s"] + 1
+        df["poly"] = 2 * df["a"] + 2 ** df["s"] + 1
 
         # ensure columns are properly ordered
         vs = df[[f"v{i}" for i in range(18)]].values
