@@ -7309,7 +7309,7 @@ def kruskal(*args, nan_policy='propagate'):
     ----------
     sample1, sample2, ... : array_like
        Two or more arrays with the sample measurements can be given as
-       arguments.
+       arguments. Samples must be one-dimensional.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -7362,6 +7362,7 @@ def kruskal(*args, nan_policy='propagate'):
 
     """
     args = list(map(np.asarray, args))
+
     num_groups = len(args)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
@@ -7369,6 +7370,9 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
+        elif arg.ndim != 1: 
+            raise ValueError("Samples must be one-dimensional.")
+
     n = np.asarray(list(map(len, args)))
 
     if nan_policy not in ('propagate', 'raise', 'omit'):
