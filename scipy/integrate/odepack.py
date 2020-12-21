@@ -238,6 +238,19 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     t = copy(t)
     y0 = copy(y0)
+
+    if np.shape(y0) == (0,):
+        # y0 is a 1-d sequence with length 0.  Handle this edge case here
+        # instead of passing it to the C code.  (The C code can handle a
+        # scalar, and it will correctly raise an exception if y0.ndim > 1,
+        # so it is OK to let those cases get passed in.)
+        n = len(t)
+        y = np.empty((n, 0))
+        if full_output:
+            return y, _make_empty_info(n)
+        else:
+            return y
+
     output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
                              ixpr, mxstep, mxhnil, mxordn, mxords,
@@ -257,3 +270,31 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         return output[0]
     else:
         return output
+
+
+def _make_empty_info(n):
+    """
+    Create an `info` dictionary for the return value of odeint in the
+    case where y0 has length 0 and full_output is True.
+    """
+    nm1 = n - 1
+    info = {
+        'hu': np.zeros(nm1, dtype=np.float64),
+        'tcur': np.zeros(nm1, dtype=np.float64),
+        'tolsf': np.zeros(nm1, dtype=np.float64),
+        'tsw': np.zeros(nm1, dtype=np.float64),
+        'nst': np.zeros(nm1, dtype=np.int32),
+        'nfe': np.zeros(nm1, dtype=np.int32),
+        'nje': np.zeros(nm1, dtype=np.int32),
+        'nqu': np.zeros(nm1, dtype=np.int32),
+        'imxer': -1,
+        'lenrw': 0,
+        'leniw': 0,
+        'mused': np.zeros(nm1, dtype=np.int32),
+    }
+    if nm1 == 0:
+        info['message'] = 'Nothing was done; the integration time was 0.'
+    else:
+        info['message'] = 'Integration successful.'
+
+    return info
