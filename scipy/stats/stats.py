@@ -5811,18 +5811,13 @@ def _broadcast_concatenate(xs, axis):
     """Concatenate arrays along an axis with broadcasting"""
     # move the axis we're concatenating along to the end
     xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last dim
+    # determine final shape of all but the last axis
     shape = np.broadcast(*[x[..., 0] for x in xs]).shape
-    # get final size of the dimension we're concatenating along
-    length = sum((x.shape[-1] for x in xs))
-    # create an empty array of the right shape
-    res = np.empty(shape + (length,))
-    # fill it up
-    index = 0
-    for x in xs:
-        res[..., index: index+x.shape[-1]] = x
-        index += x.shape[-1]
-    # move the axis we concatenated along to where it was
+    # broadcast along all but the last axis
+    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
+    # concatenate along last axis
+    res = np.concatenate(xs, axis = -1)
+    # move the last axis back to where it was
     res = np.swapaxes(res, axis, -1)
     return res
 

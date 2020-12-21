@@ -9,6 +9,7 @@
 import os
 import warnings
 from collections import namedtuple
+from itertools import product
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -29,6 +30,7 @@ from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
+from scipy.stats.stats import _broadcast_concatenate
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3902,6 +3904,24 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
+
+
+def test__broadcast_concatenate():
+    # test that _broadcast_concatenate properly broadcasts arrays along all
+    # axes except `axis`, then concatenates along axis
+    np.random.seed(0)
+    a = np.random.rand(5, 4, 4, 3, 1, 6)
+    b = np.random.rand(4, 1, 8, 2, 6)
+    c = _broadcast_concatenate((a, b), axis=-3)
+    # broadcast manually as an independent check
+    a = np.tile(a, (1, 1, 1, 1, 2, 1))
+    b = np.tile(b[None, ...], (5, 1, 4, 1, 1, 1))
+    for index in product(*(range(i) for i in c.shape)):
+        i, j, k, l, m, n = index
+        if l < a.shape[-3]:
+            assert a[i, j, k, l, m, n] == c[i, j, k, l, m, n]
+        else:
+            assert b[i, j, k, l - a.shape[-3], m, n] == c[i, j, k, l, m, n]
 
 
 def test_ttest_ind_with_uneq_var():
