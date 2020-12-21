@@ -5646,13 +5646,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         instead (i.e. each distinct permutation is used exactly once).
         If None (default), use the t-distribution to calculate p-values.
 
-        .. versionadded:: 0.16.0
+        .. versionadded:: 1.7.0
 
     random_state : int, RandomState, or Generator, optional
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
 
-        .. versionadded:: 0.16.0
+        .. versionadded:: 1.7.0
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -5783,6 +5783,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations:
+        if int(permutations) != permutations or permutations < 0:
+            raise ValueError("Permutations must be a positive integer.")
+
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
                                  nan_policy=nan_policy,

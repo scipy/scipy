@@ -3894,6 +3894,15 @@ class Test_ttest_ind_permutations():
                            match="nan-containing/masked inputs with"):
             res = stats.ttest_ind(a, b, **options_p)
 
+    def test_ttest_ind_permutation_check_inputs(self):
+        with assert_raises(ValueError, match="Permutations must be"):
+            stats.ttest_ind(self.a2, self.b2, permutations=-3)
+        with assert_raises(ValueError, match="Permutations must be"):
+            stats.ttest_ind(self.a2, self.b2, permutations=1.5)
+        with assert_raises(ValueError, match="'hello' cannot be used"):
+            stats.ttest_ind(self.a, self.b, permutations=1,
+                            random_state='hello')
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
