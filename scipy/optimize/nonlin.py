@@ -885,19 +885,23 @@ _doc_parts['broyden_params'] = """
     alpha : float, optional
         Initial guess for the Jacobian is ``(-1/alpha)``.
     reduction_method : str or tuple, optional
-        Method used in ensuring that the rank of the Broyden matrix
-        stays low. Can either be a string giving the name of the method,
-        or a tuple of the form ``(method, param1, param2, ...)``
-        that gives the name of the method and values for additional parameters.
+        Method used in ensuring that the rank of the Broyden
+        matrix stays low. Can either be a string giving the
+        name of the method, or a tuple of the form ``(method,
+        param1, param2, ...)`` that gives the name of the
+        method and values for additional parameters.
 
         Methods available:
 
-            - ``restart``: drop all matrix columns. Has no extra parameters.
-            - ``simple``: drop oldest matrix column. Has no extra parameters.
-            - ``svd``: keep only the most significant SVD components.
-              Takes an extra parameter, ``to_retain``, which determines the
-              number of SVD components to retain when rank reduction is done.
-              Default is ``max_rank - 2``.
+        ``restart`` : Drop all matrix columns. Has no extra parameters.
+
+        ``simple`` : Drop oldest matrix column. Has no extra parameters.
+
+        ``svd`` : Keep only the most significant SVD components.
+
+        If the method is ``svd``, the number of SVD components to retain
+        when rank reduction is done may also be specified as the second
+        element in the tuple. Default is ``max_rank - 2``.
 
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
