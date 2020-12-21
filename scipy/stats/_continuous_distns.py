@@ -2617,7 +2617,7 @@ class gamma_gen(rv_continuous):
         return sc.psi(a)*(1-a) + a + sc.gammaln(a)
 
     def _fitstart(self, data):
-        # The skewness of the gamma distribution is `4 / np.sqrt(a)`.
+        # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
         # We invert that to estimate the shape `a` using the skewness
         # of the data.  The formula is regularized with 1e-8 in the
         # denominator to allow for degenerate data where the skewness
