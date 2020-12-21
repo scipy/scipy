@@ -47,7 +47,7 @@ def initialize_direction_numbers():
     Original data can be found at https://web.maths.unsw.edu.au/~fkuo/sobol/.
     For additional details on the quantities involved, see [1].
 
-    [1] S. Joe and F. Y. Kuo. Remark on algorithm 659: Implementing sobol’s
+    [1] S. Joe and F. Y. Kuo. Remark on algorithm 659: Implementing sobol's
         quasirandom sequence generator. ACM Trans. Math. Softw., 29(1):49–57,
         Mar. 2003.
 
