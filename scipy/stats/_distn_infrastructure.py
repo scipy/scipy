@@ -1446,7 +1446,6 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
-
 ##  continuous random variables: implement maybe later
 ##
 ##  hf  --- Hazard Function (PDF / SF)
@@ -2293,14 +2292,6 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
 
-        # penalty approach from _nnlf_and_penalty
-        a, b = self.support(*theta)
-        cond0 = (x < a) | (x > b)
-        n_bad = np.count_nonzero(cond0, axis=0)
-        if n_bad > 0:
-            x = argsreduce(~cond0, x)[0]
-        penalty = n_bad * log(_XMAX) * 100
-
         dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
                                  for i in range(len(data_moments))])
         if np.any(np.isnan(dist_moments)):
@@ -2309,7 +2300,7 @@ class rv_continuous(rv_generic):
                               "Consider trying method='MLE'.")
 
         return (((data_moments - dist_moments) /
-                  np.maximum(np.abs(data_moments), 1e-8))**2).sum() + penalty
+                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
         """
@@ -2373,16 +2364,29 @@ class rv_continuous(rv_generic):
 
         Notes
         -----
-        With ``method="MLE"`` (default),
-        the fit is computed by maximizing a log-likelihood function, with
-        penalty applied for samples beyond the range of the distribution.
+        With ``method="MLE"`` (default), the fit is computed by minimizing
+        the negative log-likelihood function. A large, finite penalty
+        (rather than infinite negative log-likelihood) is applied for
+        observations beyond the support of the distribution.
 
         With ``method="MM"``, the fit is computed by minimizing the L2 norm
-        of the errors between the first *k* data moments and the corresponding
-        distribution moments, where *k* is the number of non-fixed parameters.
-        Typically, this error norm can be reduced to zero.
+        of the relative errors between the first *k* raw (about zero) data
+        moments and the corresponding distribution moments, where *k* is the
+        number of non-fixed parameters.
+        More precisely, the objective function is::
 
-        The returned answer is not guaranteed to be globally optimal; it
+            (((data_moments - dist_moments)
+              / np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+
+        where the constant ``1e-8`` avoids division by zero in case of
+        vanishing data moments. Typically, this error norm can be reduced to
+        zero.
+        Note that the standard method of moments can produce parameters for
+        which some data are outside the support of the fitted distribution;
+        this implementation does nothing to prevent this.
+
+        For either method,
+        the returned answer is not guaranteed to be globally optimal; it
         may only be locally optimal, or the optimization may fail altogether.
         If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
         the `fit` method will raise a ``RuntimeError``.
@@ -2453,39 +2457,27 @@ class rv_continuous(rv_generic):
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
 
-        # method of moments could be done with fsolve/root instead of an
-        # optimizer, but using an optimizer reduces maintains the structure of
-        # MM/MLE and paves the way for Generalized Method of Moments
-        vals, obj = optimizer(func, x0, args=(ravel(data),), disp=0,
-                              full_output=True)[:2]
+        # In some cases, method of moments can be done with fsolve/root
+        # instead of an optimizer, but sometimes no solution exists,
+        # especially when the user fixes parameters. Minimizing the sum
+        # of squares of the error generalizes to these cases.
+        vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        obj = func(vals, data)
 
         if restore is not None:
             vals = restore(args, vals)
         vals = tuple(vals)
 
-        a, b = self.support(*vals)
-        beyond_support = np.count_nonzero((data < a) | (data > b))
-        if beyond_support:
-            raise Exception(f"Optimization converged to parameters that are "
-                            f"inconsistent with the data: {beyond_support} "
-                            f"data points are outside the support of the "
-                            f"fitted distribution.")
-
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
             raise Exception("Optimization converged to parameters that are "
-                            "invalid for the distribution.")
+                            "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
                 raise Exception("Optimization failed: either a data moment "
                                 "or fitted distribution moment is "
                                 "non-finite.")
-
-            if obj > 1e-1:
-                raise Exception("Optimization did not converge to parameters "
-                                "for which the moments of the fitted "
-                                "distribution match the data moments.")
 
         return vals
 
