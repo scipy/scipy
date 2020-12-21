@@ -88,7 +88,7 @@ class TestInterpolativeDecomposition(object):
         t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        assert_allclose(A, B, rtol=0., atol=eps)
 
         _debug_print("Calling iddp_aid / idzp_aid ...",)
         t0 = time.time()
