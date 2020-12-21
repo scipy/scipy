@@ -3737,11 +3737,12 @@ class Test_ttest_ind_permutations():
     def test_ttest_ind_permutations_many_dims(self):
         # Test that permutation test works on many-dimensional arrays
         np.random.seed(0)
-        a = np.random.rand(5, 4, 4, 3, 1, 6)
+        a = np.random.rand(5, 4, 4, 7, 1, 6)
         b = np.random.rand(4, 1, 8, 2, 6)
         res = stats.ttest_ind(a, b, permutations=200, axis=-3,
                               random_state=0)
 
+        # compare fully-vectorized t-test against t-test on smaller slice
         i, j, k = 2, 3, 1
         a2 = a[i, :, j, :, 0, :]
         b2 = b[:, 0, :, k, :]
@@ -3751,6 +3752,25 @@ class Test_ttest_ind_permutations():
                      res2.statistic)
         assert_equal(res.pvalue[i, :, j, k, :],
                      res2.pvalue)
+
+        # compare against t-test on one axis-slice at a time
+
+        # manually broadcast with tile; move axis to end to simplify
+        x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
+        y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
+        shape = x.shape[:-1]
+        statistics = np.zeros(shape)
+        pvalues = np.zeros(shape)
+        for indices in product(*(range(i) for i in shape)):
+            xi = x[indices]  # use tuple to index single axis slice
+            yi = y[indices]
+            res3 = stats.ttest_ind(xi, yi, axis=-1, permutations=200,
+                                  random_state=0)
+            statistics[indices] = res3.statistic
+            pvalues[indices] = res3.pvalue
+
+        assert_allclose(statistics, res.statistic)
+        assert_allclose(pvalues, res.pvalue)
 
     def test_ttest_ind_exact_alternative(self):
         np.random.seed(0)
