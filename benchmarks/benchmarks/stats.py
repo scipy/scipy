@@ -64,21 +64,33 @@ class Distribution(Benchmark):
     params = [
         dists, ['pdf', 'logpdf', 'cdf', 'logcdf', 'rvs', 'fit', 'sf', 'logsf',
                 'ppf', 'isf', 'moment', 'stats', 'entropy', 'median', 'mean',
-                'var', 'std']
+                'var', 'std', 'interval', 'expect']
     ]
     distcont = dict(distcont)
     # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
-        self.method = getattr(getattr(stats, distribution), properties)
-        x = np.random.rand(100)
+        try: 
+            self.dist = getattr(stats, distribution)
+            self.method = getattr(self.dist, properties)
+        except AttributeError as e:
+            raise NotImplementedError("This attribute is not a member "
+                                      "of the distribution")
+      
         shapes = self.distcont[distribution]
-        args = [x, *self.custom_input.get(distribution, shapes)]
-        names = ['loc', 'scale']
-        values = [4, 10]
-        kwds = dict(zip(names, values))
 
+        if isinstance(self.dist, stats.rv_discrete):
+            self.isCont = False
+            kwds = {'loc': 4}
+        else: 
+            self.isCont = True
+            kwds = {'loc': 4, 'scale': 10}
+
+        rng = self.dist.interval(.99, *shapes, **kwds)
+        x = np.linspace(*rng, 100)
+        args = [x, *self.custom_input.get(distribution, shapes)]
+        
         if properties == 'fit':
             # provide only the data to fit in args
             self.args = args[:1]
@@ -97,6 +109,11 @@ class Distribution(Benchmark):
             self.kwds = kwds
         elif properties in ['entropy', 'median', 'mean', 'var', 'std']:
             self.args = args[1:]
+        elif properties == 'expect':
+            self.args = []
+            kwds['args'] = tuple(args[1:])
+        elif properties == 'interval':
+            self.args = [.99, *args[1:]]
         else:
             self.args = [*args]
         self.kwds = kwds
