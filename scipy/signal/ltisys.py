@@ -386,8 +386,8 @@ class lti(LinearTimeInvariant):
         """ divides two lti/int/float together """
         if isinstance(other, (int, float)):
             return lti(
-            np.polymul(other, self.den),  # numerator
-            self.num  # denominator
+            np.polymul(other, self.to_tf().den),  # numerator
+            self.to_tf().num  # denominator
         )
         elif not isinstance(other, type(self)):
             raise TypeError(f"{other} is not of type {type(self)}")
