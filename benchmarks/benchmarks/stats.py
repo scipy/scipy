@@ -63,7 +63,7 @@ class Distribution(Benchmark):
     param_names = ['distribution', 'properties']
     params = [
         dists, ['pdf', 'logpdf', 'cdf', 'logcdf', 'rvs', 'fit', 'sf', 'logsf',
-                'ppf', 'isf', 'moment', 'stats', 'entropy', 'median', 'mean',
+                'ppf', 'isf', 'moment', 'stats_s', 'stats_v', 'stats_m', 'stats_k', 'stats_mvsk', 'entropy', 'median', 'mean',
                 'var', 'std', 'interval', 'expect']
     ]
     distcont = dict(distcont)
@@ -71,12 +71,7 @@ class Distribution(Benchmark):
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
-        try: 
-            self.dist = getattr(stats, distribution)
-            self.method = getattr(self.dist, properties)
-        except AttributeError as e:
-            raise NotImplementedError("This attribute is not a member "
-                                      "of the distribution")
+        self.dist = getattr(stats, distribution)
       
         shapes = self.distcont[distribution]
 
@@ -103,9 +98,10 @@ class Distribution(Benchmark):
             self.args = [.99, *args[1:]]
         elif properties == 'moment':
             self.args = [10, *args[1:]]
-        elif properties == 'stats':
+        elif properties.startswith('stats_'):
+            properties = 'stats'
             self.args = args[1:]
-            kwds['moments'] = 'mv'
+            kwds['moments'] =  properties[6:]
             self.kwds = kwds
         elif properties in ['entropy', 'median', 'mean', 'var', 'std']:
             self.args = args[1:]
@@ -117,6 +113,12 @@ class Distribution(Benchmark):
         else:
             self.args = [*args]
         self.kwds = kwds
+    
+        try:
+            self.method = getattr(self.dist, properties)
+        except AttributeError as e:
+            raise NotImplementedError("This attribute is not a member "
+                                      "of the distribution")
 
     def time_distribution(self, distribution, properties):
         self.method(*self.args, **self.kwds)
