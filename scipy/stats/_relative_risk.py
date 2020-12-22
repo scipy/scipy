@@ -23,12 +23,18 @@ class ConfidenceInterval:
     high : float
 
 
+@dataclass
 class RelativeRiskResult:
     """
-    Result of scipy.stats.relative_risk.
+    Result of `scipy.stats.relative_risk`.
 
     Attributes
     ----------
+    relative_risk : float
+        This is::
+
+            (exposed_cases/exposed_total) / (control_cases/control_total)
+
     exposed_cases : int
         The number of "cases" (i.e. occurrence of disease or other event
         of interest) among the sample of "exposed" individuals.
@@ -39,10 +45,6 @@ class RelativeRiskResult:
         individuals.
     control_total : int
         The total number of "control" individuals in the sample.
-    relative_risk : float
-        This is::
-
-            (exposed_cases/exposed_total) / (control_cases/control_total)
 
     Methods
     -------
@@ -51,24 +53,18 @@ class RelativeRiskResult:
         confidence level.
 
     """
-    def __init__(self, exposed_cases, exposed_total,
-                 control_cases, control_total,
-                 relative_risk):
-        self.relative_risk = relative_risk
-        self.exposed_cases = exposed_cases
-        self.exposed_total = exposed_total
-        self.control_cases = control_cases
-        self.control_total = control_total
-
-    def __repr__(self):
-        return f"RelativeRiskResult(relative_risk={self.relative_risk})"
+    relative_risk: float
+    exposed_cases: int
+    exposed_total: int
+    control_cases: int
+    control_total: int
 
     def confidence_interval(self, confidence_level=0.95):
         """
         Compute the confidence interval for the relative risk.
 
         The confidence interval is computed using the Katz method
-        ([1]_, [2]_).
+        (i.e. "Method C" of [1]_; see also [2]_, section 3.1.2).
 
         Parameters
         ----------
@@ -84,11 +80,12 @@ class RelativeRiskResult:
 
         References
         ----------
-        .. [1] Hardeo Sahai and Anwer Khurshid, Statistics in Epidemiology,
-               CRC Press LLC, Boca Raton, FL, USA (1996).
-        .. [2] D. Katz, J. Baptista, S. P. Azen and M. C. Pike, "Obtaining
+        .. [1] D. Katz, J. Baptista, S. P. Azen and M. C. Pike, "Obtaining
                confidence intervals for the risk ratio in cohort studies",
                Biometrics, 34, 469-474 (1978).
+        .. [2] Hardeo Sahai and Anwer Khurshid, Statistics in Epidemiology,
+               CRC Press LLC, Boca Raton, FL, USA (1996).
+
 
         Examples
         --------
@@ -261,6 +258,8 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
         p1 = exposed_cases / exposed_total
         p2 = control_cases / control_total
         rr = p1 / p2
-    return RelativeRiskResult(exposed_cases, exposed_total,
-                              control_cases, control_total,
-                              relative_risk=rr)
+    return RelativeRiskResult(relative_risk=rr,
+                              exposed_cases=exposed_cases,
+                              exposed_total=exposed_total,
+                              control_cases=control_cases,
+                              control_total=control_total)

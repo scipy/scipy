@@ -23,10 +23,11 @@ Functions for creating and analyzing contingency tables.
 from functools import reduce
 import numpy as np
 from .stats import power_divergence
-from ._relative_risk import relative_risk
+from ._relative_risk import relative_risk, RelativeRiskResult
 from ._crosstab import crosstab
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab', 'relative_risk']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
+           'relative_risk', 'RelativeRiskResult']
 
 
 def margins(a):

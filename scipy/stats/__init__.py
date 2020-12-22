@@ -389,6 +389,14 @@ Warnings used in :mod:`scipy.stats`
 For many more stat related functions install the software R and the
 interface package rpy.
 
+Result classes returned by functions
+====================================
+
+.. autosummary::
+   :toctree: generated/
+
+   contingency.RelativeRiskResult
+
 """
 from .stats import *
 from .distributions import *
