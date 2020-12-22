@@ -8901,7 +8901,7 @@ class studentized_range_gen(rv_continuous):
 
     def _cdf(self, x, k, v):
         """The cdf"""
-
+        x, atol = x
         @np.vectorize
         def _single_cdf(q, k, v):
             if v < 120:
@@ -8909,7 +8909,7 @@ class studentized_range_gen(rv_continuous):
                     ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats, '_genstudentized_range_cdf',
                                                    user_data)
-                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
+                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf, epsabs=atol)[0]
 
                 return res
 
