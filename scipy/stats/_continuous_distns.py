@@ -8855,37 +8855,39 @@ class rv_histogram(rv_continuous):
 
 
 class studentized_range_gen(rv_continuous):
-    """
-    The upper half of a generalized normal continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    gennorm : generalized normal distribution
-    expon : exponential distribution
-    halfnorm : half normal distribution
-
-    Notes
-    -----
-    The probability density function for `halfgennorm` is:
-
-    References
-    ----------
-
-    .. [1] "Generalized normal distribution, Version 1",
-           https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
-
-    %(example)s
-
-    """
+    # """
+    # The Studentized Range Distribution.
+    #
+    # %(before_notes)s
+    #
+    # Notes
+    # -----
+    # This distribution is commonly used for Tukey's range test
+    # (`scipy.stats.tukeykramer`).
+    #
+    # The probability density function for `studentized_range` is:
+    #
+    # \x
+    #
+    # References
+    # ----------
+    # .. [1] "Studentized range distribution",
+    #        https://en.wikipedia.org/wiki/Studentized_range_distribution
+    # 
+    # %(after_notes)s
+    #
+    # .. versionadded:: 0.16.1
+    #
+    # %(example)s
+    #
+    # """
 
     def _argcheck(self, k, v):
         """Verify args"""
         return np.all(k > 1) and np.all(v > 0)
 
     def _ppf(self, p, k, v):
-        """the ppf"""
+        """Precentage point funtion"""
 
         # Credit to swallan for the concept
         @np.vectorize
@@ -8900,7 +8902,7 @@ class studentized_range_gen(rv_continuous):
         return _single_p_calc(p, k, v)
 
     def _cdf(self, x, k, v):
-        """The cdf"""
+        """Cumultive distribution function"""
 
         @np.vectorize
         def _single_cdf(q, k, v):
