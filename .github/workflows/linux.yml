@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Configuring Test Environment
         run: |
+          sudo apt-get update
           sudo apt install python3.7-dbg python3.7-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
           free -m
           python3.7-dbg --version # just to check
