@@ -162,7 +162,7 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate a few first moments:
+Calculate the first four moments:
 
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
@@ -291,7 +291,7 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate a few first moments:
+Calculate the first four moments:
 
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
