@@ -158,7 +158,7 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
 
     Returns
     -------
-    result : instance of RelativeRiskResult
+    result : instance of `RelativeRiskResult`
         The object has the float attribute ``relative_risk``, which is::
 
             rr = (exposed_cases/exposed_total) / (control_cases/control_total)
@@ -188,6 +188,8 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
     To pass the same data to ``relative_risk``, use::
 
         relative_risk(n11, n10 + n11, n01, n00 + n01)
+
+    .. versionadded:: 1.7.0
 
     References
     ----------
