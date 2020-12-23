@@ -1826,8 +1826,8 @@ class TestPowerlaw(object):
                                                 fscale):
         if False not in {fa, floc, fscale}:
             pytest.skip()
-        data = stats.powerlaw.rvs(size=2500, a=a, loc=loc, scale=scale)
-        
+        data = stats.powerlaw.rvs(size=500, a=a, loc=loc, scale=scale)
+
         def ll(args, data):
             # to get the same behavior as `powerlaw.reduce_func`, negate the
             # log-likelihood function
@@ -1842,20 +1842,7 @@ class TestPowerlaw(object):
         if fscale:
             kwds['fscale'] = scale
         with np.errstate(divide='ignore'):
-            mle_analytical = stats.powerlaw.fit(data, **kwds)
-            numerical_opt = super(type(stats.powerlaw),
-                                  stats.powerlaw).fit(data, **kwds)
-            ll_mle_analytical = ll(mle_analytical, data)
-            ll_numerical_opt = ll(numerical_opt, data)
-            try:
-                assert (ll_mle_analytical <= ll_numerical_opt)
-            except Exception as e1:
-                try:
-                    np.testing.assert_almost_equal(ll_mle_analytical,
-                                                   ll_numerical_opt)
-                except Exception as e2:
-                    np.testing.assert_almost_equal(mle_analytical,
-                                                   numerical_opt, decimal=3)
+            _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
 
 
 class TestInvGamma(object):
