@@ -273,11 +273,28 @@ def test_methods_with_lists(method, distname, args):
                         rtol=1e-15, atol=1e-15)
 
 
-def test_cdf_gh13280_regression():
-    vals0 = stats.hypergeom.cdf(np.arange(5), 3, 3, 4)
-    expected0 = np.array(5*[np.nan])
-    npt.assert_equal(vals0, expected0)
-
-    vals1 = stats.nhypergeom.cdf(np.arange(-2, 6), 5, 2, 8)
-    expected1 = np.array(8*[np.nan])
-    npt.assert_equal(vals1, expected1)
+@pytest.mark.parametrize(
+    'dist, x, args',
+    [
+        (stats.hypergeom, np.arange(5), (3, 3, 4)),
+        (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
+        (stats.bernoulli, np.arange(5), (1.5, )),
+        (stats.binom, np.arange(15), (10, 1.5)),
+        (stats.betabinom, np.arange(15), (10, -0.4, -0.5)),
+        (stats.boltzmann, np.arange(5), (-1, 4)),
+        (stats.dlaplace, np.arange(5), (-0.5, )),
+        (stats.geom, np.arange(5), (1.5, )),
+        (stats.logser, np.arange(5), (1.5, )),
+        (stats.nbinom, np.arange(15), (10, 1.5)),
+        (stats.planck, np.arange(5), (-0.5, )),
+        (stats.poisson, np.arange(5), (-0.5, )),
+        (stats.randint, np.arange(5), (5, 2)),
+        (stats.skellam, np.arange(5), (-5, -2)),
+        (stats.zipf, np.arange(5), (-2, )),
+        (stats.yulesimon, np.arange(5), (-2, ))
+    ]
+)
+def test_cdf_gh13280_regression(dist, x, args):
+    vals = dist.cdf(x, *args)
+    expected = np.array(x.size*[np.nan])
+    npt.assert_equal(vals, expected)
