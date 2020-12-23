@@ -843,7 +843,8 @@ CompareFunction compare_functions[] = \
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
 	npy_intp *a_ind=NULL, *b_ind=NULL, *temp_ind=NULL, *mode_dep=NULL, *check_ind=NULL;
-	npy_uintp *offsets=NULL, *offsets2=NULL;
+	npy_uintp *offsets=NULL;
+	npy_intp *offsets2=NULL;
 	npy_uintp offset1;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
