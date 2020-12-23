@@ -1114,7 +1114,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', bounds=None,
         disp : bool
             Set to True to print convergence messages.
 
-        See :func:`minimize_scalar` for more details.
+        See `scipy.optimize.minimize_scalar` for more details.
     Returns
     -------
     maxlog : float or ndarray
