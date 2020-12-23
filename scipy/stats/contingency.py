@@ -10,12 +10,13 @@ Functions for creating and analyzing contingency tables.
    :toctree: generated/
 
    chi2_contingency
-   margins
    relative_risk
    crosstab
 
    expected_freq
    margins
+
+   RelativeRiskResult
 
 """
 
