@@ -6299,14 +6299,20 @@ class powerlaw_gen(rv_continuous):
                                                                  args, kwds)
         # the analytical formula for `fshape` is the same whether `fshape` is
         # less than or greater than one.
+
         def get_a(floc, fscale, data):
             mask = data != floc
             return (len(data) / (np.sum(np.log(fscale / (data[mask] - floc)))))
 
-        # Formulas to be used under the assumption that `fshape > 1`
+        def get_a_fixed_floc(floc, fscale, data):
+            # when `floc` is fixed, there is no need to mask out a generated
+            # location
+            return (len(data) / (np.sum(np.log(fscale / (data - floc)))))
+
         def get_s_a_gt(data, floc):
             return np.max(data) - floc
 
+        # Formulas to be used under the assumption that `fshape > 1`
         def get_u_a_gt(data, fscale):
             return np.max(data) - fscale
 
@@ -6371,7 +6377,9 @@ class powerlaw_gen(rv_continuous):
                                      " likelihood estimation with 'powerlaw'"
                                      " requires loc < min(data).")
                 if fscale is None:
-                    fscale = get_s(data, floc)
+                    # use the formula for `max(data) - floc` when location
+                    # is fixed.
+                    fscale = get_s_a_gt(data, floc)
                 else:
                     if fscale + floc <= np.max(data):
                         # fitting with fixed scale and fixed location requires
@@ -6381,7 +6389,7 @@ class powerlaw_gen(rv_continuous):
                                          " 'powerlaw' requires loc + scale >"
                                          " max(data).")
                 if fshape is None:
-                    fshape = get_a(floc, fscale, data)
+                    fshape = get_a_fixed_floc(floc, fscale, data)
                 return fshape, floc, fscale
             elif fscale is not None:
                 # When the scale is fixed, the location can be analytically
@@ -6397,23 +6405,29 @@ class powerlaw_gen(rv_continuous):
 
         # fitting under the assumption that `fshape < 1` is fast and completely
         # analytical, so it is performed first.
-        res = fit_with_multiple_funcs(fshape, floc, fscale, data, get_u_a_lt,
-                                      get_s_a_lt, fixed_shape_only,
-                                      all_free_lt)
+        res_a_lt = fit_with_multiple_funcs(fshape, floc, fscale, data,
+                                           get_u_a_lt, get_s_a_lt,
+                                           fixed_shape_only, all_free_lt)
         # if the assumption that the shape < 1 is not consistent with the
         # result of the fitting, try to fit under the assumption that the
         # shape is >= 1.
-        if (not np.allclose(res[0], 1)) and (res[0] > 1 or res[0] is None):
-
-            res1 = fit_with_multiple_funcs(fshape, floc, fscale, data,
-                                          get_u_a_gt, get_s_a_gt,
-                                          all_free_gt, all_free_gt)
-            if res1[0] is not None:
-                # make sure that this was successful, otherwise, revert to
-                # other determination.
-                res = res1
-
-        return res
+        if (res_a_lt[0] > 1 or res_a_lt[0] is None):
+            res_a_gt = fit_with_multiple_funcs(fshape, floc, fscale, data,
+                                               get_u_a_gt, get_s_a_gt,
+                                               all_free_gt, all_free_gt,
+                                               )
+            if res_a_gt[0] is None:
+                # if the attempt to fit the data under the assumption that
+                # `a` > 1 fails, but the fit under the assumption that `a` < 1
+                # results in an `a` that is greater than 1, we conclude that
+                # `a` is equal to 1, and the location and scale from the
+                # a < 1 case are used.
+                return (1, *res_a_lt[1:])
+            else:
+                # if a fit for a > 1 is successfully obtained, return it.
+                return res_a_gt
+        else:
+            return res_a_lt
 
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
