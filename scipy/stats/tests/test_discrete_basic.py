@@ -275,9 +275,9 @@ def test_methods_with_lists(method, distname, args):
 
 def test_cdf_gh13280_regression():
     vals0 = stats.hypergeom.cdf(np.arange(5), 3, 3, 4)
-    expected0 = np.array(5*[np.nan], dtype='d')
+    expected0 = np.array(5*[np.nan])
     npt.assert_equal(vals0, expected0)
 
     vals1 = stats.nhypergeom.cdf(np.arange(-2, 6), 5, 2, 8)
-    expected1 = np.array(8*[np.nan], dtype='d')
+    expected1 = np.array(8*[np.nan])
     npt.assert_equal(vals1, expected1)
