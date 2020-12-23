@@ -2205,7 +2205,7 @@ def moment(a, moment=1, axis=0):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - ma.expand_dims(a.mean(axis), axis)
+        a_zero_mean = a - a.mean(axis, keepdims=True)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:

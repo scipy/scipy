@@ -3428,7 +3428,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape
