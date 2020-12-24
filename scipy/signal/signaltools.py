@@ -1822,15 +1822,17 @@ def medfilt2d(input, kernel_size=3):
 
     Notes
     -------
+    This is faster than `scipy.signal.medfilt` when `input.dtype.type`
+    is `np.ubyte`, `np.single`, or `np.double`; for other types, this
+    falls back to `scipy.signal.medfilt`
+
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
     image = np.asarray(input)
 
-    # see sigtools_median2d in sigtoolsmodule.c for supported types
-    # for sigtools._medfilt2d
-
-    # checking dtype.type is necessary for Windows
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
     if image.dtype.type not in (np.ubyte, np.single, np.double):
         return medfilt(image, kernel_size)
 
