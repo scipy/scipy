@@ -1519,7 +1519,7 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1822,10 +1822,20 @@ def medfilt2d(input, kernel_size=3):
 
     Notes
     -------
+    This is faster than `scipy.signal.medfilt` when `input.dtype.type`
+    is `np.ubyte`, `np.single`, or `np.double`; for other types, this
+    falls back to `scipy.signal.medfilt`
+
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
