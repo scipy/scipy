@@ -2245,20 +2245,17 @@ class rv_continuous(rv_generic):
             else:
                 x0.append(args[n])
 
-        # use lower for consistency, although upper would be more streamlined
-        n_params = len(shapes) + 2 - len(fixedn)
-        exponents = (np.arange(1, n_params+1))[:, np.newaxis]
-        data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
-        def moment_error_wrapped(theta, x):
-            return self._moment_error(theta, x, data_moments)
-
-        objectives = {"mle": self._penalized_nnlf,
-                      "mm": moment_error_wrapped}
+        methods = {"mle", "mm"}
         method = kwds.pop('method', "mle").lower()
-        methods = str({key.upper() for key in objectives.keys()})
-        try:
-            objective = objectives[method]
-        except KeyError:
+        if method == "mm":
+            n_params = len(shapes) + 2 - len(fixedn)
+            exponents = (np.arange(1, n_params+1))[:, np.newaxis]
+            data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+            def objective(theta, x):
+                return self._moment_error(theta, x, data_moments)
+        elif method == "mle":
+            objective = self._penalized_nnlf
+        else:
             raise ValueError("Method '{0}' not available; must be one of {1}"
                              .format(method, methods))
 
