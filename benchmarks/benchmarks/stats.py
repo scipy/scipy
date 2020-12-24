@@ -6,7 +6,7 @@ from .common import Benchmark, safe_import
 with safe_import():
     import scipy.stats as stats
 with safe_import():
-    from scipy.stats._distr_params import distcont
+    from scipy.stats._distr_params import distcont, distdiscrete
 
 try:  # builtin lib
     from itertools import compress
@@ -58,21 +58,43 @@ class InferentialStats(Benchmark):
 
 class Distribution(Benchmark):
     # add distributions here
-    dists = ['cauchy', 'gamma', 'beta']
+    dists = ['alpha', 'anglit', 'arcsine', 'argus', 'beta', 'betaprime',
+             'bradford', 'burr', 'burr12', 'cauchy', 'chi', 'chi2', 'cosine',
+             'crystalball', 'dgamma', 'dweibull', 'erlang', 'expon',
+             'exponnorm', 'exponweib', 'exponpow', 'f', 'fatiguelife',
+             'fisk', 'foldcauchy', 'foldnorm', 'frechet_r', 'frechet_l',
+             'genlogistic', 'gennorm', 'genpareto', 'genexpon', 'genextreme',
+             'gausshyper', 'gamma', 'gengamma', 'genhalflogistic',
+             'geninvgauss', 'gilbrat', 'gompertz', 'gumbel_r', 'gumbel_l',
+             'halfcauchy', 'halflogistic', 'halfnorm', 'halfgennorm',
+             'hypsecant', 'invgamma', 'invgauss', 'invweibull', 'johnsonsb',
+             'johnsonsu', 'kappa4', 'kappa3', 'ksone', 'kstwo', 'kstwobign',
+             'laplace', 'levy', 'levy_l', 'levy_stable', 'logistic',
+             'loggamma', 'loglaplace', 'lognorm', 'loguniform', 'lomax',
+             'maxwell', 'mielke', 'moyal', 'nakagami', 'ncx2', 'ncf', 'nct',
+             'norm', 'norminvgauss', 'pareto', 'pearson3', 'powerlaw',
+             'powerlognorm', 'powernorm', 'rdist', 'rayleigh', 'rice',
+             'recipinvgauss', 'semicircular', 'skewnorm', 't', 'trapz',
+             'triang', 'truncexpon', 'truncnorm', 'tukeylambda', 'uniform',
+             'vonmises', 'vonmises_line', 'wald', 'weibull_min',
+             'weibull_max', 'wrapcauchy', 'bernoulli', 'betabinom', 'binom',
+             'boltzmann', 'dlaplace', 'geom', 'hypergeom', 'logser', 'nbinom',
+             'planck', 'poisson', 'randint', 'skellam', 'zipf', 'yulesimon']
 
     param_names = ['distribution', 'properties']
     params = [
-        dists, ['pdf', 'logpdf', 'cdf', 'logcdf', 'rvs', 'fit', 'sf', 'logsf',
-                'ppf', 'isf', 'moment', 'stats_s', 'stats_v', 'stats_m', 'stats_k', 'stats_mvsk', 'entropy', 'median', 'mean',
-                'var', 'std', 'interval', 'expect']
+        dists, ['pdf/pmf', 'logpdf/logpmf', 'cdf', 'logcdf', 'rvs', 'fit',
+                'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
+                'stats_m', 'stats_k', 'stats_mvsk', 'entropy', 'median',
+                'mean', 'var', 'std', 'interval', 'expect']
     ]
-    distcont = dict(distcont)
+    distcont = dict(distcont + distdiscrete)
     # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
         self.dist = getattr(stats, distribution)
-      
+
         shapes = self.distcont[distribution]
 
         if isinstance(self.dist, stats.rv_discrete):
@@ -85,7 +107,7 @@ class Distribution(Benchmark):
         rng = self.dist.interval(.99, *shapes, **kwds)
         x = np.linspace(*rng, 100)
         args = [x, *self.custom_input.get(distribution, shapes)]
-        
+
         if properties == 'fit':
             # provide only the data to fit in args
             self.args = args[:1]
@@ -93,8 +115,14 @@ class Distribution(Benchmark):
             # add size for creation of data
             kwds['size'] = 1000
             self.args = args[1:]
-        elif properties == 'ppf' or properties == 'isf':
+        elif properties == 'pdf/pmf':
             # picking arbitrary value for this
+            self.args = [.99, *args[1:]]
+            properties = 'pmf' if isinstance(self.dist, stats.rv_discrete) else 'pdf' 
+        elif properties == 'logpdf/logpmf':
+            properties = 'logpmf' if isinstance(self.dist, stats.rv_discrete) else 'logpdf'
+            self.args = args
+        elif properties == 'isf':
             self.args = [.99, *args[1:]]
         elif properties == 'moment':
             self.args = [10, *args[1:]]
@@ -111,7 +139,7 @@ class Distribution(Benchmark):
         elif properties == 'interval':
             self.args = [.99, *args[1:]]
         else:
-            self.args = [*args]
+            self.args = args
         self.kwds = kwds
     
         try:
