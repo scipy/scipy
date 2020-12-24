@@ -58,7 +58,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     The default values for taps are specifically taken from the first
     option listed for each value of ``nbits`` in:
 
-        http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
+        https://web.archive.org/web/20181001062252/http://www.newwaveinstruments.com/resources/articles/m_sequence_linear_feedback_shift_register_lfsr.htm
 
     .. versionadded:: 0.15.0
 
