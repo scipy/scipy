@@ -22,8 +22,8 @@ Engines
    QMCEngine
    Sobol
    Halton
-   OrthogonalLatinHypercube
    LatinHypercube
+   OrthogonalLatinHypercube
    OptimalDesign
    NormalQMC
    MultivariateNormalQMC
@@ -43,7 +43,7 @@ Introduction to Quasi-Monte Carlo
 =================================
 
 Quasi-Monte Carlo (QMC) methods [1]_, [2]_, [3]_ provide an
-:math:`n \times dim` matrix of numbers in :math:`[0,1]`. They can be used in
+:math:`n \times dim` array of numbers in :math:`[0,1]`. They can be used in
 place of n points from the :math:`U[0,1]^{dim}` distribution. Compared to
 random points, QMC points are designed to have fewer gaps and clumps. This is
 quantified by discrepancy measures [4]_. From the Koksma-Hlawka
@@ -58,7 +58,7 @@ size by even one can degrade their performance, even their
 rate of convergence [6]_. For instance :math:`n=100` points may give less
 accuracy than :math:`n=64` if the method was designed for :math:`n=2^m`.
 
-Some QMC constructions are extensible in n: we can find
+Some QMC constructions are extensible in :math:`n`: we can find
 another special sample size :math:`n' > n` and often an infinite
 sequence of increasing special sample sizes. Some QMC
 constructions are extensible in :math:`dim`: we can increase the dimension,
@@ -69,10 +69,10 @@ both :math:`n` and :math:`dim`.
 QMC points are deterministic. That makes it hard to estimate
 the accuracy of averages. Randomized QMC (RQMC) [7]_
 points are constructed so that each point is individually :math:`U[0,1]^{dim}`
-while collectively the n points retain their low discrepancy.
+while collectively the :math:`n` points retain their low discrepancy.
 One can make :math:`R` independent replications of RQMC points to
-see how stable a computation is. From :math:`R` independent values
-a t test (or bootstrap t test [8]_) then gives approximate confidence
+see how stable a computation is. From :math:`R` independent values,
+a t-test (or bootstrap t-test [8]_) then gives approximate confidence
 intervals on the mean value.  Some RQMC methods produce a
 root mean squared error that is actually :math:`o(1/n)` and smaller than
 the rate seen in unrandomized QMC.  An intuitive explanation is
@@ -89,12 +89,12 @@ large elsewhere. Worst case analyses get very pessimistic
 in high dimensions. (R)QMC can bring a great improvement over
 MC when the functions on which it is used are not worst case.
 For instance (R)QMC can be especially effective on integrands
-that are well approximated by sums of functions of one or two
-or some small number of their input variables at a time [10]_, [11]_.
+that are well approximated by sums of functions of
+some small number of their input variables at a time [10]_, [11]_.
 That property is often a surprising finding about those functions.
 
 Scrambled nets are a kind of RQMC that have some valuable robustness
-properties [12]_. If the integrand is square integrable they give variance
+properties [12]_. If the integrand is square integrable, they give variance
 :math:`var_{SNET} = o(1/n)`. There is a finite upper bound on
 :math:`var_{SNET} / var_{MC}` that holds simultaneously for every square
 integrable integrand. Scrambled nets satisfy a strong law of large numbers
@@ -118,7 +118,7 @@ dimensions have much better equidistribution properties than
 later ones. There are essentially no special sample sizes.
 They are not thought to be as accurate as Sobol' sequences.
 They can be scrambled. The nets of Faure [19]_ are also widely
-used. All dimensions are equally good but the special sample
+used. All dimensions are equally good, but the special sample
 sizes grow rapidly with dimension d. They can be scrambled.
 The nets of Niederreiter and Xing [20]_ have the best asymptotic
 properties but have not shown good empirical performance [21]_.
@@ -135,14 +135,14 @@ therefore are the computational costs [23]_.
 
 (R)QMC is sometimes improved by passing the points through
 a baker's transformation (tent function) prior to using them.
-That function has the form :math:`1-2|x-1/2|`.  As x goes from 0 to
-1 this function goes from 0 to 1 and then back.  It is very
-useful to produce a periodic function for lattice rules [14]_
+That function has the form :math:`1-2|x-1/2|`.  As :math:`x` goes from 0 to
+1, this function goes from 0 to 1 and then back.  It is very
+useful to produce a periodic function for lattice rules [14]_,
 and sometimes it improves the convergence rate [24]_.
 
 It is not straightforward to apply QMC methods to Markov
 chain Monte Carlo (MCMC).  We can think of MCMC as using
-n=1 one point in :math:`[0,1]^{dim}` for very large d, with ergodic results
+:math:`n=1` point in :math:`[0,1]^{dim}` for very large d, with ergodic results
 corresponding to :math:`dim \to \infty`.  One proposal is in [25]_
 and under strong conditions an improved rate of convergence
 has been shown [26]_.

@@ -27,23 +27,23 @@ def scale(sample, bounds, reverse=False):
 
     .. math::
 
-        (b - a) * sample + a
+        (b - a) \cdot \text{sample} + a
 
     Parameters
     ----------
     sample : array_like (n_samples, dim)
         Sample to scale.
     bounds : tuple or array_like ([min, dim], [max, dim])
-        Desired range of transformed data. The transformation apply the bounds
-        on the sample and not the theoretical space, unit cube. Thus min and
+        Desired range of transformed data. The transformation applies the bounds
+        to the sample, not the theoretical space (unit hypercube). Thus, min and
         max values of the sample will coincide with the bounds.
     reverse : bool
-        Reverse the transformation, from bounds range to unit hypercube.
+        Reverse the transformation from `bounds` to the unit hypercube.
 
     Returns
     -------
     sample : array_like (n_samples, dim)
-        Scaled-sample.
+        Scaled sample.
 
     Examples
     --------
@@ -91,7 +91,7 @@ def discrepancy(sample, iterative=False, method='CD'):
     uniform distribution.
     The lower the value is, the better the coverage of the parameter space is.
 
-    Taking a subspace of the parameter space we count the number of points in
+    Taking a subspace of the parameter space, we count the number of points in
     the subpace and compare it to the total number of the points of the
     sample. This value is substracted by the volume of the subspace. This
     process is done over all subspaces and the highest value is kept.
@@ -458,7 +458,7 @@ def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
 class QMCEngine(ABC):
     """A generic Quasi-Monte Carlo sampler class meant for subclassing.
 
-    QMCEngine is a base class to construct specific Quasi-Monte Carlo sampler.
+    QMCEngine is a base class to construct a specific Quasi-Monte Carlo sampler.
     It cannot be used directly as a sampler.
 
     Parameters
@@ -466,7 +466,7 @@ class QMCEngine(ABC):
     dim : int
         Dimension of the parameter space.
     seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
+        If `seed` is not specified, the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
@@ -490,11 +490,10 @@ class QMCEngine(ABC):
       Halton), this parameter can be omitted.
     * ``random(n_samples)``: draw ``n_samples`` from the engine.
 
-    Optionally, 2 other methods can be overwritten by subclasses:
+    Optionally, two other methods can be overwritten by subclasses:
 
     * ``reset``: Reset the engine to it's original state.
-    * ``fast_forward``: It should be used as a way to fast-forward a sequence
-      to a further state. If the sequence is deterministic (like Halton
+    * ``fast_forward``: If the sequence is deterministic (like Halton
       sequence), then ``fast_forward(n)`` is skipping the ``n`` first draw.
 
     Examples
@@ -512,8 +511,8 @@ class QMCEngine(ABC):
     ...         return self.rng.random((n_samples, self.dim))
     ...
 
-    We subclass `QMCEngine` by defining the sampling strategy we want to use.
-    And we can create an instance to sample from.
+    After subclassing `QMCEngine` to define the sampling strategy we want to use,
+    we can create an instance to sample from.
 
     >>> engine = RandomEngine(2, seed=12345)
     >>> engine.random(5)
@@ -575,8 +574,8 @@ class Halton(QMCEngine):
     """Halton sequence.
 
     Pseudo-random number generator that generalize the Van der Corput sequence
-    for multiple dimensions. Halton sequence use base-two Van der Corput
-    sequence for the first dimension, base-three for its second and base-n for
+    for multiple dimensions. The Halton sequence uses the base-two Van der Corput
+    sequence for the first dimension, base-three for its second and base-:math:`n` for
     its n-dimension.
 
     Parameters
@@ -586,7 +585,7 @@ class Halton(QMCEngine):
     scramble: bool, optional
         If True, use Owen scrambling.
     seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
+        If `seed` is not specified, the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
@@ -684,8 +683,8 @@ class Halton(QMCEngine):
 class OrthogonalLatinHypercube(QMCEngine):
     """Orthogonal array-based Latin hypercube sampling (OA-LHS).
 
-    On top of the constraints from the Latin Hypercube, an orthogonal array of
-    size n_samples is defined and only one point is allowed per subspace.
+    In addition to the constraints from the Latin Hypercube, an orthogonal array of
+    size `n_samples` is defined and only one point is allowed per subspace.
 
     Parameters
     ----------
@@ -806,7 +805,7 @@ class LatinHypercube(QMCEngine):
 
     Examples
     --------
-    Generate samples from a latin hypercube generator.
+    Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(dim=2, seed=12345)
@@ -871,9 +870,9 @@ class OptimalDesign(QMCEngine):
     discrepancy. If `optimization` is False, `niter` design are generated and
     the one with lowest centered discrepancy is return. This option is faster.
 
-    Centered discrepancy based design show better space filling robustness
-    toward 2D and 3D subprojections. Distance based design better space
-    filling but less robust to subprojections.
+    Centered discrepancy-based design shows better space filling robustness
+    toward 2D and 3D subprojections. Distance-based design shows better space
+    filling but less robustness to subprojections.
 
     Parameters
     ----------
@@ -882,7 +881,7 @@ class OptimalDesign(QMCEngine):
     start_design : array_like (n_samples, dim)
         Initial design of experiment to optimize.
     niter : int
-        Number of iteration to perform.
+        Number of iterations to perform.
     force : bool
         If `optimization`, force *basinhopping* optimization. Otherwise
         grid search is used.
@@ -1049,9 +1048,9 @@ class Sobol(QMCEngine):
     can be drawn using two methods:
 
     * `random_base2`: safely draw :math:`n=2^m` points. This method
-      guaranty the balance properties of the sequence.
+      guarantees the balance properties of the sequence.
     * `random`: draw an arbitrary number of points from the
-      sequence.
+      sequence. See warning below.
 
     Parameters
     ----------
@@ -1076,7 +1075,7 @@ class Sobol(QMCEngine):
 
     There are many versions of Sobol' sequences depending on their
     'direction numbers'. This code uses direction numbers from [3]_. Hence,
-    maximum number of dimension is 21201. The direction numbers have been
+    the maximum number of dimension is 21201. The direction numbers have been
     precomputed with search criterion 6 and can be retrieved at
     https://web.maths.unsw.edu.au/~fkuo/sobol/.
 
@@ -1090,8 +1089,8 @@ class Sobol(QMCEngine):
        points for :math:`M>m`. When scrambling, the number R of independent
        replicates does not have to be a power of 2.
 
-       Sobol' sequences are generated to some number :math:`B` of bits. Then
-       after :math:`2^B` points have been generated, the sequence will repeat.
+       Sobol' sequences are generated to some number :math:`B` of bits.
+       After :math:`2^B` points have been generated, the sequence will repeat.
        Currently :math:`B=30`.
 
     References
@@ -1132,7 +1131,7 @@ class Sobol(QMCEngine):
     >>> qmc.discrepancy(sample)
     0.013882107204860938
 
-    If some wants to continue an existing design, extra points can be obtained
+    To continue an existing design, extra points can be obtained
     by calling again `random_base2`. Alternatively, you can skip some
     points like:
 
