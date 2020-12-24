@@ -275,7 +275,7 @@ def test_methods_with_lists(method, distname, args):
 
 @pytest.mark.parametrize(
     'dist, x, args',
-    [
+    [  # In each of the following, at least one shape parameter is invalid
         (stats.hypergeom, np.arange(5), (3, 3, 4)),
         (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
         (stats.bernoulli, np.arange(5), (1.5, )),
@@ -295,6 +295,7 @@ def test_methods_with_lists(method, distname, args):
     ]
 )
 def test_cdf_gh13280_regression(dist, x, args):
+    # Test for nan output when shape parameters are invalid
     vals = dist.cdf(x, *args)
     expected = np.array(x.size*[np.nan])
     npt.assert_equal(vals, expected)
