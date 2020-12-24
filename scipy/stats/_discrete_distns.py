@@ -31,8 +31,8 @@ class binom_gen(rv_discrete):
     for ``k`` in ``{0, 1,..., n}``, :math:`0 \leq p \leq 1`
 
     `binom` takes ``n`` and ``p`` as shape parameters,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -113,8 +113,8 @@ class bernoulli_gen(binom_gen):
     for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
     `bernoulli` takes :math:`p` as shape parameter,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -258,8 +258,17 @@ class nbinom_gen(rv_discrete):
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success, 
-    and :math:`1-p` is the probability of a single failure. 
+    number of successes, :math:`p` is the probability of a single success,
+    and :math:`1-p` is the probability of a single failure.
+
+    Another common parameterization of the negative binomial distribution is
+    in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
+    successes. The mean :math:`\mu` is related to the probability of success
+    as
+
+    .. math::
+
+       p = \frac{n}{n + \mu}
 
     %(after_notes)s
 
@@ -327,8 +336,8 @@ class geom_gen(rv_discrete):
 
     for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter, 
-    where :math:`p` is the probability of a single success 
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
@@ -1106,7 +1115,7 @@ class dlaplace_gen(rv_discrete):
         #     https://www.sciencedirect.com/science/
         #     article/abs/pii/S0378375804003519
         # Furthermore, the two-sided geometric distribution is
-        # equivalent to the difference between two iid geometric 
+        # equivalent to the difference between two iid geometric
         # distributions.
         #   Reference (page 179):
         #     https://pdfs.semanticscholar.org/61b3/
