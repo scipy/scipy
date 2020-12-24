@@ -297,5 +297,5 @@ def test_methods_with_lists(method, distname, args):
 def test_cdf_gh13280_regression(dist, x, args):
     # Test for nan output when shape parameters are invalid
     vals = dist.cdf(x, *args)
-    expected = np.array(x.size*[np.nan])
+    expected = np.nan
     npt.assert_equal(vals, expected)
