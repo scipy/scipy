@@ -548,7 +548,7 @@ def mode(a, axis=0, nan_policy='propagate'):
 
         for score in scores:
             template = (a == score)
-            counts = np.expand_dims(np.sum(template, axis), axis)
+            counts = np.sum(template, axis, keepdims=True)
             mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
             oldcounts = np.maximum(counts, oldcounts)
             oldmostfreq = mostfrequent
@@ -1079,7 +1079,7 @@ def _moment(a, moment, axis):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        a_zero_mean = a - np.mean(a, axis, keepdims=True)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
