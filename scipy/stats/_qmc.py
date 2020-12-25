@@ -20,7 +20,7 @@ __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
 
 
 def scale(sample, bounds, reverse=False):
-    """Sample scaling from unit hypercube to bounds range.
+    r"""Sample scaling from unit hypercube to bounds range.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
     following transformation is used:
@@ -31,9 +31,9 @@ def scale(sample, bounds, reverse=False):
 
     Parameters
     ----------
-    sample : array_like (n_samples, dim)
+    sample : array_like (n, d)
         Sample to scale.
-    bounds : tuple or array_like ([min, dim], [max, dim])
+    bounds : tuple or array_like ([min, d], [max, d])
         Desired range of transformed data. The transformation applies the bounds
         to the sample, not the theoretical space (unit hypercube). Thus, min and
         max values of the sample will coincide with the bounds.
@@ -42,7 +42,7 @@ def scale(sample, bounds, reverse=False):
 
     Returns
     -------
-    sample : array_like (n_samples, dim)
+    sample : array_like (n, d)
         Scaled sample.
 
     Examples
@@ -71,7 +71,7 @@ def discrepancy(sample, iterative=False, method='CD'):
 
     Parameters
     ----------
-    sample : array_like (n_samples, dim)
+    sample : array_like (n, d)
         The sample to compute the discrepancy from.
     iterative : bool
         Must be False if not using it for updating the discrepancy.
@@ -142,40 +142,40 @@ def discrepancy(sample, iterative=False, method='CD'):
     """
     sample = np.asarray(sample)
 
-    n_samples, dim = sample.shape
+    n, d = sample.shape
 
     if iterative:
-        n_samples += 1
+        n += 1
 
     if method == 'CD':
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
         prod_arr = 1
-        for i in range(dim):
+        for i in range(d):
             s0 = sample[:, i]
             prod_arr *= (1 +
                          0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
                          0.5 * abs(s0[:, None] - s0))
         disc2 = prod_arr.sum()
 
-        return ((13.0 / 12.0) ** dim - 2.0 / n_samples * disc1 +
-                1.0 / (n_samples ** 2) * disc2)
+        return ((13.0 / 12.0) ** d - 2.0 / n * disc1 +
+                1.0 / (n ** 2) * disc2)
     elif method == 'WD':
         prod_arr = 1
-        for i in range(dim):
+        for i in range(d):
             s0 = sample[:, i]
             x_kikj = abs(s0[:, None] - s0)
             prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
 
-        return - (4.0 / 3.0) ** dim + 1.0 / (n_samples ** 2) * prod_arr.sum()
+        return - (4.0 / 3.0) ** d + 1.0 / (n ** 2) * prod_arr.sum()
     elif method == 'MD':
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2,
                                axis=1))
 
         prod_arr = 1
-        for i in range(dim):
+        for i in range(d):
             s0 = sample[:, i]
             prod_arr *= (15.0 / 8.0 -
                          0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5) -
@@ -183,19 +183,19 @@ def discrepancy(sample, iterative=False, method='CD'):
                          0.5 * abs(s0[:, None] - s0) ** 2)
         disc2 = prod_arr.sum()
 
-        disc = (19.0 / 12.0) ** dim
-        disc1 = 2.0 / n_samples * disc1
-        disc2 = 1.0 / (n_samples ** 2) * disc2
+        disc = (19.0 / 12.0) ** d
+        disc1 = 2.0 / n * disc1
+        disc2 = 1.0 / (n ** 2) * disc2
 
         return disc - disc1 + disc2
     elif method == 'star':
         return np.sqrt(
-            3 ** (-dim) - 2 ** (1 - dim) / n_samples
+            3 ** (-d) - 2 ** (1 - d) / n
             * np.sum(np.prod(1 - sample ** 2, axis=1))
             + np.sum([
                 np.prod(1 - np.maximum(sample[k, :], sample[j, :]))
-                for k in range(n_samples) for j in range(n_samples)
-            ]) / n_samples ** 2
+                for k in range(n) for j in range(n)
+            ]) / n ** 2
         )
     else:
         raise ValueError('{} is not a valid method. Options are '
@@ -207,9 +207,9 @@ def _update_discrepancy(x_new, sample, initial_disc):
 
     Parameters
     ----------
-    x_new : array_like (1, dim)
+    x_new : array_like (1, d)
         The new sample to add in `sample`.
-    sample : array_like (n_samples, dim)
+    sample : array_like (n, d)
         The initial sample.
     initial_disc : float
         Centered discrepancy of the `sample`.
@@ -223,15 +223,15 @@ def _update_discrepancy(x_new, sample, initial_disc):
     sample = np.asarray(sample)
     x_new = np.asarray(x_new)
 
-    n_samples = len(sample) + 1
+    n = len(sample) + 1
     abs_ = abs(x_new - 0.5)
 
-    disc1 = - 2 / n_samples * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
-    disc2 = 2 / (n_samples ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
-                                                  1 / 2 * abs(sample - 0.5) -
-                                                  1 / 2 * abs(x_new - sample),
-                                                  axis=1))
-    disc3 = 1 / (n_samples ** 2) * np.prod(1 + abs_)
+    disc1 = - 2 / n * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
+    disc2 = 2 / (n ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
+                                          1 / 2 * abs(sample - 0.5) -
+                                          1 / 2 * abs(x_new - sample),
+                                          axis=1))
+    disc3 = 1 / (n ** 2) * np.prod(1 + abs_)
 
     return initial_disc + disc1 + disc2 + disc3
 
@@ -245,7 +245,7 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
 
     Parameters
     ----------
-    sample : array_like (n_samples, dim)
+    sample : array_like (n, d)
         The sample (before permutation) to compute the discrepancy from.
     i1 : int
         The first line of the elementary permutation.
@@ -269,27 +269,27 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
 
     """
     sample = np.asarray(sample)
-    n_samples = sample.shape[0]
+    n = sample.shape[0]
 
     z_ij = sample - 0.5
 
     # Eq (19)
-    c_i1j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
-                                                  abs(z_ij) -
-                                                  abs(z_ij[i1, :] - z_ij)),
-                                           axis=1)
-    c_i2j = 1. / n_samples ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
-                                                  abs(z_ij) -
-                                                  abs(z_ij[i2, :] - z_ij)),
-                                           axis=1)
+    c_i1j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
+                                          abs(z_ij) -
+                                          abs(z_ij[i1, :] - z_ij)),
+                                   axis=1)
+    c_i2j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
+                                          abs(z_ij) -
+                                          abs(z_ij[i2, :] - z_ij)),
+                                   axis=1)
 
     # Eq (20)
-    c_i1i1 = (1. / n_samples ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
-              2. / n_samples * np.prod(1. + 0.5 * abs(z_ij[i1, :]) -
-                                       0.5 * z_ij[i1, :] ** 2))
-    c_i2i2 = (1. / n_samples ** 2 * np.prod(1 + abs(z_ij[i2, :])) -
-              2. / n_samples * np.prod(1. + 0.5 * abs(z_ij[i2, :]) -
-                                       0.5 * z_ij[i2, :] ** 2))
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
+              2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :]) -
+                               0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :])) -
+              2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :]) -
+                               0.5 * z_ij[i2, :] ** 2))
 
     # Eq (22), typo in the article in the denominator i2 -> i1
     num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k]) -
@@ -312,16 +312,14 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
     h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
 
     # Eq (25), typo in the article g is missing
-    c_p_i1i1 = ((g_i1 * alpha) / (n_samples ** 2) -
-                2. * alpha * beta * h_i1 / n_samples)
+    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
     # Eq (26), typo in the article n ** 2
-    c_p_i2i2 = ((g_i2 / ((n_samples ** 2) * alpha)) -
-                (2. * h_i2 / (n_samples * alpha * beta)))
+    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
 
     # Eq (26)
     sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
 
-    mask = np.ones(n_samples, dtype=bool)
+    mask = np.ones(n, dtype=bool)
     mask[[i1, i2]] = False
     sum_ = sum(sum_[mask])
 
@@ -395,8 +393,7 @@ def n_primes(n):
     return primes
 
 
-def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
-                   seed=None):
+def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -407,7 +404,7 @@ def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
 
     Parameters
     ----------
-    n_samples : int
+    n : int
         Number of element of the sequence.
     base : int
         Base of the sequence.
@@ -425,7 +422,7 @@ def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
 
     Returns
     -------
-    sequence : list (n_samples,)
+    sequence : list (n,)
         Sequence of Van der Corput.
 
     References
@@ -435,9 +432,9 @@ def van_der_corput(n_samples, base=2, start_index=0, scramble=False,
 
     """
     rng = check_random_state(seed)
-    sequence = np.zeros(n_samples)
+    sequence = np.zeros(n)
 
-    quotient = np.arange(start_index, start_index + n_samples)
+    quotient = np.arange(start_index, start_index + n)
     b2r = 1 / base
 
     while (1 - b2r) < 1:
@@ -463,7 +460,7 @@ class QMCEngine(ABC):
 
     Parameters
     ----------
-    dim : int
+    d : int
         Dimension of the parameter space.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified, the `numpy.random.RandomState`
@@ -476,7 +473,7 @@ class QMCEngine(ABC):
     Notes
     -----
     By convention samples are distributed over the half-open interval
-    ``[0, 1)``. Instances of the class can access the attributes: ``dim`` for
+    ``[0, 1)``. Instances of the class can access the attributes: ``d`` for
     the dimension; and ``rng`` for the random number generator (used for the
     ``seed``).
 
@@ -485,10 +482,10 @@ class QMCEngine(ABC):
     When subclassing `QMCEngine` to create a new sampler,  ``__init__`` and
     ``random`` must be redefined.
 
-    * ``__init__(dim, seed=None)``: at least fix the dimension. If the sampler
+    * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
-    * ``random(n_samples)``: draw ``n_samples`` from the engine.
+    * ``random(n)``: draw ``n`` from the engine.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -503,12 +500,12 @@ class QMCEngine(ABC):
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, dim, seed):
-    ...         super().__init__(dim=dim, seed=seed)
+    ...     def __init__(self, d, seed):
+    ...         super().__init__(d=d, seed=seed)
     ...
     ...
-    ...     def random(self, n_samples=1):
-    ...         return self.rng.random((n_samples, self.dim))
+    ...     def random(self, n=1):
+    ...         return self.rng.random((n, self.d))
     ...
 
     After subclassing `QMCEngine` to define the sampling strategy we want to use,
@@ -525,26 +522,26 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(self, dim, seed=None):
-        self.dim = dim
+    def __init__(self, d, seed=None):
+        self.d = d
         self.rng = check_random_state(seed)
         self.num_generated = 0
 
     @abstractmethod
-    def random(self, n_samples=1):
-        """Draw `n_samples` in the half-open interval ``[0, 1)``.
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             QMC sample.
         """
-        # self.num_generated += n_samples
+        # self.num_generated += n
 
     def reset(self):
         """Reset the engine to base state.
@@ -580,7 +577,7 @@ class Halton(QMCEngine):
 
     Parameters
     ----------
-    dim : int
+    d : int
         Dimension of the parameter space.
     scramble: bool, optional
         If True, use Owen scrambling.
@@ -612,8 +609,8 @@ class Halton(QMCEngine):
     Generate samples from a low discrepancy sequence of Halton.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Halton(dim=2, scramble=False)
-    >>> sample = sampler.random(n_samples=5)
+    >>> sampler = qmc.Halton(d=2, scramble=False)
+    >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.        , 0.        ],
            [0.5       , 0.33333333],
@@ -630,7 +627,7 @@ class Halton(QMCEngine):
     by calling again `random`. Alternatively, you can skip some points like:
 
     >>> sampler.fast_forward(5)
-    >>> sample_continued = sampler.random(n_samples=5)
+    >>> sample_continued = sampler.random(n=5)
     >>> sample_continued
     array([[0.3125    , 0.37037037],
            [0.8125    , 0.7037037 ],
@@ -650,45 +647,45 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, dim, scramble=True, seed=None):
-        super().__init__(dim=dim)
+    def __init__(self, d, scramble=True, seed=None):
+        super().__init__(d=d)
         self.seed = seed
-        self.base = n_primes(dim)
+        self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(self, n_samples=1):
-        """Draw `n_samples` in the half-open interval ``[0, 1)``.
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             QMC sample.
 
         """
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n_samples, int(bdim), self.num_generated,
+        sample = [van_der_corput(n, int(bdim), self.num_generated,
                                  scramble=self.scramble, seed=self.seed)
                   for bdim in self.base]
 
-        self.num_generated += n_samples
+        self.num_generated += n
         return np.array(sample).T
 
 
 class OrthogonalLatinHypercube(QMCEngine):
     """Orthogonal array-based Latin hypercube sampling (OA-LHS).
 
-    In addition to the constraints from the Latin Hypercube, an orthogonal array of
-    size `n_samples` is defined and only one point is allowed per subspace.
+    In addition to the constraints from the Latin Hypercube, an orthogonal
+    array of size `n` is defined and only one point is allowed per subspace.
 
     Parameters
     ----------
-    dim : int
+    d : int
         Dimension of the parameter space.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
@@ -708,8 +705,8 @@ class OrthogonalLatinHypercube(QMCEngine):
     Generate samples from an orthogonal latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.OrthogonalLatinHypercube(dim=2, seed=12345)
-    >>> sample = sampler.random(n_samples=5)
+    >>> sampler = qmc.OrthogonalLatinHypercube(d=2, seed=12345)
+    >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.18592322, 0.77846875],
            [0.64091206, 0.18474763],
@@ -734,30 +731,30 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, dim, seed=None):
-        super().__init__(dim=dim, seed=seed)
+    def __init__(self, d, seed=None):
+        super().__init__(d=d, seed=seed)
 
-    def random(self, n_samples=1):
-        """Draw `n_samples` in the half-open interval ``[0, 1)``.
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             OLHS sample.
 
         """
         sample = []
-        step = 1.0 / n_samples
+        step = 1.0 / n
 
-        for _ in range(self.dim):
+        for _ in range(self.d):
             # Enforce a unique point per grid
-            j = np.arange(n_samples) * step
-            temp = j + self.rng.uniform(low=0, high=step, size=n_samples)
+            j = np.arange(n) * step
+            temp = j + self.rng.uniform(low=0, high=step, size=n)
             self.rng.shuffle(temp)
 
             sample.append(temp)
@@ -769,9 +766,9 @@ class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
     A Latin hypercube sample [1]_ generates ``n`` points in
-    :math:`[0,1)^{dim}`. Each univariate marginal distribution is stratified,
+    :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
-    :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << dim`.
+    :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
     LHS is extremely effective on integrands that are nearly additive [2]_.
     LHS on n points never has more variance than plain MC on :math:`n-1`
     points [3]_. There is a central limit theorem for plain LHS [4]_, but not
@@ -779,7 +776,7 @@ class LatinHypercube(QMCEngine):
 
     Parameters
     ----------
-    dim : int
+    d : int
         Dimension of the parameter space.
     centered : bool
         Center the point within the multi-dimensional grid.
@@ -808,8 +805,8 @@ class LatinHypercube(QMCEngine):
     Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(dim=2, seed=12345)
-    >>> sample = sampler.random(n_samples=5)
+    >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
+    >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.01407678, 0.53672489],
            [0.36321624, 0.75908794],
@@ -834,33 +831,33 @@ class LatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, dim, centered=False, seed=None):
-        super().__init__(dim=dim, seed=seed)
+    def __init__(self, d, centered=False, seed=None):
+        super().__init__(d=d, seed=seed)
         self.centered = centered
 
-    def random(self, n_samples=1):
-        """Draw `n_samples` in the half-open interval ``[0, 1)``.
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             LHS sample.
 
         """
         if self.centered:
             r = 0.5
         else:
-            r = self.rng.random_sample((n_samples, self.dim))
+            r = self.rng.random_sample((n, self.d))
 
-        q = self.rng.randint(low=1, high=n_samples,
-                             size=(n_samples, self.dim))
+        q = self.rng.randint(low=1, high=n,
+                             size=(n, self.d))
 
-        return 1. / n_samples * (q - r)
+        return 1. / n * (q - r)
 
 
 class OptimalDesign(QMCEngine):
@@ -876,9 +873,9 @@ class OptimalDesign(QMCEngine):
 
     Parameters
     ----------
-    dim : int
+    d : int
         Dimension of the parameter space.
-    start_design : array_like (n_samples, dim)
+    start_design : array_like (n, d)
         Initial design of experiment to optimize.
     niter : int
         Number of iterations to perform.
@@ -909,8 +906,8 @@ class OptimalDesign(QMCEngine):
     Generate samples from an optimal design.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.OptimalDesign(dim=2, seed=12345)
-    >>> sample = sampler.random(n_samples=5)
+    >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
+    >>> sample = sampler.random(n=5)
     >>> sample
     array([[0.64091206, 0.77846875],
            [0.43678376, 0.18474763],
@@ -926,8 +923,8 @@ class OptimalDesign(QMCEngine):
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
-    >>> sampler_2 = qmc.OptimalDesign(dim=2, niter=2, seed=12345)
-    >>> sample_2 = sampler_2.random(n_samples=5)
+    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=2, seed=12345)
+    >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
     0.019607673478802434
 
@@ -943,9 +940,9 @@ class OptimalDesign(QMCEngine):
 
     """
 
-    def __init__(self, dim, start_design=None, niter=1, force=False,
+    def __init__(self, d, start_design=None, niter=1, force=False,
                  optimization=True, seed=None):
-        super().__init__(dim=dim, seed=seed)
+        super().__init__(d=d, seed=seed)
         self.start_design = start_design
         self.niter = niter
         self.force = force
@@ -957,25 +954,25 @@ class OptimalDesign(QMCEngine):
         else:
             self.best_disc = np.inf
 
-        self.olhs = OrthogonalLatinHypercube(self.dim, seed=self.rng)
+        self.olhs = OrthogonalLatinHypercube(self.d, seed=self.rng)
 
-    def random(self, n_samples=1):
-        """Draw `n_samples` in the half-open interval ``[0, 1)``.
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             Optimal sample.
 
         """
         if self.optimization:
             if self.best_doe is None:
-                self.best_doe = self.olhs.random(n_samples)
+                self.best_doe = self.olhs.random(n)
                 self.best_disc = discrepancy(self.best_doe)
 
             def _perturb_best_doe(x):
@@ -997,8 +994,8 @@ class OptimalDesign(QMCEngine):
                 # Perturb the DoE
                 doe = self.best_doe.copy()
                 col, row_1, row_2 = np.round(x).astype(int)
-                doe[row_1, col], doe[row_2, col] = doe[row_2, col],\
-                    doe[row_1, col]
+                doe[row_1, col], doe[row_2, col] = doe[row_2, col], \
+                                                   doe[row_1, col]
 
                 disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
                                             self.best_disc)
@@ -1010,16 +1007,16 @@ class OptimalDesign(QMCEngine):
                 return disc
 
             # Total number of possible design
-            complexity = self.dim * n_samples ** 2
+            complexity = self.d * n ** 2
 
             if (complexity > 1e6) or self.force:
-                bounds_optim = ([0, self.dim - 1],
-                                [0, n_samples - 1],
-                                [0, n_samples - 1])
+                bounds_optim = ([0, self.d - 1],
+                                [0, n - 1],
+                                [0, n - 1])
             else:
-                bounds_optim = (slice(0, self.dim - 1, 1),
-                                slice(0, n_samples - 1, 1),
-                                slice(0, n_samples - 1, 1))
+                bounds_optim = (slice(0, self.d - 1, 1),
+                                slice(0, n - 1, 1),
+                                slice(0, n - 1, 1))
 
             for _ in range(self.niter):
                 if (complexity > 1e6) or self.force:
@@ -1032,7 +1029,7 @@ class OptimalDesign(QMCEngine):
                               finish=None)
         else:
             for _ in range(self.niter):
-                doe = self.olhs.random(n_samples)
+                doe = self.olhs.random(n)
                 disc = discrepancy(doe)
                 if disc < self.best_disc:
                     self.best_disc = disc
@@ -1054,9 +1051,9 @@ class Sobol(QMCEngine):
 
     Parameters
     ----------
-    dim: int
+    d : int
         Dimensionality of the sequence. Max dimensionality is 21201.
-    scramble: bool, optional
+    scramble : bool, optional
         If True, use Owen scrambling.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
@@ -1069,7 +1066,7 @@ class Sobol(QMCEngine):
     Notes
     -----
     Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
-    :math:`[0,1)^{dim}`. Scrambling them [2]_ makes them suitable for singular
+    :math:`[0,1)^{d}`. Scrambling them [2]_ makes them suitable for singular
     integrands, provides a means of error estimation, and can improve their
     rate of convergence.
 
@@ -1114,7 +1111,7 @@ class Sobol(QMCEngine):
     Generate samples from a low discrepancy sequence of Sobol'.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.Sobol(dim=2, scramble=False)
+    >>> sampler = qmc.Sobol(d=2, scramble=False)
     >>> sample = sampler.random_base2(m=3)
     >>> sample
     array([[0.   , 0.   ],
@@ -1158,22 +1155,22 @@ class Sobol(QMCEngine):
     MAXDIM = _MAXDIM
     MAXBIT = _MAXBIT
 
-    def __init__(self, dim, scramble=True, seed=None):
-        if dim > self.MAXDIM:
+    def __init__(self, d, scramble=True, seed=None):
+        if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(dim=dim, seed=seed)
+        super().__init__(d=d, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()
 
-        # v is dim x MAXBIT matrix
-        self._sv = np.zeros((dim, self.MAXBIT), dtype=int)
-        initialize_v(self._sv, dim)
+        # v is d x MAXBIT matrix
+        self._sv = np.zeros((d, self.MAXBIT), dtype=int)
+        initialize_v(self._sv, d)
 
         if not scramble:
-            self._shift = np.zeros(dim, dtype=int)
+            self._shift = np.zeros(d, dtype=int)
         else:
             self._scramble()
 
@@ -1184,51 +1181,50 @@ class Sobol(QMCEngine):
         """Scramble the sequence."""
         # Generate shift vector
         self._shift = np.dot(
-            self.rng.randint(2, size=(self.dim, self.MAXBIT)),
+            self.rng.randint(2, size=(self.d, self.MAXBIT)),
             2 ** np.arange(self.MAXBIT),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(self.rng.randint(2, size=(self.dim,
+        ltm = np.tril(self.rng.randint(2, size=(self.d,
                                                 self.MAXBIT,
                                                 self.MAXBIT)))
-        _cscramble(self.dim, ltm, self._sv)
+        _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
-    def random(self, n_samples=1):
+    def random(self, n=1):
         """Draw next point(s) in the Sobol' sequence.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             Sobol' sample.
 
         """
-        sample = np.empty((n_samples, self.dim), dtype=float)
+        sample = np.empty((n, self.d), dtype=float)
 
         if self.num_generated == 0:
-            # verify n_samples is 2**n
-            if not (n_samples & (n_samples - 1) == 0):
+            # verify n is 2**n
+            if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n_samples to be a power of 2.")
+                              " n to be a power of 2.")
 
-            if n_samples == 1:
+            if n == 1:
                 sample = self._first_point
             else:
-                _draw(n_samples - 1, self.num_generated, self.dim, self._sv,
+                _draw(n - 1, self.num_generated, self.d, self._sv,
                       self._quasi, sample)
-                sample = np.concatenate([self._first_point,
-                                         sample])[:n_samples]
+                sample = np.concatenate([self._first_point, sample])[:n]
         else:
-            _draw(n_samples, self.num_generated - 1, self.dim, self._sv,
+            _draw(n, self.num_generated - 1, self.d, self._sv,
                   self._quasi, sample)
 
-        self.num_generated += n_samples
+        self.num_generated += n
         return sample
 
     def random_base2(self, m=1):
@@ -1244,22 +1240,22 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             Sobol' sample.
 
         """
-        n_samples = 2 ** m
+        n = 2 ** m
 
-        total_n_samples = self.num_generated + n_samples
-        if not (total_n_samples & (total_n_samples - 1) == 0):
+        total_n = self.num_generated + n
+        if not (total_n & (total_n - 1) == 0):
             raise ValueError("The balance properties of Sobol' points require "
                              "n to be a power of 2. {0} points have been "
                              "previously generated, then: n={0}+2**{1}={2}. "
                              "If you still want to do this, the function "
                              "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n_samples))
+                             .format(self.num_generated, m, total_n))
 
-        return self.random(n_samples=n_samples)
+        return self.random()
 
     def reset(self):
         """Reset the engine to base state.
@@ -1289,21 +1285,21 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n - 1, self.num_generated, self.dim,
+            _fast_forward(n - 1, self.num_generated, self.d,
                           self._sv, self._quasi)
         else:
-            _fast_forward(n, self.num_generated - 1, self.dim,
+            _fast_forward(n, self.num_generated - 1, self.d,
                           self._sv, self._quasi)
         self.num_generated += n
         return self
 
 
-def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
+def multinomial_qmc(n, pvals, engine=None, seed=None):
     """Draw low-discreancy quasi-random samples from multinomial distribution.
 
     Parameters
     ----------
-    n_samples : int
+    n : int
         Number of experiments.
     pvals: Iterable[float]
         float vector of probabilities of size ``p``. Elements must be
@@ -1321,7 +1317,7 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
     Returns
     -------
     samples: array_like (pvals,)
-        int vector of size ``p`` summing to ``n_samples``.
+        int vector of size ``p`` summing to `n`.
 
     """
     if np.min(pvals) < 0:
@@ -1331,7 +1327,7 @@ def multinomial_qmc(n_samples, pvals, engine=None, seed=None):
 
     if engine is None:
         engine = Sobol(1, scramble=True, seed=seed)
-    draws = engine.random(n_samples).ravel()
+    draws = engine.random(n).ravel()
     p_cumulative = np.empty_like(pvals, dtype=float)
     _fill_p_cumulative(np.array(pvals, dtype=float), p_cumulative)
     sample = np.zeros_like(pvals, dtype=int)
@@ -1344,7 +1340,7 @@ class NormalQMC(QMCEngine):
 
     Parameters
     ----------
-    dim: int
+    d: int
         The dimension of the samples.
     inv_transform: bool
         If True, use inverse transform instead of Box-Muller.
@@ -1369,36 +1365,36 @@ class NormalQMC(QMCEngine):
 
     """
 
-    def __init__(self, dim, inv_transform=True, engine=None, seed=None):
-        super().__init__(dim=dim, seed=seed)
+    def __init__(self, d, inv_transform=True, engine=None, seed=None):
+        super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
         if not inv_transform:
             # to apply Box-Muller, we need an even number of dimensions
-            engine_dim = 2 * math.ceil(dim / 2)
+            engine_dim = 2 * math.ceil(d / 2)
         else:
-            engine_dim = dim
+            engine_dim = d
 
         if engine is None:
-            self.engine = Sobol(dim=engine_dim, scramble=True, seed=seed)
+            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)
         else:
             self.engine = engine
 
-    def random(self, n_samples=1):
-        """Draw `n_samples` QMC samples from the standard Normal.
+    def random(self, n=1):
+        """Draw `n` QMC samples from the standard Normal.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             Sample.
 
         """
         # get base samples
-        samples = self.engine.random(n_samples)
+        samples = self.engine.random(n)
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
@@ -1411,9 +1407,9 @@ class NormalQMC(QMCEngine):
             cos = np.cos(thetas)
             sin = np.sin(thetas)
             transf_samples = np.stack([Rs * cos, Rs * sin],
-                                      -1).reshape(n_samples, -1)
+                                      -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.dim]
+            return transf_samples[:, : self.d]
 
 
 class MultivariateNormalQMC(QMCEngine):
@@ -1421,9 +1417,9 @@ class MultivariateNormalQMC(QMCEngine):
 
     Parameters
     ----------
-    mean: array_like (dim,)
+    mean: array_like (d,)
         The mean vector.
-    cov: array_like (dim, dim)
+    cov: array_like (d, d)
         The covariance matrix.
     inv_transform: bool
         If True, use inverse transform instead of Box-Muller.
@@ -1457,12 +1453,10 @@ class MultivariateNormalQMC(QMCEngine):
         if not np.allclose(cov, cov.transpose()):
             raise ValueError("Covariance matrix is not symmetric.")
 
-        super().__init__(dim=mean.shape[0])
+        super().__init__(d=mean.shape[0])
         self._mean = mean
-        self._normal_engine = NormalQMC(
-            dim=self.dim, inv_transform=inv_transform,
-            engine=engine, seed=seed
-        )
+        self._normal_engine = NormalQMC(d=self.d, inv_transform=inv_transform,
+                                        engine=engine, seed=seed)
         # compute Cholesky decomp; if it fails, do the eigen decomposition
         try:
             self._corr_matrix = np.linalg.cholesky(cov).transpose()
@@ -1473,20 +1467,20 @@ class MultivariateNormalQMC(QMCEngine):
             eigval = np.clip(eigval, 0.0, None)
             self._corr_matrix = (eigvec * np.sqrt(eigval)).transpose()
 
-    def random(self, n_samples: int = 1) -> np.ndarray:
-        """Draw `n_samples` QMC samples from the multivariate Normal.
+    def random(self, n: int = 1) -> np.ndarray:
+        """Draw `n` QMC samples from the multivariate Normal.
 
         Parameters
         ----------
-        n_samples : int
+        n : int
             Number of samples to generate in the parameter space.
 
         Returns
         -------
-        sample : array_like (n_samples, dim)
+        sample : array_like (n, d)
             Sample.
 
         """
-        base_samples = self._normal_engine.random(n_samples)
+        base_samples = self._normal_engine.random(n)
         qmc_samples = base_samples @ self._corr_matrix + self._mean
         return qmc_samples

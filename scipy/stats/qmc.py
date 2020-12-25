@@ -43,8 +43,8 @@ Introduction to Quasi-Monte Carlo
 =================================
 
 Quasi-Monte Carlo (QMC) methods [1]_, [2]_, [3]_ provide an
-:math:`n \times dim` array of numbers in :math:`[0,1]`. They can be used in
-place of n points from the :math:`U[0,1]^{dim}` distribution. Compared to
+:math:`n \times d` array of numbers in :math:`[0,1]`. They can be used in
+place of n points from the :math:`U[0,1]^{d}` distribution. Compared to
 random points, QMC points are designed to have fewer gaps and clumps. This is
 quantified by discrepancy measures [4]_. From the Koksma-Hlawka
 inequality [5]_ we know that low discrepancy reduces a bound on
@@ -61,14 +61,14 @@ accuracy than :math:`n=64` if the method was designed for :math:`n=2^m`.
 Some QMC constructions are extensible in :math:`n`: we can find
 another special sample size :math:`n' > n` and often an infinite
 sequence of increasing special sample sizes. Some QMC
-constructions are extensible in :math:`dim`: we can increase the dimension,
+constructions are extensible in :math:`d`: we can increase the dimension,
 possibly to some upper bound, and typically without requiring
-special values of d. Some QMC methods are extensible in
-both :math:`n` and :math:`dim`.
+special values of :math:`d`. Some QMC methods are extensible in
+both :math:`n` and :math:`d`.
 
 QMC points are deterministic. That makes it hard to estimate
 the accuracy of averages. Randomized QMC (RQMC) [7]_
-points are constructed so that each point is individually :math:`U[0,1]^{dim}`
+points are constructed so that each point is individually :math:`U[0,1]^{d}`
 while collectively the :math:`n` points retain their low discrepancy.
 One can make :math:`R` independent replications of RQMC points to
 see how stable a computation is. From :math:`R` independent values,
@@ -110,7 +110,7 @@ require some form of search for good constructions. For digital
 nets there are widely used default constructions.
 
 The most widely used QMC methods are Sobol' sequences [17]_.
-These are digital nets. They are extensible in both n and d.
+These are digital nets. They are extensible in both :math:`n` and :math:`d`.
 They can be scrambled.  The special sample sizes are powers
 of 2. Another popular method are Halton sequences [18]_.
 The constructions resemble those of digital nets. The earlier
@@ -119,7 +119,7 @@ later ones. There are essentially no special sample sizes.
 They are not thought to be as accurate as Sobol' sequences.
 They can be scrambled. The nets of Faure [19]_ are also widely
 used. All dimensions are equally good, but the special sample
-sizes grow rapidly with dimension d. They can be scrambled.
+sizes grow rapidly with dimension :math:`d`. They can be scrambled.
 The nets of Niederreiter and Xing [20]_ have the best asymptotic
 properties but have not shown good empirical performance [21]_.
 
@@ -142,16 +142,16 @@ and sometimes it improves the convergence rate [24]_.
 
 It is not straightforward to apply QMC methods to Markov
 chain Monte Carlo (MCMC).  We can think of MCMC as using
-:math:`n=1` point in :math:`[0,1]^{dim}` for very large d, with ergodic results
-corresponding to :math:`dim \to \infty`.  One proposal is in [25]_
-and under strong conditions an improved rate of convergence
+:math:`n=1` point in :math:`[0,1]^{d}` for very large :math:`d`, with
+ergodic results corresponding to :math:`d \to \infty`.  One proposal is
+in [25]_ and under strong conditions an improved rate of convergence
 has been shown [26]_.
 
 Returning to Sobol' points: there are many versions depending
 on what are called direction numbers. Those are the result of
 searches and are tabulated. A very widely used set of direction
 numbers come from [27]_. It is extensible in dimension up to
-:math:`dim=21201`.
+:math:`d=21201`.
 
 References
 ----------
