@@ -34,11 +34,11 @@ def scale(sample, bounds, reverse=False):
     sample : array_like (n, d)
         Sample to scale.
     bounds : tuple or array_like ([min, d], [max, d])
-        Desired range of transformed data. The transformation applies the bounds
-        to the sample, not the theoretical space (unit hypercube). Thus, min and
-        max values of the sample will coincide with the bounds.
+        Desired range of transformed data. If `reverse` is True, range of the
+        original data to transform to the unit hypercube.
     reverse : bool
         Reverse the transformation from `bounds` to the unit hypercube.
+        Default is False.
 
     Returns
     -------
@@ -75,13 +75,15 @@ def discrepancy(sample, iterative=False, method='CD'):
         The sample to compute the discrepancy from.
     iterative : bool
         Must be False if not using it for updating the discrepancy.
+        Default is False. Refer to the notes for more details.
     method : str
-        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star'].
+        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star']. Refer to
+        the notes for more details. Default is ``CD``.
 
     Returns
     -------
     discrepancy : float
-        Centered discrepancy.
+        Discrepancy.
 
     Notes
     -----
@@ -103,6 +105,13 @@ def discrepancy(sample, iterative=False, method='CD'):
     * ``WD``: Wrap-around Discrepancy - subspace can wrap around bounds
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``star``: Star L2-discrepancy - like CD BUT variant to rotation
+
+    Lastly, there using ``iterative=True``, it is possible to compute the
+    discrepancy as if we had :math:`n+1` samples. This is useful if we want
+    to add a point to a sampling and check the candidate which would give the
+    lowest discrepancy. Then you could just update the discrepancy with
+    each candidate using `_update_discrepancy`. This method is faster than
+    computing the discrepancy for a large number of candidates.
 
     References
     ----------
@@ -138,6 +147,8 @@ def discrepancy(sample, iterative=False, method='CD'):
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
+    >>> _update_discrepancy(space[-1], space[:-1], disc_init)
+    0.008142039609053513
 
     """
     sample = np.asarray(sample)
