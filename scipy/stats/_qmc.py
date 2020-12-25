@@ -1255,7 +1255,7 @@ class Sobol(QMCEngine):
                              "'Sobol.random()' can be used."
                              .format(self.num_generated, m, total_n))
 
-        return self.random()
+        return self.random(n)
 
     def reset(self):
         """Reset the engine to base state.
