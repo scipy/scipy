@@ -854,8 +854,11 @@ class LatinHypercube(QMCEngine):
         else:
             r = self.rng.random_sample((n, self.d))
 
-        q = self.rng.randint(low=1, high=n,
-                             size=(n, self.d))
+        try:
+            rg_integers = self.rng.integers
+        except AttributeError:
+            rg_integers = self.rng.randint
+        q = rg_integers(low=1, high=n, size=(n, self.d))
 
         return 1. / n * (q - r)
 
@@ -1179,16 +1182,18 @@ class Sobol(QMCEngine):
 
     def _scramble(self):
         """Scramble the sequence."""
+        try:
+            rg_integers = self.rng.integers
+        except AttributeError:
+            rg_integers = self.rng.randint
         # Generate shift vector
         self._shift = np.dot(
-            self.rng.randint(2, size=(self.d, self.MAXBIT)),
+            rg_integers(2, size=(self.d, self.MAXBIT)),
             2 ** np.arange(self.MAXBIT),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(self.rng.randint(2, size=(self.d,
-                                                self.MAXBIT,
-                                                self.MAXBIT)))
+        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT)))
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
