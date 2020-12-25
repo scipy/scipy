@@ -308,15 +308,17 @@ def check_pickling(distfn, args):
 
 def check_freezing(distfn, args):
     # regression test for gh-11089: freezing a distribution fails
-    # if loc and/or scale are specified
+    # if loc and/or scale are specified. Modified to resolve gh-13225;
+    # loc and scale _should_ affect `a` and `b`
     if isinstance(distfn, stats.rv_continuous):
         locscale = {'loc': 1, 'scale': 2}
     else:
         locscale = {'loc': 1}
 
-    rv = distfn(*args, **locscale)
-    assert rv.a == distfn(*args).a
-    assert rv.b == distfn(*args).b
+    rv1 = distfn(*args)
+    rv2 = distfn(*args, **locscale)
+    assert rv2.a == rv1.a * locscale.get('scale', 1) + locscale.get('loc')
+    assert rv2.b == rv1.b * locscale.get('scale', 1) + locscale.get('loc')
 
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
