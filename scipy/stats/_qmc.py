@@ -765,14 +765,14 @@ class OrthogonalLatinHypercube(QMCEngine):
 class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
-    A Latin hypercube sample [1]_ generates ``n`` points in
+    A Latin hypercube sample [1]_ generates :math:`n` points in
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
     LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on n points never has more variance than plain MC on :math:`n-1`
-    points [3]_. There is a central limit theorem for plain LHS [4]_, but not
-    necessarily for optimized LHS.
+    LHS on :math:`n` points never has more variance than plain MC on
+    :math:`n-1` points [3]_. There is a central limit theorem for plain
+    LHS [4]_, but not necessarily for optimized LHS.
 
     Parameters
     ----------
