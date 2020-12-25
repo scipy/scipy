@@ -24,7 +24,8 @@ import math
 from ._crosstab import crosstab
 
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab', 'association']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
+           'association']
 
 
 def margins(a):
@@ -316,19 +317,21 @@ def association(observed, method="cramer", correction=False, lambda_=None):
 
     Notes
     ------
-    Cramer's V, Tschuprow's T and Pearson's Contingency Coefficient, all measure
-    the degree to which two nominal or ordinal variables are related, or the
-    level of their association. This differs from correlation, although many
-    often mistakenly consider them equivalent. Correlation measures in what way
-    two variables are related, whereas, association measures how related the
-    variables are. As such, association does not subsume independent variables,
-    and is rather a test of independence. A value of 1.0 indicates perfect
-    association, and 0.0 means the variables have no association.
+    Cramer's V, Tschuprow's T and Pearson's Contingency Coefficient, all
+    measure the degree to which two nominal or ordinal variables are related,
+    or the level of their association. This differs from correlation, although
+    many often mistakenly consider them equivalent. Correlation measures in
+    what way two variables are related, whereas, association measures how
+    related the variables are. As such, association does not subsume
+    independent variables, and is rather a test of independence. A value of
+    1.0 indicates perfect association, and 0.0 means the variables have no
+    association.
 
-    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient.
-    Moreover, due to the close relationship between the Cramer's V and
-    Tschuprow's T the returned values can often be similar or even equivalent.
-    They are likely to diverge more as the array shape diverges from a 2x2.
+    Both the Cramer's V and Tschuprow's T are extensions of the phi
+    coefficient.  Moreover, due to the close relationship between the
+    Cramer's V and Tschuprow's T the returned values can often be similar
+    or even equivalent.  They are likely to diverge more as the array shape
+    diverges from a 2x2.
 
     References
     ----------
@@ -351,7 +354,6 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 
     Pearson's contingency coefficient
-    
     >>> association(obs4x2, method="pearson")
     0.18303298140595667
 
@@ -385,6 +387,6 @@ def association(observed, method="cramer", correction=False, lambda_=None):
         value = phi2 / (1 + phi2)
     else:
         raise ValueError("Invalid argument value: 'method' argument must "
-                         "be 'cramer', 'tschuprow', 'pearson'")
+                         "be 'cramer', 'tschuprow', or 'pearson'")
 
     return math.sqrt(value)
