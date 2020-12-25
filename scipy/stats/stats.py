@@ -5914,7 +5914,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     compare = {"less": np.less_equal,
                "greater": np.greater_equal,
-               "two-sided": lambda x, y: np.abs(x) >= np.abs(y)}
+               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
