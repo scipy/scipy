@@ -421,8 +421,9 @@ def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
         Base of the sequence.
     start_index : int
         Index to start the sequence from.
-    scramble: bool, optional
-        If True, use Owen scrambling.
+    scramble: bool
+        If True, use Owen scrambling. Otherwise no scrambling is done.
+        Default is True.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
         singleton is used.
@@ -566,6 +567,7 @@ class QMCEngine(ABC):
         ----------
         n : int
             Number of samples to generate in the parameter space.
+            Default is 1.
 
         Returns
         -------
@@ -610,8 +612,9 @@ class Halton(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    scramble: bool, optional
-        If True, use Owen scrambling.
+    scramble: bool
+        If True, use Owen scrambling. Otherwise no scrambling is done.
+        Default is True.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified, the `numpy.random.RandomState`
         singleton is used.
@@ -690,7 +693,7 @@ class Halton(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -771,7 +774,7 @@ class OrthogonalLatinHypercube(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -810,7 +813,7 @@ class LatinHypercube(QMCEngine):
     d : int
         Dimension of the parameter space.
     centered : bool
-        Center the point within the multi-dimensional grid.
+        Center the point within the multi-dimensional grid. Default is False.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
         singleton is used.
@@ -872,7 +875,7 @@ class LatinHypercube(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -900,6 +903,7 @@ class OptimalDesign(QMCEngine):
     Optimize the design by doing random permutations to lower the centered
     discrepancy. If `optimization` is False, `niter` design are generated and
     the one with lowest centered discrepancy is return. This option is faster.
+    Otherwise,
 
     Centered discrepancy-based design shows better space filling robustness
     toward 2D and 3D subprojections. Distance-based design shows better space
@@ -909,16 +913,16 @@ class OptimalDesign(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    start_design : array_like (n, d)
+    start_design : array_like (n, d), optional
         Initial design of experiment to optimize.
     niter : int
-        Number of iterations to perform.
+        Number of iterations to perform. Default is 1.
     force : bool
         If `optimization`, force *basinhopping* optimization. Otherwise
-        grid search is used.
+        grid search is used. Default is False.
     optimization : bool
         Optimal design using global optimization or random generation of
-        `niter` samples.
+        `niter` samples. Default is True.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
         singleton is used.
@@ -996,7 +1000,7 @@ class OptimalDesign(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -1087,8 +1091,9 @@ class Sobol(QMCEngine):
     ----------
     d : int
         Dimensionality of the sequence. Max dimensionality is 21201.
-    scramble : bool, optional
-        If True, use Owen scrambling.
+    scramble : bool
+        If True, use Owen scrambling. Otherwise no scrambling is done.
+        Default is True.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
         singleton is used.
@@ -1234,7 +1239,7 @@ class Sobol(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -1273,6 +1278,7 @@ class Sobol(QMCEngine):
         ----------
         m : int
             Logarithm in base 2 of the number of samples; i.e., n = 2^m.
+            Default is 1.
 
         Returns
         -------
@@ -1340,7 +1346,7 @@ def multinomial_qmc(n, pvals, engine=None, seed=None):
     pvals: Iterable[float]
         float vector of probabilities of size ``p``. Elements must be
         non-negative and sum to 1.
-    engine: QMCEngine
+    engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
@@ -1379,8 +1385,8 @@ class NormalQMC(QMCEngine):
     d: int
         The dimension of the samples.
     inv_transform: bool
-        If True, use inverse transform instead of Box-Muller.
-    engine: QMCEngine
+        If True, use inverse transform instead of Box-Muller. Default is True.
+    engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
@@ -1421,7 +1427,7 @@ class NormalQMC(QMCEngine):
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
@@ -1458,8 +1464,8 @@ class MultivariateNormalQMC(QMCEngine):
     cov: array_like (d, d)
         The covariance matrix.
     inv_transform: bool
-        If True, use inverse transform instead of Box-Muller.
-    engine: QMCEngine
+        If True, use inverse transform instead of Box-Muller. Default is True.
+    engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
@@ -1503,13 +1509,13 @@ class MultivariateNormalQMC(QMCEngine):
             eigval = np.clip(eigval, 0.0, None)
             self._corr_matrix = (eigvec * np.sqrt(eigval)).transpose()
 
-    def random(self, n: int = 1) -> np.ndarray:
+    def random(self, n=1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
 
         Parameters
         ----------
         n : int
-            Number of samples to generate in the parameter space.
+            Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
