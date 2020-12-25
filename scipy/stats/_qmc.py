@@ -513,16 +513,36 @@ class QMCEngine(ABC):
     >>> class RandomEngine(qmc.QMCEngine):
     ...     def __init__(self, d, seed):
     ...         super().__init__(d=d, seed=seed)
+    ...         self.rng_seed_state = self.rng.get_state()
     ...
     ...
     ...     def random(self, n=1):
     ...         return self.rng.random((n, self.d))
     ...
+    ...
+    ...     def reset(self):
+    ...         self.rng.set_state(self.rng_seed_state)
+    ...         return self
+    ...
+    ...
+    ...     def fast_forward(self, n):
+    ...         self.rng.random((n, self.d))
+    ...         return self
 
     After subclassing `QMCEngine` to define the sampling strategy we want to use,
     we can create an instance to sample from.
 
     >>> engine = RandomEngine(2, seed=12345)
+    >>> engine.random(5)
+    array([[0.92961609, 0.31637555],
+           [0.18391881, 0.20456028],
+           [0.56772503, 0.5955447 ],
+           [0.96451452, 0.6531771 ],
+           [0.74890664, 0.65356987]])
+
+    We can also reset the state of the generator and resample again.
+
+    >>> _ = engine.reset()
     >>> engine.random(5)
     array([[0.92961609, 0.31637555],
            [0.18391881, 0.20456028],
