@@ -58,7 +58,8 @@ class TestUtils(object):
         assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451,
                         atol=1e-4)
 
-        assert_raises(ValueError, qmc.discrepancy, sample, False, 'toto')
+        with pytest.raises(ValueError, match=r"toto is not a valid method."):
+            qmc.discrepancy(sample, method='toto')
 
     def test_update_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
@@ -261,11 +262,15 @@ class TestLHS(object):
 class TestMultinomialQMC:
     def test_MultinomialNegativePs(self):
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
-        assert_raises(ValueError, qmc.multinomial_qmc, 10, p)
+        with pytest.raises(ValueError, match=r"Elements of pvals must "
+                                             r"be non-negative."):
+            qmc.multinomial_qmc(10, p)
 
     def test_MultinomialSumOfPTooLarge(self):
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
-        assert_raises(ValueError, qmc.multinomial_qmc, 10, p)
+        with pytest.raises(ValueError, match=r"Elements of pvals must sum "
+                                             r"to 1."):
+            qmc.multinomial_qmc(10, p)
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
@@ -401,9 +406,8 @@ class TestNormalQMC:
 class TestMultivariateNormalQMC:
     def test_MultivariateNormalQMCNonPSD(self):
         # try with non-psd, non-pd cov and expect an assertion error
-        assert_raises(
-            ValueError, qmc.MultivariateNormalQMC, [0, 0], [[1, 2], [2, 1]]
-        )
+        with pytest.raises(ValueError, match=r"Covariance matrix not PSD."):
+            qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]])
 
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
@@ -414,15 +418,15 @@ class TestMultivariateNormalQMC:
 
     def test_MultivariateNormalQMCSymmetric(self):
         # try with non-symmetric cov and expect an error
-        assert_raises(
-            ValueError, qmc.MultivariateNormalQMC, [0, 0], [[1, 0], [2, 1]]
-        )
+        with pytest.raises(ValueError, match=r"Covariance matrix is not "
+                                             r"symmetric."):
+            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]])
 
     def test_MultivariateNormalQMCDim(self):
         # incompatible dimension of mean/cov
-        assert_raises(
-            ValueError, qmc.MultivariateNormalQMC, [0], [[1, 0], [0, 1]]
-        )
+        with pytest.raises(ValueError, match=r"Dimension mismatch between "
+                                             r"mean and covariance."):
+            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]])
 
     def test_MultivariateNormalQMC(self):
         # d = 1 scalar
