@@ -369,7 +369,7 @@ class lti(LinearTimeInvariant):
         return (-1)*self
     
     def __truediv__(self, other):
-        """ divides two lti/int/float together """
+        """ Divides two lti/int/float together """
         if isinstance(other, (int, float)):
             return lti(
             self.num,  # numerator
@@ -383,7 +383,9 @@ class lti(LinearTimeInvariant):
         ) 
     
     def __rtruediv__(self, other):
-        """ divides two lti/int/float together """
+        """ Divides two lti/int/float together """
+        if type(self) not in (lti, TransferFunctionContinuous):
+                return NotImplemented
         if isinstance(other, (int, float)):
             return lti(
             np.polymul(other, self.to_tf().den),  # numerator
