@@ -396,7 +396,7 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_logpdf_overflow():
     # regression test for gh-12988; testing against linalg instability for
     # very high dimensionality kde
