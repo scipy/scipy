@@ -132,7 +132,7 @@ class kstwo_gen(rv_continuous):
 
     .. math::
 
-        D_n &= \text{sup}_x |F_n(x) - F(x)|
+        D_n = \text{sup}_x |F_n(x) - F(x)|
 
     where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
     `kstwo` describes the distribution under the null hypothesis of the KS test
