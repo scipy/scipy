@@ -147,7 +147,7 @@ def discrepancy(sample, iterative=False, method='CD'):
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
-    >>> _update_discrepancy(space[-1], space[:-1], disc_init)
+    >>> _update_discrepancy(space[-1], space[:-1], disc_init) # doctest: +SKIP
     0.008142039609053513
 
     """
