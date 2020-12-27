@@ -224,7 +224,7 @@ def get_build_ext_override():
     Custom build_ext command to tweak extension building.
     """
     from numpy.distutils.command.build_ext import build_ext as npy_build_ext
-    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         # PythranBuildExt does *not* derive from npy_build_ext
         # Win the monkey patching race here and patch base class
         # before it's loaded by Pythran. This should be removed
