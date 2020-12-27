@@ -132,7 +132,7 @@ class kstwo_gen(rv_continuous):
 
     .. math::
 
-        D_n &= \text{sup}_x |F_n(x) - F(x)|
+        D_n = \text{sup}_x |F_n(x) - F(x)|
 
     where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
     `kstwo` describes the distribution under the null hypothesis of the KS test
@@ -2617,7 +2617,7 @@ class gamma_gen(rv_continuous):
         return sc.psi(a)*(1-a) + a + sc.gammaln(a)
 
     def _fitstart(self, data):
-        # The skewness of the gamma distribution is `4 / np.sqrt(a)`.
+        # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
         # We invert that to estimate the shape `a` using the skewness
         # of the data.  The formula is regularized with 1e-8 in the
         # denominator to allow for degenerate data where the skewness
@@ -6137,6 +6137,12 @@ class t_gen(rv_continuous):
                         np.inf)
         g2 = np.where(df <= 2, np.nan, g2)
         return mu, mu2, g1, g2
+
+    def _entropy(self, df):
+        half = df/2
+        half1 = (df + 1)/2
+        return (half1*(sc.digamma(half1) - sc.digamma(half))
+                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
 
 t = t_gen(name='t')

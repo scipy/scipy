@@ -132,7 +132,7 @@ std(%(shapes)s, loc=0, scale=1)
 """
 _doc_interval = """\
 interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains alpha percent of the distribution
+    Endpoints of the range that contains fraction alpha [0, 1] of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -162,7 +162,7 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate a few first moments:
+Calculate the first four moments:
 
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
@@ -291,7 +291,7 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate a few first moments:
+Calculate the first four moments:
 
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
