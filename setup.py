@@ -233,8 +233,12 @@ def get_build_ext_override():
         import distutils.command.build_ext
         distutils_build_ext = distutils.command.build_ext.build_ext
         distutils.command.build_ext.build_ext = npy_build_ext
-        from pythran.dist import PythranBuildExt as BaseBuildExt
-        distutils.command.build_ext.build_ext = distutils_build_ext
+        try:
+            from pythran.dist import PythranBuildExt as BaseBuildExt
+        except ImportError:
+            BaseBuildExt = npy_build_ext
+        finally:
+            distutils.command.build_ext.build_ext = distutils_build_ext
     else:
         BaseBuildExt = npy_build_ext
 
