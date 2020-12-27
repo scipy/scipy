@@ -270,6 +270,14 @@ class nbinom_gen(rv_discrete):
 
        p = \frac{n}{n + \mu}
 
+    The number of successes :math:`n` may also be specified in terms of a
+    "dispersion", "heterogeneity". or "aggregation" parameter :math:`alpha`,
+    which relates the mean :math:`mu` to the variance :math:`\sigma^2`.
+    If the variance of the distribution is given by
+    :math:`\sigma^2 = \mu + \alpha \mu^2`, then :math:`n = 1 / \alpha`; if
+    the variance is :math:`\sigma^2 = \mu + \alpha \mu`, then
+    :math:`n = \mu / \alpha`.
+
     %(after_notes)s
 
     %(example)s
