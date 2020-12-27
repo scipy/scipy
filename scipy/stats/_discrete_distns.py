@@ -277,10 +277,10 @@ class nbinom_gen(rv_discrete):
     used for :math:`\alpha`,
 
     .. math::
-       \begin{eqnarray*}
-       p & = & \frac{\mu}{\sigma^2} \\
-       n & = & \frac{\mu^2}{\sigma^2 - \mu}
-       \end{eqnarray*}
+
+       p &= \frac{\mu}{\sigma^2} \\
+       n &= \frac{\mu^2}{\sigma^2 - \mu}
+
 
     %(after_notes)s
 
