@@ -72,6 +72,7 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+                   'genhyperbolic',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
@@ -260,7 +261,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon']:
+    if dist in ['gausshyper', 'genexpon', 'genhyperbolic']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the
