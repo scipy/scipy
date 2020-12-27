@@ -371,6 +371,51 @@ class TestGenInvGauss(object):
         assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
 
 
+class TestGenHyperbolic(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_pdf_t(self):
+        # Test Against T-Student with 1 - 100 df
+        res = []
+        for df in np.linspace(1,100,20):
+        # in principle alpha should be zero
+        # in practice for big lmbdas alpha cannot be too small else pdf pdf does not integrate
+            alpha = np.float_power(df,2)*np.finfo(np.float32).eps 
+            gh = stats.genhyperbolic(lmbda=-df/2, alpha=alpha, beta=0, delta=np.sqrt(df), mu=0)
+            x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
+            res.append(np.allclose(gh.pdf(x), stats.t.pdf(x, df), atol=1e-9))
+        np.all(res)
+
+    def test_pdf_laplace(self):
+        # Test Against Laplace with location param 1-100
+        res = []
+        for loc in np.linspace(-100,100,20):
+        # in principle delta should be zero
+        # in practice for big loc delta cannot be too small else pdf does not integrate
+            gh = stats.genhyperbolic(lmbda=1, alpha=1, beta=0, delta=np.finfo(np.float32).eps, mu=loc)
+            x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
+            res.append(np.allclose(gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1), atol=1e-9))
+        np.all(res)
+
+    def test_pdf_norminversegauss(self):
+        # Test Against NIG
+        res = []
+        # TODO i need to double check the implementation of the NormInvGauss(),
+        # it does not seem to me it exactly replicate the wiki or the original paper
+        # https://www.jstor.org/stable/4616433?read-now=1&refreqid=excelsior%3A2458de9bd8c27a01b8bf7c21dc550252&seq=2#page_scan_tab_contents
+        # delta behaves weirdly from 2 to ~ 10 (then the two distributions coincides.)
+        # keeping delta fixed 1 for this test
+        for alpha, beta, delta, mu in zip(np.linspace(1,20, 20), \
+                                            np.linspace(0,19, 20)*np.float_power(-1,range(20)), \
+                                            np.linspace(1,1, 20), \
+                                            np.linspace(-100,100, 50)):
+            gh = stats.genhyperbolic(lmbda=-0.5, alpha=alpha, beta=beta, delta=delta, mu=mu)
+            x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
+            res.append(np.allclose(gh.pdf(x), stats.norminvgauss.pdf(x, a=alpha, b=beta, loc=mu, scale=delta), atol=1e-9))
+        np.all(res)
+
+
 class TestNormInvGauss(object):
     def setup_method(self):
         np.random.seed(1234)
