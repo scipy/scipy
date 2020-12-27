@@ -530,9 +530,18 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
 
     s = x[1]
     z = x[0]
-    res = math.pow(s, (v - 1)) * _phi(math.sqrt(v) * s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
-    return res * math.sqrt(2 * math.M_PI) * k * math.pow(v, v / 2) / ( math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
+    # All possible terms are evaluated using logs, to help with overflows.
+
+    log_terms = math.log(k) + (v / 2) * math.log(v) \
+               - (math.lgamma(v / 2) + (v / 2 - 1) * math.log(2)) \
+               + (v - 1) * math.log(s) - (v * s * s / 2) \
+               + math.log(0.3989422804014327) - 0.5 * z * z  # phi estimation.
+
+    #Gives a divide by zero error if put into log. Just leave outside for now.
+    t4 = math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
+
+    return math.exp(log_terms) * t4
 
 cdef double _genstudentized_range_cdf_asymptomatic(double z, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
