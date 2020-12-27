@@ -2911,47 +2911,116 @@ class genhyperbolic_gen(rv_continuous):
 
     .. math::
 
-        f(x, \nu, \alpha, \beta, \delta, \mu) = 
-           \frac{(\gamma/\delta)^\nu}{\sqrt{2\pi}K_\nu(\delta \gamma)}
-           e^{\beta (x - \mu)} \times \frac{K_{\nu - 1/2}
+        f(x, \lambda, \alpha, \beta, \delta, \mu) = 
+           \frac{(\gamma/\delta)^\lambda}{\sqrt{2\pi}K_\lambda(\delta \gamma)}
+           e^{\beta (x - \mu)} \times \frac{K_{\lambda - 1/2}
            (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
-           {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \nu}}
+           {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \lambda}}
 
     for :math:`x \in (-\infty; \infty)`,
-    and :math:`\nu, \mu \in \mathbb{R}`
+    and :math:`\lambda, \mu \in \mathbb{R}`
     ans :math: `0 \le |\beta| < \alpha ` \beta,
     and :math: `\delta \in \mathbb{R}_{>0}`.
     
     Where: :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
-    :math: `K_{\nu}(.)` denotes the modified Bessel function of the third
-    kind and order :math: `\nu` (`scipy.special.kn`)
+    :math: `K_{\lambda}(.)` denotes the modified Bessel function of the third
+    kind and order :math: `\lambda` (`scipy.special.kn`)
 
-    `genhyperbolic` takes ``nu`` as a tail parameter for :math:`\nu`.
+    `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`.
     takes ``alpha`` as a shape parameter for :math:`\alpha`.
     takes ``beta`` as a skeweness parameter for :math:`\beta`.
     takes ``delta`` as a scale parameter for :math:`\delta`.
     takes ``mu`` as a location parameter for :math:`\mu`.
 
+
     %(after_notes)s
+
+    References
+    ----------
+    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    pp. 151-157, 1978.
+
+    Scott, David J, Würtz, Diethelm, Dong, Christine and Tran, Thanh Tam, (2009),
+    Moments of the generalized hyperbolic distribution, MPRA Paper,
+    University Library of Munich, Germany, https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
 
     %(example)s
 
     """
-    def _argcheck(self, alpha, beta, delta):
-        return 0 <= abs(beta) < alpha and delta > 0
+    
+    def _argcheck(self, lmbda, alpha, beta, delta, mu):
+        
+        @np.vectorize
+        def argcheck_single(lmbda, alpha, beta, delta, mu):
+            if lmbda > 0:
+                return np.all((np.absolute(beta) < alpha) & (delta >= 0))
+            elif lmbda == 0:
+                return np.all((np.absolute(beta) < alpha) & (delta > 0))
+            else:
+                return np.all((np.absolute(beta) <= alpha) & (delta > 0))
+                
+        return argcheck_single(lmbda, alpha, beta, delta, mu)
 
-    def _pdf(self, x, nu, alpha, beta, gamma, delta, mu):
-        gamma = np.sqrt(np.power(alpha,2)-np.power(beta,2))
-        t0 = np.power(gamma/delta, nu)
-        t1 = 1/(np.sqrt(2*np.pi)*sc.kn(nu, delta*gamma))
-        t2 = np.exp(beta*(x-mu))
-        t3 = np.sqrt(np.power(delta,2) + np.sqrt(x-mu,2))
-        t4 = sc.kn(nu-0.5, alpha*tmp3)
-        t5 = 1/np.power(tmp3/alpha, 0.5-nu)
-        return t0*t1*t2*t4*t5
+    def norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
+    #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
+        t1 = np.float_power(alpha,2) - np.float_power(beta,2)
+        t2 = np.float_power(t1, lmbda*0.5)
+        t3 = np.float_power(2*np.pi,0.5)
+        t4 = np.float_power(alpha, lmbda-0.5)
+        t5 = np.float_power(delta, lmbda)
+        t6 = delta*np.float_power(t1, 0.5)
+        t7 = sc.kv(lmbda, t6)
+        return t2*np.float_power(t3*t4*t5*t7,-1)
+
+    def _pdf(self, x, lmbda, alpha, beta, delta, mu):
+    #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
+        t1 = self.norming_constant(lmbda=lmbda, alpha=alpha, beta=beta, delta=delta)
+        t2 = np.hypot(delta, x-mu)
+        t3 = np.float_power(t2, (lmbda-0.5))
+        t4 = sc.kv(lmbda-0.5, alpha*t2)
+        t5 = beta*(x-mu)
+        t6 = np.where(t5 < 700, t5, 700)
+        t7 = np.exp(t6)
+        return t1*t3*t4*t7
+
+    def _cdf(self, x, lmbda, alpha, beta, delta, mu):
+        # quad must be guided towards the bulk of the mass
+        
+        @np.vectorize
+        def cdf_single(x, lmbda, alpha, beta, delta, mu):
+            if beta >= 0:
+                return integrate.quad(self._pdf, -1e9, x, points=[mu-1e3, mu+1e3], args = (lmbda, alpha, beta, delta, mu))[0]
+            else:
+                return integrate.quad(self._pdf, 1e9, x, points=[mu-1e3, mu+1e3], args = (lmbda, alpha, beta, delta, mu))[0] + 1
+        
+        return cdf_single(x, lmbda, alpha, beta, delta, mu)
 
 
-genhyperbolic = genhyperbolicc_gen(name='genhyperbolic')
+    def _stats(self, lmbda, alpha, beta, delta, mu):
+    #https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
+        t1 = np.hypot(delta, beta)
+        t2 = np.float_power(delta, 2)*np.float_power(t1, 2)
+        b0 = sc.kv(lmbda, t1)
+        b1 = sc.kv(lmbda+1, t1)
+        b2 = sc.kv(lmbda+2, t1)
+        b3 = sc.kv(lmbda+3, t1)
+        b4 = sc.kv(lmbda+4, t1)
+        r1 = b1*np.float_power(b0, -1)
+        r2 = b2*np.float_power(b0, -1)
+        r3 = b3*np.float_power(b0, -1)
+        r4 = b4*np.float_power(b0, -1)
+        m1 = t2*beta*r1
+        m2 = t2*r1 + np.float_power(t2*beta, 2)*r2
+        m3 = 3*beta*np.float_power(t2, 2)*r2 \
+            + np.float_power(t2*beta, 3)*r3
+        m4 = 3*np.float_power(t2, 2)*r2 \
+            + 6*np.float_power(t2*beta, 3)*r3 \
+            + np.float_power(t2*beta, 4)*r4
+        return m1, m2, m3, m4
+ 
+
+genhyperbolic = genhyperbolic_gen(name='genhyperbolic')
 
 
 class gompertz_gen(rv_continuous):
