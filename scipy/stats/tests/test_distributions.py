@@ -5204,3 +5204,32 @@ def test_rvs_no_size_warning():
 
     with assert_warns(np.VisibleDeprecationWarning):
         rvs_no_size.rvs()
+
+
+@pytest.mark.parametrize(
+    'dist, args',
+    [  # In each of the following, at least one shape parameter is invalid
+        (stats.hypergeom, (3, 3, 4)),
+        (stats.nhypergeom, (5, 2, 8)),
+        (stats.bernoulli, (1.5, )),
+        (stats.binom, (10, 1.5)),
+        (stats.betabinom, (10, -0.4, -0.5)),
+        (stats.boltzmann, (-1, 4)),
+        (stats.dlaplace, (-0.5, )),
+        (stats.geom, (1.5, )),
+        (stats.logser, (1.5, )),
+        (stats.nbinom, (10, 1.5)),
+        (stats.planck, (-0.5, )),
+        (stats.poisson, (-0.5, )),
+        (stats.randint, (5, 2)),
+        (stats.skellam, (-5, -2)),
+        (stats.zipf, (-2, )),
+        (stats.yulesimon, (-2, ))
+    ]
+)
+def test_support_gh13294_regression(dist, args):
+    # test support method with invalid arguents
+    rv = dist(*args)
+    a, b = rv.support()
+    assert_equal(a, np.nan)
+    assert_equal(b, np.nan)
