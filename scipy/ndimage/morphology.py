@@ -1878,9 +1878,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     chessboard algorithms.
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
+    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
 
     tmp1 = numpy.asarray(input) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
@@ -2012,9 +2010,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         supplied.
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
+    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
 
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
@@ -2212,9 +2208,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 0, 3, 3, 4]]])
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
+    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
 
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
@@ -2268,3 +2262,16 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         return result[0]
     else:
         return None
+
+
+def _distance_tranform_arg_check(distances, indices, return_distances, return_indices):
+    error_msgs = []
+    if (not return_distances) and (not return_indices):
+        error_msgs.append(
+            'at least one of return_distances/return_indices must be specified')
+    if distances and not return_distances:
+        error_msgs.append('return_distances must be True if distances is supplied')
+    if indices and not return_indices:
+        error_msgs.append('return_indices must be True if indices is supplied')
+    if error_msgs:
+        RuntimeError(', '.join(error_msgs))
