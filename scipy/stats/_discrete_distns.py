@@ -1133,11 +1133,11 @@ class zipfian_gen(rv_discrete):
 
     %(example)s
 
-    Confirm that `zipfian` reduces to `zipf` for large `n`.
+    Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
     >>> from scipy.stats import zipf
     >>> k = np.arange(11)
-    >>> np.allclose(zipfian.pmf(k, a, n=10000000), zipf.pmf(k, a))
+    >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=1.5))
     True
 
     """
