@@ -3182,8 +3182,8 @@ class rv_discrete(rv_generic):
         cond2 = (k >= _b)
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
-        place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2*(cond0 == cond0), 1.0)
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
 
         if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
