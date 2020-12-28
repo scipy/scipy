@@ -1850,12 +1850,13 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     distances : ndarray, optional
         An output array to store the calculated distance transform, instead of 
         returning it.
-        This parameter is only used when `return_distances` is True.
+        `return_distances` must be True.
         It must be the same shape as `input`, and of type float64 if `metric`
         is 'euclidean', uint32 otherwise.
     indices : int32 ndarray, optional
         An output array to store the calculated feature transform, instead of 
         returning it.
+        `return_indicies` must be True.
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -1958,7 +1959,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
     Distance transform for chamfer type of transforms.
-    
+
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
     element to each foreground element is returned in a separate array.
@@ -1987,13 +1988,14 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         Whether to calculate the feature transform.
         Default is False.
     distances : int32 ndarray, optional
-        An output array to store the calculated distance transform, instead of 
+        An output array to store the calculated distance transform, instead of
         returning it.
-        This parameter is only used when `return_distances` is True.
+        `return_distances` must be True.
         It must be the same shape as `input`.
     indices : int32 ndarray, optional
-        An output array to store the calculated feature transform, instead of 
+        An output array to store the calculated feature transform, instead of
         returning it.
+        `return_indicies` must be True.
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -2003,10 +2005,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         `return_distances` is True, and `distances` is not supplied.
         It will have the same shape as the input array.
     indices : int32 ndarray, optional
-        The calculated feature transform. It has an input-shaped array for each 
-        dimension of the input. See distance_transform_edt documentation for an 
+        The calculated feature transform. It has an input-shaped array for each
+        dimension of the input. See distance_transform_edt documentation for an
         example.
-        Returned only when `return_indices` is True, and `indices` is not 
+        Returned only when `return_indices` is True, and `indices` is not
         supplied.
 
     """
@@ -2113,13 +2115,14 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         Whether to calculate the feature transform.
         Default is False.
     distances : float64 ndarray, optional
-        An output array to store the calculated distance transform, instead of 
+        An output array to store the calculated distance transform, instead of
         returning it.
-        This parameter is only used when `return_distances` is True.
+        `return_distances` must be True.
         It must be the same shape as `input`.
     indices : int32 ndarray, optional
-        An output array to store the calculated feature transform, instead of 
+        An output array to store the calculated feature transform, instead of
         returning it.
+        `return_indicies` must be True.
         Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
@@ -2129,9 +2132,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         `return_distances` is True and `distances` is not supplied.
         It will have the same shape as the input array.
     indices : int32 ndarray, optional
-        The calculated feature transform. It has an input-shaped array for each 
+        The calculated feature transform. It has an input-shaped array for each
         dimension of the input. See example below.
-        Returned only when `return_indices` is True and `indices` is not 
+        Returned only when `return_indices` is True and `indices` is not
         supplied.
 
     Notes
