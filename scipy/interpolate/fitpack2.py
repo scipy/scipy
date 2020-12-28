@@ -1586,7 +1586,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError("requested phi out of bounds.")
 
         return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
-                                       dphi=dphi, grid=grid)
+                                              dphi=dphi, grid=grid)
 
 
 class LSQSphereBivariateSpline(SphereBivariateSpline):
@@ -1741,7 +1741,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError("requested phi out of bounds.")
 
         return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
-                                       dphi=dphi, grid=grid)
+                                              dphi=dphi, grid=grid)
 
 
 _spfit_messages = _surfit_messages.copy()
@@ -2004,9 +2004,5 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         theta = np.asarray(theta)
         phi = np.asarray(phi)
 
-        if phi.size > 0 and (phi.min() < self.v0 or
-                             phi.max() > self.v0 + 2. * np.pi):
-            raise ValueError("requested phi out of bounds.")
-
         return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
-                                       dphi=dphi, grid=grid)
+                                              dphi=dphi, grid=grid)

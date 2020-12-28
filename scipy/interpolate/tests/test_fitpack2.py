@@ -1056,11 +1056,6 @@ class TestRectSphereBivariateSpline(object):
                         [-49.0625, -46.54315]])
         assert_array_almost_equal(data_interp, ans)
 
-        with assert_raises(ValueError) as exc_info:
-            query_lon = np.radians(np.array([-100, 80.0]))
-            interpolator(query_lat, query_lon)
-        assert "requested phi out of bounds." in str(exc_info.value)
-
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
     if dx == 0 and dy == 0:
