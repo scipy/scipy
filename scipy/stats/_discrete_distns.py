@@ -1042,8 +1042,8 @@ class zipf_gen(rv_discrete):
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
     >>> from scipy.stats import zipfian
-    >>> k = np.array(0, n + 1)
-    >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, 10000000))
+    >>> k = np.arange(11)
+    >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
     True
 
     """
@@ -1113,10 +1113,11 @@ class zipfian_gen(rv_discrete):
 
         f(k, a, n) = \frac{1}{H_{n,a} k^a}
 
-    for :math:`k \ge 1`, :math:`a \ge 0`, :math:`n \in \{1, 2, 3, \dots\}`.
+    for :math:`k \in \{1, 2, \dots, n-1, n\}`, :math:`a \ge 0`,
+    :math:`n \in \{1, 2, 3, \dots\}`.
 
     `zipfian` takes :math:`a` and :math:`n` as shape parameters.
-    :math:`H_{n,a}` is the :math:`n\textsuperscript{th}` generalized harmonic
+    :math:`H_{n,a}` is the :math:`n`:sup:`th` generalized harmonic
     number of order :math:`a`.
 
     The Zipfian distribution reduces to the Zipf (zeta) distribution as
@@ -1135,8 +1136,8 @@ class zipfian_gen(rv_discrete):
     Confirm that `zipfian` reduces to `zipf` for large `n`.
 
     >>> from scipy.stats import zipf
-    >>> k = np.array(0, n + 1)
-    >>> np.allclose(zipfian.pmf(k, a, 10000000), zipf.pmf(k, a))
+    >>> k = np.arange(11)
+    >>> np.allclose(zipfian.pmf(k, a, n=10000000), zipf.pmf(k, a))
     True
 
     """
