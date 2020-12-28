@@ -238,6 +238,8 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     >>> plt.show()
     """
     input = numpy.asarray(input)
+    if input.ndim > 3:
+        raise NotImplementedError("Only 1d, 2d and 3d inputs are supported")
     output = _get_output_fourier(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)

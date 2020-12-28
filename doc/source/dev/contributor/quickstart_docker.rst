@@ -85,7 +85,7 @@ container do not persist after you close it.
       docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 
    This command starts (``run``) an interactive (``-it``) Docker container
-   named ``scipy-dev`` (based on Ubuntu Bionic) from the ``scipy``
+   named ``scipy-dev`` (based on Ubuntu focal) from the ``scipy``
    `Docker Hub repository`_. When the Docker container starts, the
    ``scipy`` directory from the current directory of the host (``$PWD``) is
    made available in the container as ``/home/scipy``. The changes you make
@@ -104,16 +104,16 @@ container do not persist after you close it.
 
       cd /home/scipy
 
-#. The container has both Python 3.6 and Python 3.7 available. To start
+#. The container has both Python 3.7 and Python 3.8 available. To start
    using/building SciPy, we need to install some dependencies::
 
-      pip3.7 install numpy cython pytest pybind11
+      pip3.8 install numpy cython pytest pybind11
 
-   If you want to work with Python 3.6 use the ``pip3.6`` command instead.
+   If you want to work with Python 3.7 use the ``pip3.7`` command instead.
 
 #. Do an in-place build by entering::
 
-      python3.7 setup.py build_ext --inplace
+      python3.8 setup.py build_ext --inplace
 
    This will compile the C,
    C++, and Fortran code that comes with SciPy. ``setup.py`` is a
@@ -122,11 +122,11 @@ container do not persist after you close it.
    defined in ``setup.py``, and ``--inplace`` is an option we’ll use to
    ensure that the compiling happens in the SciPy directory you already
    have rather than some other folder on your computer. If you want to
-   work with Python 3.6, replace ``python3.7`` with ``python3.6``.
+   work with Python 3.7, replace ``python3.8`` with ``python3.7``.
 
 #. Test the build by entering::
 
-      python3.7 runtests.py -v
+      python3.8 runtests.py -v
 
    ``runtests.py`` is another script in the SciPy root directory. It runs a
    suite of tests that make sure SciPy is working as it should, and ``-v``
@@ -136,11 +136,11 @@ container do not persist after you close it.
    or import SciPy from any directory other than the SciPy root, you should
    set up SciPy for development::
 
-      python3.7 setup.py develop
+      python3.8 setup.py develop
 
-From here, you can start a Python console (e.g., enter ``python3.7``) or
+From here, you can start a Python console (e.g., enter ``python3.8``) or
 execute Python scripts from the command line (e.g.,
-``python3.7 scriptname.py``).
+``python3.8 scriptname.py``).
 
 You can make changes to files in the ``scipy`` directory in a text editor/IDE
 in your host OS, and those changes will be reflected

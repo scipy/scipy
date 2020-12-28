@@ -1,10 +1,11 @@
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
          assert_array_almost_equal, assert_approx_equal, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
-
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import (margins, expected_freq,
+                                     chi2_contingency, association)
 
 
 def test_margins():
@@ -196,3 +197,26 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
+def test_bad_association_args():
+    # Invalid Test Statistic
+    assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")
+    # Invalid array shape
+    assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
+    # chi2_contingency exception
+    assert_raises(ValueError, association, [[-1, 10], [1, 2]], 'cramer')
+    # Invalid Array Item Data Type
+    assert_raises(ValueError, association, [[1, 2], ["dd", 4]], 'cramer')
+
+
+@pytest.mark.parametrize('stat, expected',
+                         [('cramer', 0.09222412010290792),
+                          ('tschuprow', 0.0775509319944633),
+                          ('pearson', 0.12932925727138758)])
+def test_assoc(stat, expected):
+    # 2d Array
+    obs1 = np.array([[12, 13, 14, 15, 16],
+                     [17, 16, 18, 19, 11],
+                     [9, 15, 14, 12, 11]])
+    a = association(observed=obs1, method=stat)
+    assert_allclose(a, expected)

@@ -271,3 +271,31 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [dist.pmf(*v) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
+
+
+@pytest.mark.parametrize(
+    'dist, x, args',
+    [  # In each of the following, at least one shape parameter is invalid
+        (stats.hypergeom, np.arange(5), (3, 3, 4)),
+        (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
+        (stats.bernoulli, np.arange(5), (1.5, )),
+        (stats.binom, np.arange(15), (10, 1.5)),
+        (stats.betabinom, np.arange(15), (10, -0.4, -0.5)),
+        (stats.boltzmann, np.arange(5), (-1, 4)),
+        (stats.dlaplace, np.arange(5), (-0.5, )),
+        (stats.geom, np.arange(5), (1.5, )),
+        (stats.logser, np.arange(5), (1.5, )),
+        (stats.nbinom, np.arange(15), (10, 1.5)),
+        (stats.planck, np.arange(5), (-0.5, )),
+        (stats.poisson, np.arange(5), (-0.5, )),
+        (stats.randint, np.arange(5), (5, 2)),
+        (stats.skellam, np.arange(5), (-5, -2)),
+        (stats.zipf, np.arange(5), (-2, )),
+        (stats.yulesimon, np.arange(5), (-2, ))
+    ]
+)
+def test_cdf_gh13280_regression(dist, x, args):
+    # Test for nan output when shape parameters are invalid
+    vals = dist.cdf(x, *args)
+    expected = np.nan
+    npt.assert_equal(vals, expected)
