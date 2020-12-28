@@ -1142,7 +1142,10 @@ class zipfian_gen(rv_discrete):
 
     """
     def _argcheck(self, a, n):
-        return (a >= 0) & (np.asarray(n) == np.asarray(n, dtype=int))
+        return (a >= 0) & (n > 0)
+
+    def _get_support(self, a, n):
+        return 1, n
 
     def _pmf(self, k, a, n):
         return 1.0 / _gen_harmonic(n, a) / k**a
