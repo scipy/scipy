@@ -392,7 +392,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     For more functionalities or optimal performance, you can use
     `sklearn.cluster.KMeans <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html>`_.
     `This <https://hdbscan.readthedocs.io/en/latest/performance_and_scalability.html#comparison-of-high-performance-implementations>`_
-    is a benchmark result of several implementaions.
+    is a benchmark result of several implementations.
 
     Examples
     --------
