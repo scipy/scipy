@@ -11,7 +11,7 @@ mass function is given by
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} p\left(k; s, N \right) & = & \frac{1}{H_{N, s}k^{s}}\quad k\geq1\end{eqnarray*}
+    \begin{eqnarray*} p\left(k; s, N \right) & = & \frac{1}{H_{N, s}k^{s}}\quad k \in \{1, 2, \dots, n-1, n\} \end{eqnarray*}
 
 where
 
@@ -19,7 +19,7 @@ where
 
     H_{N, s}=\sum_{n=1}^{N}\frac{1}{n^{s}}
 
-is the :math:`N\textsuperscript{th}` generalized harmonic number of order
+is the :math:`N`:sup:`th` generalized harmonic number of order
 :math:`s`. Other functions of this distribution are
 
 .. math::

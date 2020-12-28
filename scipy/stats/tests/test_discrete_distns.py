@@ -168,7 +168,7 @@ class TestZipfian:
     @pytest.mark.parametrize("a, n", [(1.01, 10), (1.56712977, 70),
                                       (3.681, 33), (5.492, 66)])
     def test_zipfian_naive(self, a, n):
-        # test against bare-bones implementation of zipfian
+        # test against bare-bones implementation
         def Hns(n, s):
             """Naive implementation of harmonic sum"""
             return (1/np.arange(1, n+1)**s).sum()

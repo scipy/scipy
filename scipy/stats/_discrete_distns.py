@@ -1156,7 +1156,6 @@ class zipfian_gen(rv_discrete):
     def _sf(self, k, a, n):
         k = k + 1  # # to match SciPy convention
         # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        # implemented exactly as shown; please suggest improvements
         return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
                 / (k**a*_gen_harmonic(n, a)))
 
