@@ -721,7 +721,7 @@ def test_moments_with_array_gh12192_regression():
     # (n > 4), all(loc != 0), and all(scale != 0)
     vals10 = stats.norm.moment(5, [1., 2.], [1., 2.])
     expected10 = np.array([26., 832.])
-    npt.assert_equal(vals10, expected10)
+    npt.assert_allclose(vals10, expected10, rtol=1e-13)
 
 
 def test_broadcasting_in_moments_gh12192_regression():
