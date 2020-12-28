@@ -1,21 +1,19 @@
 from collections import Counter
 
-import numpy as np
 import pytest
-
-from scipy.stats.qmc import Sobol
-
+import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_equal)
-from pytest import raises as assert_raises
+
+from scipy.stats.qmc import Sobol
 import scipy.stats.qmc as qmc
 
 
 class TestSobol:
-    # set maxDiff to None to show all differences when tests fail
-    maxDiff = None
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup_sequences(self):
+        # 10 samples for testing. Silent the warning as 10 is not 2**n
         with pytest.warns(UserWarning):
             engine_unscrambled_1d = Sobol(1, scramble=False)
             self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
@@ -32,7 +30,6 @@ class TestSobol:
             engine.random(10)
 
     def test_random_base2(self):
-        self.setUp()
         engine = Sobol(1, scramble=False)
         sample = engine.random_base2(2)
         assert_array_equal(self.draws_unscrambled_1d[:4],
@@ -44,13 +41,16 @@ class TestSobol:
                            sample)
 
         # resampling again but leading to N!=2**n
-        assert_raises(ValueError, engine.random_base2, 2)
+        with pytest.raises(ValueError, match=r"The balance properties of "
+                                             r"Sobol' points"):
+            engine.random_base2(2)
 
     def test_raise(self):
-        assert_raises(ValueError, Sobol, Sobol.MAXDIM + 1)
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"dimensionality"):
+            Sobol(Sobol.MAXDIM + 1)
 
     def test_Unscrambled1DSobol(self):
-        self.setUp()
         expected = [
             0, 0.5, 0.75, 0.25, 0.375, 0.875, 0.625, 0.125, 0.1875, 0.6875
         ]
@@ -60,7 +60,6 @@ class TestSobol:
                            np.array(expected))
 
     def test_Unscrambled3DSobol(self):
-        self.setUp()
         expected_dim3 = [0, 0.5, 0.25, 0.75, 0.625, 0.125, 0.875, 0.375,
                          0.9375, 0.4375]
         assert_equal(self.draws_unscrambled_3d.shape[0], 10)
@@ -73,13 +72,11 @@ class TestSobol:
         )
 
     def test_Unscrambled3DAsyncSobol(self):
-        self.setUp()
         engine_unscrambled_3d = Sobol(3, scramble=False)
-        draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
+        draws = np.vstack([engine_unscrambled_3d.random() for _ in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
     def test_UnscrambledFastForwardAndResetSobol(self):
-        self.setUp()
         engine_unscrambled_3d = Sobol(3, scramble=False).fast_forward(5)
         draws = engine_unscrambled_3d.random(5)
         assert_array_equal(self.draws_unscrambled_3d[5:10, :], draws)
@@ -125,7 +122,6 @@ class TestSobol:
         )
 
     def test_Scrambled1DSobol(self):
-        self.setUp()
         expected = [
             0.590297,
             0.46784395,
@@ -146,7 +142,6 @@ class TestSobol:
         )
 
     def test_Scrambled3DSobol(self):
-        self.setUp()
         expected_dim3 = [0.56645, 0.19712, 0.79965, 0.43654, 0.0867, 0.70811,
                          0.295, 0.90994, 0.31903, 0.94863]
         assert_equal(self.draws_scrambled_3d.shape[0], 10)
@@ -156,9 +151,8 @@ class TestSobol:
         )
 
     def test_Scrambled3DAsyncSobol(self):
-        self.setUp()
         engine_unscrambled_3d = Sobol(3, scramble=False)
-        draws = np.vstack([engine_unscrambled_3d.random() for i in range(10)])
+        draws = np.vstack([engine_unscrambled_3d.random() for _ in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
     def test_ScrambledSobolBounds(self):
@@ -168,7 +162,6 @@ class TestSobol:
         assert_(np.all(draws <= 1))
 
     def test_ScrambledFastForwardAndResetSobol(self):
-        self.setUp()
         engine_scrambled_3d = Sobol(3, scramble=True,
                                     seed=12345).fast_forward(5)
         draws = engine_scrambled_3d.random(5)

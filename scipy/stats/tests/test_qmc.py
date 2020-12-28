@@ -1,11 +1,10 @@
 import copy
-import numpy as np
+
 import pytest
+import numpy as np
 from numpy.testing import (assert_allclose, assert_almost_equal, assert_,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
-from pytest import raises as assert_raises
-
 from scipy.stats import shapiro
 
 from scipy.stats._sobol import _test_find_index
