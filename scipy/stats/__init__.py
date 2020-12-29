@@ -259,6 +259,7 @@ Statistical tests
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
+   mannwhitneyu2
    tiecorrect
    rankdata
    ranksums
