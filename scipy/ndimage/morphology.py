@@ -1879,7 +1879,11 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     chessboard algorithms.
 
     """
-    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
+    ft_inplace = isinstance(indices, numpy.ndarray)
+    dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
 
     tmp1 = numpy.asarray(input) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
@@ -1942,9 +1946,9 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
 
     # construct and return the result
     result = []
-    if return_distances and not isinstance(distances, numpy.ndarray):
+    if return_distances and not dt_inplace:
         result.append(dt)
-    if return_indices and not isinstance(indices, numpy.ndarray):
+    if return_indices and not ft_inplace:
         result.append(ft)
 
     if len(result) == 2:
@@ -2012,10 +2016,11 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         supplied.
 
     """
-    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
-
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
     input = numpy.asarray(input)
     if metric in ['taxicab', 'cityblock', 'manhattan']:
         rank = input.ndim
@@ -2211,10 +2216,12 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 0, 3, 3, 4]]])
 
     """
-    _distance_tranform_arg_check(distances, indices, return_distances, return_indices)
-
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
+
     # calculate the feature transform
     input = numpy.atleast_1d(numpy.where(input, 1, 0).astype(numpy.int8))
     if sampling is not None:
@@ -2267,14 +2274,18 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         return None
 
 
-def _distance_tranform_arg_check(distances, indices, return_distances, return_indices):
+def _distance_tranform_arg_check(distances_out, indices_out,
+                                 return_distances, return_indices):
+    """Raise a RuntimeError if the arguments are invalid"""
     error_msgs = []
     if (not return_distances) and (not return_indices):
         error_msgs.append(
             'at least one of return_distances/return_indices must be specified')
-    if distances and not return_distances:
-        error_msgs.append('return_distances must be True if distances is supplied')
-    if indices and not return_indices:
+    if distances_out and not return_distances:
+        error_msgs.append(
+            'return_distances must be True if distances is supplied'
+        )
+    if indices_out and not return_indices:
         error_msgs.append('return_indices must be True if indices is supplied')
     if error_msgs:
         RuntimeError(', '.join(error_msgs))
