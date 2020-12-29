@@ -25,30 +25,23 @@ class _MWU:
 
     def pmf(self, k, m, n):
         '''Probability mass function'''
-        return self.f(m, n, k) / special.binom(m + n, m)
+        self._resize_fmnks(m, n, k)
+        return self._f(m, n, k) / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
-        return (np.sum([self.f(m, n, i) for i in range(0, k + 1)])
+        self._resize_fmnks(m, n, k)
+        return (np.sum([self._f(m, n, i) for i in range(0, k + 1)])
                 / special.binom(m + n, m))
 
     def sf(self, k, m, n):
         '''Survival function'''
-        n_choose = special.binom(m + n, m)
+        self._resize_fmnks(m, n, m*n)
+        return (np.sum([self._f(m, n, i) for i in range(m*n, k, -1)])
+                / special.binom(m + n, m))
 
-        # TODO: would it be faster to calculate i from k to some maximum?
-        # it would avoid precision loss in subtraction below
-        F = np.sum([self.f(m, n, i) for i in range(0, k + 1)])
-
-        # ideally, we could do (n_choose - F) with integer arithmetic to
-        # avoid precision loss, but in reality, n_choose can
-        # easily exceed the maximum int64.
-        # So maybe we should just do 1-cdf?
-        return (n_choose - F) / n_choose
-
-    def f(self, m, n, k):
-        '''Convenience function of [3] Theorem 2.5'''
-        # If necessary, expand the array that remembers PMF values
+    def _resize_fmnks(self, m, n, k):
+        '''If necessary, expand the array that remembers PMF values'''
         # could probably use `np.pad` but I'm not sure it would save code
         shape_old = np.array(self.fmnks.shape)
         shape_new = np.array((m+1, n+1, k+1))
@@ -56,15 +49,11 @@ class _MWU:
             shape = np.maximum(shape_old, shape_new)
             fmnks = -np.ones(shape)            # create the new array
             m0, n0, k0 = shape_old
-            fmnks[:m0, :n0, :k0] = self.fmnks  # copy rememered values
+            fmnks[:m0, :n0, :k0] = self.fmnks  # copy remembered values
             self.fmnks = fmnks
 
-        # Call the function that does all the real work
-        return self._f(m, n, k)
-
     def _f(self, m, n, k):
-        '''Recursive implementation function of [3] Theorem 2.5'''
-        # TODO: vectorize w.r.t. k
+        '''Recursive implementation of function of [3] Theorem 2.5'''
 
         fmnks = self.fmnks  # for convenience
 
@@ -79,7 +68,7 @@ class _MWU:
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
         else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self.f(m-1, n, k-n)  +  self.f(m, n-1, k)
+            fmnk = self._f(m-1, n, k-n)  +  self._f(m, n-1, k)
 
         fmnks[m, n, k] = fmnk  # remember result
 
