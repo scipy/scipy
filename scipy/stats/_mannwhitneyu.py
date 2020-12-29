@@ -29,19 +29,21 @@ class _MWU:
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
-        return (np.sum([self.f(m, n, i) for i in range(0, k+1)])
+        return (np.sum([self.f(m, n, i) for i in range(0, k + 1)])
                 / special.binom(m + n, m))
 
     def sf(self, k, m, n):
         '''Survival function'''
         n_choose = special.binom(m + n, m)
-        # I think this should be k+1, but k makes it match expected result : /
-        F = np.sum([self.f(m, n, i) for i in range(0, k)])
-        # consequently, cdf + sf > 1; we're double counting pmf(k, m, n)
 
-        # the thought was that we could do (n_choose - F) with integer
-        # arithmetic, but it probably doesn't matter because n_choose can
-        # easily exceed the maximum int64
+        # TODO: would it be faster to calculate i from k to some maximum?
+        # it would avoid precision loss in subtraction below
+        F = np.sum([self.f(m, n, i) for i in range(0, k + 1)])
+
+        # ideally, we could do (n_choose - F) with integer arithmetic to
+        # avoid precision loss, but in reality, n_choose can
+        # easily exceed the maximum int64.
+        # So maybe we should just do 1-cdf?
         return (n_choose - F) / n_choose
 
     def f(self, m, n, k):
@@ -85,7 +87,7 @@ class _MWU:
 
 
 # Maintain state for faster repeat calls to mannwhitneyu2 w/ method='exact'
-_mwu_state = _MWU()  #
+_mwu_state = _MWU()
 
 
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
@@ -147,10 +149,12 @@ def mannwhitneyu2(x, y, continuity=True, alternative=None, axis=0,
         U, f = np.maximum(U1, U2), 2  # multiply by two for two-sided test
 
     if exact:
-        p = _mwu_state.sf(int(U), n1, n2) * f
+        p = (_mwu_state.sf(int(U), n1, n2)  # because distribution is discrete,
+             + _mwu_state.pmf(int(U), n1, n2))  # we need to add the PMF at U
     else:
         z = _get_mwu_z(U, n1, n2, ranks, continuity=continuity)
-        p = stats.norm.sf(z) * f
+        p = stats.norm.sf(z)
+    p *= f
 
     # return mwu_result(U, p)
     return MannwhitneyuResult(U1, p)  # temporary to integrate with tests
