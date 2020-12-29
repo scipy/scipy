@@ -1931,9 +1931,9 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     if return_indices:
         if isinstance(indices, numpy.ndarray):
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices must of int32 type')
+                raise RuntimeError('indices array must be int32')
             if indices.shape != (tmp1.ndim,) + tmp1.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('indices array has wrong shape')
             tmp2 = indices
         else:
             tmp2 = numpy.indices(tmp1.shape, dtype=numpy.int32)
@@ -2068,9 +2068,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         ft = numpy.ravel(ft)
         if ft_inplace:
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices must of int32 type')
+                raise RuntimeError('indices array must be int32')
             if indices.shape != (dt.ndim,) + dt.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('indices array has wrong shape')
             tmp = indices
         else:
             tmp = numpy.indices(dt.shape, dtype=numpy.int32)
@@ -2233,9 +2233,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     if ft_inplace:
         ft = indices
         if ft.shape != (input.ndim,) + input.shape:
-            raise RuntimeError('indices has wrong shape')
+            raise RuntimeError('indices array has wrong shape')
         if ft.dtype.type != numpy.int32:
-            raise RuntimeError('indices must be of int32 type')
+            raise RuntimeError('indices array must be int32')
     else:
         ft = numpy.zeros((input.ndim,) + input.shape, dtype=numpy.int32)
 
@@ -2251,9 +2251,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         if dt_inplace:
             dt = numpy.add.reduce(dt, axis=0)
             if distances.shape != dt.shape:
-                raise RuntimeError('distances has wrong shape')
+                raise RuntimeError('distances array has wrong shape')
             if distances.dtype.type != numpy.float64:
-                raise RuntimeError('distances must be of float64 type')
+                raise RuntimeError('distances array must be float64')
             numpy.sqrt(dt, distances)
         else:
             dt = numpy.add.reduce(dt, axis=0)
