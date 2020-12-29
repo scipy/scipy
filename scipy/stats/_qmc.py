@@ -93,10 +93,28 @@ def discrepancy(sample, iterative=False, method='CD'):
     uniform distribution.
     The lower the value is, the better the coverage of the parameter space is.
 
-    Taking a subspace of the parameter space, we count the number of points in
-    the subpace and compare it to the total number of the points of the
-    sample. This value is substracted by the volume of the subspace. This
-    process is done over all subspaces and the highest value is kept.
+    A discrepancy quantifies the distance between the continuous uniform
+    distribution on a hypercube and the discrete uniform distribution on
+    :math:`n` distinct sample points. Smaller values are better. For a
+    collection of subsets of the hypercube, the discrepancy is the greatest
+    absolute difference between the fraction of sample points in one of those
+    subsets and the volume of that subset. There are different definitions of
+    discrepancy corresponding to different collections of subsets. Some
+    versions take a root mean square difference over subsets instead of
+    a maximum.
+
+    A measure of uniformity is reasonable if it satisfies the following
+    criteria [1]_:
+
+    1. It is invariant under permuting factors and/or runs.
+    2. It is invariant under rotation of the coordinates.
+    3. It can measure not only uniformity of the sample over the hypercube,
+       but also the projection uniformity of the sample over non-empty
+       subset of lower dimension hypercubes.
+    4. There is some reasonable geometric meaning.
+    5. It is easy to compute.
+    6. It satisfies the Koksma-Hlawka-like inequality.
+    7. It is consistent with other criteria in experimental design.
 
     Four methods are available:
 
@@ -106,7 +124,7 @@ def discrepancy(sample, iterative=False, method='CD'):
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``star``: Star L2-discrepancy - like CD BUT variant to rotation
 
-    Lastly, there using ``iterative=True``, it is possible to compute the
+    Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
     to add a point to a sampling and check the candidate which would give the
     lowest discrepancy. Then you could just update the discrepancy with
@@ -140,15 +158,6 @@ def discrepancy(sample, iterative=False, method='CD'):
            [0.91666667, 0.58333333]])
     >>> qmc.discrepancy(space)
     0.008142039609053464
-
-    We can also compute iteratively the discrepancy by using
-    ``iterative=True``.
-
-    >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
-    >>> disc_init
-    0.04769081147119336
-    >>> _update_discrepancy(space[-1], space[:-1], disc_init) # doctest: +SKIP
-    0.008142039609053513
 
     """
     sample = np.asarray(sample)
@@ -229,6 +238,21 @@ def _update_discrepancy(x_new, sample, initial_disc):
     -------
     discrepancy : float
         Centered discrepancy of the sample composed of `x_new` and `sample`.
+
+    Examples
+    --------
+    We can also compute iteratively the discrepancy by using
+    ``iterative=True``.
+
+    >>> from scipy.stats import qmc
+    >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+    >>> bounds = np.array([[0.5, 0.5], [6.5, 6.5]])
+    >>> space = qmc.scale(space, bounds, reverse=True)
+    >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
+    >>> disc_init
+    0.04769081147119336
+    >>> _update_discrepancy(space[-1], space[:-1], disc_init) # doctest: +SKIP
+    0.008142039609053513
 
     """
     sample = np.asarray(sample)
