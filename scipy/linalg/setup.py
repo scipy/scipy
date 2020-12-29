@@ -144,6 +144,9 @@ def configuration(parent_package='', top_path=None):
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')
 
+    # PROPACK
+    config.add_subpackage('_propack')
+
     return config
 
 
