@@ -19,8 +19,7 @@ def _broadcast_concatenate(x, y, axis):
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
-    # Possible improvement: use integer arithmetic when m and n are
-    # small enough. I had some code, but let's keep the inital PR simple.
+    # Possible improvement: if m and n are small enough, use integer arithmetic
 
     def __init__(self):
         '''Minimal initializer'''
@@ -29,18 +28,20 @@ class _MWU:
     def pmf(self, k, m, n):
         '''Probability mass function'''
         self._resize_fmnks(m, n, np.max(k))
-        return self._f(m, n, k) / special.binom(m + n, m)
+        # could loop over just the unique elements, but probably not worth
+        # the time to find them
+        for i in np.ravel(k):
+            self._f(m, n, i)
+        return self._fmnks[m, n, k] / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
         # We could use the fact that the distribution is symmetric to avoid
         # summing more than m*n/2 terms, but it might not be worth the
         # overhead. Let's leave that to an improvement.
-        self._resize_fmnks(m, n, np.max(k))
-        for i in range(0, np.max(k) + 1):
-            self._f(m, n, i)
-        cdfs = np.cumsum(self._fmnks[m, n])
-        return cdfs[k] / special.binom(m + n, m)
+        pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
+        cdfs = np.cumsum(pmfs)
+        return cdfs[k]
 
     def sf(self, k, m, n):
         '''Survival function'''
