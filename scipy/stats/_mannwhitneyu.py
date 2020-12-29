@@ -5,6 +5,7 @@ from scipy import special
 from scipy import stats
 
 
+
 def _broadcast_concatenate(x, y, axis):
     '''Broadcast then concatenate arrays, leaving concatenation axis last'''
     x = x.swapaxes(axis, -1)
@@ -18,44 +19,55 @@ def _broadcast_concatenate(x, y, axis):
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
+    # Possible improvement: use integer arithmetic when m and n are
+    # small enough. I had some code, but let's keep the inital PR simple.
 
     def __init__(self):
-        '''Lightweight initializer to remember previously calculated f/F'''
-        self.fmnks = -np.ones((1, 1, 1))
+        '''Minimal initializer'''
+        self._fmnks = -np.ones((1, 1, 1))
 
     def pmf(self, k, m, n):
         '''Probability mass function'''
-        self._resize_fmnks(m, n, k)
+        self._resize_fmnks(m, n, np.max(k))
         return self._f(m, n, k) / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
-        self._resize_fmnks(m, n, k)
-        return (np.sum([self._f(m, n, i) for i in range(0, k + 1)])
-                / special.binom(m + n, m))
+        # We could use the fact that the distribution is symmetric to avoid
+        # summing more than m*n/2 terms, but it might not be worth the
+        # overhead. Let's leave that to an improvement.
+        self._resize_fmnks(m, n, np.max(k))
+        for i in range(0, np.max(k) + 1):
+            self._f(m, n, i)
+        cdfs = np.cumsum(self._fmnks[m, n])
+        return cdfs[k] / special.binom(m + n, m)
 
     def sf(self, k, m, n):
         '''Survival function'''
-        self._resize_fmnks(m, n, m*n)
-        return (np.sum([self._f(m, n, i) for i in range(m*n, k, -1)])
-                / special.binom(m + n, m))
+        # Use the fact that the distribution is symmetric; i.e.
+        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
+        k = m*n - k
+        # Note that both CDF and SF include the PMF at k. The p-value is
+        # calculated from the SF and should include the mass at k, so this
+        # is desirable
+        return self.cdf(k, m, n)
 
     def _resize_fmnks(self, m, n, k):
         '''If necessary, expand the array that remembers PMF values'''
         # could probably use `np.pad` but I'm not sure it would save code
-        shape_old = np.array(self.fmnks.shape)
+        shape_old = np.array(self._fmnks.shape)
         shape_new = np.array((m+1, n+1, k+1))
         if np.any(shape_new > shape_old):
             shape = np.maximum(shape_old, shape_new)
-            fmnks = -np.ones(shape)            # create the new array
+            fmnks = -np.ones(shape)             # create the new array
             m0, n0, k0 = shape_old
-            fmnks[:m0, :n0, :k0] = self.fmnks  # copy remembered values
-            self.fmnks = fmnks
+            fmnks[:m0, :n0, :k0] = self._fmnks  # copy remembered values
+            self._fmnks = fmnks
 
     def _f(self, m, n, k):
         '''Recursive implementation of function of [3] Theorem 2.5'''
 
-        fmnks = self.fmnks  # for convenience
+        fmnks = self._fmnks  # for convenience
 
         # [3] Theorem 2.5 Line 1
         if k < 0 or m < 0 or n < 0 or k > m*n:
@@ -138,8 +150,7 @@ def mannwhitneyu2(x, y, continuity=True, alternative=None, axis=0,
         U, f = np.maximum(U1, U2), 2  # multiply by two for two-sided test
 
     if exact:
-        p = (_mwu_state.sf(int(U), n1, n2)  # because distribution is discrete,
-             + _mwu_state.pmf(int(U), n1, n2))  # we need to add the PMF at U
+        p = _mwu_state.sf(U.astype(int), n1, n2)
     else:
         z = _get_mwu_z(U, n1, n2, ranks, continuity=continuity)
         p = stats.norm.sf(z)
