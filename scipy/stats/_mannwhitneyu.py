@@ -7,8 +7,8 @@ from scipy import stats
 
 def _broadcast_concatenate(x, y, axis):
     '''Broadcast then concatenate arrays, leaving concatenation axis last'''
-    x = x.swapaxes(axis, -1)
-    y = y.swapaxes(axis, -1)
+    x = np.moveaxis(x, axis, -1)
+    y = np.moveaxis(y, axis, -1)
     z = np.broadcast(x[..., 0], y[..., 0])
     x = np.broadcast_to(x, z.shape + (x.shape[-1],))
     y = np.broadcast_to(y, z.shape + (y.shape[-1],))
@@ -110,7 +110,7 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
 def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     ''' Input validation and standardization for mannwhitneyu2 '''
     # Would use np.asarray_chkfinite, but infs are OK
-    x, y = np.asarray(x), np.asarray(y)
+    x, y = np.atleast_1d(x), np.atleast_1d(y)
     if np.isnan(x).any() or np.isnan(y).any():
         raise ValueError('`x` and `y` must not contain NaNs.')
     if np.size(x) == 0 or np.size(y) == 0:
@@ -126,8 +126,8 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         raise ValueError(f'`alternative` must be one of {alternatives}.')
 
     axis_int = int(axis)
-    if axis != axis_int or axis_int < 0:
-        raise ValueError('`index` must be a positive integer.')
+    if axis != axis_int:
+        raise ValueError('`axis` must be an integer.')
 
     methods = {"asymptotic", "exact"}
     method = method.lower()

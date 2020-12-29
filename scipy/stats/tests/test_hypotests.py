@@ -1,12 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+from itertools import product
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
 
+import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm)
+from scipy.stats._mannwhitneyu import mannwhitneyu2
 from scipy.stats import distributions
 from .common_tests import check_named_results
 
@@ -159,3 +162,130 @@ class TestCvm(object):
         r1 = cramervonmises(x, distributions.beta.cdf, args)
         r2 = cramervonmises(x, "beta", args)
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+
+
+class TestMannWhitneyU():
+
+    def test_input_validation(self):
+        x = np.array([1, 2]) # generic, valid inputs
+        y = np.array([3, 4])
+        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
+            mannwhitneyu2([], y)
+        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
+            mannwhitneyu2(x, [])
+        with assert_raises(ValueError, match="`x` and `y` must not contain"):
+            mannwhitneyu2([np.nan, 2], y)
+        with assert_raises(ValueError, match="`use_continuity` must be one"):
+            mannwhitneyu2(x, y, use_continuity='ekki')
+        with assert_raises(ValueError, match="`alternative` must be one of"):
+            mannwhitneyu2(x, y, alternative='ekki')
+        with assert_raises(ValueError, match="`axis` must be an integer"):
+            mannwhitneyu2(x, y, axis=1.5)
+        with assert_raises(ValueError, match="`method` must be one of"):
+            mannwhitneyu2(x, y, method='ekki')
+
+    def test_corner_cases(self):
+        # tests behavior for cases that required special handling
+        pass
+        # mannwhitneyu2([1], [1])
+        # mannwhitneyu2([1, 2], [1, 2])
+
+    def test_unusual_cases(self):
+        # test behavior for unusual cases that did not require special handling
+        mannwhitneyu2(1, 2, alternative='two-sided')
+        mannwhitneyu2(1, 2, alternative='greater')
+        mannwhitneyu2(1, 2, alternative='less')
+
+    @pytest.mark.parametrize("method", ["asymptotic", "exact"])
+    def test_gh_12837_11113(self, method):
+        # test that behavior for broadcastable nd arrays is appropriate:
+        # output shape is correct and all values are equal to when the test
+        # is performed on one pair of samples at a time.
+        # tests that gh-12837 and gh-11113 (requests for n-d input)
+        # are resolved
+        np.random.seed(0)
+
+        # arrays are broadcastable except for axis = -3
+        axis = -3
+        m, n = 7, 10  # sample sizes
+        x = np.random.rand(m, 3, 8)
+        y = np.random.rand(6, n, 1, 8) + 0.1
+        res = mannwhitneyu2(x, y, method=method, axis=axis)
+
+        shape = (6, 3, 8) # appropriate shape of outputs, given inputs
+        assert(res.pvalue.shape == shape)
+        assert(res.statistic.shape == shape)
+
+        # move axis of test to end for simplicity
+        x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
+
+        x = x[None, ...] # give x a zeroth dimension
+        assert(x.ndim == y.ndim)
+
+        x = np.broadcast_to(x, shape + (m,))
+        y = np.broadcast_to(y, shape + (n,))
+        assert(x.shape[:-1] == shape)
+        assert(y.shape[:-1] == shape)
+
+        # loop over pairs of samples
+        statistics = np.zeros(shape)
+        pvalues = np.zeros(shape)
+        for indices in product(*[range(i) for i in shape]):
+            xi = x[indices]
+            yi = y[indices]
+            temp = mannwhitneyu2(xi, yi, method=method)
+            statistics[indices] = temp.statistic
+            pvalues[indices] = temp.pvalue
+
+        np.testing.assert_equal(res.pvalue, pvalues)
+        np.testing.assert_equal(res.statistic, statistics)
+
+    settings = [[True, "less", "asymptotic", 0.900775348204],
+                [True, "greater", "asymptotic", 0.1223118025635],
+                [True, "two-sided", "asymptotic", 0.244623605127],
+                [False, "less", "asymptotic", 0.8896643190401],
+                [False, "greater", "asymptotic", 0.1103356809599],
+                [False, "two-sided", "asymptotic", 0.2206713619198],
+                [True, "less", "exact", 0.8967698967699],
+                [True, "greater", "exact", 0.1272061272061],
+                [True, "two-sided", "exact", 0.2544122544123]]
+    @pytest.mark.parametrize(("use_continuity", "alternative",
+                              "method", "pvalue_exp"), settings)
+    def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp):
+        # gh-9184 might be considered a doc-only bug. Please see the
+        # documentation to confirm that mannwhitneyu2 correctly notes
+        # that the output statistic is that of the first sample (x). In any
+        # case, check the case provided there against output from R.
+        # R code:
+        # options(digits=16)
+        # x <- c(0.80, 0.83, 1.89, 1.04, 1.45, 1.38, 1.91, 1.64, 0.73, 1.46)
+        # y <- c(1.15, 0.88, 0.90, 0.74, 1.21)
+        # wilcox.test(x, y, alternative = "less", exact = FALSE)
+        # wilcox.test(x, y, alternative = "greater", exact = FALSE)
+        # wilcox.test(x, y, alternative = "two.sided", exact = FALSE)
+        # wilcox.test(x, y, alternative = "less", exact = FALSE,
+        #             correct=FALSE)
+        # wilcox.test(x, y, alternative = "greater", exact = FALSE,
+        #             correct=FALSE)
+        # wilcox.test(x, y, alternative = "two.sided", exact = FALSE,
+        #             correct=FALSE)
+        # wilcox.test(x, y, alternative = "less", exact = TRUE)
+        # wilcox.test(x, y, alternative = "greater", exact = TRUE)
+        # wilcox.test(x, y, alternative = "two.sided", exact = TRUE)
+        statistic_exp = 35
+        x = (0.80, 0.83, 1.89, 1.04, 1.45, 1.38, 1.91, 1.64, 0.73, 1.46)
+        y = (1.15, 0.88, 0.90, 0.74, 1.21)
+        res = mannwhitneyu2(x, y, use_continuity=use_continuity,
+                            alternative=alternative, method=method)
+        assert_equal(res.statistic, statistic_exp)
+        assert_allclose(res.pvalue, pvalue_exp)
+
+    def test_gh_6897(self):
+        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
+            mannwhitneyu2([], [])
+
+    def test_gh_4067(self):
+        a=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
+        b=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
+        with assert_raises(ValueError, match="`x` and `y` must not contain"):
+            mannwhitneyu2(a,b)
