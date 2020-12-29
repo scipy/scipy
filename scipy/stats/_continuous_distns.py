@@ -8931,7 +8931,7 @@ class studentized_range_gen(rv_continuous):
             else:  # Use asymptomatic method
                 user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats,
-                                                   '_genstudentized_range_cdf_asymptomatic',
+                                                   '_genstudentized_range_cdf_asymptopic',
                                                    user_data)
                 res = integrate.quad(llc, -np.inf, np.inf)[0]
                 return res

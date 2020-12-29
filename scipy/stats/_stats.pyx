@@ -543,7 +543,7 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
 
     return math.exp(log_terms) * t4
 
-cdef double _genstudentized_range_cdf_asymptomatic(double z, void *user_data) nogil:
+cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
     q = (<double *>user_data)[0]
     k = (<double *>user_data)[1]
