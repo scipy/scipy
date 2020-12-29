@@ -1824,14 +1824,21 @@ class TestPowerlaw(object):
     @pytest.mark.parametrize("fscale", [True, False])
     def test_fit_MLE_comp_optimzer_combinations(self, a, loc, scale, fa, floc,
                                                 fscale):
+        # skip the test if all parameters are fixed.
         if False not in {fa, floc, fscale}:
             pytest.skip()
-        data = stats.powerlaw.rvs(size=500, a=a, loc=loc, scale=scale)
+        data = stats.powerlaw.rvs(size=250, a=a, loc=loc, scale=scale)
+        print(data)
 
         def ll(args, data):
             # to get the same behavior as `powerlaw.reduce_func`, negate the
             # log-likelihood function
             return -np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
+
+        def ll_a1(args, data):
+            # the log likelihood function reduces to this when `a` is known to
+            # be 1.
+            return len(data) * np.log(fscale)
 
         # build kwds based on which arguments are indicated to be fixed
         kwds = dict()
@@ -1841,8 +1848,15 @@ class TestPowerlaw(object):
             kwds['floc'] = loc
         if fscale:
             kwds['fscale'] = scale
+        # warnings are raised in the super fit method, unrelated to changes
+        # made here
         with np.errstate(divide='ignore'):
-            _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
+            # if powerlaw.fit determines that a==1, then a different log
+            if stats.powerlaw.fit(data, **kwds)[0] == 1:
+                _assert_less_or_close_loglike(stats.powerlaw, data, ll_a1,
+                                              **kwds)
+            else:
+                _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
 
 
 class TestInvGamma(object):
