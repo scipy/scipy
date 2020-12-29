@@ -5224,12 +5224,122 @@ def test_rvs_no_size_warning():
         (stats.randint, (5, 2)),
         (stats.skellam, (-5, -2)),
         (stats.zipf, (-2, )),
-        (stats.yulesimon, (-2, ))
+        (stats.yulesimon, (-2, )),
+        (stats.alpha, (-1, )),
+        (stats.anglit, ()),
+        (stats.arcsine, ()),
+        (stats.argus, (-1, )),
+        (stats.beta, (-2, 2)),
+        (stats.betaprime, (-2, 2)),
+        (stats.bradford, (-1, )),
+        (stats.burr, (-1, 1)),
+        (stats.burr12, (-1, 1)),
+        (stats.cauchy, ()),
+        (stats.chi, (-1, )),
+        (stats.chi2, (-1, )),
+        (stats.cosine, ()),
+        (stats.crystalball, (-1, 2)),
+        (stats.dgamma, (-1, )),
+        (stats.dweibull, (-1, )),
+        (stats.erlang, (-1, )),
+        (stats.expon, ()),
+        (stats.exponnorm, (-1, )),
+        (stats.exponweib, (1, -1)),
+        (stats.exponpow, (-1, )),
+        (stats.f, (10, -10)),
+        (stats.fatiguelife, (-1, )),
+        (stats.fisk, (-1, )),
+        (stats.foldcauchy, (-1, )),
+        (stats.foldnorm, (-1, )),
+        (stats.genlogistic, (-1, )),
+        (stats.gennorm, (-1, )),
+        (stats.genpareto, (np.inf, )),
+        (stats.genexpon, (1, 2, -3)),
+        (stats.genextreme, (np.inf, )),
+        (stats.gausshyper, (1, 2, 3, -4)),
+        (stats.gamma, (-1, )),
+        (stats.gengamma, (-1, 0)),
+        (stats.genhalflogistic, (-1, )),
+        (stats.geninvgauss, (1, 0)),
+        (stats.gilbrat, ()),
+        (stats.gompertz, (-1, )),
+        (stats.gumbel_r, ()),
+        (stats.gumbel_l, ()),
+        (stats.halfcauchy, ()),
+        (stats.halflogistic, ()),
+        (stats.halfnorm, ()),
+        (stats.halfgennorm, (-1, )),
+        (stats.hypsecant, ()),
+        (stats.invgamma, (-1, )),
+        (stats.invgauss, (-1, )),
+        (stats.invweibull, (-1, )),
+        (stats.johnsonsb, (1, -2)),
+        (stats.johnsonsu, (1, -2)),
+        (stats.kappa4, (np.nan, 0)),
+        (stats.kappa3, (-1, )),
+        (stats.ksone, (-1, )),
+        (stats.kstwo, (-1, )),
+        (stats.kstwobign, ()),
+        (stats.laplace, ()),
+        (stats.laplace_asymmetric, (-1, )),
+        (stats.levy, ()),
+        (stats.levy_l, ()),
+        (stats.levy_stable, (-1, 1)),
+        (stats.logistic, ()),
+        (stats.loggamma, (-1, )),
+        (stats.loglaplace, (-1, )),
+        (stats.lognorm, (-1, )),
+        (stats.loguniform, (10, 5)),
+        (stats.lomax, (-1, )),
+        (stats.maxwell, ()),
+        (stats.mielke, (1, -2)),
+        (stats.moyal, ()),
+        (stats.nakagami, (-1, )),
+        (stats.ncx2, (-1, 2)),
+        (stats.ncf, (10, 20, -1)),
+        (stats.nct, (-1, 2)),
+        (stats.norm, ()),
+        (stats.norminvgauss, (5, -10)),
+        (stats.pareto, (-1, )),
+        # (stats.pearson3, (np.nan, )),
+        (stats.powerlaw, (-1, )),
+        (stats.powerlognorm, (1, -2)),
+        (stats.powernorm, (-1, )),
+        (stats.rdist, (-1, )),
+        (stats.rayleigh, ()),
+        (stats.rice, (-1, )),
+        (stats.recipinvgauss, (-1, )),
+        (stats.semicircular, ()),
+        (stats.skewnorm, (np.inf, )),
+        (stats.t, (-1, )),
+        (stats.trapezoid, (0, 2)),
+        (stats.triang, (2, )),
+        (stats.truncexpon, (-1, )),
+        (stats.truncnorm, (10, 5)),
+        # (stats.tukeylambda, (np.nan, )),
+        (stats.uniform, ()),
+        (stats.vonmises, (-1, )),
+        (stats.vonmises_line, (-1, )),
+        (stats.wald, ()),
+        (stats.weibull_min, (-1, )),
+        (stats.weibull_max, (-1, )),
+        (stats.wrapcauchy, (2, ))
     ]
 )
 def test_support_gh13294_regression(dist, args):
     # test support method with invalid arguents
-    rv = dist(*args)
-    a, b = rv.support()
-    assert_equal(a, np.nan)
-    assert_equal(b, np.nan)
+    if isinstance(dist, stats.rv_continuous):
+        # test with valid scale
+        if len(args) != 0:
+            a0, b0 = dist.support(*args)
+            assert_equal(a0, np.nan)
+            assert_equal(b0, np.nan)
+        # test with invalid scale
+        loc1, scale1 = 0, -1
+        a1, b1 = dist.support(*args, loc1, scale1)
+        assert_equal(a1, np.nan)
+        assert_equal(b1, np.nan)
+    else:
+        a, b = dist.support(*args)
+        assert_equal(a, np.nan)
+        assert_equal(b, np.nan)
