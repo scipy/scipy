@@ -556,10 +556,16 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     k = (<double *>user_data)[1]
     v = (<double *>user_data)[2]
 
-    s = x[1]
     z = x[0]
+    s = x[1]
+    #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
+    const = math.pow(v, v / 2) * math.pow(s, v - 1) * math.exp(
+        -v * s * s / 2) / (math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
 
-    return math.pow(s, v) * _phi(math.sqrt(v) * s) * _phi(z + q*s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 2)
+    r = k * (k - 1) * s * _phi(z) * _phi(s * q + z) * math.pow(
+        _Phi(s * q + z) - _Phi(z), k - 2) * const
+
+    return r
 
 ctypedef fused real:
     float
