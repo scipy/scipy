@@ -1421,7 +1421,7 @@ class rv_generic(object):
             scale parameter, Default is 1.
         Returns
         -------
-        a, b : float
+        a, b : array_like
             end-points of the distribution's support.
 
         """
@@ -1429,22 +1429,16 @@ class rv_generic(object):
         arrs = np.broadcast_arrays(*args, loc, scale)
         args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
         cond = self._argcheck(*args) & (scale > 0)
+        _a, _b = self._get_support(*args)
         if cond.all():
-            _a, _b = self._get_support(*args)
             return _a * scale + loc, _b * scale + loc
-        goodargs = argsreduce(cond, loc, scale, *args)
-        goodloc, goodscale = goodargs[:2]
-        goodargs = goodargs[2:]
-        _a, _b = self._get_support(*goodargs)
-        out_a = np.zeros(loc.shape, dtype='d')
-        out_b = np.zeros(loc.shape, dtype='d')
-        out_a_, out_b_ = _a * goodscale + goodloc, _b * goodscale + goodloc
-        place(out_a, cond, out_a_)
+        elif cond.ndim == 0:
+            return self.badvalue, self.badvalue
+        # promote bounds to at least float to fill in the badvalue
+        _a, _b = 1.*_a, 1.*_b
+        out_a, out_b = _a * scale + loc, _b * scale + loc
         place(out_a, 1-cond, self.badvalue)
-        place(out_b, cond, out_b_)
         place(out_b, 1-cond, self.badvalue)
-        if loc.ndim == 0:
-            return out_a.item(), out_b.item()
         return out_a, out_b
 
 
