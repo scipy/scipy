@@ -1029,6 +1029,13 @@ def boxcox(x, lmbda=None, alpha=None):
     >>> plt.show()
 
     """
+    
+    ## hotfix to solve ValueError("Data must be 1-dimensional.") when only single value x (not array) is given with some value of lmbda
+    
+    if (lmbda is not None) and x > 0 and (type(x)==int or type(x)==float):  # single transformation if lambda value is given but for only single value x (not array)
+        return special.boxcox(x, lmbda)
+    ## end of fix
+    
     x = np.asarray(x)
     if x.ndim != 1:
         raise ValueError("Data must be 1-dimensional.")
