@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from .common import Benchmark, safe_import
+from .common import Benchmark, safe_import, is_xslow
 
 with safe_import():
     import scipy.stats as stats
@@ -58,28 +58,9 @@ class InferentialStats(Benchmark):
 
 class Distribution(Benchmark):
     # add distributions here
-    dists = ['alpha', 'anglit', 'arcsine', 'argus', 'beta', 'betaprime',
-             'bradford', 'burr', 'burr12', 'cauchy', 'chi', 'chi2', 'cosine',
-             'crystalball', 'dgamma', 'dweibull', 'erlang', 'expon',
-             'exponnorm', 'exponweib', 'exponpow', 'f', 'fatiguelife',
-             'fisk', 'foldcauchy', 'foldnorm', 'frechet_r', 'frechet_l',
-             'genlogistic', 'gennorm', 'genpareto', 'genexpon', 'genextreme',
-             'gausshyper', 'gamma', 'gengamma', 'genhalflogistic',
-             'geninvgauss', 'gilbrat', 'gompertz', 'gumbel_r', 'gumbel_l',
-             'halfcauchy', 'halflogistic', 'halfnorm', 'halfgennorm',
-             'hypsecant', 'invgamma', 'invgauss', 'invweibull', 'johnsonsb',
-             'johnsonsu', 'kappa4', 'kappa3', 'ksone', 'kstwo', 'kstwobign',
-             'laplace', 'levy', 'levy_l', 'levy_stable', 'logistic',
-             'loggamma', 'loglaplace', 'lognorm', 'loguniform', 'lomax',
-             'maxwell', 'mielke', 'moyal', 'nakagami', 'ncx2', 'ncf', 'nct',
-             'norm', 'norminvgauss', 'pareto', 'pearson3', 'powerlaw',
-             'powerlognorm', 'powernorm', 'rdist', 'rayleigh', 'rice',
-             'recipinvgauss', 'semicircular', 'skewnorm', 't', 'trapz',
-             'triang', 'truncexpon', 'truncnorm', 'tukeylambda', 'uniform',
-             'vonmises', 'vonmises_line', 'wald', 'weibull_min',
-             'weibull_max', 'wrapcauchy', 'bernoulli', 'betabinom', 'binom',
-             'boltzmann', 'dlaplace', 'geom', 'hypergeom', 'logser', 'nbinom',
-             'planck', 'poisson', 'randint', 'skellam', 'zipf', 'yulesimon']
+    dists = ([d[0] for d in distcont + distdiscrete] +
+             ['frechet_l', 'frechet_r', 'trapz', 'laplace_asymmetric',
+              'nhypergeom', 'reciprocal', 'trapezoid'])
 
     param_names = ['distribution', 'properties']
     params = [
@@ -93,6 +74,9 @@ class Distribution(Benchmark):
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     def setup(self, distribution, properties):
+        if not is_xslow():
+            raise NotImplementedError("Skipped")
+
         self.dist = getattr(stats, distribution)
 
         shapes = self.distcont[distribution]
@@ -100,7 +84,7 @@ class Distribution(Benchmark):
         if isinstance(self.dist, stats.rv_discrete):
             self.isCont = False
             kwds = {'loc': 4}
-        else: 
+        else:
             self.isCont = True
             kwds = {'loc': 4, 'scale': 10}
 
@@ -129,7 +113,7 @@ class Distribution(Benchmark):
         elif properties.startswith('stats_'):
             properties = 'stats'
             self.args = args[1:]
-            kwds['moments'] =  properties[6:]
+            kwds['moments'] = properties[6:]
             self.kwds = kwds
         elif properties in ['entropy', 'median', 'mean', 'var', 'std']:
             self.args = args[1:]
@@ -141,10 +125,10 @@ class Distribution(Benchmark):
         else:
             self.args = args
         self.kwds = kwds
-    
+
         try:
             self.method = getattr(self.dist, properties)
-        except AttributeError as e:
+        except AttributeError:
             raise NotImplementedError("This attribute is not a member "
                                       "of the distribution")
 
