@@ -59,8 +59,8 @@ class InferentialStats(Benchmark):
 class Distribution(Benchmark):
     # add distributions here
     dists = ([d[0] for d in distcont + distdiscrete] +
-             ['frechet_l', 'frechet_r', 'trapz', 'laplace_asymmetric',
-              'nhypergeom', 'reciprocal', 'trapezoid'])
+             ['laplace_asymmetric', 'nhypergeom', 'reciprocal',
+             'trapezoid'])
 
     param_names = ['distribution', 'properties']
     params = [
@@ -109,7 +109,7 @@ class Distribution(Benchmark):
         elif properties == 'isf':
             self.args = [.99, *args[1:]]
         elif properties == 'moment':
-            self.args = [10, *args[1:]]
+            self.args = [2, *args[1:]]
         elif properties.startswith('stats_'):
             properties = 'stats'
             self.args = args[1:]
