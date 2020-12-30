@@ -6,6 +6,7 @@ from numpy.testing import (assert_allclose, assert_almost_equal, assert_,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
+from scipy.optimize import minimize, basinhopping
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
@@ -216,46 +217,43 @@ class TestLHS(object):
     def test_optimal_design(self):
         seed = 123456
 
+        # base discrepancy as a reference for testing OptimalDesign is better
         olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
         sample_ref = olhs.random(n=20)
         disc_ref = qmc.discrepancy(sample_ref)
 
-        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref,
-                                      seed=seed)
-        sample_1 = optimal_1.random(n=20)
-        disc_1 = qmc.discrepancy(sample_1)
-
-        assert disc_1 < disc_ref
-
+        # all defaults
         optimal_ = qmc.OptimalDesign(d=2, seed=seed)
         sample_ = optimal_.random(n=20)
         disc_ = qmc.discrepancy(sample_)
 
         assert disc_ < disc_ref
 
-        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=2,
+        # using an initial sample
+        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref, seed=seed)
+        sample_1 = optimal_1.random(n=20)
+        disc_1 = qmc.discrepancy(sample_1)
+
+        assert disc_1 < disc_ref
+
+        # 5 iterations is better than 1
+        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=5,
                                       seed=seed)
         sample_2 = optimal_2.random(n=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1
 
-        # resample is like doing another iteration
-        sample_1 = optimal_1.random(n=20)
-        assert_allclose(sample_1, sample_2)
-
+        # another optimization method
+        def method(func, x0, bounds):
+            minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+            _ = basinhopping(func, x0, niter=100,
+                             minimizer_kwargs=minimizer_kwargs,
+                             seed=seed)
         optimal_3 = qmc.OptimalDesign(d=2, start_design=sample_ref,
-                                      force=True)
+                                      method=method, seed=seed)
         sample_3 = optimal_3.random(n=20)
         disc_3 = qmc.discrepancy(sample_3)
         assert disc_3 < disc_ref
-
-        # no optimization
-        optimal_4 = qmc.OptimalDesign(d=2, start_design=sample_ref,
-                                      optimization=False, niter=100, seed=seed)
-        sample_4 = optimal_4.random(n=20)
-        disc_4 = qmc.discrepancy(sample_4)
-
-        assert disc_4 < disc_ref
 
 
 class TestMultinomialQMC:

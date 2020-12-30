@@ -2,14 +2,13 @@
 # Prevents annotations from being evaluated during runtime,
 # thus storing them as plain strings
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Callable, Iterable
 from abc import ABC, abstractmethod
 import math
 import warnings
 
 import numpy as np
 
-from scipy.optimize import brute
 from scipy._lib._util import check_random_state
 from scipy.optimize import basinhopping
 from scipy.stats import norm
@@ -951,9 +950,11 @@ class OptimalDesign(QMCEngine):
     """Optimal design.
 
     Optimize the design by doing random permutations to lower the centered
-    discrepancy. If `optimization` is False, `niter` design are generated and
-    the one with lowest centered discrepancy is return. This option is faster.
-    Otherwise,
+    discrepancy.
+
+    The specified optimization `method` is used to select a new set of
+    permutations to perform. If `method` is None, *basinhopping* optimization
+    is used. `niter` set of permutations are performed.
 
     Centered discrepancy-based design shows better space filling robustness
     toward 2D and 3D subprojections. Distance-based design shows better space
@@ -967,12 +968,9 @@ class OptimalDesign(QMCEngine):
         Initial design of experiment to optimize.
     niter : int
         Number of iterations to perform. Default is 1.
-    force : bool
-        If `optimization`, force *basinhopping* optimization. Otherwise
-        grid search is used. Default is False.
-    optimization : bool
-        Optimal design using global optimization or random generation of
-        `niter` samples. Default is True.
+    method : callable ``f(func, x0, bounds)``, optional
+        Optimization function used to search new samples. Default to
+        *basinhopping* optimization.
     seed : {int or `numpy.random.RandomState` instance}, optional
         If `seed` is not specified the `numpy.random.RandomState`
         singleton is used.
@@ -997,45 +995,56 @@ class OptimalDesign(QMCEngine):
     >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.64091206, 0.77846875],
+    array([[0.91354501, 0.77846875],
            [0.43678376, 0.18474763],
            [0.18592322, 0.80535794],
-           [0.91354501, 0.27478424],
+           [0.64091206, 0.27478424],
            [0.26327511, 0.43099467]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.019688311022535432
+    0.019948003942932058
 
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
-    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=2, seed=12345)
+    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
-    0.019607673478802434
+    0.01947498422566407
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
     >>> qmc.scale(sample, bounds)
-    array([[6.40912056, 4.33540624],
+    array([[9.13545006, 4.33540624],
            [4.36783762, 2.55424289],
            [1.85923219, 4.41607383],
-           [9.13545006, 2.82435271],
+           [6.40912056, 2.82435271],
            [2.63275111, 3.29298401]])
 
     """
 
-    def __init__(self, d: int, start_design: bool = None, niter: int = 1,
-                 force: bool = False, optimization: bool = True,
-                 seed: Optional[int, np.random.RandomState] = None):
+    def __init__(
+            self, d: int, start_design: npt.ArrayLike = None, niter: int = 1,
+            method: Optional[Callable[[Callable, List[int], npt.ArrayLike],
+                                      None]] = None,
+            seed: Optional[int, np.random.RandomState] = None
+    ):
         super().__init__(d=d, seed=seed)
         self.start_design = start_design
         self.niter = niter
-        self.force = force
-        self.optimization = optimization
+
+        if method is None:
+            def method(func: Callable, x0: List[int],
+                       bounds: npt.ArrayLike) -> None:
+                """Basinhopping optimization."""
+                minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+                basinhopping(func, x0, niter=100,
+                             minimizer_kwargs=minimizer_kwargs, seed=self.rng)
+
+        self.method = method
 
         self.best_doe = self.start_design
         if self.start_design is not None:
@@ -1059,71 +1068,49 @@ class OptimalDesign(QMCEngine):
             Optimal sample.
 
         """
-        if self.optimization:
-            if self.best_doe is None:
-                self.best_doe = self.olhs.random(n)
-                self.best_disc = discrepancy(self.best_doe)
+        if self.best_doe is None:
+            self.best_doe = self.olhs.random(n)
+            self.best_disc = discrepancy(self.best_doe)
 
-            def _perturb_best_doe(x: List[int]) -> float:
-                """Perturb the DoE and keep track of the best DoE.
+        def _perturb_best_doe(x: List[int]) -> float:
+            """Perturb the DoE and keep track of the best DoE.
 
-                Parameters
-                ----------
-                x : list of int
-                    It is a list of:
-                        idx : int
-                            Index value of the components to compute
+            Parameters
+            ----------
+            x : list of int
+                It is a list of:
+                    idx : int
+                        Index value of the components to compute
 
-                Returns
-                -------
-                discrepancy : float
-                    Centered discrepancy.
+            Returns
+            -------
+            discrepancy : float
+                Centered discrepancy.
 
-                """
-                # Perturb the DoE
-                doe = self.best_doe.copy()
-                col, row_1, row_2 = np.round(x).astype(int)
+            """
+            # Perturb the DoE
+            doe = self.best_doe.copy()
+            col, row_1, row_2 = np.round(x).astype(int)
+
+            disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
+                                        self.best_disc)
+            if disc < self.best_disc:
                 doe[row_1, col], doe[row_2, col] = doe[row_2, col], \
                                                    doe[row_1, col]
+                self.best_disc = disc
+                self.best_doe = doe
 
-                disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
-                                            self.best_disc)
+            return disc
 
-                if disc < self.best_disc:
-                    self.best_disc = disc
-                    self.best_doe = doe
+        x0 = [0, 0, 0]
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
 
-                return disc
+        for _ in range(self.niter):
+            self.method(_perturb_best_doe, x0, bounds)
 
-            # Total number of possible design
-            complexity = self.d * n ** 2
-
-            if (complexity > 1e6) or self.force:
-                bounds_optim = ([0, self.d - 1],
-                                [0, n - 1],
-                                [0, n - 1])
-            else:
-                bounds_optim = (slice(0, self.d - 1, 1),
-                                slice(0, n - 1, 1),
-                                slice(0, n - 1, 1))
-
-            for _ in range(self.niter):
-                if (complexity > 1e6) or self.force:
-                    minimizer_kwargs = {"method": "L-BFGS-B",
-                                        "bounds": bounds_optim}
-                    _ = basinhopping(_perturb_best_doe, [0, 0, 0], niter=100,
-                                     minimizer_kwargs=minimizer_kwargs)
-                else:
-                    _ = brute(_perturb_best_doe, ranges=bounds_optim,
-                              finish=None)
-        else:
-            for _ in range(self.niter):
-                doe = self.olhs.random(n)
-                disc = discrepancy(doe)
-                if disc < self.best_disc:
-                    self.best_disc = disc
-                    self.best_doe = doe
-
+        self.num_generated += n
         return self.best_doe
 
 
@@ -1389,7 +1376,7 @@ class Sobol(QMCEngine):
 
 
 def multinomial_qmc(
-        n: int, pvals: List[float], engine: QMCEngine = None,
+        n: int, pvals: Iterable[float], engine: QMCEngine = None,
         seed: Optional[int, np.random.RandomState] = None
 ) -> np.ndarray:
     """Draw low-discreancy quasi-random samples from multinomial distribution.
