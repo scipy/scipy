@@ -9,7 +9,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm)
-from scipy.stats._mannwhitneyu import mannwhitneyu2
+from scipy.stats._mannwhitneyu import mannwhitneyu2, _mwu_state
 from scipy.stats import distributions
 from .common_tests import check_named_results
 
@@ -165,6 +165,58 @@ class TestCvm(object):
 
 
 class TestMannWhitneyU():
+
+    # These are tabulated values of the CDF of the exact distribution of
+    # the test statistic from pg 52 of reference [1] (Mann-Whitney Original)
+    pn3 = {1: [0.25, 0.5, 0.75], 2: [0.1, 0.2, 0.4, 0.6],
+           3: [0.05, .1, 0.2, 0.35, 0.5, 0.65]}
+    pn4 = {1: [0.2, 0.4, 0.6], 2: [0.067, 0.133, 0.267, 0.4, 0.6],
+           3: [0.028, 0.057, 0.114, 0.2, .314, 0.429, 0.571],
+           4: [0.014, 0.029, 0.057, 0.1, 0.171, 0.243, 0.343, 0.443, 0.557]}
+    pm5 = {1: [0.167, 0.333, 0.5, 0.667],
+           2: [0.047, 0.095, 0.19, 0.286, 0.429, 0.571],
+           3: [0.018, 0.036, 0.071, 0.125, 0.196, 0.286, 0.393, 0.5, 0.607],
+           4: [0.008, 0.016, 0.032, 0.056, 0.095, 0.143,
+               0.206, 0.278, 0.365, 0.452, 0.548],
+           5: [0.004, 0.008, 0.016, 0.028, 0.048, 0.075, 0.111,
+               0.155, 0.21, 0.274, 0.345, .421, 0.5, 0.579]}
+    pm6 = {1: [0.143, 0.286, 0.428, 0.571],
+           2: [0.036, 0.071, 0.143, 0.214, 0.321, 0.429, 0.571],
+           3: [0.012, 0.024, 0.048, 0.083, 0.131,
+               0.19, 0.274, 0.357, 0.452, 0.548],
+           4: [0.005, 0.01, 0.019, 0.033, 0.057, 0.086, 0.129,
+               0.176, 0.238, 0.305, 0.381, 0.457, 0.543],  # the last element
+              # of the previous list, 0.543, has been modified from 0.545;
+              # I assume it was a typo
+           5: [0.002, 0.004, 0.009, 0.015, 0.026, 0.041, 0.063, 0.089,
+               0.123, 0.165, 0.214, 0.268, 0.331, 0.396, 0.465, 0.535],
+           6: [0.001, 0.002, 0.004, 0.008, 0.013, 0.021, 0.032, 0.047,
+               0.066, 0.09, 0.12, 0.155, 0.197, 0.242, 0.294, 0.350,
+               0.409, 0.469, 0.531]}
+
+    def test_exact_distribution(self):
+        # I considered parametrize. I decided against it.
+        p_tables = {3: self.pn3, 4: self.pn4, 5: self.pm5, 6: self.pm6}
+        for n, table in p_tables.items():
+            for m, p in table.items():
+                # check p-value against table
+                u = np.arange(0, len(p))
+                assert_allclose(_mwu_state.cdf(k=u, m=m, n=n), p, atol=1e-3)
+
+                # check identity CDF + SF - PMF = 1
+                # ( In this implementation, SF(U) includes PMF(U) )
+                u2 = np.arange(0, m*n+1)
+                assert_allclose(_mwu_state.cdf(k=u2, m=m, n=n)
+                                + _mwu_state.sf(k=u2, m=m, n=n)
+                                - _mwu_state.pmf(k=u2, m=m, n=n), 1)
+
+                # check symmetry about mean of U, i.e. pmf(U) = pmf(m*n-U)
+                pmf = _mwu_state.pmf(k=u2, m=m, n=n)
+                assert_allclose(pmf, pmf[::-1])
+
+                # check symmetry w.r.t. interchange of m, n
+                pmf2 = _mwu_state.pmf(k=u2, m=n, n=m)
+                assert_allclose(pmf, pmf2)
 
     def test_input_validation(self):
         x = np.array([1, 2]) # generic, valid inputs
