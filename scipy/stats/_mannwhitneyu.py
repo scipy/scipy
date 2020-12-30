@@ -12,7 +12,7 @@ def _broadcast_concatenate(x, y, axis):
     z = np.broadcast(x[..., 0], y[..., 0])
     x = np.broadcast_to(x, z.shape + (x.shape[-1],))
     y = np.broadcast_to(y, z.shape + (y.shape[-1],))
-    z = np.concatenate((x, y), axis = -1)
+    z = np.concatenate((x, y), axis=-1)
     return x, y, z
 
 
@@ -80,7 +80,7 @@ class _MWU:
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
         else:   # [3] Theorem 2.5 Line 3 / Equation 3
-            fmnk = self._f(m-1, n, k-n)  +  self._f(m, n-1, k)
+            fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
 
         fmnks[m, n, k] = fmnk  # remember result
 
@@ -139,6 +139,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         raise ValueError(f'`method` must be one of {methods}.')
 
     return x, y, use_continuity, alternative, axis_int, method
+
 
 mwu_result = make_dataclass("MannWhitneyUResult", ("statistic", "pvalue"))
 # Using `nametuple` for now to pass existing mannwhitneyu tests without
@@ -351,11 +352,14 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
         p = stats.norm.sf(z)
     p *= f
 
-    # ensure that test statistic is not greater than 1
+    # Ensure that test statistic is not greater than 1
+    # This should not happen for asymptotic test with proper continuity
+    # correction, but could happen for exact test when U = m*n/2
     # Written to avoid dealing with floats and Nd arrays separately
+    # If you prefer to branch, please suggest specific code
     pgt1 = p > 1
-    p *= np.logical_not(pgt1) # zero the entries where p > 1, preserve the rest
-    p += pgt1                 # add 1 to entries where p > 1, preserve the rest
+    p *= np.logical_not(pgt1)  # zero entries > 1, preserve the rest
+    p += pgt1                  # add 1 to entries > 1, preserve the rest
 
     # return mwu_result(U, p)
     return MannwhitneyuResult(U1, p)  # temporary to integrate with tests

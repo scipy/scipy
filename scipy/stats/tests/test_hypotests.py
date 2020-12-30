@@ -14,6 +14,7 @@ from scipy.stats import distributions
 from .common_tests import check_named_results
 import warnings
 
+
 class TestEppsSingleton(object):
     def test_statistic_1(self):
         # first example in Goerg & Kaiser, also in original paper of
@@ -165,10 +166,10 @@ class TestCvm(object):
 
 
 class TestMannWhitneyU():
-    ## Test Input Validation ##
+    # --- Test Input Validation ---
 
     def test_input_validation(self):
-        x = np.array([1, 2]) # generic, valid inputs
+        x = np.array([1, 2])  # generic, valid inputs
         y = np.array([3, 4])
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
             mannwhitneyu2([], y)
@@ -185,7 +186,7 @@ class TestMannWhitneyU():
         with assert_raises(ValueError, match="`method` must be one of"):
             mannwhitneyu2(x, y, method='ekki')
 
-    ## Test Basic Functionality ##
+    # --- Test Basic Functionality ---
 
     # This test was written for mann_whitney_u in gh-4933.
     # Originally, the p-values for alternatives were swapped;
@@ -209,6 +210,7 @@ class TestMannWhitneyU():
                     (16, 0.3517857142857)],
                    [{"alternative": 'greater', "method": "exact"},
                     (16, 0.6946428571429)]]
+
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     def test_basic(self, kwds, expected):
         x = [210.052110, 110.190630, 307.918612]
@@ -220,7 +222,7 @@ class TestMannWhitneyU():
         res = mannwhitneyu2(x, y, **kwds)
         assert_allclose(res, expected)
 
-    ## Test Exact Distribution of U ##
+    # --- Test Exact Distribution of U ---
 
     # These are tabulated values of the CDF of the exact distribution of
     # the test statistic from pg 52 of reference [1] (Mann-Whitney Original)
@@ -242,8 +244,8 @@ class TestMannWhitneyU():
                0.19, 0.274, 0.357, 0.452, 0.548],
            4: [0.005, 0.01, 0.019, 0.033, 0.057, 0.086, 0.129,
                0.176, 0.238, 0.305, 0.381, 0.457, 0.543],  # the last element
-              # of the previous list, 0.543, has been modified from 0.545;
-              # I assume it was a typo
+           # of the previous list, 0.543, has been modified from 0.545;
+           # I assume it was a typo
            5: [0.002, 0.004, 0.009, 0.015, 0.026, 0.041, 0.063, 0.089,
                0.123, 0.165, 0.214, 0.268, 0.331, 0.396, 0.465, 0.535],
            6: [0.001, 0.002, 0.004, 0.008, 0.013, 0.021, 0.032, 0.047,
@@ -293,7 +295,7 @@ class TestMannWhitneyU():
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) < 1e-3
 
-    ## Test Corner Cases ##
+    # --- Test Corner Cases ---
 
     def test_exact_U_equals_mean(self):
         # Test U == m*n/2 with exact method
@@ -319,6 +321,7 @@ class TestMannWhitneyU():
                     [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
                     [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
                     [{"alternative": 'greater', "method": "exact"}, (0, 1)]]
+
     @pytest.mark.parametrize(("kwds", "result"), cases_scalar)
     def test_scalar_data(self, kwds, result):
         # just making sure scalars work
@@ -334,7 +337,7 @@ class TestMannWhitneyU():
             assert res.statistic == 0.5
             assert np.isnan(res.pvalue)
 
-    ## Test Enhancements / Bug Reports ##
+    # --- Test Enhancements / Bug Reports ---
 
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method):
@@ -352,14 +355,14 @@ class TestMannWhitneyU():
         y = np.random.rand(6, n, 1, 8) + 0.1
         res = mannwhitneyu2(x, y, method=method, axis=axis)
 
-        shape = (6, 3, 8) # appropriate shape of outputs, given inputs
+        shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
         assert(res.pvalue.shape == shape)
         assert(res.statistic.shape == shape)
 
         # move axis of test to end for simplicity
         x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
 
-        x = x[None, ...] # give x a zeroth dimension
+        x = x[None, ...]  # give x a zeroth dimension
         assert(x.ndim == y.ndim)
 
         x = np.broadcast_to(x, shape + (m,))
@@ -388,7 +391,8 @@ class TestMannWhitneyU():
 
         # Inf is not a problem. This is a rank test, and it's the largest value
         y[4] = np.inf
-        res2 = mannwhitneyu2([1, 2, 3, 4], [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
+        res2 = mannwhitneyu2([1, 2, 3, 4],
+                             [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
 
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res1.pvalue)
@@ -407,6 +411,7 @@ class TestMannWhitneyU():
                   [True, "less", "exact", 0.8967698967699],
                   [True, "greater", "exact", 0.1272061272061],
                   [True, "two-sided", "exact", 0.2544122544123]]
+
     @pytest.mark.parametrize(("use_continuity", "alternative",
                               "method", "pvalue_exp"), cases_9184)
     def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp):
@@ -445,14 +450,15 @@ class TestMannWhitneyU():
 
     def test_gh_4067(self):
         # Test for correct behavior with all NaN input
-        a=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
-        b=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
+        a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+        b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2(a,b)
+            mannwhitneyu2(a, b)
 
     cases_2118 = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
                   [[1, 2, 3], [2], "less", (1.5, 0.5)],
                   [[1, 2], [1, 2], "greater", (2, 0.5)]]
+
     @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases_2118)
     def test_gh_2118(self, x, y, alternative, expected):
         # test cases in which U == m*n/2 when method is asymptotic
