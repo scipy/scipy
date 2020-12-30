@@ -55,6 +55,7 @@ available in release 1.2.x, which is a long-term support release [1]_, [2]_.
  2018              Py2.7, Py3.4+ (SciPy 1.2.x is the last release to support Python 2.7)
  2019              Py3.5+ (but Py2.7-specific code not removed)
  2020              Py3.6+ (removal of Py2.7-specific code permitted)
+ 2021              Py3.7+
 ================  =======================================================================
 
 NumPy
@@ -110,7 +111,7 @@ rather than official decisions. This is particularly true of
 attempting to predict adoption timelines for newer standards.
 
 ================  =======================================================================
- Date              C Standard
+ Date              C/C++ Standard
 ================  =======================================================================
  <= 2018           C90
  2019              C90 for old code, may consider C99 for new
