@@ -12,7 +12,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 from scipy.stats._mannwhitneyu import mannwhitneyu2, _mwu_state
 from scipy.stats import distributions
 from .common_tests import check_named_results
-
+import warnings
 
 class TestEppsSingleton(object):
     def test_statistic_1(self):
@@ -236,17 +236,34 @@ class TestMannWhitneyU():
         with assert_raises(ValueError, match="`method` must be one of"):
             mannwhitneyu2(x, y, method='ekki')
 
-    def test_corner_cases(self):
-        # tests behavior for cases that required special handling
-        pass
-        # mannwhitneyu2([1], [1])
-        # mannwhitneyu2([1, 2], [1, 2])
+    # corner cases
+    def test_exact_U_equals_mean(self):
+        # test cases in which U == m*n/2 when method is exact
+        # without special treatment, p-value > 1
+        res = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="two-sided",
+                            method="exact")
+        assert_equal(res, (3, 1))
 
-    def test_unusual_cases(self):
-        # test behavior for unusual cases that did not require special handling
-        mannwhitneyu2(1, 2, alternative='two-sided')
-        mannwhitneyu2(1, 2, alternative='greater')
-        mannwhitneyu2(1, 2, alternative='less')
+    cases = [[{"alternative": 'two-sided'}, (0, 1)],
+             [{"alternative": 'less'}, (0, 0.5)],
+             [{"alternative": 'greater'}, (0, 0.977249868052)],
+             [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
+             [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
+             [{"alternative": 'greater', "method": "exact"}, (0, 1)]]
+    @pytest.mark.parametrize(("kwds", "result"), cases)
+    def test_scalar_data(self, kwds, result):
+        # just making sure scalars work
+        assert_allclose(mannwhitneyu2(1, 2, **kwds), result)
+
+    def test_equal_scalar_data(self):
+        # when two scalars are equal, "exact" method has no problem, but
+        # a NaN in the asymptotic approximation.
+        assert_equal(mannwhitneyu2(1, 1, method="exact"), (0.5, 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = mannwhitneyu2(1, 1, method="asymptotic")
+            assert res.statistic == 0.5
+            assert np.isnan(res.pvalue)
 
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method):
@@ -357,3 +374,14 @@ class TestMannWhitneyU():
         b=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
             mannwhitneyu2(a,b)
+
+    cases = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
+             [[1, 2, 3], [2], "less", (1.5, 0.5)],
+             [[1, 2], [1, 2], "greater", (2, 0.5)]]
+    @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases)
+    def test_gh_2118(self, x, y, alternative, expected):
+        # test cases in which U == m*n/2 when method is asymptotic
+        # applying continuity correction could result in p-value > 1
+        res = mannwhitneyu2(x, y, use_continuity=True, alternative=alternative,
+                            method="asymptotic")
+        assert_equal(res, expected)

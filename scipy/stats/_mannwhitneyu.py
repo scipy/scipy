@@ -94,16 +94,20 @@ _mwu_state = _MWU()
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu2 [2]
-    m_u = n1 * n2 / 2
+    mu = n1 * n2 / 2
     n = n1 + n2
 
     # Tie correction. scipy.stats.tiecorrect is not vectorized; this is.
     # element i of t is the number of subjects sharing rank i
     _, t = np.unique(ranks, return_counts=True, axis=-1)
     s = np.sqrt(n1*n2/12 * ((n + 1) - (t**3 - t).sum(axis=-1)/(n*(n-1))))
+    numerator = U - mu
 
-    c = -0.5 * continuity
-    z = (U - m_u + c) / s
+    # Continuity correction. I still need to find a reference for this.
+    if continuity:
+        numerator -= 0.5 * (U != mu)
+
+    z = numerator / s
     return z
 
 
@@ -192,16 +196,18 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     Notes
     -----
-    `method` 'exact' is recommended when there are no ties and either sample
-    size is less than 8 _[1]. The implementation follows the original
-    recurrence relation proposed in _[1] as described in _[3].
-
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
     ``x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu2` is for independent samples. For related samples,
     consider `wilcoxon`.
+
+    `method` 'exact' is recommended when there are no ties and either sample
+    size is less than 8 _[1]. The implementation follows the original
+    recurrence relation proposed in _[1] as described in _[3].
+    Note that 'exact' method is *not* corrected for ties, but `mannwhitneyu2`
+    will not raise errors or warnings if there are ties in the data.
 
     See Also
     --------
@@ -237,9 +243,9 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     in favor of the alternative: that either the diagnosis age of males is
     stochastically greater than the diagnosis age of females or the diagnosis
     age of females is stochastically greater than the diagnosis age of males.
-    Since the number of samples is very small, we will compare the test
-    statistic against the *exact* distribution of the test statistic under
-    the null hypothesis.
+    Since the number of samples is very small and there are no ties in the
+    data, we can compare the test statistic against the *exact* distribution
+    of the test statistic under the null hypothesis.
 
     >>> from scipy.stats import mannwhitneyu2
     >>> U1, p = mannwhitneyu2(males, females, method="exact")
@@ -344,6 +350,12 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
         z = _get_mwu_z(U, n1, n2, ranks, continuity=use_continuity)
         p = stats.norm.sf(z)
     p *= f
+
+    # ensure that test statistic is not greater than 1
+    # Written to avoid dealing with floats, 0d arrays, and Nd arrays separately
+    pgt1 = p > 1
+    p *= np.logical_not(pgt1)
+    p += pgt1
 
     # return mwu_result(U, p)
     return MannwhitneyuResult(U1, p)  # temporary to integrate with tests
