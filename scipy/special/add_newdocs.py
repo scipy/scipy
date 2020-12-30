@@ -354,7 +354,7 @@ add_newdoc("airye",
     Returns
     -------
     eAi, eAip, eBi, eBip : array_like
-        Exponentially scaled Airy functions eAi and eBi, and their derivatives 
+        Exponentially scaled Airy functions eAi and eBi, and their derivatives
         eAip and eBip
 
     Notes
@@ -370,11 +370,11 @@ add_newdoc("airye",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-           
+
     Examples
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
-    
+
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -386,9 +386,9 @@ add_newdoc("airye",
     ...     ax[ind].legend(data[2])
     ...     ax[ind].grid(True)
     >>> plt.show()
-    
+
     We can compute these using usual non-scaled Airy functions by:
-    
+
     >>> from scipy.special import airy
     >>> Ai, Aip, Bi, Bip = airy(z)
     >>> np.allclose(eAi, Ai * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
@@ -399,16 +399,16 @@ add_newdoc("airye",
     True
     >>> np.allclose(eBip, Bip * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
     True
-    
-    Comparing non-scaled and exponentially scaled ones, the usual non-scaled 
+
+    Comparing non-scaled and exponentially scaled ones, the usual non-scaled
     function quickly underflows for large values, whereas the exponentially
     scaled function does not.
-    
+
     >>> airy(200)
     (0.0, 0.0, nan, nan)
     >>> airye(200)
     (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
-    
+
     """)
 
 add_newdoc("bdtr",
@@ -5040,13 +5040,13 @@ add_newdoc("hyp2f1",
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    For most complex values of ``z``, the implementation follows the method described in [1]_. 
+    For most complex values of ``z``, the implementation follows the method described in [1]_.
     However, in the region given by
-    
+
     .. math::
 
       \Re(z)>0, \ 0.9<|z|<1.1, \ |z-1|>0.75,
-    
+
     where the transformation methods used in [1]_ are not effective, the analytic continuation series given in [2]_ is used to evaluate the hypergeometric function.
 
     References
