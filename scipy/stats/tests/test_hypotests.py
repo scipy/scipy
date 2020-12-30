@@ -240,6 +240,22 @@ class TestMannWhitneyU():
         np.testing.assert_equal(res.pvalue, pvalues)
         np.testing.assert_equal(res.statistic, statistics)
 
+    def test_gh_11355(self):
+        x = [1, 2, 3, 4]
+        y = [3, 6, 7, 8, 9, 3, 2, 1, 4, 4, 5]
+
+        res1 = mannwhitneyu2(x, y)
+
+        y[4] = np.nan
+        with assert_raises(ValueError, match="`x` and `y` must not contain"):
+            mannwhitneyu2(x, y)
+
+        y[4] = np.inf
+        res2 = mannwhitneyu2([1, 2, 3, 4], [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
+
+        assert_equal(res1.statistic, res2.statistic)
+        assert_equal(res1.pvalue, res1.pvalue)
+
     settings = [[True, "less", "asymptotic", 0.900775348204],
                 [True, "greater", "asymptotic", 0.1223118025635],
                 [True, "two-sided", "asymptotic", 0.244623605127],
