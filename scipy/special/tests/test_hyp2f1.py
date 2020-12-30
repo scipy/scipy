@@ -166,12 +166,12 @@ def _build_test_cases():
     # uses a different method to calculate hyp2f1
     rho = [0.5, 0.95, 1.0, 1.05, 10.0]
     phi = np.pi * np.array(
-        [0.0, 0.1, -0.1, 0.375, -0.375, 0.5, -0.5, -1.0, -0.75, 0.75], dtype=np.float
+        [0.0, 0.1, -0.1, 0.375, -0.375, 0.5, -0.5, -1.0, -0.75, 0.75], dtype=float
     )
 
     # The total number of test cases
     N = 2 * len(abc_list) * len(rho) * len(phi)
-    dataset = np.zeros((N, 5), dtype=np.complex)
+    dataset = np.zeros((N, 5), dtype=complex)
 
     count = 0
     for (a, b, c), r, theta in itertools.product(abc_list, rho, phi):
@@ -204,7 +204,7 @@ def _build_test_cases():
         else:
             z_mpmath = z
 
-        right = np.complex(mpmath.hyp2f1(a, b, c, z_mpmath))
+        right = complex(mpmath.hyp2f1(a, b, c, z_mpmath))
         dataset[count, :] = a, b, c, z, right
         count += 1
 
