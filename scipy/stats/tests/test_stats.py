@@ -4434,6 +4434,7 @@ class TestMannWhitneyU(object):
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_ones(self):
+        # test for gh-1428
         x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
                       1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
                       1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -4467,9 +4468,13 @@ class TestMannWhitneyU(object):
                       1., 1., 1., 1.])
 
         # p-value verified with matlab and R to 5 significant digits
-        assert_array_almost_equal(self.mwu_fun(x, y, alternative='less'),
-                                  (16980.5, 2.8214327656317373e-005),
-                                  decimal=12)
+        assert_allclose(self.mwu_fun(x, y, alternative='less'),
+                        (16980.5, 2.8214327656317373e-005))
+        # p-value from R, e.g. wilcox.test(x, y, alternative="g")
+        assert_allclose(self.mwu_fun(x, y, alternative='greater'),
+                        (16980.5, 0.9999719954296))
+        assert_allclose(self.mwu_fun(x, y, alternative='two-sided'),
+                        (16980.5, 5.642865531266e-05))
 
     @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_result_attributes(self):
