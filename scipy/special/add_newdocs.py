@@ -5052,11 +5052,13 @@ add_newdoc("hyp2f1",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/15.2
     .. [2] W. Buhring, "An Analytic Continuation of the Hypergeometric Series",
             SIAM J. Math. Anal., Vol. 18, No. 3, May 1987
     .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [4] NIST Digital Library of Mathematical Functions
+    .. [4] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+
     Examples
     --------
     >>> import scipy.special as sc
