@@ -165,6 +165,62 @@ class TestCvm(object):
 
 
 class TestMannWhitneyU():
+    ## Test Input Validation ##
+
+    def test_input_validation(self):
+        x = np.array([1, 2]) # generic, valid inputs
+        y = np.array([3, 4])
+        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
+            mannwhitneyu2([], y)
+        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
+            mannwhitneyu2(x, [])
+        with assert_raises(ValueError, match="`x` and `y` must not contain"):
+            mannwhitneyu2([np.nan, 2], y)
+        with assert_raises(ValueError, match="`use_continuity` must be one"):
+            mannwhitneyu2(x, y, use_continuity='ekki')
+        with assert_raises(ValueError, match="`alternative` must be one of"):
+            mannwhitneyu2(x, y, alternative='ekki')
+        with assert_raises(ValueError, match="`axis` must be an integer"):
+            mannwhitneyu2(x, y, axis=1.5)
+        with assert_raises(ValueError, match="`method` must be one of"):
+            mannwhitneyu2(x, y, method='ekki')
+
+    ## Test Basic Functionality ##
+
+    # This test was written for mann_whitney_u in gh-4933.
+    # Originally, the p-values for alternatives were swapped;
+    # this has been corrected and the tests have been refactored for
+    # compactness, but otherwise the tests are unchanged.
+    # R code for comparison, e.g.:
+    # options(digits = 16)
+    # x = c(210.052110, 110.190630, 307.918612)
+    # y = c(436.08811482466416, 416.37397329768191, 179.96975939463582,
+    #       197.8118754228619, 34.038757281225756, 138.54220550921517,
+    #       128.7769351470246, 265.92721427951852, 275.6617533155341,
+    #       592.34083395416258, 448.73177590617018, 300.61495185038905,
+    #       187.97508449019588)
+    # wilcox.test(x, y, alternative="g", exact=TRUE)
+    cases_basic = [[{"alternative": 'two-sided'}, (16, 0.6865041817876)],
+                   [{"alternative": 'less'}, (16, 0.3432520908938)],
+                   [{"alternative": 'greater'}, (16, 0.7047591913255)],
+                   [{"alternative": 'two-sided', "method": "exact"},
+                    (16, 0.7035714285714)],
+                   [{"alternative": 'less', "method": "exact"},
+                    (16, 0.3517857142857)],
+                   [{"alternative": 'greater', "method": "exact"},
+                    (16, 0.6946428571429)]]
+    @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
+    def test_basic(self, kwds, expected):
+        x = [210.052110, 110.190630, 307.918612]
+        y = [436.08811482466416, 416.37397329768191, 179.96975939463582,
+             197.8118754228619, 34.038757281225756, 138.54220550921517,
+             128.7769351470246, 265.92721427951852, 275.6617533155341,
+             592.34083395416258, 448.73177590617018, 300.61495185038905,
+             187.97508449019588]
+        res = mannwhitneyu2(x, y, **kwds)
+        assert_allclose(res, expected)
+
+    ## Test Exact Distribution of U ##
 
     # These are tabulated values of the CDF of the exact distribution of
     # the test statistic from pg 52 of reference [1] (Mann-Whitney Original)
@@ -218,46 +274,59 @@ class TestMannWhitneyU():
                 pmf2 = _mwu_state.pmf(k=u2, m=n, n=m)
                 assert_allclose(pmf, pmf2)
 
-    def test_input_validation(self):
-        x = np.array([1, 2]) # generic, valid inputs
-        y = np.array([3, 4])
-        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu2([], y)
-        with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu2(x, [])
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2([np.nan, 2], y)
-        with assert_raises(ValueError, match="`use_continuity` must be one"):
-            mannwhitneyu2(x, y, use_continuity='ekki')
-        with assert_raises(ValueError, match="`alternative` must be one of"):
-            mannwhitneyu2(x, y, alternative='ekki')
-        with assert_raises(ValueError, match="`axis` must be an integer"):
-            mannwhitneyu2(x, y, axis=1.5)
-        with assert_raises(ValueError, match="`method` must be one of"):
-            mannwhitneyu2(x, y, method='ekki')
+    def test_asymptotic_behavior(self):
+        np.random.seed(0)
 
-    # corner cases
+        # for small samples, the asyptotic test is not very accurate
+        x = np.random.rand(5)
+        y = np.random.rand(5)
+        res1 = mannwhitneyu2(x, y, method="exact")
+        res2 = mannwhitneyu2(x, y, method="asymptotic")
+        assert res1.statistic == res2.statistic
+        assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
+
+        # for large samples, they agree reasonably well
+        x = np.random.rand(40)
+        y = np.random.rand(40)
+        res1 = mannwhitneyu2(x, y, method="exact")
+        res2 = mannwhitneyu2(x, y, method="asymptotic")
+        assert res1.statistic == res2.statistic
+        assert np.abs(res1.pvalue - res2.pvalue) < 1e-3
+
+    ## Test Corner Cases ##
+
     def test_exact_U_equals_mean(self):
-        # test cases in which U == m*n/2 when method is exact
-        # without special treatment, p-value > 1
+        # Test U == m*n/2 with exact method
+        # Without special treatment, two-sided p-value > 1 because both
+        # one-sided p-values are > 0.5
+        res_l = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="less",
+                              method="exact")
+        res_g = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="greater",
+                              method="exact")
+        assert_equal(res_l.pvalue, res_g.pvalue)
+        assert res_l.pvalue > 0.5
+
         res = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="two-sided",
                             method="exact")
         assert_equal(res, (3, 1))
+        # U == m*n/2 for asymptotic case tested in test_gh_2118
+        # The reason it's tricky for the asmptotic test has to do with
+        # continuity correction.
 
-    cases = [[{"alternative": 'two-sided'}, (0, 1)],
-             [{"alternative": 'less'}, (0, 0.5)],
-             [{"alternative": 'greater'}, (0, 0.977249868052)],
-             [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
-             [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
-             [{"alternative": 'greater', "method": "exact"}, (0, 1)]]
-    @pytest.mark.parametrize(("kwds", "result"), cases)
+    cases_scalar = [[{"alternative": 'two-sided'}, (0, 1)],
+                    [{"alternative": 'less'}, (0, 0.5)],
+                    [{"alternative": 'greater'}, (0, 0.977249868052)],
+                    [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
+                    [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
+                    [{"alternative": 'greater', "method": "exact"}, (0, 1)]]
+    @pytest.mark.parametrize(("kwds", "result"), cases_scalar)
     def test_scalar_data(self, kwds, result):
         # just making sure scalars work
         assert_allclose(mannwhitneyu2(1, 2, **kwds), result)
 
     def test_equal_scalar_data(self):
-        # when two scalars are equal, "exact" method has no problem, but
-        # a NaN in the asymptotic approximation.
+        # when two scalars are equal, there is a NaN in the asymptotic
+        # approximation. This is the same behavior as R's wilcox.test.
         assert_equal(mannwhitneyu2(1, 1, method="exact"), (0.5, 1))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -265,12 +334,14 @@ class TestMannWhitneyU():
             assert res.statistic == 0.5
             assert np.isnan(res.pvalue)
 
+    ## Test Enhancements / Bug Reports ##
+
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method):
-        # test that behavior for broadcastable nd arrays is appropriate:
+        # Test that behavior for broadcastable nd arrays is appropriate:
         # output shape is correct and all values are equal to when the test
         # is performed on one pair of samples at a time.
-        # tests that gh-12837 and gh-11113 (requests for n-d input)
+        # Tests that gh-12837 and gh-11113 (requests for n-d input)
         # are resolved
         np.random.seed(0)
 
@@ -310,32 +381,34 @@ class TestMannWhitneyU():
         np.testing.assert_equal(res.statistic, statistics)
 
     def test_gh_11355(self):
+        # Test for correct behavior with NaN/Inf in input
         x = [1, 2, 3, 4]
         y = [3, 6, 7, 8, 9, 3, 2, 1, 4, 4, 5]
-
         res1 = mannwhitneyu2(x, y)
 
-        y[4] = np.nan
-        with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2(x, y)
-
+        # Inf is not a problem. This is a rank test, and it's the largest value
         y[4] = np.inf
         res2 = mannwhitneyu2([1, 2, 3, 4], [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
 
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res1.pvalue)
 
-    settings = [[True, "less", "asymptotic", 0.900775348204],
-                [True, "greater", "asymptotic", 0.1223118025635],
-                [True, "two-sided", "asymptotic", 0.244623605127],
-                [False, "less", "asymptotic", 0.8896643190401],
-                [False, "greater", "asymptotic", 0.1103356809599],
-                [False, "two-sided", "asymptotic", 0.2206713619198],
-                [True, "less", "exact", 0.8967698967699],
-                [True, "greater", "exact", 0.1272061272061],
-                [True, "two-sided", "exact", 0.2544122544123]]
+        # NaNs should raise an error. No nan_policy for now.
+        y[4] = np.nan
+        with assert_raises(ValueError, match="`x` and `y` must not contain"):
+            mannwhitneyu2(x, y)
+
+    cases_9184 = [[True, "less", "asymptotic", 0.900775348204],
+                  [True, "greater", "asymptotic", 0.1223118025635],
+                  [True, "two-sided", "asymptotic", 0.244623605127],
+                  [False, "less", "asymptotic", 0.8896643190401],
+                  [False, "greater", "asymptotic", 0.1103356809599],
+                  [False, "two-sided", "asymptotic", 0.2206713619198],
+                  [True, "less", "exact", 0.8967698967699],
+                  [True, "greater", "exact", 0.1272061272061],
+                  [True, "two-sided", "exact", 0.2544122544123]]
     @pytest.mark.parametrize(("use_continuity", "alternative",
-                              "method", "pvalue_exp"), settings)
+                              "method", "pvalue_exp"), cases_9184)
     def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp):
         # gh-9184 might be considered a doc-only bug. Please see the
         # documentation to confirm that mannwhitneyu2 correctly notes
@@ -366,19 +439,21 @@ class TestMannWhitneyU():
         assert_allclose(res.pvalue, pvalue_exp)
 
     def test_gh_6897(self):
+        # Test for correct behavior with empty input
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
             mannwhitneyu2([], [])
 
     def test_gh_4067(self):
+        # Test for correct behavior with all NaN input
         a=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
         b=np.array([np.nan,np.nan,np.nan,np.nan,np.nan])
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
             mannwhitneyu2(a,b)
 
-    cases = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
-             [[1, 2, 3], [2], "less", (1.5, 0.5)],
-             [[1, 2], [1, 2], "greater", (2, 0.5)]]
-    @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases)
+    cases_2118 = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
+                  [[1, 2, 3], [2], "less", (1.5, 0.5)],
+                  [[1, 2], [1, 2], "greater", (2, 0.5)]]
+    @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases_2118)
     def test_gh_2118(self, x, y, alternative, expected):
         # test cases in which U == m*n/2 when method is asymptotic
         # applying continuity correction could result in p-value > 1

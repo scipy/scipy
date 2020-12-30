@@ -211,7 +211,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     See Also
     --------
-    `scipy.stats.wilcoxon`
+    scipy.stats.wilcoxon
 
     References
     ----------
