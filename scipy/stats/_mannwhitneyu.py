@@ -201,7 +201,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     ``x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu2` is for independent samples. For related samples,
-    consider `wilcoxon`.
+    consider `scipy.stats.wilcoxon`.
 
     `method` 'exact' is recommended when there are no ties and either sample
     size is less than 8 _[1]. The implementation follows the original
@@ -211,7 +211,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     See Also
     --------
-    `wilcoxon`
+    `scipy.stats.wilcoxon`
 
     References
     ----------
@@ -352,10 +352,10 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     p *= f
 
     # ensure that test statistic is not greater than 1
-    # Written to avoid dealing with floats, 0d arrays, and Nd arrays separately
+    # Written to avoid dealing with floats and Nd arrays separately
     pgt1 = p > 1
-    p *= np.logical_not(pgt1)
-    p += pgt1
+    p *= np.logical_not(pgt1) # zero the entries where p > 1, preserve the rest
+    p += pgt1                 # add 1 to entries where p > 1, preserve the rest
 
     # return mwu_result(U, p)
     return MannwhitneyuResult(U1, p)  # temporary to integrate with tests
