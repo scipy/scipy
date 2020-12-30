@@ -13,7 +13,8 @@ except ImportError:
 
 
 def _get_rand(minv, maxv, only_int=False, exclude_int=False):
-    """Gets a random value in the range (minv, maxv).
+    """
+    Gets a random value in the range (minv, maxv).
 
     When only_int=True, this function only returns integers in (minv, maxv).
     When exclude_int=True, this function only returns *non*-integers in (minv, maxv).
@@ -42,9 +43,8 @@ def _get_rnd_tuple(*args):
     (flag, minv, maxv)
 
     flag: i -> this value will be a random integer
-            f -> this value will be a floating point number BUT not an integer
-            a -> this value will be any random number between minv, maxv
-                    (integers included)
+          f -> this value will be a floating point number BUT not an integer
+          a -> this value will be any random number between minv, maxv (integers included)
     """
     curr_params = []
 
@@ -93,67 +93,67 @@ def _build_abc_list():
     # -a, -b, -c test case
     _add_params(plist, ("f", -3.0, -small), ("f", -3.0, -small), ("f", -3.0, -small))
 
-    # Re(c-a-b)>0 test case
+    # Re(c - a - b) > 0 test case
     _add_params(plist, ("f", small, 2.0), ("f", small, 2.0), ("f", 4.0 + small, 6.0))
 
-    # Re(c-a-b)<-1 test case
+    # Re(c - a - b) < -1 test case
     _add_params(plist, ("f", 2.0, 4.0), ("f", 2.0, 4.0), ("f", small, 3.0 - small))
 
-    # c-a-b=m>0
+    # c - a - b = m > 0
     a, b, m = _get_rnd_tuple(("f", small, 2.0), ("f", small, 2.0), ("i", 1, 6))
     c = a + b + m
     plist.append((a, b, c))
 
-    # c-a-b=0
+    # c - a - b = 0
     a, b = _get_rnd_tuple(("f", small, 2.0), ("f", small, 2.0))
     c = a + b
     plist.append((a, b, c))
 
-    # c-a-b=-m<0
+    # c - a - b = -m < 0
     a, b, m = _get_rnd_tuple(("f", 3.0, 5.0), ("f", 3.0, 5.0), ("i", 1, 6))
     c = a + b - m
     plist.append((a, b, c))
 
-    # b-a=m>0
+    # b - a = m > 0
     a, m, c = _get_rnd_tuple(("f", small, 2.0), ("i", 1, 5), ("f", small, 2.0))
     b = a + m
     plist.append((a, b, c))
 
-    # b-a=0
+    # b - a = 0
     a, c = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0))
     b = a
     plist.append((a, b, c))
 
-    # b-a=-m<0
+    # b - a = -m < 0
     a, m, c = _get_rnd_tuple(("f", 4.0, 6.0), ("i", 1, 4), ("f", small, 2.0))
     b = a - m
     plist.append((a, b, c))
 
-    # c-a=m>0
+    # c - a = m > 0
     a, b, m = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0), ("i", 1, 5))
     c = a + m
     plist.append((a, b, c))
 
-    # c-a=0
+    # c - a = 0
     a, b = _get_rnd_tuple(("f", small, 3.0), ("f", small, 3.0))
     c = a
     plist.append((a, b, c))
 
-    # c-a=-m<0
+    # c - a = -m < 0
     a, b, m = _get_rnd_tuple(("f", 4.0, 6.0), ("f", small, 3.0), ("i", 1, 4))
     c = a - m
     plist.append((a, b, c))
 
-    # a=-m
+    # a = -m
     m, b, c = _get_rnd_tuple(("i", 1, 10), ("f", small, 3.0), ("f", small, 3.0))
     a = -m
     plist.append((a, b, c))
 
-    # c=-m, a=-n, |m|>|n|
-    # b, m, n = _get_rnd_tuple(('f',small,3.0),('i',5,8),('i',2,4))
+    # c = -m, a = -n, |m| > |n|
+    # b, m, n = _get_rnd_tuple(('f', small, 3.0), ('i', 5, 8), ('i', 2, 4))
     # a = -n
     # c = -m
-    # plist.append((a,b,c))
+    # plist.append((a, b, c))
 
     return plist
 
@@ -177,13 +177,13 @@ def _build_test_cases():
     for (a, b, c), r, theta in itertools.product(abc_list, rho, phi):
         z = r * np.exp(1.0j * theta)
 
-        # For most values of a,b,c mpmath returns the x - 0j branch
+        # For most values of a, b, c mpmath returns the x - 0j branch
         # of hyp2f1 on the branch cut x=(1,inf) whereas scipy's
         # hyp2f1 calculates the x + 0j branch. Thus, to generate the right
         # comparison values on the branch cut, we evaluate mpmath.hyp2f1
         # at x + 1e-15*j.
         #
-        # The exception to this occurs when c-a=-m in which case both
+        # The exception to this occurs when c - a = -m in which case both
         # mpmath and scipy calculate the x + 0j branch on the branch
         # cut. When this happens mpmath.hyp2f1 will be evaluated
         # at the normal z point.
