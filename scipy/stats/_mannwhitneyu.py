@@ -144,7 +144,7 @@ MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
                   axis=0, method="asymptotic"):
-    '''Perform the Mann-Whitney U rank test on two independent samples.
+    r'''Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
     that the distribution underlying sample `x` is neither stochastically
