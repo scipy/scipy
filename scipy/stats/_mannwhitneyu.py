@@ -217,6 +217,106 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     .. [3] A. Di Bucchianico, "Combinatorics, computer algebra, and the
            Wilcoxon-Mann-Whitney test", Journal of Statistical Planning and
            Inference, Vol. 79, pp. 349-364, 1999.
+    .. [4] Rosie Shier, "Statistics: 2.3 The Mann-Whitney U Test", Mathematics
+           Learning Support Centre, 2004.
+
+    Examples
+    --------
+    We follow the example from _[4]: nine randomly sampled young adults were
+    diagnosed with type II diabetes at the ages below.
+
+    >>> males = [19, 22, 16, 29, 24]
+    >>> females = [20, 11, 17, 12]
+
+    We use the Mann-Whitney U test to assess whether there is a statistically
+    significant difference in the age of diagnosis of males and females.
+    The null hypothesis is that the probability of a male diagnosis age being
+    greater than a female diagnosis age is equal to the probability of a
+    female diagnosis age being greater than a male diagnosis age. We decide
+    that a confidence level of 95% is required to reject the null hypothesis
+    in favor of the alternative: that either the diagnosis age of males is
+    stochastically greater than the diagnosis age of females or the diagnosis
+    age of females is stochastically greater than the diagnosis age of males.
+    Since the number of samples is very small, we will compare the test
+    statistic against the *exact* distribution of the test statistic under
+    the null hypothesis.
+
+    >>> from scipy.stats import mannwhitneyu2
+    >>> U1, p = mannwhitneyu2(males, females, method="exact")
+    >>> print(U1)
+    17.0
+
+    `mannwhitneyu2` always reports the statistic associated with the first
+    sample, which, in this case, is males. This agrees with :math:`U_M = 17`
+    reported in _[4]. The statistic associated with the second statistic
+    can be calculated:
+
+    >>> nx, ny = len(males), len(females)
+    >>> U2 = nx*ny - U1
+    >>> print(U2)
+    3.0
+
+    This agrees with :math:`U_F = 3` reported in _[4]. The two-sided
+    *p*-value can be calculated from either statistic, and the value produced
+    by `mannwhitneyu2` agrees with :math:`p = 0.11` reported in _[4].
+
+    >>> print(p)
+    0.1111111111111111
+
+    The exact distribution of the test statistic is asymptotically normal, so
+    the example continues by comparing the exact *p*-value against the
+    *p*-value produced using the normal approximation.
+
+    >>> _, pnorm = mannwhitneyu2(males, females, method="asymptotic")
+    >>> print(pnorm)
+    0.11134688653314041
+
+    Here `mannwhitneyu2`'s reported *p*-value appears to conflict with the
+    value :math:`p = 0.09` given in _[4]. The reason is that the example
+    does not apply the continuity correction performed by `mannwhitneyu2`;
+    `mannwhitneyu2` reduces the distance between the test statistic and the
+    mean :math:`\mu = n_x n_y / 2` by 0.5 to correct for the fact that the
+    discrete statistic is being compared against a continuous distribution.
+    Here, the :math:`U` statistic used is less than the mean, so we reduce
+    the distance by adding 0.5 in the numerator.
+
+    >>> import numpy as np
+    >>> from scipy.stats import norm
+    >>> U = min(U1, U2)
+    >>> N = nx + ny
+    >>> z = (U - nx*ny/2 + 0.5) / np.sqrt(nx*ny * (N + 1)/ 12)
+    >>> p = 2 * norm.cdf(z)  # use CDF to get p-value from smaller statistic
+    >>> print(p)
+    0.11134688653314041
+
+    If desired, we can disable the continuity correction to get a result
+    that agrees with that reported in _[4].
+
+    >>> _, pnorm = mannwhitneyu2(males, females, use_continuity=False,
+    ...                          method="asymptotic")
+    >>> print(pnorm)
+    0.0864107329737
+
+    Regardless of whether we perform an exact or asymptotic test, the
+    probability of the test statistic being as extreme or more extreme by
+    chance exceeds 5%, so we do not consider the results statistically
+    significant
+
+    Suppose that, before seeing the data, we had hypothesized that females
+    would tend to be diagnosed at a younger age than males.
+    In that case, it would be natural to provide the female ages as the
+    first input, and we would have performed a one-sided test using
+    ``alternative = 'less'``: females are diagnosed at an age that is
+    stochastically less than that of males.
+
+    >>> res = mannwhitneyu2(females, males, alternative="less", method="exact")
+    >>> print(res)
+    MannwhitneyuResult(statistic=3.0, pvalue=0.05555555555555555)
+
+    Again, the probability of getting a sufficiently low value of the
+    test statistic by chance under the null hypothesis is greater than 5%,
+    so we do not reject the null hypothesis in favor of our alternative.
+
     '''
 
     x, y, use_continuity, alternative, axis_int, method = (
