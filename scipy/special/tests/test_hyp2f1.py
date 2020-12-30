@@ -13,7 +13,7 @@ except ImportError:
 
 def _get_rand(minv, maxv, only_int=False, exclude_int=False):
     '''Gets a random value in the range (minv, maxv).
-    
+
     When only_int=True, this function only returns integers in (minv, maxv).
     When exclude_int=True, this function only returns *non*-integers in (minv, maxv).
     '''
@@ -134,12 +134,12 @@ def _build_abc_list():
     a, b = _get_rnd_tuple(('f',small,3.0),('f',small,3.0))
     c = a
     plist.append((a,b,c))
-    
+
     # c-a=-m<0
     a, b, m = _get_rnd_tuple(('f',4.0,6.0),('f',small,3.0),('i',1,4))
     c = a - m
     plist.append((a,b,c))
-    
+
     # a=-m
     m, b, c = _get_rnd_tuple(('i',1,10),('f',small,3.0),('f',small,3.0))
     a = -m
@@ -150,7 +150,7 @@ def _build_abc_list():
     #a = -n
     #c = -m
     #plist.append((a,b,c))
-    
+
     return plist
 
 # Build the test case data that FuncData needs
@@ -191,7 +191,7 @@ def _build_test_cases():
         # Make sure imaginary part is *exactly* zero
         if on_branch_cut:
             z = np.real(z) + 0.0j
-        
+
         if on_branch_cut and not (c_a_int or c_b_int):
             z_mpmath = np.real(z) + 1.e-15j
         else:
@@ -205,7 +205,7 @@ def _build_test_cases():
         # when we swap a, b
         dataset[count,:] = b, a, c, z, right
         count += 1
-    
+
     return dataset
 
 def _hyp2f1_wrap(a,b,c,z):
