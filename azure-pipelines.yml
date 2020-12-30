@@ -172,7 +172,7 @@ jobs:
            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
            python3.7 get-pip.py && \
            pip3 --version && \
-           pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 --user && \
+           pip3 install setuptools wheel numpy==1.16.6 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
            apt-get -y install gcc-5 g++-5 gfortran-5 wget && \
            cd .. && \
            mkdir openblas && cd openblas && \
@@ -211,11 +211,13 @@ jobs:
           PYTHON_ARCH: 'x86'
           TEST_MODE: fast
           BITS: 32
+          SCIPY_USE_PYTHRAN: 1
         Python37-64bit-full:
           PYTHON_VERSION: '3.7'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
           BITS: 64
+          SCIPY_USE_PYTHRAN: 0
         Python38-64bit-full-ilp64:
           PYTHON_VERSION: '3.8'
           PYTHON_ARCH: 'x64'
@@ -223,11 +225,13 @@ jobs:
           NPY_USE_BLAS_ILP64: 1
           BITS: 64
           OPENBLAS64_: $(OPENBLAS)
+          SCIPY_USE_PYTHRAN: 1
         Python39-64bit-full:
           PYTHON_VERSION: '3.9'
           PYTHON_ARCH: 'x64'
           TEST_MODE: full
           BITS: 64
+          SCIPY_USE_PYTHRAN: 0
   steps:
   - task: UsePythonVersion@0
     inputs:
@@ -256,6 +260,14 @@ jobs:
           Download-OpenBLAS('1')
       }
     displayName: 'Download / Install OpenBLAS'
+  - script: |
+      choco install -y llvm
+      set PATH=C:\Program Files\LLVM\bin;%PATH%
+      echo '##vso[task.setvariable variable=PATH]%PATH%'
+    displayName: 'Install clang-cl'
+  - script: |
+      clang-cl.exe --version
+    displayName: 'clang-cl version'
   - powershell: |
       # wheels appear to use mingw64 version 6.3.0, but 6.4.0
       # is the closest match available from choco package manager
@@ -270,6 +282,7 @@ jobs:
       numpy
       Pillow
       pybind11
+      pythran
       pytest==5.4.3
       pytest-cov
       pytest-env
@@ -302,6 +315,9 @@ jobs:
           $env:CFLAGS = "-m32"
           $env:LDFLAGS = "-m32"
           refreshenv
+          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\ncflags=/std:c++14 -m32\nblas=none\n'); fd.close()"
+      }else{
+          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\nblas=none\n'); fd.close()"
       }
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
@@ -313,6 +329,7 @@ jobs:
     displayName: 'Build SciPy'
   - powershell: |
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+      $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
       python runtests.py -n --mode=$(TEST_MODE) -- -n 2 -rsx --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
     displayName: 'Run SciPy Test Suite'
   - task: PublishTestResults@2

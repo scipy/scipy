@@ -223,9 +223,26 @@ def get_build_ext_override():
     """
     Custom build_ext command to tweak extension building.
     """
-    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+    from numpy.distutils.command.build_ext import build_ext as npy_build_ext
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        # PythranBuildExt does *not* derive from npy_build_ext
+        # Win the monkey patching race here and patch base class
+        # before it's loaded by Pythran. This should be removed
+        # once Pythran has proper support for base class selection.
+        assert 'pythran' not in sys.modules
+        import distutils.command.build_ext
+        distutils_build_ext = distutils.command.build_ext.build_ext
+        distutils.command.build_ext.build_ext = npy_build_ext
+        try:
+            from pythran.dist import PythranBuildExt as BaseBuildExt
+        except ImportError:
+            BaseBuildExt = npy_build_ext
+        finally:
+            distutils.command.build_ext.build_ext = distutils_build_ext
+    else:
+        BaseBuildExt = npy_build_ext
 
-    class build_ext(old_build_ext):
+    class build_ext(BaseBuildExt):
         def finalize_options(self):
             super().finalize_options()
 
@@ -254,7 +271,7 @@ def get_build_ext_override():
             hooks = getattr(ext, '_pre_build_hook', ())
             _run_pre_build_hooks(hooks, (self, ext))
 
-            old_build_ext.build_extension(self, ext)
+            super(build_ext, self).build_extension(ext)
 
         def __is_using_gnu_linker(self, ext):
             if not sys.platform.startswith('linux'):
