@@ -19,9 +19,11 @@ class TestSobol:
             self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
             engine_unscrambled_3d = Sobol(3, scramble=False)
             self.draws_unscrambled_3d = engine_unscrambled_3d.random(10)
-            engine_scrambled_1d = Sobol(1, scramble=True, seed=12345)
+            seed = np.random.RandomState(12345)
+            engine_scrambled_1d = Sobol(1, scramble=True, seed=seed)
             self.draws_scrambled_1d = engine_scrambled_1d.random(10)
-            engine_scrambled_3d = Sobol(3, scramble=True, seed=12345)
+            seed = np.random.RandomState(12345)
+            engine_scrambled_3d = Sobol(3, scramble=True, seed=seed)
             self.draws_scrambled_3d = engine_scrambled_3d.random(10)
 
     def test_warning(self):
@@ -151,9 +153,10 @@ class TestSobol:
         )
 
     def test_Scrambled3DAsyncSobol(self):
-        engine_unscrambled_3d = Sobol(3, scramble=False)
-        draws = np.vstack([engine_unscrambled_3d.random() for _ in range(10)])
-        assert_array_equal(self.draws_unscrambled_3d, draws)
+        seed = np.random.RandomState(12345)
+        engine_scrambled_3d = Sobol(3, scramble=True, seed=seed)
+        draws = np.vstack([engine_scrambled_3d.random() for _ in range(10)])
+        assert_array_equal(self.draws_scrambled_3d, draws)
 
     def test_ScrambledSobolBounds(self):
         engine = Sobol(100, scramble=True)
@@ -162,8 +165,9 @@ class TestSobol:
         assert_(np.all(draws <= 1))
 
     def test_ScrambledFastForwardAndResetSobol(self):
+        seed = np.random.RandomState(12345)
         engine_scrambled_3d = Sobol(3, scramble=True,
-                                    seed=12345).fast_forward(5)
+                                    seed=seed).fast_forward(5)
         draws = engine_scrambled_3d.random(5)
         assert_array_equal(self.draws_scrambled_3d[5:10], draws)
 
@@ -180,7 +184,8 @@ class TestSobol:
         )
 
     def test_ScrambledDistributionSobol(self):
-        engine = Sobol(10, scramble=True, seed=12345)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(10, scramble=True, seed=seed)
         draws = engine.random(512)
         assert_array_almost_equal(
             np.mean(draws, axis=0), np.repeat(0.5, 10), decimal=2
