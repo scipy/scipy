@@ -6337,6 +6337,23 @@ class powerlaw_gen(rv_continuous):
             s_max = np.max(data) - np.min(data)
             u_min = np.min(data) - s_max
             u_max = (1-np.finfo(float).eps)*np.min(data)
+
+            # for some a > 1 cases, `u_max` needs to be decreased even more
+            # s.t. `func(u_min)` and `func(u_max)` have opposite signs.
+            for i in range(1, 30):
+                # sometimes `func`'s computations raise errors.
+                try:
+                    a = func(u_min, None)
+                    b = func(u_max, None)
+                    # if `a` and `b` are not of opposite sign, decrease `u_max`
+                    # by an increasing amount each interation.
+                    if (a < 0 and b < 0) or (a > 0 and b > 0):
+                        u_max = u_max - np.finfo(float).eps**(1/i)
+                    else:
+                        break
+                except Exception:
+                    break
+
             try:
                 floc = optimize.root_scalar(func, bracket=[u_min, u_max],
                                             args=(fshape,)).root
