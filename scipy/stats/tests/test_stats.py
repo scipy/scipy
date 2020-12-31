@@ -5937,32 +5937,3 @@ class TestMGCStat(object):
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
-
-
-@pytest.mark.parametrize(("hypotest"), (stats.pearsonr,
-                                        stats.ranksums,
-                                        stats.ansari))
-def test_hypotest_vectorization(hypotest):
-    # test that hypothesis tests using vectorize_hypotest_factory decorator
-    # vectorize as expected
-    m, n = 4, 5
-
-    np.random.seed(0)
-    x = np.random.rand(m, n)
-    y = np.random.rand(m, n)
-
-    axis = 1
-    stats, ps = np.zeros(m), np.zeros(m)
-    for i in range(m):
-        stats[i], ps[i] = hypotest(x[i], y[i])
-    res = hypotest(x, y, axis=axis)
-    assert_equal(res[0], stats)
-    assert_equal(res[1], ps)
-
-    axis = 0
-    stats, ps = np.zeros(n), np.zeros(n)
-    for i in range(n):
-        stats[i], ps[i] = hypotest(x.T[i], y.T[i])
-    res = hypotest(x, y, axis=axis)
-    assert_equal(res[0], stats)
-    assert_equal(res[1], ps)

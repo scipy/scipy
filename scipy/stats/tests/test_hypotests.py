@@ -4,12 +4,13 @@ import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
 
+import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm)
 from scipy.stats import distributions
 from .common_tests import check_named_results
-
+from scipy import stats
 
 class TestEppsSingleton(object):
     def test_statistic_1(self):
@@ -57,10 +58,6 @@ class TestEppsSingleton(object):
         assert_raises(ValueError, epps_singleton_2samp, x, y)
         x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
         assert_raises(ValueError, epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_1d_input(self):
-        x = np.arange(100).reshape(-1, 1)
-        assert_raises(ValueError, epps_singleton_2samp, x, x)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
@@ -159,3 +156,37 @@ class TestCvm(object):
         r1 = cramervonmises(x, distributions.beta.cdf, args)
         r2 = cramervonmises(x, "beta", args)
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+
+
+@pytest.mark.parametrize(("hypotest", "args", "kwds"),
+                         [(stats.pearsonr, tuple(), dict()),
+                          (stats.ranksums, tuple(), dict()),
+                          (stats.ansari, tuple(), dict()),
+                          (stats.brunnermunzel, ("less",),
+                           {"distribution":'normal'}),
+                          (stats.epps_singleton_2samp, ((.35, 0.75),), {})
+                          ])
+def test_hypotest_vectorization(hypotest, args, kwds):
+    # test that hypothesis tests using vectorize_hypotest_factory decorator
+    # vectorize as expected
+    m, n = 6, 7
+
+    np.random.seed(0)
+    x = np.random.rand(m, n)
+    y = np.random.rand(m, n)
+
+    axis = 1
+    stats, ps = np.zeros(m), np.zeros(m)
+    for i in range(m):
+        stats[i], ps[i] = hypotest(x[i], y[i], *args, **kwds)
+    res = hypotest(x, y, axis=axis, *args, **kwds)
+    assert_equal(res[0], stats)
+    assert_equal(res[1], ps)
+
+    axis = 0
+    stats, ps = np.zeros(n), np.zeros(n)
+    for i in range(n):
+        stats[i], ps[i] = hypotest(x.T[i], y.T[i], *args, **kwds)
+    res = hypotest(x, y, axis=axis, *args, **kwds)
+    assert_equal(res[0], stats)
+    assert_equal(res[1], ps)

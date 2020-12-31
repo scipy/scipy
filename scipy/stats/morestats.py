@@ -12,11 +12,11 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan, vectorize_hypotest_factory
+from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._hypotests import _get_wilcoxon_distr
+from ._hypotests import _get_wilcoxon_distr, _vectorize_2s_hypotest_factory
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
@@ -2076,7 +2076,7 @@ def anderson_ksamp(samples, midrank=True):
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
-@vectorize_hypotest_factory(result_creator=AnsariResult)
+@_vectorize_2s_hypotest_factory(result_creator=AnsariResult)
 def ansari(x, y):
     """
     Perform the Ansari-Bradley test for equal scale parameters.

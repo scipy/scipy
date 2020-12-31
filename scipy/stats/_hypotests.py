@@ -1,16 +1,48 @@
 from collections import namedtuple
 import numpy as np
 import warnings
+from itertools import product
 from . import distributions
 from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 
 
+def _vectorize_2s_hypotest_factory(result_creator):
+    def vectorize_hypotest_decorator(hypotest_fun):
+        def vectorize_hypotest_wrapper(x, y, *args, axis=0, **kwds):
+            x, y = np.atleast_1d(x), np.atleast_1d(y)
+
+            if x.size == 0 or y.size == 0:
+                statistic, pvalue = hypotest_fun(x, y, *args, **kwds)
+                return result_creator(statistic, pvalue)
+
+            x = np.moveaxis(x, axis, -1)
+            y = np.moveaxis(y, axis, -1)
+            z = np.broadcast(x[..., 0], y[..., 0])
+            x = np.broadcast_to(x, z.shape + (x.shape[-1],))
+            y = np.broadcast_to(y, z.shape + (y.shape[-1],))
+
+            shape = x.shape[:-1]
+            statistics = np.zeros(shape)
+            pvalues = np.zeros(shape)
+            for indices in product(*[range(i) for i in shape]):
+                xi = x[indices]
+                yi = y[indices]
+                statistic, pvalue = hypotest_fun(xi, yi, *args, **kwds)
+                statistics[indices] = statistic
+                pvalues[indices] = pvalue
+            return result_creator(statistics, pvalues)
+
+        return vectorize_hypotest_wrapper
+    return vectorize_hypotest_decorator
+
+
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@_vectorize_2s_hypotest_factory(result_creator=Epps_Singleton_2sampResult)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """
     Compute the Epps-Singleton (ES) test statistic.
