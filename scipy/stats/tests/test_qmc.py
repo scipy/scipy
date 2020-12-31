@@ -11,10 +11,237 @@ from scipy.optimize import basinhopping
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              _perturb_discrepancy, _update_discrepancy)
+                              _perturb_discrepancy, _update_discrepancy, QMCEngine)
 
 
-class TestUtils(object):
+class QMCEngineTests:
+    qmce = ...
+    can_scramble = ...
+    unscramble_1d = ...
+    scramble_1d = ...
+    unscramble_nd = ...
+    scramble_nd = ...
+
+    scramble = [True, False]
+
+    def engine(self, scramble: bool, **kwargs) -> QMCEngine:
+        seed = np.random.RandomState(123456)
+        if self.can_scramble:
+            return self.qmce(scramble=scramble, seed=seed, **kwargs)
+        else:
+            if scramble:
+                pytest.skip()
+            else:
+                return self.qmce(seed=seed, **kwargs)
+
+    def reference(self, d: int, scramble: bool) -> np.ndarray:
+        if scramble:
+            return self.scramble_1d if d == 1 else self.scramble_nd
+        else:
+            return self.unscramble_1d if d == 1 else self.unscramble_nd
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_0dim(self, scramble):
+        engine = self.engine(d=0, scramble=scramble)
+        sample = engine.random(4)
+        assert_array_equal(np.empty((4, 0)), sample)
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_bounds(self, scramble):
+        engine = self.engine(d=100, scramble=scramble)
+        sample = engine.random(1024)
+        assert_(np.all(sample >= 0))
+        assert_(np.all(sample <= 1))
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_sample(self, scramble):
+        ref_sample = self.reference(d=2, scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+        sample = engine.random(n=len(ref_sample))
+
+        assert_almost_equal(sample, ref_sample, decimal=1)
+        assert engine.num_generated == len(ref_sample)
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_continuing(self, scramble):
+        ref_sample = self.reference(d=2, scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+
+        _ = engine.random(n=4)
+        sample = engine.random(n=len(ref_sample))
+        assert_almost_equal(sample, ref_sample, decimal=1)
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_reset(self, scramble):
+        ref_sample = self.reference(d=2, scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+
+        _ = engine.random(n=4)
+
+        engine.reset()
+        assert engine.num_generated == 0
+
+        sample = engine.random(n=len(ref_sample))
+        assert_almost_equal(sample, ref_sample, decimal=1)
+
+    @pytest.mark.parametrize("scramble", scramble)
+    def test_fast_forward(self, scramble):
+        ref_sample = self.reference(d=2, scramble=scramble)
+        engine = self.engine(d=2, scramble=scramble)
+
+        engine.fast_forward(4)
+        sample = engine.random(n=4)
+
+        assert_almost_equal(sample, ref_sample[4:], decimal=1)
+
+
+class TestHalton(QMCEngineTests):
+    qmce = qmc.Halton
+    can_scramble = True
+    # theoretical values known from Van der Corput
+    unscramble_nd = np.array([[0, 0], [1 / 2, 1 / 3],
+                              [1 / 4, 2 / 3], [3 / 4, 1 / 9],
+                              [1 / 8, 4 / 9], [5 / 8, 7 / 9],
+                              [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
+    # theoretical values unknown: convergence properties checked
+    scramble_nd = np.array([[0.34229571, 0.89178423],
+                            [0.84229571, 0.07696942],
+                            [0.21729571, 0.41030275],
+                            [0.71729571, 0.74363609],
+                            [0.46729571, 0.18808053],
+                            [0.96729571, 0.52141386],
+                            [0.06104571, 0.8547472],
+                            [0.56104571, 0.29919164]])
+
+
+class TestLHS(QMCEngineTests):
+    qmce = qmc.LatinHypercube
+    can_scramble = False
+    unscramble_nd = np.array([[0.73412877, 0.50416027],
+                              [0.5924405, 0.51284543],
+                              [0.57790629, 0.70797228],
+                              [0.44357794, 0.64496811],
+                              [0.23461223, 0.55712172],
+                              [0.45337347, 0.4440004],
+                              [0.73381992, 0.01751516],
+                              [0.52245145, 0.33099331]])
+
+    def test_continuing(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_sample_centered(self):
+        engine = self.engine(d=2, scramble=False, centered=True)
+        sample = engine.random(n=5)
+        out = np.array([[0.3, 0.5],
+                        [0.5, 0.3],
+                        [0.1, 0.7],
+                        [0.7, 0.7],
+                        [0.7, 0.1]])
+        assert_almost_equal(sample, out, decimal=1)
+
+
+class TestOLHS(QMCEngineTests):
+    qmce = qmc.OrthogonalLatinHypercube
+    can_scramble = False
+    unscramble_nd = np.array([[0.01587123, 0.01618008],
+                              [0.24583973, 0.35254855],
+                              [0.66702772, 0.82434795],
+                              [0.80642206, 0.89219419],
+                              [0.2825595, 0.41900669],
+                              [0.98003189, 0.52861091],
+                              [0.54709371, 0.23248484],
+                              [0.48715457, 0.72209797]])
+
+    def test_continuing(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_iid(self):
+        # Checking independency of the random numbers generated
+        engine = self.engine(d=2, scramble=False)
+        n_samples = 500
+        sample = engine.random(n=n_samples)
+        min_b = 50  # number of bins
+        bins = np.linspace(0, 1, min(min_b, n_samples) + 1)
+        hist = np.histogram(sample[:, 0], bins=bins)
+        out = np.array([n_samples / min_b] * min_b)
+        assert_equal(hist[0], out)
+
+        hist = np.histogram(sample[:, 1], bins=bins)
+        assert_equal(hist[0], out)
+
+
+class TestOptimalDesign(QMCEngineTests):
+    qmce = qmc.OptimalDesign
+    can_scramble = False
+    unscramble_nd = np.array([[0.24583973, 0.01618008],
+                              [0.01587123, 0.82434795],
+                              [0.66702772, 0.35254855],
+                              [0.80642206, 0.89219419],
+                              [0.2825595, 0.41900669],
+                              [0.98003189, 0.52861091],
+                              [0.54709371, 0.23248484],
+                              [0.48715457, 0.72209797]])
+
+    def test_continuing(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_discrepancy_hierarchy(self):
+        # base discrepancy as a reference for testing OptimalDesign is better
+        seed = np.random.RandomState(123456)
+        olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
+        sample_ref = olhs.random(n=20)
+        disc_ref = qmc.discrepancy(sample_ref)
+
+        # all defaults
+        seed = np.random.RandomState(123456)
+        optimal_ = qmc.OptimalDesign(d=2, seed=seed)
+        sample_ = optimal_.random(n=20)
+        disc_ = qmc.discrepancy(sample_)
+
+        assert disc_ < disc_ref
+
+        # using an initial sample
+        seed = np.random.RandomState(123456)
+        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref, seed=seed)
+        sample_1 = optimal_1.random(n=20)
+        disc_1 = qmc.discrepancy(sample_1)
+
+        assert disc_1 < disc_ref
+
+        # 5 iterations is better than 1
+        seed = np.random.RandomState(123456)
+        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=5,
+                                      seed=seed)
+        sample_2 = optimal_2.random(n=20)
+        disc_2 = qmc.discrepancy(sample_2)
+        assert disc_2 < disc_1
+
+        # another optimization method
+        def method(func, x0, bounds):
+            seed = np.random.RandomState(123456)
+            minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+            _ = basinhopping(func, x0, niter=100,
+                             minimizer_kwargs=minimizer_kwargs,
+                             seed=seed)
+
+        seed = np.random.RandomState(123456)
+        optimal_3 = qmc.OptimalDesign(d=2, start_design=sample_ref,
+                                      method=method, seed=seed)
+        sample_3 = optimal_3.random(n=20)
+        disc_3 = qmc.discrepancy(sample_3)
+        assert disc_3 < disc_ref
+
+
+class TestUtils:
     def test_scale(self):
         space = [[0, 0], [1, 1], [0.5, 0.5]]
         corners = np.array([[-2, 0], [6, 5]])
@@ -104,7 +331,7 @@ class TestUtils(object):
         assert_allclose(primes, out)
 
 
-class TestQMC(object):
+class TestVDC:
     def test_van_der_corput(self):
         seed = np.random.RandomState(12345)
         sample = van_der_corput(10, seed=seed)
@@ -122,147 +349,6 @@ class TestQMC(object):
         sample = van_der_corput(7, start_index=3, scramble=True,
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
-
-    def test_halton(self):
-        seed = np.random.RandomState(123456)
-        engine = qmc.Halton(d=2, scramble=False, seed=seed)
-        sample = engine.random(n=3)
-
-        out = np.array([[0, 0], [1 / 2, 1 / 3], [1 / 4, 2 / 3], [3 / 4, 1 / 9],
-                        [1 / 8, 4 / 9], [5 / 8, 7 / 9]])
-        assert_almost_equal(sample, out[:3], decimal=1)
-
-        assert engine.num_generated == 3
-
-        # continuing
-        sample = engine.random(n=3)
-        assert_almost_equal(sample, out[3:], decimal=1)
-
-        # reset
-        engine.reset()
-        sample = engine.random(n=6)
-        assert_almost_equal(sample, out, decimal=1)
-
-        # continuing with fast_forward
-        engine = qmc.Halton(d=2, scramble=False, seed=seed)
-        engine.fast_forward(2)
-        sample = engine.random(n=4)
-
-        assert_almost_equal(sample, out[2:], decimal=1)
-
-    def test_halton_scramble(self):
-        seed = np.random.RandomState(123456)
-        engine = qmc.Halton(d=2, scramble=True, seed=seed)
-        out = engine.random(n=10)
-
-        seed = np.random.RandomState(123456)
-        engine = qmc.Halton(d=2, scramble=True, seed=seed)
-        sample = engine.random(n=3)
-        assert_almost_equal(sample, out[:3], decimal=1)
-
-        # continuing
-        sample = engine.random(n=7)
-        assert_almost_equal(sample, out[3:], decimal=1)
-
-        # reset
-        engine.reset()
-        sample = engine.random(n=10)
-        assert_almost_equal(sample, out, decimal=1)
-
-        # continuing with fast_forward
-        seed = np.random.RandomState(123456)
-        engine = qmc.Halton(d=2, scramble=True, seed=seed)
-        engine.fast_forward(2)
-        sample = engine.random(n=8)
-
-        assert_almost_equal(sample, out[2:], decimal=1)
-
-
-class TestLHS:
-    def test_lhs(self):
-        seed = np.random.RandomState(123456)
-        corners = np.array([[0, 2], [10, 5]])
-
-        lhs = qmc.LatinHypercube(d=2, seed=seed)
-        sample = lhs.random(n=5)
-        sample = qmc.scale(sample, bounds=corners)
-        out = np.array([[5.7, 3.2], [5.5, 3.9], [5.2, 3.6],
-                        [5.1, 3.3], [5.8, 4.1]])
-        assert_almost_equal(sample, out, decimal=1)
-
-        lhs = qmc.LatinHypercube(d=2, centered=True, seed=seed)
-        sample = lhs.random(n=5)
-        out = np.array([[0.1, 0.5], [0.3, 0.1], [0.7, 0.1],
-                        [0.1, 0.1], [0.3, 0.7]])
-        assert_almost_equal(sample, out, decimal=1)
-
-    def test_orthogonal_lhs(self):
-        seed = np.random.RandomState(123456)
-        corners = np.array([[0, 2], [10, 5]])
-
-        olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
-        sample = olhs.random(n=5)
-        sample = qmc.scale(sample, bounds=corners)
-        out = np.array([[3.933, 2.670], [7.794, 4.031], [4.520, 2.129],
-                        [0.253, 4.976], [8.753, 3.249]])
-        assert_almost_equal(sample, out, decimal=1)
-
-        # Checking independency of the random numbers generated
-        n_samples = 500
-        sample = olhs.random(n=n_samples)
-        min_b = 50  # number of bins
-        bins = np.linspace(0, 1, min(min_b, n_samples) + 1)
-        hist = np.histogram(sample[:, 0], bins=bins)
-        out = np.array([n_samples / min_b] * min_b)
-        assert_equal(hist[0], out)
-
-        hist = np.histogram(sample[:, 1], bins=bins)
-        assert_equal(hist[0], out)
-
-    def test_optimal_design(self):
-        # base discrepancy as a reference for testing OptimalDesign is better
-        seed = np.random.RandomState(123456)
-        olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
-        sample_ref = olhs.random(n=20)
-        disc_ref = qmc.discrepancy(sample_ref)
-
-        # all defaults
-        seed = np.random.RandomState(123456)
-        optimal_ = qmc.OptimalDesign(d=2, seed=seed)
-        sample_ = optimal_.random(n=20)
-        disc_ = qmc.discrepancy(sample_)
-
-        assert disc_ < disc_ref
-
-        # using an initial sample
-        seed = np.random.RandomState(123456)
-        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref, seed=seed)
-        sample_1 = optimal_1.random(n=20)
-        disc_1 = qmc.discrepancy(sample_1)
-
-        assert disc_1 < disc_ref
-
-        # 5 iterations is better than 1
-        seed = np.random.RandomState(123456)
-        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=5,
-                                      seed=seed)
-        sample_2 = optimal_2.random(n=20)
-        disc_2 = qmc.discrepancy(sample_2)
-        assert disc_2 < disc_1
-
-        # another optimization method
-        def method(func, x0, bounds):
-            seed = np.random.RandomState(123456)
-            minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-            _ = basinhopping(func, x0, niter=100,
-                             minimizer_kwargs=minimizer_kwargs,
-                             seed=seed)
-        seed = np.random.RandomState(123456)
-        optimal_3 = qmc.OptimalDesign(d=2, start_design=sample_ref,
-                                      method=method, seed=seed)
-        sample_3 = optimal_3.random(n=20)
-        disc_3 = qmc.discrepancy(sample_3)
-        assert disc_3 < disc_ref
 
 
 class TestMultinomialQMC:
