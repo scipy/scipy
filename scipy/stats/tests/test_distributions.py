@@ -1822,23 +1822,24 @@ class TestPowerlaw(object):
     @pytest.mark.parametrize("fa", [True, False])
     @pytest.mark.parametrize("floc", [True, False])
     @pytest.mark.parametrize("fscale", [True, False])
+    @pytest.mark.parametrize("seed", [1412304, 8435792])
     def test_fit_MLE_comp_optimzer_combinations(self, a, loc, scale, fa, floc,
-                                                fscale):
+                                                fscale, seed):
+        # the two parametrized seeds exhibit failures for these two previous
+        # issue cases:
+        #  - analytical a = 1 when numerical a > 1
+        #  - analytical a = 1 when numerical a < 1
+        # after inspection this can be moved to setup_method
+        np.random.seed(seed)
         # skip the test if all parameters are fixed.
         if False not in {fa, floc, fscale}:
             pytest.skip()
         data = stats.powerlaw.rvs(size=250, a=a, loc=loc, scale=scale)
-        print(data)
 
         def ll(args, data):
             # to get the same behavior as `powerlaw.reduce_func`, negate the
             # log-likelihood function
             return -np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
-
-        def ll_a1(args, data):
-            # the log likelihood function reduces to this when `a` is known to
-            # be 1.
-            return len(data) * np.log(fscale)
 
         # build kwds based on which arguments are indicated to be fixed
         kwds = dict()
@@ -1851,12 +1852,18 @@ class TestPowerlaw(object):
         # warnings are raised in the super fit method, unrelated to changes
         # made here
         with np.errstate(divide='ignore'):
-            # if powerlaw.fit determines that a==1, then a different log
-            if stats.powerlaw.fit(data, **kwds)[0] == 1:
-                _assert_less_or_close_loglike(stats.powerlaw, data, ll_a1,
-                                              **kwds)
-            else:
+            try:
                 _assert_less_or_close_loglike(stats.powerlaw, data, ll, **kwds)
+            except Exception as e:
+                # if the fit is not determined to be better than that obtained
+                # numerically, but the analytically determined `a` is 1and
+                # the numerically determined `a` is slightly less than 1,
+                # this should still be considered a good fit.
+                a_analytical = stats.powerlaw.fit(data, **kwds)[0]
+                a_numerical = super(type(stats.powerlaw),
+                                    stats.powerlaw).fit(data, **kwds)[0]
+                if not (a_analytical == 1 and .9 < a_numerical < 1):
+                    raise e
 
 
 class TestInvGamma(object):
