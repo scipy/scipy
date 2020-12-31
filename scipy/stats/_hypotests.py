@@ -463,28 +463,6 @@ def _tau_b(A):
     return tau, p
 
 
-def _tau_c(A):
-    """Calculate Kendall's tau-b and p-value from contingency table"""
-    # See [2] 2.3 and 4.3
-
-    # contingency table must be truly 2D
-    if A.shape[0] == 1 or A.shape[1] == 1:
-        return np.nan, np.nan
-
-    m = min(A.shape)
-    n = A.sum()
-    PA = _P(A)
-    QA = _Q(A)
-    tau = m*(PA-QA)/(n**2*(m-1))
-    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/n
-    if S == 0:  # Avoid divide by zero
-        return tau, 0
-    Z = (PA - QA)/(4*(S))**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
-
-    return tau, p
-
-
 def _somers_d(A):
     """Calculate Somers' D and p-value from contingency table"""
     # See [3] page 1740
