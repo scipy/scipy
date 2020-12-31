@@ -12,7 +12,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 from scipy.stats._mannwhitneyu import mannwhitneyu2, _mwu_state
 from scipy.stats import distributions
 from .common_tests import check_named_results
-import warnings
 
 
 class TestEppsSingleton(object):
@@ -331,8 +330,8 @@ class TestMannWhitneyU():
         # when two scalars are equal, there is a NaN in the asymptotic
         # approximation. This is the same behavior as R's wilcox.test.
         assert_equal(mannwhitneyu2(1, 1, method="exact"), (0.5, 1))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value")
             res = mannwhitneyu2(1, 1, method="asymptotic")
             assert res.statistic == 0.5
             assert np.isnan(res.pvalue)
