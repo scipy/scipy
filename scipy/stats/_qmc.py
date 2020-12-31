@@ -3,6 +3,7 @@
 # thus storing them as plain strings
 from __future__ import annotations
 
+import copy
 import numbers
 from typing import TYPE_CHECKING, List, Optional, Callable, Iterable, Union
 from abc import ABC, abstractmethod
@@ -56,7 +57,10 @@ def check_random_state(seed: Optional[_int, np.random.Generator,
                    "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`")
             raise ValueError(msg)
         return np.random.default_rng(seed)
-    elif isinstance(seed, (np.random.Generator, np.random.RandomState)):
+    elif isinstance(seed, np.random.RandomState):
+        return seed
+    elif isinstance(seed, np.random.Generator):
+        # The two checks can be merged once numpy 1.16 is dropped
         return seed
     else:
         raise ValueError('%r cannot be used to seed a numpy.random.Generator'
@@ -764,7 +768,7 @@ class Halton(QMCEngine):
 
     def __init__(self, d: _int, scramble: bool = True,
                  seed: Optional[_int, np.random.Generator] = None) -> None:
-        super().__init__(d=d)
+        super().__init__(d=d, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
         self.scramble = scramble
@@ -786,7 +790,8 @@ class Halton(QMCEngine):
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
         sample = [van_der_corput(n, int(bdim), self.num_generated,
-                                 scramble=self.scramble, seed=self.seed)
+                                 scramble=self.scramble,
+                                 seed=copy.deepcopy(self.seed))
                   for bdim in self.base]
 
         self.num_generated += n
@@ -1573,7 +1578,7 @@ class MultivariateNormalQMC(QMCEngine):
         if not np.allclose(cov, cov.transpose()):
             raise ValueError("Covariance matrix is not symmetric.")
 
-        super().__init__(d=mean.shape[0])
+        super().__init__(d=mean.shape[0], seed=seed)
         self._mean = mean
         self._normal_engine = NormalQMC(d=self.d, inv_transform=inv_transform,
                                         engine=engine, seed=seed)
