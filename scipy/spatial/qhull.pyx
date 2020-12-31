@@ -1,3 +1,4 @@
+# cython: language_level=3, binding=True, annotation_typing=True
 """
 Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 
@@ -10,14 +11,21 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+from typing import TYPE_CHECKING, Any
+
 import threading
 import numpy as np
 cimport numpy as np
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
+else:
+    ArrayLike = Any
 cimport cython
 from . cimport qhull
 from . cimport setlist
 from libc cimport stdlib
 from scipy._lib.messagestream cimport MessageStream
+from scipy.sparse import csr_matrix
 
 from numpy.compat import asbytes
 import os
@@ -355,7 +363,7 @@ cdef class _Qhull:
             self.close()
             raise QhullError(msg)
 
-    def check_active(self):
+    def check_active(self) -> None:
         if self._qh == NULL:
             raise RuntimeError("Qhull instance is closed")
 
@@ -377,7 +385,7 @@ cdef class _Qhull:
         self._messages.close()
 
     @cython.final
-    def close(self):
+    def close(self) -> None:
         """
         Uninitialize this instance
         """
@@ -403,7 +411,7 @@ cdef class _Qhull:
         self._messages.close()
 
     @cython.final
-    def get_points(self):
+    def get_points(self) -> np.ndarray:
         if len(self._point_arrays) == 1:
             return self._point_arrays[0]
         else:
@@ -412,7 +420,8 @@ cdef class _Qhull:
                 axis=0)
 
     @cython.final
-    def add_points(self, points, interior_point=None):
+    def add_points(self, points: ArrayLike,
+                   interior_point: ArrayLike = None) -> None:
         cdef int j
         cdef realT *p
         cdef facetT *facet
@@ -483,7 +492,7 @@ cdef class _Qhull:
             self._qh[0].NOerrexit = 1
 
     @cython.final
-    def get_paraboloid_shift_scale(self):
+    def get_paraboloid_shift_scale(self) -> (float, float):
         cdef double paraboloid_scale
         cdef double paraboloid_shift
 
@@ -500,7 +509,7 @@ cdef class _Qhull:
         return paraboloid_scale, paraboloid_shift
 
     @cython.final
-    def volume_area(self):
+    def volume_area(self) -> (float, float):
         cdef double volume
         cdef double area
 
@@ -516,7 +525,7 @@ cdef class _Qhull:
         return volume, area
 
     @cython.final
-    def triangulate(self):
+    def triangulate(self) -> None:
         self.check_active()
 
         with nogil:
@@ -677,7 +686,7 @@ cdef class _Qhull:
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    def get_hull_points(self):
+    def get_hull_points(self) -> np.ndarray:
         """Returns all points currently contained in Qhull.
         It is equivalent to retrieving the input in most cases, except in
         halfspace mode, where the points are in fact the points of the dual
@@ -919,7 +928,7 @@ cdef class _Qhull:
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    def get_extremes_2d(_Qhull self):
+    def get_extremes_2d(_Qhull self) -> np.ndarray:
         """
         Compute the extremal points in a 2-D convex hull, i.e. the
         vertices of the convex hull, ordered counterclockwise.
@@ -1043,7 +1052,7 @@ cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex):
 @cython.cdivision(True)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
                                 np.ndarray[np.npy_int, ndim=2] simplices,
-                                double eps):
+                                double eps) -> np.ndarray:
     """
     Compute barycentric affine coordinate transformations for given
     simplices.
@@ -1546,7 +1555,7 @@ class _QhullUser(object):
 
     _qhull = None
 
-    def __init__(self, qhull, incremental=False):
+    def __init__(self, qhull: _Qhull, incremental: bool = False):
         self._qhull = None
         try:
             self._update(qhull)
@@ -1557,7 +1566,7 @@ class _QhullUser(object):
             if qhull is not self._qhull:
                 qhull.close()
 
-    def close(self):
+    def close(self) -> None:
         """
         close()
 
@@ -1574,14 +1583,15 @@ class _QhullUser(object):
     def __del__(self):
         self.close()
 
-    def _update(self, qhull):
+    def _update(self, qhull: _Qhull) -> None:
         self._points = qhull.get_points()
         self.ndim = self._points.shape[1]
         self.npoints = self._points.shape[0]
         self.min_bound = self._points.min(axis=0)
         self.max_bound = self._points.max(axis=0)
 
-    def _add_points(self, points, restart=False, interior_point=None):
+    def _add_points(self, points: ArrayLike, restart: bool = False,
+                    interior_point: ArrayLike = None) -> None:
         """
         add_points(points, restart=False)
 
@@ -1820,8 +1830,8 @@ class Delaunay(_QhullUser):
 
     """
 
-    def __init__(self, points, furthest_site=False, incremental=False,
-                 qhull_options=None):
+    def __init__(self, points: ArrayLike, furthest_site: bool = False,
+                 incremental: bool = False, qhull_options=None):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
@@ -1843,7 +1853,7 @@ class Delaunay(_QhullUser):
 
         self.furthest_site = furthest_site
 
-    def _update(self, qhull):
+    def _update(self, qhull: _Qhull) -> None:
         qhull.triangulate()
 
         self.paraboloid_scale, self.paraboloid_shift = \
@@ -1862,15 +1872,15 @@ class Delaunay(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
-    def add_points(self, points, restart=False):
+    def add_points(self, points: ArrayLike, restart: bool = False) -> None:
         self._add_points(points, restart)
 
     @property
-    def points(self):
+    def points(self) -> ArrayLike:
         return self._points
 
     @property
-    def transform(self):
+    def transform(self) -> np.ndarray:
         """
         Affine transform from ``x`` to the barycentric coordinates ``c``.
 
@@ -1895,7 +1905,7 @@ class Delaunay(_QhullUser):
 
     @property
     @cython.boundscheck(False)
-    def vertex_to_simplex(self):
+    def vertex_to_simplex(self) -> np.ndarray:
         """
         Lookup array, from a vertex, to some simplex which it is a part of.
 
@@ -1933,7 +1943,7 @@ class Delaunay(_QhullUser):
 
     @property
     @cython.boundscheck(False)
-    def vertex_neighbor_vertices(self):
+    def vertex_neighbor_vertices(self) -> csr_matrix:
         """
         Neighboring vertices of vertices.
 
@@ -1973,7 +1983,7 @@ class Delaunay(_QhullUser):
 
     @property
     @cython.boundscheck(False)
-    def convex_hull(self):
+    def convex_hull(self) -> np.ndarray:
         """
         Vertices of facets forming the convex hull of the point set.
 
@@ -2029,7 +2039,8 @@ class Delaunay(_QhullUser):
         return out
 
     @cython.boundscheck(False)
-    def find_simplex(self, xi, bruteforce=False, tol=None):
+    def find_simplex(self, xi: ArrayLike, bruteforce: bool = False,
+                     tol: float = None) -> np.ndarray:
         """
         find_simplex(self, xi, bruteforce=False, tol=None)
 
@@ -2111,7 +2122,7 @@ class Delaunay(_QhullUser):
         return out.reshape(xi_shape[:-1])
 
     @cython.boundscheck(False)
-    def plane_distance(self, xi):
+    def plane_distance(self, xi: ArrayLike) -> np.ndarray:
         """
         plane_distance(self, xi)
 
@@ -2146,7 +2157,7 @@ class Delaunay(_QhullUser):
 
         return out.reshape(xi_shape[:-1] + (self.nsimplex,))
 
-    def lift_points(self, x):
+    def lift_points(self, x: ArrayLike) -> np.ndarray:
         """
         lift_points(self, x)
 
@@ -2160,7 +2171,7 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
-def tsearch(tri, xi):
+def tsearch(tri: Delaunay, xi: ArrayLike) -> np.ndarray:
     """
     tsearch(tri, xi)
 
@@ -2200,7 +2211,7 @@ def tsearch(tri, xi):
 
 # Set docstring for foo to docstring of bar, working around change in Cython 0.28
 # See https://github.com/scipy/scipy/pull/8581
-def _copy_docstr(dst, src):
+def _copy_docstr(dst: object, src: object) -> None:
     try:
         dst.__doc__ = src.__doc__
     except AttributeError:
@@ -2417,7 +2428,8 @@ class ConvexHull(_QhullUser):
 
     """
 
-    def __init__(self, points, incremental=False, qhull_options=None):
+    def __init__(self, points: ArrayLike, incremental: bool = False,
+                 qhull_options=None):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
@@ -2434,7 +2446,7 @@ class ConvexHull(_QhullUser):
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
-    def _update(self, qhull):
+    def _update(self, qhull: _Qhull) -> None:
         qhull.triangulate()
 
         self.simplices, self.neighbors, self.equations, self.coplanar, self.good = \
@@ -2467,15 +2479,15 @@ class ConvexHull(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
-    def add_points(self, points, restart=False):
+    def add_points(self, points: ArrayLike, restart: bool = False) -> None:
         self._add_points(points, restart)
 
     @property
-    def points(self):
+    def points(self) -> np.ndarray:
         return self._points
 
     @property
-    def vertices(self):
+    def vertices(self) -> np.ndarray:
         if self._vertices is None:
             self._vertices = np.unique(self.simplices)
         return self._vertices
@@ -2592,8 +2604,8 @@ class Voronoi(_QhullUser):
            [4, 3]], dtype=int32)
 
     """
-    def __init__(self, points, furthest_site=False, incremental=False,
-                 qhull_options=None):
+    def __init__(self, points: ArrayLike, furthest_site: bool = False,
+                 incremental: bool = False, qhull_options=None):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
@@ -2615,7 +2627,7 @@ class Voronoi(_QhullUser):
 
         self.furthest_site = furthest_site
 
-    def _update(self, qhull):
+    def _update(self, qhull: _Qhull) -> None:
         self.vertices, self.ridge_points, self.ridge_vertices, \
                        self.regions, self.point_region = \
                        qhull.get_voronoi_diagram()
@@ -2624,15 +2636,15 @@ class Voronoi(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
-    def add_points(self, points, restart=False):
+    def add_points(self, points: ArrayLike, restart: bool = False) -> None:
         self._add_points(points, restart)
 
     @property
-    def points(self):
+    def points(self) -> np.ndarray:
         return self._points
 
     @property
-    def ridge_dict(self):
+    def ridge_dict(self) -> dict:
         if self._ridge_dict is None:
             self._ridge_dict = dict(zip(map(tuple, self.ridge_points.tolist()),
                                         self.ridge_vertices))
@@ -2787,8 +2799,8 @@ class HalfspaceIntersection(_QhullUser):
 
     """
 
-    def __init__(self, halfspaces, interior_point,
-                    incremental=False, qhull_options=None):
+    def __init__(self, halfspaces: ArrayLike, interior_point: ArrayLike,
+                    incremental: bool = False, qhull_options=None):
         if np.ma.isMaskedArray(halfspaces):
             raise ValueError('Input halfspaces cannot be a masked array')
         if np.ma.isMaskedArray(interior_point):
@@ -2806,13 +2818,13 @@ class HalfspaceIntersection(_QhullUser):
             qhull_options = asbytes(qhull_options)
 
         # Run qhull
-        mode_option = "H"
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
+        mode_option = b"H"
+        qhull = _Qhull(mode_option, halfspaces, qhull_options, required_options=None,
                        incremental=incremental, interior_point=interior_point)
 
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
-    def _update(self, qhull):
+    def _update(self, qhull: _Qhull) -> None:
         self.dual_facets, self.dual_equations = qhull.get_hull_facets()
 
         self.dual_points = qhull.get_hull_points()
@@ -2831,7 +2843,8 @@ class HalfspaceIntersection(_QhullUser):
         self.ndim = self.halfspaces.shape[1] - 1
         self.nineq = self.halfspaces.shape[0]
 
-    def add_halfspaces(self, halfspaces, restart=False):
+    def add_halfspaces(self, halfspaces: ArrayLike,
+                       restart: bool = False) -> None:
         """
         add_halfspaces(halfspaces, restart=False)
 
@@ -2866,11 +2879,11 @@ class HalfspaceIntersection(_QhullUser):
         self._add_points(halfspaces, restart, self.interior_point)
 
     @property
-    def halfspaces(self):
+    def halfspaces(self) -> np.ndarray:
         return self._points
 
     @property
-    def dual_vertices(self):
+    def dual_vertices(self) -> np.ndarray:
         if self._vertices is None:
             self._vertices = np.unique(np.array(self.dual_facets))
         return self._vertices
