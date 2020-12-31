@@ -152,8 +152,8 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     r'''Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
-    that the distribution underlying sample `x` is neither stochastically
-    greater nor stochastically less than the distribution underlying sample
+    that the underlying distribution of sample `x` is neither stochastically
+    greater nor stochastically less than the uderlying distribution of sample
     `y`.
 
     Parameters
@@ -163,27 +163,27 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
         the dimension given by `axis`.
     use_continuity : bool, optional
             Whether a continuity correction (1/2) should be applied.
-            Default is True when `method` is `asymptotic`; has no effect
+            Default is True when `method` is ``'asymptotic'``; has no effect
             otherwise.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available:
 
-          * 'two-sided' (default)
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided' (default)
+        * 'less': one-sided
+        * 'greater': one-sided
 
     axis : int, optional
         Axis along which to perform the test. Default is 0.
     method : {'asymptotic', 'exact'}, optional
         Selects the method used to calculate the *p*-value. The following
         options are available.
-        * 'asymptotic': (default) compares the standardized test statistic
+
+        * ``'asymptotic'``: (default) compares the standardized test statistic
           against the normal distribution, correcting for ties.
-        * 'exact': computes the exact *p*-value by comparing the observed
-          :math:`L` statistic against those realized by all possible
-          permutations of ranks (under the null hypothesis that each
-          permutation is equally likely)
+        * ``'exact'``: computes the exact *p*-value by comparing the observed
+          :math:`U` statistic against the exact distribution of the :math:`U`
+          statistic under the null hypothesis. No correction is made for ties.
 
     Returns
     -------
@@ -191,7 +191,8 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
         An object containing attributes:
 
         statistic : float
-            The Mann-Whitney U statistic corresponding with sample `x`.
+            The Mann-Whitney U statistic corresponding with sample `x`. See
+            Notes for the test statistic corresponding with sample `y`.
         pvalue : float
             The associated *p*-value for the chosen `alternative`.
 
@@ -199,16 +200,17 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     -----
     If ``U1`` is the statistic corresponding with sample `x`, then the
     statistic corresponding with sample `y` is
-    ``x.shape[axis] * y.shape[axis] - U1``.
+    `U2 = `x.shape[axis] * y.shape[axis] - U1``.
 
     `mannwhitneyu2` is for independent samples. For related samples,
     consider `scipy.stats.wilcoxon`.
 
-    `method` 'exact' is recommended when there are no ties and either sample
-    size is less than 8 _[1]. The implementation follows the original
-    recurrence relation proposed in _[1] as described in _[3].
-    Note that 'exact' method is *not* corrected for ties, but `mannwhitneyu2`
-    will not raise errors or warnings if there are ties in the data.
+    `method` ``'exact'`` is recommended when there are no ties and when either
+    sample size is less than 8 [1]_. The implementation follows the recurrence
+    relation originally proposed in [1]_ as it is described in [3]_.
+    Note that the exact method is *not* corrected for ties, but
+    `mannwhitneyu2` will not raise errors or warnings if there are ties in the
+    data.
 
     See Also
     --------
@@ -229,7 +231,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     Examples
     --------
-    We follow the example from _[4]: nine randomly sampled young adults were
+    We follow the example from [4]_: nine randomly sampled young adults were
     diagnosed with type II diabetes at the ages below.
 
     >>> males = [19, 22, 16, 29, 24]
@@ -255,7 +257,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     `mannwhitneyu2` always reports the statistic associated with the first
     sample, which, in this case, is males. This agrees with :math:`U_M = 17`
-    reported in _[4]. The statistic associated with the second statistic
+    reported in [4]_. The statistic associated with the second statistic
     can be calculated:
 
     >>> nx, ny = len(males), len(females)
@@ -263,9 +265,9 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     >>> print(U2)
     3.0
 
-    This agrees with :math:`U_F = 3` reported in _[4]. The two-sided
+    This agrees with :math:`U_F = 3` reported in [4]_. The two-sided
     *p*-value can be calculated from either statistic, and the value produced
-    by `mannwhitneyu2` agrees with :math:`p = 0.11` reported in _[4].
+    by `mannwhitneyu2` agrees with :math:`p = 0.11` reported in [4]_.
 
     >>> print(p)
     0.1111111111111111
@@ -279,7 +281,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     0.11134688653314041
 
     Here `mannwhitneyu2`'s reported *p*-value appears to conflict with the
-    value :math:`p = 0.09` given in _[4]. The reason is that the example
+    value :math:`p = 0.09` given in [4]_. The reason is that [4]_
     does not apply the continuity correction performed by `mannwhitneyu2`;
     `mannwhitneyu2` reduces the distance between the test statistic and the
     mean :math:`\mu = n_x n_y / 2` by 0.5 to correct for the fact that the
@@ -297,7 +299,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     0.11134688653314041
 
     If desired, we can disable the continuity correction to get a result
-    that agrees with that reported in _[4].
+    that agrees with that reported in [4]_.
 
     >>> _, pnorm = mannwhitneyu2(males, females, use_continuity=False,
     ...                          method="asymptotic")
