@@ -443,7 +443,7 @@ def n_primes(n: _int) -> List[int]:
 def van_der_corput(
         n: _int, base: _int = 2, start_index: _int = 0,
         scramble: bool = False,
-        seed: Optional[_int, np.random.Generator, np.random.RandomState] = None
+        seed: Optional[_int, np.random.Generator] = None
 ) -> np.ndarray:
     """Van der Corput sequence.
 
@@ -464,13 +464,12 @@ def van_der_corput(
     scramble: bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
@@ -514,13 +513,12 @@ class QMCEngine(ABC):
     ----------
     d : int
         Dimension of the parameter space.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified, the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Notes
     -----
@@ -595,8 +593,7 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(self, d: _int,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         self.d = d
         self.rng = check_random_state(seed)
         self.num_generated = 0
@@ -664,13 +661,12 @@ class Halton(QMCEngine):
     scramble: bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified, the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Notes
     -----
@@ -731,8 +727,7 @@ class Halton(QMCEngine):
     """
 
     def __init__(self, d: _int, scramble: bool = True,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         super().__init__(d=d)
         self.seed = seed
         self.base = n_primes(d)
@@ -772,13 +767,12 @@ class OrthogonalLatinHypercube(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     References
     ----------
@@ -817,8 +811,7 @@ class OrthogonalLatinHypercube(QMCEngine):
     """
 
     def __init__(self, d: _int,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         super().__init__(d=d, seed=seed)
 
     def random(self, n: _int = 1) -> np.ndarray:
@@ -867,13 +860,12 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     References
     ----------
@@ -919,10 +911,17 @@ class LatinHypercube(QMCEngine):
     """
 
     def __init__(self, d: _int, centered: bool = False,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
+
+        # This can be removed once numpy 1.16 is dropped
+        try:
+            self.rg_integers = self.rng.randint
+            self.rg_sample = self.rng.random_sample
+        except AttributeError:
+            self.rg_integers = self.rng.integers
+            self.rg_sample = self.rng.random
 
     def random(self, n: _int = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -941,13 +940,9 @@ class LatinHypercube(QMCEngine):
         if self.centered:
             r = 0.5
         else:
-            r = self.rng.random_sample((n, self.d))
+            r = self.rg_sample((n, self.d))
 
-        try:
-            rg_integers = self.rng.integers
-        except AttributeError:
-            rg_integers = self.rng.randint
-        q = rg_integers(low=1, high=n, size=(n, self.d))
+        q = self.rg_integers(low=1, high=n, size=(n, self.d))
 
         return 1. / n * (q - r)
 
@@ -977,13 +972,12 @@ class OptimalDesign(QMCEngine):
     method : callable ``f(func, x0, bounds)``, optional
         Optimization function used to search new samples. Default to
         *basinhopping* optimization.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     References
     ----------
@@ -1037,8 +1031,7 @@ class OptimalDesign(QMCEngine):
             niter: _int = 1,
             method: Optional[Callable[[Callable, List[int], npt.ArrayLike],
                                       None]] = None,
-            seed: Optional[_int, np.random.Generator,
-                           np.random.RandomState] = None
+            seed: Optional[_int, np.random.Generator] = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         self.start_design = start_design
@@ -1140,13 +1133,12 @@ class Sobol(QMCEngine):
     scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Notes
     -----
@@ -1241,8 +1233,7 @@ class Sobol(QMCEngine):
     MAXBIT = _MAXBIT
 
     def __init__(self, d: _int, scramble: bool = True,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
@@ -1385,7 +1376,7 @@ class Sobol(QMCEngine):
 
 def multinomial_qmc(
         n: _int, pvals: Iterable[float], engine: Optional[QMCEngine] = None,
-        seed: Optional[_int, np.random.Generator, np.random.RandomState] = None
+        seed: Optional[_int, np.random.Generator] = None
 ) -> np.ndarray:
     """Draw low-discreancy quasi-random samples from multinomial distribution.
 
@@ -1398,13 +1389,12 @@ def multinomial_qmc(
         non-negative and sum to 1.
     engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
@@ -1438,13 +1428,12 @@ class NormalQMC(QMCEngine):
         If True, use inverse transform instead of Box-Muller. Default is True.
     engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Examples
     --------
@@ -1459,8 +1448,7 @@ class NormalQMC(QMCEngine):
 
     def __init__(self, d: _int, inv_transform: bool = True,
                  engine: Optional[QMCEngine] = None,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
         if not inv_transform:
@@ -1520,13 +1508,12 @@ class MultivariateNormalQMC(QMCEngine):
         If True, use inverse transform instead of Box-Muller. Default is True.
     engine: QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : {int or `numpy.random.RandomState` instance}, optional
-        If `seed` is not specified the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``RandomState`` instance, then that
-        instance is used.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Examples
     --------
@@ -1541,8 +1528,7 @@ class MultivariateNormalQMC(QMCEngine):
 
     def __init__(self, mean: npt.ArrayLike, cov: npt.ArrayLike,
                  inv_transform: bool = True, engine: Optional[QMCEngine] = None,
-                 seed: Optional[_int, np.random.Generator,
-                                np.random.RandomState] = None) -> None:
+                 seed: Optional[_int, np.random.Generator] = None) -> None:
         # check for square/symmetric cov matrix and mean vector has the same d
         mean = np.array(mean, copy=False, ndmin=1)
         cov = np.array(cov, copy=False, ndmin=2)
