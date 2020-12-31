@@ -391,37 +391,6 @@ def _get_wilcoxon_distr(n):
     return np.array(cnt, dtype=int)
 
 
-def _ct_to_lists(table):
-    """Convert contingency table to equivalent lists of rankings"""
-    table = np.array(table, copy=False, dtype=int)
-    n = table.sum()
-    x = np.zeros(n, dtype=int)
-    y = np.zeros(n, dtype=int)
-    k = 0
-    for i, row in enumerate(table):
-        for j, val in enumerate(row):
-            x[k:k+val] = i + 1
-            y[k:k+val] = j + 1
-            k += val
-    return x, y
-
-
-def _lists_to_ct(x, y):
-    """Convert lists of rankings to contingency table"""
-    if x.size == 0 or y.size == 0:
-        return np.array([[]])
-    x = scipy.stats.rankdata(x, method='dense')
-    y = scipy.stats.rankdata(y, method='dense')
-    n = len(x)
-    z = np.zeros((n,), dtype='i4, i4')
-    z['f0'], z['f1'] = x, y
-    z_unique, z_count = np.unique(z, return_counts=True)
-    r, s = np.max(x), np.max(y)  # due to rankdata, number of unique elements
-    table = np.zeros((r, s), dtype=int)
-    table[z_unique['f0']-1, z_unique['f1']-1] = z_count
-    return table
-
-
 def _Aij(A, i, j):
     """Sum of upper-left and lower right blocks of contingency table"""
     # See [2] bottom of page 309
