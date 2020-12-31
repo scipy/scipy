@@ -7232,6 +7232,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
+
 @_vectorize_2s_hypotest_factory(result_creator=RanksumsResult)
 def ranksums(x, y):
     """

@@ -10,6 +10,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm)
 from scipy.stats import distributions
 from .common_tests import check_named_results
+
 from scipy import stats
 
 class TestEppsSingleton(object):
@@ -167,7 +168,7 @@ class TestCvm(object):
                           (stats.epps_singleton_2samp, ((.35, 0.75),), {})
                           ])
 def test_hypotest_vectorization(hypotest, args, kwds):
-    # test that hypothesis tests using vectorize_hypotest_factory decorator
+    # test that hypothesis tests using _vectorize_2s_hypotest_factory decorator
     # vectorize as expected
     m, n = 6, 7
 

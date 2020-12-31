@@ -16,6 +16,7 @@ from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
+
 from ._hypotests import _get_wilcoxon_distr, _vectorize_2s_hypotest_factory
 
 __all__ = ['mvsdist',
@@ -2075,6 +2076,7 @@ def anderson_ksamp(samples, midrank=True):
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
+
 
 @_vectorize_2s_hypotest_factory(result_creator=AnsariResult)
 def ansari(x, y):
