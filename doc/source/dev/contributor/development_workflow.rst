@@ -284,9 +284,6 @@ Checklist before submitting a PR
    module-level description? Tutorial files are in ``doc/source/tutorial``.
 -  If compiled code is added, is it integrated correctly via ``setup.py``?
    See :ref:`compiled-code` for more information.
--  If you are a first-time contributor, did you add yourself to ``THANKS.txt``?
-   Please note that this is perfectly normal and desirable; every contributor
-   deserves credit.
 
 .. include:: ../gitwash/git_links.inc
 

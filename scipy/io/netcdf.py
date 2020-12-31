@@ -34,11 +34,11 @@ which has a similar API.
 __all__ = ['netcdf_file', 'netcdf_variable']
 
 
-import sys
 import warnings
 import weakref
 from operator import mul
 from collections import OrderedDict
+from platform import python_implementation
 
 import mmap as mm
 
@@ -49,7 +49,7 @@ from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
 
-IS_PYPY = ('__pypy__' in sys.modules)
+IS_PYPY = python_implementation() == 'PyPy'
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'

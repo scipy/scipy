@@ -582,6 +582,31 @@ class TestCorrSpearmanr(object):
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
+    def test_nan_policy_bug_12458(self):
+        np.random.seed(5)
+        x = np.random.rand(5, 10)
+        k = 6
+        x[:, k] = np.nan
+        y = np.delete(x, k, axis=1)
+        corx, px = stats.spearmanr(x, nan_policy='omit')
+        cory, py = stats.spearmanr(y)
+        corx = np.delete(np.delete(corx, k, axis=1), k, axis=0)
+        px = np.delete(np.delete(px, k, axis=1), k, axis=0)
+        assert_allclose(corx, cory, atol=1e-14)
+        assert_allclose(px, py, atol=1e-14)
+
+    def test_nan_policy_bug_12411(self):
+        np.random.seed(5)
+        m = 5
+        n = 10
+        x = np.random.randn(m, n)
+        x[1, 0] = np.nan
+        x[3, -1] = np.nan
+        corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
+        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation for i in range(m)]
+               for j in range(m)]
+        assert_allclose(corr, res)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -912,6 +937,9 @@ class TestCorrSpearmanr2(object):
 
 
 def test_kendalltau():
+    # For the cases without ties, both variants should give the same
+    # result.
+    variants = ('b', 'c')
 
     # case without ties, con-dis equal zero
     x = [5, 2, 1, 3, 6, 4, 7, 8]
@@ -919,9 +947,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis equal zero
     x = [0, 5, 2, 1, 3, 6, 4, 7, 8]
@@ -929,9 +958,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
     x = [5, 2, 1, 3, 6, 4, 7]
@@ -939,9 +969,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # case without ties, con-dis close to zero
     x = [2, 1, 3, 6, 4, 7, 8]
@@ -949,9 +980,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # simple case without ties
     x = np.arange(10)
@@ -959,9 +991,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -970,9 +1003,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
     b = y[5]
@@ -981,9 +1015,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # same in opposite direction
     x = np.arange(10)
@@ -991,9 +1026,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -1002,9 +1038,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
     b = y[5]
@@ -1013,18 +1050,32 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y)
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    # check exception in case of ties
+    # Check a case where variants are different
+    # Example values found from Kendall (1970).
+    # P-value is the same for the both variants
+    x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+    y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
+    expected = 0.85895569
+    assert_approx_equal(stats.kendalltau(x, y, variant='b')[0], expected)
+    expected = 0.825
+    assert_approx_equal(stats.kendalltau(x, y, variant='c')[0], expected)
+
+    # check exception in case of ties and method='exact' requested
     y[2] = y[1]
     assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
 
     # check exception in case of invalid method keyword
     assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
 
-    # with some ties
+    # check exception in case of invalid variant keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, variant='rms')
+
+    # tau-b with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     x1 = [12, 2, 1, 12, 2]
@@ -1036,13 +1087,18 @@ def test_kendalltau():
 
     # test for namedtuple attribute results
     attributes = ('correlation', 'pvalue')
-    res = stats.kendalltau(x1, x2)
-    check_named_results(res, attributes)
+    for taux in variants:
+        res = stats.kendalltau(x1, x2, variant=taux)
+        check_named_results(res, attributes)
 
-    # with only ties in one or both inputs
-    assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,0,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,2,2], [2,0,2]), (np.nan, np.nan))
+    # with only ties in one or both inputs in tau-b or tau-c
+    for taux in variants:
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 0, 2], [2, 2, 2], variant=taux),
+                     (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2, 2, 2], [2, 0, 2], variant=taux),
+                     (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
@@ -1059,8 +1115,11 @@ def test_kendalltau():
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
 
-    # and do we get a tau of 1 for identical inputs?
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2])[0], 1.0)
+    # this should result in 1 for taub but not tau-c
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='b')[0],
+                        1.0)
+    assert_approx_equal(stats.kendalltau([1, 1, 2], [1, 1, 2], variant='c')[0],
+                        0.88888888)
 
     # test nan_policy
     x = np.arange(10.)
@@ -1092,6 +1151,7 @@ def test_kendalltau():
     y = np.arange(2000, dtype=float)
     y = np.concatenate((y[1000:], y[:1000]))
     assert_(np.isfinite(stats.kendalltau(x,y)[1]))
+
 
 def test_kendalltau_vs_mstats_basic():
     np.random.seed(42)
@@ -1181,6 +1241,26 @@ def test_weightedtau():
     x = [12, 2, np.nan, 12, 2]
     tau, p_value = stats.weightedtau(x, y)
     assert_approx_equal(tau, -0.56694968153682723)
+    # NaNs when the dtype of x and y are all np.float64
+    x = [12.0, 2.0, 1.0, 12.0, 2.0]
+    y = [1.0, 4.0, 7.0, 1.0, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12.0, 2.0, np.nan, 12.0, 2.0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    # NaNs when there are more than one NaN in x or y
+    x = [12.0, 2.0, 1.0, 12.0, 1.0]
+    y = [1.0, 4.0, 7.0, 1.0, 1.0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+    x = [12.0, 2.0, np.nan, 12.0, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+    y = [np.nan, 4.0, 7.0, np.nan, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.6615242347139803)
+
 
 def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
@@ -1191,17 +1271,14 @@ def test_segfault_issue_9710():
     # The code below also caused SEGFAULT
     stats.weightedtau([np.nan], [52])
 
+
 def test_kendall_tau_large():
-    n = 172.
-    x = np.arange(n)
-    y = np.arange(n)
-    _, pval = stats.kendalltau(x, y, method='exact')
-    assert_equal(pval, 0.0)
-    y[-1], y[-2] = y[-2], y[-1]
-    _, pval = stats.kendalltau(x, y, method='exact')
-    assert_equal(pval, 0.0)
-    y[-3], y[-4] = y[-4], y[-3]
-    _, pval = stats.kendalltau(x, y, method='exact')
+    n = 172
+    # Test omit policy
+    x = np.arange(n + 1).astype(float)
+    y = np.arange(n + 1).astype(float)
+    y[-1] = np.nan
+    _, pval = stats.kendalltau(x, y, method='exact', nan_policy='omit')
     assert_equal(pval, 0.0)
 
 
@@ -1260,41 +1337,46 @@ class TestFindRepeats(object):
 
 
 class TestRegression(object):
+
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
-        # The constant should be 99999990 and the regression coefficient should be 1.
-        y = stats.linregress(X,BIG)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,99999990)
-        assert_almost_equal(r,1.0)
+        result = stats.linregress(X, BIG)
+        assert_almost_equal(result.intercept, 99999990)
+        assert_almost_equal(result.rvalue, 1.0)
+        # The uncertainty ought to be almost zero
+        # since all points lie on a line
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_regressXX(self):
         # W.IV.B.  Regress X on X.
-        # The constant should be exactly 0 and the regression coefficient should be 1.
-        # This is a perfectly valid regression.  The program should not complain.
-        y = stats.linregress(X,X)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,0.0)
-        assert_almost_equal(r,1.0)
-#     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
-#     should tell you that this model is "singular" because BIG and
-#     LITTLE are linear combinations of each other.  Cryptic error
-#     messages are unacceptable here.  Singularity is the most
-#     fundamental regression error.
-# Need to figure out how to handle multiple linear regression.  Not obvious
+        # The constant should be exactly 0 and the regression coefficient
+        # should be 1.  This is a perfectly valid regression and the
+        # program should not complain.
+        result = stats.linregress(X, X)
+        assert_almost_equal(result.intercept, 0.0)
+        assert_almost_equal(result.rvalue, 1.0)
+        # The uncertainly on regression through two points ought to be 0
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
+
+        # W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
+        # should tell you that this model is "singular" because BIG and
+        # LITTLE are linear combinations of each other.  Cryptic error
+        # messages are unacceptable here.  Singularity is the most
+        # fundamental regression error.
+        #
+        # Need to figure out how to handle multiple linear regression.
+        # This is not obvious
 
     def test_regressZEROX(self):
         # W.IV.D. Regress ZERO on X.
         # The program should inform you that ZERO has no variance or it should
         # go ahead and compute the regression and report a correlation and
         # total sum of squares of exactly 0.
-        y = stats.linregress(X,ZERO)
-        intercept = y[1]
-        r = y[2]
-        assert_almost_equal(intercept,0.0)
-        assert_almost_equal(r,0.0)
+        result = stats.linregress(X, ZERO)
+        assert_almost_equal(result.intercept, 0.0)
+        assert_almost_equal(result.rvalue, 0.0)
 
     def test_regress_simple(self):
         # Regress a line with sinusoidal noise.
@@ -1302,27 +1384,32 @@ class TestRegression(object):
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(x, y)
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
     def test_regress_simple_onearg_rows(self):
-        # Regress a line w sinusoidal noise, with a single input of shape (2, N).
+        # Regress a line w sinusoidal noise,
+        # with a single input of shape (2, N)
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
         rows = np.vstack((x, y))
 
-        res = stats.linregress(rows)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(rows)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_simple_onearg_cols(self):
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
-        cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
+        columns = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
-        res = stats.linregress(cols)
-        assert_almost_equal(res[4], 2.3957814497838803e-3)
+        result = stats.linregress(columns)
+        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
     def test_regress_shape_error(self):
         # Check that a single input argument to linregress with wrong shape
@@ -1332,52 +1419,83 @@ class TestRegression(object):
     def test_linregress(self):
         # compared with multivariate ols with pinv
         x = np.arange(11)
-        y = np.arange(5,16)
-        y[[(1),(-2)]] -= 1
-        y[[(0),(-1)]] += 1
+        y = np.arange(5, 16)
+        y[[(1), (-2)]] -= 1
+        y[[(0), (-1)]] += 1
 
-        res = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733)
-        assert_array_almost_equal(stats.linregress(x,y),res,decimal=14)
+        result = stats.linregress(x, y)
+
+        # This test used to use 'assert_array_almost_equal' but its
+        # formualtion got confusing since LinregressResult became
+        # _lib._bunch._make_tuple_bunch instead of namedtuple
+        # (for backwards compatibility, see PR #12983)
+        assert_ae = lambda x, y: assert_almost_equal(x, y, decimal=14)
+        assert_ae(result.slope, 1.0)
+        assert_ae(result.intercept, 5.0)
+        assert_ae(result.rvalue, 0.98229948625750)
+        assert_ae(result.pvalue, 7.45259691e-008)
+        assert_ae(result.stderr, 0.063564172616372733)
+        assert_ae(result.intercept_stderr, 0.37605071654517686)
 
     def test_regress_simple_negative_cor(self):
-        # If the slope of the regression is negative the factor R tend to -1 not 1.
-        # Sometimes rounding errors makes it < -1 leading to stderr being NaN
+        # If the slope of the regression is negative the factor R tend
+        # to -1 not 1.  Sometimes rounding errors makes it < -1
+        # leading to stderr being NaN.
         a, n = 1e-71, 100000
         x = np.linspace(a, 2 * a, n)
         y = np.linspace(2 * a, a, n)
-        stats.linregress(x, y)
-        res = stats.linregress(x, y)
-        assert_(res[2] >= -1)  # propagated numerical errors were not corrected
-        assert_almost_equal(res[2], -1)  # perfect negative correlation case
-        assert_(not np.isnan(res[4]))  # stderr should stay finite
+        result = stats.linregress(x, y)
+
+        # Make sure propagated numerical errors
+        # did not bring rvalue below -1 (or were coersced)
+        assert_(result.rvalue >= -1)
+        assert_almost_equal(result.rvalue, -1)
+
+        # slope and intercept stderror should stay numeric
+        assert_(not np.isnan(result.stderr))
+        assert_(not np.isnan(result.intercept_stderr))
 
     def test_linregress_result_attributes(self):
-        # Regress a line with sinusoidal noise.
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
+        # Result is of a correct class
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+
+        # LinregressResult elements have correct names
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
-        check_named_results(res, attributes)
+        check_named_results(result, attributes)
+        # Also check that the extra attribute (intercept_stderr) is present
+        assert 'intercept_stderr' in dir(result)
 
     def test_regress_two_inputs(self):
         # Regress a simple line formed by two points.
         x = np.arange(2)
         y = np.arange(3, 5)
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[3], 0.0)  # non-horizontal line
-        assert_almost_equal(res[4], 0.0)  # zero stderr
+        # Non-horizontal line
+        assert_almost_equal(result.pvalue, 0.0)
+
+        # Zero error through two points
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_regress_two_inputs_horizontal_line(self):
         # Regress a horizontal line formed by two points.
         x = np.arange(2)
         y = np.ones(2)
+        result = stats.linregress(x, y)
 
-        res = stats.linregress(x, y)
-        assert_almost_equal(res[3], 1.0)  # horizontal line
-        assert_almost_equal(res[4], 0.0)  # zero stderr
+        # Horizontal line
+        assert_almost_equal(result.pvalue, 1.0)
+
+        # Zero error through two points
+        assert_almost_equal(result.stderr, 0.0)
+        assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_nist_norris(self):
         x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
@@ -1390,16 +1508,26 @@ class TestRegression(object):
              998.0, 888.8, 119.6, 0.3, 0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
              10.2, 117.6, 228.9, 668.4, 449.2, 0.2]
 
-        # Expected values
-        exp_slope = 1.00211681802045
-        exp_intercept = -0.262323073774029
-        exp_rsquared = 0.999993745883712
+        result = stats.linregress(x, y)
 
-        actual = stats.linregress(x, y)
+        assert_almost_equal(result.slope, 1.00211681802045)
+        assert_almost_equal(result.intercept, -0.262323073774029)
+        assert_almost_equal(result.rvalue**2, 0.999993745883712)
+        assert_almost_equal(result.pvalue, 0.0)
+        assert_almost_equal(result.stderr, 0.00042979684820)
+        assert_almost_equal(result.intercept_stderr, 0.23281823430153)
 
-        assert_almost_equal(actual.slope, exp_slope)
-        assert_almost_equal(actual.intercept, exp_intercept)
-        assert_almost_equal(actual.rvalue**2, exp_rsquared)
+    def test_compare_to_polyfit(self):
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+        result = stats.linregress(x, y)
+        poly = np.polyfit(x, y, 1)  # Fit 1st degree polynomial
+
+        # Make sure linear regression slope and intercept
+        # match with results from numpy polyfit
+        assert_almost_equal(result.slope, poly[0])
+        assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])
@@ -1409,8 +1537,13 @@ class TestRegression(object):
         x[9] = np.nan
 
         with np.errstate(invalid="ignore"):
-            assert_array_equal(stats.linregress(x, x),
-                               (np.nan, np.nan, np.nan, np.nan, np.nan))
+            result = stats.linregress(x, x)
+
+        # Make sure the resut still comes back as `LinregressResult`
+        lr = stats._stats_mstats_common.LinregressResult
+        assert_(isinstance(result, lr))
+        assert_array_equal(result, (np.nan,)*5)
+        assert_equal(result.intercept_stderr, np.nan)
 
 
 def test_theilslopes():
@@ -1743,9 +1876,9 @@ class TestMode(object):
         assert np.all(m.count == 2) and m.count.shape == (1, 1)
 
 
-class TestVariability(object):
+class TestSEM:
 
-    testcase = [1,2,3,4]
+    testcase = [1, 2, 3, 4]
     scalar_testcase = 4.
 
     def test_sem(self):
@@ -1772,12 +1905,20 @@ class TestVariability(object):
         assert_raises(ValueError, stats.sem, x, nan_policy='raise')
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
-    def test_zmap(self):
-        # not in R, so tested by using:
-        #     (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zmap(self.testcase,self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
-        assert_array_almost_equal(desired,y,decimal=12)
+
+class TestZmapZscore:
+
+    @pytest.mark.parametrize(
+        'x, y',
+        [([1, 2, 3, 4], [1, 2, 3, 4]),
+         ([1, 2, 3], [0, 1, 2, 3, 4])]
+    )
+    def test_zmap(self, x, y):
+        z = stats.zmap(x, y)
+        # For these simple cases, calculate the expected result directly
+        # by using the formula for the z-score.
+        expected = (x - np.mean(y))/np.std(y)
+        assert_allclose(z, expected, rtol=1e-12)
 
     def test_zmap_axis(self):
         # Test use of 'axis' keyword in zmap.
@@ -1814,12 +1955,45 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit(self, ddof):
+        # nans in `scores` are propagated, regardless of `nan_policy`.
+        # `nan_policy` only affects how nans in `compare` are handled.
+        scores = np.array([-3, -1, 2, np.nan])
+        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        z = stats.zmap(scores, compare, ddof=ddof, nan_policy='omit')
+        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)],
+                                      ddof=ddof))
+
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit_with_axis(self, ddof):
+        scores = np.arange(-5.0, 9.0).reshape(2, -1)
+        compare = np.linspace(-8, 6, 24).reshape(2, -1)
+        compare[0, 4] = np.nan
+        compare[0, 6] = np.nan
+        compare[1, 1] = np.nan
+        z = stats.zmap(scores, compare, nan_policy='omit', axis=1, ddof=ddof)
+        expected = np.array([stats.zmap(scores[0],
+                                        compare[0][~np.isnan(compare[0])],
+                                        ddof=ddof),
+                             stats.zmap(scores[1],
+                                        compare[1][~np.isnan(compare[1])],
+                                        ddof=ddof)])
+        assert_allclose(z, expected, rtol=1e-14)
+
+    def test_zmap_nan_policy_raise(self):
+        scores = np.array([1, 2, 3])
+        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        with pytest.raises(ValueError, match='input contains nan'):
+            stats.zmap(scores, compare, nan_policy='raise')
+
     def test_zscore(self):
         # not in R, so tested by using:
         #    (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zscore(self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
-        assert_array_almost_equal(desired,y,decimal=12)
+        y = stats.zscore([1, 2, 3, 4])
+        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996,
+                    1.3416407864999])
+        assert_array_almost_equal(desired, y, decimal=12)
 
     def test_zscore_axis(self):
         # Test use of 'axis' keyword in zscore.
@@ -1874,10 +2048,71 @@ class TestVariability(object):
                              ])
         assert_array_almost_equal(z, expected)
 
+    def test_zscore_nan_omit_with_ddof(self):
+        x = np.array([np.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+        z = stats.zscore(x, ddof=1, nan_policy='omit')
+        expected = np.r_[np.nan, stats.zscore(x[1:], ddof=1)]
+        assert_allclose(z, expected, rtol=1e-13)
+
     def test_zscore_nan_raise(self):
         x = np.array([1, 2, np.nan, 4, 5])
 
         assert_raises(ValueError, stats.zscore, x, nan_policy='raise')
+
+    def test_zscore_constant_input_1d(self):
+        x = [-0.087] * 3
+        z = stats.zscore(x)
+        assert_equal(z, np.full(len(x), np.nan))
+
+    def test_zscore_constant_input_2d(self):
+        x = np.array([[10.0, 10.0, 10.0, 10.0],
+                      [10.0, 11.0, 12.0, 13.0]])
+        z0 = stats.zscore(x, axis=0)
+        assert_equal(z0, np.array([[np.nan, -1.0, -1.0, -1.0],
+                                   [np.nan, 1.0, 1.0, 1.0]]))
+        z1 = stats.zscore(x, axis=1)
+        assert_equal(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                   stats.zscore(x[1])]))
+        z = stats.zscore(x, axis=None)
+        assert_equal(z, stats.zscore(x.ravel()).reshape(x.shape))
+
+        y = np.ones((3, 6))
+        z = stats.zscore(y, axis=None)
+        assert_equal(z, np.full(y.shape, np.nan))
+
+    def test_zscore_constant_input_2d_nan_policy_omit(self):
+        x = np.array([[10.0, 10.0, 10.0, 10.0],
+                      [10.0, 11.0, 12.0, np.nan],
+                      [10.0, 12.0, np.nan, 10.0]])
+        z0 = stats.zscore(x, nan_policy='omit', axis=0)
+        s = np.sqrt(3/2)
+        s2 = np.sqrt(2)
+        assert_allclose(z0, np.array([[np.nan, -s, -1.0, np.nan],
+                                      [np.nan, 0, 1.0, np.nan],
+                                      [np.nan, s, np.nan, np.nan]]))
+        z1 = stats.zscore(x, nan_policy='omit', axis=1)
+        assert_allclose(z1, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                      [-s, 0, s, np.nan],
+                                      [-s2/2, s2, np.nan, -s2/2]]))
+
+    def test_zscore_2d_all_nan_row(self):
+        # A row is all nan, and we use axis=1.
+        x = np.array([[np.nan, np.nan, np.nan, np.nan],
+                      [10.0, 10.0, 12.0, 12.0]])
+        z = stats.zscore(x, nan_policy='omit', axis=1)
+        assert_equal(z, np.array([[np.nan, np.nan, np.nan, np.nan],
+                                  [-1.0, -1.0, 1.0, 1.0]]))
+
+    def test_zscore_2d_all_nan(self):
+        # The entire 2d array is nan, and we use axis=None.
+        y = np.full((2, 3), np.nan)
+        z = stats.zscore(y, nan_policy='omit', axis=None)
+        assert_equal(z, y)
+
+    @pytest.mark.parametrize('x', [np.array([]), np.zeros((3, 0, 5))])
+    def test_zscore_empty_input(self, x):
+        z = stats.zscore(x)
+        assert_equal(z, x)
 
 
 class TestMedianAbsDeviation(object):
@@ -2418,12 +2653,14 @@ class TestStudentTest(object):
     X2 = np.array([0, 1, 2])
     T1_0 = 0
     P1_0 = 1
-    T1_1 = -1.732051
-    P1_1 = 0.2254033
+    T1_1 = -1.7320508075
+    P1_1 = 0.22540333075
     T1_2 = -3.464102
     P1_2 = 0.0741799
     T2_0 = 1.732051
     P2_0 = 0.2254033
+    P1_1_l = P1_1 / 2
+    P1_1_g = 1 - (P1_1 / 2)
 
     def test_onesample(self):
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
@@ -2468,6 +2705,17 @@ class TestStudentTest(object):
             assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
                           nan_policy='foobar')
 
+    def test_1samp_alternative(self):
+        assert_raises(ValueError, stats.ttest_1samp, self.X1, 0,
+                      alternative="error")
+
+        t, p = stats.ttest_1samp(self.X1, 1, alternative="less")
+        assert_allclose(p, self.P1_1_l)
+        assert_allclose(t, self.T1_1)
+
+        t, p = stats.ttest_1samp(self.X1, 1, alternative="greater")
+        assert_allclose(p, self.P1_1_g)
+        assert_allclose(t, self.T1_1)
 
 def test_percentileofscore():
     pcos = stats.percentileofscore
@@ -2768,6 +3016,26 @@ class TestPowerDivergence(object):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_power_divergence_gh_12282(self):
+        # The sums of observed and expected frequencies must match
+        f_obs = np.array([[10, 20], [30, 20]])
+        f_exp = np.array([[5, 15], [35, 25]])
+        with assert_raises(ValueError, match='For each axis slice...'):
+            stats.power_divergence(f_obs=[10, 20], f_exp=[30, 60])
+        with assert_raises(ValueError, match='For each axis slice...'):
+            stats.power_divergence(f_obs=f_obs, f_exp=f_exp, axis=1)
+        stat, pval = stats.power_divergence(f_obs=f_obs, f_exp=f_exp)
+        assert_allclose(stat, [5.71428571, 2.66666667])
+        assert_allclose(pval, [0.01682741, 0.10247043])
+
+
+def test_gh_chisquare_12282():
+    # Currently `chisquare` is implemented via power_divergence
+    # in case that ever changes, perform a basic test like
+    # test_power_divergence_gh_12282
+    with assert_raises(ValueError, match='For each axis slice...'):
+        stats.chisquare(f_obs=[10, 20], f_exp=[30, 60])
+
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
 def test_chiquare_data_types(n, dtype):
@@ -2859,28 +3127,19 @@ def test_power_divergence_against_cressie_read_data():
     # J. R. Statist. Soc. B (1984), Vol 46, No. 3, pp. 440-464.
     # This tests the calculation for several values of lambda.
 
+    # Table 4 data recalculated for greater precision according to:
+    # Shelby J. Haberman, Analysis of Qualitative Data: Volume 1
+    # Introductory Topics, Academic Press, New York, USA (1978).
+    obs = np.array([15, 11, 14, 17, 5, 11, 10, 4, 8,
+                    10, 7, 9, 11, 3, 6, 1, 1, 4])
+    beta = -0.083769  # Haberman (1978), p. 15
+    i = np.arange(1, len(obs) + 1)
+    alpha = np.log(obs.sum() / np.exp(beta*i).sum())
+    expected_counts = np.exp(alpha + beta*i)
+
     # `table4` holds just the second and third columns from Table 4.
-    table4 = np.array([
-        # observed, expected,
-        15, 15.171,
-        11, 13.952,
-        14, 12.831,
-        17, 11.800,
-        5, 10.852,
-        11, 9.9796,
-        10, 9.1777,
-        4, 8.4402,
-        8, 7.7620,
-        10, 7.1383,
-        7, 6.5647,
-        9, 6.0371,
-        11, 5.5520,
-        3, 5.1059,
-        6, 4.6956,
-        1, 4.3183,
-        1, 3.9713,
-        4, 3.6522,
-        ]).reshape(-1, 2)
+    table4 = np.vstack((obs, expected_counts)).T
+
     table5 = np.array([
         # lambda, statistic
         -10.0, 72.2e3,
@@ -3262,6 +3521,8 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+
+    @pytest.mark.slow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
         # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
@@ -3312,10 +3573,22 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_rel(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2), axis=2)
+    t, p = stats.ttest_rel(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+                           axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
+
+    # test alternative parameter
+    assert_raises(ValueError, stats.ttest_rel, rvs1, rvs2, alternative="error")
+
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="less")
+    assert_allclose(p, 1 - pr/2)
+    assert_allclose(t, tr)
+
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0, alternative="greater")
+    assert_allclose(p, pr/2)
+    assert_allclose(t, tr)
 
     # check nan policy
     rng = np.random.RandomState(12345678)
@@ -3460,10 +3733,36 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2), axis=2)
+    t, p = stats.ttest_ind(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+                           axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
+
+    # test alternative parameter
+    assert_raises(ValueError, stats.ttest_ind, rvs1, rvs2, alternative="error")
+    assert_raises(ValueError, stats.ttest_ind_from_stats,
+                  *_desc_stats(rvs1_2D.T, rvs2_2D.T), alternative="error")
+
+    t, p = stats.ttest_ind(rvs1, rvs2, alternative="less")
+    assert_allclose(p, 1 - (pr/2))
+    assert_allclose(t, tr)
+
+    t, p = stats.ttest_ind(rvs1, rvs2, alternative="greater")
+    assert_allclose(p, pr/2)
+    assert_allclose(t, tr)
+
+    # Below makes sure ttest_ind_from_stats p-val functions identically to
+    # ttest_ind
+    t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="less")
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_allclose(
+        stats.ttest_ind_from_stats(*args, alternative="less"), [t, p])
+
+    t, p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, alternative="greater")
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_allclose(
+        stats.ttest_ind_from_stats(*args, alternative="greater"), [t, p])
 
     # check nan policy
     rng = np.random.RandomState(12345678)
@@ -3616,7 +3915,8 @@ def test_ttest_ind_nan_2nd_arg():
     # x = c(NA, 2.0, 3.0, 4.0)
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, var.equal=TRUE)
-    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901),
+                    atol=1e-15)
 
 
 def test_ttest_ind_empty_1d_returns_nan():
@@ -3707,6 +4007,25 @@ def test_ttest_1samp_new():
     # test zero division problem
     t, p = stats.ttest_1samp([0, 0, 0], 1)
     assert_equal((np.abs(t), p), (np.inf, 0))
+
+    # test alternative parameter
+    # Convert from two-sided p-values to one sided using T result data.
+    def convert(t, p, alt):
+        if (t < 0 and alt == "less") or (t > 0 and alt == "greater"):
+            return p / 2
+        return 1 - (p / 2)
+    converter = np.vectorize(convert)
+    tr, pr = stats.ttest_1samp(rvn1[:, :, :], 1)
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="greater")
+    pc = converter(tr, pr, "greater")
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
+
+    t, p = stats.ttest_1samp(rvn1[:, :, :], 1, alternative="less")
+    pc = converter(tr, pr, "less")
+    assert_allclose(p, pc)
+    assert_allclose(t, tr)
 
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
@@ -4928,6 +5247,14 @@ class TestKruskal(object):
         z = []
         assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
 
+    def test_nd_arrays(self):
+        # Inputs must be exactly one-dimensional
+        x = [1]
+        y = [2]
+        z = np.random.rand(2, 2)
+        with assert_raises(ValueError, match="Samples must be one-dimensional."):
+            stats.kruskal(x, y, z)
+
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]
@@ -4987,8 +5314,8 @@ class TestCombinePvalues(object):
         assert_approx_equal(p, 0.970299, significant=4)
 
     def test_mudholkar_george(self):
-        Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
-        assert_approx_equal(p, 3.7191571041915e-07, significant=4)
+        Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
+        assert_approx_equal(p, 0.019462, significant=4)
 
     def test_mudholkar_george_equal_fisher_minus_pearson(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
@@ -5422,62 +5749,6 @@ class TestRatioUniforms(object):
                       stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
-
-
-class TestEppsSingleton(object):
-    def test_statistic_1(self):
-        # first example in Goerg & Kaiser, also in original paper of
-        # Epps & Singleton. Note: values do not match exactly, the
-        # value of the interquartile range varies depending on how
-        # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35, 2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71, 4.29, 5.00, 7.74, 8.38, 8.60])
-        w, p = stats.epps_singleton_2samp(x, y)
-        assert_almost_equal(w, 15.14, decimal=1)
-        assert_almost_equal(p, 0.00442, decimal=3)
-
-    def test_statistic_2(self):
-        # second example in Goerg & Kaiser, again not a perfect match
-        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
-                      10, 10, 10))
-        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
-                      5, 8, 10))
-        w, p = stats.epps_singleton_2samp(x, y)
-        assert_allclose(w, 8.900, atol=0.001)
-        assert_almost_equal(p, 0.06364, decimal=3)
-
-    def test_epps_singleton_array_like(self):
-        np.random.seed(1234)
-        x, y = np.arange(30), np.arange(28)
-
-        w1, p1 = stats.epps_singleton_2samp(list(x), list(y))
-        w2, p2 = stats.epps_singleton_2samp(tuple(x), tuple(y))
-        w3, p3 = stats.epps_singleton_2samp(x, y)
-
-        assert_(w1 == w2 == w3)
-        assert_(p1 == p2 == p3)
-
-    def test_epps_singleton_size(self):
-        # raise error if less than 5 elements
-        x, y = (1, 2, 3, 4), np.arange(10)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_nonfinite(self):
-        # raise error if there are non-finite values
-        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_1d_input(self):
-        x = np.arange(100).reshape(-1, 1)
-        assert_raises(ValueError, stats.epps_singleton_2samp, x, x)
-
-    def test_names(self):
-        x, y = np.arange(20), np.arange(30)
-        res = stats.epps_singleton_2samp(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
 
 
 class TestMGCErrorWarnings(object):

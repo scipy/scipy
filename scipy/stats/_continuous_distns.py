@@ -22,10 +22,10 @@ from . import _stats
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-                                    rv_continuous, _skew, valarray,
-                                    _get_fixed_fit_value, _check_shape)
+from ._distn_infrastructure import (
+    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
+    _fit_determine_optimizer)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -65,6 +65,10 @@ class ksone_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    kstwobign, kstwo, kstest
+
     Notes
     -----
     :math:`D_n^+` and :math:`D_n^-` are given by
@@ -80,10 +84,6 @@ class ksone_gen(rv_continuous):
     with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    kstwobign, kstwo, kstest
 
     References
     ----------
@@ -122,13 +122,17 @@ class kstwo_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    kstwobign, ksone, kstest
+
     Notes
     -----
     :math:`D_n` is given by
 
     .. math::
 
-        D_n &= \text{sup}_x |F_n(x) - F(x)|
+        D_n = \text{sup}_x |F_n(x) - F(x)|
 
     where :math:`F` is a (continuous) CDF and :math:`F_n` is an empirical CDF.
     `kstwo` describes the distribution under the null hypothesis of the KS test
@@ -136,10 +140,6 @@ class kstwo_gen(rv_continuous):
     with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    kstwobign, ksone, kstest
 
     References
     ----------
@@ -184,6 +184,10 @@ class kstwobign_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    ksone, kstwo, kstest
+
     Notes
     -----
     :math:`\sqrt{n} D_n` is given by
@@ -198,10 +202,6 @@ class kstwobign_gen(rv_continuous):
     empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    ksone, kstwo, kstest
 
     References
     ----------
@@ -957,6 +957,8 @@ class burr_gen(rv_continuous):
             lambda c, e1, e2, e3, e4, mu2_if_c: (
                 ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
             fillvalue=np.nan)
+        if np.ndim(c) == 0:
+            return mu.item(), mu2.item(), g1.item(), g2.item()
         return mu, mu2, g1, g2
 
     def _munp(self, n, c, d):
@@ -1056,6 +1058,10 @@ class fisk_gen(burr_gen):
 
     %(before_notes)s
 
+    See Also
+    --------
+    burr
+
     Notes
     -----
     The probability density function for `fisk` is:
@@ -1071,10 +1077,6 @@ class fisk_gen(burr_gen):
     `fisk` is a special case of `burr` or `burr12` with ``d=1``.
 
     %(after_notes)s
-
-    See Also
-    --------
-    burr
 
     %(example)s
 
@@ -1234,7 +1236,13 @@ chi = chi_gen(a=0.0, name='chi')
 class chi2_gen(rv_continuous):
     r"""A chi-squared continuous random variable.
 
+    For the noncentral chi-square distribution, see `ncx2`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    ncx2
 
     Notes
     -----
@@ -1846,7 +1854,13 @@ foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy')
 class f_gen(rv_continuous):
     r"""An F continuous random variable.
 
+    For the noncentral F distribution, see `ncf`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    ncf
 
     Notes
     -----
@@ -2162,7 +2176,12 @@ class genlogistic_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return np.log(c) - x - (c+1.0)*sc.log1p(np.exp(-x))
+        # Two mathematically equivalent expressions for log(pdf(x, c)):
+        #     log(pdf(x, c)) = log(c) - x - (c + 1)*log(1 + exp(-x))
+        #                    = log(c) + c*x - (c + 1)*log(1 + exp(x))
+        mult = -(c - 1) * (x < 0) - 1
+        absx = np.abs(x)
+        return np.log(c) + mult*absx - (c+1) * sc.log1p(np.exp(-absx))
 
     def _cdf(self, x, c):
         Cx = (1+np.exp(-x))**(-c)
@@ -2547,7 +2566,7 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
+        f(x, a) = \frac{x^{a-1} e^{-x}}{\Gamma(a)}
 
     for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
@@ -2556,6 +2575,16 @@ class gamma_gen(rv_continuous):
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
+
+    Gamma distributions are sometimes parameterized with two variables,
+    with a probability density function of:
+
+    .. math::
+
+        f(x, \alpha, \beta) = \frac{\beta^\alpha x^{\alpha - 1} e^{-\beta x }}{\Gamma(\alpha)}
+
+    Note that this parameterization is equivalent to the above, with
+    ``scale = 1 / beta``.
 
     %(after_notes)s
 
@@ -2588,7 +2617,7 @@ class gamma_gen(rv_continuous):
         return sc.psi(a)*(1-a) + a + sc.gammaln(a)
 
     def _fitstart(self, data):
-        # The skewness of the gamma distribution is `4 / np.sqrt(a)`.
+        # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
         # We invert that to estimate the shape `a` using the skewness
         # of the data.  The formula is regularized with 1e-8 in the
         # denominator to allow for degenerate data where the skewness
@@ -2913,6 +2942,14 @@ class gompertz_gen(rv_continuous):
 gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
+def _average_with_log_weights(x, logweights):
+    x = np.asarray(x)
+    logweights = np.asarray(logweights)
+    maxlogw = logweights.max()
+    weights = np.exp(logweights - maxlogw)
+    return np.average(x, weights=weights)
+
+
 class gumbel_r_gen(rv_continuous):
     r"""A right-skewed Gumbel continuous random variable.
 
@@ -2955,12 +2992,52 @@ class gumbel_r_gen(rv_continuous):
     def _ppf(self, q):
         return -np.log(-np.log(q))
 
+    def _sf(self, x):
+        return -sc.expm1(-np.exp(-x))
+
+    def _isf(self, p):
+        return -np.log(-np.log1p(-p))
+
     def _stats(self):
         return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
         # https://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
+
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # if user has provided `floc` or `fscale`, fall back on super fit
+        # method. This scenario is not suitable for solving a system of
+        # equations
+        if floc is not None or fscale is not None:
+            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
+
+        # rv_continuous provided guesses
+        loc, scale = self._fitstart(data)
+        # account for user provided guesses
+        loc = kwds.pop('loc', loc)
+        scale = kwds.pop('scale', scale)
+
+        # By the method of maximum likelihood, the estimators of the
+        # location and scale are the roots of the equation defined in
+        # `func` and the value of the expression for `loc` that follows.
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        # and Peacock (2000), Page 101
+
+        def func(scale, data):
+            sdata = -data / scale
+            wavg = _average_with_log_weights(data, logweights=sdata)
+            return data.mean() - wavg - scale
+
+        soln = optimize.root(func, scale, args=(data,),
+                             options={'xtol': 1e-14})
+        scale = soln.x[0]
+        loc = -scale * (sc.logsumexp(-data/scale) - np.log(len(data)))
+
+        return loc, scale
 
 
 gumbel_r = gumbel_r_gen(name='gumbel_r')
@@ -3020,6 +3097,17 @@ class gumbel_l_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER + 1.
+
+    def fit(self, data, *args, **kwds):
+        # The fit method of `gumbel_r` can be used for this distribution with
+        # small modifications. The process to do this is
+        # 1. pass the sign negated data into `gumbel_r.fit`
+        # 2. negate the sign of the resulting location, leaving the scale
+        #    unmodified.
+        # `gumbel_r.fit` holds necessary input checks.
+
+        loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
+        return (-loc_r, scale_r)
 
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')
@@ -3225,8 +3313,8 @@ class gausshyper_gen(rv_continuous):
 
         f(x, a, b, c, z) = C x^{a-1} (1-x)^{b-1} (1+zx)^{-c}
 
-    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, and
-    :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
+    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, :math:`z > -1`,
+    and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
     :math:`F[2, 1]` is the Gauss hypergeometric function
     `scipy.special.hyp2f1`.
 
@@ -3235,11 +3323,19 @@ class gausshyper_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
+           Queues." *Journal of the Royal Statistical Society*. Series D (The
+           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+
     %(example)s
 
     """
+
     def _argcheck(self, a, b, c, z):
-        return (a > 0) & (b > 0) & (c == c) & (z == z)
+        # z > -1 per gh-10134
+        return (a > 0) & (b > 0) & (c == c) & (z > -1)
 
     def _pdf(self, x, a, b, c, z):
         # gausshyper.pdf(x, a, b, c, z) =
@@ -3376,6 +3472,37 @@ class invgauss_gen(rv_continuous):
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
+
+    def fit(self, data, *args, **kwds):
+
+        if type(self) == wald_gen:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+
+        data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
+                                                                   args, kwds)
+        '''
+        Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        SciPy's with the conversion `fshape_s = fshape / scale`.
+
+        MLE formulas are not used in 3 condtions:
+        - `loc` is not fixed
+        - `mu` is fixed
+        These cases fall back on the superclass fit method.
+        - `loc` is fixed but translation results in negative data raises
+          a `FitDataError`.
+        '''
+        if floc is None or fshape_s is not None:
+            return super(invgauss_gen, self).fit(data, *args, **kwds)
+        elif np.any(data - floc < 0):
+            raise FitDataError("invgauss", lower=0, upper=np.inf)
+        else:
+            data = data - floc
+            fshape_n = np.mean(data)
+            if fscale is None:
+                fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
+            fshape_s = fshape_n / fscale
+        return fshape_s, floc, fscale
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
@@ -3971,12 +4098,103 @@ class laplace_gen(rv_continuous):
 laplace = laplace_gen(name='laplace')
 
 
+class laplace_asymmetric_gen(rv_continuous):
+    r"""An asymmetric Laplace continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    laplace : Laplace distribution
+
+    Notes
+    -----
+    The probability density function for `laplace_asymmetric` is
+
+    .. math::
+
+       f(x, \kappa) &= \frac{1}{\kappa+\kappa^{-1}}\exp(-x\kappa),\quad x\ge0\\
+                    &= \frac{1}{\kappa+\kappa^{-1}}\exp(x/\kappa),\quad x<0\\
+
+    for :math:`-\infty < x < \infty`, :math:`\kappa > 0`.
+
+    `laplace_asymmetric` takes ``kappa`` as a shape parameter for
+    :math:`\kappa`. For :math:`\kappa = 1`, it is identical to a
+    Laplace distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Asymmetric Laplace distribution", Wikipedia
+            https://en.wikipedia.org/wiki/Asymmetric_Laplace_distribution
+
+    .. [2] Kozubowski TJ and Podgórski K. A Multivariate and
+           Asymmetric Generalization of Laplace Distribution,
+           Computational Statistics 15, 531--540 (2000).
+           :doi:`10.1007/PL00022717`
+
+    %(example)s
+
+    """
+    def _pdf(self, x, kappa):
+        return np.exp(self._logpdf(x, kappa))
+
+    def _logpdf(self, x, kappa):
+        kapinv = 1/kappa
+        lPx = x * np.where(x >= 0, -kappa, kapinv)
+        lPx -= np.log(kappa+kapinv)
+        return lPx
+
+    def _cdf(self, x, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(x >= 0,
+                        1 - np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        np.exp(x*kapinv)*(kappa/kappkapinv))
+
+    def _sf(self, x, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(x >= 0,
+                        np.exp(-x*kappa)*(kapinv/kappkapinv),
+                        1 - np.exp(x*kapinv)*(kappa/kappkapinv))
+
+    def _ppf(self, q, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(q >= kappa/kappkapinv,
+                        -np.log((1 - q)*kappkapinv*kappa)*kapinv,
+                        np.log(q*kappkapinv/kappa)*kappa)
+
+    def _isf(self, q, kappa):
+        kapinv = 1/kappa
+        kappkapinv = kappa+kapinv
+        return np.where(q <= kapinv/kappkapinv,
+                        -np.log(q*kappkapinv*kappa)*kapinv,
+                        np.log((1 - q)*kappkapinv/kappa)*kappa)
+
+    def _stats(self, kappa):
+        kapinv = 1/kappa
+        mn = kapinv - kappa
+        var = kapinv*kapinv + kappa*kappa
+        g1 = 2.0*(1-np.power(kappa, 6))/np.power(1+np.power(kappa, 4), 1.5)
+        g2 = 6.0*(1+np.power(kappa, 8))/np.power(1+np.power(kappa, 4), 2)
+        return mn, var, g1, g2
+
+    def _entropy(self, kappa):
+        return 1 + np.log(kappa+1/kappa)
+
+
+laplace_asymmetric = laplace_asymmetric_gen(name='laplace_asymmetric')
+
+
 def _check_fit_input_parameters(dist, data, args, kwds):
     data = np.asarray(data)
     floc = kwds.get('floc', None)
     fscale = kwds.get('fscale', None)
 
-    num_shapes = len(dist.shapes) if dist.shapes else 0
+    num_shapes = len(dist.shapes.split(",")) if dist.shapes else 0
     fshape_keys = []
     fshapes = []
 
@@ -4053,6 +4271,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 2*norm.sf(np.sqrt(1/x))
         return sc.erfc(np.sqrt(0.5 / x))
 
+    def _sf(self, x):
+        return sc.erf(np.sqrt(0.5 / x))
+
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)
@@ -4102,9 +4323,16 @@ class levy_l_gen(rv_continuous):
         ax = abs(x)
         return 2 * _norm_cdf(1 / np.sqrt(ax)) - 1
 
+    def _sf(self, x):
+        ax = abs(x)
+        return 2 * _norm_sf(1 / np.sqrt(ax))
+
     def _ppf(self, q):
         val = _norm_ppf((q + 1.0) / 2)
         return -1.0 / (val * val)
+
+    def _isf(self, p):
+        return -1/_norm_isf(p/2)**2
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -4623,7 +4851,8 @@ class logistic_gen(rv_continuous):
         return np.exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return -x - 2. * sc.log1p(np.exp(-x))
+        y = -np.abs(x)
+        return y - 2. * sc.log1p(np.exp(y))
 
     def _cdf(self, x):
         return sc.expit(x)
@@ -4643,6 +4872,36 @@ class logistic_gen(rv_continuous):
     def _entropy(self):
         # https://en.wikipedia.org/wiki/Logistic_distribution
         return 2.0
+
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # if user has provided `floc` or `fscale`, fall back on super fit
+        # method. This scenario is not suitable for solving a system of
+        # equations
+        if floc is not None or fscale is not None:
+            return super(logistic_gen, self).fit(data, *args, **kwds)
+
+        # rv_continuous provided guesses
+        loc, scale = self._fitstart(data)
+        # account for user provided guesses
+        loc = kwds.pop('loc', loc)
+        scale = kwds.pop('scale', scale)
+
+        # the maximum likelihood estimators `a` and `b` of the location and
+        # scale parameters are roots of the two equations described in `func`.
+        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
+        # Peacock (2000), Page 130
+        def func(params, data):
+            a, b = params
+            n = len(data)
+            c = (data - a) / b
+            x1 = np.sum(sc.expit(c)) - n/2
+            x2 = np.sum(c*np.tanh(c/2)) - n
+            return x1, x2
+
+        return tuple(optimize.root(func, (loc, scale), args=(data,)).x)
 
 
 logistic = logistic_gen(name='logistic')
@@ -5141,7 +5400,7 @@ class kappa4_gen(rv_continuous):
     B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
     Site in the Chi River Basin, Thailand", Journal of Water Resource and
     Protection, vol. 4, 866-869, (2012).
-    https://doi.org/10.4236/jwarp.2012.410101
+    :doi:`10.4236/jwarp.2012.410101`
 
     C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
     Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
@@ -5342,11 +5601,11 @@ class kappa3_gen(rv_continuous):
     P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
     Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
     701-707, (September, 1973),
-    https://doi.org/10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2
+    :doi:`10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2`
 
     B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
     Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
-    415-419 (2012), https://doi.org/10.4236/ojs.2012.24050
+    415-419 (2012), :doi:`10.4236/ojs.2012.24050`
 
     %(after_notes)s
 
@@ -5487,15 +5746,25 @@ class nakagami_gen(rv_continuous):
 
     """
     def _pdf(self, x, nu):
+        return np.exp(self._logpdf(x, nu))
+
+    def _logpdf(self, x, nu):
         # nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
         #                       x**(2*nu-1) * exp(-nu*x**2)
-        return 2*nu**nu/sc.gamma(nu)*(x**(2*nu-1.0))*np.exp(-nu*x*x)
+        return (np.log(2) + sc.xlogy(nu, nu) - sc.gammaln(nu) +
+                sc.xlogy(2*nu - 1, x) - nu*x**2)
 
     def _cdf(self, x, nu):
         return sc.gammainc(nu, nu*x*x)
 
     def _ppf(self, q, nu):
         return np.sqrt(1.0/nu*sc.gammaincinv(nu, q))
+
+    def _sf(self, x, nu):
+        return sc.gammaincc(nu, nu*x*x)
+
+    def _isf(self, p, nu):
+        return np.sqrt(1/nu * sc.gammainccinv(nu, p))
 
     def _stats(self, nu):
         mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
@@ -5576,6 +5845,10 @@ class ncf_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    scipy.stats.f : Fisher distribution
+
     Notes
     -----
     The probability density function for `ncf` is:
@@ -5604,10 +5877,6 @@ class ncf_gen(rv_continuous):
     the distribution becomes equivalent to the Fisher distribution.
 
     %(after_notes)s
-
-    See Also
-    --------
-    scipy.stats.f : Fisher distribution
 
     %(example)s
 
@@ -5672,7 +5941,13 @@ ncf = ncf_gen(a=0.0, name='ncf')
 class t_gen(rv_continuous):
     r"""A Student's t continuous random variable.
 
+    For the noncentral t distribution, see `nct`.
+
     %(before_notes)s
+
+    See Also
+    --------
+    nct
 
     Notes
     -----
@@ -5739,6 +6014,12 @@ class t_gen(rv_continuous):
                         np.inf)
         g2 = np.where(df <= 2, np.nan, g2)
         return mu, mu2, g1, g2
+
+    def _entropy(self, df):
+        half = df/2
+        half1 = (df + 1)/2
+        return (half1*(sc.digamma(half1) - sc.digamma(half))
+                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
 
 t = t_gen(name='t')
@@ -5809,12 +6090,12 @@ class nct_gen(rv_continuous):
         #
         mu, mu2, g1, g2 = None, None, None, None
 
-        gfac = sc.gamma(df/2.-0.5) / sc.gamma(df/2.)
+        gfac = np.exp(sc.betaln(df/2-0.5, 0.5) - sc.gammaln(0.5))
         c11 = np.sqrt(df/2.) * gfac
-        c20 = df / (df-2.)
+        c20 = np.where(df > 2., df / (df-2.), np.nan)
         c22 = c20 - c11*c11
-        mu = np.where(df > 1, nc*c11, np.inf)
-        mu2 = np.where(df > 2, c22*nc*nc + c20, np.inf)
+        mu = np.where(df > 1, nc*c11, np.nan)
+        mu2 = np.where(df > 2, c22*nc*nc + c20, np.nan)
         if 's' in moments:
             c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
             c31t = 3.*df / (df-2.) / (df-3.)
@@ -5877,23 +6158,23 @@ class pareto_gen(rv_continuous):
         if 'm' in moments:
             mask = b > 1
             bt = np.extract(mask, b)
-            mu = valarray(np.shape(b), value=np.inf)
+            mu = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu, mask, bt / (bt-1.0))
         if 'v' in moments:
             mask = b > 2
             bt = np.extract(mask, b)
-            mu2 = valarray(np.shape(b), value=np.inf)
+            mu2 = np.full(np.shape(b), fill_value=np.inf)
             np.place(mu2, mask, bt / (bt-2.0) / (bt-1.0)**2)
         if 's' in moments:
             mask = b > 3
             bt = np.extract(mask, b)
-            g1 = valarray(np.shape(b), value=np.nan)
+            g1 = np.full(np.shape(b), fill_value=np.nan)
             vals = 2 * (bt + 1.0) * np.sqrt(bt - 2.0) / ((bt - 3.0) * np.sqrt(bt))
             np.place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
             bt = np.extract(mask, b)
-            g2 = valarray(np.shape(b), value=np.nan)
+            g2 = np.full(np.shape(b), fill_value=np.nan)
             vals = (6.0*np.polyval([1.0, 1.0, -6, -2], bt) /
                     np.polyval([1.0, -7.0, 12.0, 0.0], bt))
             np.place(g2, mask, vals)
@@ -5989,20 +6270,23 @@ class pearson3_gen(rv_continuous):
 
     .. math::
 
-        f(x, skew) = \frac{|\beta|}{\Gamma(\alpha)}
-                     (\beta (x - \zeta))^{\alpha - 1}
-                     \exp(-\beta (x - \zeta))
+        f(x, \kappa) = \frac{|\beta|}{\Gamma(\alpha)}
+                       (\beta (x - \zeta))^{\alpha - 1}
+                       \exp(-\beta (x - \zeta))
 
     where:
 
     .. math::
 
-            \beta = \frac{2}{skew  stddev}
-            \alpha = (stddev \beta)^2
-            \zeta = loc - \frac{\alpha}{\beta}
+            \beta = \frac{2}{\kappa}
+
+            \alpha = \beta^2 = \frac{4}{\kappa^2}
+
+            \zeta = -\frac{\alpha}{\beta} = -\beta
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
-    `pearson3` takes ``skew`` as a shape parameter for :math:`skew`.
+    Pass the skew :math:`\kappa` into `pearson3` as the shape parameter
+    ``skew``.
 
     %(after_notes)s
 
@@ -6057,12 +6341,10 @@ class pearson3_gen(rv_continuous):
         return np.ones(np.shape(skew), dtype=bool)
 
     def _stats(self, skew):
-        _, _, _, _, _, beta, alpha, zeta = (
-            self._preprocess([1], skew))
-        m = zeta + alpha / beta
-        v = alpha / (beta**2)
-        s = 2.0 / (alpha**0.5) * np.sign(beta)
-        k = 6.0 / alpha
+        m = 0.0
+        v = 1.0
+        s = skew
+        k = 1.5*skew**2
         return m, v, s, k
 
     def _pdf(self, x, skew):
@@ -6088,7 +6370,9 @@ class pearson3_gen(rv_continuous):
             self._preprocess(x, skew))
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
-        ans[invmask] = np.log(abs(beta)) + gamma._logpdf(transx, alpha)
+        # use logpdf instead of _logpdf to fix issue mentioned in gh-12640
+        # (_logpdf does not return correct result for alpha = 1)
+        ans[invmask] = np.log(abs(beta)) + gamma.logpdf(transx, alpha)
         return ans
 
     def _cdf(self, x, skew):
@@ -6096,7 +6380,22 @@ class pearson3_gen(rv_continuous):
             self._preprocess(x, skew))
 
         ans[mask] = _norm_cdf(x[mask])
-        ans[invmask] = gamma._cdf(transx, alpha)
+
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        # use cdf instead of _cdf to fix issue mentioned in gh-12640
+        # (_cdf produces NaNs for inputs outside support)
+        ans[invmask1a] = gamma.cdf(transx[invmask1b], alpha[invmask1b])
+
+        # The gamma._cdf approach wasn't working with negative skew.
+        # Note that multiplying the skew by -1 reflects about x=0.
+        # So instead of evaluating the CDF with negative skew at x,
+        # evaluate the SF with positive skew at -x.
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        # gamma._sf produces NaNs when transx < 0, so use gamma.sf
+        ans[invmask2a] = gamma.sf(transx[invmask2b], alpha[invmask2b])
+
         return ans
 
     def _rvs(self, skew, size=None, random_state=None):
@@ -6317,6 +6616,13 @@ class rdist_gen(rv_continuous):
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
+def _rayleigh_fit_check_error(ier, msg):
+    if ier != 1:
+        raise RuntimeError('rayleigh.fit: fsolve failed to find the root of '
+                           'the first-order conditions of the log-likelihood '
+                           f'function: {msg} (ier={ier})')
+
+
 class rayleigh_gen(rv_continuous):
     r"""A Rayleigh continuous random variable.
 
@@ -6376,6 +6682,65 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        Notes specifically for ``rayleigh.fit``: If the location is fixed with
+        the `floc` parameter, this method uses an analytical formula to find
+        the scale.  Otherwise, this function uses a numerical root finder on
+        the first order conditions of the log-likelihood function to find the
+        MLE.  Only the (optional) `loc` parameter is used as the initial guess
+        for the root finder; the `scale` parameter and any other parameters
+        for the optimizer are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def scale_mle(loc, data):
+            # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
+            # and Peacock (2000), Page 175
+            return (np.sum((data - loc) ** 2) / (2 * len(data))) ** .5
+
+        def loc_mle(loc, data):
+            # This implicit equation for `loc` is used when
+            # both `loc` and `scale` are free.
+            xm = data - loc
+            s1 = xm.sum()
+            s2 = (xm**2).sum()
+            s3 = (1/xm).sum()
+            return s1 - s2/(2*len(data))*s3
+
+        def loc_mle_scale_fixed(loc, scale, data):
+            # This implicit equation for `loc` is used when
+            # `scale` is fixed but `loc` is not.
+            xm = data - loc
+            return xm.sum() - scale**2 * (1/xm).sum()
+
+        if floc is not None:
+            # `loc` is fixed, analytically determine `scale`.
+            if np.any(data - floc <= 0):
+                raise FitDataError("rayleigh", lower=1, upper=np.inf)
+            else:
+                return floc, scale_mle(floc, data)
+
+        # Account for user provided guess of `loc`.
+        loc0 = kwds.get('loc')
+        if loc0 is None:
+            # Use _fitstart to estimate loc; ignore the returned scale.
+            loc0 = self._fitstart(data)[0]
+
+        if fscale is not None:
+            # `scale` is fixed
+            x, info, ier, msg = optimize.fsolve(loc_mle_scale_fixed, x0=loc0,
+                                                args=(fscale, data,),
+                                                xtol=1e-10, full_output=True)
+            _rayleigh_fit_check_error(ier, msg)
+            return x[0], fscale
+        else:
+            # Neither `loc` nor `scale` are fixed.
+            x, info, ier, msg = optimize.fsolve(loc_mle, x0=loc0, args=(data,),
+                                                xtol=1e-10, full_output=True)
+            _rayleigh_fit_check_error(ier, msg)
+            return x[0], scale_mle(x[0], data)
+
 
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
@@ -6394,7 +6759,9 @@ class reciprocal_gen(rv_continuous):
         f(x, a, b) = \frac{1}{x \log(b/a)}
 
     for :math:`a \le x \le b`, :math:`b > a > 0`. This class takes
-    :math:`a` and :math:`b` as shape parameters. %(after_notes)s
+    :math:`a` and :math:`b` as shape parameters.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -6573,6 +6940,10 @@ class semicircular_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    rdist
+
     Notes
     -----
     The probability density function for `semicircular` is:
@@ -6586,10 +6957,6 @@ class semicircular_gen(rv_continuous):
     The distribution is a special case of `rdist` with `c = 3`.
 
     %(after_notes)s
-
-    See Also
-    --------
-    rdist
 
     References
     ----------
@@ -6651,7 +7018,7 @@ class skew_norm_gen(rv_continuous):
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        https://arxiv.org/abs/0911.2093
+        :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -6702,7 +7069,7 @@ class skew_norm_gen(rv_continuous):
 skewnorm = skew_norm_gen(name='skewnorm')
 
 
-class trapz_gen(rv_continuous):
+class trapezoid_gen(rv_continuous):
     r"""A trapezoidal continuous random variable.
 
     %(before_notes)s
@@ -6718,7 +7085,7 @@ class trapz_gen(rv_continuous):
     with the same values for `loc`, `scale` and `c`.
     The method of [1]_ is used for computing moments.
 
-    `trapz` takes :math:`c` and :math:`d` as shape parameters.
+    `trapezoid` takes :math:`c` and :math:`d` as shape parameters.
 
     %(after_notes)s
 
@@ -6732,7 +7099,7 @@ class trapz_gen(rv_continuous):
     ----------
     .. [1] Kacker, R.N. and Lawrence, J.F. (2007). Trapezoidal and triangular
        distributions for Type B evaluation of standard uncertainty.
-       Metrologia 44, 117-127. https://doi.org/10.1088/0026-1394/44/2/003
+       Metrologia 44, 117-127. :doi:`10.1088/0026-1394/44/2/003`
 
 
     """
@@ -6803,7 +7170,12 @@ class trapz_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
-trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
+trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
+# Note: alias kept for backwards compatibility. Rename was done
+# because trapz is a slur in colloquial English (see gh-12924).
+trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
+if trapz.__doc__:
+    trapz.__doc__ = "trapz is an alias for `trapezoid`"
 
 
 class triang_gen(rv_continuous):
@@ -7780,8 +8152,11 @@ class vonmises_gen(rv_continuous):
         return random_state.vonmises(0.0, kappa, size=size)
 
     def _pdf(self, x, kappa):
-        # vonmises.pdf(x, \kappa) = exp(\kappa * cos(x)) / (2*pi*I[0](\kappa))
-        return np.exp(kappa * np.cos(x)) / (2*np.pi*sc.i0(kappa))
+        # vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
+        #                        = exp(kappa * (cos(x) - 1)) /
+        #                          (2*pi*exp(-kappa)*I[0](kappa))
+        #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
+        return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
@@ -7908,6 +8283,11 @@ class gennorm_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    laplace : Laplace distribution
+    norm : normal distribution
+
     Notes
     -----
     The probability density function for `gennorm` is [1]_:
@@ -7922,11 +8302,6 @@ class gennorm_gen(rv_continuous):
     For :math:`\beta = 1`, it is identical to a Laplace distribution.
     For :math:`\beta = 2`, it is identical to a normal distribution
     (with ``scale=1/sqrt(2)``).
-
-    See Also
-    --------
-    laplace : Laplace distribution
-    norm : normal distribution
 
     References
     ----------
@@ -7976,6 +8351,12 @@ class halfgennorm_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    gennorm : generalized normal distribution
+    expon : exponential distribution
+    halfnorm : half normal distribution
+
     Notes
     -----
     The probability density function for `halfgennorm` is:
@@ -7991,12 +8372,6 @@ class halfgennorm_gen(rv_continuous):
     For :math:`\beta = 1`, it is identical to an exponential distribution.
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with ``scale=1/sqrt(2)``).
-
-    See Also
-    --------
-    gennorm : generalized normal distribution
-    expon : exponential distribution
-    halfnorm : half normal distribution
 
     References
     ----------
@@ -8217,15 +8592,14 @@ class argus_gen(rv_continuous):
 
     `argus` takes :math:`\chi` as shape a parameter.
 
-    References
-    ----------
-
-    .. [1] "ARGUS distribution",
-           https://en.wikipedia.org/wiki/ARGUS_distribution
-
     %(after_notes)s
 
     .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(example)s
     """
@@ -8339,7 +8713,7 @@ class argus_gen(rv_continuous):
     def _stats(self, chi):
         chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * np.exp(-chi2/4) * sc.iv(1, chi2/4) / phi
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
         return m, v, None, None
 
@@ -8489,7 +8863,7 @@ class rv_histogram(rv_continuous):
 
 
 # Collect names of classes and objects in this module.
-pairs = list(globals().items())
+pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names + ['rv_histogram']

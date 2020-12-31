@@ -13,14 +13,12 @@ import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import sparse
     from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse(m, n, nnz_per_row):

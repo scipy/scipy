@@ -414,7 +414,7 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
 class Test_DCTN_IDCTN(object):
     dec = 14
     dct_type = [1, 2, 3, 4]
-    norms = [None, 'ortho']
+    norms = [None, 'backward', 'ortho', 'forward']
     rstate = np.random.RandomState(1234)
     shape = (32, 16)
     data = rstate.randn(*shape)
@@ -443,7 +443,7 @@ class Test_DCTN_IDCTN(object):
 
     @pytest.mark.parametrize('funcn,func', [(idctn, idct), (idstn, idst)])
     @pytest.mark.parametrize('dct_type', dct_type)
-    @pytest.mark.parametrize('norm', [None, 'ortho'])
+    @pytest.mark.parametrize('norm', norms)
     def test_idctn_vs_2d_reference(self, funcn, func, dct_type, norm):
         fdata = dctn(self.data, type=dct_type, norm=norm)
         y1 = funcn(fdata, type=dct_type, norm=norm)
