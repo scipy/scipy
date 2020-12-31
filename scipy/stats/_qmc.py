@@ -2,6 +2,8 @@
 # Prevents annotations from being evaluated during runtime,
 # thus storing them as plain strings
 from __future__ import annotations
+
+import numbers
 from typing import TYPE_CHECKING, List, Optional, Callable, Iterable, Union
 from abc import ABC, abstractmethod
 import math
@@ -9,7 +11,6 @@ import warnings
 
 import numpy as np
 
-from scipy._lib._util import check_random_state
 from scipy.optimize import basinhopping
 from scipy.stats import norm
 from scipy.stats._sobol import (
@@ -25,6 +26,41 @@ _int = Union[int, np.integer]
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
            'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
            'multinomial_qmc', 'NormalQMC', 'MultivariateNormalQMC']
+
+
+# Based on scipy._lib._util.check_random_state
+def check_random_state(seed: Optional[_int, np.random.Generator,
+                                      np.random.RandomState] = None):
+    """Turn `seed` into a `numpy.random.Generator` instance.
+
+    Parameters
+    ----------
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Returns
+    -------
+    seed : {`numpy.random.Generator`, `numpy.random.RandomState`}
+        Random number generator.
+
+    """
+    if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
+        if not hasattr(np.random, 'Generator'):
+            # This can be removed once numpy 1.16 is dropped
+            msg = ("NumPy 1.16 doesn't have Generator, use either "
+                   "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`")
+            raise ValueError(msg)
+        return np.random.default_rng(seed)
+    elif isinstance(seed, (np.random.Generator, np.random.RandomState)):
+        return seed
+    else:
+        raise ValueError('%r cannot be used to seed a numpy.random.Generator'
+                         ' instance' % seed)
 
 
 def scale(sample: npt.ArrayLike, bounds: npt.ArrayLike,
@@ -552,7 +588,7 @@ class QMCEngine(ABC):
     >>> class RandomEngine(qmc.QMCEngine):
     ...     def __init__(self, d, seed):
     ...         super().__init__(d=d, seed=seed)
-    ...         self.rng_seed_state = self.rng.get_state()
+    ...         self.rng_seed = seed
     ...
     ...
     ...     def random(self, n=1):
@@ -560,7 +596,7 @@ class QMCEngine(ABC):
     ...
     ...
     ...     def reset(self):
-    ...         self.rng.set_state(self.rng_seed_state)
+    ...         super().__init__(d=self.d, seed=self.rng_seed)
     ...         return self
     ...
     ...
@@ -572,22 +608,22 @@ class QMCEngine(ABC):
     we can create an instance to sample from.
 
     >>> engine = RandomEngine(2, seed=12345)
-    >>> engine.random(5)
-    array([[0.92961609, 0.31637555],
-           [0.18391881, 0.20456028],
-           [0.56772503, 0.5955447 ],
-           [0.96451452, 0.6531771 ],
-           [0.74890664, 0.65356987]])
+    >>> engine.random(5)  # doctest: +SKIP
+    array([[0.22733602, 0.31675834],
+           [0.79736546, 0.67625467],
+           [0.39110955, 0.33281393],
+           [0.59830875, 0.18673419],
+           [0.67275604, 0.94180287]])
 
     We can also reset the state of the generator and resample again.
 
     >>> _ = engine.reset()
-    >>> engine.random(5)
-    array([[0.92961609, 0.31637555],
-           [0.18391881, 0.20456028],
-           [0.56772503, 0.5955447 ],
-           [0.96451452, 0.6531771 ],
-           [0.74890664, 0.65356987]])
+    >>> engine.random(5)  # doctest: +SKIP
+    array([[0.22733602, 0.31675834],
+           [0.79736546, 0.67625467],
+           [0.39110955, 0.33281393],
+           [0.59830875, 0.18673419],
+           [0.67275604, 0.94180287]])
 
     """
 
@@ -754,7 +790,7 @@ class Halton(QMCEngine):
                   for bdim in self.base]
 
         self.num_generated += n
-        return np.array(sample).T
+        return np.array(sample).T.reshape(n, self.d)
 
 
 class OrthogonalLatinHypercube(QMCEngine):
@@ -786,27 +822,27 @@ class OrthogonalLatinHypercube(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.OrthogonalLatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.18592322, 0.77846875],
-           [0.64091206, 0.18474763],
-           [0.91354501, 0.80535794],
-           [0.43678376, 0.27478424],
-           [0.26327511, 0.43099467]])
+    >>> sample  # doctest: +SKIP
+    array([[0.0454672 , 0.58836057],
+           [0.55947309, 0.03734684],
+           [0.26335167, 0.98977623],
+           [0.87822191, 0.33455121],
+           [0.73525093, 0.64964914]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)
-    0.02004864477993462
+    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    0.02050567122966518
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
-    array([[1.85923219, 4.33540624],
-           [6.40912056, 2.55424289],
-           [9.13545006, 4.41607383],
-           [4.36783762, 2.82435271],
-           [2.63275111, 3.29298401]])
+    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    array([[0.45467204, 3.76508172],
+           [5.59473091, 2.11204051],
+           [2.63351668, 4.96932869],
+           [8.7822191 , 3.00365363],
+           [7.35250934, 3.94894743]])
 
     """
 
@@ -886,27 +922,27 @@ class LatinHypercube(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.01407678, 0.53672489],
-           [0.36321624, 0.75908794],
-           [0.28645499, 0.48089106],
-           [0.2070971 , 0.46936458],
-           [0.45021867, 0.66928603]])
+    >>> sample  # doctest: +SKIP
+    array([[0.5545328 , 0.13664833],
+           [0.64052691, 0.66474907],
+           [0.52177809, 0.53343721],
+           [0.08033825, 0.16265316],
+           [0.26544879, 0.21163943]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)
-    0.1271335273223828
+    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    0.07254149611314986
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
-    array([[0.14076781, 3.61017467],
-           [3.63216238, 4.27726383],
-           [2.86454994, 3.44267318],
-           [2.07097096, 3.40809374],
-           [4.50218672, 4.00785808]])
+    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    array([[5.54532796, 2.409945  ],
+           [6.40526909, 3.9942472 ],
+           [5.2177809 , 3.60031164],
+           [0.80338249, 2.48795949],
+           [2.65448791, 2.63491828]])
 
     """
 
@@ -994,35 +1030,35 @@ class OptimalDesign(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.91354501, 0.77846875],
-           [0.43678376, 0.18474763],
-           [0.18592322, 0.80535794],
-           [0.64091206, 0.27478424],
-           [0.26327511, 0.43099467]])
+    >>> sample  # doctest: +SKIP
+    array([[0.0454672 , 0.58836057],
+           [0.55947309, 0.98977623],
+           [0.26335167, 0.03734684],
+           [0.87822191, 0.33455121],
+           [0.73525093, 0.64964914]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)
-    0.019948003942932058
+    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    0.018581537720176344
 
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
     >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
     >>> sample_2 = sampler_2.random(n=5)
-    >>> qmc.discrepancy(sample_2)
-    0.01947498422566407
+    >>> qmc.discrepancy(sample_2)  # doctest: +SKIP
+    0.018378401228740238
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
-    array([[9.13545006, 4.33540624],
-           [4.36783762, 2.55424289],
-           [1.85923219, 4.41607383],
-           [6.40912056, 2.82435271],
-           [2.63275111, 3.29298401]])
+    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    array([[0.45467204, 3.76508172],
+           [5.59473091, 4.96932869],
+           [2.63351668, 2.11204051],
+           [8.7822191 , 3.00365363],
+           [7.35250934, 3.94894743]])
 
     """
 
