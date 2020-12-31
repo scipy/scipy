@@ -223,8 +223,105 @@ double ndtr(double a)
     return (y);
 }
 
+//
+// Gauss-Legendre points.
+//
+
+// Gauss-Legendre n = 7 x coordinates in [-1, 1]
+static double glx7[] = {
+    -0.9491079123427584,
+    -0.7415311855993945,
+    -0.4058451513773972,
+     0.0,
+     0.4058451513773972,
+     0.7415311855993945,
+     0.9491079123427584
+};
+
+// Gauss-Legendre n = 7 weights
+static double glw7[] = {
+    0.12948496616886998,
+    0.27970539148927664,
+    0.38183005050511876,
+    0.4179591836734691,
+    0.38183005050511876,
+    0.27970539148927664,
+    0.12948496616886998
+};
+
+// Gauss-Legendre n = 21 x coordinates in [-1, 1]
+static double glx21[] = {
+    -0.9937521706203896,
+    -0.9672268385663063,
+    -0.9200993341504009,
+    -0.8533633645833172,
+    -0.768439963475678,
+    -0.6671388041974123,
+    -0.5516188358872198,
+    -0.4243421202074388,
+    -0.2880213168024011,
+    -0.14556185416089512,
+     0.0,
+     0.14556185416089512,
+     0.2880213168024011,
+     0.4243421202074388,
+     0.5516188358872198,
+     0.6671388041974123,
+     0.768439963475678,
+     0.8533633645833172,
+     0.9200993341504009,
+     0.9672268385663063,
+     0.9937521706203896
+};
+
+// Gauss-Legendre n = 21 weights
+static double glw21[] = {
+    0.016017228257774067,
+    0.03695378977085202,
+    0.057134425426857,
+    0.07610011362837958,
+    0.09344442345603363,
+    0.10879729916714861,
+    0.12183141605372863,
+    0.13226893863333766,
+    0.13988739479107337,
+    0.1445244039899701,
+    0.1460811336496905,
+    0.1445244039899701,
+    0.13988739479107337,
+    0.13226893863333766,
+    0.12183141605372863,
+    0.10879729916714861,
+    0.09344442345603363,
+    0.07610011362837958,
+    0.057134425426857,
+    0.03695378977085202,
+    0.016017228257774067
+};
+
 
 #define NDTR_DELTA_TAIL_LIMIT  38.5
+#define SQRT_2PI  2.5066282746310007
+
+//
+// Estimate integral of the normal PDF from a to b using
+// Gauss-Legendre quadrature.
+//
+// n is the length of the arrays x and weight.
+// x and weight are the Gauss-Legendre points and weights.
+//
+double norm_quad_gl(double a, double b, int n, double x[], double weight[])
+{
+    double hw = (b - a)/2;  // half width of the interval
+    double m = (a + b)/2;   // midpoint of the interval
+    double delta = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double z = hw*x[i] + m;
+        double pdf = exp(-z*z/2);
+        delta += pdf * weight[i];
+    }
+    return delta * hw / SQRT_2PI;
+}
 
 //
 // Compute ndtr(b) - ndtr(a) robustly.
@@ -232,7 +329,7 @@ double ndtr(double a)
 double ndtr_delta(double a, double b)
 {
     int sgn = 1;
-    double delta;
+    double w;
 
     if (cephes_isnan(a) || cephes_isnan(b)) {
         sf_error("ndtr_delta", SF_ERROR_DOMAIN, NULL);
@@ -248,18 +345,45 @@ double ndtr_delta(double a, double b)
         sgn = -1;
     }
     if ((a > NDTR_DELTA_TAIL_LIMIT) || (b < -NDTR_DELTA_TAIL_LIMIT)) {
+        // The endpoints of the interval are so far out in the tail
+        // that the exact result is smaller than can be represented
+        // with double precision.
         return 0.0;
     }
-    if (a > 0) {
-        delta = ndtr(-a) - ndtr(-b);
+
+    w = b - a;
+    if (w < 1e-10) {
+        // Degree 3 Taylor series approximation at the midpoint
+        // of [a, b].
+        double w = b - a;
+        double m = (a + b)/2;
+        double pdf = exp(-m*m/2)/SQRT_2PI;
+        return sgn * w * pdf * (1 + w*w*(4*m*m - 2)/6);
+    }
+    else if (w < 1e-7) {
+        // 7 point Gauss-Legendre quadrature.
+        return sgn * norm_quad_gl(a, b, 7, glx7, glw7);
+    }
+    else if (w < 1.0) {
+        // 21 point Gauss-Legendre quadrature.
+        return sgn * norm_quad_gl(a, b, 21, glx21, glw21);
     }
     else {
-        delta = ndtr(b) - ndtr(a);
+        // The interval length isn't "small", so compute
+        // the result using the difference in ndtr.
+        double delta;
+
+        if (a > 0) {
+            delta = ndtr(-a) - ndtr(-b);
+        }
+        else {
+            delta = ndtr(b) - ndtr(a);
+        }
+        if (delta < 0) {
+            delta = 0.0;
+        }
+        return sgn*delta;
     }
-    if (delta < 0) {
-        delta = 0.0;
-    }
-    return sgn*delta;
 }
 
 //
@@ -267,9 +391,6 @@ double ndtr_delta(double a, double b)
 //
 double trunc_ndtr(double a, double b, double x)
 {
-    double delta;
-    double logp;
-
     if (cephes_isnan(x) || cephes_isnan(a) || cephes_isnan(b) || (a >= b)) {
         sf_error("trunc_ndtr", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
@@ -277,28 +398,69 @@ double trunc_ndtr(double a, double b, double x)
     if (x <= a) {
         return 0.0;
     }
-    if (x >= b) {
+    else if (x >= b) {
         return 1.0;
     }
-    delta = ndtr_delta(b, a);
-    if (delta > 0) {
-        return ndtr_delta(x, a) / delta;
-    }
-    if (a < 0) {
-        double logcdfa = log_ndtr(a);
-        double logcdfb = log_ndtr(b);
-        double logcdfx = log_ndtr(x);
-        double tab = log1p(-exp(logcdfa - logcdfb));
-        double tax = log1p(-exp(logcdfa - logcdfx));
-        logp = logcdfx + tax - (logcdfb + tab);
-    }
     else {
-        double logsfa = log_ndtr(-a);
-        double logsfb = log_ndtr(-b);
-        double logsfx = log_ndtr(-x);
-        logp = log1p(-exp(logsfx - logsfa)) - log1p(-exp(logsfb - logsfa));
+        double delta = ndtr_delta(a, b);
+        // printf("delta = %16.12e\n", delta);
+        if (delta > 0) {
+            // printf("using ndtr_delta\n");
+            return ndtr_delta(a, x) / delta;
+        }
+        else {
+            // Let F(x) be the CDF of the normal distribution.
+            // The function ndtr_delta(a, b), which computes F(b) - F(a),
+            // returned 0, so the straightforward calculation
+            //   ndtr_delta(a, x) / ndtr(a, b) = (F(x) - F(a))/(F(b) - F(a))
+            // won't work.  Instead, we'll express this formula in terms
+            // of logarithms of F.  For brevity, define Fx = F(x), Fa = F(a),
+            // etc., and logFx = log(F(x)), etc.
+            //
+            // log((Fx - Fa)/(Fb - Fa))
+            //   = log(Fx - Fa) - log(Fb - Fa)
+            //   = log(Fx) + log(1 - Fa/Fx) - log(Fb) - log(1 + Fa/Fb)
+            //   = logFx + log(1 - exp(logFa - logFx))
+            //     - logFb - log(1 - exp(logFa - logFb))
+            //   = logFx + log1p(-exp(logFa - logFx))
+            //     - logFb - log1p(-exp(logFa - logFb))
+            //
+            // The truncated normal CDF can also be expressed in terms of
+            // the survivial functon S(x) as (S(a) - S(x))/(S(a) - S(b)).
+            // Expressing the log of that in terms of the logarithms of the
+            // survival function gives
+            //
+            // log(S(a) - S(x))/(S(a) - S(b))
+            //   = log(Sa - Sx) - log(Sa - Sb)
+            //   = logSa + log(1 - Sx/Sa) - logSa - log(1 - Sb/Sa)
+            //   = log1p(-exp(logSx - logSa)) - log1p(-exp(logSb - logSa))
+            //
+
+            double p;
+            // printf("using log_ndtr\n");
+            if (a < 0) {
+                double logFa = log_ndtr(a);
+                double logFb = log_ndtr(b);
+                double logFx = log_ndtr(x);
+                double tab = log1p(-exp(logFa - logFb));
+                double tax = log1p(-exp(logFa - logFx));
+                double logp = logFx + tax - (logFb + tab);
+                //p = expm1(logFx - logFa) / expm1(logFb - logFa);
+                p = exp(logp);
+            }
+            else {
+                double logSa = log_ndtr(-a);
+                double logSb = log_ndtr(-b);
+                double logSx = log_ndtr(-x);
+                /*
+                logp = log1p(-exp(logSx - logSa))
+                       - log1p(-exp(logSb - logSa));
+                */
+                p = expm1(logSx - logSa) / expm1(logSb - logSa);
+            }
+            return p;
+        }
     }
-    return exp(logp);
 }
 
 
