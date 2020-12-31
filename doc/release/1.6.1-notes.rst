@@ -1,0 +1,20 @@
+==========================
+SciPy 1.6.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.6.1 is a bug-fix release with no new features
+compared to 1.6.0.
+
+Authors
+=======
+
+
+Issues closed for 1.6.1
+-----------------------
+
+
+Pull requests for 1.6.1
+-----------------------
+
