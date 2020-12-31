@@ -636,6 +636,7 @@ class QMCEngine(ABC):
                  seed: Optional[_int, np.random.Generator] = None) -> None:
         self.d = d
         self.rng = check_random_state(seed)
+        self.rng_seed = copy.deepcopy(seed)
         self.num_generated = 0
 
     @abstractmethod
@@ -665,6 +666,7 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
+        self.__init__(d=self.d, seed=self.rng_seed)
         self.num_generated = 0
         return self
 
@@ -880,7 +882,8 @@ class OrthogonalLatinHypercube(QMCEngine):
 
             sample.append(temp)
 
-        return np.array(sample).T
+        self.num_generated += n
+        return np.array(sample).T.reshape(n, self.d)
 
 
 class LatinHypercube(QMCEngine):
@@ -985,6 +988,7 @@ class LatinHypercube(QMCEngine):
 
         q = self.rg_integers(low=1, high=n, size=(n, self.d))
 
+        self.num_generated += n
         return 1. / n * (q - r)
 
 
@@ -1110,6 +1114,9 @@ class OptimalDesign(QMCEngine):
             Optimal sample.
 
         """
+        if self.d == 0:
+            return np.empty((n, 0))
+
         if self.best_doe is None:
             self.best_doe = self.olhs.random(n)
             self.best_disc = discrepancy(self.best_doe)
