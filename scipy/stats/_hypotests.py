@@ -543,6 +543,7 @@ def somersd(x, y=None):
             pvalue : float
                The two-sided p-value for a hypothesis test whose null
                hypothesis is an absence of association, :math:`D=0`.
+               See notes for more information.
             table : 2D array
                The contingency table formed from rankings `x` and `y` (or the
                provided contingency table, if `x` is a 2D array)
