@@ -1,4 +1,5 @@
 from collections import namedtuple
+from dataclasses import make_dataclass
 import numpy as np
 import warnings
 from . import distributions
@@ -488,15 +489,8 @@ def _somers_d(A):
     return d, p
 
 
-class SomersDResult:
-    """
-    A placeholder until we figure out how new stats results should be returned
-    """
-    def __init__(self, statistic, pvalue, table):
-        self.statistic, self.pvalue, self.table, = statistic, pvalue, table
-
-    def __repr__(self):
-        return f"SomersD={self.statistic}, pvalue={self.pvalue}"
+SomersDResult = make_dataclass("SomersDResult",
+                               ("statistic", "pvalue", "table"))
 
 
 def somersd(x, y=None):
