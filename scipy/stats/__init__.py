@@ -314,13 +314,14 @@ Statistical distances
    wasserstein_distance
    energy_distance
 
-Random variate generation
-=========================
+Random variate generation / CDF Inversion
+=========================================
 
 .. autosummary::
    :toctree: generated/
 
    rvs_ratio_uniforms
+   fast_numerical_inversion
 
 Circular statistical functions
 ==============================

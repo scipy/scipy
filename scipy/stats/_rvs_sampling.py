@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._util import check_random_state
-
+from scipy.interpolate import CubicHermiteSpline
 
 def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     """
@@ -167,3 +167,147 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         i += 1
 
     return np.reshape(x, size1d)
+
+
+def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
+    """
+    Generate a fast approximate PPF (inverse CDF) of a probability distribution
+
+    `fast_numerical_inversion` accepts `dist`, a frozen instance of
+    `scipy.stats.rv_continuous`, and returns a callable `H` that approximates
+    `dist.ppf`. For some distributions, this callable may be faster than
+    `dist.ppf`, and may also be used to generate random variates using inverse
+    transform sampling faster than `dist.rvs` (see examples).
+
+    Parameters
+    ----------
+    dist : scipy.stats.rv_frozen
+        Frozen distribution for which fast approximate PPF is desired
+    tol : float, optional
+        u-error tolerance. The default is 1e-12.
+    N_max : int, optional
+        Maximum number of intervals in the cubic Hermite Spline used to
+        approximate the percent point function. The default is 100000.
+
+    Returns
+    -------
+    H : scipy.interpolate.CubicHermiteSpline
+        An callable that approximates dist.ppf
+
+    Notes
+    -----
+    `fast_numerical_inversion` approximates the inverse of a continuous
+    statistical distribution's CDF with a cubic Hermite spline.
+
+    As described in [1]_, it begins by evaluating the distribution's PDF and
+    CDF at a mesh of quantiles ``x`` within the distribution's support.
+    It uses the results to fit a cubic Hermite spline ``H`` such that
+    ``H(p) == x``, where ``p`` is the array of percentiles corresponding
+    with the quantiles ``x``. In general, the spline will not be as accurate
+    at the midpoints between the percentile points::
+
+        p_mid = (p[:-1] + p[1:])/2
+
+    so the mesh of quantiles is refined as needed to reduce the maximum
+    "u-error"::
+
+        u_error = np.max(np.abs(dist.cdf(H(p_mid)) - p_mid))
+
+    below the specified tolerance `tol`. Refinement stops when the required
+    tolerance is achieved or when the number of mesh intervals after the next
+    refinement could exceed the maximum allowed number `N_max`.
+
+    References
+    ----------
+    .. [1] Hörmann, Wolfgang, and Josef Leydold. "Continuous random variate
+           generation by fast numerical inversion." ACM Transactions on
+           Modeling and Computer Simulation (TOMACS) 13.4 (2003): 347-362.
+
+    Examples
+    --------
+    For some distributions, ``dist.ppf`` and ``dist.rvs`` are quite slow.
+
+    >>> import numpy as np
+    >>> from scipy.stats import genexpon
+    >>> dist = genexpon(9, 16, 3)  # freeze the distribution
+    >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
+    >>> %timeit dist.ppf(p)  # may vary
+    474 ms ± 39.8 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    >>> %timeit dist.rvs(size=100)  # may vary
+    494 ms ± 14.6 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    `fast_numerical_inverse` returns a callable that approximates ``dist.ppf``.
+
+    >>> from scipy.stats import fast_numerical_inversion
+    >>> H = fast_numerical_inversion(dist)
+    >>> print(np.allclose(H(p), dist.ppf(p)))
+    True
+
+    In some cases, it is faster to both generate the callable and use it than
+    to call ``dist.ppf``.
+
+    >>> %timeit H = fast_numerical_inversion(dist); H(p)  # may vary
+    25.7 ms ± 615 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+    After generating the callable, subsequent calls are much faster.
+    >>> H = fast_numerical_inversion(dist)
+    >>> %timeit H(p)  # may vary
+    28 µs ± 588 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+
+    The callable can also be used to generate random variates using inverse
+    transform sampling.
+
+    >>> %timeit H(np.random.rand(100))
+
+    Depending on the implementation of the distribution's random sampling method,
+    the random variates generated may be nearly identical.
+
+    >>> rng = np.random.default_rng(0)
+    >>> rvs1 = dist.rvs(size=100, random_state=rng)
+    >>> rng = np.random.default_rng(0)
+    >>> rvs2 = H(rng.random(size=100))
+    >>> print(np.allclose(rvs1, rvs2))
+    True
+
+    """
+
+    # [1] Section 2.1: "For distributions with unbounded domain, we have to
+    # chop off its tails at [a] and [b] such that F(a) and 1-F(b) are small
+    # compared to the maximal tolerated approximation error."
+    p = np.array([dist.ppf(tol/10), dist.isf(tol/10)])  # initial interval
+
+    # [1] Section 2.3: "We then halve this interval recursively until
+    # |u[i+1]-u[i]| is smaller than some threshold value, for example, 0.05."
+    while p.size-1 <= np.ceil(N_max/2):
+        u = dist.cdf(p)
+        i = np.nonzero(np.diff(u) > 0.05)[0]
+        if not i.size:
+            break
+
+        p_mid = (p[i] + p[i+1])/2
+        p = np.sort(np.concatenate((p, p_mid)))
+
+    # [1] Section 2.3: "Now we continue with checking the error estimate in
+    # each of the intervals and continue with splitting them until [it] is
+    # smaller than a given error bound."
+    while p.size-1 <= N_max:
+        # [1] Equation 4-8
+        u = dist.cdf(p)
+        f = dist.pdf(p)
+        H = CubicHermiteSpline(u, p, 1/f)
+
+        # [1] Equation 12
+        u_mid = (u[:-1] + u[1:])/2
+        eu = np.abs(dist.cdf(H(u_mid)) - u_mid)
+
+        i = np.nonzero(eu > tol)[0]
+        if not i.size:
+            break
+
+        p_mid = (p[i] + p[i+1])/2
+        p = np.sort(np.concatenate((p, p_mid)))
+
+    # todo: add test for monotonicity [1] Section 2.4
+    # todo: deal with vanishing density [1] Section 2.5
+    return H  # , np.max(eu), p.size-1

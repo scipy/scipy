@@ -154,6 +154,7 @@ Support Functions
 
    rankdata
    rvs_ratio_uniforms
+   fast_numerical_inversion
 
 References
 ----------
@@ -183,7 +184,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from ._rvs_sampling import rvs_ratio_uniforms
+from ._rvs_sampling import rvs_ratio_uniforms, fast_numerical_inversion
 from ._hypotests import epps_singleton_2samp, cramervonmises
 
 
@@ -207,7 +208,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata', 'rvs_ratio_uniforms',
+           'rankdata', 'rvs_ratio_uniforms', 'fast_numerical_inversion',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises']
 
@@ -7370,7 +7371,7 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1: 
+        elif arg.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
     n = np.asarray(list(map(len, args)))

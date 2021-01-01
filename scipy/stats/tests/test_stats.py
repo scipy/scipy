@@ -28,6 +28,7 @@ from scipy.special._testutils import FuncData
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
+from scipy.stats._distr_params import distcont
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -5937,3 +5938,32 @@ class TestMGCStat(object):
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+
+@pytest.mark.parametrize(("distname", "shapes"), distcont)
+def test_fast_numerical_inversion(distname, shapes):
+    slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+    fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                  'norminvgauss'}
+
+    if distname in slow_dists:
+        pytest.skip("fast_numerical_inversion is not fast enough.")
+    if distname in fail_dists:
+        pytest.xfail("fast_numerical_inversion fails; should fix.")
+
+    np.random.seed(0)
+
+    dist = getattr(stats, distname)(*shapes)
+
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "overflow encountered")
+        sup.filter(RuntimeWarning, "divide by zero")
+        sup.filter(RuntimeWarning, "invalid value encountered")
+        H = stats.fast_numerical_inversion(dist)
+
+    x = np.random.rand(10)
+    p_tol = np.max(np.abs(dist.ppf(x)-H(x))/np.abs(dist.ppf(x)))
+    u_tol = np.max(np.abs(dist.cdf(H(x)) - x))
+
+    assert p_tol < 1e-8
+    assert u_tol < 1e-12
