@@ -10,6 +10,9 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('tests')
 
+    # PROPACK
+    config.add_subpackage('_propack')
+    
     return config
 
 
