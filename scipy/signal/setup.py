@@ -1,4 +1,5 @@
 from scipy._build_utils import numpy_nodepr_api
+import os
 
 
 def configuration(parent_package='', top_path=None):
@@ -22,8 +23,17 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension(
         '_spectral', sources=['_spectral.c'])
-    config.add_extension(
-        '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
+
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.signal._max_len_seq_inner',
+            sources=["scipy/signal/_max_len_seq_inner.py"])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension(
+            '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
+
     config.add_extension(
         '_peak_finding_utils', sources=['_peak_finding_utils.c'])
     config.add_extension(
