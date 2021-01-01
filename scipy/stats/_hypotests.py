@@ -22,7 +22,7 @@ def _vectorize_2s_hypotest_factory(result_creator):
 
             if x.size == 0 or y.size == 0:
                 if nan_policy == "omit":
-                    x, y = x[~np.isnan(x)], y[~np.isnan(x)]
+                    x, y = x[~np.isnan(x)], y[~np.isnan(y)]
                 statistic, pvalue = hypotest_fun(x, y, *args, **kwds)
                 return result_creator(statistic, pvalue)
 
@@ -39,7 +39,7 @@ def _vectorize_2s_hypotest_factory(result_creator):
                 xi = x[indices]
                 yi = y[indices]
                 if nan_policy == "omit":
-                    xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(xi)]
+                    xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
                 statistic, pvalue = hypotest_fun(xi, yi, *args, **kwds)
                 statistics[indices] = statistic
                 pvalues[indices] = pvalue
