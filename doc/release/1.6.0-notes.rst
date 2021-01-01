@@ -2,8 +2,6 @@
 SciPy 1.6.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.6.0 is not released yet!
-
 .. contents::
 
 SciPy 1.6.0 is the culmination of 6 months of hard work. It contains
@@ -402,6 +400,7 @@ Authors
 * Sambit Panda
 * Dima Pasechnik
 * Tirth Patel +
+* Matti Picus
 * Paweł Redzyński +
 * Vladimir Philipenko +
 * Philipp Thölke +
@@ -449,7 +448,7 @@ Authors
 * ZhihuiChen0903 +
 * Jacob Zhong +
 
-A total of 121 people contributed to this release.
+A total of 122 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -589,6 +588,9 @@ Issues closed for 1.6.0
 * `#13182 <https://github.com/scipy/scipy/issues/13182>`__: Key appears twice in \`test_optimize.test_show_options\`
 * `#13191 <https://github.com/scipy/scipy/issues/13191>`__: \`scipy.linalg.lapack.dgesjv\` overwrites original arrays if...
 * `#13207 <https://github.com/scipy/scipy/issues/13207>`__: TST: Erratic test failure in test_cossin_separate
+* `#13221 <https://github.com/scipy/scipy/issues/13221>`__: BUG: pavement.py glitch
+* `#13239 <https://github.com/scipy/scipy/issues/13239>`__: Segmentation fault with \`eigh(..., driver="evx")\` for 10x10...
+* `#13248 <https://github.com/scipy/scipy/issues/13248>`__: ndimage: improper cval handling for complex-valued inputs
 
 Pull requests for 1.6.0
 -----------------------
@@ -927,6 +929,15 @@ Pull requests for 1.6.0
 * `#13190 <https://github.com/scipy/scipy/pull/13190>`__: BUG: optimize: fix a duplicate key bug for \`test_show_options\`
 * `#13192 <https://github.com/scipy/scipy/pull/13192>`__: BUG:linalg: Add overwrite option to gejsv wrapper
 * `#13194 <https://github.com/scipy/scipy/pull/13194>`__: BUG: slsqp should be able to use rel_step
+* `#13199 <https://github.com/scipy/scipy/pull/13199>`__: [skip travis] DOC: 1.6.0 release notes
 * `#13203 <https://github.com/scipy/scipy/pull/13203>`__: fix typos
 * `#13209 <https://github.com/scipy/scipy/pull/13209>`__: TST:linalg: set the seed for cossin test
 * `#13212 <https://github.com/scipy/scipy/pull/13212>`__: [DOC] Backtick and directive consistency.
+* `#13217 <https://github.com/scipy/scipy/pull/13217>`__: REL: add necessary setuptools and numpy version pins in pyproject.toml...
+* `#13226 <https://github.com/scipy/scipy/pull/13226>`__: BUG: pavement.py file handle fixes
+* `#13249 <https://github.com/scipy/scipy/pull/13249>`__: Handle cval correctly for ndimage functions with complex-valued...
+* `#13253 <https://github.com/scipy/scipy/pull/13253>`__: BUG,MAINT: Ensure all Pool objects are closed
+* `#13255 <https://github.com/scipy/scipy/pull/13255>`__: BUG:linalg: Fix heevx wrappers and add new tests
+* `#13260 <https://github.com/scipy/scipy/pull/13260>`__: CI: fix macOS testing
+* `#13269 <https://github.com/scipy/scipy/pull/13269>`__: CI: github actions: In the linux dbg tests, update apt before...
+* `#13279 <https://github.com/scipy/scipy/pull/13279>`__: MAINT: 1.6.0 rc2 backports
