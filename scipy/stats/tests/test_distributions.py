@@ -378,9 +378,9 @@ class TestGenHyperbolic(object):
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 100 df
         res = []
-        for df in np.linspace(1,100,20):
+        for df in np.linspace(1, 100, 20):
         # in principle alpha should be zero
-        # in practice for big lmbdas alpha cannot be too small else pdf pdf does not integrate
+        # in practice for big lmbdas alpha cannot be too small else pdf does not integrate
             alpha = np.float_power(df,2)*np.finfo(np.float32).eps 
             gh = stats.genhyperbolic(lmbda=-df/2, alpha=alpha, beta=0, delta=np.sqrt(df), mu=0)
             x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
@@ -403,7 +403,7 @@ class TestGenHyperbolic(object):
         res = []
         # TODO i need to double check the implementation of the NormInvGauss(),
         # it does not seem to me it exactly replicate the wiki or the original paper
-        # https://www.jstor.org/stable/4616433?read-now=1&refreqid=excelsior%3A2458de9bd8c27a01b8bf7c21dc550252&seq=2#page_scan_tab_contents
+        # https://www.jstor.org/stable/4616433
         # delta behaves weirdly from 2 to ~ 10 (then the two distributions coincides.)
         # keeping delta fixed 1 for this test
         for alpha, beta, delta, mu in zip(np.linspace(1,20, 20), \

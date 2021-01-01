@@ -2918,19 +2918,19 @@ class genhyperbolic_gen(rv_continuous):
            {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \lambda}}
 
     for :math:`x \in (-\infty; \infty)`,
-    and :math:`\lambda, \mu \in \mathbb{R}`
-    ans :math: `0 \le |\beta| < \alpha ` \beta,
+    :math:`\lambda, \mu \in \mathbb{R}`
+    :math: `0 \le |\beta| < \alpha ` \beta,
     and :math: `\delta \in \mathbb{R}_{>0}`.
     
-    Where: :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
+    :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
     :math: `K_{\lambda}(.)` denotes the modified Bessel function of the third
     kind and order :math: `\lambda` (`scipy.special.kn`)
 
-    `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`.
-    takes ``alpha`` as a shape parameter for :math:`\alpha`.
-    takes ``beta`` as a skeweness parameter for :math:`\beta`.
-    takes ``delta`` as a scale parameter for :math:`\delta`.
-    takes ``mu`` as a location parameter for :math:`\mu`.
+    `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`,
+    ``alpha`` as a shape parameter for :math:`\alpha`,
+    ``beta`` as a skewness parameter for :math:`\beta`,
+    ``delta`` as a scale parameter for :math:`\delta`, and
+    ``mu`` as a location parameter for :math:`\mu`.
 
 
     %(after_notes)s
@@ -2966,7 +2966,7 @@ class genhyperbolic_gen(rv_continuous):
     #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
         t1 = np.float_power(alpha,2) - np.float_power(beta,2)
         t2 = np.float_power(t1, lmbda*0.5)
-        t3 = np.float_power(2*np.pi,0.5)
+        t3 = np.float_power(2*np.pi, 0.5)
         t4 = np.float_power(alpha, lmbda-0.5)
         t5 = np.float_power(delta, lmbda)
         t6 = delta*np.float_power(t1, 0.5)
