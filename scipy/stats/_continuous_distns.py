@@ -2962,7 +2962,7 @@ class genhyperbolic_gen(rv_continuous):
                 
         return argcheck_single(lmbda, alpha, beta, delta, mu)
 
-    def norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
+    def _norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
     #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
         t1 = np.float_power(alpha,2) - np.float_power(beta,2)
         t2 = np.float_power(t1, lmbda*0.5)
@@ -2975,7 +2975,7 @@ class genhyperbolic_gen(rv_continuous):
 
     def _pdf(self, x, lmbda, alpha, beta, delta, mu):
     #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
-        t1 = self.norming_constant(lmbda=lmbda, alpha=alpha, beta=beta, delta=delta)
+        t1 = self._norming_constant(lmbda=lmbda, alpha=alpha, beta=beta, delta=delta)
         t2 = np.hypot(delta, x-mu)
         t3 = np.float_power(t2, (lmbda-0.5))
         t4 = sc.kv(lmbda-0.5, alpha*t2)
