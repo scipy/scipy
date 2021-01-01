@@ -1,11 +1,6 @@
 """Quasi-Monte Carlo engines and helpers."""
-# Prevents annotations from being evaluated during runtime,
-# thus storing them as plain strings
-from __future__ import annotations
-
 import copy
 import numbers
-from typing import TYPE_CHECKING, List, Optional, Callable, Iterable, Union
 from abc import ABC, abstractmethod
 import math
 import warnings
@@ -19,19 +14,13 @@ from scipy.stats._sobol import (
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
 )
 
-if TYPE_CHECKING:
-    import numpy.typing as npt
-
-_int = Union[int, np.integer]
-
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
            'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 # Based on scipy._lib._util.check_random_state
-def check_random_state(seed: Optional[_int, np.random.Generator,
-                                      np.random.RandomState] = None):
+def check_random_state(seed=None):
     """Turn `seed` into a `numpy.random.Generator` instance.
 
     Parameters
@@ -67,8 +56,7 @@ def check_random_state(seed: Optional[_int, np.random.Generator,
                          ' instance' % seed)
 
 
-def scale(sample: npt.ArrayLike, bounds: npt.ArrayLike,
-          reverse: bool = False) -> np.ndarray:
+def scale(sample, bounds, reverse=False):
     r"""Sample scaling from unit hypercube to bounds range.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
@@ -115,8 +103,7 @@ def scale(sample: npt.ArrayLike, bounds: npt.ArrayLike,
         return (sample - min_) / (max_ - min_)
 
 
-def discrepancy(sample: npt.ArrayLike, iterative: bool = False,
-                method: str = 'CD') -> float:
+def discrepancy(sample, iterative=False, method='CD'):
     """Discrepancy on a given sample.
 
     Parameters
@@ -272,8 +259,7 @@ def discrepancy(sample: npt.ArrayLike, iterative: bool = False,
                          'CD, WD, MD, star.'.format(method))
 
 
-def _update_discrepancy(x_new: npt.ArrayLike, sample: npt.ArrayLike,
-                        initial_disc: float) -> float:
+def _update_discrepancy(x_new, sample, initial_disc):
     """Update the centered discrepancy with a new sample.
 
     Parameters
@@ -322,8 +308,7 @@ def _update_discrepancy(x_new: npt.ArrayLike, sample: npt.ArrayLike,
     return initial_disc + disc1 + disc2 + disc3
 
 
-def _perturb_discrepancy(sample: npt.ArrayLike, i1: _int, i2: _int, k: _int,
-                         disc: float) -> float:
+def _perturb_discrepancy(sample, i1, i2, k, disc):
     """Centered discrepancy after and elementary perturbation on a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
@@ -415,7 +400,7 @@ def _perturb_discrepancy(sample: npt.ArrayLike, i1: _int, i2: _int, k: _int,
     return disc_ep
 
 
-def primes_from_2_to(n: _int) -> np.ndarray:
+def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
 
     Parameters
@@ -441,7 +426,7 @@ def primes_from_2_to(n: _int) -> np.ndarray:
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n: _int) -> List[int]:
+def n_primes(n):
     """List of the n-first prime numbers.
 
     Parameters
@@ -480,11 +465,7 @@ def n_primes(n: _int) -> List[int]:
     return primes
 
 
-def van_der_corput(
-        n: _int, base: _int = 2, start_index: _int = 0,
-        scramble: bool = False,
-        seed: Optional[_int, np.random.Generator] = None
-) -> np.ndarray:
+def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -632,15 +613,14 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(self, d: _int,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, d, seed=None):
         self.d = d
         self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(seed)
         self.num_generated = 0
 
     @abstractmethod
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -657,7 +637,7 @@ class QMCEngine(ABC):
         """
         # self.num_generated += n
 
-    def reset(self) -> QMCEngine:
+    def reset(self):
         """Reset the engine to base state.
 
         Returns
@@ -670,7 +650,7 @@ class QMCEngine(ABC):
         self.num_generated = 0
         return self
 
-    def fast_forward(self, n: _int) -> QMCEngine:
+    def fast_forward(self, n):
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -768,14 +748,13 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, d: _int, scramble: bool = True,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, d, scramble=True, seed=None):
         super().__init__(d=d, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -853,11 +832,10 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, d: _int,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, d, seed=None):
         super().__init__(d=d, seed=seed)
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -954,8 +932,7 @@ class LatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, d: _int, centered: bool = False,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, d, centered=False, seed=None):
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
@@ -967,7 +944,7 @@ class LatinHypercube(QMCEngine):
             self.rg_integers = self.rng.integers
             self.rg_sample = self.rng.random
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -991,7 +968,7 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return 1. / n * (q - r)
 
-    def reset(self) -> LatinHypercube:
+    def reset(self):
         """Reset the engine to base state.
 
         Returns
@@ -1084,20 +1061,13 @@ class OptimalDesign(QMCEngine):
 
     """
 
-    def __init__(
-            self, d: _int, start_design: Optional[npt.ArrayLike] = None,
-            niter: _int = 1,
-            method: Optional[Callable[[Callable, List[int], npt.ArrayLike],
-                                      None]] = None,
-            seed: Optional[_int, np.random.Generator] = None
-    ) -> None:
+    def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
         super().__init__(d=d, seed=seed)
         self.start_design = start_design
         self.niter = niter
 
         if method is None:
-            def method(func: Callable, x0: List[int],
-                       bounds: npt.ArrayLike) -> None:
+            def method(func, x0, bounds):
                 """Basinhopping optimization."""
                 minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
                 basinhopping(func, x0, niter=100,
@@ -1113,7 +1083,7 @@ class OptimalDesign(QMCEngine):
 
         self.olhs = OrthogonalLatinHypercube(self.d, seed=self.rng)
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -1175,7 +1145,7 @@ class OptimalDesign(QMCEngine):
         self.num_generated += n
         return self.best_doe
 
-    def reset(self) -> OptimalDesign:
+    def reset(self):
         """Reset the engine to base state.
 
         Returns
@@ -1306,8 +1276,7 @@ class Sobol(QMCEngine):
     MAXDIM = _MAXDIM
     MAXBIT = _MAXBIT
 
-    def __init__(self, d: _int, scramble: bool = True,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, d, scramble=True, seed=None):
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
@@ -1329,7 +1298,7 @@ class Sobol(QMCEngine):
         self._quasi = self._shift.copy()
         self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
 
-    def _scramble(self) -> None:
+    def _scramble(self):
         """Scramble the sequence."""
         try:
             rg_integers = self.rng.integers
@@ -1346,7 +1315,7 @@ class Sobol(QMCEngine):
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw next point(s) in the Sobol' sequence.
 
         Parameters
@@ -1381,7 +1350,7 @@ class Sobol(QMCEngine):
         self.num_generated += n
         return sample
 
-    def random_base2(self, m: _int) -> np.ndarray:
+    def random_base2(self, m):
         """Draw point(s) from the Sobol' sequence.
 
         This function draws :math:`n=2^m` points in the parameter space
@@ -1411,7 +1380,7 @@ class Sobol(QMCEngine):
 
         return self.random(n)
 
-    def reset(self) -> Sobol:
+    def reset(self):
         """Reset the engine to base state.
 
         Returns
@@ -1424,7 +1393,7 @@ class Sobol(QMCEngine):
         self.num_generated = 0
         return self
 
-    def fast_forward(self, n: _int) -> Sobol:
+    def fast_forward(self, n):
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -1483,10 +1452,8 @@ class MultivariateNormalQMC(QMCEngine):
 
     """
 
-    def __init__(self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None,
-                 cov_root: Optional[npt.ArrayLike] = None, inv_transform: bool = True,
-                 engine: Optional[QMCEngine] = None,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, mean, cov=None, cov_root=None, inv_transform=True,
+                 engine=None, seed=None):
         mean = np.array(mean, copy=False, ndmin=1)
         d = mean.shape[0]
         if cov is not None:
@@ -1526,7 +1493,7 @@ class MultivariateNormalQMC(QMCEngine):
         self._mean = mean
         self._corr_matrix = cov_root
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` QMC samples from the multivariate Normal.
 
         Parameters
@@ -1543,14 +1510,14 @@ class MultivariateNormalQMC(QMCEngine):
         base_samples = self._standard_normal_samples(n)
         return self._correlate(base_samples)
 
-    def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
+    def _correlate(self, base_samples):
         if self._corr_matrix is not None:
             return base_samples @ self._corr_matrix + self._mean
         else:
             # avoid mulitplying with identity here
             return base_samples + self._mean
 
-    def _standard_normal_samples(self, n: _int = 1) -> np.ndarray:
+    def _standard_normal_samples(self, n=1):
         """Draw `n` QMC samples from the standard Normal N(0, I_d).
 
         Parameters
@@ -1607,8 +1574,7 @@ class MultinomialQMC(QMCEngine):
 
     """
 
-    def __init__(self, pvals: npt.ArrayLike, engine: Optional[QMCEngine] = None,
-                 seed: Optional[_int, np.random.Generator] = None) -> None:
+    def __init__(self, pvals, engine=None, seed=None):
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
@@ -1618,7 +1584,7 @@ class MultinomialQMC(QMCEngine):
             engine = Sobol(d=1, scramble=True, seed=seed)
         self.engine = engine
 
-    def random(self, n: _int = 1) -> np.ndarray:
+    def random(self, n=1):
         """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
