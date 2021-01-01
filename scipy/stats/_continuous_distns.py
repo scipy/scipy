@@ -2937,11 +2937,11 @@ class genhyperbolic_gen(rv_continuous):
 
     References
     ----------
-    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+            Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
     pp. 151-157, 1978.
 
-    Scott, David J, Würtz, Diethelm, Dong, Christine and Tran, Thanh Tam, (2009),
+    .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran, Thanh Tam, (2009),
     Moments of the generalized hyperbolic distribution, MPRA Paper,
     University Library of Munich, Germany, https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
 
