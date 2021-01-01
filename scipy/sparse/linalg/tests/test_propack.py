@@ -46,11 +46,11 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     u2, sigma2, vt2 = svdp(Msp, k=k, which=which, irl_mode=irl_mode, tol=tol)
 
     # check the which
-    if which.upper() == 'S':
+    if which.upper() == 'SM':
         u1 = np.roll(u1, k, 1)
         vt1 = np.roll(vt1, k, 0)
         sigma1 = np.roll(sigma1, k)
-    elif which.upper() == 'L':
+    elif which.upper() == 'LM':
         pass
     else:
         raise ValueError(f"which = '{which}' not recognized")
@@ -66,11 +66,11 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 @pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
 @pytest.mark.parametrize('dtype', (np.float32, np.float64, np.complex64, np.complex128))
 @pytest.mark.parametrize('irl', (True, False))
-@pytest.mark.parametrize('which', ('L', 'S'))
+@pytest.mark.parametrize('which', ('LM', 'SM'))
 def test_svdp(ctor, dtype, irl, which):
     np.random.seed(0)
     n, m, k = 10, 20, 3
-    if which == 'S' and not irl:
+    if which == 'SM' and not irl:
         with assert_raises(ValueError):
             check_svdp(n, m, ctor, dtype, k, irl, which)
     else:

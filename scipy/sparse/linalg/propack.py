@@ -40,6 +40,10 @@ _lansvd_irl_dict = {
     'D': _zpropack.zlansvd_irl,
 }
 
+_which_converter = {
+    'LM': 'L',
+    'SM': 'S',
+}
 
 class _AProd:
     """
@@ -72,10 +76,10 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-def svdp(A, k, which='L', irl_mode=False, kmax=None,
+def svdp(A, k, which='LM', irl_mode=False, kmax=None,
          compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
          delta=None, eta=None, anorm=0, cgs=False, elr=True, blocksize=16,
-         min_relgap=0.002, shifts=100, maxiter=1000):
+         min_relgap=0.002, shifts=100, maxiter=None):
     """
     Compute the singular value decomposition of A using PROPACK
 
@@ -88,9 +92,9 @@ def svdp(A, k, which='L', irl_mode=False, kmax=None,
         Number of singular values/vectors to compute
     which : string (optional)
         Which singluar triplets to compute:
-        - 'L': compute triplets corresponding to the k largest singular values
-        - 'S': compute triplets corresponding to the k smallest singular values
-        which='S' requires irl=True.
+        - 'LM': compute triplets corresponding to the k largest singular values
+        - 'SM: compute triplets corresponding to the k smallest singular values
+        which='SM' requires irl=True.
         Computes largest singular values by default.
     irl_mode : boolean (optional)
         If True, then compute SVD using iterative restarts.  Default is False.
@@ -175,10 +179,10 @@ def svdp(A, k, which='L', irl_mode=False, kmax=None,
     """
 
     which = which.upper()
-    if which not in {'L', 'S'}:
-        raise ValueError("`which` must be either 'L' or 'S'")
-    if not irl_mode and which == 'S':
-        raise ValueError("`which`='S' requires irl_mode=True")
+    if which not in {'LM', 'SM'}:
+        raise ValueError("`which` must be either 'LM' or 'SM'")
+    if not irl_mode and which == 'SM':
+        raise ValueError("`which`='SM' requires irl_mode=True")
 
     aprod = _AProd(A)
     typ = aprod.dtype.char
@@ -201,6 +205,8 @@ def svdp(A, k, which='L', irl_mode=False, kmax=None,
 
     if kmax is None:
         kmax = 5*k
+    if maxiter is None:
+        maxiter = 1000
 
     # guard against unnecessarily large kmax
     kmax = min(m + 1, n + 1, kmax)
@@ -265,7 +271,8 @@ def svdp(A, k, which='L', irl_mode=False, kmax=None,
         zwork = np.empty(m + n + 32*m, dtype=typ)
 
         if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(which, jobu, jobv, m, n,
+            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
+                                                jobu, jobv, m, n,
                                                 shifts, k, maxiter, aprod,
                                                 u, v, tol, work, zwork,
                                                 iwork, doption, ioption,
@@ -276,7 +283,8 @@ def svdp(A, k, which='L', irl_mode=False, kmax=None,
                                             ioption, dparm, iparm)
     else:
         if irl_mode:
-            u, sigma, bnd, v, info = lansvd_irl(which, jobu, jobv, m, n,
+            u, sigma, bnd, v, info = lansvd_irl(_which_converter[which],
+                                                jobu, jobv, m, n,
                                                 shifts, k, maxiter, aprod,
                                                 u, v, tol, work, iwork,
                                                 doption, ioption, dparm,

@@ -1771,7 +1771,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         .. versionadded:: 0.16.0
     solver : str, optional
-            Eigenvalue solver to use. Should be 'arpack' or 'lobpcg'.
+            Eigenvalue solver to use. Should be 'arpack', 'lobpcg', or
+            'propack'.
             Default: 'arpack'
 
     Returns
@@ -1864,13 +1865,22 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                                  largest=largest)
-
+    elif solver == 'propack':
+        from scipy.sparse.linalg import svdp
+        jobu = ((isinstance(return_singular_vectors, str) and 'u' in return_singular_vectors)
+                or (isinstance(return_singular_vectors, bool) and return_singular_vectors))
+        jobv = ((isinstance(return_singular_vectors, str) and 'v' in return_singular_vectors)
+                or (isinstance(return_singular_vectors, bool) and return_singular_vectors))
+        return svdp(
+            A, k=k, tol=tol, which=which, maxiter=maxiter, compute_u=jobu, compute_v=jobv,
+            irl_mode=True, kmax=ncv, v0=v0)
     elif solver == 'arpack' or solver is None:
         eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
     else:
-        raise ValueError("solver must be either 'arpack', or 'lobpcg'.")
+        raise ValueError("solver must be either 'arpack', 'lobpcg', or "
+                         "'propack'.")
 
     # Gramian matrices have real non-negative eigenvalues.
     eigvals = np.maximum(eigvals.real, 0)
