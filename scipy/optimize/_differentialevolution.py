@@ -597,7 +597,7 @@ class DifferentialEvolutionSolver(object):
             self.population[0] = x0_scaled
 
         # infrastructure for constraints
-         self.constraints = constraints
+        self.constraints = constraints
         self._wrapped_constraints = []
 
         if hasattr(constraints, '__len__'):
