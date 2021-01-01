@@ -59,12 +59,12 @@ skip_fit_test = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                  'levy_stable', 'rv_histogram_instance']
 
 # skip check_fit_args_fix (test is slow)
-skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
-                     'gausshyper', 'genexpon', 'halfgennorm',
-                     'gompertz', 'johnsonsb', 'johnsonsu', 'kappa4',
-                     'ksone', 'kstwo', 'kstwobign', 'levy_stable', 'mielke', 'ncf',
-                     'ncx2', 'powerlognorm', 'powernorm', 'rdist',
-                     'recipinvgauss', 'trapezoid', 'vonmises', 'vonmises_line']
+skip_fit_fix_test = ['burr', 'exponpow', 'exponweib', 'gausshyper',
+                     'genexpon', 'halfgennorm', 'gompertz', 'johnsonsb',
+                     'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
+                     'levy_stable', 'mielke', 'ncf', 'ncx2', 'powerlognorm',
+                     'powernorm', 'rdist', 'recipinvgauss', 'trapezoid',
+                     'vonmises', 'vonmises_line']
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -72,14 +72,13 @@ skip_fit_fix_test = ['burr', 'exponpow', 'exponweib',
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'genhyperbolic',
-                   'geninvgauss', 'gennorm', 'genpareto',
-                   'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'genhyperbolic', 'geninvgauss', 'gennorm', 'genpareto',
+                   'halfgennorm', 'invgamma', 'ksone', 'kstwo', 'kstwobign',
+                   'levy_l', 'loggamma', 'logistic', 'loguniform',
+                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'norminvgauss', 'pearson3', 'rdist', 'reciprocal',
+                   'rice', 'skewnorm', 't', 'tukeylambda', 'vonmises',
+                   'vonmises_line', 'rv_histogram_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)

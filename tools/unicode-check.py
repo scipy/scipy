@@ -10,7 +10,7 @@ import argparse
 # The set of Unicode code points greater than 127 that we
 # allow in the source code.
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
-allowed = (set(['®', 'é', 'ó', 'ö', 'λ', 'π', 'ω', '∫', '≠']) |
+allowed = (set(['®', 'é', 'ó', 'ö', 'ü', 'λ', 'π', 'ω', '∫', '≠']) |
            box_drawing_chars)
 
 

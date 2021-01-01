@@ -2911,7 +2911,7 @@ class genhyperbolic_gen(rv_continuous):
 
     .. math::
 
-        f(x, \lambda, \alpha, \beta, \delta, \mu) = 
+        f(x, \lambda, \alpha, \beta, \delta, \mu) =
            \frac{(\gamma/\delta)^\lambda}{\sqrt{2\pi}K_\lambda(\delta \gamma)}
            e^{\beta (x - \mu)} \times \frac{K_{\lambda - 1/2}
            (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
@@ -2921,7 +2921,7 @@ class genhyperbolic_gen(rv_continuous):
     and :math:`\lambda, \mu \in \mathbb{R}`
     ans :math: `0 \le |\beta| < \alpha ` \beta,
     and :math: `\delta \in \mathbb{R}_{>0}`.
-    
+
     Where: :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
     :math: `K_{\lambda}(.)` denotes the modified Bessel function of the third
     kind and order :math: `\lambda` (`scipy.special.kn`)
@@ -2941,16 +2941,17 @@ class genhyperbolic_gen(rv_continuous):
             Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
     pp. 151-157, 1978.
 
-    .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran, Thanh Tam, (2009),
-    Moments of the generalized hyperbolic distribution, MPRA Paper,
-    University Library of Munich, Germany, https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
+    .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
+    Thanh Tam, (2009), Moments of the generalized hyperbolic distribution,
+    MPRA Paper, University Library of Munich, Germany,
+    https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
 
     %(example)s
 
     """
-    
+
     def _argcheck(self, lmbda, alpha, beta, delta, mu):
-        
+
         @np.vectorize
         def argcheck_single(lmbda, alpha, beta, delta, mu):
             if lmbda > 0:
@@ -2959,23 +2960,25 @@ class genhyperbolic_gen(rv_continuous):
                 return np.all((np.absolute(beta) < alpha) & (delta > 0))
             else:
                 return np.all((np.absolute(beta) <= alpha) & (delta > 0))
-                
+
         return argcheck_single(lmbda, alpha, beta, delta, mu)
 
     def _norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
-    #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
-        t1 = np.float_power(alpha,2) - np.float_power(beta,2)
+        # https://www.jstor.org/stable/4615705
+        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
         t2 = np.float_power(t1, lmbda*0.5)
-        t3 = np.float_power(2*np.pi,0.5)
+        t3 = np.float_power(2*np.pi, 0.5)
         t4 = np.float_power(alpha, lmbda-0.5)
         t5 = np.float_power(delta, lmbda)
         t6 = delta*np.float_power(t1, 0.5)
         t7 = sc.kv(lmbda, t6)
-        return t2*np.float_power(t3*t4*t5*t7,-1)
+        return t2*np.float_power(t3*t4*t5*t7, -1)
 
     def _pdf(self, x, lmbda, alpha, beta, delta, mu):
-    #https://www.jstor.org/stable/4615705?seq=7#metadata_info_tab_contents
-        t1 = self._norming_constant(lmbda=lmbda, alpha=alpha, beta=beta, delta=delta)
+        # https://www.jstor.org/stable/4615705
+        t1 = self._norming_constant(
+            lmbda=lmbda, alpha=alpha, beta=beta, delta=delta
+            )
         t2 = np.hypot(delta, x-mu)
         t3 = np.float_power(t2, (lmbda-0.5))
         t4 = sc.kv(lmbda-0.5, alpha*t2)
@@ -2986,19 +2989,26 @@ class genhyperbolic_gen(rv_continuous):
 
     def _cdf(self, x, lmbda, alpha, beta, delta, mu):
         # quad must be guided towards the bulk of the mass
-        
+
         @np.vectorize
         def cdf_single(x, lmbda, alpha, beta, delta, mu):
             if beta >= 0:
-                return integrate.quad(self._pdf, -1e9, x, points=[mu-1e3, mu+1e3], args = (lmbda, alpha, beta, delta, mu))[0]
+                return integrate.quad(
+                            self._pdf, -1e9, x,
+                            points=[mu-1e3, mu+1e3],
+                            args=(lmbda, alpha, beta, delta, mu)
+                            )[0]
             else:
-                return integrate.quad(self._pdf, 1e9, x, points=[mu-1e3, mu+1e3], args = (lmbda, alpha, beta, delta, mu))[0] + 1
-        
+                return integrate.quad(
+                            self._pdf, 1e9, x,
+                            points=[mu-1e3, mu+1e3],
+                            args=(lmbda, alpha, beta, delta, mu)
+                            )[0] + 1
+
         return cdf_single(x, lmbda, alpha, beta, delta, mu)
 
-
     def _stats(self, lmbda, alpha, beta, delta, mu):
-    #https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
+        # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
         t1 = np.hypot(delta, beta)
         t2 = np.float_power(delta, 2)*np.float_power(t1, 2)
         b0 = sc.kv(lmbda, t1)
@@ -3018,7 +3028,7 @@ class genhyperbolic_gen(rv_continuous):
             + 6*np.float_power(t2*beta, 3)*r3 \
             + np.float_power(t2*beta, 4)*r4
         return m1, m2, m3, m4
- 
+
 
 genhyperbolic = genhyperbolic_gen(name='genhyperbolic')
 
