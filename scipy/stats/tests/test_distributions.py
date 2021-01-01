@@ -386,8 +386,7 @@ class TestGenHyperbolic(object):
                 lmbda=-df/2,
                 alpha=alpha,
                 beta=0,
-                delta=np.sqrt(df),
-                mu=0
+                delta=np.sqrt(df)
                 )
             x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
             res.append(assert_allclose(
@@ -407,7 +406,7 @@ class TestGenHyperbolic(object):
                 alpha=1,
                 beta=0,
                 delta=np.finfo(np.float32).eps,
-                mu=loc)
+                loc=loc)
             x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
             res.append(assert_allclose(
                 gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
@@ -423,7 +422,7 @@ class TestGenHyperbolic(object):
         # the wiki or the original paper https://www.jstor.org/stable/4616433
         # delta behaves weirdly from 2 to ~ 10 (then the two distributions
         # coincides.) keeping delta fixed 1 for this test
-        for alpha, beta, delta, mu in zip(
+        for alpha, beta, delta, loc in zip(
                 np.linspace(1, 20, 20),
                 np.linspace(0, 19, 20)*np.float_power(-1, range(20)),
                 np.linspace(1, 1, 20),
@@ -433,11 +432,11 @@ class TestGenHyperbolic(object):
                 alpha=alpha,
                 beta=beta,
                 delta=delta,
-                mu=mu)
+                loc=loc)
             x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
             res.append(assert_allclose(
                 gh.pdf(x), stats.norminvgauss.pdf(
-                    x, a=alpha, b=beta, loc=mu, scale=delta),
+                    x, a=alpha, b=beta, loc=loc, scale=delta),
                 atol=1e-9)
                 )
             np.all(res)

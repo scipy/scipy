@@ -2950,10 +2950,10 @@ class genhyperbolic_gen(rv_continuous):
 
     """
 
-    def _argcheck(self, lmbda, alpha, beta, delta, mu):
+    def _argcheck(self, lmbda, alpha, beta, delta):
 
         @np.vectorize
-        def argcheck_single(lmbda, alpha, beta, delta, mu):
+        def argcheck_single(lmbda, alpha, beta, delta):
             if lmbda > 0:
                 return np.all((np.absolute(beta) < alpha) & (delta >= 0))
             elif lmbda == 0:
@@ -2961,7 +2961,7 @@ class genhyperbolic_gen(rv_continuous):
             else:
                 return np.all((np.absolute(beta) <= alpha) & (delta > 0))
 
-        return argcheck_single(lmbda, alpha, beta, delta, mu)
+        return argcheck_single(lmbda, alpha, beta, delta)
 
     def _norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
         # https://www.jstor.org/stable/4615705
@@ -2974,40 +2974,40 @@ class genhyperbolic_gen(rv_continuous):
         t7 = sc.kv(lmbda, t6)
         return t2*np.float_power(t3*t4*t5*t7, -1)
 
-    def _pdf(self, x, lmbda, alpha, beta, delta, mu):
+    def _pdf(self, x, lmbda, alpha, beta, delta):
         # https://www.jstor.org/stable/4615705
         t1 = self._norming_constant(
             lmbda=lmbda, alpha=alpha, beta=beta, delta=delta
             )
-        t2 = np.hypot(delta, x-mu)
+        t2 = np.hypot(delta, x)
         t3 = np.float_power(t2, (lmbda-0.5))
         t4 = sc.kv(lmbda-0.5, alpha*t2)
-        t5 = beta*(x-mu)
+        t5 = beta*(x)
         t6 = np.where(t5 < 700, t5, 700)
         t7 = np.exp(t6)
         return t1*t3*t4*t7
 
-    def _cdf(self, x, lmbda, alpha, beta, delta, mu):
-        # quad must be guided towards the bulk of the mass
+#    def _cdf(self, x, lmbda, alpha, beta, delta):
+#        # quad must be guided towards the bulk of the mass
+#
+#        @np.vectorize
+#        def cdf_single(x, lmbda, alpha, beta, delta):
+#            if beta >= 0:
+#                return integrate.quad(
+#                            self._pdf, -1e9, x,
+#                            points=[1e3, 1e3],
+#                            args=(lmbda, alpha, beta, delta)
+#                            )[0]
+#            else:
+#                return integrate.quad(
+#                            self._pdf, 1e9, x,
+#                            points=[1e3, 1e3],
+#                            args=(lmbda, alpha, beta, delta)
+#                            )[0] + 1
+#
+#        return cdf_single(x, lmbda, alpha, beta, delta)
 
-        @np.vectorize
-        def cdf_single(x, lmbda, alpha, beta, delta, mu):
-            if beta >= 0:
-                return integrate.quad(
-                            self._pdf, -1e9, x,
-                            points=[mu-1e3, mu+1e3],
-                            args=(lmbda, alpha, beta, delta, mu)
-                            )[0]
-            else:
-                return integrate.quad(
-                            self._pdf, 1e9, x,
-                            points=[mu-1e3, mu+1e3],
-                            args=(lmbda, alpha, beta, delta, mu)
-                            )[0] + 1
-
-        return cdf_single(x, lmbda, alpha, beta, delta, mu)
-
-    def _stats(self, lmbda, alpha, beta, delta, mu):
+    def _stats(self, lmbda, alpha, beta, delta):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
         t1 = np.hypot(delta, beta)
         t2 = np.float_power(delta, 2)*np.float_power(t1, 2)
