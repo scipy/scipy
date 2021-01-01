@@ -341,7 +341,7 @@ class FastNumericalInverse():
         return self.ppf(rng.random(size=size))
 
 
-def fni_input_validation(dist, tol, max_intervals):
+def _fni_input_validation(dist, tol, max_intervals):
     if int(max_intervals) != max_intervals or max_intervals <= 1:
         raise ValueError("`max_intervals' must be an integer greater than 1.")
 
@@ -379,7 +379,7 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
         The maximum u-error at an interpolant interval midpoint
 
     """
-    dist, tol, max_intervals = fni_input_validation(dist, tol, max_intervals)
+    dist, tol, max_intervals = _fni_input_validation(dist, tol, max_intervals)
 
     # [1] Section 2.1: "For distributions with unbounded domain, we have to
     # chop off its tails at [a] and [b] such that F(a) and 1-F(b) are small
