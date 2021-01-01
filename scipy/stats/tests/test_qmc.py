@@ -356,25 +356,27 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
-            qmc.multinomial_qmc(10, p)
+            qmc.MultinomialQMC(p)
 
     def test_MultinomialSumOfPTooLarge(self):
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must sum "
                                              r"to 1."):
-            qmc.multinomial_qmc(10, p)
+            qmc.MultinomialQMC(p)
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         seed = np.random.RandomState(12345)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         expected = np.array([12, 25, 6, 35, 22])
-        assert_array_equal(qmc.multinomial_qmc(100, p, seed=seed), expected)
+        engine = qmc.MultinomialQMC(p, seed=seed)
+        assert_array_equal(engine.random(100), expected)
 
     def test_MultinomialDistribution(self):
         seed = np.random.RandomState(12345)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        draws = qmc.multinomial_qmc(8192, p, seed=seed)
+        engine = qmc.MultinomialQMC(p, seed=seed)
+        draws = engine.random(8192)
         assert_array_almost_equal(draws / np.sum(draws), p, decimal=4)
 
     def test_FindIndex(self):
@@ -392,23 +394,22 @@ class TestMultinomialQMC:
         seed = np.random.RandomState(12345)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         expected = np.array([12, 25, 6, 35, 22])
-        engine = qmc.Sobol(1, scramble=True, seed=seed)
-        assert_array_equal(qmc.multinomial_qmc(100, p, engine=engine,
-                                               seed=seed),
-                           expected)
+        base_engine = qmc.Sobol(1, scramble=True, seed=seed)
+        engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
+        assert_array_equal(engine.random(100), expected)
 
 
 class TestNormalQMC:
     def test_NormalQMC(self):
         # d = 1
         seed = np.random.RandomState(123456)
-        engine = qmc.NormalQMC(d=1, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1), seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
-        engine = qmc.NormalQMC(d=2, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n=5)
@@ -417,13 +418,15 @@ class TestNormalQMC:
     def test_NormalQMCInvTransform(self):
         # d = 1
         seed = np.random.RandomState(123456)
-        engine = qmc.NormalQMC(d=1, inv_transform=True, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(1), inv_transform=True, seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 1))
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 1))
         # d = 2
-        engine = qmc.NormalQMC(d=2, inv_transform=True, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(2), inv_transform=True, seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
         samples = engine.random(n=5)
@@ -431,8 +434,8 @@ class TestNormalQMC:
 
     def test_other_engine(self):
         seed = np.random.RandomState(123456)
-        engine = qmc.NormalQMC(d=2, engine=qmc.Sobol(d=2, scramble=False,
-                                                     seed=seed),
+        base_engine = qmc.Sobol(d=2, scramble=False, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), engine=base_engine,
                                inv_transform=True, seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
@@ -440,7 +443,8 @@ class TestNormalQMC:
     def test_NormalQMCSeeded(self):
         # test even dimension
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=2, inv_transform=False, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(2), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
         samples_expected = np.array(
             [[-0.943472, 0.405116], [-0.63099602, -1.32950772]]
@@ -449,7 +453,8 @@ class TestNormalQMC:
 
         # test odd dimension
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=3, inv_transform=False, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(3), inv_transform=False, seed=seed)
         samples = engine.random(n=2)
         samples_expected = np.array(
             [
@@ -462,7 +467,8 @@ class TestNormalQMC:
     def test_NormalQMCSeededInvTransform(self):
         # test even dimension
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=2, seed=seed, inv_transform=True)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(2), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
         samples_expected = np.array(
             [[0.228309, -0.162516], [-0.41622922, 0.46622792]]
@@ -471,7 +477,8 @@ class TestNormalQMC:
 
         # test odd dimension
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=3, seed=seed, inv_transform=True)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(3), seed=seed, inv_transform=True)
         samples = engine.random(n=2)
         samples_expected = np.array(
             [
@@ -483,7 +490,7 @@ class TestNormalQMC:
 
     def test_NormalQMCShapiro(self):
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=2, seed=seed)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), seed=seed)
         samples = engine.random(n=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))
@@ -497,7 +504,8 @@ class TestNormalQMC:
 
     def test_NormalQMCShapiroInvTransform(self):
         seed = np.random.RandomState(12345)
-        engine = qmc.NormalQMC(d=2, seed=seed, inv_transform=True)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(2), seed=seed, inv_transform=True)
         samples = engine.random(n=256)
         assert_(all(np.abs(samples.mean(axis=0)) < 1e-2))
         assert_(all(np.abs(samples.std(axis=0) - 1) < 1e-2))

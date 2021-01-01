@@ -26,7 +26,7 @@ _int = Union[int, np.integer]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
            'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
-           'multinomial_qmc', 'NormalQMC', 'MultivariateNormalQMC']
+           'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 # Based on scipy._lib._util.check_random_state
@@ -1422,56 +1422,19 @@ class Sobol(QMCEngine):
         return self
 
 
-def multinomial_qmc(
-        n: _int, pvals: Iterable[float], engine: Optional[QMCEngine] = None,
-        seed: Optional[_int, np.random.Generator] = None
-) -> np.ndarray:
-    """Draw low-discreancy quasi-random samples from multinomial distribution.
+class MultivariateNormalQMC(QMCEngine):
+    r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
     Parameters
     ----------
-    n : int
-        Number of experiments.
-    pvals: Iterable[float]
-        float vector of probabilities of size ``p``. Elements must be
-        non-negative and sum to 1.
-    engine: QMCEngine, optional
-        Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-
-    Returns
-    -------
-    samples: array_like (pvals,)
-        int vector of size ``p`` summing to `n`.
-
-    """
-    if np.min(pvals) < 0:
-        raise ValueError('Elements of pvals must be non-negative.')
-    if not np.isclose(np.sum(pvals), 1):
-        raise ValueError('Elements of pvals must sum to 1.')
-
-    if engine is None:
-        engine = Sobol(1, scramble=True, seed=seed)
-    draws = engine.random(n).ravel()
-    p_cumulative = np.empty_like(pvals, dtype=float)
-    _fill_p_cumulative(np.array(pvals, dtype=float), p_cumulative)
-    sample = np.zeros_like(pvals, dtype=int)
-    _categorize(draws, p_cumulative, sample)
-    return sample
-
-
-class NormalQMC(QMCEngine):
-    """Engine for QMC sampling from a multivariate normal :math:`N(0, I_d)`.
-
-    Parameters
-    ----------
-    d: int
-        The dimension of the samples.
+    mean: array_like (d,)
+        The mean vector.
+    cov: array_like (d, d), optional
+        The covariance matrix. If omitted, use `cov_root` instead.
+        If both `cov` and `cov_root` are omitted, use the identity matrix.
+    cov_root: array_like (d, d'), optional
+        A root decomposition of the covariance matrix, where `d'` may be less
+        than `d` if the covariance is not full rank. If omitted, use `cov`.
     inv_transform: bool, optional
         If True, use inverse transform instead of Box-Muller. Default is True.
     engine: QMCEngine, optional
@@ -1487,16 +1450,42 @@ class NormalQMC(QMCEngine):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
-    >>> engine = qmc.NormalQMC(2)
+    >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
     >>> sample = engine.random(512)
     >>> plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
     """
 
-    def __init__(self, d: _int, inv_transform: bool = True,
+    def __init__(self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None,
+                 cov_root: Optional[npt.ArrayLike] = None, inv_transform: bool = True,
                  engine: Optional[QMCEngine] = None,
                  seed: Optional[_int, np.random.Generator] = None) -> None:
+        mean = np.array(mean, copy=False, ndmin=1)
+        d = mean.shape[0]
+        if cov is not None:
+            cov = np.array(cov, copy=False, ndmin=2)
+            # check for square/symmetric cov matrix and mean vector has the same d
+            if not mean.shape[0] == cov.shape[0]:
+                raise ValueError("Dimension mismatch between mean and covariance.")
+            if not np.allclose(cov, cov.transpose()):
+                raise ValueError("Covariance matrix is not symmetric.")
+            # compute Cholesky decomp; if it fails, do the eigen decomposition
+            try:
+                cov_root = np.linalg.cholesky(cov).transpose()
+            except np.linalg.LinAlgError:
+                eigval, eigvec = np.linalg.eigh(cov)
+                if not np.all(eigval >= -1.0e-8):
+                    raise ValueError("Covariance matrix not PSD.")
+                eigval = np.clip(eigval, 0.0, None)
+                cov_root = (eigvec * np.sqrt(eigval)).transpose()
+        elif cov_root is not None:
+            cov_root = np.array(cov_root_decomp, copy=False, ndmin=2)
+            if not mean.shape[0] == cov_root_decomp.shape[0]:
+                raise ValueError("Dimension mismatch between mean and covariance.")
+        else:
+            cov_root = None  # corresponds to identity covariance matrix
+
         super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
         if not inv_transform:
@@ -1504,14 +1493,39 @@ class NormalQMC(QMCEngine):
             engine_dim = 2 * math.ceil(d / 2)
         else:
             engine_dim = d
-
         if engine is None:
             self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)
         else:
             self.engine = engine
+        self._mean = mean
+        self._corr_matrix = cov_root
 
     def random(self, n: _int = 1) -> np.ndarray:
-        """Draw `n` QMC samples from the standard Normal.
+        """Draw `n` QMC samples from the multivariate Normal.
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of samples to generate in the parameter space. Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            Sample.
+
+        """
+        base_samples = self._standard_normal_samples(n)
+        return self._correlate(base_samples)
+
+    def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
+        if self._corr_matrix is not None:
+            return base_samples @ self._corr_matrix + self._mean
+        else:
+            # avoid mulitplying with identity here
+            return base_samples + self._mean
+
+    def _standard_normal_samples(self, n: _int = 1) -> np.ndarray:
+        """Draw `n` QMC samples from the standard Normal N(0, I_d).
 
         Parameters
         ----------
@@ -1543,19 +1557,16 @@ class NormalQMC(QMCEngine):
             return transf_samples[:, : self.d]
 
 
-class MultivariateNormalQMC(QMCEngine):
-    r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
+class MultinomialQMC(QMCEngine):
+    r"""QMC sampling from a multinomial distribution.
 
     Parameters
     ----------
-    mean: array_like (d,)
-        The mean vector.
-    cov: array_like (d, d)
-        The covariance matrix.
-    inv_transform: bool, optional
-        If True, use inverse transform instead of Box-Muller. Default is True.
+    pvals: Iterable[float]
+        float vector of probabilities of size `k`, where `k` is the number of
+        categories. Elements must be non-negative and sum to 1.
     engine: QMCEngine, optional
-        Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
+        Quasi-Monte Carlo engine sampler. If None, Sobol is used.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1565,42 +1576,24 @@ class MultivariateNormalQMC(QMCEngine):
 
     Examples
     --------
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import qmc
-    >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
-    >>> sample = engine.random(512)
-    >>> plt.scatter(sample[:, 0], sample[:, 1])
-    >>> plt.show()
+    >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
+    >>> sample = engine.random(10)
 
     """
 
-    def __init__(self, mean: npt.ArrayLike, cov: npt.ArrayLike,
-                 inv_transform: bool = True, engine: Optional[QMCEngine] = None,
+    def __init__(self, pvals: npt.ArrayLike, engine: Optional[QMCEngine] = None,
                  seed: Optional[_int, np.random.Generator] = None) -> None:
-        # check for square/symmetric cov matrix and mean vector has the same d
-        mean = np.array(mean, copy=False, ndmin=1)
-        cov = np.array(cov, copy=False, ndmin=2)
-        if not mean.shape[0] == cov.shape[0]:
-            raise ValueError("Dimension mismatch between mean and covariance.")
-        if not np.allclose(cov, cov.transpose()):
-            raise ValueError("Covariance matrix is not symmetric.")
-
-        super().__init__(d=mean.shape[0], seed=seed)
-        self._mean = mean
-        self._normal_engine = NormalQMC(d=self.d, inv_transform=inv_transform,
-                                        engine=engine, seed=seed)
-        # compute Cholesky decomp; if it fails, do the eigen decomposition
-        try:
-            self._corr_matrix = np.linalg.cholesky(cov).transpose()
-        except np.linalg.LinAlgError:
-            eigval, eigvec = np.linalg.eigh(cov)
-            if not np.all(eigval >= -1.0e-8):
-                raise ValueError("Covariance matrix not PSD.")
-            eigval = np.clip(eigval, 0.0, None)
-            self._corr_matrix = (eigvec * np.sqrt(eigval)).transpose()
+        self.pvals = np.array(pvals, copy=False, ndmin=1)
+        if np.min(pvals) < 0:
+            raise ValueError('Elements of pvals must be non-negative.')
+        if not np.isclose(np.sum(pvals), 1):
+            raise ValueError('Elements of pvals must sum to 1.')
+        if engine is None:
+            engine = Sobol(d=1, scramble=True, seed=seed)
+        self.engine = engine
 
     def random(self, n: _int = 1) -> np.ndarray:
-        """Draw `n` QMC samples from the multivariate Normal.
+        """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
         ----------
@@ -1609,10 +1602,13 @@ class MultivariateNormalQMC(QMCEngine):
 
         Returns
         -------
-        sample : array_like (n, d)
-            Sample.
+        samples: array_like (pvals,)
+            int vector of size ``p`` summing to `n`.
 
         """
-        base_samples = self._normal_engine.random(n)
-        qmc_samples = base_samples @ self._corr_matrix + self._mean
-        return qmc_samples
+        base_draws = self.engine.random(n).ravel()
+        p_cumulative = np.empty_like(self.pvals, dtype=float)
+        _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
+        sample = np.zeros_like(self.pvals, dtype=int)
+        _categorize(base_draws, p_cumulative, sample)
+        return sample
