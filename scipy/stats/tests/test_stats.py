@@ -5959,11 +5959,11 @@ def test_fast_numerical_inversion(distname, shapes):
         sup.filter(RuntimeWarning, "overflow encountered")
         sup.filter(RuntimeWarning, "divide by zero")
         sup.filter(RuntimeWarning, "invalid value encountered")
-        H = stats.fast_numerical_inversion(dist)
+        fni = stats.fast_numerical_inversion(dist)
 
     x = np.random.rand(10)
-    p_tol = np.max(np.abs(dist.ppf(x)-H(x))/np.abs(dist.ppf(x)))
-    u_tol = np.max(np.abs(dist.cdf(H(x)) - x))
+    p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
+    u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
     assert p_tol < 1e-8
     assert u_tol < 1e-12

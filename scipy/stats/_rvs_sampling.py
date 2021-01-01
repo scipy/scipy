@@ -2,6 +2,7 @@ import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicHermiteSpline
 
+
 def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     """
     Generate random samples from a probability density function using the
@@ -169,15 +170,30 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     return np.reshape(x, size1d)
 
 
-def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
+class FastNumericalInverse():
+    def __init__(self, H, eu, intervals):
+        self.H = H
+        self.midpoint_error = eu
+        self.intervals = intervals
+
+    def ppf(self, q):
+        if np.any(q) > 1 or np.any(q) < 0:
+            raise ValueError("All percentiles must be in [0, 1]")
+        return self.H(q)
+
+    def rvs(self, size=1, random_state=None):
+        rng = check_random_state(random_state)
+        return self.ppf(rng.random(size=size))
+
+
+def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
     """
     Generate a fast approximate PPF (inverse CDF) of a probability distribution
 
     `fast_numerical_inversion` accepts `dist`, a frozen instance of
-    `scipy.stats.rv_continuous`, and returns a callable `H` that approximates
-    `dist.ppf`. For some distributions, this callable may be faster than
-    `dist.ppf`, and may also be used to generate random variates using inverse
-    transform sampling faster than `dist.rvs` (see examples).
+    `scipy.stats.rv_continuous`, and returns a object `fni` with methods
+    that approximate `dist.ppf` and `dist.rvs`. For some distributions,
+    these methods may be faster than those of `dist` itself.
 
     Parameters
     ----------
@@ -185,14 +201,29 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
         Frozen distribution for which fast approximate PPF is desired
     tol : float, optional
         u-error tolerance. The default is 1e-12.
-    N_max : int, optional
+    max_intervals : int, optional
         Maximum number of intervals in the cubic Hermite Spline used to
         approximate the percent point function. The default is 100000.
 
     Returns
     -------
-    H : scipy.interpolate.CubicHermiteSpline
-        An callable that approximates dist.ppf
+    fni : FastNumericalInverse
+        An object with the following attributes:
+
+        intervals : int
+            The number of intervals of the interpolant
+        midpoint_error : float
+            The maximum u-error at an interpolant interval midpoint
+
+        The object has the following methods:
+
+        ppf(q) :
+            An approximation of `dist.ppf`, the distribution's percent point
+            function.
+
+        rvs(size=1, random_state=None) :
+            An approximation of `dist.rvs`, the distribution's random variate
+            sampler.
 
     Notes
     -----
@@ -203,8 +234,10 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
     CDF at a mesh of quantiles ``x`` within the distribution's support.
     It uses the results to fit a cubic Hermite spline ``H`` such that
     ``H(p) == x``, where ``p`` is the array of percentiles corresponding
-    with the quantiles ``x``. In general, the spline will not be as accurate
-    at the midpoints between the percentile points::
+    with the quantiles ``x``. Therefore, the spline approximates the inverse
+    of the distribution's CDF to machine precision at the percentiles ``p``,
+    but typically, the spline will not be as accurate at the midpoints between
+    the percentile points::
 
         p_mid = (p[:-1] + p[1:])/2
 
@@ -215,7 +248,7 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
 
     below the specified tolerance `tol`. Refinement stops when the required
     tolerance is achieved or when the number of mesh intervals after the next
-    refinement could exceed the maximum allowed number `N_max`.
+    refinement could exceed the maximum allowed number `max_intervals`.
 
     References
     ----------
@@ -225,48 +258,54 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
 
     Examples
     --------
-    For some distributions, ``dist.ppf`` and ``dist.rvs`` are quite slow.
+    For some distributions, ``dist.ppf`` are ``dist.rvs`` are quite slow.
 
     >>> import numpy as np
+    >>> from timeit import timeit
+    >>> time_once = lambda f: f"{timeit(f, number=1)*1000:.6} ms"
     >>> from scipy.stats import genexpon
     >>> dist = genexpon(9, 16, 3)  # freeze the distribution
     >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
-    >>> %timeit dist.ppf(p)  # may vary
-    474 ms ± 39.8 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+    >>> time_once(lambda: dist.ppf(p))  # may vary
+    '154.565 ms'
 
-    >>> %timeit dist.rvs(size=100)  # may vary
-    494 ms ± 14.6 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+    >>> time_once(lambda: dist.rvs(size=100))  # may vary
+    '148.979 ms'
 
-    `fast_numerical_inverse` returns a callable that approximates ``dist.ppf``.
+    `fast_numerical_inverse` returns an object with a method that approximates
+    ``dist.ppf``.
 
     >>> from scipy.stats import fast_numerical_inversion
-    >>> H = fast_numerical_inversion(dist)
-    >>> print(np.allclose(H(p), dist.ppf(p)))
+    >>> fni = fast_numerical_inversion(dist)
+    >>> np.allclose(fni.ppf(p), dist.ppf(p))
     True
 
-    In some cases, it is faster to both generate the callable and use it than
-    to call ``dist.ppf``.
+    In some cases, it is faster to both generate the fast numerical inverse
+    and use it than to call ``dist.ppf``.
 
-    >>> %timeit H = fast_numerical_inversion(dist); H(p)  # may vary
-    25.7 ms ± 615 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+    >>> def time_me():
+    >>>     fni = fast_numerical_inversion(dist)
+    >>>     fni.ppf(p)
+    >>> time_once(time_me)  # may vary
+    '11.9222 ms'
 
-    After generating the callable, subsequent calls are much faster.
-    >>> H = fast_numerical_inversion(dist)
-    >>> %timeit H(p)  # may vary
-    28 µs ± 588 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+    After generating the fast numerical inverse, subsequent calls to its
+    methods are much faster.
+    >>> time_once(lambda: fni.ppf(p))  # may vary
+    '0.0819 ms'
 
-    The callable can also be used to generate random variates using inverse
-    transform sampling.
+    The fast numerical inverse can also be used to generate random variates
+    using inverse transform sampling.
 
-    >>> %timeit H(np.random.rand(100))
+    >>> time_once(fni.rvs(size=100))
+    '0.0911 ms'
 
-    Depending on the implementation of the distribution's random sampling method,
-    the random variates generated may be nearly identical.
+    Depending on the implementation of the distribution's random sampling
+    method, the random variates generated may be nearly identical, given
+    the same random state.
 
-    >>> rng = np.random.default_rng(0)
-    >>> rvs1 = dist.rvs(size=100, random_state=rng)
-    >>> rng = np.random.default_rng(0)
-    >>> rvs2 = H(rng.random(size=100))
+    >>> rvs1 = dist.rvs(size=100, random_state=0)
+    >>> rvs2 = fni.rvs(size=100, random_state=0)
     >>> print(np.allclose(rvs1, rvs2))
     True
 
@@ -279,7 +318,7 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
 
     # [1] Section 2.3: "We then halve this interval recursively until
     # |u[i+1]-u[i]| is smaller than some threshold value, for example, 0.05."
-    while p.size-1 <= np.ceil(N_max/2):
+    while p.size-1 <= np.ceil(max_intervals/2):
         u = dist.cdf(p)
         i = np.nonzero(np.diff(u) > 0.05)[0]
         if not i.size:
@@ -291,7 +330,7 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
     # [1] Section 2.3: "Now we continue with checking the error estimate in
     # each of the intervals and continue with splitting them until [it] is
     # smaller than a given error bound."
-    while p.size-1 <= N_max:
+    while p.size-1 <= max_intervals:
         # [1] Equation 4-8
         u = dist.cdf(p)
         f = dist.pdf(p)
@@ -310,4 +349,4 @@ def fast_numerical_inversion(dist, tol=1e-12, N_max=100000):
 
     # todo: add test for monotonicity [1] Section 2.4
     # todo: deal with vanishing density [1] Section 2.5
-    return H  # , np.max(eu), p.size-1
+    return FastNumericalInverse(H, eu, p.size-1)
