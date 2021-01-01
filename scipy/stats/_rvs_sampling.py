@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicHermiteSpline
@@ -171,26 +172,89 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
 
 class FastNumericalInverse():
+    r"""Object representing a Fast Numerical Inverse
+
+    See `fast_numerical_inverse` for more information.
+
+    Attributes
+    ----------
+
+        intervals : int
+            The number of intervals of the interpolant
+        midpoint_error : float
+            The maximum u-error at an interpolant interval midpoint
+
+    """
     def __init__(self, H, eu, intervals):
         self.H = H
         self.midpoint_error = eu
         self.intervals = intervals
 
     def ppf(self, q):
-        if np.any(q) > 1 or np.any(q) < 0:
-            raise ValueError("All percentiles must be in [0, 1]")
-        return self.H(q)
+        r'''
+        Approximate percent point function (inverse of `cdf`) at q of the
+        given RV.
+
+        Parameters
+        ----------
+        q : array_like
+            lower tail probability
+
+        Returns
+        -------
+        x : array_like
+            quantile corresponding to the lower tail probability q.
+
+        '''
+        q = np.asarray(q)  # no harm; self.H always returns an array
+        result = np.zeros_like(q, dtype=np.float64)
+        i = (q >= 0) & (q <= 1)
+        result[i] = self.H(q[i])
+        result[~i] = np.nan
+        return result
 
     def rvs(self, size=1, random_state=None):
+        """
+        Random variates of the given RV.
+
+        Parameters
+        ----------
+        size : int or tuple of ints, optional
+            Defining number of random variates (Default is 1).
+        random_state : (see below), optional
+            This parameter defines the object to use for drawing random
+            variates.
+            If `random_state` is `None` the `~np.random.RandomState` singleton
+            is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``RandomState`` or ``Generator``
+            instance, then that object is used.
+            Default is None.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of given `size`.
+        """
         rng = check_random_state(random_state)
         return self.ppf(rng.random(size=size))
 
 
-def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
+def fni_input_validation(dist, tol, max_intervals):
+    if int(max_intervals) != max_intervals or max_intervals <= 1:
+        raise ValueError("`max_intervals' must be an integer greater than 1.")
+
+    tol = float(tol)  # if there's an exception, raise it now
+
+    return dist, tol, max_intervals
+
+
+def fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     """
     Generate a fast approximate PPF (inverse CDF) of a probability distribution
 
-    `fast_numerical_inversion` accepts `dist`, a frozen instance of
+    `fast_numerical_inverse` accepts `dist`, a frozen instance of
     `scipy.stats.rv_continuous`, and returns a object `fni` with methods
     that approximate `dist.ppf` and `dist.rvs`. For some distributions,
     these methods may be faster than those of `dist` itself.
@@ -227,7 +291,7 @@ def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
 
     Notes
     -----
-    `fast_numerical_inversion` approximates the inverse of a continuous
+    `fast_numerical_inverse` approximates the inverse of a continuous
     statistical distribution's CDF with a cubic Hermite spline.
 
     As described in [1]_, it begins by evaluating the distribution's PDF and
@@ -249,6 +313,9 @@ def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
     below the specified tolerance `tol`. Refinement stops when the required
     tolerance is achieved or when the number of mesh intervals after the next
     refinement could exceed the maximum allowed number `max_intervals`.
+
+    The approximation will not be accurate for the extreme tails of the
+    distribution (e.g. ``H(1e-17)``, ``H(1)``).
 
     References
     ----------
@@ -275,8 +342,8 @@ def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
     `fast_numerical_inverse` returns an object with a method that approximates
     ``dist.ppf``.
 
-    >>> from scipy.stats import fast_numerical_inversion
-    >>> fni = fast_numerical_inversion(dist)
+    >>> from scipy.stats import fast_numerical_inverse
+    >>> fni = fast_numerical_inverse(dist)
     >>> np.allclose(fni.ppf(p), dist.ppf(p))
     True
 
@@ -284,7 +351,7 @@ def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
     and use it than to call ``dist.ppf``.
 
     >>> def time_me():
-    >>>     fni = fast_numerical_inversion(dist)
+    >>>     fni = fast_numerical_inverse(dist)
     >>>     fni.ppf(p)
     >>> time_once(time_me)  # may vary
     '11.9222 ms'
@@ -310,6 +377,7 @@ def fast_numerical_inversion(dist, tol=1e-12, max_intervals=100000):
     True
 
     """
+    dist, tol, max_intervals = fni_input_validation(dist, tol, max_intervals)
 
     # [1] Section 2.1: "For distributions with unbounded domain, we have to
     # chop off its tails at [a] and [b] such that F(a) and 1-F(b) are small
