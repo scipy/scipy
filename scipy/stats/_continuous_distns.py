@@ -2917,12 +2917,12 @@ class genhyperbolic_gen(rv_continuous):
            (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
            {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \lambda}}
 
-    for :math:`x \in (-\infty; \infty)`,
-    :math:`\lambda, \mu \in \mathbb{R}`
+    for :math:`x \in (- \infty; \infty)`,
+    :math:`\lambda, \mu \in \mathbb{R}`,
     :math: `0 \le |\beta| < \alpha ` \beta,
     and :math: `\delta \in \mathbb{R}_{>0}`.
 
-    :math:`\gamma := \sqrt{\alpha^2-\beta^2}`.
+    :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`.
     :math: `K_{\lambda}(.)` denotes the modified Bessel function of the third
     kind and order :math: `\lambda` (`scipy.special.kn`)
 
@@ -2938,7 +2938,7 @@ class genhyperbolic_gen(rv_continuous):
     References
     ----------
     .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-            Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
     pp. 151-157, 1978.
 
     .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
