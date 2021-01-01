@@ -9073,12 +9073,17 @@ class argus_gen(rv_continuous):
 
     %(after_notes)s
 
-    .. versionadded:: 0.19.0
+    To sample random variates of the distribution, it is recommended to use a
+    ``numpy.random.Generator`` for the keyword argument ``random_state`` of
+    the methods ``rvs``: in that case, the generation of the random variates
+    uses Cython code for :math:`\chi < 5`, leading to better performance.
 
     References
     ----------
     .. [1] "ARGUS distribution",
            https://en.wikipedia.org/wiki/ARGUS_distribution
+
+    .. versionadded:: 0.19.0
 
     %(example)s
     """
@@ -9123,6 +9128,8 @@ class argus_gen(rv_continuous):
         return out
 
     def _rvs_scalar(self, chi, numsamples=None, random_state=None):
+        # If random_state is a numpy.random.RandomState, a pure Python
+        # implementation is used.
         # if chi <= 1.825:
         # use rejection method, see Devroye:
         # Non-Uniform Random Variate Generation, 1986, section II.3.2.
@@ -9139,8 +9146,8 @@ class argus_gen(rv_continuous):
         # h(x) = sqrt(1 - x**2), 0 <= x <= 1
         #
         # In both cases, the cdf G of g can be easily computed to apply the
-        # rejection method. We use case 1 for chi < 1,
-        # case 2 for 1 <= chi <= 1.825
+        # rejection method. We use case 1 for chi < 1.15,
+        # case 2 for 1.15 <= chi <= 1.825
         #
         # if chi > 1.825:
         # use relation to the Gamma distribution: if X is ARGUS with parameter
@@ -9148,8 +9155,18 @@ class argus_gen(rv_continuous):
         # sqrt(u) * exp(-u) on [0, chi**2 / 2], i.e. a Gamma(3/2) distribution
         # conditioned on [0, chi**2 / 2]).
         #
-        # The points 1 and 1.825 are determined by a comparison of the
-        # runtime of the different methods
+        # If random_state is a numpy.random.Generator, a Cython
+        # implementation is used. It relies on case 1 for chi < 1.15.
+        # For 1.15 <= chi < 5, the ratio of uniforms method is used to
+        # generate Gamma(3/2) rvs conditioned on [0, chi**2 / 2]. These rvs
+        # are transformed back to the ARGUS distribution.
+        # For chi > 5, sample again directly from the Gamma(3/2) distribution
+        #
+        # The points to switch between the different methods are determined
+        # by a comparison of the runtime of the different methods. However,
+        # the runtime is platform-dependent. The implemented values should
+        # ensure a good overall performance and are supported by an anlysis
+        # of the rejection constants of different methods.
 
         size1d = tuple(np.atleast_1d(numsamples))
         N = int(np.prod(size1d))
@@ -9158,7 +9175,7 @@ class argus_gen(rv_continuous):
             x = np.zeros(N)
             simulated = 0
             chi2 = chi * chi
-            if chi < 1:
+            if chi < 1.15:
                 d = -chi2 / 2
                 while simulated < N:
                     k = N - simulated
@@ -9187,10 +9204,6 @@ class argus_gen(rv_continuous):
         elif isinstance(random_state, np.random.Generator) and chi < 5:
             if chi < 1.15:
                 x = _stats._rvs_argus_rejection_beta(chi, N, random_state)
-            elif chi <= 1.3:
-                x = _stats._rvs_argus_rejection_xexp(chi, N, random_state)
-            elif chi <= 2.1:
-                x = _stats._rvs_argus_rou_shifted_maxwell(chi, N, random_state)
             elif chi < 5:
                 x = _stats._rvs_argus_rou_gamma(chi, N, random_state)
         else:

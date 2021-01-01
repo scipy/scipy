@@ -5786,7 +5786,7 @@ class TestArgus:
         assert_almost_equal(stats.argus(50).mean(), x.mean(), decimal=4)
 
     @pytest.mark.parametrize('chi, random_state', [
-            [0.1, 325],   # chi < 1: rejection method case 1
+            [0.1, 325],   # chi < 1.15: rejection method case 1
             [1.3, 155],   # 1 <= chi <= 1.825: rejection method case 2
             [3.5, 135]    # chi > 1.825: transform conditional Gamma distr.
         ])
@@ -5797,15 +5797,12 @@ class TestArgus:
 
     @pytest.mark.parametrize('chi, generator', [
             [0.1, default_rng(325)],   # chi < 1.15: rejection case 1
-            [1.2, default_rng(125)],   # 1.15 <= chi <= 1.3: rejection case 2
-            [1.5, default_rng(625)],   # 1.3 < chi <= 2.1: RoU shifted Maxwell
-            [2.5, default_rng(251)],   # 2.1 < chi < 5: RoU Gamma
-            [5.5, default_rng(258)]    # chi < 5: transform conditional Gamma
+            [2.5, default_rng(251)],   # 1.15 <= chi < 5: RoU Gamma
+            [5.5, default_rng(258)]    # chi > 5: transform conditional Gamma
         ])
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.19.0'),
+    @pytest.mark.skipif(Version(np.__version__) < Version('1.18.0'),
                         reason='Generator Cython API not available for numpy,'
-                               ' < 1.19.0')
-    # see https://github.com/numpy/numpy/pull/15463
+                               ' < 1.18.0')
     def test_rvs_generator(self, chi, generator):
         x = stats.argus.rvs(chi, size=500, random_state=generator)
         _, p = stats.kstest(x, "argus", (chi, ))
