@@ -25,7 +25,7 @@ Engines
    LatinHypercube
    OrthogonalLatinHypercube
    OptimalDesign
-   NormalQMC
+   MultinomialQMC
    MultivariateNormalQMC
 
 Helpers
@@ -36,7 +36,6 @@ Helpers
 
    discrepancy
    scale
-   multinomial_qmc
 
 
 Introduction to Quasi-Monte Carlo
