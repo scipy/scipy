@@ -399,6 +399,14 @@ class TestMultinomialQMC:
         engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
         assert_array_equal(engine.random(100), expected)
 
+    def test_reset(self):
+        p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
+        engine = qmc.MultinomialQMC(p)
+        samples = engine.random(2)
+        engine.reset()
+        samples_reset = engine.random(2)
+        assert_array_equal(samples, samples_reset)
+
 
 class TestNormalQMC:
     def test_NormalQMC(self):
@@ -517,6 +525,13 @@ class TestNormalQMC:
         # make sure samples are uncorrelated
         cov = np.cov(samples.transpose())
         assert_(np.abs(cov[0, 1]) < 1e-2)
+
+    def test_reset(self):
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1))
+        samples = engine.random(2)
+        engine.reset()
+        samples_reset = engine.random(2)
+        assert_array_equal(samples, samples_reset)
 
 
 class TestMultivariateNormalQMC:
