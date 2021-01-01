@@ -1514,6 +1514,18 @@ class MultivariateNormalQMC(QMCEngine):
         base_samples = self._standard_normal_samples(n)
         return self._correlate(base_samples)
 
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: MultivariateNormalQMC
+            Engine reset to its base state.
+
+        """
+        self.engine.reset()
+        return self
+
     def _correlate(self, base_samples):
         if self._corr_matrix is not None:
             return base_samples @ self._corr_matrix + self._mean
@@ -1618,4 +1630,5 @@ class MultinomialQMC(QMCEngine):
             Engine reset to its base state.
 
         """
-        return self.__class__(self.pvals, engine=self.engine.reset())
+        self.engine.reset()
+        return self
