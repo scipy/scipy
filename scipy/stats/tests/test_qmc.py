@@ -67,16 +67,17 @@ class QMCEngineTests:
         ref_sample = self.reference(d=2, scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
 
-        _ = engine.random(n=4)
-        sample = engine.random(n=len(ref_sample))
-        assert_almost_equal(sample, ref_sample, decimal=1)
+        _ = engine.random(n=len(ref_sample) // 2)
+        sample = engine.random(n=len(ref_sample) // 2)
+        assert_almost_equal(sample, ref_sample[len(ref_sample) // 2:],
+                            decimal=1)
 
     @pytest.mark.parametrize("scramble", scramble)
     def test_reset(self, scramble):
         ref_sample = self.reference(d=2, scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
 
-        _ = engine.random(n=4)
+        _ = engine.random(n=len(ref_sample) // 2)
 
         engine.reset()
         assert engine.num_generated == 0

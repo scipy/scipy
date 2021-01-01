@@ -15,9 +15,10 @@ class TestSobol:
     def setup_sequences(self):
         # 10 samples for testing. Silent the warning as 10 is not 2**n
         with pytest.warns(UserWarning):
-            engine_unscrambled_1d = Sobol(1, scramble=False)
+            seed = np.random.RandomState(12345)
+            engine_unscrambled_1d = Sobol(1, scramble=False, seed=seed)
             self.draws_unscrambled_1d = engine_unscrambled_1d.random(10)
-            engine_unscrambled_3d = Sobol(3, scramble=False)
+            engine_unscrambled_3d = Sobol(3, scramble=False, seed=seed)
             self.draws_unscrambled_3d = engine_unscrambled_3d.random(10)
             seed = np.random.RandomState(12345)
             engine_scrambled_1d = Sobol(1, scramble=True, seed=seed)
@@ -28,11 +29,13 @@ class TestSobol:
 
     def test_warning(self):
         with pytest.warns(UserWarning):
-            engine = Sobol(1)
+            seed = np.random.RandomState(12345)
+            engine = Sobol(1, seed=seed)
             engine.random(10)
 
     def test_random_base2(self):
-        engine = Sobol(1, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(1, scramble=False, seed=seed)
         sample = engine.random_base2(2)
         assert_array_equal(self.draws_unscrambled_1d[:4],
                            sample)
@@ -74,12 +77,15 @@ class TestSobol:
         )
 
     def test_Unscrambled3DAsyncSobol(self):
-        engine_unscrambled_3d = Sobol(3, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine_unscrambled_3d = Sobol(3, scramble=False, seed=seed)
         draws = np.vstack([engine_unscrambled_3d.random() for _ in range(10)])
         assert_array_equal(self.draws_unscrambled_3d, draws)
 
     def test_UnscrambledFastForwardAndResetSobol(self):
-        engine_unscrambled_3d = Sobol(3, scramble=False).fast_forward(5)
+        seed = np.random.RandomState(12345)
+        engine_unscrambled_3d = Sobol(3, scramble=False,
+                                      seed=seed).fast_forward(5)
         draws = engine_unscrambled_3d.random(5)
         assert_array_equal(self.draws_unscrambled_3d[5:10, :], draws)
 
@@ -96,7 +102,8 @@ class TestSobol:
         )
 
     def test_UnscrambledHighDimSobol(self):
-        engine = Sobol(1111, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(1111, scramble=False, seed=seed)
         count1 = Counter(engine.random().flatten().tolist())
         count2 = Counter(engine.random().flatten().tolist())
         count3 = Counter(engine.random().flatten().tolist())
@@ -105,13 +112,15 @@ class TestSobol:
         assert_equal(count3, Counter({0.25: 557, 0.75: 554}))
 
     def test_UnscrambledSobolBounds(self):
-        engine = Sobol(1111, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(1111, scramble=False, seed=seed)
         draws = engine.random(1024)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
 
     def test_UnscrambledDistributionSobol(self):
-        engine = Sobol(1111, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(1111, scramble=False, seed=seed)
         draws = engine.random(1024)
         assert_array_almost_equal(
             np.mean(draws, axis=0), np.repeat(0.5, 1111), decimal=2
@@ -159,7 +168,8 @@ class TestSobol:
         assert_array_equal(self.draws_scrambled_3d, draws)
 
     def test_ScrambledSobolBounds(self):
-        engine = Sobol(100, scramble=True)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(100, scramble=True, seed=seed)
         draws = engine.random(1024)
         assert_(np.all(draws >= 0))
         assert_(np.all(draws <= 1))
@@ -198,20 +208,22 @@ class TestSobol:
         )
 
     def test_0Dim(self):
-        engine = Sobol(0, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine = Sobol(0, scramble=False, seed=seed)
         draws = engine.random(4)
         assert_array_equal(np.empty((4, 0)), draws)
 
     def test_discrepancy(self):
-        engine_sobol = Sobol(10, scramble=False)
+        seed = np.random.RandomState(12345)
+        engine_sobol = Sobol(10, scramble=False, seed=seed)
         sample_sobol = engine_sobol.random(128)
 
-        engine_olhs = qmc.OrthogonalLatinHypercube(10)
+        engine_olhs = qmc.OrthogonalLatinHypercube(10, seed=seed)
         sample_olhs = engine_olhs.random(128)
 
         assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_olhs)
 
-        engine_halton = qmc.Halton(10)
+        engine_halton = qmc.Halton(10, seed=seed)
         sample_halton = engine_halton.random(128)
 
         assert qmc.discrepancy(sample_sobol) < qmc.discrepancy(sample_halton)

@@ -666,7 +666,7 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.__init__(d=self.d, seed=self.rng_seed)
+        self.rng = check_random_state(self.rng_seed)
         self.num_generated = 0
         return self
 
@@ -991,6 +991,19 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return 1. / n * (q - r)
 
+    def reset(self) -> LatinHypercube:
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: LatinHypercube
+            Engine reset to its base state.
+
+        """
+        self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
+        self.num_generated = 0
+        return self
+
 
 class OptimalDesign(QMCEngine):
     """Optimal design.
@@ -1161,6 +1174,19 @@ class OptimalDesign(QMCEngine):
 
         self.num_generated += n
         return self.best_doe
+
+    def reset(self) -> OptimalDesign:
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: OptimalDesign
+            Engine reset to its base state.
+
+        """
+        self.__init__(d=self.d, seed=self.rng_seed)
+        self.num_generated = 0
+        return self
 
 
 class Sobol(QMCEngine):
