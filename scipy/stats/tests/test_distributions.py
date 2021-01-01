@@ -392,7 +392,7 @@ class TestGenHyperbolic(object):
             x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
             res.append(assert_allclose(
                 gh.pdf(x), stats.t.pdf(x, df),
-                atol=1e-9)
+                atol=1e-8)
                 )
         np.all(res)
 
