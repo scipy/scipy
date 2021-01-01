@@ -6309,27 +6309,29 @@ class powerlaw_gen(rv_continuous):
             # location
             return (len(data) / (np.sum(np.log(fscale / (data - floc)))))
 
-        def get_s_a_gt(data, floc):
+        def get_s_gt(data, floc):
             return np.max(data) - floc
 
         # Formulas to be used under the assumption that `fshape > 1`
-        def get_u_a_gt(data, fscale):
+        def get_u_gt(data, fscale):
             return np.max(data) - fscale
 
-        def all_free_gt(data, get_a, get_u, get_s, *args):
+        def fit_all_free_fshape_gt(data, get_u, get_s, *args):
+            # this method is used when all the parameters are free and when
+            # the shape is fixed
             fshape = args[0] if args else None
 
             def ll_comp(fshape, floc, fscale, data):
                 return ((fshape - 1) * np.sum(1 / (floc - data)) + len(data)
                         * fshape / fscale)
 
-            def func_fixed_shape(floc, fshape):
-                fscale = get_s(data, floc)
-                return ll_comp(fshape, floc, fscale, data)
-
-            def func_all_free(floc, fshape):
+            def func_all_free(floc):
                 fscale = get_s(data, floc)
                 fshape = get_a(floc, fscale, data)
+                return ll_comp(fshape, floc, fscale, data)
+
+            def func_fixed_shape(floc):
+                fscale = get_s(data, floc)
                 return ll_comp(fshape, floc, fscale, data)
 
             func = func_fixed_shape if fshape else func_all_free
@@ -6344,8 +6346,8 @@ class powerlaw_gen(rv_continuous):
                 # sometimes the inner calculations raise a TypeError due to
                 # an invalid result.
                 try:
-                    a = func(u_min, None)
-                    b = func(u_max, None)
+                    a = func(u_min)
+                    b = func(u_max)
                     # if `a` and `b` are not of opposite sign, decrease `u_max`
                     # by an increasing amount each interation.
                     if np.sign(a) == np.sign(b):
@@ -6356,8 +6358,7 @@ class powerlaw_gen(rv_continuous):
                     break
 
             try:
-                floc = optimize.root_scalar(func, bracket=[u_min, u_max],
-                                            args=(fshape,)).root
+                floc = optimize.root_scalar(func, bracket=[u_min, u_max]).root
                 fscale = get_s(data, floc)
                 fshape = fshape if fshape else get_a(floc, fscale, data)
             except ValueError:
@@ -6367,27 +6368,27 @@ class powerlaw_gen(rv_continuous):
             return fshape, floc, fscale
 
         # Analytical formulas to be used under the assumption that `fshape < 1`
-        def get_s_a_lt(data, *args):
+        def get_s_lt(data, *args):
             return np.max(data) - np.min(data)
 
-        def get_u_a_lt(data, *args):
+        def get_u_lt(data, *args):
             return np.min(data)
 
-        def fixed_shape_only(data, get_a, get_u, get_s, fshape):
-            floc = get_u_a_lt(data)
-            fscale = get_s_a_lt(data)
+        def fit_fixed_shape_lt(data, get_u, get_s, fshape):
+            floc = get_u(data)
+            fscale = get_s(data)
             return fshape, floc, fscale
 
-        def all_free_lt(data, get_a, get_u, get_s):
-            floc = get_u_a_lt(data)
-            fscale = get_s_a_lt(data)
+        def fit_all_free_lt(data, get_u, get_s):
+            floc = get_u(data)
+            fscale = get_s(data)
             fshape = get_a(floc, fscale, data)
             return fshape, floc, fscale
 
         # a generic fitting routing that allows for parametrization of
         # the methods to determine the shape, location, and scale.
-        def fit_with_multiple_funcs(fshape, floc, fscale, data, get_u, get_s,
-                                    fixed_shape_only, all_free):
+        def parametrized_fit(fshape, floc, fscale, data, get_u, get_s,
+                             fit_fixed_shape, fit_all_free):
             if floc is not None:
                 # `floc` is fixed, `fshape` and `fscale` may be deterermined
                 # through analytical equations
@@ -6399,7 +6400,7 @@ class powerlaw_gen(rv_continuous):
                 if fscale is None:
                     # use the formula for `max(data) - floc` when location
                     # is fixed.
-                    fscale = get_s_a_gt(data, floc)
+                    fscale = np.max(data) - floc
                 else:
                     if fscale + floc <= np.max(data):
                         # fitting with fixed scale and fixed location requires
@@ -6419,23 +6420,22 @@ class powerlaw_gen(rv_continuous):
                     fshape = get_a(floc, fscale, data)
                 return fshape, floc, fscale
             elif fshape is not None:
-                return fixed_shape_only(data, get_a, get_u, get_s, fshape)
+                return fit_fixed_shape(data, get_u, get_s, fshape)
             else:
-                return all_free(data, get_a, get_u, get_s)
+                return fit_all_free(data, get_u, get_s)
 
         # fitting under the assumption that `fshape < 1` is fast and completely
         # analytical, so it is performed first.
-        res_a_lt = fit_with_multiple_funcs(fshape, floc, fscale, data,
-                                           get_u_a_lt, get_s_a_lt,
-                                           fixed_shape_only, all_free_lt)
+        res_a_lt = parametrized_fit(fshape, floc, fscale, data, get_u_lt,
+                                    get_s_lt, fit_fixed_shape_lt,
+                                    fit_all_free_lt)
         # if the assumption that the shape < 1 is not consistent with the
         # result of the fitting, try to fit under the assumption that the
         # shape is >= 1.
         if (res_a_lt[0] > 1 or res_a_lt[0] is None):
-            res_a_gt = fit_with_multiple_funcs(fshape, floc, fscale, data,
-                                               get_u_a_gt, get_s_a_gt,
-                                               all_free_gt, all_free_gt,
-                                               )
+            res_a_gt = parametrized_fit(fshape, floc, fscale, data, get_u_gt,
+                                        get_s_gt, fit_all_free_fshape_gt,
+                                        fit_all_free_fshape_gt)
             if res_a_gt[0] is None:
                 # if the attempt to fit the data under the assumption that
                 # `a` > 1 fails, but the fit under the assumption that `a` < 1
