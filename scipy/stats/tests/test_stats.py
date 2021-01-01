@@ -5941,15 +5941,15 @@ class TestMGCStat(object):
 
 
 @pytest.mark.parametrize(("distname", "shapes"), distcont)
-def test_fast_numerical_inverse(distname, shapes):
+def test_FastNumericalInverse(distname, shapes):
     slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
     fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
                   'norminvgauss'}
 
     if distname in slow_dists:
-        pytest.skip("fast_numerical_inverse is not fast enough.")
+        pytest.skip("FastNumericalInverse is not fast enough.")
     if distname in fail_dists:
-        pytest.xfail("fast_numerical_inverse fails; should fix.")
+        pytest.xfail("FastNumericalInverse fails; should fix.")
 
     np.random.seed(0)
 
@@ -5959,7 +5959,7 @@ def test_fast_numerical_inverse(distname, shapes):
         sup.filter(RuntimeWarning, "overflow encountered")
         sup.filter(RuntimeWarning, "divide by zero")
         sup.filter(RuntimeWarning, "invalid value encountered")
-        fni = stats.fast_numerical_inverse(dist)
+        fni = stats.FastNumericalInverse(dist)
 
     x = np.random.rand(10)
     p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
@@ -5971,8 +5971,8 @@ def test_fast_numerical_inverse(distname, shapes):
 
 def test_fni_input_validation():
     with assert_raises(ValueError, match="could not convert string to float"):
-        stats.fast_numerical_inverse(stats.norm(), tol='ekki')
+        stats.FastNumericalInverse(stats.norm(), tol='ekki')
     with assert_raises(ValueError, match="`max_intervals' must be"):
-        stats.fast_numerical_inverse(stats.norm(), max_intervals=-1)
+        stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
     with assert_raises(AttributeError, match="'str' object has no attribute"):
-        stats.fast_numerical_inverse("ekki")
+        stats.FastNumericalInverse("ekki")

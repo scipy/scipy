@@ -321,7 +321,6 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
-   fast_numerical_inverse
    FastNumericalInverse
 
 Circular statistical functions
