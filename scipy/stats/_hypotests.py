@@ -6,14 +6,23 @@ from . import distributions
 from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+import scipy.stats.stats
 
 
 def _vectorize_2s_hypotest_factory(result_creator):
     def vectorize_hypotest_decorator(hypotest_fun):
-        def vectorize_hypotest_wrapper(x, y, *args, axis=0, **kwds):
+        def vectorize_hypotest_wrapper(x, y, *args, axis=0,
+                                       nan_policy='propagate', **kwds):
+
             x, y = np.atleast_1d(x), np.atleast_1d(y)
 
+            # Addresses nan_policy="raise"
+            _, nan_policy = scipy.stats.stats._contains_nan(x, nan_policy)
+            _, nan_policy = scipy.stats.stats._contains_nan(y, nan_policy)
+
             if x.size == 0 or y.size == 0:
+                if nan_policy == "omit":
+                    x, y = x[~np.isnan(x)], y[~np.isnan(x)]
                 statistic, pvalue = hypotest_fun(x, y, *args, **kwds)
                 return result_creator(statistic, pvalue)
 
@@ -29,6 +38,8 @@ def _vectorize_2s_hypotest_factory(result_creator):
             for indices in product(*[range(i) for i in shape]):
                 xi = x[indices]
                 yi = y[indices]
+                if nan_policy == "omit":
+                    xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(xi)]
                 statistic, pvalue = hypotest_fun(xi, yi, *args, **kwds)
                 statistics[indices] = statistic
                 pvalues[indices] = pvalue
@@ -174,6 +185,7 @@ class CramerVonMisesResult:
     def __repr__(self):
         return (f"{self.__class__.__name__}(statistic={self.statistic}, "
                 f"pvalue={self.pvalue})")
+
 
 def _psi1_mod(x):
     """

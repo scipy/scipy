@@ -13,6 +13,7 @@ from .common_tests import check_named_results
 
 from scipy import stats
 
+
 class TestEppsSingleton(object):
     def test_statistic_1(self):
         # first example in Goerg & Kaiser, also in original paper of
@@ -164,30 +165,64 @@ class TestCvm(object):
                           (stats.ranksums, tuple(), dict()),
                           (stats.ansari, tuple(), dict()),
                           (stats.brunnermunzel, ("less",),
-                           {"distribution":'normal'}),
+                           {"distribution": 'normal'}),
                           (stats.epps_singleton_2samp, ((.35, 0.75),), {})
                           ])
-def test_hypotest_vectorization(hypotest, args, kwds):
+@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit"))
+def test_hypotest_vectorization(hypotest, args, kwds, nan_policy):
     # test that hypothesis tests using _vectorize_2s_hypotest_factory decorator
     # vectorize as expected
-    m, n = 6, 7
+    m, n = 8, 9
 
     np.random.seed(0)
     x = np.random.rand(m, n)
     y = np.random.rand(m, n)
 
+    if nan_policy == 'omit':
+        nan_mask = np.random.rand(m, n) > 0.85
+        x[nan_mask] = np.nan
+        y[nan_mask] = np.nan
+
     axis = 1
     stats, ps = np.zeros(m), np.zeros(m)
     for i in range(m):
-        stats[i], ps[i] = hypotest(x[i], y[i], *args, **kwds)
-    res = hypotest(x, y, axis=axis, *args, **kwds)
+        xi, yi = x[i], y[i]
+        if nan_policy == 'omit':
+            xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
+        stats[i], ps[i] = hypotest(xi, yi, *args, **kwds)
+    res = hypotest(x, y, axis=axis, nan_policy=nan_policy, *args, **kwds)
     assert_equal(res[0], stats)
     assert_equal(res[1], ps)
 
     axis = 0
     stats, ps = np.zeros(n), np.zeros(n)
     for i in range(n):
-        stats[i], ps[i] = hypotest(x.T[i], y.T[i], *args, **kwds)
-    res = hypotest(x, y, axis=axis, *args, **kwds)
+        xi, yi = x.T[i], y.T[i]
+        if nan_policy == 'omit':
+            xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
+        stats[i], ps[i] = hypotest(xi, yi, *args, **kwds)
+
+    res = hypotest(x, y, axis=axis, nan_policy=nan_policy, *args, **kwds)
     assert_equal(res[0], stats)
     assert_equal(res[1], ps)
+
+
+@pytest.mark.parametrize(("hypotest", "args", "kwds"),
+                         [(stats.pearsonr, tuple(), dict()),
+                          (stats.ranksums, tuple(), dict()),
+                          (stats.ansari, tuple(), dict()),
+                          (stats.brunnermunzel, ("less",),
+                           {"distribution": 'normal'}),
+                          (stats.epps_singleton_2samp, ((.35, 0.75),), {})
+                          ])
+def test_hypotest_nan_raise(hypotest, args, kwds):
+    m, n = 8, 9
+    np.random.seed(0)
+    x = np.random.rand(m, n)
+    y = np.random.rand(m, n)
+    nan_mask = np.random.rand(m, n) > 0.85
+    x[nan_mask] = np.nan
+    y[nan_mask] = np.nan
+
+    with assert_raises(ValueError, match="The input contains nan values"):
+        hypotest(x, y, nan_policy="raise", *args, **kwds)
