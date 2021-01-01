@@ -540,7 +540,7 @@ class TestDifferentialEvolutionSolver(object):
         # bounds are [(0, 2), (0, 2)]
         x0 = np.random.uniform(low=0.0, high=2.0, size=2)
         solver = DifferentialEvolutionSolver(
-            rosen, self.bounds, init=population, x0=x0
+            rosen, self.bounds, x0=x0
         )
         # parameters are scaled to unit interval
         assert_allclose(solver.population[0], x0 / 2.0)
