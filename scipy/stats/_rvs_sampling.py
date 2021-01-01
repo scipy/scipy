@@ -241,11 +241,11 @@ class FastNumericalInverse():
     >>> time_once = lambda f: f"{timeit(f, number=1)*1000:.6} ms"
     >>> dist = genexpon(9, 16, 3)  # freeze the distribution
     >>> p = np.linspace(0.01, 0.99, 99)  # percentiles from 1% to 99%
-    >>> time_once(lambda: dist.ppf(p))  # may vary
-    '154.565 ms'
+    >>> time_once(lambda: dist.ppf(p))
+    '154.565 ms'  # may vary
 
-    >>> time_once(lambda: dist.rvs(size=100))  # may vary
-    '148.979 ms'
+    >>> time_once(lambda: dist.rvs(size=100))
+    '148.979 ms'  # may vary
 
     The `FastNumericalInverse` has a method that approximates ``dist.ppf``.
 
@@ -258,21 +258,21 @@ class FastNumericalInverse():
     and use it than to call ``dist.ppf``.
 
     >>> def time_me():
-    >>>     fni = FastNumericalInverse(dist)
-    >>>     fni.ppf(p)
-    >>> time_once(time_me)  # may vary
-    '11.9222 ms'
+    ...     fni = FastNumericalInverse(dist)
+    ...     fni.ppf(p)
+    >>> time_once(time_me)
+    '11.9222 ms'  # may vary
 
     After generating the fast numerical inverse, subsequent calls to its
     methods are much faster.
-    >>> time_once(lambda: fni.ppf(p))  # may vary
-    '0.0819 ms'
+    >>> time_once(lambda: fni.ppf(p))
+    '0.0819 ms'  # may vary
 
     The fast numerical inverse can also be used to generate random variates
     using inverse transform sampling.
 
     >>> time_once(lambda: fni.rvs(size=100))
-    '0.0911 ms'
+    '0.0911 ms'  # may vary
 
     Depending on the implementation of the distribution's random sampling
     method, the random variates generated may be nearly identical, given
