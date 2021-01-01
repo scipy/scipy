@@ -1457,6 +1457,7 @@ class MultivariateNormalQMC(QMCEngine):
         mean = np.array(mean, copy=False, ndmin=1)
         d = mean.shape[0]
         if cov is not None:
+            # covariance matrix provided
             cov = np.array(cov, copy=False, ndmin=2)
             # check for square/symmetric cov matrix and mean vector has the same d
             if not mean.shape[0] == cov.shape[0]:
@@ -1473,14 +1474,17 @@ class MultivariateNormalQMC(QMCEngine):
                 eigval = np.clip(eigval, 0.0, None)
                 cov_root = (eigvec * np.sqrt(eigval)).transpose()
         elif cov_root is not None:
-            cov_root = np.array(cov_root_decomp, copy=False, ndmin=2)
-            if not mean.shape[0] == cov_root_decomp.shape[0]:
+            # root decomposition provided
+            cov_root = np.array(cov_root, copy=False, ndmin=2)
+            if not mean.shape[0] == cov_root.shape[0]:
                 raise ValueError("Dimension mismatch between mean and covariance.")
         else:
-            cov_root = None  # corresponds to identity covariance matrix
+            # corresponds to identity covariance matrix
+            cov_root = None
 
         super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
+
         if not inv_transform:
             # to apply Box-Muller, we need an even number of dimensions
             engine_dim = 2 * math.ceil(d / 2)
@@ -1604,3 +1608,14 @@ class MultinomialQMC(QMCEngine):
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
         return sample
+
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: MultinomialQMC
+            Engine reset to its base state.
+
+        """
+        return self.__class__(self.pvals, engine=self.engine.reset())
