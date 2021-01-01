@@ -74,8 +74,8 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2
+        pip install setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran
 
     - name: Test SciPy
       run: |
-        python -u runtests.py
+        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
