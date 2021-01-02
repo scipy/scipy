@@ -3,6 +3,7 @@ from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    import numpy as np
     config = Configuration('stats', parent_package, top_path)
 
     config.add_data_dir('tests')
@@ -28,8 +29,23 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # add BiasedUrn module
+    config.add_data_files('biasedurn.pxd')
+    config.add_extension(
+        'biasedurn',
+        sources=[
+            'biasedurn.cxx',
+            'biasedurn/impls.cpp',
+            'biasedurn/fnchyppr.cpp',
+            'biasedurn/wnchyppr.cpp',
+            'biasedurn/stoc1.cpp',
+            'biasedurn/stoc3.cpp'],
+        include_dirs=[np.get_include()],
+        define_macros=[('R_BUILD', None)],
+        language='c++',
+    )
+    
     return config
-
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
