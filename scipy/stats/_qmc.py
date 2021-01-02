@@ -593,7 +593,7 @@ class QMCEngine(ABC):
     we can create an instance to sample from.
 
     >>> engine = RandomEngine(2, seed=12345)
-    >>> engine.random(5)  # doctest: +SKIP
+    >>> engine.random(5)
     array([[0.22733602, 0.31675834],
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
@@ -603,7 +603,7 @@ class QMCEngine(ABC):
     We can also reset the state of the generator and resample again.
 
     >>> _ = engine.reset()
-    >>> engine.random(5)  # doctest: +SKIP
+    >>> engine.random(5)
     array([[0.22733602, 0.31675834],
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
@@ -727,7 +727,7 @@ class Halton(QMCEngine):
     If some wants to continue an existing design, extra points can be obtained
     by calling again `random`. Alternatively, you can skip some points like:
 
-    >>> sampler.fast_forward(5)
+    >>> _ = sampler.fast_forward(5)
     >>> sample_continued = sampler.random(n=5)
     >>> sample_continued
     array([[0.3125    , 0.37037037],
@@ -808,7 +808,7 @@ class OrthogonalLatinHypercube(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.OrthogonalLatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample  # doctest: +SKIP
+    >>> sample
     array([[0.0454672 , 0.58836057],
            [0.55947309, 0.03734684],
            [0.26335167, 0.98977623],
@@ -817,13 +817,13 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    >>> qmc.discrepancy(sample)
     0.02050567122966518
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    >>> qmc.scale(sample, bounds)
     array([[0.45467204, 3.76508172],
            [5.59473091, 2.11204051],
            [2.63351668, 4.96932869],
@@ -908,7 +908,7 @@ class LatinHypercube(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample  # doctest: +SKIP
+    >>> sample
     array([[0.5545328 , 0.13664833],
            [0.64052691, 0.66474907],
            [0.52177809, 0.53343721],
@@ -917,13 +917,13 @@ class LatinHypercube(QMCEngine):
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    >>> qmc.discrepancy(sample)
     0.07254149611314986
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    >>> qmc.scale(sample, bounds)
     array([[5.54532796, 2.409945  ],
            [6.40526909, 3.9942472 ],
            [5.2177809 , 3.60031164],
@@ -1029,7 +1029,7 @@ class OptimalDesign(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
-    >>> sample  # doctest: +SKIP
+    >>> sample
     array([[0.0454672 , 0.58836057],
            [0.55947309, 0.98977623],
            [0.26335167, 0.03734684],
@@ -1038,7 +1038,7 @@ class OptimalDesign(QMCEngine):
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)  # doctest: +SKIP
+    >>> qmc.discrepancy(sample)
     0.018581537720176344
 
     You can possibly improve the quality of the sample by performing more
@@ -1046,13 +1046,13 @@ class OptimalDesign(QMCEngine):
 
     >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
     >>> sample_2 = sampler_2.random(n=5)
-    >>> qmc.discrepancy(sample_2)  # doctest: +SKIP
+    >>> qmc.discrepancy(sample_2)
     0.018378401228740238
 
     Finally, samples can be scaled to bounds.
 
     >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)  # doctest: +SKIP
+    >>> qmc.scale(sample, bounds)
     array([[0.45467204, 3.76508172],
            [5.59473091, 4.96932869],
            [2.63351668, 2.11204051],
@@ -1253,8 +1253,8 @@ class Sobol(QMCEngine):
     by calling again `random_base2`. Alternatively, you can skip some
     points like:
 
-    >>> sampler.reset()
-    >>> sampler.fast_forward(4)
+    >>> _ = sampler.reset()
+    >>> _ = sampler.fast_forward(4)
     >>> sample_continued = sampler.random_base2(m=2)
     >>> sample_continued
     array([[0.375, 0.375],
@@ -1447,7 +1447,7 @@ class MultivariateNormalQMC(QMCEngine):
     >>> from scipy.stats import qmc
     >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
     >>> sample = engine.random(512)
-    >>> plt.scatter(sample[:, 0], sample[:, 1])
+    >>> _ = plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
     """
@@ -1585,6 +1585,7 @@ class MultinomialQMC(QMCEngine):
 
     Examples
     --------
+    >>> from scipy.stats import qmc
     >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
     >>> sample = engine.random(10)
 
