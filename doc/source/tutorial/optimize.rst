@@ -1564,9 +1564,14 @@ We need to choose the best student for each of the four swimming styles.
 This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
 
 The linear sum assignment problem is one of the most famous combinatorial optimization problems.
-When we are given a matrix :math:`C` known as a "cost matrix" and we want to match each row to a different column,
-we need to find a combinations of a row and a column which the sum of the corresponding entries is minimized
-(or maximized).
+Given a "cost matrix" :math:`C`, the problem is to choose
+
+- exactly one element from each row 
+- without choosing more than one element from any column 
+- such that the sum of the chosen elements is minimized (or maximized).
+
+In other words, we need to assign each row to one column such that the sum of 
+the corresponding entries is minimized (or maximized).
 
 Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is assigned to column j.
 Then the optimal assignment has cost
