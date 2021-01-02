@@ -2953,7 +2953,7 @@ class genhyperbolic_gen(rv_continuous):
     def _argcheck(self, lmbda, alpha, beta, delta):
 
         @np.vectorize
-        def argcheck_single(lmbda, alpha, beta, delta):
+        def _argcheck_single(lmbda, alpha, beta, delta):
             if lmbda > 0:
                 return np.all((np.absolute(beta) < alpha) & (delta >= 0))
             elif lmbda == 0:
@@ -2961,51 +2961,26 @@ class genhyperbolic_gen(rv_continuous):
             else:
                 return np.all((np.absolute(beta) <= alpha) & (delta > 0))
 
-        return argcheck_single(lmbda, alpha, beta, delta)
-
-    def _norming_constant(self, lmbda=1, alpha=1, beta=0, delta=1):
-        # https://www.jstor.org/stable/4615705
-        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
-        t2 = np.float_power(t1, lmbda*0.5)
-        t3 = np.float_power(2*np.pi, 0.5)
-        t4 = np.float_power(alpha, lmbda-0.5)
-        t5 = np.float_power(delta, lmbda)
-        t6 = delta*np.float_power(t1, 0.5)
-        t7 = sc.kv(lmbda, t6)
-        return t2*np.float_power(t3*t4*t5*t7, -1)
+        return _argcheck_single(lmbda, alpha, beta, delta)
 
     def _pdf(self, x, lmbda, alpha, beta, delta):
         # https://www.jstor.org/stable/4615705
-        t1 = self._norming_constant(
-            lmbda=lmbda, alpha=alpha, beta=beta, delta=delta
-            )
-        t2 = np.hypot(delta, x)
-        t3 = np.float_power(t2, (lmbda-0.5))
-        t4 = sc.kv(lmbda-0.5, alpha*t2)
-        t5 = beta*(x)
-        t6 = np.where(t5 < 700, t5, 700)
-        t7 = np.exp(t6)
-        return t1*t3*t4*t7
+        @np.vectorize
+        def _pdf_single(x, lmbda, alpha, beta, delta):
+            return _stats.genhyperbolic_pdf(x, lmbda, alpha, beta, delta)
 
-#    def _cdf(self, x, lmbda, alpha, beta, delta):
-#        # quad must be guided towards the bulk of the mass
-#
-#        @np.vectorize
-#        def cdf_single(x, lmbda, alpha, beta, delta):
-#            if beta >= 0:
-#                return integrate.quad(
-#                            self._pdf, -1e9, x,
-#                            points=[1e3, 1e3],
-#                            args=(lmbda, alpha, beta, delta)
-#                            )[0]
-#            else:
-#                return integrate.quad(
-#                            self._pdf, 1e9, x,
-#                            points=[1e3, 1e3],
-#                            args=(lmbda, alpha, beta, delta)
-#                            )[0] + 1
-#
-#        return cdf_single(x, lmbda, alpha, beta, delta)
+        return _pdf_single(x, lmbda, alpha, beta, delta)
+
+    def _cdf(self, x, lmbda, alpha, beta, delta):
+
+        @np.vectorize
+        def _cdf_single(x, lmbda, alpha, beta, delta):
+            user_data = np.array([lmbda, alpha, beta, delta], float).ctypes.data_as(ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf', user_data)
+
+            return integrate.quad(llc, -np.inf, x)[0]
+
+        return _cdf_single(x, lmbda, alpha, beta, delta)
 
     def _stats(self, lmbda, alpha, beta, delta):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf

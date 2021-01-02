@@ -513,6 +513,55 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
     return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
 
 
+##
+
+cpdef double genhyperbolic_pdf(double x, double lmbda, double alpha, double beta, double delta) nogil:
+    return _genhyperbolic_pdf_kernel(x, lmbda, alpha, beta, delta)
+
+cdef double _genhyperbolic_pdf(double x, void *user_data) nogil except *:
+    # destined to be used in a LowLevelCallable
+    cdef double lmbda, alpha, beta, delta
+
+    lmbda = (<double *>user_data)[0]
+    alpha = (<double *>user_data)[1]
+    beta = (<double *>user_data)[2]
+    delta = (<double *>user_data)[3]
+
+    return _genhyperbolic_pdf_kernel(x, lmbda, alpha, beta, delta)
+
+cdef double _genhyperbolic_pdf_kernel(double x, double lmbda, double alpha, double beta, double delta) nogil:
+    cdef double t1, t2, t3, t4, t5, t6
+
+    t1 = _norming_constant(lmbda, alpha, beta, delta)
+    t2 = math.pow(delta, 2) + math.pow(x, 2)
+    t2 = math.pow(t2, 0.5)
+    t3 = math.pow(t2, (lmbda-0.5))
+    t4 = cs.kv(lmbda-0.5, alpha*t2)
+    t5 = beta*(x)
+    if t5 > 700:
+        t5 = 700
+    t6 = math.exp(t5)
+    return t1*t3*t4*t6
+
+
+cdef double _norming_constant(double lmbda, double alpha, double beta, double delta) nogil:
+    cdef double t1, t2, t3, t4, t5, t6
+    
+    t1 = math.pow(alpha, 2) - math.pow(beta, 2)
+    t2 = math.pow(t1, lmbda*0.5)
+    t3 = math.pow(2*PI, 0.5)
+    t4 = math.pow(alpha, lmbda-0.5)
+    t5 = math.pow(delta, lmbda)
+    t6 = delta*math.pow(t1, 0.5)
+    t6 = cs.kv(lmbda, t6)
+
+    if math.isinf(t6):
+        return NAN
+
+    return t2*math.pow(t3*t4*t5*t6, -1)
+
+##
+
 ctypedef fused real:
     float
     double
