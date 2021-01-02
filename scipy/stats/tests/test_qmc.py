@@ -12,18 +12,129 @@ from scipy.optimize import basinhopping
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              _perturb_discrepancy, _update_discrepancy, QMCEngine)
+                              _perturb_discrepancy, _update_discrepancy,
+                              QMCEngine)
+
+
+class TestUtils:
+    def test_scale(self):
+        space = [[0, 0], [1, 1], [0.5, 0.5]]
+        corners = np.array([[-2, 0], [6, 5]])
+        out = [[-2, 0], [6, 5], [2, 2.5]]
+
+        scaled_space = qmc.scale(space, bounds=corners)
+
+        assert_allclose(scaled_space, out)
+
+        scaled_back_space = qmc.scale(scaled_space, bounds=corners,
+                                      reverse=True)
+        assert_allclose(scaled_back_space, space)
+
+    def test_discrepancy(self):
+        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
+        space_2 = np.array([[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]])
+        space_2 = (2.0 * space_2 - 1.0) / (2.0 * 6.0)
+
+        # From Fang et al. Design and modeling for computer experiments, 2006
+        assert_allclose(qmc.discrepancy(space_1), 0.0081, atol=1e-4)
+        assert_allclose(qmc.discrepancy(space_2), 0.0105, atol=1e-4)
+
+        # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point
+        # sets. Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
+        sample = np.array([[2, 1, 1, 2, 2, 2],
+                           [1, 2, 2, 2, 2, 2],
+                           [2, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 2, 2],
+                           [1, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 1, 2, 2]])
+        sample = (2.0 * sample - 1.0) / (2.0 * 2.0)
+
+        assert_allclose(qmc.discrepancy(sample, method='MD'), 2.5000,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='WD'), 1.3680,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451,
+                        atol=1e-4)
+
+        with pytest.raises(ValueError, match=r"toto is not a valid method."):
+            qmc.discrepancy(sample, method='toto')
+
+    def test_update_discrepancy(self):
+        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
+
+        disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
+        disc_iter = _update_discrepancy(space_1[-1], space_1[:-1],
+                                        disc_init)
+
+        assert_allclose(disc_iter, 0.0081, atol=1e-4)
+
+    def test_perm_discrepancy(self):
+        doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
+
+        disc_init = qmc.discrepancy(doe_init)
+
+        row_1, row_2, col = 5, 2, 1
+
+        doe = copy.deepcopy(doe_init)
+        doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
+
+        disc_valid = qmc.discrepancy(doe)
+        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
+                                         disc_init)
+
+        assert_allclose(disc_valid, disc_perm)
+
+    def test_n_primes(self):
+        primes = n_primes(10)
+        assert primes[-1] == 29
+
+        primes = n_primes(168)
+        assert primes[-1] == 997
+
+        primes = n_primes(350)
+        assert primes[-1] == 2357
+
+    def test_primes(self):
+        primes = primes_from_2_to(50)
+        out = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
+        assert_allclose(primes, out)
+
+
+class TestVDC:
+    def test_van_der_corput(self):
+        seed = np.random.RandomState(12345)
+        sample = van_der_corput(10, seed=seed)
+        out = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625]
+        assert_almost_equal(sample, out)
+
+        sample = van_der_corput(7, start_index=3, seed=seed)
+        assert_almost_equal(sample, out[3:])
+
+    def test_van_der_corput_scramble(self):
+        seed = np.random.RandomState(123456)
+        out = van_der_corput(10, scramble=True, seed=seed)
+
+        seed = np.random.RandomState(123456)
+        sample = van_der_corput(7, start_index=3, scramble=True,
+                                seed=seed)
+        assert_almost_equal(sample, out[3:])
 
 
 class QMCEngineTests:
+    """Generic tests for QMC engines."""
     qmce = ...
     can_scramble = ...
-    unscramble_1d = ...
-    scramble_1d = ...
     unscramble_nd = ...
     scramble_nd = ...
 
     scramble = [True, False]
+    ids = ["Scrambled", "Unscrambled"]
 
     def engine(self, scramble: bool, **kwargs) -> QMCEngine:
         seed = np.random.RandomState(123456)
@@ -35,47 +146,45 @@ class QMCEngineTests:
             else:
                 return self.qmce(seed=seed, **kwargs)
 
-    def reference(self, d: int, scramble: bool) -> np.ndarray:
-        if scramble:
-            return self.scramble_1d if d == 1 else self.scramble_nd
-        else:
-            return self.unscramble_1d if d == 1 else self.unscramble_nd
+    def reference(self, scramble: bool) -> np.ndarray:
+        return self.scramble_nd if scramble else self.unscramble_nd
 
-    @pytest.mark.parametrize("scramble", scramble)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_0dim(self, scramble):
         engine = self.engine(d=0, scramble=scramble)
         sample = engine.random(4)
         assert_array_equal(np.empty((4, 0)), sample)
 
-    @pytest.mark.parametrize("scramble", scramble)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_bounds(self, scramble):
         engine = self.engine(d=100, scramble=scramble)
         sample = engine.random(512)
         assert_(np.all(sample >= 0))
         assert_(np.all(sample <= 1))
 
-    @pytest.mark.parametrize("scramble", scramble)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_sample(self, scramble):
-        ref_sample = self.reference(d=2, scramble=scramble)
+        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
         sample = engine.random(n=len(ref_sample))
 
         assert_almost_equal(sample, ref_sample, decimal=1)
         assert engine.num_generated == len(ref_sample)
 
-    @pytest.mark.parametrize("scramble", scramble)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_continuing(self, scramble):
-        ref_sample = self.reference(d=2, scramble=scramble)
+        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
 
-        _ = engine.random(n=len(ref_sample) // 2)
-        sample = engine.random(n=len(ref_sample) // 2)
-        assert_almost_equal(sample, ref_sample[len(ref_sample) // 2:],
-                            decimal=1)
+        n_half = len(ref_sample) // 2
 
-    @pytest.mark.parametrize("scramble", scramble)
+        _ = engine.random(n=n_half)
+        sample = engine.random(n=n_half)
+        assert_almost_equal(sample, ref_sample[n_half:], decimal=1)
+
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
-        ref_sample = self.reference(d=2, scramble=scramble)
+        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
 
         _ = engine.random(n=len(ref_sample) // 2)
@@ -86,9 +195,9 @@ class QMCEngineTests:
         sample = engine.random(n=len(ref_sample))
         assert_almost_equal(sample, ref_sample, decimal=1)
 
-    @pytest.mark.parametrize("scramble", scramble)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_fast_forward(self, scramble):
-        ref_sample = self.reference(d=2, scramble=scramble)
+        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
 
         engine.fast_forward(4)
@@ -331,117 +440,6 @@ class TestSobol(QMCEngineTests):
         count2 = Counter(engine.random().flatten().tolist())
         assert_equal(count1, Counter({0.0: 1111}))
         assert_equal(count2, Counter({0.5: 1111}))
-
-
-
-class TestUtils:
-    def test_scale(self):
-        space = [[0, 0], [1, 1], [0.5, 0.5]]
-        corners = np.array([[-2, 0], [6, 5]])
-        out = [[-2, 0], [6, 5], [2, 2.5]]
-
-        scaled_space = qmc.scale(space, bounds=corners)
-
-        assert_allclose(scaled_space, out)
-
-        scaled_back_space = qmc.scale(scaled_space, bounds=corners,
-                                      reverse=True)
-        assert_allclose(scaled_back_space, space)
-
-    def test_discrepancy(self):
-        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
-        space_2 = np.array([[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]])
-        space_2 = (2.0 * space_2 - 1.0) / (2.0 * 6.0)
-
-        # From Fang et al. Design and modeling for computer experiments, 2006
-        assert_allclose(qmc.discrepancy(space_1), 0.0081, atol=1e-4)
-        assert_allclose(qmc.discrepancy(space_2), 0.0105, atol=1e-4)
-
-        # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point
-        # sets. Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
-        sample = np.array([[2, 1, 1, 2, 2, 2],
-                           [1, 2, 2, 2, 2, 2],
-                           [2, 1, 1, 1, 1, 1],
-                           [1, 1, 1, 1, 2, 2],
-                           [1, 2, 2, 2, 1, 1],
-                           [2, 2, 2, 2, 1, 1],
-                           [2, 2, 2, 1, 2, 2]])
-        sample = (2.0 * sample - 1.0) / (2.0 * 2.0)
-
-        assert_allclose(qmc.discrepancy(sample, method='MD'), 2.5000,
-                        atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='WD'), 1.3680,
-                        atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172,
-                        atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451,
-                        atol=1e-4)
-
-        with pytest.raises(ValueError, match=r"toto is not a valid method."):
-            qmc.discrepancy(sample, method='toto')
-
-    def test_update_discrepancy(self):
-        space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
-
-        disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = _update_discrepancy(space_1[-1], space_1[:-1],
-                                        disc_init)
-
-        assert_allclose(disc_iter, 0.0081, atol=1e-4)
-
-    def test_perm_discrepancy(self):
-        doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
-
-        disc_init = qmc.discrepancy(doe_init)
-
-        row_1, row_2, col = 5, 2, 1
-
-        doe = copy.deepcopy(doe_init)
-        doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
-
-        disc_valid = qmc.discrepancy(doe)
-        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
-                                         disc_init)
-
-        assert_allclose(disc_valid, disc_perm)
-
-    def test_n_primes(self):
-        primes = n_primes(10)
-        assert primes[-1] == 29
-
-        primes = n_primes(168)
-        assert primes[-1] == 997
-
-        primes = n_primes(350)
-        assert primes[-1] == 2357
-
-    def test_primes(self):
-        primes = primes_from_2_to(50)
-        out = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
-        assert_allclose(primes, out)
-
-
-class TestVDC:
-    def test_van_der_corput(self):
-        seed = np.random.RandomState(12345)
-        sample = van_der_corput(10, seed=seed)
-        out = [0., 0.5, 0.25, 0.75, 0.125, 0.625, 0.375, 0.875, 0.0625, 0.5625]
-        assert_almost_equal(sample, out)
-
-        sample = van_der_corput(7, start_index=3, seed=seed)
-        assert_almost_equal(sample, out[3:])
-
-    def test_van_der_corput_scramble(self):
-        seed = np.random.RandomState(123456)
-        out = van_der_corput(10, scramble=True, seed=seed)
-
-        seed = np.random.RandomState(123456)
-        sample = van_der_corput(7, start_index=3, scramble=True,
-                                seed=seed)
-        assert_almost_equal(sample, out[3:])
 
 
 class TestMultinomialQMC:
