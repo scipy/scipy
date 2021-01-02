@@ -375,6 +375,50 @@ class TestGenHyperbolic(object):
     def setup_method(self):
         np.random.seed(1234)
 
+    def test_pdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # x <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::dghyp(
+        #    x = x, lambda = 1, alpha = 1, beta = 0, delta = 1, mu = 0
+        #)
+        vals_R = np.array([
+            3.58785528920361e-05, 0.000326429934731449, 0.00293709769480322,
+            0.0255888798689523, 0.186310182073243, 0.186310182073243,
+            0.0255888798689523, 0.00293709769480321, 0.000326429934731449,
+            3.58785528920361e-05
+            ])
+        x = np.linspace(-10, 10, 10)
+        gh = stats.genhyperbolic(
+            lmbda=1,
+            alpha=1,
+            beta=0,
+            delta=1,
+            loc = 0
+            )
+        assert_allclose(gh.pdf(x), vals_R, atol=1e-9)
+
+    def test_cdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # x <- seq(0, 1, length.out = 10)
+        # GeneralizedHyperbolic::pghyp(
+        #   x = x, lambda = 1, alpha = 1, beta = 0, delta = 1, mu = 0
+        #)
+        vals_R = np.array([
+            3.60290695121014e-05, 0.000328601679561392, 0.00297281173512242,
+            0.0263324424523274, 0.212770086631079, 0.787229913368921,
+            0.973667557547673 ,0.997027188264878 ,0.999671398320439,
+            0.999963970930488
+            ])
+        x = np.linspace(-10, 10, 10)
+        gh = stats.genhyperbolic(
+            lmbda=1,
+            alpha=1,
+            beta=0,
+            delta=1,
+            loc = 0
+            )
+        assert_allclose(gh.cdf(x), vals_R, atol=1e-9, rtol=1e-5)
+
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 100 df
         res = []
