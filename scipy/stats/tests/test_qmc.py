@@ -1,4 +1,5 @@
 import copy
+from collections import Counter
 
 import pytest
 import numpy as np
@@ -49,7 +50,7 @@ class QMCEngineTests:
     @pytest.mark.parametrize("scramble", scramble)
     def test_bounds(self, scramble):
         engine = self.engine(d=100, scramble=scramble)
-        sample = engine.random(1024)
+        sample = engine.random(512)
         assert_(np.all(sample >= 0))
         assert_(np.all(sample <= 1))
 
@@ -94,6 +95,35 @@ class QMCEngineTests:
         sample = engine.random(n=4)
 
         assert_almost_equal(sample, ref_sample[4:], decimal=1)
+
+        # alternate fast forwarding with sampling
+        engine.reset()
+        even_draws = []
+        for i in range(8):
+            if i % 2 == 0:
+                even_draws.append(engine.random())
+            else:
+                engine.fast_forward(1)
+        assert_almost_equal(
+            ref_sample[[i for i in range(8) if i % 2 == 0]],
+            np.concatenate(even_draws),
+            decimal=5
+        )
+
+    @pytest.mark.parametrize("scramble", [True])
+    def test_distribution(self, scramble):
+        d = 50
+        engine = self.engine(d=d, scramble=scramble)
+        sample = engine.random(1024)
+        assert_array_almost_equal(
+            np.mean(sample, axis=0), np.repeat(0.5, d), decimal=2
+        )
+        assert_array_almost_equal(
+            np.percentile(sample, 25, axis=0), np.repeat(0.25, d), decimal=2
+        )
+        assert_array_almost_equal(
+            np.percentile(sample, 75, axis=0), np.repeat(0.75, d), decimal=2
+        )
 
 
 class TestHalton(QMCEngineTests):
@@ -240,6 +270,68 @@ class TestOptimalDesign(QMCEngineTests):
         sample_3 = optimal_3.random(n=20)
         disc_3 = qmc.discrepancy(sample_3)
         assert disc_3 < disc_ref
+
+
+class TestSobol(QMCEngineTests):
+    qmce = qmc.Sobol
+    can_scramble = True
+    # theoretical values from Joe Kuo2010
+    unscramble_nd = np.array([[0., 0.],
+                              [0.5, 0.5],
+                              [0.75, 0.25],
+                              [0.25, 0.75],
+                              [0.375, 0.375],
+                              [0.875, 0.875],
+                              [0.625, 0.125],
+                              [0.125, 0.625]])
+
+    # theoretical values unknown: convergence properties checked
+    scramble_nd = np.array([[0.50860737, 0.29320504],
+                            [0.07116939, 0.89594537],
+                            [0.49354145, 0.11524881],
+                            [0.93097717, 0.70244044],
+                            [0.87266153, 0.23887917],
+                            [0.31021884, 0.57600391],
+                            [0.13687253, 0.42054182],
+                            [0.69931293, 0.77336788]])
+
+    def test_warning(self):
+        with pytest.warns(UserWarning, match=r"The balance properties of "
+                                             r"Sobol' points"):
+            seed = np.random.RandomState(12345)
+            engine = qmc.Sobol(1, seed=seed)
+            engine.random(10)
+
+    def test_random_base2(self):
+        seed = np.random.RandomState(12345)
+        engine = qmc.Sobol(2, scramble=False, seed=seed)
+        sample = engine.random_base2(2)
+        assert_array_equal(self.unscramble_nd[:4],
+                           sample)
+
+        # resampling still having N=2**n
+        sample = engine.random_base2(2)
+        assert_array_equal(self.unscramble_nd[4:8],
+                           sample)
+
+        # resampling again but leading to N!=2**n
+        with pytest.raises(ValueError, match=r"The balance properties of "
+                                             r"Sobol' points"):
+            engine.random_base2(2)
+
+    def test_raise(self):
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"dimensionality"):
+            qmc.Sobol(qmc.Sobol.MAXDIM + 1)
+
+    def test_high_dim(self):
+        seed = np.random.RandomState(12345)
+        engine = qmc.Sobol(1111, scramble=False, seed=seed)
+        count1 = Counter(engine.random().flatten().tolist())
+        count2 = Counter(engine.random().flatten().tolist())
+        assert_equal(count1, Counter({0.0: 1111}))
+        assert_equal(count2, Counter({0.5: 1111}))
+
 
 
 class TestUtils:
@@ -445,7 +537,7 @@ class TestNormalQMC:
         seed = np.random.RandomState(123456)
         base_engine = qmc.Sobol(d=2, scramble=False, seed=seed)
         engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), engine=base_engine,
-                               inv_transform=True, seed=seed)
+                                           inv_transform=True, seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))
 
