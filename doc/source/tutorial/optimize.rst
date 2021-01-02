@@ -1583,8 +1583,8 @@ Then the optimal assignment has cost
 First of all, we need to setup a cost matrix.
 :func:`linear_sum_assignment` can assign each row to the best column.
 In this example, we want to assign each swimming style to a student.
-This means that rows of the cost matrix show each swimming style and columns show each student.
-In other words, the upper table needs to be transposed for the cost matrix:
+Therefore, to form the cost matrix, the table above needs to be transposed so that the rows
+correspond with swimming styles and the columns correspond with students:
 
 ::
 
