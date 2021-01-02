@@ -1634,7 +1634,8 @@ Note that this result is not the same as the sum of the minimum times for each s
     161.39999999999998
 
 because student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
-We need to decide either style is assigned to student "C" based on the total time.
+We cannot assign student "C" to both styles, so we assigned student C to the "breaststroke" style
+and D to the "butterfly" style to minimize the total time.
 
 .. rubric:: References
 
