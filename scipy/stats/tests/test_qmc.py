@@ -491,7 +491,8 @@ class TestMultinomialQMC:
 
     def test_reset(self):
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        engine = qmc.MultinomialQMC(p)
+        seed = np.random.RandomState(12345)
+        engine = qmc.MultinomialQMC(p, seed=seed)
         samples = engine.random(2)
         engine.reset()
         samples_reset = engine.random(2)
@@ -617,7 +618,8 @@ class TestNormalQMC:
         assert_(np.abs(cov[0, 1]) < 1e-2)
 
     def test_reset(self):
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1))
+        seed = np.random.RandomState(12345)
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(1), seed=seed)
         samples = engine.random(2)
         engine.reset()
         samples_reset = engine.random(2)
