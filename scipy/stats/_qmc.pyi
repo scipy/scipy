@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Optional,
     Union, List,
+    type_check_only,
 )
 
 import numpy as np
@@ -63,6 +64,7 @@ def van_der_corput(
 ) -> np.ndarray: ...
 
 
+@type_check_only
 class QMCEngine(ABC):
     @abstractmethod
     def __init__(
