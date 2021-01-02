@@ -1633,7 +1633,7 @@ Note that this result is not the same as the sum of the minimum times for each s
     >>> np.min(cost, axis=1).sum()
     161.39999999999998
 
-Because, student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
+because student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
 We need to decide either style is assigned to student "C" based on the total time.
 
 .. rubric:: References
