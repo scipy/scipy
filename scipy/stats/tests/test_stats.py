@@ -3521,7 +3521,6 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
-
     @pytest.mark.slow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
@@ -5252,7 +5251,8 @@ class TestKruskal(object):
         x = [1]
         y = [2]
         z = np.random.rand(2, 2)
-        with assert_raises(ValueError, match="Samples must be one-dimensional."):
+        with assert_raises(ValueError,
+                           match="Samples must be one-dimensional."):
             stats.kruskal(x, y, z)
 
     def test_kruskal_result_attributes(self):

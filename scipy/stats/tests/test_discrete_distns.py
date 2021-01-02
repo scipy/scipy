@@ -1,5 +1,6 @@
+import pytest
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam)
+                         boltzmann, skellam, binom, nbinom)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
@@ -98,6 +99,80 @@ def test_betabinom_bernoulli():
     p = betabinom(1, a, b).pmf(k)
     expected = bernoulli(a / (a + b)).pmf(k)
     assert_almost_equal(p, expected)
+
+
+def test_issue_10317():
+    alpha, n, p = 0.9, 10, 1
+    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+
+
+def test_issue_11134():
+    alpha, n, p = 0.95, 10, 0
+    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+
+
+def test_issue_7406():
+    np.random.seed(0)
+    assert_equal(binom.ppf(np.random.rand(10), 0, 0.5), 0)
+
+    # Also check that endpoints (q=0, q=1) are correct
+    assert_equal(binom.ppf(0, 0, 0.5), -1)
+    assert_equal(binom.ppf(1, 0, 0.5), 0)
+
+
+def test_issue_5122():
+    p = 0
+    n = np.random.randint(100, size=10)
+
+    x = 0
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, -1)
+
+    x = np.linspace(0.01, 0.99, 10)
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, 0)
+
+    x = 1
+    ppf = binom.ppf(x, n, p)
+    assert_equal(ppf, n)
+
+
+def test_issue_1603():
+    assert_equal(binom(1000, np.logspace(-3, -100)).ppf(0.01), 0)
+
+
+def test_issue_5503():
+    p = 0.5
+    x = np.logspace(3, 14, 12)
+    assert_allclose(binom.cdf(x, 2*x, p), 0.5, atol=1e-2)
+
+
+@pytest.mark.parametrize('x, n, p, cdf_desired', [
+    (300, 1000, 3/10, 0.51559351981411995636),
+    (3000, 10000, 3/10, 0.50493298381929698016),
+    (30000, 100000, 3/10, 0.50156000591726422864),
+    (300000, 1000000, 3/10, 0.50049331906666960038),
+    (3000000, 10000000, 3/10, 0.50015600124585261196),
+    (30000000, 100000000, 3/10, 0.50004933192735230102),
+    (30010000, 100000000, 3/10, 0.98545384016570790717),
+    (29990000, 100000000, 3/10, 0.01455017177985268670),
+    (29950000, 100000000, 3/10, 5.02250963487432024943e-28),
+])
+def test_issue_5503pt2(x, n, p, cdf_desired):
+    assert_allclose(binom.cdf(x, n, p), cdf_desired)
+
+
+def test_issue_5503pt3():
+    # From Wolfram Alpha: CDF[BinomialDistribution[1e12, 1e-12], 2]
+    assert_allclose(binom.cdf(2, 10**12, 10**-12), 0.91969860292869777384)
+
+
+def test_issue_6682():
+    # Reference value from R:
+    # options(digits=16)
+    # print(pnbinom(250, 50, 32/63, lower.tail=FALSE))
+    assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
+
 
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`

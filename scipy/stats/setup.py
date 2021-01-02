@@ -28,6 +28,9 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf','mvndst.f'],
     )
 
+    # add boost stats distributions
+    config.add_subpackage('_boost')
+
     return config
 
 
