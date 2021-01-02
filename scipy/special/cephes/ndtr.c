@@ -224,7 +224,8 @@ double ndtr(double a)
 }
 
 //
-// Gauss-Legendre points.
+// Gauss-Legendre points and weights.
+// The arrays defined here were created by scipy.special.roots_legendre(n).
 //
 
 // Gauss-Legendre n = 7 x coordinates in [-1, 1]
