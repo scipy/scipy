@@ -1560,7 +1560,8 @@ We have a table showing times for each swimming style of five students:
  E          46.3           47.8         50.4        37.2
 ==========  ===========  ============  ===========  ===============================
 
-We need to choose the best student for each of the four swimming styles.
+We need to choose a student for each of the four swimming styles such that 
+the total relay time is minimized.
 This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
 
 The linear sum assignment problem is one of the most famous combinatorial optimization problems.
@@ -1568,21 +1569,21 @@ Given a "cost matrix" :math:`C`, the problem is to choose
 
 - exactly one element from each row 
 - without choosing more than one element from any column 
-- such that the sum of the chosen elements is minimized (or maximized).
+- such that the sum of the chosen elements is minimized
 
 In other words, we need to assign each row to one column such that the sum of 
-the corresponding entries is minimized (or maximized).
+the corresponding entries is minimized.
 
-Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is assigned to column j.
+Formally, let :math:`X` be a boolean matrix where :math:`X[i,j] = 1` iff row  :math:`i` is assigned to column :math:`j`.
 Then the optimal assignment has cost
 
 .. math::
 
     \min \sum_i \sum_j C_{i,j} X_{i,j}
 
-First of all, we need to setup a cost matrix.
-:func:`linear_sum_assignment` can assign each row to the best column.
+The first step is to define the cost matrix.
 In this example, we want to assign each swimming style to a student.
+:func:`linear_sum_assignment` is able to assign each row of a cost matrix to a column.
 Therefore, to form the cost matrix, the table above needs to be transposed so that the rows
 correspond with swimming styles and the columns correspond with students:
 
