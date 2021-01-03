@@ -1,4 +1,5 @@
 from os.path import join
+from platform import system
 
 
 def pre_build_hook(build_ext, ext):
@@ -50,6 +51,7 @@ def configuration(parent_package='',top_path=None):
         include_dirs=[np.get_include()],
         define_macros=[('R_BUILD', None)],
         language='c++',
+        extra_compile_args=['-Wno-narrowing'] if system() == 'Darwin' else [],
     )
     ext._pre_build_hook = pre_build_hook
 
