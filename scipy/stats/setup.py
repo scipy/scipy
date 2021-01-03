@@ -39,6 +39,12 @@ def configuration(parent_package='',top_path=None):
 
     # add BiasedUrn module
     config.add_data_files(['random.pxd', 'biasedurn.pxd'])
+    npy_major_version = int(np.__version__.split('.')[1])
+    if npy_major_version >= 18:
+        inc_dirs = [np.get_include()]
+    else:
+        from scipy._build_utils.npy_1_18_compat import get_include
+        inc_dirs = [get_include()]
     ext = config.add_extension(
         'biasedurn',
         sources=[
@@ -48,7 +54,7 @@ def configuration(parent_package='',top_path=None):
             'biasedurn/wnchyppr.cpp',
             'biasedurn/stoc1.cpp',
             'biasedurn/stoc3.cpp'],
-        include_dirs=[np.get_include()],
+        include_dirs=inc_dirs,
         define_macros=[('R_BUILD', None)],
         language='c++',
         extra_compile_args=['-Wno-narrowing'] if system() == 'Darwin' else [],
