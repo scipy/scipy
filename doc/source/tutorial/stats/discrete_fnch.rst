@@ -16,7 +16,7 @@ if its probability mass function is given by
 
 .. math::
 
-    p(x; N, m_1, n, \omega) = \frac{\binom{m_1}{x}\binom{m_2}{n-x}\omega^x}{P_0}, \end{eqnarray*}
+    p(x; N, m_1, n, \omega) = \frac{\binom{m_1}{x}\binom{m_2}{n-x}\omega^x}{P_0},
 
 for
 :math:`x \in [x_l, x_u]`,
