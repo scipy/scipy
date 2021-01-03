@@ -2982,26 +2982,47 @@ class genhyperbolic_gen(rv_continuous):
 
         return _cdf_single(x, lmbda, alpha, beta, delta)
 
+    def _rvs(self, lmbda, alpha, beta, delta, size=None, random_state=None):
+        # note: X = b * V + sqrt(V) * X  has a generalized hyperbolic distribution if X is standard
+        # normal and V is geninvgauss(a = ?, b = ?)
+        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
+        t2 = np.float_power(delta, 2)
+        # b in the GIG
+        t3 = np.float_power(t1 * t2, 0.5)
+        # scale in the GIG
+        t4 = 1 / np.float_power(t1 / t2, 0.5)
+        gig = geninvgauss.rvs(
+            p=lmbda,
+            b=t3,
+            scale = t4,
+            size=size,
+            random_state=random_state
+            )
+        normst = norm.rvs(size=size, random_state=random_state)
+        return beta * gig + np.sqrt(gig) * normst
+
     def _stats(self, lmbda, alpha, beta, delta):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
-        t1 = np.hypot(delta, beta)
-        t2 = np.float_power(delta, 2)*np.float_power(t1, 2)
+        # raw moments
+        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
+        t1 = delta * np.float_power(t1, 0.5)
+        t2 = np.float_power(delta, 2) * np.float_power(t1, - 1)
         b0 = sc.kv(lmbda, t1)
-        b1 = sc.kv(lmbda+1, t1)
-        b2 = sc.kv(lmbda+2, t1)
-        b3 = sc.kv(lmbda+3, t1)
-        b4 = sc.kv(lmbda+4, t1)
-        r1 = b1*np.float_power(b0, -1)
-        r2 = b2*np.float_power(b0, -1)
-        r3 = b3*np.float_power(b0, -1)
-        r4 = b4*np.float_power(b0, -1)
-        m1 = t2*beta*r1
-        m2 = t2*r1 + np.float_power(t2*beta, 2)*r2
-        m3 = 3*beta*np.float_power(t2, 2)*r2 \
-            + np.float_power(t2*beta, 3)*r3
-        m4 = 3*np.float_power(t2, 2)*r2 \
-            + 6*np.float_power(t2*beta, 3)*r3 \
-            + np.float_power(t2*beta, 4)*r4
+        b1 = sc.kv(lmbda + 1, t1)
+        b2 = sc.kv(lmbda + 2, t1)
+        b3 = sc.kv(lmbda + 3, t1)
+        b4 = sc.kv(lmbda + 4, t1)
+        r1 = b1 * np.float_power(b0, - 1)
+        r2 = b2 * np.float_power(b0, - 1)
+        r3 = b3 * np.float_power(b0, - 1)
+        r4 = b4 * np.float_power(b0, - 1)
+        m1 = t2 * beta * r1
+        m2 = t2 * r1 + np.float_power(t2 * beta, 2) * r2
+        m3 = 3 * beta * np.float_power(t2, 2) * r2 \
+            + np.float_power(t2 * beta, 3) * r3
+        m4 = 3 * np.float_power(t2, 2) * r2 \
+            + 6 * np.float_power(t2 * beta, 3) * r3 \
+            + np.float_power(t2 * beta, 4) * r4
         return m1, m2, m3, m4
 
 
