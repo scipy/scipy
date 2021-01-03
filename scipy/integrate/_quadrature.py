@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, Tuple, Any, cast
 import functools
 import numpy as np
 import math
@@ -52,14 +52,15 @@ class AccuracyWarning(Warning):
 if TYPE_CHECKING:
     # workaround for mypy function attributes see:
     # https://github.com/python/mypy/issues/2087#issuecomment-462726600
-    from typing import Protocol, Dict, Tuple, Any
+    from typing_extensions import Protocol
     class CacheAttributes(Protocol):
         cache: Dict[int, Tuple[Any, Any]]
-    def cache_decorator(func: Any) -> CacheAttributes:
-        return func
 else:
-    def cache_decorator(func):
-        return func
+    CacheAttributes = Callable
+
+
+def cache_decorator(func: Callable) -> CacheAttributes:
+    return cast(CacheAttributes, func)
 
 
 @cache_decorator
