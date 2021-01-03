@@ -1,8 +1,9 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam)
+                         boltzmann, skellam, fnch, randint)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from scipy.special import binom
 
 
 def test_hypergeom_logpmf():
@@ -99,6 +100,7 @@ def test_betabinom_bernoulli():
     expected = bernoulli(a / (a + b)).pmf(k)
     assert_almost_equal(p, expected)
 
+
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -112,3 +114,45 @@ def test_skellam_gh11474():
                     0.5044605891382528, 0.5019947363350450, 0.5019848365953181,
                     0.5019750827993392, 0.5019466621805060, 0.5018209330219539]
     assert_allclose(cdf, cdf_expected)
+
+
+class TestFNCH():
+    np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
+    shape = (2, 4, 3)
+    max_m = 100
+    m1 = np.random.randint(1, max_m, size=shape)    # red balls
+    m2 = np.random.randint(1, max_m, size=shape)    # white balls
+    N = m1 + m2                                     # total balls
+    n = randint.rvs(0, N, size=N.shape)             # number of draws
+    xl = np.maximum(0, n-m2)                        # lower bound of support
+    xu = np.minimum(n, m1)                          # upper bound of support
+    x = randint.rvs(xl, xu, size=xl.shape)
+
+    def test_fnch_hypergeom(self):
+        # Fisher's noncentral hypergeometric distribution reduces to the
+        # hypergeometric distribution when odds = 1
+        x, N, m1, n = self.x, self.N, self.m1, self.n
+        assert_allclose(fnch.pmf(x, N, m1, n, odds=1),
+                        hypergeom.pmf(x, N, m1, n))
+
+    def test_fnch_naive(self):
+        # test against a very simple implementation
+        x, N, m1, n = self.x, self.N, self.m1, self.n
+        odds = np.random.rand(*x.shape)*2
+
+        @np.vectorize
+        def pmf(x, N, m1, n, w):
+            # simple implementation of FNCH pmf
+            m2 = N - m1
+            xl = np.maximum(0, n-m2)
+            xu = np.minimum(n, m1)
+
+            def f(x):
+                t1 = binom(m1, x)
+                t2 = binom(m2, n - x)
+                return t1 * t2 * w**x
+
+            P0 = sum((f(y) for y in range(xl, xu + 1)))
+            return f(x) / P0
+
+        assert_allclose(fnch.pmf(x, N, m1, n, odds), pmf(x, N, m1, n, odds))

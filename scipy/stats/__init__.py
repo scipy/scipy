@@ -158,6 +158,7 @@ Discrete distributions
    dlaplace          -- Discrete Laplacian
    geom              -- Geometric
    hypergeom         -- Hypergeometric
+   fnch              -- Fisher's Noncentral Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
    nhypergeom        -- Negative Hypergeometric

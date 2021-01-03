@@ -98,7 +98,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace']
+    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
+                          'fnch']
 
     try:
         distfunc = getattr(stats, dist)

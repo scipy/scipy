@@ -13,6 +13,7 @@ import numpy as np
 
 from ._distn_infrastructure import (
         rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+from .biasedurn import _PyFishersNCHypergeometric, _PyStochasticLib3
 
 
 class binom_gen(rv_discrete):
@@ -31,8 +32,8 @@ class binom_gen(rv_discrete):
     for ``k`` in ``{0, 1,..., n}``, :math:`0 \leq p \leq 1`
 
     `binom` takes ``n`` and ``p`` as shape parameters,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -113,8 +114,8 @@ class bernoulli_gen(binom_gen):
     for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
     `bernoulli` takes :math:`p` as shape parameter,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -258,8 +259,8 @@ class nbinom_gen(rv_discrete):
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success, 
-    and :math:`1-p` is the probability of a single failure. 
+    number of successes, :math:`p` is the probability of a single success,
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -327,8 +328,8 @@ class geom_gen(rv_discrete):
 
     for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter, 
-    where :math:`p` is the probability of a single success 
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
@@ -1106,7 +1107,7 @@ class dlaplace_gen(rv_discrete):
         #     https://www.sciencedirect.com/science/
         #     article/abs/pii/S0378375804003519
         # Furthermore, the two-sided geometric distribution is
-        # equivalent to the difference between two iid geometric 
+        # equivalent to the difference between two iid geometric
         # distributions.
         #   Reference (page 179):
         #     https://pdfs.semanticscholar.org/61b3/
@@ -1260,6 +1261,133 @@ class yulesimon_gen(rv_discrete):
 
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
+
+
+class fnch_gen(rv_discrete):
+    r"""A Fisher's noncentral hypergeometric discrete random variable.
+
+    Fisher's noncentral hypergeometric distribution models drawing objects of
+    two types from a bin. `M` is the total number of objects, `n` is the
+    number of Type I objects, and `odds` is the odds ratio: the odds of
+    selecting a Type I object rather than a Type II object when there is only
+    one object of each type.
+    The random variate represents the number of Type I objects drawn if we
+    take a handful of objects from the bin at once and find out afterwards
+    that we took `N` objects.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, nhypergeom
+
+    Notes
+    -----
+    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`N` correspond
+    with parameters `N`, `n`, and `M` (respectively) as defined above.
+
+    The probability mass function is defined as
+
+    .. math::
+
+        p(x; N, m_1, n, \omega) =
+        \frac{\binom{m_1}{x}\binom{m_2}{n-x}\omega^x}{P_0},
+
+    for
+    :math:`x \in [x_l, x_u]`,
+    :math:`N \in {\mathbb N}`,
+    :math:`m_1 \in [0, N]`,
+    :math:`n \in [0, N]`,
+    :math:`\omega > 0`,
+    where
+    :math:`x_l = \max(0, n - m_2)`,
+    :math:`x_u = \min(n, m_1)`,
+    :math:`m_2 = N - m_1`,
+
+    .. math::
+
+        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{m_2}{n-y}\omega^y,
+
+    and the binomial coefficients are defined as
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    `fnch` uses the BiasedUrn package by Agner Fog with permission
+    for it to be distributed under SciPy's license.
+
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted; they are chosen for consistency with `hypergeom`.
+    The choice of corresponding mathematical symbols allows for
+    comparison with the references.
+
+    Note that Fisher's noncentral hypergeometric distribution is distinct
+    from Wallenius' noncentral hypergeometric distribution, which models
+    drawing a pre-determined `N` objects from a bin one by one.
+    When the odds ratio is unity, however, both distributions reduce to the
+    ordinary hypergeometric distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Agner Fog, "Biased Urn Theory".
+           https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
+
+    .. [2] "Fisher's noncentral hypergeometric distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Fisher's_noncentral_hypergeometric_distribution
+
+    %(example)s
+
+    """
+
+    def _get_support(self, M, n, N, odds):
+        N, m1, n = M, n, N  # follow Wikipedia notation
+        m2 = N - m1
+        x_min = np.maximum(0, n - m2)
+        x_max = np.minimum(n, m1)
+        return x_min, x_max
+
+    def _argcheck(self, M, n, N, odds):
+        M, n = np.asarray(M), np.asarray(n),
+        N, odds = np.asarray(N), np.asarray(odds)
+        cond1 = (M.astype(int) == M) & (M >= 0)
+        cond2 = (n.astype(int) == n) & (n >= 0)
+        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond4 = odds > 0
+        cond5 = N <= M
+        cond6 = n <= M
+        return cond1 & cond2 & cond3 & cond4 & cond5 & cond6
+
+    def _rvs(self, M, n, N, odds, size=None, random_state=None):
+
+        def _rvs1(M, n, N, odds, length, random_state=None):
+            urn = _PyStochasticLib3()
+            rvs = urn.rvs_fisher(N, n, M, odds, length, random_state)
+            return rvs
+
+        # If all the shapes are scalar, we can generate all the random numbers
+        # in one call to rvs_fisher and reshape to the desired result.
+        # Otherwise, we need to resort to np.vectorize.
+        if (np.size(M) == 1 and np.size(n) == 1
+                and np.size(N) == 1 and np.size(odds) == 1):
+            rvs = _rvs1(M, n, N, odds,
+                        np.prod(size), random_state).reshape(size)
+        else:
+            fun = np.vectorize(_rvs1, excluded=['size', 'random_state'])
+            rvs = fun(M, n, N, odds, 1, random_state)
+        return rvs
+
+    def _pmf(self, x, M, n, N, odds):
+
+        @np.vectorize
+        def _pmf1(x, M, n, N, odds):
+            urn = _PyFishersNCHypergeometric(N, n, M, odds, 1e-12)
+            return urn.probability(x)
+
+        return _pmf1(x, M, n, N, odds)
+
+
+fnch = fnch_gen(name=r'fnch', longname="A Fisher's noncentral hypergeometric")
 
 
 # Collect names of classes and objects in this module.
