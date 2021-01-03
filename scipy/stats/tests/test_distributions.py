@@ -395,6 +395,49 @@ class TestNormInvGauss(object):
         vals_pdf = stats.norminvgauss.pdf(x_test, a=1, b=0.5)
         assert_allclose(vals_pdf, r_pdf, atol=1e-9)
 
+    @pytest.mark.parametrize('x, a, b, sf, rtol',
+                             [(-1, 1, 0, 0.8759652211005315, 1e-13),
+                              (25, 1, 0, 1.1318690184042579e-13, 1e-4),
+                              (1, 5, -1.5, 0.002066711134653577, 1e-12),
+                              (10, 5, -1.5, 2.308435233930669e-29, 1e-9)])
+    def test_sf_isf_mpmath(self, x, a, b, sf, rtol):
+        # The data in this test is based on this code that uses mpmath:
+        #
+        # -----
+        # import mpmath
+        #
+        # mpmath.mp.dps = 50
+        #
+        # def pdf(x, a, b):
+        #     x = mpmath.mpf(x)
+        #     a = mpmath.mpf(a)
+        #     b = mpmath.mpf(b)
+        #     g = mpmath.sqrt(a**2 - b**2)
+        #     t = mpmath.sqrt(1 + x**2)
+        #     return (a * mpmath.besselk(1, a*t) * mpmath.exp(g + b*x)
+        #             / (mpmath.pi * t))
+        #
+        # def sf(x, a, b):
+        #     return mpmath.quad(lambda x: pdf(x, a, b), [x, mpmath.inf])
+        #
+        # -----
+        #
+        # In particular,
+        #
+        # >>> float(sf(-1, 1, 0))
+        # 0.8759652211005315
+        # >>> float(sf(25, 1, 0))
+        # 1.1318690184042579e-13
+        # >>> float(sf(1, 5, -1.5))
+        # 0.002066711134653577
+        # >>> float(sf(10, 5, -1.5))
+        # 2.308435233930669e-29
+
+        s = stats.norminvgauss.sf(x, a, b)
+        assert_allclose(s, sf, rtol=rtol)
+        i = stats.norminvgauss.isf(sf, a, b)
+        assert_allclose(i, x, rtol=rtol)
+
     def test_stats(self):
         a, b = 1, 0.5
         gamma = np.sqrt(a**2 - b**2)
