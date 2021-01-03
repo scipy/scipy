@@ -545,6 +545,11 @@ class TestDifferentialEvolutionSolver(object):
         # parameters are scaled to unit interval
         assert_allclose(solver.population[0], x0 / 2.0)
 
+    def test_x0(self):
+        # smoke test that checks that x0 is usable.
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        assert res.success
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs
