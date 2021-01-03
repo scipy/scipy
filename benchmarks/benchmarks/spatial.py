@@ -273,6 +273,34 @@ class CNeighbors(Benchmark):
         """
         self.T1s.count_neighbors(self.T2s, self.r)
 
+
+class Remove(Benchmark):
+    params = [
+        [
+          (2, 50000),
+          (8, 50000),
+          (16, 50000)
+        ],
+        BOX_SIZES, LEAF_SIZES
+    ]
+    param_names = ['(m, n)', 'boxsize', 'leafsize']
+
+    def setup(self, mn, boxsize, leafsize):
+        m, n = mn
+        dataset = np.random.uniform(size=(n, m))
+        self.T = cKDTree(dataset, boxsize=boxsize, leafsize=leafsize)
+        self.i = 0
+
+    def time_remove(self, mn, boxsize, leafsize):
+        """
+        Time to remove one point from cKDTree.
+        """
+
+        self.T.remove(self.i)
+        self.i += 1
+
+
+
 def generate_spherical_points(num_points):
     # generate uniform points on sphere
     # see: https://stackoverflow.com/a/23785326

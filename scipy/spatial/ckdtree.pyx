@@ -139,6 +139,8 @@ cdef extern from "ckdtree_decl.h":
                                   const np.float64_t max_distance,
                                   vector[coo_entry] *results) nogil except +
 
+    bool remove(ckdtree *self, const np.intp_t data_index) nogil except +
+
 
 # C++ helper functions
 # ====================
@@ -1530,6 +1532,58 @@ cdef class cKDTree:
             return res.dok_matrix(self.n, other.n)
         else:
             raise ValueError('Invalid output type')
+
+    # -----
+    # remove
+    # -----
+
+    def remove(self, np.intp_t index):
+        """
+        remove(self, index)
+        .. versionadded:: 1.6.0
+
+        Remove a point from the tree
+
+        Parameters
+        ----------
+        index : integer
+            The index in self.data of the point to remove.
+
+        Returns
+        -------
+        found : bool
+            True if the tree contained the point and it has been removed.
+            False if the tree did not contain the point.
+
+        Examples
+        --------
+        You can try to remove a point twice:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> np.random.seed(21701)
+        >>> shape = (100, 10)
+        >>> points = np.random.random(shape)
+        >>> tree = cKDTree(points)
+        >>> tree.remove(0)  # contained
+        True
+
+        >>> tree.remove(0)  # not contained anymore
+        False
+
+        """
+
+        cdef:
+            ckdtree *cself = self.cself
+
+        with nogil:
+            found = remove(cself, index)
+
+        if found:
+            self._python_tree = None
+            self.indices = self.indices[:self.n]
+
+        return found
 
 
     # ----------------------

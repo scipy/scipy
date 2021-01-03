@@ -130,4 +130,8 @@ sparse_distance_matrix(const ckdtree *self,
                        std::vector<coo_entry> *results);
 
 
+bool
+remove(ckdtree *self,
+       const ckdtree_intp_t data_index);
+
 #endif

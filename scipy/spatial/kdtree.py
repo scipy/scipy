@@ -862,6 +862,44 @@ class KDTree(cKDTree):
         return super().sparse_distance_matrix(
             other, max_distance, p, output_type)
 
+    def remove(self, index):
+        """
+        remove(self, index)
+        .. versionadded:: 1.6.0
+
+        Remove a point from the tree
+
+        Parameters
+        ----------
+        index : integer
+            The index in self.data of the point to remove.
+
+        Returns
+        -------
+        found : bool
+            True if the tree contained the point and it has been removed.
+            False if the tree did not contain the point.
+
+        Examples
+        --------
+        You can try to remove a point twice:
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
+        >>> np.random.seed(21701)
+        >>> shape = (100, 10)
+        >>> points = np.random.random(shape)
+        >>> tree = KDTree(points)
+        >>> tree.remove(0)  # contained
+        True
+
+        >>> tree.remove(0)  # not contained anymore
+        False
+
+        """
+
+        return super().remove(index)
+
 
 def distance_matrix(x, y, p=2, threshold=1000000):
     """
