@@ -549,7 +549,7 @@ class TestNdimageMorphology:
     def test_distance_transform_edt5(self):
         # Ticket #954 regression test
         out = ndimage.distance_transform_edt(False)
-        assert_array_almost_equal(out, [0.])1
+        assert_array_almost_equal(out, [0.])
 
     def test_distance_transform_edt6(self):
         # test input validation per discussion on PR #13302
