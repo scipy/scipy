@@ -402,7 +402,7 @@ class TestGenHyperbolic(object):
         # x <- seq(0, 1, length.out = 10)
         # GeneralizedHyperbolic::pghyp(
         #   x = x, lambda = 1, alpha = 1, beta = 0, delta = 1, mu = 0
-        #)
+        # )
         vals_R = np.array([
             3.60290695121014e-05, 0.000328601679561392, 0.00297281173512242,
             0.0263324424523274, 0.212770086631079, 0.787229913368921,
@@ -418,6 +418,35 @@ class TestGenHyperbolic(object):
             loc = 0
             )
         assert_allclose(gh.cdf(x), vals_R, atol=1e-9, rtol=1e-5)
+
+    def test_moments_r(self):
+        # test against R package GeneralizedHyperbolic
+        # sapply(1:4,
+        #    function(x) GeneralizedHyperbolic::ghypMom(
+        #        order = x, lambda = 2, alpha = 2, beta = 1, delta = 1,
+        #        momType = 'raw')
+        # )
+        
+        vals_R = np.array([
+            1.86848366948115, 6.35545100844345,
+            26.8275110062306, 141.581144754983
+
+            ])
+        mvsk = stats.genhyperbolic(
+            lmbda=2,
+            alpha=2,
+            beta=1,
+            delta=1.5,
+            loc = 0
+            ).stats('mvsk')
+        assert_allclose(mvsk, vals_R, atol=1e-9, rtol=1e-8)
+
+    def test_rvs(self):
+        # KS test
+        #lmbda = 1, alpha = 1, beta = 0, delta = 1, mu = 0
+        gh = stats.genhyperbolic(lmbda=1, alpha=1, beta=0, delta=1, loc=0)
+        _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
+        assert_equal(p > 0.05, True)
 
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 100 df
