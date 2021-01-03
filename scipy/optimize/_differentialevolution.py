@@ -595,9 +595,11 @@ class DifferentialEvolutionSolver(object):
         if x0 is not None:
             # scale to within unit interval and
             # ensure parameters are within bounds.
-            x0_scaled = np.clip(
-                self._unscale_parameters(np.asarray(x0)), 0.0, 1.0
-            )
+            x0_scaled = self._unscale_parameters(np.asarray(x0))
+            if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
+                raise ValueError(
+                    "Some entries in x0 lay outside the specified bounds"
+                )
             self.population[0] = x0_scaled
 
         # infrastructure for constraints

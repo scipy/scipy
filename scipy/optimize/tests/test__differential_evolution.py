@@ -550,6 +550,10 @@ class TestDifferentialEvolutionSolver(object):
         res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
         assert res.success
 
+        # check what happens if some of the x0 lay outside the bounds
+        with assert_raises(ValueError):
+            differential_evolution(rosen, self.bounds, x0=[0.2, 2.1])
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs
