@@ -1795,6 +1795,13 @@ class fatiguelife_gen(rv_continuous):
         tmp = c*sc.ndtri(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
+    def _sf(self, x, c):
+        return _norm_sf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
+
+    def _isf(self, q, c):
+        tmp = -c*sc.ndtri(q)
+        return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
+
     def _stats(self, c):
         # NB: the formula for kurtosis in wikipedia seems to have an error:
         # it's 40, not 41. At least it disagrees with the one from Wolfram
@@ -2361,11 +2368,14 @@ class genexpon_gen(rv_continuous):
         return (a + b*(-sc.expm1(-c*x)))*np.exp((-a-b)*x +
                                                 b*(-sc.expm1(-c*x))/c)
 
+    def _logpdf(self, x, a, b, c):
+        return np.log(a+b*(-sc.expm1(-c*x))) + (-a-b)*x+b*(-sc.expm1(-c*x))/c
+
     def _cdf(self, x, a, b, c):
         return -sc.expm1((-a-b)*x + b*(-sc.expm1(-c*x))/c)
 
-    def _logpdf(self, x, a, b, c):
-        return np.log(a+b*(-sc.expm1(-c*x))) + (-a-b)*x+b*(-sc.expm1(-c*x))/c
+    def _sf(self, x, a, b, c):
+        return np.exp((-a-b)*x + b*(-sc.expm1(-c*x))/c)
 
 
 genexpon = genexpon_gen(a=0.0, name='genexpon')
