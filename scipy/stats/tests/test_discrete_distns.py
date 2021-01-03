@@ -141,7 +141,7 @@ class TestFNCH():
         odds = np.random.rand(*x.shape)*2
 
         @np.vectorize
-        def pmf(x, N, m1, n, w):
+        def pmf_mean_var(x, N, m1, n, w):
             # simple implementation of FNCH pmf
             m2 = N - m1
             xl = np.maximum(0, n-m2)
@@ -152,7 +152,18 @@ class TestFNCH():
                 t2 = binom(m2, n - x)
                 return t1 * t2 * w**x
 
-            P0 = sum((f(y) for y in range(xl, xu + 1)))
-            return f(x) / P0
+            def P(k):
+                return sum((f(y)*y**k for y in range(xl, xu + 1)))
 
-        assert_allclose(fnch.pmf(x, N, m1, n, odds), pmf(x, N, m1, n, odds))
+            P0 = P(0)
+            P1 = P(1)
+            P2 = P(2)
+            pmf = f(x) / P0
+            mean = P1 / P0
+            var = P2 / P0 - (P1 / P0)**2
+            return pmf, mean, var
+
+        pmf, mean, var = pmf_mean_var(x, N, m1, n, odds)
+        assert_allclose(fnch.pmf(x, N, m1, n, odds), pmf)
+        assert_allclose(fnch.stats(N, m1, n, odds, moments='m'), mean)
+        assert_allclose(fnch.stats(N, m1, n, odds, moments='v'), var)

@@ -1386,6 +1386,18 @@ class fnch_gen(rv_discrete):
 
         return _pmf1(x, M, n, N, odds)
 
+    def _stats(self, M, n, N, odds, moments):
+
+        @np.vectorize
+        def _moments1(M, n, N, odds):
+            urn = _PyFishersNCHypergeometric(N, n, M, odds, 1e-12)
+            return urn.moments()
+
+        m, v = _moments1(M, n, N, odds) if ("m" in moments
+                                            or "v" in moments) else None
+        s, k = None, None
+        return m, v, s, k
+
 
 fnch = fnch_gen(name=r'fnch', longname="A Fisher's noncentral hypergeometric")
 
