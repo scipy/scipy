@@ -1,9 +1,12 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, fnch, randint)
+                         boltzmann, skellam, fnch, wnch, randint)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 from scipy.special import binom
+import pytest
+from scipy.optimize import root_scalar
+from scipy.integrate import quad
 
 
 def test_hypergeom_logpmf():
@@ -116,7 +119,7 @@ def test_skellam_gh11474():
     assert_allclose(cdf, cdf_expected)
 
 
-class TestFNCH():
+class TestNCH():
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
     shape = (2, 4, 3)
     max_m = 100
@@ -127,18 +130,22 @@ class TestFNCH():
     xl = np.maximum(0, n-m2)                        # lower bound of support
     xu = np.minimum(n, m1)                          # upper bound of support
     x = randint.rvs(xl, xu, size=xl.shape)
+    odds = np.random.rand(*x.shape)*2
 
-    def test_fnch_hypergeom(self):
-        # Fisher's noncentral hypergeometric distribution reduces to the
+    # test output is more readable when function names (strings) are passed
+    @pytest.mark.parametrize('dist_name', ['fnch', 'wnch'])
+    def test_nch_hypergeom(self, dist_name):
+        # Both noncentral hypergeometric distributions reduce to the
         # hypergeometric distribution when odds = 1
+        dists = {'fnch': fnch, 'wnch': wnch}
+        dist = dists[dist_name]
         x, N, m1, n = self.x, self.N, self.m1, self.n
-        assert_allclose(fnch.pmf(x, N, m1, n, odds=1),
+        assert_allclose(dist.pmf(x, N, m1, n, odds=1),
                         hypergeom.pmf(x, N, m1, n))
 
     def test_fnch_naive(self):
         # test against a very simple implementation
-        x, N, m1, n = self.x, self.N, self.m1, self.n
-        odds = np.random.rand(*x.shape)*2
+        x, N, m1, n, odds = self.x, self.N, self.m1, self.n, self.odds
 
         @np.vectorize
         def pmf_mean_var(x, N, m1, n, w):
@@ -167,3 +174,85 @@ class TestFNCH():
         assert_allclose(fnch.pmf(x, N, m1, n, odds), pmf)
         assert_allclose(fnch.stats(N, m1, n, odds, moments='m'), mean)
         assert_allclose(fnch.stats(N, m1, n, odds, moments='v'), var)
+
+    def test_wnch_naive(self):
+        # test against a very simple implementation
+
+        np.random.seed(2)
+        shape = (2, 4, 3)
+        max_m = 100
+        m1 = np.random.randint(1, max_m, size=shape)
+        m2 = np.random.randint(1, max_m, size=shape)
+        N = m1 + m2
+        n = randint.rvs(0, N, size=N.shape)
+        xl = np.maximum(0, n-m2)
+        xu = np.minimum(n, m1)
+        x = randint.rvs(xl, xu, size=xl.shape)
+        w = np.random.rand(*x.shape)*2
+
+        def support(N, m1, n, w):
+            m2 = N - m1
+            xl = np.maximum(0, n-m2)
+            xu = np.minimum(n, m1)
+            return xl, xu
+
+        @np.vectorize
+        def mean(N, m1, n, w):
+            m2 = N - m1
+            xl, xu = support(N, m1, n, w)
+
+            def fun(u):
+                return u/m1 + (1 - (n-u)/m2)**w - 1
+
+            return root_scalar(fun, bracket=(xl, xu)).root
+
+        assert_allclose(wnch.mean(N, m1, n, w), mean(N, m1, n, w), rtol=2e-2)
+
+        @np.vectorize
+        def variance(N, m1, n, w):
+            m2 = N - m1
+            u = mean(N, m1, n, w)
+            a = u * (m1 - u)
+            b = (n-u)*(u + m2 - n)
+            return N*a*b / ((N-1) * (m1*b + m2*a))
+
+        assert_allclose(wnch.stats(N, m1, n, w, moments='v'),
+                        variance(N, m1, n, w), rtol=5e-2)
+
+        @np.vectorize
+        def pmf(x, N, m1, n, w):
+            m2 = N - m1
+            xl, xu = support(N, m1, n, w)
+
+            def integrand(t):
+                D = w*(m1 - x) + (m2 - (n-x))
+                res = (1-t**(w/D))**x * (1-t**(1/D))**(n-x)
+                return res
+
+            def f(x):
+                t1 = binom(m1, x)
+                t2 = binom(m2, n - x)
+                the_integral = quad(integrand, 0, 1,
+                                    epsrel=1e-16, epsabs=1e-16)
+                return t1 * t2 * the_integral[0]
+
+            return f(x)
+
+        pmf0 = pmf(x, N, m1, n, w)
+        pmf1 = wnch.pmf(x, N, m1, n, w)
+
+        atol, rtol = 1e-6, 1e-6
+        i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
+        assert(i.sum() > np.prod(shape) / 2)  # works at least half the time
+
+        # for those that fail, discredit the naive implementation
+        for N, m1, n, w in zip(N[~i], m1[~i], n[~i], w[~i]):
+            # get the support
+            m2 = N - m1
+            xl, xu = support(N, m1, n, w)
+            x = np.arange(xl, xu + 1)
+
+            # calculate sum of pmf over the support
+            # the naive implementation is very wrong in these cases
+            assert pmf(x, N, m1, n, w).sum() < .5
+            assert_allclose(wnch.pmf(x, N, m1, n, w).sum(), 1)

@@ -13,7 +13,9 @@ import numpy as np
 
 from ._distn_infrastructure import (
         rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
-from .biasedurn import _PyFishersNCHypergeometric, _PyStochasticLib3
+from .biasedurn import (_PyFishersNCHypergeometric,
+                        _PyWalleniusNCHypergeometric,
+                        _PyStochasticLib3)
 
 
 class binom_gen(rv_discrete):
@@ -1263,7 +1265,77 @@ class yulesimon_gen(rv_discrete):
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
 
-class fnch_gen(rv_discrete):
+class _nch_gen(rv_discrete):
+    r"""A noncentral hypergeometric discrete random variable.
+
+    For subclassing by fnch_gen and wnch_gen.
+
+    """
+
+    rvs_name = None
+    dist = None
+
+    def _get_support(self, M, n, N, odds):
+        N, m1, n = M, n, N  # follow Wikipedia notation
+        m2 = N - m1
+        x_min = np.maximum(0, n - m2)
+        x_max = np.minimum(n, m1)
+        return x_min, x_max
+
+    def _argcheck(self, M, n, N, odds):
+        M, n = np.asarray(M), np.asarray(n),
+        N, odds = np.asarray(N), np.asarray(odds)
+        cond1 = (M.astype(int) == M) & (M >= 0)
+        cond2 = (n.astype(int) == n) & (n >= 0)
+        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond4 = odds > 0
+        cond5 = N <= M
+        cond6 = n <= M
+        return cond1 & cond2 & cond3 & cond4 & cond5 & cond6
+
+    def _rvs(self, M, n, N, odds, size=None, random_state=None):
+
+        def _rvs1(M, n, N, odds, length, random_state=None):
+            urn = _PyStochasticLib3()
+            rv_gen = getattr(urn, self.rvs_name)
+            rvs = rv_gen(N, n, M, odds, length, random_state)
+            return rvs
+
+        # If all the shapes are scalar, we can generate all the random numbers
+        # in one call to rvs_fisher and reshape to the desired result.
+        # Otherwise, we need to resort to np.vectorize.
+        if (np.size(M) == 1 and np.size(n) == 1
+                and np.size(N) == 1 and np.size(odds) == 1):
+            rvs = _rvs1(M, n, N, odds,
+                        np.prod(size), random_state).reshape(size)
+        else:
+            fun = np.vectorize(_rvs1, excluded=['size', 'random_state'])
+            rvs = fun(M, n, N, odds, 1, random_state)
+        return rvs
+
+    def _pmf(self, x, M, n, N, odds):
+
+        @np.vectorize
+        def _pmf1(x, M, n, N, odds):
+            urn = self.dist(N, n, M, odds, 1e-12)
+            return urn.probability(x)
+
+        return _pmf1(x, M, n, N, odds)
+
+    def _stats(self, M, n, N, odds, moments):
+
+        @np.vectorize
+        def _moments1(M, n, N, odds):
+            urn = self.dist(N, n, M, odds, 1e-12)
+            return urn.moments()
+
+        m, v = _moments1(M, n, N, odds) if ("m" in moments
+                                            or "v" in moments) else None
+        s, k = None, None
+        return m, v, s, k
+
+
+class fnch_gen(_nch_gen):
     r"""A Fisher's noncentral hypergeometric discrete random variable.
 
     Fisher's noncentral hypergeometric distribution models drawing objects of
@@ -1340,66 +1412,96 @@ class fnch_gen(rv_discrete):
 
     """
 
-    def _get_support(self, M, n, N, odds):
-        N, m1, n = M, n, N  # follow Wikipedia notation
-        m2 = N - m1
-        x_min = np.maximum(0, n - m2)
-        x_max = np.minimum(n, m1)
-        return x_min, x_max
-
-    def _argcheck(self, M, n, N, odds):
-        M, n = np.asarray(M), np.asarray(n),
-        N, odds = np.asarray(N), np.asarray(odds)
-        cond1 = (M.astype(int) == M) & (M >= 0)
-        cond2 = (n.astype(int) == n) & (n >= 0)
-        cond3 = (N.astype(int) == N) & (N >= 0)
-        cond4 = odds > 0
-        cond5 = N <= M
-        cond6 = n <= M
-        return cond1 & cond2 & cond3 & cond4 & cond5 & cond6
-
-    def _rvs(self, M, n, N, odds, size=None, random_state=None):
-
-        def _rvs1(M, n, N, odds, length, random_state=None):
-            urn = _PyStochasticLib3()
-            rvs = urn.rvs_fisher(N, n, M, odds, length, random_state)
-            return rvs
-
-        # If all the shapes are scalar, we can generate all the random numbers
-        # in one call to rvs_fisher and reshape to the desired result.
-        # Otherwise, we need to resort to np.vectorize.
-        if (np.size(M) == 1 and np.size(n) == 1
-                and np.size(N) == 1 and np.size(odds) == 1):
-            rvs = _rvs1(M, n, N, odds,
-                        np.prod(size), random_state).reshape(size)
-        else:
-            fun = np.vectorize(_rvs1, excluded=['size', 'random_state'])
-            rvs = fun(M, n, N, odds, 1, random_state)
-        return rvs
-
-    def _pmf(self, x, M, n, N, odds):
-
-        @np.vectorize
-        def _pmf1(x, M, n, N, odds):
-            urn = _PyFishersNCHypergeometric(N, n, M, odds, 1e-12)
-            return urn.probability(x)
-
-        return _pmf1(x, M, n, N, odds)
-
-    def _stats(self, M, n, N, odds, moments):
-
-        @np.vectorize
-        def _moments1(M, n, N, odds):
-            urn = _PyFishersNCHypergeometric(N, n, M, odds, 1e-12)
-            return urn.moments()
-
-        m, v = _moments1(M, n, N, odds) if ("m" in moments
-                                            or "v" in moments) else None
-        s, k = None, None
-        return m, v, s, k
+    rvs_name = "rvs_fisher"
+    dist = _PyFishersNCHypergeometric
 
 
 fnch = fnch_gen(name=r'fnch', longname="A Fisher's noncentral hypergeometric")
+
+
+class wnch_gen(_nch_gen):
+    r"""A Wallenius' noncentral hypergeometric discrete random variable.
+
+    Wallenius' noncentral hypergeometric distribution models drawing objects of
+    two types from a bin. `M` is the total number of objects, `n` is the
+    number of Type I objects, and `odds` is the odds ratio: the odds of
+    selecting a Type I object rather than a Type II object when there is only
+    one object of each type.
+    The random variate represents the number of Type I objects drawn if we
+    draw a pre-determined `N` objects from a bin one by one.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    hypergeom, nhypergeom
+
+    Notes
+    -----
+    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`N` correspond
+    with parameters `N`, `n`, and `M` (respectively) as defined above.
+
+    The probability mass function is defined as
+
+    .. math::
+
+        p(x; n, m_1, N) = \binom{m_1}{x} \binom{m_2}{n-x}
+        \int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{n-x} dt
+
+    for
+    :math:`x \in [x_l, x_u]`,
+    :math:`N \in {\mathbb N}`,
+    :math:`m_1 \in [0, N]`,
+    :math:`n \in [0, N]`,
+    :math:`\omega > 0`,
+    where
+    :math:`x_l = \max(0, n - m_2)`,
+    :math:`x_u = \min(n, m_1)`,
+    :math:`m_2 = N - m_1`,
+
+    .. math::
+
+        D = \omega(m_1 - x) + (m_2-(n-x)),
+
+    and the binomial coefficients are defined as
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    `wnch` uses the BiasedUrn package by Agner Fog with permission
+    for it to be distributed under SciPy's license.
+
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted; they are chosen for consistency with `hypergeom`.
+    The choice of corresponding mathematical symbols allows for
+    comparison with the references.
+
+    Note that Wallenius' noncentral hypergeometric distribution is distinct
+    from Fisher's noncentral hypergeometric distribution, which models
+    take a handful of objects from the bin at once, finding out afterwards
+    that `N` objects were taken.
+    When the odds ratio is unity, however, both distributions reduce to the
+    ordinary hypergeometric distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Agner Fog, "Biased Urn Theory".
+           https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
+
+    .. [2] "Wallenius' noncentral hypergeometric distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Wallenius'_noncentral_hypergeometric_distribution
+
+    %(example)s
+
+    """
+
+    rvs_name = "rvs_wallenius"
+    dist = _PyWalleniusNCHypergeometric
+
+
+wnch = wnch_gen(name=r'wnch',
+                longname="A Wallenius' noncentral hypergeometric")
 
 
 # Collect names of classes and objects in this module.

@@ -6,11 +6,36 @@ from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 from libcpp.memory cimport unique_ptr
 
+
 cdef class _PyFishersNCHypergeometric:
     cdef unique_ptr[CFishersNCHypergeometric] c_fnch
 
     def __cinit__(self, int n, int m, int N, double odds, double accuracy):
         self.c_fnch = unique_ptr[CFishersNCHypergeometric](new CFishersNCHypergeometric(n, m, N, odds, accuracy))
+
+    def mode(self):
+        return self.c_fnch.get().mode()
+
+    def mean(self):
+        return self.c_fnch.get().mean()
+
+    def variance(self):
+        return self.c_fnch.get().variance()
+
+    def probability(self, int x):
+        return self.c_fnch.get().probability(x)
+
+    def moments(self):
+        cdef double mean, var
+        self.c_fnch.get().moments(&mean, &var)
+        return mean, var
+
+
+cdef class _PyWalleniusNCHypergeometric:
+    cdef unique_ptr[CWalleniusNCHypergeometric] c_fnch
+
+    def __cinit__(self, int n, int m, int N, double odds, double accuracy):
+        self.c_fnch = unique_ptr[CWalleniusNCHypergeometric](new CWalleniusNCHypergeometric(n, m, N, odds, accuracy))
 
     def mode(self):
         return self.c_fnch.get().mode()
@@ -72,6 +97,20 @@ cdef class _PyStochasticLib3:
             rvs[ii] = self.c_sl3.get().FishersNCHyp(n, m, N, odds)
         return rvs
 
+    def rvs_wallenius(self, int n, int m, int N, double odds, int size, random_state=None):
+        # handle random state
+        self.c_sl3.get().SetBitGen(make_rng(random_state))
+
+        # call for each
+        rvs = np.empty(size, dtype=np.float64)
+        for ii in range(size):
+            rvs[ii] = self.c_sl3.get().WalleniusNCHyp(n, m, N, odds)
+        return rvs
+
     def FishersNCHyp(self, int n, int m, int N, double odds):
         self.c_sl3.get().SetBitGen(make_rng())  # get default rng
         return self.c_sl3.get().FishersNCHyp(n, m, N, odds)
+
+    def WalleniusNCHyp(self, int n, int m, int N, double odds):
+        self.c_sl3.get().SetBitGen(make_rng())  # get default rng
+        return self.c_sl3.get().WalleniusNCHyp(n, m, N, odds)

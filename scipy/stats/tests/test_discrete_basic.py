@@ -48,7 +48,8 @@ def test_discrete_basic(distname, arg, first_case):
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
         # make sure arguments are within support
-        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
+        # for some distributions, this needs to be overridden
+        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, 'wnch': 6}
         k = spec_k.get(distname, 1)
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
@@ -99,7 +100,7 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
-                          'fnch']
+                          'fnch', 'wnch']
 
     try:
         distfunc = getattr(stats, dist)
@@ -279,6 +280,8 @@ def test_methods_with_lists(method, distname, args):
     [  # In each of the following, at least one shape parameter is invalid
         (stats.hypergeom, np.arange(5), (3, 3, 4)),
         (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
+        (stats.fnch, np.arange(5), (3, 3, 4, -1)),
+        (stats.wnch, np.arange(5), (3, 3, 4, -1)),
         (stats.bernoulli, np.arange(5), (1.5, )),
         (stats.binom, np.arange(15), (10, 1.5)),
         (stats.betabinom, np.arange(15), (10, -0.4, -0.5)),
