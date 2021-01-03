@@ -1,4 +1,4 @@
-from numpy.random cimport bitgen_t
+from .random cimport bitgen_t
 
 # Declare the class with cdef
 cdef extern from "biasedurn/stocc.h" nogil:

@@ -2,7 +2,7 @@
 
 from .biasedurn cimport CFishersNCHypergeometric, StochasticLib3
 import numpy as np
-from numpy.random cimport bitgen_t
+from .random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 from libcpp.memory cimport unique_ptr
 

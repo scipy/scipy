@@ -37,7 +37,7 @@ def configuration(parent_package='',top_path=None):
     )
 
     # add BiasedUrn module
-    config.add_data_files('biasedurn.pxd')
+    config.add_data_files(['random.pxd', 'biasedurn.pxd'])
     ext = config.add_extension(
         'biasedurn',
         sources=[
