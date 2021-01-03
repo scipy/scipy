@@ -2,7 +2,7 @@
 .. _discrete-wnch:
 
 Wallenius' Noncentral Hypergeometric Distribution
-===============================================
+=================================================
 
 A random variable has Wallenius' Noncentral Hypergeometric distribution with
 parameters
