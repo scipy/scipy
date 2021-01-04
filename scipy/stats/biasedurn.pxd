@@ -17,11 +17,10 @@ cdef extern from "biasedurn/stocc.h" nogil:
         double probability(int x)
         double moments(double * mean, double * var)
 
-cdef extern from "biasedurn/stocc.h":
     cdef cppclass StochasticLib3:
-        StochasticLib3(int seed) nogil except +
-        double Random() nogil except +
-        void SetAccuracy(double accur) nogil
-        int FishersNCHyp (int n, int m, int N, double odds) nogil except +
-        int WalleniusNCHyp (int n, int m, int N, double odds) nogil except +
-        double(*next_double)() nogil
+        StochasticLib3(int seed) except +
+        double Random() except +
+        void SetAccuracy(double accur)
+        int FishersNCHyp (int n, int m, int N, double odds) except +
+        int WalleniusNCHyp (int n, int m, int N, double odds) except +
+        double(*next_double)(void*)

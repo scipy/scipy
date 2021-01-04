@@ -9,7 +9,7 @@ struct StocRBase {
   StocRBase(int seed) : next_double(NULL) {}
 
   double Random() {
-    return next_double();
+    return next_double(NULL);
   }
 };
 
