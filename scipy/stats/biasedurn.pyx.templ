@@ -60,7 +60,7 @@ cdef class _PyWalleniusNCHypergeometric:
 
 IF NPY_OLD:
     cdef object _glob_rng
-    cdef double next_double(void*) nogil:
+    cdef double next_double(void* state) nogil:
         with gil:
             return _glob_rng.uniform()
 ELSE:
