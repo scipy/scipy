@@ -79,7 +79,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     shape : int or array_like of ints or None
         The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If `shape` is -1, the size of the corresponding dimension of `x` is
         used.
     axes : int or array_like of ints or None
