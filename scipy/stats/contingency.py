@@ -14,6 +14,9 @@ Functions for creating and analyzing contingency tables.
    expected_freq
    margins
    association
+   odds_ratio
+
+   OddsRatioResult
 """
 
 
