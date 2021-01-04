@@ -260,7 +260,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon', 'genhyperbolic']:
+    if dist in ['gausshyper', 'genexpon']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the
@@ -275,7 +275,8 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
                           'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
-                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
+                          'norminvgauss', 'rice', 'skewnorm', 'semicircular',
+                          'genhyperbolic']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
