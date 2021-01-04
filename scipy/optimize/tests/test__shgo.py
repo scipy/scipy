@@ -504,7 +504,7 @@ class TestShgoArguments(object):
             'local_iter': 1,
             'infty_constraints': False}
 
-        run_test(test4_1, n=300, test_atol=1e-5, options=options,
+        run_test(test4_1, n=1024, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
@@ -623,16 +623,6 @@ class TestShgoArguments(object):
                    'f_min': 0.0}
         shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
              options=options, sampling_method='sobol')
-
-    def test_13_high_sobol(self):
-        """Test init of high-dimensional sobol sequences"""
-
-        def f(x):
-            return 0
-
-        bounds = [(None, None), ] * 41
-        SHGOc = SHGO(f, bounds)
-        SHGOc.sobol_points(2, 50)
 
     def test_14_local_iter(self):
         """Test limited local iterations for a pseudo-global mode"""
