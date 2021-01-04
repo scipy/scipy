@@ -279,12 +279,22 @@ Statistical tests
    anderson
    anderson_ksamp
    binom_test
+   binomtest
    fligner
    median_test
    mood
    skewtest
    kurtosistest
    normaltest
+
+Objects returned by some statistical tests
+==========================================
+
+.. autosummary::
+   :toctree: generated/
+
+   BinomTestResult
+
 
 Transformations
 ===============
@@ -393,6 +403,7 @@ interface package rpy.
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._binomtest import binomtest, BinomTestResult
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
