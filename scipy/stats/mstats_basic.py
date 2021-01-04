@@ -3002,7 +3002,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     For more details on `brunnermunzel`, see `stats.brunnermunzel`.
 
     """
