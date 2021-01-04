@@ -1435,7 +1435,7 @@ class rv_generic(object):
         elif cond.ndim == 0:
             return self.badvalue, self.badvalue
         # promote bounds to at least float to fill in the badvalue
-        _a, _b = 1.*_a, 1.*_b
+        _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
         out_a, out_b = _a * scale + loc, _b * scale + loc
         place(out_a, 1-cond, self.badvalue)
         place(out_b, 1-cond, self.badvalue)
