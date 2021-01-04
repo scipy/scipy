@@ -3,7 +3,7 @@
 
 struct StocRBase {
 
-  double(*next_double)();
+  double(*next_double)(void*);
 
   StocRBase() : next_double(NULL) {}
   StocRBase(int seed) : next_double(NULL) {}
