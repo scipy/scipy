@@ -2601,6 +2601,19 @@ class TestMoments(object):
             s = stats.skew(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
 
+    def test_skew_constant_value(self):
+        # Skewness of a constant input should be zero even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.skew(a) == 0.0
+        assert stats.skew(a * float(2**50)) == 0.0
+        assert stats.skew(a / float(2**50)) == 0.0
+        assert stats.skew(a, bias=False) == 0.0
+
+        # similarly, from gh-11086:
+        assert stats.skew([14.3]*7) == 0.0
+        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
+
     def test_kurtosis(self):
         # Scalar test case
         y = stats.kurtosis(self.scalar_testcase)
@@ -2638,6 +2651,15 @@ class TestMoments(object):
         a[1, 0] = np.nan
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
+
+    def test_kurtosis_constant_value(self):
+        # Kurtosis of a constant input should be zero, even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.kurtosis(a, fisher=False) == 0.0
+        assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
