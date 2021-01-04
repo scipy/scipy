@@ -2919,11 +2919,11 @@ class genhyperbolic_gen(rv_continuous):
 
     for :math:`x \in (- \infty; \infty)`,
     :math:`\lambda, \mu \in \mathbb{R}`,
-    :math: `0 \le |\beta| < \alpha ` \beta,
-    and :math: `\delta \in \mathbb{R}_{>0}`.
+    :math:`0 \le |\beta| < \alpha \beta`,
+    and :math:`\delta \in \mathbb{R}_{>0}`.
 
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`.
-    :math: `K_{\lambda}(.)` denotes the modified Bessel function of the third
+    :math:K_{\lambda}(.)` denotes the modified Bessel function of the third
     kind and order :math: `\lambda` (`scipy.special.kn`)
 
     `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`,
