@@ -2919,12 +2919,12 @@ class genhyperbolic_gen(rv_continuous):
 
     for :math:`x \in (- \infty; \infty)`,
     :math:`\lambda, \mu \in \mathbb{R}`,
-    :math:`0 \le |\beta| < \alpha \beta`,
+    :math:`0 \leq |\beta| < \alpha \beta`,
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`.
-    :math:K_{\lambda}(.)` denotes the modified Bessel function of the third
-    kind and order :math: `\lambda` (`scipy.special.kn`)
+    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
+    kind and order :math:`\lambda` (`scipy.special.kn`)
 
     `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`,
     ``alpha`` as a shape parameter for :math:`\alpha`,
@@ -2932,19 +2932,18 @@ class genhyperbolic_gen(rv_continuous):
     ``delta`` as a scale parameter for :math:`\delta`, and
     ``mu`` as a location parameter for :math:`\mu`.
 
-
     %(after_notes)s
 
     References
     ----------
-    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
-    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
-    pp. 151-157, 1978.
+    .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions
+       on Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+       pp. 151-157, 1978.
 
     .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
-    Thanh Tam, (2009), Moments of the generalized hyperbolic distribution,
-    MPRA Paper, University Library of Munich, Germany,
-    https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
+       Thanh Tam, (2009), Moments of the generalized hyperbolic
+       distribution, MPRA Paper, University Library of Munich, Germany,
+       https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
 
     %(example)s
 
