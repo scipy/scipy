@@ -672,9 +672,9 @@ class Halton(QMCEngine):
     """Halton sequence.
 
     Pseudo-random number generator that generalize the Van der Corput sequence
-    for multiple dimensions. The Halton sequence uses the base-two Van der Corput
-    sequence for the first dimension, base-three for its second and base-:math:`n` for
-    its n-dimension.
+    for multiple dimensions. The Halton sequence uses the base-two Van der
+    Corput sequence for the first dimension, base-three for its second and
+    base-:math:`n` for its n-dimension.
 
     Parameters
     ----------
@@ -873,8 +873,8 @@ class LatinHypercube(QMCEngine):
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
     LHS is extremely effective on integrands that are nearly additive [2]_.
     LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for plain
-    LHS [4]_, but not necessarily for optimized LHS.
+    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
+    but not necessarily for optimized LHS.
 
     Parameters
     ----------
@@ -1001,7 +1001,8 @@ class OptimalDesign(QMCEngine):
     d : int
         Dimension of the parameter space.
     start_design : array_like (n, d), optional
-        Initial design of experiment to optimize.
+        Initial design of experiment to optimize. `OrthogonalLatinHypercube`
+        is used to generate a first design otherwise.
     niter : int, optional
         Number of iterations to perform. Default is 1.
     method : callable ``f(func, x0, bounds)``, optional
@@ -1423,17 +1424,17 @@ class MultivariateNormalQMC(QMCEngine):
     Parameters
     ----------
     mean: array_like (d,)
-        The mean vector.
+        The mean vector. Where ``d`` is the dimension.
     cov: array_like (d, d), optional
         The covariance matrix. If omitted, use `cov_root` instead.
         If both `cov` and `cov_root` are omitted, use the identity matrix.
     cov_root: array_like (d, d'), optional
-        A root decomposition of the covariance matrix, where `d'` may be less
-        than `d` if the covariance is not full rank. If omitted, use `cov`.
+        A root decomposition of the covariance matrix, where ``d'`` may be less
+        than ``d`` if the covariance is not full rank. If omitted, use `cov`.
     inv_transform: bool, optional
         If True, use inverse transform instead of Box-Muller. Default is True.
     engine: QMCEngine, optional
-        Quasi-Monte Carlo engine sampler. If None, Sobol' is used.
+        Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1534,7 +1535,7 @@ class MultivariateNormalQMC(QMCEngine):
             return base_samples + self._mean
 
     def _standard_normal_samples(self, n=1):
-        """Draw `n` QMC samples from the standard Normal N(0, I_d).
+        """Draw `n` QMC samples from the standard Normal :math:`N(0, I_d)`.
 
         Parameters
         ----------
@@ -1571,11 +1572,11 @@ class MultinomialQMC(QMCEngine):
 
     Parameters
     ----------
-    pvals: Iterable[float]
-        float vector of probabilities of size `k`, where `k` is the number of
-        categories. Elements must be non-negative and sum to 1.
+    pvals: array_like (k,)
+        Vector of probabilities of size ``k``, where ``k`` is the number
+        of categories. Elements must be non-negative and sum to 1.
     engine: QMCEngine, optional
-        Quasi-Monte Carlo engine sampler. If None, Sobol is used.
+        Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1612,7 +1613,7 @@ class MultinomialQMC(QMCEngine):
         Returns
         -------
         samples: array_like (pvals,)
-            int vector of size ``p`` summing to `n`.
+            Vector of size ``p`` summing to `n`.
 
         """
         base_draws = self.engine.random(n).ravel()

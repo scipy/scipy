@@ -128,10 +128,10 @@ class TestVDC:
 
 class QMCEngineTests:
     """Generic tests for QMC engines."""
-    qmce = ...
-    can_scramble = ...
-    unscramble_nd = ...
-    scramble_nd = ...
+    qmce = NotImplemented
+    can_scramble = NotImplemented
+    unscramble_nd = NotImplemented
+    scramble_nd = NotImplemented
 
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]

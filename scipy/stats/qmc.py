@@ -43,7 +43,7 @@ Introduction to Quasi-Monte Carlo
 
 Quasi-Monte Carlo (QMC) methods [1]_, [2]_, [3]_ provide an
 :math:`n \times d` array of numbers in :math:`[0,1]`. They can be used in
-place of n points from the :math:`U[0,1]^{d}` distribution. Compared to
+place of :math:`n` points from the :math:`U[0,1]^{d}` distribution. Compared to
 random points, QMC points are designed to have fewer gaps and clumps. This is
 quantified by discrepancy measures [4]_. From the Koksma-Hlawka
 inequality [5]_ we know that low discrepancy reduces a bound on
@@ -65,8 +65,8 @@ possibly to some upper bound, and typically without requiring
 special values of :math:`d`. Some QMC methods are extensible in
 both :math:`n` and :math:`d`.
 
-QMC points are deterministic. That makes it hard to estimate
-the accuracy of averages. Randomized QMC (RQMC) [7]_
+QMC points are deterministic. That makes it hard to estimate the accuracy of
+integrals estimated by averages over QMC points. Randomized QMC (RQMC) [7]_
 points are constructed so that each point is individually :math:`U[0,1]^{d}`
 while collectively the :math:`n` points retain their low discrepancy.
 One can make :math:`R` independent replications of RQMC points to
