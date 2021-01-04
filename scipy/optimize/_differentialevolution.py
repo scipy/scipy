@@ -12,9 +12,10 @@ from scipy._lib._util import check_random_state, MapWrapper
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.sparse import issparse
-
+from scipy.stats import qmc
 
 __all__ = ['differential_evolution']
+
 
 _MACHEPS = np.finfo(np.float64).eps
 
@@ -631,28 +632,9 @@ class DifferentialEvolutionSolver(object):
         """
         rng = self.random_number_generator
 
-        # Each parameter range needs to be sampled uniformly. The scaled
-        # parameter range ([0, 1)) needs to be split into
-        # `self.num_population_members` segments, each of which has the following
-        # size:
-        segsize = 1.0 / self.num_population_members
-
-        # Within each segment we sample from a uniform random distribution.
-        # We need to do this sampling for each parameter.
-        samples = (segsize * rng.uniform(size=self.population_shape)
-
-        # Offset each segment to cover the entire parameter range [0, 1)
-                   + np.linspace(0., 1., self.num_population_members,
-                                 endpoint=False)[:, np.newaxis])
-
         # Create an array for population of candidate solutions.
-        self.population = np.zeros_like(samples)
-
-        # Initialize population of candidate solutions by permutation of the
-        # random samples.
-        for j in range(self.parameter_count):
-            order = rng.permutation(range(self.num_population_members))
-            self.population[:, j] = samples[order, j]
+        sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        self.population = sampler.random(n=self.num_population_members)
 
         # reset population energies
         self.population_energies = np.full(self.num_population_members,
