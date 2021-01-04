@@ -343,6 +343,7 @@ Contingency table functions
    contingency.expected_freq
    contingency.margins
    contingency.association
+   contingency.odds_ratio
    fisher_exact
 
 Plot-tests
@@ -388,6 +389,14 @@ Warnings used in :mod:`scipy.stats`
 
 For many more stat related functions install the software R and the
 interface package rpy.
+
+Result classes returned by functions
+====================================
+
+.. autosummary::
+   :toctree: generated/
+
+   contingency.OddsRatioResult
 
 """
 from .stats import *

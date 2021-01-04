@@ -22,10 +22,11 @@ import numpy as np
 from .stats import power_divergence
 import math
 from ._crosstab import crosstab
+from ._odds_ratio import odds_ratio, OddsRatioResult
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association']
+           'association', 'odds_ratio', 'OddsRatioResult']
 
 
 def margins(a):

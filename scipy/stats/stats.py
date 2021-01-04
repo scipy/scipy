@@ -3999,13 +3999,16 @@ def fisher_exact(table, alternative='two-sided'):
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
+    contingency.odds_ratio : Compute the odds ratio for a 2x2 contingency
+        table.
 
     Notes
     -----
-    The calculated odds ratio is different from the one R uses. This scipy
-    implementation returns the (more common) "unconditional Maximum
-    Likelihood Estimate", while R uses the "conditional Maximum Likelihood
-    Estimate".
+    The calculated odds ratio is different from the one R uses. This
+    implementation returns the "unconditional maximum likelihood estimate",
+    while R uses the "conditional maximum likelihood estimate".  To compute
+    the conditional maximum likelihood estimate of the odds ratio, use
+    `scipy.stats.contingency.odds_ratio`.
 
     For tables with large numbers, the (inexact) chi-square test implemented
     in the function `chi2_contingency` can also be used.
