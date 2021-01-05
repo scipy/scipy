@@ -55,7 +55,6 @@ def _remove_optimizer_parameters(kwds):
         raise TypeError("Unknown arguments: %s." % kwds)
 
 
-## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
@@ -1117,7 +1116,6 @@ class fisk_gen(burr_gen):
 fisk = fisk_gen(a=0.0, name='fisk')
 
 
-# median = loc
 class cauchy_gen(rv_continuous):
     r"""A Cauchy continuous random variable.
 
@@ -1232,7 +1230,6 @@ class chi_gen(rv_continuous):
 chi = chi_gen(a=0.0, name='chi')
 
 
-## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
     r"""A chi-squared continuous random variable.
 
@@ -1257,6 +1254,10 @@ class chi2_gen(rv_continuous):
     in the implementation).
 
     `chi2` takes ``df`` as a shape parameter.
+
+    The chi-squared distribution is a special case of the gamma
+    distribution, with gamma parameters ``a = df/2``, ``loc = 0`` and
+    ``scale = 2``.
 
     %(after_notes)s
 
@@ -1450,7 +1451,6 @@ class dweibull_gen(rv_continuous):
 dweibull = dweibull_gen(name='dweibull')
 
 
-## Exponential (gamma distributed with a=1.0, loc=loc and scale=scale)
 class expon_gen(rv_continuous):
     r"""An exponential continuous random variable.
 
@@ -1471,6 +1471,9 @@ class expon_gen(rv_continuous):
     A common parameterization for `expon` is in terms of the rate parameter
     ``lambda``, such that ``pdf = lambda * exp(-lambda * x)``. This
     parameterization corresponds to using ``scale = 1 / lambda``.
+
+    The exponential distribution is a special case of the gamma
+    distributions, with gamma shape parameter ``a = 1``.
 
     %(example)s
 
@@ -1554,11 +1557,10 @@ class expon_gen(rv_continuous):
 expon = expon_gen(a=0.0, name='expon')
 
 
-# Exponentially Modified Normal (exponential distribution
-# convolved with a Normal).
-# This is called an exponentially modified gaussian on wikipedia.
 class exponnorm_gen(rv_continuous):
     r"""An exponentially modified Normal continuous random variable.
+
+    Also known as the exponentially modified Gaussian distribution [1]_.
 
     %(before_notes)s
 
@@ -1580,14 +1582,19 @@ class exponnorm_gen(rv_continuous):
     %(after_notes)s
 
     An alternative parameterization of this distribution (for example, in
-    `Wikipedia <https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
-    involves three parameters, :math:`\mu`, :math:`\lambda` and
-    :math:`\sigma`.
+    the Wikpedia article [1]_) involves three parameters, :math:`\mu`,
+    :math:`\lambda` and :math:`\sigma`.
+
     In the present parameterization this corresponds to having ``loc`` and
     ``scale`` equal to :math:`\mu` and :math:`\sigma`, respectively, and
     shape parameter :math:`K = 1/(\sigma\lambda)`.
 
     .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Exponentially modified Gaussian distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution
 
     %(example)s
 
@@ -3422,7 +3429,6 @@ class invgamma_gen(rv_continuous):
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 
-# scale is gamma from DATAPLOT and B from Regress
 class invgauss_gen(rv_continuous):
     r"""An inverse Gaussian continuous random variable.
 
@@ -5632,6 +5638,7 @@ class kappa3_gen(rv_continuous):
 
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
 
+
 class moyal_gen(rv_continuous):
     r"""A Moyal continuous random variable.
 
@@ -6889,7 +6896,6 @@ class rice_gen(rv_continuous):
 rice = rice_gen(a=0.0, name="rice")
 
 
-# FIXME: PPF does not work.
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
 
@@ -7875,7 +7881,6 @@ class truncnorm_gen(rv_continuous):
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
 
 
-# FIXME: RVS does not work.
 class tukeylambda_gen(rv_continuous):
     r"""A Tukey-Lamdba continuous random variable.
 
