@@ -1093,7 +1093,7 @@ def _moment(a, moment, axis):
         return np.mean(s, axis)
 
 
-def variation(a, axis=0, nan_policy='propagate'):
+def variation(a, axis=0, nan_policy='propagate', ddof=0):
     """
     Compute the coefficient of variation.
 
@@ -1114,6 +1114,8 @@ def variation(a, axis=0, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
@@ -1139,9 +1141,9 @@ def variation(a, axis=0, nan_policy='propagate'):
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis)
+        return mstats_basic.variation(a, axis, ddof)
 
-    return a.std(axis) / a.mean(axis)
+    return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):

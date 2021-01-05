@@ -545,6 +545,13 @@ class TestMoments(object):
         y = mstats.variation(self.testcase)
         assert_almost_equal(y,0.44721359549996, 10)
 
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = np.array([1, 2, 3, 4, 5])
+        y = mstats.variation(a, ddof=1)
+        assert_almost_equal(y, 0.5270462766947299)
+
     def test_skewness(self):
         y = mstats.skew(self.testmathworks)
         assert_almost_equal(y,-0.29322304336607,10)
