@@ -3750,8 +3750,8 @@ def alexandergovern(*args):
         >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
         ...           11.89]
         >>> alexandergovern(atlanta, chicago, houston, memphis)
-        AlexanderGovernResult(statistic=5.3246289691809086,
-                              pvalue=0.06978651486951949)
+        AlexanderGovernResult(statistic=4.65087071883494,
+                              pvalue=0.19922132490385214)
     """
     if len(args) < 2:
         raise TypeError(f"2 or more inputs required, got {len(args)}")
