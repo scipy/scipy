@@ -58,13 +58,19 @@ cdef class _PyWalleniusNCHypergeometric:
         self.c_fnch.get().moments(&mean, &var)
         return mean, var
 
+
 IF NPY_OLD:
     cdef object _glob_rng
-    cdef double next_double(void* state) nogil:
+    cdef double next_double() nogil:
         with gil:
             return _glob_rng.uniform()
 ELSE:
-    cdef bitgen_t* make_rng(random_state=None):
+    cdef bitgen_t* _glob_rng
+    cdef double next_double() nogil:
+        global _glob_rng
+        return _glob_rng.next_double(_glob_rng.state);
+
+    cdef object make_rng(random_state=None):
         # get a bit_generator object
         if random_state is None or isinstance(random_state, int):
             bg = np.random.RandomState(random_state)._bit_generator
@@ -75,26 +81,18 @@ ELSE:
         else:
             raise ValueError('random_state is not one of None, int, RandomState, Generator')
         capsule = bg.capsule
-
-        # get the bitgen_t pointer
-        cdef const char *capsule_name = "BitGenerator"
-        if not PyCapsule_IsValid(capsule, capsule_name):
-            raise ValueError("Invalid pointer to anon_func_state")
-        cdef bitgen_t* crng = <bitgen_t *> PyCapsule_GetPointer(capsule, capsule_name)
-        return crng
+        return capsule
 
 
 cdef class _PyStochasticLib3:
     cdef unique_ptr[StochasticLib3] c_sl3
     IF not NPY_OLD:
+        cdef object capsule
         cdef bitgen_t* bit_generator
 
     def __cinit__(self):
         self.c_sl3 = unique_ptr[StochasticLib3](new StochasticLib3(0))
-        IF NPY_OLD:
-            self.c_sl3.get().next_double = &next_double
-        ELSE:
-            self.c_sl3.get().next_double = self.bit_generator.next_double
+        self.c_sl3.get().next_double = &next_double
 
     def Random(self):
         return self.c_sl3.get().Random()
@@ -115,7 +113,15 @@ cdef class _PyStochasticLib3:
             _glob_rng = rng
     ELSE:
         cdef void HandleRng(self, random_state=None):
-            self.bit_generator = make_rng(random_state)
+            self.capsule = make_rng(random_state)
+
+            # get the bitgen_t pointer
+            cdef const char *capsule_name = "BitGenerator"
+            if not PyCapsule_IsValid(self.capsule, capsule_name):
+                raise ValueError("Invalid pointer to anon_func_state")
+            self.bit_generator = <bitgen_t *> PyCapsule_GetPointer(self.capsule, capsule_name)
+            global _glob_rng
+            _glob_rng = self.bit_generator
 
     def rvs_fisher(self, int n, int m, int N, double odds, int size, random_state=None):
         # handle random state
@@ -142,5 +148,5 @@ cdef class _PyStochasticLib3:
         return self.c_sl3.get().FishersNCHyp(n, m, N, odds)
 
     def WalleniusNCHyp(self, int n, int m, int N, double odds):
-        self.InitRng(None)  # get default rng
+        self.HandleRng(None)  # get default rng
         return self.c_sl3.get().WalleniusNCHyp(n, m, N, odds)
