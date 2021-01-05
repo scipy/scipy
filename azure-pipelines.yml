@@ -104,7 +104,7 @@ jobs:
       test_mode: fast
       numpy_spec: "numpy==1.17.4"
       use_sdist: true
-- job: wheel_optimized_gcc48
+- job: wheel_optimized_gcc52
   pool:
     vmImage: 'ubuntu-18.04'
   variables:
@@ -112,15 +112,15 @@ jobs:
     # pytest-xdist plugin for load scheduling its workers don't pick up the
     # flag. This environment variable starts all Py instances in -OO mode.
     PYTHONOPTIMIZE: 2
-    # Use gcc version 4.8
-    CC: gcc-4.8
-    CXX: g++-4.8
+    # Use gcc version 5.2
+    CC: gcc-5.2
+    CXX: g++-5.2
   steps:
   - script: |
       set -e
       sudo apt update -y
-      sudo apt install -y g++-4.8 gcc-4.8
-    displayName: 'Install GCC 4.8'
+      sudo apt install -y g++-5.2 gcc-5.2
+    displayName: 'Install GCC 5.2'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.7'
