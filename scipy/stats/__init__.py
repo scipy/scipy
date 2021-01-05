@@ -279,12 +279,22 @@ Statistical tests
    anderson
    anderson_ksamp
    binom_test
+   binomtest
    fligner
    median_test
    mood
    skewtest
    kurtosistest
    normaltest
+
+Objects returned by some statistical tests
+==========================================
+
+.. autosummary::
+   :toctree: generated/
+
+   BinomTestResult
+
 
 Transformations
 ===============
@@ -343,6 +353,7 @@ Contingency table functions
    contingency.expected_freq
    contingency.margins
    contingency.relative_risk
+   contingency.association
    fisher_exact
 
 Plot-tests
@@ -401,11 +412,13 @@ Result classes returned by functions
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._binomtest import binomtest, BinomTestResult
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
-from .contingency import chi2_contingency
 from ._multivariate import *
+from . import contingency
+from .contingency import chi2_contingency
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

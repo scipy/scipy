@@ -45,9 +45,9 @@ distcont_extra = [
 ]
 
 
-distslow = ['kstwo', 'ksone', 'kappa4', 'gausshyper', 'recipinvgauss',
-            'genexpon', 'vonmises', 'vonmises_line', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
+            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
+            'geninvgauss']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -654,3 +654,11 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
+
+
+def test_burr_fisk_moment_gh13234_regression():
+    vals0 = stats.burr.moment(1, 5, 4)
+    assert isinstance(vals0, float)
+
+    vals1 = stats.fisk.moment(1, 8)
+    assert isinstance(vals1, float)

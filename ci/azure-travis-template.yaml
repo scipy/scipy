@@ -69,6 +69,7 @@ steps:
     cython
     gmpy2
     mpmath
+    pythran
     pybind11
     pytest
     pytest-xdist
