@@ -73,8 +73,20 @@ class Distribution(Benchmark):
     # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
+    # these distributions are the slowest quartile and are only run if is_xslow
+    # is set
+    slow_dists = ['alpha', 'argus', 'cosine', 'exponnorm', 'exponweib',
+                  'f', 'foldcauchy', 'foldnorm', 'genlogistic', 'genexpon',
+                  'gausshyper', 'gumbel_r', 'halfgennorm', 'invgauss',
+                  'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'levy_stable',
+                  'lognorm', 'ncx2', 'nct', 'pearson3', 'powerlognorm',
+                  'powernorm', 'recipinvgauss', 'vonmises',
+                  'vonmises_line', 'wald']
+
     def setup(self, distribution, properties):
-        if not is_xslow():
+
+        if not is_xslow() and (distribution in self.slow_dists or
+                               properties in self.slow_methods):
             raise NotImplementedError("Skipped")
 
         self.dist = getattr(stats, distribution)
