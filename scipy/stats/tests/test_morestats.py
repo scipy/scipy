@@ -15,6 +15,7 @@ from pytest import raises as assert_raises
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
+from .morestats_data import x50a, x50b, x500, x500b
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -1322,7 +1323,7 @@ class TestKstatVar(object):
 
 class TestPpccPlot(object):
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = x500
 
     def test_basic(self):
         N = 5
@@ -1501,10 +1502,11 @@ _boxcox_data = [
     1891609
 ]
 
+
 class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
-        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        x = np.array(x50a)
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1528,8 +1530,7 @@ class TestBoxcox(object):
         assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
 
     def test_alpha(self):
-        rng = np.random.RandomState(1234)
-        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
+        x = x50b
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1538,7 +1539,7 @@ class TestBoxcox(object):
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
+        x = x500b
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1567,7 +1568,7 @@ class TestBoxcox(object):
 
 class TestBoxcoxNormmax(object):
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
+        self.x = x50a
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1588,7 +1589,7 @@ class TestBoxcoxNormmax(object):
 
 class TestBoxcoxNormplot(object):
     def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
+        self.x = x500
 
     def test_basic(self):
         N = 5
@@ -1755,11 +1756,9 @@ class TestYeojohnson(object):
 
 
 class TestYeojohnsonNormmax(object):
-    def setup_method(self):
-        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
-        maxlog = stats.yeojohnson_normmax(self.x)
+        maxlog = stats.yeojohnson_normmax(x50a)
         assert_allclose(maxlog, 1.876393, rtol=1e-6)
 
     def test_darwin_example(self):
