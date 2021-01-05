@@ -4738,6 +4738,40 @@ class TestSigmaClip(object):
 
 
 class TestAlexanderGovern(object):
+    def test_compare_dtypes(self):
+        args = [[13, 13, 13, 13, 13, 13, 13, 12, 12],
+                [14, 13, 12, 12, 12, 12, 12, 11, 11],
+                [14, 14, 13, 13, 13, 13, 13, 12, 12],
+                [15, 14, 13, 13, 13, 12, 12, 12, 11]]
+        args_int16 = np.asarray(args, dtype=np.int16)
+        args_int32 = np.asarray(args, dtype=np.int32)
+        args_uint8 = np.asarray(args, dtype=np.uint8)
+        args_float64 = np.asarray(args, dtype=np.float64)
+
+        res_int16 = stats.alexandergovern(*args_int16)
+        res_int32 = stats.alexandergovern(*args_int32)
+        res_unit8 = stats.alexandergovern(*args_uint8)
+        res_float64 = stats.alexandergovern(*args_float64)
+
+        assert (res_int16.pvalue == res_int32.pvalue ==
+                res_unit8.pvalue == res_float64.pvalue)
+        assert (res_int16.statistic == res_int32.statistic ==
+                res_unit8.statistic == res_float64.statistic)
+
+    def test_bad_inputs(self):
+        # test for zero length input args
+        with assert_raises(ValueError) as e:
+            stats.alexandergovern([1, 2], [])
+        assert "is of length zero" in str(e)
+
+        with assert_raises(ValueError) as e:
+            stats.alexandergovern([1, 2], 2)
+        assert "Input samples cannot be zero-dimentional." in str(e)
+
+        with assert_raises(ValueError) as e:
+            stats.alexandergovern([1, 2], [np.nan])
+        assert "Input samples must be finite." in str(e)
+
     def test_compare_r(self):
         '''
         Data generated in R with

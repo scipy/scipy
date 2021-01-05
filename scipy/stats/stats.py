@@ -3719,7 +3719,7 @@ def alexandergovern(*args):
     Notes
     -----
     The use of this test relies on several assumptions.
-    
+
     1. The samples are independent.
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
@@ -3757,14 +3757,24 @@ def alexandergovern(*args):
 
     args = [np.asarray(arg, dtype=float) for arg in args]
 
+    for arg in args:
+        if arg.shape == ():
+            raise ValueError("Input samples cannot be zero-dimentional.")
+        if False in np.isfinite(arg):
+            raise ValueError("Input samples must be finite.")
+
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
     # tests that serve as the basis for equation (8) but are not needed
     # to perform the test.
 
     # precalculate mean and length of each sample
-    means = np.asarray([np.mean(arg) for arg in args])
     lengths = np.asarray([len(arg) for arg in args])
+    if 0 in lengths:
+        raise ValueError(f"Sample at index {np.where(lengths == 0)[0]}"
+                         " is of length zero.")
+
+    means = np.asarray([np.mean(arg) for arg in args])
 
     # (1) determine standard error of the mean for each sample
     standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
