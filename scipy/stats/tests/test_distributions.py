@@ -2319,6 +2319,20 @@ class TestGenExpon(object):
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
 
+    def test_sf_tail(self):
+        # Expected value computed with mpmath. This script
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf('15.0')
+        #     a = mpmath.mpf('1.0')
+        #     b = mpmath.mpf('2.0')
+        #     c = mpmath.mpf('1.5')
+        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
+        # prints
+        #     1.0859444834514553e-19
+        s = stats.genexpon.sf(15, 1, 2, 1.5)
+        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
+
 
 class TestExponpow(object):
     def test_tail(self):
@@ -3726,6 +3740,29 @@ class TestExponWeib(object):
         logp = stats.exponweib.logpdf(x, a, c)
         expected = stats.expon.logpdf(x)
         assert_allclose(logp, expected)
+
+
+class TestFatigueLife:
+
+    def test_sf_tail(self):
+        # Expected value computed with mpmath:
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf(800.0)
+        #     c = mpmath.mpf(2.5)
+        #     s = float(1 - mpmath.ncdf(1/c * (mpmath.sqrt(x)
+        #                                      - 1/mpmath.sqrt(x))))
+        #     print(s)
+        # Output:
+        #     6.593376447038406e-30
+        s = stats.fatiguelife.sf(800.0, 2.5)
+        assert_allclose(s, 6.593376447038406e-30, rtol=1e-13)
+
+    def test_isf_tail(self):
+        # See test_sf_tail for the mpmath code.
+        p = 6.593376447038406e-30
+        q = stats.fatiguelife.isf(p, 2.5)
+        assert_allclose(q, 800.0, rtol=1e-13)
 
 
 class TestWeibull(object):
