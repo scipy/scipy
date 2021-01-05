@@ -112,15 +112,15 @@ jobs:
     # pytest-xdist plugin for load scheduling its workers don't pick up the
     # flag. This environment variable starts all Py instances in -OO mode.
     PYTHONOPTIMIZE: 2
-    # Use gcc version 5.2
-    CC: gcc-5.2
-    CXX: g++-5.2
+    # Use gcc version 5
+    CC: gcc-5
+    CXX: g++-5
   steps:
   - script: |
       set -e
       sudo apt update -y
-      sudo apt install -y g++-5.2 gcc-5.2
-    displayName: 'Install GCC 5.2'
+      sudo apt install -y g++-5 gcc-5
+    displayName: 'Install GCC 5'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.7'
