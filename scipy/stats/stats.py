@@ -3739,6 +3739,7 @@ def alexandergovern(*args):
     Examples
     --------
         >>> from scipy.stats import alexandergovern
+
         Here are some data on annual percentage rate of interest charged on
         new car loans at nine of the largest banks in 4 American cities.
         https://www.itl.nist.gov/div898/education/datasets.htm#anova
@@ -3749,8 +3750,8 @@ def alexandergovern(*args):
         >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
         ...           11.89]
         >>> alexandergovern(atlanta, chicago, houston, memphis)
-        AlexanderGovernResult(statistic=6.941146076872535,
-                              pvalue=0.03109920451449096)
+        AlexanderGovernResult(statistic=5.3246289691809086,
+                              pvalue=0.06978651486951949)
     """
     if len(args) < 2:
         raise TypeError(f"2 or more inputs required, got {len(args)}")
