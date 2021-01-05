@@ -274,8 +274,9 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
-                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
-                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
+                          'exponnorm', 'geninvgauss', 'levy_stable',
+                          'loggamma', 'nct', 'norminvgauss', 'rice',
+                          'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
