@@ -1108,11 +1108,11 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    7.177...
+    6.336...
     >>> lmax_pearsonr
-    7.916...
+    6.888...
     >>> stats.boxcox_normmax(x, method='all')
-    array([ 7.91667384,  7.17718692])
+    array([6.88821597, 6.33639925])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
