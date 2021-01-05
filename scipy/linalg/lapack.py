@@ -689,6 +689,11 @@ All functions
    ctfttr
    ztfttr
 
+   stgexc
+   dtgexc
+   ctgexc
+   ztgexc
+
    stgsen
    dtgsen
    ctgsen
