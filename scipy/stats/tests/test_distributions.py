@@ -21,7 +21,7 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad
+from scipy.integrate import IntegrationWarning, quad, cumulative_trapezoid
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -4012,7 +4012,7 @@ class TestStudentizedRange(object):
             for k_ind in range(3):
                 k = 2 + k_ind * 6
                 q = set[1 + k_ind]
-                res_p = stats.distributions.studentized_range.cdf(q, k, v)
+                res_p = stats.studentized_range.cdf(q, k, v)
 
                 # In assertion, only expect as many sig-figs as we have input
                 assert_allclose(res_p, significance, rtol=1e-4)
@@ -4024,15 +4024,14 @@ class TestStudentizedRange(object):
             _test_set_cdf(test_set, 0.99)
         return
 
-    # @pytest.mark.slow
+    @pytest.mark.slow
     def test_ppf_against_tables(self):
         def _test_set_ppf(set, significance):
             v = set[0]
             for k_ind in range(3):
                 k = 2 + k_ind * 6
                 q = set[1 + k_ind]
-                res_q = stats.distributions.studentized_range.ppf(significance,
-                                                                  k, v)
+                res_q = stats.studentized_range.ppf(significance, k, v)
                 # Accuracy is somthing to be improved on.
                 assert_allclose(res_q, q, rtol=5e-4)
 
@@ -4043,6 +4042,28 @@ class TestStudentizedRange(object):
             _test_set_ppf(test_set, 0.99)
         return
 
+    def test_pdf_integration(self):
+        k, v = 3, 10
+
+        # Test whether PDF integration is 1 like it should be.
+        res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
+        assert_allclose(res[0], 1)
+
+    @pytest.mark.slow
+    def test_pdf_against_cdf(self):
+        k, v = 3, 10
+
+        # Test whether the integrated PDF matches the CDF using cumulative
+        # integration. Use a small step size to reduce error due to the
+        # summation. This is slow, but tests the results well.
+        x = np.arange(0, 10, step=0.01)
+
+        y_cdf = stats.distributions.studentized_range.cdf(x, k, v)[1:]
+        y_pdf_raw = stats.distributions.studentized_range.pdf(x, k, v)
+        y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
+
+        # Because of error caused by the summation, use a relatively large rtol
+        assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
 
 def test_540_567():
