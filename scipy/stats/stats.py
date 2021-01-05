@@ -3705,11 +3705,11 @@ class TukeyKramerResult():
 
     def __repr__(self):
         nargs = self.res.shape[0]
-        s = ("~~~~~~~~~~~~\n\tComparison between groups with  Simultanious"
+        s = ("~~~~~~~~~~~~\n\tComparison between groups with Simultanious"
              f"\n(with {100*(1-self.alpha):.0f}% Confidence Limits and "
              f"significance at the {self.alpha} level)\n~~~~~~~~~~~~\n")
-        s += (f"{'group' : <7}{'mean' : ^10}{'min' : ^10}"
-              f"{'max' : >5}{'sig' : >9}{'p-value' : >11}\n")
+        s += (f"{'group':<7}{'mean':^10}{'min':^10}"
+              f"{'max':>5}{'sig':>9}{'p-value':>11}\n")
         for i in range(nargs):
             for j in range(nargs):
                 if i == j:
@@ -3717,13 +3717,14 @@ class TukeyKramerResult():
                 else:
                     paircomp = self.res[i, j]
                     s += (f"{i+1} - {j+1}  "
-                          f"{paircomp[0] :>8.3f}{paircomp[1] :>10.3f}"
-                          f"{paircomp[2] :>8.3f}{paircomp[3] : >8}{paircomp[4] : >10.3f}\n")
+                          f"{paircomp[0]:>8.3f}{paircomp[1]:>10.3f}"
+                          f"{paircomp[2]:>8.3f}{paircomp[3]:>8}"
+                          f"{paircomp[4]:>10.3f}\n")
         return s
 
     def __getitem__(self, key):
         return self.res[key]
-    
+
     def get_pairwise(self, n, m):
         '''
         Parameters
@@ -3765,7 +3766,7 @@ def tukeykramer(*args, sig_level=.05):
     Notes
     -----
     The use of this test relies on several assumptions.
-   
+
     1. There are equal variances between the samples.
     2. Each sample is from a normally distributed population.
 
@@ -3787,7 +3788,7 @@ def tukeykramer(*args, sig_level=.05):
         >>> group3 = [26.1, 28.3, 24.3, 26.2, 27.8]
         >>> tukeykramer(group1, group2, group3)
         ~~~~~~~~~~~~
-            	Comparison between groups with  Simultanious
+            Comparison between groups with Simultanious
         (with 95% Confidence Limits and significance at the 0.05 level)
         ~~~~~~~~~~~~
         group     mean      min      max      sig    p-value
@@ -3803,7 +3804,7 @@ def tukeykramer(*args, sig_level=.05):
         The test can also be conducted with varying group sizes.
         >>> tukeykramer(group1, group2, group3)
         ~~~~~~~~~~~~
-            	Comparison between groups with  Simultanious
+            	Comparison between groups with Simultanious
         (with 95% Confidence Limits and significance at the 0.05 level)
         ~~~~~~~~~~~~
         group     mean      min      max      sig    p-value
@@ -3829,7 +3830,7 @@ def tukeykramer(*args, sig_level=.05):
 
     # determine the critical value of the studentized range using the
     # appropriate significance level, number of treatments, and degrees
-    # of freedom as determined by the number of data less the number of 
+    # of freedom as determined by the number of data less the number of
     # treatments. ("Confidence limits for Tukey's method")[1].
     nsamples = np.sum([a.shape[0] for a in args])
     srd = get_q(sig_level, len(args), nsamples - len(args))
