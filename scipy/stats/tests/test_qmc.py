@@ -18,16 +18,24 @@ from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
 
 class TestUtils:
     def test_scale(self):
-        space = [[0, 0], [1, 1], [0.5, 0.5]]
-        corners = np.array([[-2, 0], [6, 5]])
-        out = [[-2, 0], [6, 5], [2, 2.5]]
-
-        scaled_space = qmc.scale(space, bounds=corners)
+        # 1d scalar
+        space = [[0], [1], [0.5]]
+        out = [[-2], [6], [2]]
+        scaled_space = qmc.scale(space, l_bounds=-2, u_bounds=6)
 
         assert_allclose(scaled_space, out)
 
-        scaled_back_space = qmc.scale(scaled_space, bounds=corners,
-                                      reverse=True)
+        # 2d space
+        space = [[0, 0], [1, 1], [0.5, 0.5]]
+        bounds = np.array([[-2, 0], [6, 5]])
+        out = [[-2, 0], [6, 5], [2, 2.5]]
+
+        scaled_space = qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
+
+        assert_allclose(scaled_space, out)
+
+        scaled_back_space = qmc.scale(scaled_space, l_bounds=bounds[0],
+                                      u_bounds=bounds[1], reverse=True)
         assert_allclose(scaled_back_space, space)
 
     def test_discrepancy(self):

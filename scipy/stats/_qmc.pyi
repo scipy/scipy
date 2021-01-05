@@ -31,7 +31,8 @@ def check_random_state(
 
 
 def scale(
-        sample: npt.ArrayLike, bounds: npt.ArrayLike, reverse: bool = ...
+        sample: npt.ArrayLike, l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike,
+        reverse: bool = ...
 ) -> np.ndarray: ...
 
 

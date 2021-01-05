@@ -56,7 +56,7 @@ def check_random_state(seed=None):
                          ' instance' % seed)
 
 
-def scale(sample, bounds, reverse=False):
+def scale(sample, l_bounds, u_bounds, reverse=False):
     r"""Sample scaling from unit hypercube to bounds range.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
@@ -70,9 +70,9 @@ def scale(sample, bounds, reverse=False):
     ----------
     sample : array_like (n, d)
         Sample to scale.
-    bounds : tuple or array_like ([min, d], [max, d])
-        Desired range of transformed data. If `reverse` is True, range of the
-        original data to transform to the unit hypercube.
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds of transformed data. If `reverse` is True,
+        range of the original data to transform to the unit hypercube.
     reverse : bool, optional
         Reverse the transformation from `bounds` to the unit hypercube.
         Default is False.
@@ -85,18 +85,18 @@ def scale(sample, bounds, reverse=False):
     Examples
     --------
     >>> from scipy.stats import qmc
-    >>> bounds = [[-2, 0],
-    ...           [6, 5]]
+    >>> l_bounds = [-2, 0]
+    >>> u_bounds = [6, 5]
     >>> sample = [[0.5 , 0.5 ],
     ...           [0.75, 0.25]]
-    >>> qmc.scale(sample, bounds)
+    >>> qmc.scale(sample, l_bounds, u_bounds)
     array([[2.  , 2.5 ],
            [4.  , 1.25]])
 
     """
-    bounds = np.asarray(bounds)
-    min_ = np.min(bounds, axis=0)
-    max_ = np.max(bounds, axis=0)
+    sample = np.asarray(sample)
+    min_ = np.asarray(l_bounds)
+    max_ = np.asarray(u_bounds)
     if not reverse:
         return sample * (max_ - min_) + min_
     else:
@@ -184,8 +184,9 @@ def discrepancy(sample, iterative=False, method='CD'):
 
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-    >>> bounds = np.array([[0.5, 0.5], [6.5, 6.5]])
-    >>> space = qmc.scale(space, bounds, reverse=True)
+    >>> l_bounds = [0.5, 0.5]
+    >>> u_bounds = [6.5, 6.5]
+    >>> space = qmc.scale(space, l_bounds, u_bounds, reverse=True)
     >>> space
     array([[0.08333333, 0.41666667],
            [0.25      , 0.91666667],
@@ -283,8 +284,9 @@ def _update_discrepancy(x_new, sample, initial_disc):
 
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-    >>> bounds = np.array([[0.5, 0.5], [6.5, 6.5]])
-    >>> space = qmc.scale(space, bounds, reverse=True)
+    >>> l_bounds = [0.5, 0.5]
+    >>> u_bounds = [6.5, 6.5]
+    >>> space = qmc.scale(space, l_bounds, u_bounds, reverse=True)
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
@@ -738,8 +740,9 @@ class Halton(QMCEngine):
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample_continued, bounds)
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample_continued, l_bounds, u_bounds)
     array([[3.125     , 3.11111111],
            [8.125     , 4.11111111],
            [1.875     , 2.44444444],
@@ -822,8 +825,9 @@ class OrthogonalLatinHypercube(QMCEngine):
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
     array([[0.45467204, 3.76508172],
            [5.59473091, 2.11204051],
            [2.63351668, 4.96932869],
@@ -922,8 +926,9 @@ class LatinHypercube(QMCEngine):
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
     array([[5.54532796, 2.409945  ],
            [6.40526909, 3.9942472 ],
            [5.2177809 , 3.60031164],
@@ -1052,8 +1057,9 @@ class OptimalDesign(QMCEngine):
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample, bounds)
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
     array([[0.45467204, 3.76508172],
            [5.59473091, 4.96932869],
            [2.63351668, 2.11204051],
@@ -1265,8 +1271,9 @@ class Sobol(QMCEngine):
 
     Finally, samples can be scaled to bounds.
 
-    >>> bounds = [[0, 2], [10, 5]]
-    >>> qmc.scale(sample_continued, bounds)
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample_continued, l_bounds, u_bounds)
     array([[3.75 , 3.125],
            [8.75 , 4.625],
            [6.25 , 2.375],
