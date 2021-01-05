@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 
 from scipy.optimize import basinhopping
-from scipy.stats import norm
+import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
@@ -1560,7 +1560,7 @@ class MultivariateNormalQMC(QMCEngine):
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
