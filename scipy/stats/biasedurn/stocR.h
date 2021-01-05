@@ -5,13 +5,13 @@
 
 struct StocRBase {
 
-  double(*next_double)(void*);
+  double(*next_double)();
 
   StocRBase() : next_double(NULL) {}
   StocRBase(int seed) : next_double(NULL) {}
 
   double Random() {
-    return next_double(NULL);
+    return next_double();
   }
 };
 
