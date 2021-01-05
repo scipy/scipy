@@ -559,13 +559,45 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     z = x[0]
     s = x[1]
     #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
-    const = math.pow(v, v / 2) * math.pow(s, v - 1) * math.exp(
-        -v * s * s / 2) / (math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
+    const_log = (v / 2) * math.log(v) \
+                - math.lgamma(v / 2) \
+                - (v / 2 - 1) * math.log(2) \
+                + (v - 1) * math.log(s) \
+                - v * s * s / 2
 
-    r = k * (k - 1) * s * _phi(z) * _phi(s * q + z) * math.pow(
-        _Phi(s * q + z) - _Phi(z), k - 2) * const
+    # math.pow(v, v / 2) * math.pow(s, v - 1) * math.exp(
+    # -v * s * s / 2) / (math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
 
-    return r
+    r_log = math.log(k) \
+        + math.log(k - 1) \
+        + math.log(s) \
+        + math.log(0.3989422804014327) - 0.5 * z * z \
+        + math.log(0.3989422804014327) - 0.5 * (s * q + z) * (s * q + z)
+
+    #Not ln'd B/C causes divide by 0 errors when it is.
+    r_nolog = math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+
+    return math.exp(r_log + const_log) * r_nolog
+
+cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
+    # destined to be used in a LowLevelCallable
+    K = (<double *>user_data)[0]
+    k = (<double *>user_data)[1]
+    v = (<double *>user_data)[2]
+
+    z = x_arg[0]
+    s = x_arg[1]
+    x = x_arg[2]
+
+    #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
+    cdef double pdf_data[3]
+    pdf_data[0] = 1.5
+    pdf_data[1] = k
+    pdf_data[2] = v
+
+#math.pow(x-0, n) *
+    return  _genstudentized_range_pdf(2, x_arg, pdf_data)
+    #return n * (n-1) * math.pow(w, k)*math.pow(_Phi(x + w) - _Phi(x), n-2)*_phi(x+w)*_phi(x)
 
 ctypedef fused real:
     float

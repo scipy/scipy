@@ -8885,16 +8885,30 @@ class studentized_range_gen(rv_continuous):
         return np.all(k > 1) and np.all(v > 0)
 
 
-    def _pdf(self, x, k, v):
-    #First attempt at a PDF. TODO: VERIFY!
+    def _munp(self, K, k, v):
+        def _single_moment(K, k, v):
+            user_data = np.array([K, k, v], float).ctypes.data_as(
+                ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(_stats,
+                                               '_genstudentized_range_moment',
+                                               user_data)
+            #res = integrate.nquad(llc, ranges=[(-np.inf, np.inf), (0, np.inf), (-np.inf, np.inf)])
+            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)
 
+            return res[0]
+
+        return _single_moment(K, k, v)
+
+    def _pdf(self, x, k, v):
+        #x, atol = x
+        @np.vectorize
         def _single_pdf(q, k, v):
             user_data = np.array([q, k, v], float).ctypes.data_as(
                 ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats,
                                                '_genstudentized_range_pdf',
                                                user_data)
-            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)
+            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf) #, epsabs=atol
             return res[0]
 
         return _single_pdf(x, k, v)
@@ -8909,7 +8923,7 @@ class studentized_range_gen(rv_continuous):
             def wrapper_cdf(q, k, v, alpha):
                 return alpha - self.cdf(q, k, v)
 
-            #Increase max possible q with very low treatments
+            # Increase max possible q with very low treatments
             bracket_max = 1000 if v < 3 else 100
             res = optimize.root_scalar(wrapper_cdf, bracket=[0, bracket_max], args=(k, v, p))
             return res.root
@@ -8925,8 +8939,8 @@ class studentized_range_gen(rv_continuous):
                     ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats, '_genstudentized_range_cdf',
                                                    user_data)
-                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf)[0]
-                return res
+                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf) #epsabs=atol
+                return res[0]
 
             else:  # Use asymptomatic method
                 user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
