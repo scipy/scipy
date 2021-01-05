@@ -142,5 +142,5 @@ cdef class _PyStochasticLib3:
         return self.c_sl3.get().FishersNCHyp(n, m, N, odds)
 
     def WalleniusNCHyp(self, int n, int m, int N, double odds):
-        self.InitRng(None)  # get default rng
+        self.HandleRng(None)  # get default rng
         return self.c_sl3.get().WalleniusNCHyp(n, m, N, odds)
