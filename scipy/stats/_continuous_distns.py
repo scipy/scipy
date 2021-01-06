@@ -8879,6 +8879,8 @@ class studentized_range_gen(rv_continuous):
     %(example)s
 
     """
+    _epsabs = 1e-9  # Allows setting of quad epsabs for class integration fns.
+    _force_fn = None  # "asymptopic", None, or "regular"
 
     def _argcheck(self, k, v):
         """Verify args"""
@@ -8900,7 +8902,6 @@ class studentized_range_gen(rv_continuous):
         return _single_moment(K, k, v)
 
     def _pdf(self, x, k, v):
-        #x, atol = x
         @np.vectorize
         def _single_pdf(q, k, v):
             user_data = np.array([q, k, v], float).ctypes.data_as(
@@ -8908,10 +8909,12 @@ class studentized_range_gen(rv_continuous):
             llc = LowLevelCallable.from_cython(_stats,
                                                '_genstudentized_range_pdf',
                                                user_data)
-            res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf) #, epsabs=atol
+            res = integrate.dblquad(llc, 0, np.inf, -np.inf, np.inf,
+                                    epsabs=self._epsabs)
             return res[0]
 
-        return _single_pdf(x, k, v)
+        ufunc = np.frompyfunc(_single_pdf, 3, 1)
+        return ufunc(x, k, v).astype("float64")
 
 
     def _ppf(self, p, k, v):
@@ -8931,26 +8934,28 @@ class studentized_range_gen(rv_continuous):
 
     def _cdf(self, x, k, v):
         """The cdf"""
-        #x, atol = x
-        @np.vectorize
         def _single_cdf(q, k, v):
-            if v < 1000:
+            if (v < 2000 and not self._force_fn) or self._force_fn == "regular":
                 user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
-                llc = LowLevelCallable.from_cython(_stats, '_genstudentized_range_cdf',
+                llc = LowLevelCallable.from_cython(_stats,
+                                                   '_genstudentized_range_cdf',
                                                    user_data)
-                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf, hfun=np.inf) #epsabs=atol
+                res = integrate.dblquad(llc, 0, np.inf, gfun=-np.inf,
+                                        hfun=np.inf, epsabs=self._epsabs)
                 return res[0]
 
             else:  # Use asymptomatic method
-                user_data = np.array([q, k], float).ctypes.data_as(ctypes.c_void_p)
+                user_data = np.array([q, k], float).ctypes.data_as(
+                    ctypes.c_void_p)
                 llc = LowLevelCallable.from_cython(_stats,
                                                    '_genstudentized_range_cdf_asymptopic',
                                                    user_data)
-                res = integrate.quad(llc, -np.inf, np.inf)[0]
-                return res
+                res = integrate.quad(llc, -np.inf, np.inf)
+                return res[0]
 
-        return _single_cdf(x, k, v)
+        ufunc = np.frompyfunc(_single_cdf, 3, 1)
+        return ufunc(x, k, v).astype("float64")
 
 
 studentized_range = studentized_range_gen(name='studentized_range')
