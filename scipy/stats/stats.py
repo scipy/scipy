@@ -7483,7 +7483,7 @@ def _confint_lowerbound(n, quantile, confidence):
 
     Used by the public function confint_quantile().
 
-    .. versionadded:: 1.6.0
+    .. versionadded:: 1.7.0
     """
 
     # compute all probabilities from the binomial distribution for
