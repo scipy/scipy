@@ -4960,6 +4960,12 @@ class loggamma_gen(rv_continuous):
     def _ppf(self, q, c):
         return np.log(sc.gammaincinv(c, q))
 
+    def _sf(self, x, c):
+        return sc.gammaincc(c, np.exp(x))
+
+    def _isf(self, q, c):
+        return np.log(sc.gammainccinv(c, q))
+
     def _stats(self, c):
         # See, for example, "A Statistical Study of Log-Gamma Distribution", by
         # Ping Shing Chan (thesis, McMaster University, 1993).
