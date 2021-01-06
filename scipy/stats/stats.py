@@ -3724,6 +3724,7 @@ def alexandergovern(*args):
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
        instead relaxing the assumption of equal variances.
+    4. The input samples are one dimentional with size greater than one.
 
     See Also
     --------
@@ -3753,16 +3754,8 @@ def alexandergovern(*args):
         AlexanderGovernResult(statistic=4.65087071883494,
                               pvalue=0.19922132490385214)
     """
-    if len(args) < 2:
-        raise TypeError(f"2 or more inputs required, got {len(args)}")
 
-    args = [np.asarray(arg, dtype=float) for arg in args]
-
-    for arg in args:
-        if arg.shape == ():
-            raise ValueError("Input samples cannot be zero-dimentional.")
-        if False in np.isfinite(arg):
-            raise ValueError("Input samples must be finite.")
+    args = _alexandergovern_input_validation(args)
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -3771,10 +3764,6 @@ def alexandergovern(*args):
 
     # precalculate mean and length of each sample
     lengths = np.asarray([len(arg) for arg in args])
-    if 0 in lengths:
-        raise ValueError(f"Sample at index {np.where(lengths == 0)[0]}"
-                         " is of length zero.")
-
     means = np.asarray([np.mean(arg) for arg in args])
 
     # (1) determine standard error of the mean for each sample
@@ -3809,6 +3798,21 @@ def alexandergovern(*args):
     # with n_i - 1 degrees of freedom". Alexander, Govern (94)
     p = distributions.chi2.sf(A, len(args) - 1)
     return AlexanderGovernResult(A, p)
+
+
+def _alexandergovern_input_validation(args):
+    if len(args) < 2:
+        raise TypeError(f"2 or more inputs required, got {len(args)}")
+
+    # the current intended behavior is that the samples are flattened into 1d
+    args = [np.ravel(np.asarray(arg, dtype=float)) for arg in args]
+
+    for arg in args:
+        if arg.size() <= 0:
+            raise ValueError("Input samples cannot be zero-dimensional.")
+        if False in np.isfinite(arg):
+            raise ValueError("Input samples must be finite.")
+    return args
 
 
 class AlexanderGovernResult:
