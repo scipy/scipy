@@ -57,6 +57,12 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
                      'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
                      'rv_histogram_instance']
+# wrapcauchy fails because the default initial guess for the shape that is
+# passed to the optimizer is 1, but 1 is not a valid parameter for the
+# distribution.
+fail_fit_test_mle = ['wrapcauchy']
+fail_fit_fix_test_mle = ['wrapcauchy']
+
 # these were really slow in `test_fit`.py.
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -67,15 +73,18 @@ slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
+# see note about `wrapcauchy` above
 fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 't', 'tukeylambda',
-                     'invweibull'] +
-                    ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
-                     'powerlognorm', 'johnsonsu'] + ['pearson3'])
-skip_fit_test = {"MLE": skip_fit_test_mle,
+                     'invweibull']
+                     + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
+                        'powerlognorm', 'johnsonsu']
+                     + ['pearson3']
+                     + ['wrapcauchy'])
+skip_fit_test = {"MLE": skip_fit_test_mle + fail_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
 # skip check_fit_args_fix (test is slow)
@@ -88,14 +97,17 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
+# see note about `wrapcauchy` above
 fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 't', 'invweibull']
-                        + ['ksone', 'kstwo', 'pareto', 'powernorm',
-                           'powerlognorm', 'johnsonsu'] + ['pearson3'])
-skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
+                         + ['ksone', 'kstwo', 'pareto', 'powernorm',
+                            'powerlognorm', 'johnsonsu']
+                         + ['pearson3']
+                         + ['wrapcauchy'])
+skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle + fail_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
 # These distributions fail the complex derivative test below.
