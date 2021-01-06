@@ -72,9 +72,9 @@ while collectively the :math:`n` points retain their low discrepancy.
 One can make :math:`R` independent replications of RQMC points to
 see how stable a computation is. From :math:`R` independent values,
 a t-test (or bootstrap t-test [8]_) then gives approximate confidence
-intervals on the mean value.  Some RQMC methods produce a
+intervals on the mean value. Some RQMC methods produce a
 root mean squared error that is actually :math:`o(1/n)` and smaller than
-the rate seen in unrandomized QMC.  An intuitive explanation is
+the rate seen in unrandomized QMC. An intuitive explanation is
 that the error is a sum of many small ones and random errors
 cancel in a way that deterministic ones do not. RQMC also
 has advantages on integrands that are singular or, for other
@@ -91,6 +91,13 @@ For instance (R)QMC can be especially effective on integrands
 that are well approximated by sums of functions of
 some small number of their input variables at a time [10]_, [11]_.
 That property is often a surprising finding about those functions.
+
+Also, to see an improvement over IID MC, (R)QMC requires a bit of smoothness of
+the integrand, roughly the mixed first order derivative in each direction,
+:math:`\partial^d f/\partial x_1 \cdots \partial x_d`, must be integral.
+For instance, a function that is 1 inside the hypersphere and 0 outside of it
+has infinite variation in the sense of Hardy and Krause for any dimension
+:math:`d = 2`.
 
 Scrambled nets are a kind of RQMC that have some valuable robustness
 properties [12]_. If the integrand is square integrable, they give variance
@@ -110,7 +117,7 @@ nets there are widely used default constructions.
 
 The most widely used QMC methods are Sobol' sequences [17]_.
 These are digital nets. They are extensible in both :math:`n` and :math:`d`.
-They can be scrambled.  The special sample sizes are powers
+They can be scrambled. The special sample sizes are powers
 of 2. Another popular method are Halton sequences [18]_.
 The constructions resemble those of digital nets. The earlier
 dimensions have much better equidistribution properties than
@@ -134,15 +141,15 @@ therefore are the computational costs [23]_.
 
 (R)QMC is sometimes improved by passing the points through
 a baker's transformation (tent function) prior to using them.
-That function has the form :math:`1-2|x-1/2|`.  As :math:`x` goes from 0 to
-1, this function goes from 0 to 1 and then back.  It is very
+That function has the form :math:`1-2|x-1/2|`. As :math:`x` goes from 0 to
+1, this function goes from 0 to 1 and then back. It is very
 useful to produce a periodic function for lattice rules [14]_,
 and sometimes it improves the convergence rate [24]_.
 
 It is not straightforward to apply QMC methods to Markov
 chain Monte Carlo (MCMC).  We can think of MCMC as using
 :math:`n=1` point in :math:`[0,1]^{d}` for very large :math:`d`, with
-ergodic results corresponding to :math:`d \to \infty`.  One proposal is
+ergodic results corresponding to :math:`d \to \infty`. One proposal is
 in [25]_ and under strong conditions an improved rate of convergence
 has been shown [26]_.
 

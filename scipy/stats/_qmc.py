@@ -484,7 +484,7 @@ def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
         Base of the sequence. Default is 2.
     start_index : int, optional
         Index to start the sequence from. Default is 0.
-    scramble: bool, optional
+    scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
@@ -644,7 +644,7 @@ class QMCEngine(ABC):
 
         Returns
         -------
-        engine: QMCEngine
+        engine : QMCEngine
             Engine reset to its base state.
 
         """
@@ -657,12 +657,12 @@ class QMCEngine(ABC):
 
         Parameters
         ----------
-        n: int
+        n : int
             Number of points to skip in the sequence.
 
         Returns
         -------
-        engine: QMCEngine
+        engine : QMCEngine
             Engine reset to its base state.
 
         """
@@ -682,7 +682,7 @@ class Halton(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    scramble: bool, optional
+    scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
@@ -978,7 +978,7 @@ class LatinHypercube(QMCEngine):
 
         Returns
         -------
-        engine: LatinHypercube
+        engine : LatinHypercube
             Engine reset to its base state.
 
         """
@@ -1393,7 +1393,7 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        engine: Sobol
+        engine : Sobol
             Engine reset to its base state.
 
         """
@@ -1406,7 +1406,7 @@ class Sobol(QMCEngine):
 
         Parameters
         ----------
-        n: int
+        n : int
             Number of points to skip in the sequence.
 
         Returns
@@ -1430,17 +1430,17 @@ class MultivariateNormalQMC(QMCEngine):
 
     Parameters
     ----------
-    mean: array_like (d,)
+    mean : array_like (d,)
         The mean vector. Where ``d`` is the dimension.
-    cov: array_like (d, d), optional
+    cov : array_like (d, d), optional
         The covariance matrix. If omitted, use `cov_root` instead.
         If both `cov` and `cov_root` are omitted, use the identity matrix.
-    cov_root: array_like (d, d'), optional
+    cov_root : array_like (d, d'), optional
         A root decomposition of the covariance matrix, where ``d'`` may be less
         than ``d`` if the covariance is not full rank. If omitted, use `cov`.
-    inv_transform: bool, optional
+    inv_transform : bool, optional
         If True, use inverse transform instead of Box-Muller. Default is True.
-    engine: QMCEngine, optional
+    engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
@@ -1527,7 +1527,7 @@ class MultivariateNormalQMC(QMCEngine):
 
         Returns
         -------
-        engine: MultivariateNormalQMC
+        engine : MultivariateNormalQMC
             Engine reset to its base state.
 
         """
@@ -1579,10 +1579,10 @@ class MultinomialQMC(QMCEngine):
 
     Parameters
     ----------
-    pvals: array_like (k,)
+    pvals : array_like (k,)
         Vector of probabilities of size ``k``, where ``k`` is the number
         of categories. Elements must be non-negative and sum to 1.
-    engine: QMCEngine, optional
+    engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
@@ -1619,7 +1619,7 @@ class MultinomialQMC(QMCEngine):
 
         Returns
         -------
-        samples: array_like (pvals,)
+        samples : array_like (pvals,)
             Vector of size ``p`` summing to `n`.
 
         """
@@ -1635,7 +1635,7 @@ class MultinomialQMC(QMCEngine):
 
         Returns
         -------
-        engine: MultinomialQMC
+        engine : MultinomialQMC
             Engine reset to its base state.
 
         """
