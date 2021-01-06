@@ -67,19 +67,16 @@ class Distribution(Benchmark):
                 'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
                 'stats_m', 'stats_k', 'stats_mvsk', 'entropy']
     ]
-    distcont = dict(distcont + distdiscrete)
+    dist_data = dict(distcont + distdiscrete)
     # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
     # these distributions are the slowest quartile and are only run if is_xslow
     # is set
-    slow_dists = ['alpha', 'argus', 'cosine', 'exponnorm', 'exponweib',
-                  'f', 'foldcauchy', 'foldnorm', 'genlogistic', 'genexpon',
-                  'gausshyper', 'gumbel_r', 'halfgennorm', 'invgauss',
-                  'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'levy_stable',
-                  'lognorm', 'ncx2', 'nct', 'pearson3', 'powerlognorm',
-                  'powernorm', 'recipinvgauss', 'vonmises',
-                  'vonmises_line', 'wald']
+    slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
+                  'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
+                  'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
+                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
     slow_methods = ['moment']
 
     def setup(self, distribution, properties):
@@ -90,7 +87,7 @@ class Distribution(Benchmark):
 
         self.dist = getattr(stats, distribution)
 
-        shapes = self.distcont[distribution]
+        shapes = self.dist_data[distribution]
 
         if isinstance(self.dist, stats.rv_discrete):
             self.isCont = False
@@ -99,28 +96,27 @@ class Distribution(Benchmark):
             self.isCont = True
             kwds = {'loc': 4, 'scale': 10}
 
-        rng = self.dist.interval(.99, *shapes, **kwds)
-        x = np.linspace(*rng, 100)
+        bounds = self.dist.interval(.99, *shapes, **kwds)
+        x = np.linspace(*bounds, 100)
         args = [x, *self.custom_input.get(distribution, shapes)]
 
         if properties == 'fit':
             # provide only the data to fit in args
-            self.args = args[:1]
+            self.args = self.dist.rvs(size=100, **kwds)
         elif properties == 'rvs':
             # add size for creation of data
             kwds['size'] = 1000
             self.args = args[1:]
         elif properties == 'pdf/pmf':
-            # picking arbitrary value for this
-            self.args = [.99, *args[1:]]
             properties = ('pmf' if isinstance(self.dist, stats.rv_discrete)
                           else 'pdf')
+            self.args = args
         elif properties == 'logpdf/logpmf':
             properties = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
                           else 'logpdf')
             self.args = args
-        elif properties == 'isf':
-            self.args = [.99, *args[1:]]
+        elif properties in ['ppf', 'isf']:
+            self.args = [np.linspace((0, 1), 100), *args[1:]]
         elif properties == 'moment':
             self.args = [5, *args[1:]]
         elif properties.startswith('stats_'):
@@ -128,13 +124,8 @@ class Distribution(Benchmark):
             self.args = args[1:]
             kwds['moments'] = properties[6:]
             self.kwds = kwds
-        elif properties in ['entropy']:
+        elif properties == 'entropy':
             self.args = args[1:]
-        elif properties == 'expect':
-            self.args = []
-            kwds['args'] = tuple(args[1:])
-        elif properties == 'interval':
-            self.args = [.99, *args[1:]]
         else:
             self.args = args
         self.kwds = kwds
