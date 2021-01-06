@@ -57,17 +57,15 @@ class InferentialStats(Benchmark):
 
 
 class Distribution(Benchmark):
-    # add distributions here
-    dists = ([d[0] for d in distcont + distdiscrete] +
-             ['laplace_asymmetric', 'nhypergeom', 'reciprocal',
-             'trapezoid'])
+    # all distributions are in this list. A conversion to a set is used to
+    # remove duplicates that are files under `distcont` and `distdiscrete`.
+    dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
     param_names = ['distribution', 'properties']
     params = [
         dists, ['pdf/pmf', 'logpdf/logpmf', 'cdf', 'logcdf', 'rvs', 'fit',
                 'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
-                'stats_m', 'stats_k', 'stats_mvsk', 'entropy', 'median',
-                'mean', 'var', 'std', 'interval', 'expect']
+                'stats_m', 'stats_k', 'stats_mvsk', 'entropy']
     ]
     distcont = dict(distcont + distdiscrete)
     # maintain previous benchmarks' values
@@ -82,6 +80,7 @@ class Distribution(Benchmark):
                   'lognorm', 'ncx2', 'nct', 'pearson3', 'powerlognorm',
                   'powernorm', 'recipinvgauss', 'vonmises',
                   'vonmises_line', 'wald']
+    slow_methods = ['moment']
 
     def setup(self, distribution, properties):
 
@@ -114,20 +113,22 @@ class Distribution(Benchmark):
         elif properties == 'pdf/pmf':
             # picking arbitrary value for this
             self.args = [.99, *args[1:]]
-            properties = 'pmf' if isinstance(self.dist, stats.rv_discrete) else 'pdf' 
+            properties = ('pmf' if isinstance(self.dist, stats.rv_discrete)
+                          else 'pdf')
         elif properties == 'logpdf/logpmf':
-            properties = 'logpmf' if isinstance(self.dist, stats.rv_discrete) else 'logpdf'
+            properties = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
+                          else 'logpdf')
             self.args = args
         elif properties == 'isf':
             self.args = [.99, *args[1:]]
         elif properties == 'moment':
-            self.args = [2, *args[1:]]
+            self.args = [5, *args[1:]]
         elif properties.startswith('stats_'):
             properties = 'stats'
             self.args = args[1:]
             kwds['moments'] = properties[6:]
             self.kwds = kwds
-        elif properties in ['entropy', 'median', 'mean', 'var', 'std']:
+        elif properties in ['entropy']:
             self.args = args[1:]
         elif properties == 'expect':
             self.args = []
@@ -147,6 +148,16 @@ class Distribution(Benchmark):
     def time_distribution(self, distribution, properties):
         self.method(*self.args, **self.kwds)
 
+
+class Distribution_old(Benchmark):
+    param_names = ['distribution', 'properties']
+    params = [[], []]
+
+    def setup(self):
+        pass
+
+    def time_distribution(self, distribution, properties):
+        pass
     # Retain old benchmark results (remove this if changing the benchmark)
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
 
