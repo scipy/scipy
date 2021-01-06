@@ -7541,7 +7541,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     the one-sided intervals are optimally tight.
 
     A similar function is available in the QuantileNPCI R package [3]_.
-    The fundation is the same but it computes the confidence interval
+    The foundation is the same, but it computes the confidence interval
     bounds by doing interpolations between the sample values, which this
     function uses only sample values as bounds. This results in slightly
     more conservative intervals (i.e., larger).
