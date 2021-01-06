@@ -7523,7 +7523,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         \mathbb{P}(x_m \leq q) = \mathbb{P}(x_{N-m+1} \geq 1-q).
 
     The function computes confidence intervals for a given quantile and
-    confidence level, based on `x` which is either a set of samples
+    confidence level based on `x`, which is either a set of samples
     (one-dimensional array_like) or the number of samples available.
     The confidence intervals are valid if and only if the samples are i.i.d.
 
