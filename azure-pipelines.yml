@@ -104,7 +104,7 @@ jobs:
       test_mode: fast
       numpy_spec: "numpy==1.17.4"
       use_sdist: true
-- job: wheel_optimized_gcc52
+- job: wheel_optimized_gcc5
   pool:
     vmImage: 'ubuntu-18.04'
   variables:
