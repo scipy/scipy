@@ -230,7 +230,7 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
-def highs_wrapper(
+def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
         int[::1] aindex,

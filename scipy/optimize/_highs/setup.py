@@ -105,8 +105,8 @@ def configuration(parent_package='', top_path=None):
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
     ext = config.add_extension(
-        'highs_wrapper',
-        sources=['cython/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        '_highs_wrapper',
+        sources=['cython/src/_highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
 
             # highs_wrapper
@@ -133,11 +133,11 @@ def configuration(parent_package='', top_path=None):
 
     # wrapper around HiGHS writeMPS:
     ext = config.add_extension(
-        'mpswriter',
+        '_mpswriter',
         sources=[
             # we should be using using highs shared library;
             # next best thing is compiling minimal set of sources
-            'cython/src/mpswriter.cxx',
+            'cython/src/_mpswriter.cxx',
             'src/util/HighsUtils.cpp',
             'src/io/HighsIO.cpp',
             'src/io/HMPSIO.cpp',
@@ -159,8 +159,8 @@ def configuration(parent_package='', top_path=None):
 
     # Export constants and enums from HiGHS:
     ext = config.add_extension(
-        'constants',
-        sources=['cython/src/constants.cxx'],
+        '_highs_constants',
+        sources=['cython/src/_highs_constants.cxx'],
         include_dirs=[
             'cython/src/',
             'src/',
