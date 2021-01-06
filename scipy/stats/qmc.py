@@ -24,7 +24,6 @@ Engines
    Halton
    LatinHypercube
    OrthogonalLatinHypercube
-   OptimalDesign
    MultinomialQMC
    MultivariateNormalQMC
 

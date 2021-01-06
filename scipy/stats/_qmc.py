@@ -7,7 +7,6 @@ import warnings
 
 import numpy as np
 
-from scipy.optimize import basinhopping
 import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
@@ -15,7 +14,7 @@ from scipy.stats._sobol import (
 )
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
+           'OrthogonalLatinHypercube', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -983,185 +982,6 @@ class LatinHypercube(QMCEngine):
 
         """
         self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
-        self.num_generated = 0
-        return self
-
-
-class OptimalDesign(QMCEngine):
-    """Optimal design.
-
-    Optimize the design by doing random permutations to lower the centered
-    discrepancy.
-
-    The specified optimization `method` is used to select a new set of
-    permutations to perform. If `method` is None, *basinhopping* optimization
-    is used. `niter` set of permutations are performed.
-
-    Centered discrepancy-based design shows better space filling robustness
-    toward 2D and 3D subprojections. Distance-based design shows better space
-    filling but less robustness to subprojections.
-
-    Parameters
-    ----------
-    d : int
-        Dimension of the parameter space.
-    start_design : array_like (n, d), optional
-        Initial design of experiment to optimize. `OrthogonalLatinHypercube`
-        is used to generate a first design otherwise.
-    niter : int, optional
-        Number of iterations to perform. Default is 1.
-    method : callable ``f(func, x0, bounds)``, optional
-        Optimization function used to search new samples. Default to
-        *basinhopping* optimization.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-
-    References
-    ----------
-    .. [1] Fang et al. Design and modeling for computer experiments,
-       Computer Science and Data Analysis Series, 2006.
-    .. [2] Damblin et al., "Numerical studies of space filling designs:
-       optimization of Latin Hypercube Samples and subprojection properties",
-       Journal of Simulation, 2013.
-
-    Examples
-    --------
-    Generate samples from an optimal design.
-
-    >>> from scipy.stats import qmc
-    >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
-    >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.0454672 , 0.58836057],
-           [0.55947309, 0.98977623],
-           [0.26335167, 0.03734684],
-           [0.87822191, 0.33455121],
-           [0.73525093, 0.64964914]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
-    >>> qmc.discrepancy(sample)
-    0.018581537720176344
-
-    You can possibly improve the quality of the sample by performing more
-    optimization iterations by using `niter`:
-
-    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
-    >>> sample_2 = sampler_2.random(n=5)
-    >>> qmc.discrepancy(sample_2)
-    0.018378401228740238
-
-    Finally, samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[0.45467204, 3.76508172],
-           [5.59473091, 4.96932869],
-           [2.63351668, 2.11204051],
-           [8.7822191 , 3.00365363],
-           [7.35250934, 3.94894743]])
-
-    """
-
-    def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
-        super().__init__(d=d, seed=seed)
-        self.start_design = start_design
-        self.niter = niter
-
-        if method is None:
-            def method(func, x0, bounds):
-                """Basinhopping optimization."""
-                minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-                basinhopping(func, x0, niter=100,
-                             minimizer_kwargs=minimizer_kwargs, seed=self.rng)
-
-        self.method = method
-
-        self.best_doe = self.start_design
-        if self.start_design is not None:
-            self.best_disc = discrepancy(self.start_design)
-        else:
-            self.best_disc = np.inf
-
-        self.olhs = OrthogonalLatinHypercube(self.d, seed=self.rng)
-
-    def random(self, n=1):
-        """Draw `n` in the half-open interval ``[0, 1)``.
-
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
-
-        Returns
-        -------
-        sample : array_like (n, d)
-            Optimal sample.
-
-        """
-        if self.d == 0:
-            return np.empty((n, 0))
-
-        if self.best_doe is None:
-            self.best_doe = self.olhs.random(n)
-            self.best_disc = discrepancy(self.best_doe)
-
-        def _perturb_best_doe(x: np.ndarray) -> float:
-            """Perturb the DoE and keep track of the best DoE.
-
-            Parameters
-            ----------
-            x : list of int
-                It is a list of:
-                    idx : int
-                        Index value of the components to compute
-
-            Returns
-            -------
-            discrepancy : float
-                Centered discrepancy.
-
-            """
-            # Perturb the DoE
-            doe = self.best_doe.copy()
-            col, row_1, row_2 = np.round(x).astype(int)
-
-            disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
-                                        self.best_disc)
-            if disc < self.best_disc:
-                doe[row_1, col], doe[row_2, col] = doe[row_2, col], \
-                                                   doe[row_1, col]
-                self.best_disc = disc
-                self.best_doe = doe
-
-            return disc
-
-        x0 = [0, 0, 0]
-        bounds = ([0, self.d - 1],
-                  [0, n - 1],
-                  [0, n - 1])
-
-        for _ in range(self.niter):
-            self.method(_perturb_best_doe, x0, bounds)
-
-        self.num_generated += n
-        return self.best_doe
-
-    def reset(self):
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine: OptimalDesign
-            Engine reset to its base state.
-
-        """
-        self.__init__(d=self.d, seed=self.rng_seed)
         self.num_generated = 0
         return self
 
