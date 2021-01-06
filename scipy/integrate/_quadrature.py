@@ -421,7 +421,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1, axis=-1, even='avg'):
+def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
     """`An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
@@ -430,7 +430,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1, axis=-1, even='avg'):
+def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -445,7 +445,7 @@ def simpson(y, x=None, dx=1, axis=-1, even='avg'):
         Array to be integrated.
     x : array_like, optional
         If given, the points at which `y` is sampled.
-    dx : int, optional
+    dx : float, optional
         Spacing of integration points along axis of `x`. Only used when
         `x` is None. Default is 1.
     axis : int, optional
