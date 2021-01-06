@@ -7542,7 +7542,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
 
     A similar function is available in the QuantileNPCI R package [3]_.
     The foundation is the same, but it computes the confidence interval
-    bounds by doing interpolations between the sample values, which this
+    bounds by doing interpolations between the sample values, whereas this
     function uses only sample values as bounds. This results in slightly
     more conservative intervals (i.e., larger).
 
