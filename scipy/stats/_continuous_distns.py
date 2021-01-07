@@ -4954,6 +4954,9 @@ class loggamma_gen(rv_continuous):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
         return np.exp(c*x-np.exp(x)-sc.gammaln(c))
 
+    def _logpdf(self, x, c):
+        return c*x - np.exp(x) - sc.gammaln(c)
+
     def _cdf(self, x, c):
         return sc.gammainc(c, np.exp(x))
 

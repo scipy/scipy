@@ -942,6 +942,14 @@ class TestLoggamma(object):
         y = stats.loggamma.isf(s, c)
         assert_allclose(y, x, rtol=1e-12)
 
+    def test_logpdf(self):
+        # Test logpdf with x=-500, c=2.  ln(gamma(2)) = 0, and
+        # exp(-500) ~= 7e-218, which is far smaller than the ULP
+        # of c*x=-1000, so logpdf(-500, 2) = c*x - exp(x) - ln(gamma(2))
+        # should give -1000.0.
+        lp = stats.loggamma.logpdf(-500, 2)
+        assert_allclose(lp, -1000.0, rtol=1e-14)
+
     def test_stats(self):
         # The following precomputed values are from the table in section 2.2
         # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
