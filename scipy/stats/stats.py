@@ -1098,9 +1098,9 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0):
     Compute the coefficient of variation.
 
     The coefficient of variation is the standard deviation divided by the
-    mean.  This function is equivalent to:
+    mean.  This function is equivalent to::
 
-    ``np.std(x, axis=axis, ddof=ddof) / np.mean(x)``
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
 
     The default for ``ddof`` is 0, but many definitions of the coefficient
     of variation use the square root of the unbiased sample variance
