@@ -185,6 +185,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp, cramervonmises
+from ._bootstrap import bootstrap_ci_1samp
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -209,7 +210,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises']
+           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
+           'bootstrap_ci_1samp']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -7369,7 +7371,7 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1: 
+        elif arg.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
     n = np.asarray(list(map(len, args)))
