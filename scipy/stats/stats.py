@@ -1117,9 +1117,10 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+
     ddof : int, optional
         Delta degrees of freedom.  Default is 0.
 
