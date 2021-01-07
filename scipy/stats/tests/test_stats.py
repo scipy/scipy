@@ -2567,6 +2567,16 @@ class TestMoments(object):
         vv = stats.variation(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
 
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = array([1, 2, 3, 4, 5])
+        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
+        y = stats.variation(a, ddof=1)
+        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
+        assert_approx_equal(y, 0.5270462766947299)
+        np.testing.assert_equal(y, nan_y)
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
