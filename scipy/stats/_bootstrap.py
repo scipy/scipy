@@ -156,7 +156,7 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     >>> np.random.seed(0)
     >>> from scipy.stats import norm
     >>> dist = norm(loc=2, scale = 4)  # our "unknown" distribution
-    >>> rvs = dist.rvs(size=100)       # a random sample from the distribution
+    >>> data = dist.rvs(size=100)      # a random sample from the distribution
 
     We are interested int the standard deviation of the distribution.
 
@@ -165,12 +165,13 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     4.0
     >>> std_sample = np.std(data)      # the sample statistic
     >>> print(std_sample)
-    4.114831571293993
+    4.0315289788663184
 
     We can calculate a 90% confidence interval of the statistic using
     `bootstrap_ci_1samp`.
 
-    >>> ci_l, ci_u = bootstrap_ci_1samp(rvs, np.std, confidence_level=0.9)
+    >>> from scipy.stats import bootstrap_ci_1samp
+    >>> ci_l, ci_u = bootstrap_ci_1samp(data, np.std, confidence_level=0.9)
     >>> print(ci_l, ci_u)
     3.6358417469634423 4.505860501007106
 
@@ -184,16 +185,17 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     ...    ci = bootstrap_ci_1samp(data, np.std, confidence_level=0.9)
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std+=1
-    print(ci_contains_true_std)
+    >>> print(ci_contains_true_std)
+    891
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
 
     >>> data = dist.rvs(size=(n_trials, 100))
-    >>> bootstrap_ci_1samp(data, np.std, axis=-1, confidence_level=0.9,
-    ...                    method='basic')
-    >>> print(np.sum((ci[0] < std_true) & (std_true < ci[1])))
-    863
+    >>> ci_l, ci_u = bootstrap_ci_1samp(data, np.std, axis=-1,
+    ...                                 confidence_level=0.9, method='basic')
+    >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
+    870
 
     """
     # Input validation
