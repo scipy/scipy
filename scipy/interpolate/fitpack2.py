@@ -1765,8 +1765,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     ----------
     u : array_like
         1-D array of colatitude coordinates in strictly ascending order.
-        Coordinates must be given in radians and lie within the interval
-        ``[0, pi]``.
+        Coordinates must be given in radians and lie within the open interval
+        ``(0, pi)``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
@@ -1934,8 +1934,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         u, v = np.ravel(u), np.ravel(v)
         r = np.asarray(r)
 
-        if not ((0.0 <= u).all() and (u <= np.pi).all()):
-            raise ValueError('u should be between [0, pi]')
+        if not (0.0 < u[0] and u[-1] < np.pi):
+            raise ValueError('u should be between (0, pi)')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')
         if not v[-1] <= v[0] + 2*np.pi:
