@@ -2221,8 +2221,16 @@ def moment(a, moment=1, axis=0):
 
 def variation(a, axis=0, ddof=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Compute the coefficient of variation.
+
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to:
+
+    ``np.std(x, axis=axis, ddof=ddof) / np.mean(x)``
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
