@@ -1,4 +1,3 @@
-from __future__ import division, absolute_import, print_function
 from .common import set_mem_rlimit, run_monitored, get_mem_info
 
 import os
@@ -7,13 +6,10 @@ import collections
 from io import BytesIO
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.io import savemat, loadmat
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class MemUsage(Benchmark):

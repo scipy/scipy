@@ -1,7 +1,7 @@
 """Test how the ufuncs in special handle nan inputs.
 
 """
-from __future__ import division, print_function, absolute_import
+from typing import Callable, Dict
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_, suppress_warnings
@@ -9,9 +9,9 @@ import pytest
 import scipy.special as sc
 
 
-KNOWNFAILURES = {}
+KNOWNFAILURES: Dict[str, Callable] = {}
 
-POSTPROCESSING = {}
+POSTPROCESSING: Dict[str, Callable] = {}
 
 
 def _get_ufuncs():

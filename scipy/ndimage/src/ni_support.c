@@ -187,13 +187,8 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     case NPY_DOUBLE:
         break;
     default:
-#if PY_VERSION_HEX >= 0x03040000
         PyErr_Format(PyExc_RuntimeError, "array type %R not supported",
                      (PyObject *)PyArray_DTYPE(array));
-#else
-        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                     array_type);
-#endif
         return 0;
     }
 
@@ -232,6 +227,11 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
     double *last = first + line_length;
     double *src, *dst, val;
 
+    if ((line_length == 1) && (extend_mode == NI_EXTEND_MIRROR))
+    {
+        extend_mode = NI_EXTEND_NEAREST;
+    }
+
     switch (extend_mode) {
         /* aaaaaaaa|abcd|dddddddd */
         case NI_EXTEND_NEAREST:
@@ -250,6 +250,7 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             break;
         /* abcdabcd|abcd|abcdabcd */
         case NI_EXTEND_WRAP:
+        case NI_EXTEND_GRID_WRAP:
             src = last - 1;
             dst = first - 1;
             while (size_before--) {
@@ -309,6 +310,7 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             break;
         /* kkkkkkkk|abcd]kkkkkkkk */
         case NI_EXTEND_CONSTANT:
+        case NI_EXTEND_GRID_CONSTANT:
             val = extend_value;
             dst = buffer;
             while (size_before--) {
@@ -642,6 +644,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                         }
                         break;
                     case NI_EXTEND_WRAP:
+                    case NI_EXTEND_GRID_WRAP:
                         if (cc < 0) {
                             if (len <= 1) {
                                 cc = 0;
@@ -668,6 +671,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                         }
                         break;
                     case NI_EXTEND_CONSTANT:
+                    case NI_EXTEND_GRID_CONSTANT:
                         if (cc < 0 || cc >= len)
                             cc = *border_flag_value;
                         break;

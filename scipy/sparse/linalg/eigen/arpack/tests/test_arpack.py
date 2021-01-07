@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 To run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]
@@ -441,7 +439,7 @@ def test_symmetric_no_convergence():
     except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
         if k <= 0:
-            raise AssertionError("Spurious no-eigenvalues-found case")
+            raise AssertionError("Spurious no-eigenvalues-found case") from err
         w, v = err.eigenvalues, err.eigenvectors
         assert_allclose(dot(m, v), w * v, rtol=rtol, atol=atol)
 
@@ -509,7 +507,7 @@ def test_standard_nonsymmetric_no_convergence():
     except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
         if k <= 0:
-            raise AssertionError("Spurious no-eigenvalues-found case")
+            raise AssertionError("Spurious no-eigenvalues-found case") from err
         w, v = err.eigenvalues, err.eigenvectors
         for ww, vv in zip(w, v.T):
             assert_allclose(dot(m, vv), ww * vv, rtol=rtol, atol=atol)

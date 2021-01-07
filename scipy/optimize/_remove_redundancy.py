@@ -4,10 +4,11 @@ programming equality constraints.
 """
 # Author: Matt Haberland
 
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import svd
+from scipy.linalg.interpolative import interp_decomp
 import scipy
+from scipy.linalg.blas import dtrsm
 
 
 def _row_count(A):
@@ -95,8 +96,8 @@ def _remove_zero_rows(A, b):
 def bg_update_dense(plu, perm_r, v, j):
     LU, p = plu
 
-    u = scipy.linalg.solve_triangular(LU, v[perm_r], lower=True,
-                                      unit_diagonal=True)
+    vperm = v[perm_r]
+    u = dtrsm(1, LU, vperm, lower=1, diag=1)
     LU[:j+1, j] = u[:j+1]
     l = u[j+1:]
     piv = LU[j, j]
@@ -104,7 +105,7 @@ def bg_update_dense(plu, perm_r, v, j):
     return LU, p
 
 
-def _remove_redundancy_dense(A, rhs):
+def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -156,14 +157,18 @@ def _remove_redundancy_dense(A, rhs):
     b = list(v)             # Basis column indices.
     # This is better as a list than a set because column order of basis matrix
     # needs to be consistent.
-    k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
-    lu = None
     perm_r = None
 
     A_orig = A
-    A = np.hstack((np.eye(m), A))
+    A = np.zeros((m, m + n), order='F')
+    np.fill_diagonal(A, 1)
+    A[:, m:] = A_orig
     e = np.zeros(m)
+
+    js_candidates = np.arange(m, m+n, dtype=int)  # candidate columns for basis
+    # manual masking was faster than masked array
+    js_mask = np.ones(js_candidates.shape, dtype=bool)
 
     # Implements basic algorithm from [2]
     # Uses some of the suggested improvements (removing zero rows and
@@ -173,15 +178,11 @@ def _remove_redundancy_dense(A, rhs):
     # matrix from the original problem - not on the canonical form matrix,
     # which would have many more column singletons due to slack variables
     # from the inequality constraints.
-    # The thoughts on "crashing" the initial basis sound useful, but the
-    # description of the procedure seems to assume a lot of familiarity with
-    # the subject; it is not very explicit. I already went through enough
-    # trouble getting the basic algorithm working, so I was not interested in
-    # trying to decipher this, too. (Overall, the paper is fraught with
-    # mistakes and ambiguities - which is strange, because the rest of
-    # Andersen's papers are quite good.)
+    # The thoughts on "crashing" the initial basis are only really useful if
+    # the matrix is sparse.
 
-    B = A[:, b]
+    lu = np.eye(m, order='F'), np.arange(m)  # initial LU is trivial
+    perm_r = lu[1]
     for i in v:
 
         e[i] = 1
@@ -192,7 +193,7 @@ def _remove_redundancy_dense(A, rhs):
             j = b[i-1]
             lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
         except Exception:
-            lu = scipy.linalg.lu_factor(B)
+            lu = scipy.linalg.lu_factor(A[:, b])
             LU, p = lu
             perm_r = list(range(m))
             for i1, i2 in enumerate(p):
@@ -200,20 +201,19 @@ def _remove_redundancy_dense(A, rhs):
 
         pi = scipy.linalg.lu_solve(lu, e, trans=1)
 
-        # not efficient, but this is not the time sink...
-        js = np.array(list(k-set(b)))
+        js = js_candidates[js_mask]
         batch = 50
 
         # This is a tiny bit faster than looping over columns indivually,
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
         for j_index in range(0, len(js), batch):
-            j_indices = js[np.arange(j_index, min(j_index+batch, len(js)))]
+            j_indices = js[j_index: min(j_index+batch, len(js))]
 
             c = abs(A[:, j_indices].transpose().dot(pi))
             if (c > tolapiv).any():
                 j = js[j_index + np.argmax(c)]  # very independent column
-                B[:, i] = A[:, j]
                 b[i] = j
+                js_mask[j-m] = False
                 break
         else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
@@ -224,13 +224,15 @@ def _remove_redundancy_dense(A, rhs):
                 return A_orig, rhs, status, message
             else:  # dependent
                 d.append(i)
+                if true_rank is not None and len(d) == m - true_rank:
+                    break   # found all redundancies
 
     keep = set(range(m))
     keep = list(keep - set(d))
     return A_orig[keep, :], rhs[keep], status, message
 
 
-def _remove_redundancy_sparse(A, rhs):
+def _remove_redundancy_pivot_sparse(A, rhs):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -357,7 +359,7 @@ def _remove_redundancy_sparse(A, rhs):
     return A_orig[keep, :], rhs[keep], status, message
 
 
-def _remove_redundancy(A, b):
+def _remove_redundancy_svd(A, b):
     """
     Eliminates redundant equations from system of equations defined by Ax = b
     and identifies infeasibilities.
@@ -447,3 +449,74 @@ def _remove_redundancy(A, b):
         s_min = s[-1] if m <= n else 0
 
     return A, b, status, message
+
+
+def _remove_redundancy_id(A, rhs, rank=None, randomized=True):
+    """Eliminates redundant equations from a system of equations.
+
+    Eliminates redundant equations from system of equations defined by Ax = b
+    and identifies infeasibilities.
+
+    Parameters
+    ----------
+    A : 2-D array
+        An array representing the left-hand side of a system of equations
+    rhs : 1-D array
+        An array representing the right-hand side of a system of equations
+    rank : int, optional
+        The rank of A
+    randomized: bool, optional
+        True for randomized interpolative decomposition
+
+    Returns
+    -------
+    A : 2-D array
+        An array representing the left-hand side of a system of equations
+    rhs : 1-D array
+        An array representing the right-hand side of a system of equations
+    status: int
+        An integer indicating the status of the system
+        0: No infeasibility identified
+        2: Trivially infeasible
+    message : str
+        A string descriptor of the exit status of the optimization.
+
+    """
+
+    status = 0
+    message = ""
+    inconsistent = ("There is a linear combination of rows of A_eq that "
+                    "results in zero, suggesting a redundant constraint. "
+                    "However the same linear combination of b_eq is "
+                    "nonzero, suggesting that the constraints conflict "
+                    "and the problem is infeasible.")
+
+    A, rhs, status, message = _remove_zero_rows(A, rhs)
+
+    if status != 0:
+        return A, rhs, status, message
+
+    m, n = A.shape
+
+    k = rank
+    if rank is None:
+        k = np.linalg.matrix_rank(A)
+
+    idx, proj = interp_decomp(A.T, k, rand=randomized)
+
+    # first k entries in idx are indices of the independent rows
+    # remaining entries are the indices of the m-k dependent rows
+    # proj provides a linear combinations of rows of A2 that form the
+    # remaining m-k (dependent) rows. The same linear combination of entries
+    # in rhs2 must give the remaining m-k entries. If not, the system is
+    # inconsistent, and the problem is infeasible.
+    if not np.allclose(rhs[idx[:k]] @ proj, rhs[idx[k:]]):
+        status = 2
+        message = inconsistent
+
+    # sort indices because the other redundancy removal routines leave rows
+    # in original order and tests were written with that in mind
+    idx = sorted(idx[:k])
+    A2 = A[idx, :]
+    rhs2 = rhs[idx]
+    return A2, rhs2, status, message

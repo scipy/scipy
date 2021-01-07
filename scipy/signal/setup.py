@@ -1,10 +1,10 @@
-from __future__ import division, print_function, absolute_import
-
 from scipy._build_utils import numpy_nodepr_api
+import os
 
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.compiler_helper import set_c_flags_hook
 
     config = Configuration('signal', parent_package, top_path)
 
@@ -12,18 +12,33 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('windows')
 
-    config.add_extension('sigtools',
+    sigtools = config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
                                   'medianfilter.c', 'lfilter.c.src',
                                   'correlate_nd.c.src'],
                          depends=['sigtools.h'],
                          include_dirs=['.'],
                          **numpy_nodepr_api)
+    sigtools._pre_build_hook = set_c_flags_hook
 
-    config.add_extension(
-        '_spectral', sources=['_spectral.c'])
-    config.add_extension(
-        '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.signal._max_len_seq_inner',
+            sources=["scipy/signal/_max_len_seq_inner.py"])
+        config.ext_modules.append(ext)
+
+        ext = pythran.dist.PythranExtension(
+            'scipy.signal._spectral',
+            sources=["scipy/signal/_spectral.py"])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension(
+            '_spectral', sources=['_spectral.c'])
+
+        config.add_extension(
+            '_max_len_seq_inner', sources=['_max_len_seq_inner.c'])
+
     config.add_extension(
         '_peak_finding_utils', sources=['_peak_finding_utils.c'])
     config.add_extension(

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import math
 
 import numpy.linalg as nl
@@ -8,12 +6,10 @@ import numpy as np
 from numpy.testing import assert_
 from numpy.random import rand
 
-try:
-    import scipy.linalg as sl
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    import scipy.linalg as sl
 
 
 def random(size):

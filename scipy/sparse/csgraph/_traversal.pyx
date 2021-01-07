@@ -5,8 +5,6 @@ Routines for traversing graphs in compressed sparse format
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as np
 

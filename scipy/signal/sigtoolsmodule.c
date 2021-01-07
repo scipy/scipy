@@ -824,8 +824,13 @@ COMPARE(ULONGLONG_compare, npy_ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
-        /*return PyObject_Compare(*ip1, *ip2); */
-        return PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) != 1;
+        /* PyObject_RichCompareBool returns -1 on error; not handled here */
+        if(PyObject_RichCompareBool(*ip1, *ip2, Py_LT) == 1)
+          return -1;
+        else if(PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) == 1)
+          return 0;
+        else
+          return 1;
 }
 
 typedef int (*CompareFunction)(const void *, const void *);
@@ -843,7 +848,8 @@ CompareFunction compare_functions[] = \
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
 	npy_intp *a_ind=NULL, *b_ind=NULL, *temp_ind=NULL, *mode_dep=NULL, *check_ind=NULL;
-	npy_uintp *offsets=NULL, *offsets2=NULL;
+	npy_uintp *offsets=NULL;
+	npy_intp *offsets2=NULL;
 	npy_uintp offset1;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;
@@ -1399,7 +1405,6 @@ static struct PyMethodDef toolbox_module_methods[] = {
 	{NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "sigtools",
@@ -1422,29 +1427,3 @@ PyObject *PyInit_sigtools(void)
 
     return m;
 }
-#else
-/* Initialization function for the module (*must* be called initsigtools) */
-
-PyMODINIT_FUNC initsigtools(void) {
-    /* Create the module and add the functions */
-    Py_InitModule("sigtools", toolbox_module_methods);
-
-	/* Import the C API function pointers for the Array Object*/
-	import_array();
-
-	/* Make sure the multiarraymodule is loaded so that the zero
-	   and one objects are defined */
-	/* XXX: This should be updated for scipy. I think it's pulling in 
-	   Numeric's multiarray. */
-	PyImport_ImportModule("numpy.core.multiarray");
-	/* { PyObject *multi = PyImport_ImportModule("multiarray"); } */
-
-    scipy_signal_sigtools_linear_filter_module_init();
-
-	/* Check for errors */
-	if (PyErr_Occurred()) {
-	  PyErr_Print();
-	  Py_FatalError("can't initialize module array");
-	}
-}
-#endif

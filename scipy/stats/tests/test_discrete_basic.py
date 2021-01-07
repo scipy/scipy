@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy.testing as npt
 import numpy as np
 import pytest
@@ -252,3 +250,52 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
+
+@pytest.mark.parametrize('method', ['pmf', 'logpmf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+@pytest.mark.parametrize('distname, args', distdiscrete)
+def test_methods_with_lists(method, distname, args):
+    # Test that the discrete distributions can accept Python lists
+    # as arguments.
+    try:
+        dist = getattr(stats, distname)
+    except TypeError:
+        return
+    if method in ['ppf', 'isf']:
+        z = [0.1, 0.2]
+    else:
+        z = [0, 1]
+    p2 = [[p]*2 for p in args]
+    loc = [0, 1]
+    result = dist.pmf(z, *p2, loc=loc)
+    npt.assert_allclose(result,
+                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        rtol=1e-15, atol=1e-15)
+
+
+@pytest.mark.parametrize(
+    'dist, x, args',
+    [  # In each of the following, at least one shape parameter is invalid
+        (stats.hypergeom, np.arange(5), (3, 3, 4)),
+        (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
+        (stats.bernoulli, np.arange(5), (1.5, )),
+        (stats.binom, np.arange(15), (10, 1.5)),
+        (stats.betabinom, np.arange(15), (10, -0.4, -0.5)),
+        (stats.boltzmann, np.arange(5), (-1, 4)),
+        (stats.dlaplace, np.arange(5), (-0.5, )),
+        (stats.geom, np.arange(5), (1.5, )),
+        (stats.logser, np.arange(5), (1.5, )),
+        (stats.nbinom, np.arange(15), (10, 1.5)),
+        (stats.planck, np.arange(5), (-0.5, )),
+        (stats.poisson, np.arange(5), (-0.5, )),
+        (stats.randint, np.arange(5), (5, 2)),
+        (stats.skellam, np.arange(5), (-5, -2)),
+        (stats.zipf, np.arange(5), (-2, )),
+        (stats.yulesimon, np.arange(5), (-2, ))
+    ]
+)
+def test_cdf_gh13280_regression(dist, x, args):
+    # Test for nan output when shape parameters are invalid
+    vals = dist.cdf(x, *args)
+    expected = np.nan
+    npt.assert_equal(vals, expected)

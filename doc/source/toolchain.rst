@@ -71,9 +71,10 @@ The table shows the NumPy versions suitable for each major Python version
 =================  ========================    ===========================
 2.7 (SciPy 1.2)      1.8.2                      1.16.x
 3.5 (SciPy 1.4)      1.13.3                     1.18.x
-3.6                  1.14.5                     >= 1.18.x
-3.7                  1.14.5                     >= 1.18.x
-3.8                  1.17.3                     >= 1.18.x
+3.6 (SciPy 1.5)      1.14.5                     1.19.x
+3.7                  1.16.5                     >= 1.20.x
+3.8                  1.17.3                     >= 1.20.x
+3.9                  1.19.3                     >= 1.20.x
 =================  ========================    ===========================
 
 
@@ -81,10 +82,12 @@ C Compilers
 ^^^^^^^^^^^
 
 SciPy is compatible with most modern C compilers (in particular ``clang``).
-However, CPython on Windows is
-built with specific versions of the Microsoft Visual C++ compiler [7]_, [8]_, [9]_,
-as is the corresponding build of SciPy. This has implications for the
-C language standards that can be supported [6]_.
+However, CPython on Windows is built with specific versions of the Microsoft
+Visual C++ compiler [7]_, [8]_, [9]_, as is the corresponding build of SciPy.
+This has implications for the C language standards that can be supported [6]_.
+Starting from MS Visual Studio 16.8, C11/C17 is supported [11]_ (without the
+C11 optional features [12]_ like atomics, threading, VLAs & complex types),
+though Windows builds of CPython have not yet upgraded this far.
 
 ===================   ==============   ===================
 CPython               MS Visual C++    C Standard
@@ -92,7 +95,7 @@ CPython               MS Visual C++    C Standard
 2.7, 3.0, 3.1, 3.2       9.0           C90
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
-3.7                     15.7           C90 & most of C99
+3.7, 3.8, 3.9           15.7           C90 & most of C99
 ===================   ==============   ===================
 
 
@@ -104,32 +107,40 @@ C and C++ language standards for SciPy are generally guidelines
 rather than official decisions. This is particularly true of
 attempting to predict adoption timelines for newer standards.
 
-================  ===========================================
+================  =======================================================================
  Date              C Standard
-================  ===========================================
+================  =======================================================================
  <= 2018           C90
  2019              C90 for old code, may consider C99 for new
  2020              C99
- ?                 C11
- ?                 C17, C18
-================  ===========================================
+ 2020              C++11
+ 2021              C++14, C++17
+ ?                 C11, C17
+ ?                 C++20
+================  =======================================================================
 
-The use of MSVisual Studio 9.0 (which doesn't have support C99)
+The use of MS Visual Studio 9.0 (which doesn't have support C99)
 to build Python2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
-With the dropping of Python2.7 for SciPy 1.3.x, the C90 restriction is no
-longer imposed by compilers.
-Even though C99 has been a standard for 20 years, experience has shown that
-not all features are supported equally well across all platforms.
-The expectation is that C99 code will become acceptable in 2020.
+With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
+longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
+may have to be added by the user if C99 features are used in SciPy code.
+*Note: even though C99 has been a standard for 20 years, experience has shown
+that not all features are supported equally well across all platforms.*
 
-C18 is a bug fix for C11, so C11 may be skipped entirely.
+C17 (occasionally called C18) is a bug fix for C11, so C11 may be skipped entirely.
+Microsoft has taken very long to achieve conformance to C99/C11/C17, but as soon as CPython
+is built with Visual Studio 16.8 or newer (see above), it will be possible to use C17
+(though optional C11 features like atomics & threading are so far not supported in MSVC).
 
 
 In practice, the C++ feature set that can be used is limited by the
 availability in the MS VisualStudio versions that SciPy needs to support.
-C++11 can be used, C++14/17 is going to be impossible
-for a very long time because of ecosystem support restrictions. See [4]_.
+Since dropping support for Python 2.7, C++11 can be used universally, and
+since dropping support for Python 3.6, the same is true also for C++14 & C++17.
+This is because the oldest still required version of MS Visual Studio
+(Visual Studio 15.7 <-> MSVC 19.14, see [8]_) has effectively full support, see [4]_.
+Compiler support for C++20 is still under heavy development.
 
 .. note::
 
@@ -173,6 +184,7 @@ SciPy always requires a recent Cython compiler.
  Tool    Tool Version  SciPy version
 ======== ============ ===============
 Cython     >= 0.29.13  1.4.1
+Cython     >= 0.29.18  1.5.0
 ======== ============ ===============
 
 
@@ -259,7 +271,7 @@ A Recent version of:
 =============  ========  =============================================
  Tool          Version    URL
 =============  ========  =============================================
-setuptools     Recent     https://https://pypi.org/project/setuptools/
+setuptools     Recent     https://pypi.org/project/setuptools/
 wheel          Recent     https://pythonwheels.com
 multibuild     Recent     https://github.com/matthew-brett/multibuild
 =============  ========  =============================================
@@ -280,3 +292,5 @@ References
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://wiki.python.org/moin/WindowsCompilers
 .. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
+.. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
+.. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features

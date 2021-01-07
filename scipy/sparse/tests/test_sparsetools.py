@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import os
 import gc
@@ -63,6 +61,7 @@ def test_regression_std_vector_dtypes():
 
 
 @pytest.mark.slow
+@pytest.mark.xfail_on_32bit("Can't create large array for test")
 def test_nnz_overflow():
     # Regression test for gh-7230 / gh-7871, checking that coo_todense
     # with nnz > int32max doesn't overflow.

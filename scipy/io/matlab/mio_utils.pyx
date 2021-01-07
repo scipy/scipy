@@ -2,8 +2,6 @@
 ''' Utilities for generic processing of return arrays from read
 '''
 
-from __future__ import absolute_import
-
 import numpy as np
 cimport numpy as cnp
 
@@ -14,7 +12,7 @@ cpdef object squeeze_element(cnp.ndarray arr):
     The returned object may not be an ndarray - for example if we do
     ``arr.item`` to return a ``mat_struct`` object from a struct array '''
     if not arr.size:
-        return np.array([])
+        return np.array([], dtype=arr.dtype)
     cdef cnp.ndarray arr2 = np.squeeze(arr)
     # We want to squeeze 0d arrays, unless they are record arrays
     if arr2.ndim == 0 and arr2.dtype.kind != 'V':

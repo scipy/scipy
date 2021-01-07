@@ -43,15 +43,32 @@ convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 }
 
 
-static char doc_cspline2d[] = "cspline2d(input {, lambda, precision}) -> ck\n"
+static char doc_cspline2d[] = "out = cspline2d(input, lambda=0.0, precision=-1.0)\n"
 "\n"
-"  Description:\n"
+"    Coefficients for 2-D cubic (3rd order) B-spline.\n"
 "\n"
-"    Return the third-order B-spline coefficients over a regularly spacedi\n" 
-"    input grid for the two-dimensional input image.  The lambda argument\n" 
-"    specifies the amount of smoothing.  The precision argument allows specifying\n"
-"    the precision used when computing the infinite sum needed to apply mirror-\n"
-"    symmetric boundary conditions.\n";
+"    Return the third-order B-spline coefficients over a regularly spaced\n"
+"    input grid for the two-dimensional input image.\n"
+"\n"
+"    Parameters\n"
+"    ----------\n"
+"    input : ndarray\n"
+"        The input signal.\n"
+"    lambda : float\n"
+"        Specifies the amount of smoothing in the transfer function.\n"
+"    precision : float\n"
+"        Specifies the precision for computing the infinite sum needed to apply mirror-\n"
+"        symmetric boundary conditions.\n"
+"\n"
+"    Returns\n"
+"    -------\n"
+"    output : ndarray\n"
+"        The filtered signal.\n"
+"\n"
+"    Examples\n"
+"    --------\n"
+"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
+"\n";
 
  
 static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
@@ -105,15 +122,32 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_qspline2d[] = "qspline2d(input {, lambda, precision}) -> qk\n"
+static char doc_qspline2d[] = "out = qspline2d(input, lambda=0.0, precision=-1.0)\n"
 "\n"
-"  Description:\n"
+"    Coefficients for 2-D quadratic (2nd order) B-spline:\n"
 "\n"
 "    Return the second-order B-spline coefficients over a regularly spaced\n"
-"    input grid for the two-dimensional input image.  The lambda argument\n" 
-"    specifies the amount of smoothing.  The precision argument allows specifying\n"
-"    the precision used when computing the infinite sum needed to apply mirror-\n"
-"    symmetric boundary conditions.\n";
+"    input grid for the two-dimensional input image.\n"
+"\n"
+"    Parameters\n"
+"    ----------\n"
+"    input : ndarray\n"
+"        The input signal.\n"
+"    lambda : float\n"
+"        Specifies the amount of smoothing in the transfer function.\n"
+"    precision : float\n"
+"        Specifies the precision for computing the infinite sum needed to apply mirror-\n"
+"        symmetric boundary conditions.\n"
+"\n"
+"    Returns\n"
+"    -------\n"
+"    output : ndarray\n"
+"        The filtered signal.\n"
+"\n"
+"    Examples\n"
+"    --------\n"
+"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
+"\n";
  
 static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
@@ -168,14 +202,35 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_FIRsepsym2d[] = " sepfir2d(input, hrow, hcol) -> output\n"
+static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "\n"
-"  Description:\n"
+"    Convolve with a 2-D separable FIR filter.\n"
 "\n"
 "    Convolve the rank-2 input array with the separable filter defined by the\n"
 "    rank-1 arrays hrow, and hcol. Mirror symmetric boundary conditions are\n"
-"    assumed.  This function can be used to find an image given its B-spline\n"
-"    representation.";
+"    assumed. This function can be used to find an image given its B-spline\n"
+"    representation.\n"
+"\n"
+"    Parameters\n"
+"    ----------\n"
+"    input : ndarray\n"
+"        The input signal. Must be a rank-2 array.\n"
+"    hrow : ndarray\n"
+"        A rank-1 array defining the row direction of the filter.\n"
+"        Must be odd-length\n"
+"    hcol : ndarray\n"
+"        A rank-1 array defining the column direction of the filter.\n"
+"        Must be odd-length\n"
+"\n"
+"    Returns\n"
+"    -------\n"
+"    output : ndarray\n"
+"        The filtered signal.\n"
+"\n"
+"    Examples\n"
+"    --------\n"
+"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
+"\n";
  
 static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
@@ -189,19 +244,28 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
+  if (a_image == NULL) goto fail;
+
   a_hrow = (PyArrayObject *)PyArray_ContiguousFromObject(hrow, thetype, 1, 1);
+  if (a_hrow == NULL) goto fail;
+
   a_hcol = (PyArrayObject *)PyArray_ContiguousFromObject(hcol, thetype, 1, 1);
-  
-  if ((a_image == NULL) || (a_hrow == NULL) || (a_hcol==NULL)) goto fail;
+  if (a_hcol == NULL) goto fail;
   
   out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
   if (out == NULL) goto fail;
+
   M = PyArray_DIMS(a_image)[0];
   N = PyArray_DIMS(a_image)[1];
 
   convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
   outstrides[0] = N;
   outstrides[1] = 1;
+
+  if (PyArray_DIMS(a_hrow)[0] % 2 != 1 ||
+      PyArray_DIMS(a_hcol)[0] % 2 != 1) {
+    PYERR("hrow and hcol must be odd length");
+  }
 
   switch (thetype) {
   case NPY_FLOAT:
@@ -258,7 +322,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_IIRsymorder1[] = " symiirorder1(input, c0, z1 {, precision}) -> output\n"
+static char doc_IIRsymorder1[] = "out = symiirorder1(input, c0, z1, precision=-1.0)\n"
 "\n"
 "    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
 "    using a cascade of first-order sections.  The second section uses a\n"
@@ -379,7 +443,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -> output\n"
+static char doc_IIRsymorder2[] = "out = symiirorder2(input, r, omega, precision=-1.0)\n"
 "\n"
 "    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
 "    using a cascade of second-order sections.  The second section uses a\n"
@@ -399,9 +463,9 @@ static char doc_IIRsymorder2[] = " symiirorder2(input, r, omega {, precision}) -
 "    ----------\n"
 "    input : ndarray\n"
 "        The input signal.\n"
-"    r, omega : scalar\n"
+"    r, omega : float\n"
 "        Parameters in the transfer function.\n"
-"    precision :\n"
+"    precision : float\n"
 "        Specifies the precision for calculating initial conditions\n"
 "        of the recursive filter based on mirror-symmetric input.\n"
 "\n"
@@ -474,8 +538,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {NULL, NULL, 0, NULL}		/* sentinel */
 };
 
-/* Initialization function for the module (*must* be called initXXXXX) */
-#if PY_VERSION_HEX >= 0x03000000
+/* Initialization function for the module */
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "spline",
@@ -508,25 +571,3 @@ PyObject *PyInit_spline(void)
     }
     return m;
 }
-#else
-PyMODINIT_FUNC initspline(void) {
-    PyObject *m, *d, *s;
-	
-    /* Create the module and add the functions */
-    m = Py_InitModule("spline", toolbox_module_methods);
-    
-    /* Import the C API function pointers for the Array Object*/
-    import_array();
-    
-    /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-
-    s = PyString_FromString("0.2");
-    PyDict_SetItemString(d, "__version__", s);
-    Py_DECREF(s);
-    
-    /* Check for errors */
-    if (PyErr_Occurred())
-	Py_FatalError("can't initialize module array");
-}
-#endif

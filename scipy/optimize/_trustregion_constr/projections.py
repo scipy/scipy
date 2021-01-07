@@ -1,6 +1,5 @@
 """Basic linear factorizations needed by the solver."""
 
-from __future__ import division, print_function, absolute_import
 from scipy.sparse import (bmat, csc_matrix, eye, issparse)
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg

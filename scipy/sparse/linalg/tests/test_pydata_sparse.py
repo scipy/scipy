@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 
 try:
     import sparse
-except ImportError:
+except Exception:
     sparse = None
 
 pytestmark = pytest.mark.skipif(sparse is None,
@@ -21,10 +21,31 @@ msg = "pydata/sparse (0.8) does not implement necessary operations"
 sparse_params = [pytest.param("COO"),
                  pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)])]
 
+scipy_sparse_classes = [
+    sp.bsr_matrix,
+    sp.csr_matrix,
+    sp.coo_matrix,
+    sp.csc_matrix,
+    sp.dia_matrix,
+    sp.dok_matrix
+]
+
 
 @pytest.fixture(params=sparse_params)
 def sparse_cls(request):
     return getattr(sparse, request.param)
+
+
+@pytest.fixture(params=scipy_sparse_classes)
+def sp_sparse_cls(request):
+    return request.param
+
+
+@pytest.fixture
+def same_matrix(sparse_cls, sp_sparse_cls):
+    np.random.seed(1234)
+    A_dense = np.random.rand(9, 9)
+    return sp_sparse_cls(A_dense), sparse_cls(A_dense)
 
 
 @pytest.fixture
@@ -51,7 +72,7 @@ def test_lsmr(matrices):
     A_dense, A_sparse, b = matrices
     res0 = splin.lsmr(A_dense, b)
     res = splin.lsmr(A_sparse, b)
-    assert_allclose(res[0], res0[0], atol=1e-5)
+    assert_allclose(res[0], res0[0], atol=1.8e-5)
 
 
 def test_lsqr(matrices):
@@ -202,3 +223,13 @@ def test_expm_multiply(matrices):
     x0 = splin.expm_multiply(A_dense, b)
     x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
+
+
+def test_eq(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    assert (sp_sparse == pd_sparse).all()
+
+
+def test_ne(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    assert not (sp_sparse != pd_sparse).any()

@@ -1,15 +1,10 @@
-from __future__ import division, absolute_import, print_function
-
 from itertools import product
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.signal as signal
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class Resample(Benchmark):

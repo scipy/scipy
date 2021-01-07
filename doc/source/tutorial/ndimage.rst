@@ -134,14 +134,39 @@ boundary condition. The following boundary conditions are currently
 supported:
 
  ==========   ====================================   ====================
+  **mode**              **description**                  **example**
+ ==========   ====================================   ====================
  "nearest"    use the value at the boundary          [1 2 3]->[1 1 2 3 3]
  "wrap"       periodically replicate the array       [1 2 3]->[3 1 2 3 1]
  "reflect"    reflect the array at the boundary      [1 2 3]->[1 1 2 3 3]
+ "mirror"     mirror the array at the boundary       [1 2 3]->[2 1 2 3 2]
  "constant"   use a constant value, default is 0.0   [1 2 3]->[0 1 2 3 0]
  ==========   ====================================   ====================
 
-The "constant" mode is special since it needs an additional
-parameter to specify the constant value that should be used.
+The following synonyms are also supported for consistency with the
+interpolation routines:
+
+ ===============   =========================
+     **mode**           **description**
+ ===============   =========================
+ "grid-constant"   equivalent to "constant"*
+ "grid-mirror"     equivalent to "reflect"
+ "grid-wrap"       equivalent to "wrap"
+ ===============   =========================
+
+\* "grid-constant" and "constant" are equivalent for filtering operations, but
+have different behavior in interpolation functions. For API consistency, the
+filtering functions accept either name.
+
+The "constant" mode is special since it needs an additional parameter to
+specify the constant value that should be used.
+
+Note that modes mirror and reflect differ only in whether the sample at the
+boundary is repeated upon reflection. For mode mirror, the point of symmetry is
+exactly at the final sample, so that value is not repeated. This mode is also
+known as whole-sample symmetric since the point of symmetry falls on the final
+sample. Similarly, reflect is often refered to as half-sample symmetric as the
+point of symmetry is half a sample beyond the array boundary.
 
 .. note::
 
@@ -725,7 +750,7 @@ Interpolation functions
 
 This section describes various interpolation functions that are based
 on B-spline theory. A good introduction to B-splines can be found
-in [1]_.
+in [1]_ with detailed algorithms for image interpolation given in [5]_.
 
 Spline pre-filters
 ^^^^^^^^^^^^^^^^^^
@@ -758,10 +783,12 @@ following two functions implement the pre-filtering:
      insufficient precision. This can be prevented by specifying a
      output type of high precision.
 
-Interpolation functions
-^^^^^^^^^^^^^^^^^^^^^^^
+.. _ndimage-interpolation-modes:
 
-The following functions all employ spline interpolation to effect some
+Interpolation boundary handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The interpolation functions all employ spline interpolation to effect some
 type of geometric transformation of the input array. This requires a
 mapping of the output coordinates to the input coordinates, and
 therefore, the possibility arises that input values outside the
@@ -770,7 +797,30 @@ described in :ref:`ndimage-filter-functions` for the multidimensional
 filter functions. Therefore, these functions all support a *mode*
 parameter that determines how the boundaries are handled, and a *cval*
 parameter that gives a constant value in case that the 'constant' mode
-is used.
+is used. The behavior of all modes, including at non-integer locations is
+illustrated below. Note the boundaries are not handled the same for all modes;
+`reflect` (aka `grid-mirror`) and `grid-wrap` involve symmetry or repetition
+about a point that is half way between image samples (dashed vertical lines)
+while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
+at the first and last sample point rather than 0.5 samples past it.
+
+.. plot:: tutorial/examples/plot_boundary_modes.py
+   :include-source: False
+
+The coordinates of image samples fall on integer sampling locations
+in the range from 0 to ``shape[i] - 1`` along each axis, ``i``. The figure
+below illustrates the interpolation of a point at location ``(3.7, 3.3)``
+within an image of shape ``(7, 7)``. For an interpolation of order ``n``,
+``n + 1`` samples are involved along each axis. The filled circles
+illustrate the sampling locations involved in the interpolation of the value at
+the location of the red x.
+
+.. plot:: tutorial/examples/plot_interp_grid.py
+   :include-source: False
+
+
+Interpolation functions
+^^^^^^^^^^^^^^^^^^^^^^^
 
 - The :func:`geometric_transform` function applies an arbitrary
   geometric transform to the input. The given *mapping* function is
@@ -1661,7 +1711,6 @@ We can also implement the callback function with the following C code:
    };
 
    /* Initialize the module */
-   #if PY_VERSION_HEX >= 0x03000000
    static struct PyModuleDef example = {
        PyModuleDef_HEAD_INIT,
        "example",
@@ -1679,13 +1728,6 @@ We can also implement the callback function with the following C code:
    {
        return PyModule_Create(&example);
    }
-   #else
-   PyMODINIT_FUNC
-   initexample(void)
-   {
-       Py_InitModule("example", ExampleMethods);
-   }
-   #endif
 
 More information on writing Python extension modules can be found
 `here`__. If the C code is in the file ``example.c``, then it can be
@@ -1960,3 +2002,7 @@ References
 .. [4] P. Felkel, R. Wegenkittl, and M. Bruckschwaiger,
        "Implementation and Complexity of the Watershed-from-Markers Algorithm
        Computed as a Minimal Cost Forest.", Eurographics 2001, pp. C:26-35.
+
+.. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
+       Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
+       https://doi.org/10.5201/ipol.2018.221

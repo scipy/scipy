@@ -2,8 +2,6 @@
 
 '''
 
-from __future__ import absolute_import
-
 '''
 Programmer's notes
 ------------------
@@ -109,7 +107,7 @@ cdef bint sys_is_le = sys.byteorder == 'little'
 swapped_code = '>' if sys_is_le else '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
-cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
+cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
@@ -417,7 +415,7 @@ cdef class VarReader5:
 
         The type of the array is usually given by the ``mdtype`` returned via
         ``read_element``.  Sparse logical arrays are an exception, where the
-        type of the array may be ``np.bool`` even if the ``mdtype`` claims the
+        type of the array may be ``np.bool_`` even if the ``mdtype`` claims the
         data is of float64 type.
 
         Parameters
@@ -860,7 +858,7 @@ cdef class VarReader5:
                 arr = np.ndarray(shape=(length,),
                                   dtype=dt,
                                   buffer=data)
-                data = arr.astype(np.uint8).tostring()
+                data = arr.astype(np.uint8).tobytes()
         elif mdtype == miINT8 or mdtype == miUINT8:
             codec = 'ascii'
         elif mdtype in self.codecs: # encoded char data
@@ -914,19 +912,17 @@ cdef class VarReader5:
         # Make n_duplicates and pointer arrays
         cdef:
             int *n_duplicates
-            char **name_ptrs
         n_duplicates = <int *>calloc(n_names, sizeof(int))
-        name_ptrs = <char **>calloc(n_names, sizeof(char *))
         cdef:
+            char *names_ptr = names
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
             name = asstr(PyBytes_FromString(n_ptr))
             # Check if this is a duplicate field, rename if so
-            name_ptrs[i] = n_ptr
             dup_no = 0
             for j in range(i):
-                if strcmp(n_ptr, name_ptrs[j]) == 0: # the same
+                if strcmp(n_ptr, names_ptr + j * namelength) == 0: # the same
                     n_duplicates[j] += 1
                     dup_no = n_duplicates[j]
                     break
@@ -935,7 +931,6 @@ cdef class VarReader5:
             field_names.append(name)
             n_ptr += namelength
         free(n_duplicates)
-        free(name_ptrs)
         n_names_ptr[0] = n_names
         return field_names
 

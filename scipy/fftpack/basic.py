@@ -2,8 +2,6 @@
 Discrete Fourier Transforms - basic.py
 """
 # Created by Pearu Peterson, August,September 2002
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
@@ -293,7 +291,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.
@@ -380,6 +378,18 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     --------
     fftn : for detailed information.
 
+    Examples
+    --------
+    >>> from scipy.fftpack import fft2, ifft2
+    >>> y = np.mgrid[:5, :5][0]
+    >>> y
+    array([[0, 0, 0, 0, 0],
+           [1, 1, 1, 1, 1],
+           [2, 2, 2, 2, 2],
+           [3, 3, 3, 3, 3],
+           [4, 4, 4, 4, 4]])
+    >>> np.allclose(y, ifft2(fft2(y)))
+    True
     """
     return fftn(x,shape,axes,overwrite_x)
 
@@ -396,6 +406,19 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     See also
     --------
     fft2, ifft
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fft2, ifft2
+    >>> y = np.mgrid[:5, :5][0]
+    >>> y
+    array([[0, 0, 0, 0, 0],
+           [1, 1, 1, 1, 1],
+           [2, 2, 2, 2, 2],
+           [3, 3, 3, 3, 3],
+           [4, 4, 4, 4, 4]])
+    >>> np.allclose(y, fft2(ifft2(y)))
+    True
 
     """
     return ifftn(x,shape,axes,overwrite_x)

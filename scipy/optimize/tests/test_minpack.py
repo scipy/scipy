@@ -1,8 +1,6 @@
 """
 Unit tests for optimization routines from minpack.py.
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
@@ -41,11 +39,8 @@ def dummy_func(x, shape):
 
 
 def sequence_parallel(fs):
-    pool = ThreadPool(len(fs))
-    try:
+    with ThreadPool(len(fs)) as pool:
         return pool.map(lambda f: f(), fs)
-    finally:
-        pool.terminate()
 
 
 # Function and Jacobian for tests of solvers for systems of nonlinear
@@ -728,8 +723,8 @@ class TestCurveFit(object):
                 popt2, pcov2 = curve_fit(funcp, xdata, ydatap, sigma=covarp,
                         jac=jac2, absolute_sigma=absolute_sigma)
 
-                assert_allclose(popt1, popt2, atol=1e-14)
-                assert_allclose(pcov1, pcov2, atol=1e-14)
+                assert_allclose(popt1, popt2, rtol=1.2e-7, atol=1e-14)
+                assert_allclose(pcov1, pcov2, rtol=1.2e-7, atol=1e-14)
 
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
@@ -839,11 +834,8 @@ class TestFixedPoint(object):
         def func(x):
             return 2.0*x
         x0 = [0.3, 0.15]
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             x = fixed_point(func, x0)
-        finally:
-            np.seterr(**olderr)
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
@@ -852,11 +844,8 @@ class TestFixedPoint(object):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
         x0 = [1.1, 1.15, 0.9]
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             x = fixed_point(func, x0, args=(c,))
-        finally:
-            np.seterr(**olderr)
         assert_almost_equal(x, 1.0/c)
 
     def test_array_basic2(self):

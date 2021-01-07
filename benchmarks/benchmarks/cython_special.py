@@ -1,16 +1,11 @@
-from __future__ import division, absolute_import, print_function
-
 import re
-import six
 import numpy as np
 from scipy import special
 
-try:
-    from scipy.special import cython_special
-except ImportError:
-    pass
+from .common import with_attributes, safe_import
 
-from .common import with_attributes
+with safe_import():
+    from scipy.special import cython_special
 
 
 FUNC_ARGS = {
@@ -62,7 +57,7 @@ class _CythonSpecialMeta(type):
         return type.__new__(cls, cls_name, bases, dct)
 
 
-class CythonSpecial(six.with_metaclass(_CythonSpecialMeta)):
+class CythonSpecial(metaclass=_CythonSpecialMeta):
     def setup(self, name, args, N, api):
         self.py_func = getattr(cython_special, '_bench_{}_py'.format(name))
         self.cy_func = getattr(cython_special, '_bench_{}_cy'.format(name))

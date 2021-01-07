@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
@@ -74,14 +73,14 @@ def rk_step(fun, t, y, f, h, A, B, C, K):
 
 class RungeKutta(OdeSolver):
     """Base class for explicit Runge-Kutta methods."""
-    C = NotImplemented
-    A = NotImplemented
-    B = NotImplemented
-    E = NotImplemented
-    P = NotImplemented
-    order = NotImplemented
-    error_estimator_order = NotImplemented
-    n_stages = NotImplemented
+    C: np.ndarray = NotImplemented
+    A: np.ndarray = NotImplemented
+    B: np.ndarray = NotImplemented
+    E: np.ndarray = NotImplemented
+    P: np.ndarray = NotImplemented
+    order: int = NotImplemented
+    error_estimator_order: int = NotImplemented
+    n_stages: int = NotImplemented
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,
@@ -496,9 +495,10 @@ class DOP853(RungeKutta):
     def _estimate_error_norm(self, K, h, scale):
         err5 = np.dot(K.T, self.E5) / scale
         err3 = np.dot(K.T, self.E3) / scale
-
-        err5_norm_2 = np.sum(err5**2)
-        err3_norm_2 = np.sum(err3**2)
+        err5_norm_2 = np.linalg.norm(err5)**2
+        err3_norm_2 = np.linalg.norm(err3)**2
+        if err5_norm_2 == 0 and err3_norm_2 == 0:
+            return 0.0
         denom = err5_norm_2 + 0.01 * err3_norm_2
         return np.abs(h) * err5_norm_2 / np.sqrt(denom * len(scale))
 

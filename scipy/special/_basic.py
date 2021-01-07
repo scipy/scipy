@@ -2,8 +2,6 @@
 # Author:  Travis Oliphant, 2002
 #
 
-from __future__ import division, print_function, absolute_import
-
 import operator
 import numpy as np
 import math
@@ -105,7 +103,7 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name))
+        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
     return n
 
 
@@ -2180,9 +2178,9 @@ def comb(N, k, exact=False, repetition=False):
     >>> comb(n, k, exact=False)
     array([ 120.,  210.])
     >>> comb(10, 3, exact=True)
-    120L
+    120
     >>> comb(10, 3, exact=True, repetition=True)
-    220L
+    220
 
     """
     if repetition:
@@ -2318,30 +2316,36 @@ def factorial(n, exact=False):
     >>> factorial(arr, exact=True)
     array([  6,  24, 120])
     >>> factorial(5, exact=True)
-    120L
+    120
 
     """
     if exact:
         if np.ndim(n) == 0:
+            if np.isnan(n):
+                return n
             return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n).astype(object)
 
-            # Convert to object array of long ints if np.int can't handle size
-            if un[-1] > 20:
+            # Convert to object array of long ints if np.int_ can't handle size
+            if np.isnan(n).any():
+                dt = float
+            elif un[-1] > 20:
                 dt = object
             elif un[-1] > 12:
                 dt = np.int64
             else:
-                dt = np.int
+                dt = np.int_
 
             out = np.empty_like(n, dtype=dt)
 
             # Handle invalid/trivial values
-            un = un[un > 1]
-            out[n < 2] = 1
-            out[n < 0] = 0
+            # Ignore runtime warning when less operator used w/np.nan
+            with np.errstate(all='ignore'):
+                un = un[un > 1]
+                out[n < 2] = 1
+                out[n < 0] = 0
 
             # Calculate products of each range of numbers
             if un.size:
@@ -2352,14 +2356,14 @@ def factorial(n, exact=False):
                     current = un[i + 1]
                     val *= _range_prod(prev, current)
                     out[n == current] = val
+
+            if np.isnan(n).any():
+                out = out.astype(np.float64)
+                out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        if np.ndim(n) == 0:
-            return 0 if n < 0 else gamma(n + 1)
-
-        n = asarray(n)
-        vals = gamma(n + 1)
-        return where(n >= 0, vals, 0)
+        out = ufuncs._factorial(n)
+        return out
 
 
 def factorial2(n, exact=False):
@@ -2393,7 +2397,7 @@ def factorial2(n, exact=False):
     >>> factorial2(7, exact=False)
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
-    105L
+    105
 
     """
     if exact:
@@ -2456,9 +2460,9 @@ def factorialk(n, k, exact=True):
     --------
     >>> from scipy.special import factorialk
     >>> factorialk(5, 1, exact=True)
-    120L
+    120
     >>> factorialk(5, 3, exact=True)
-    10L
+    10
 
     """
     if exact:

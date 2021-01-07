@@ -1,5 +1,5 @@
-from __future__ import division, print_function, absolute_import
 
+import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -11,7 +11,8 @@ from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals)
+                          fiedler, fiedler_companion, eigvals,
+                          convolution_matrix)
 from numpy.linalg import cond
 
 
@@ -38,9 +39,9 @@ class TestTri(object):
                                          [1, 1, 1, 1],
                                          [1, 1, 1, 1]]))
         assert_equal(tri(4, k=-1), array([[0, 0, 0, 0],
-                                         [1, 0, 0, 0],
-                                         [1, 1, 0, 0],
-                                         [1, 1, 1, 0]]))
+                                          [1, 0, 0, 0],
+                                          [1, 1, 0, 0],
+                                          [1, 1, 1, 0]]))
 
     def test_2d(self):
         assert_equal(tri(4, 3), array([[1, 0, 0],
@@ -499,7 +500,7 @@ class TestInvHilbert(object):
              -1129631016152221783200, 1098252376814660067000,
              -753830033789944188000, 346146444087219270000,
              -95382575704033754400, 11922821963004219300]
-            ])
+        ])
         assert_array_equal(invhilbert(17, exact=True), invh17)
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
@@ -638,3 +639,52 @@ def test_fiedler_companion():
     fc = fiedler_companion([1., -16., 86., -176., 105.])
     assert_array_almost_equal(eigvals(fc),
                               np.array([7., 5., 3., 1.]))
+
+
+class TestConvolutionMatrix:
+    """
+    Test convolution_matrix vs. numpy.convolve for various parameters.
+    """
+
+    def create_vector(self, n, cpx):
+        """Make a complex or real test vector of length n."""
+        x = np.linspace(-2.5, 2.2, n)
+        if cpx:
+            x = x + 1j*np.linspace(-1.5, 3.1, n)
+        return x
+
+    def test_bad_n(self):
+        # n must be a positive integer
+        with pytest.raises(ValueError, match='n must be a positive integer'):
+            convolution_matrix([1, 2, 3], 0)
+
+    def test_bad_first_arg(self):
+        # first arg must be a 1d array, otherwise ValueError
+        with pytest.raises(ValueError, match='one-dimensional'):
+            convolution_matrix(1, 4)
+
+    def test_empty_first_arg(self):
+        # first arg must have at least one value
+        with pytest.raises(ValueError, match=r'len\(a\)'):
+            convolution_matrix([], 4)
+
+    def test_bad_mode(self):
+        # mode must be in ('full', 'valid', 'same')
+        with pytest.raises(ValueError, match='mode.*must be one of'):
+            convolution_matrix((1, 1), 4, mode='invalid argument')
+
+    @pytest.mark.parametrize('cpx', [False, True])
+    @pytest.mark.parametrize('na', [1, 2, 9])
+    @pytest.mark.parametrize('nv', [1, 2, 9])
+    @pytest.mark.parametrize('mode', [None, 'full', 'valid', 'same'])
+    def test_against_numpy_convolve(self, cpx, na, nv, mode):
+        a = self.create_vector(na, cpx)
+        v = self.create_vector(nv, cpx)
+        if mode is None:
+            y1 = np.convolve(v, a)
+            A = convolution_matrix(a, nv)
+        else:
+            y1 = np.convolve(v, a, mode)
+            A = convolution_matrix(a, nv, mode)
+        y2 = A @ v
+        assert_array_almost_equal(y1, y2)

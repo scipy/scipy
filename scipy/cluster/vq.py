@@ -64,8 +64,6 @@ human face, more flesh-tone colors would be represented in the
 code book.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from collections import deque
@@ -88,9 +86,10 @@ def whiten(obs, check_finite=True):
     Normalize a group of observations on a per feature basis.
 
     Before running k-means, it is beneficial to rescale each feature
-    dimension of the observation set with whitening. Each feature is
-    divided by its standard deviation across all observations to give
-    it unit variance.
+    dimension of the observation set by its standard deviation (i.e. "whiten"
+    it - as in "white noise" where each frequency has equal power).
+    Each feature is divided by its standard deviation across all observations
+    to give it unit variance.
 
     Parameters
     ----------
@@ -369,6 +368,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        codebook[i] is represented with the code i. The centroids
        and codes generated represent the lowest distortion seen,
        not necessarily the globally minimal distortion.
+       Note that the number of centroids is not necessarily the same as the
+       ``k_or_guess`` parameter, because centroids assigned to no observations
+       are removed during iterations.
 
     distortion : float
        The mean (non-squared) Euclidean distance between the observations
@@ -384,6 +386,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     whiten : must be called prior to passing an observation matrix
        to kmeans.
+
+    Notes
+    -----
+    For more functionalities or optimal performance, you can use
+    `sklearn.cluster.KMeans <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html>`_.
+    `This <https://hdbscan.readthedocs.io/en/latest/performance_and_scalability.html#comparison-of-high-performance-implementations>`_
+    is a benchmark result of several implementations.
 
     Examples
     --------
@@ -472,7 +481,7 @@ def _kpoints(data, k):
     k : int
         Number of samples to generate.
 
-   Returns
+    Returns
     -------
     x : ndarray
         A 'k' by 'N' containing the initial centroids
@@ -556,12 +565,10 @@ def _kpp(data, k):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[np.random.randint(dims)]
+            init[i, :] = data[np.random.randint(data.shape[0])]
 
         else:
-            D2 = np.array([min(
-                            [np.inner(init[j]-x, init[j]-x) for j in range(i)]
-                            ) for x in data])
+            D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
@@ -708,8 +715,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
                          "must be a positive integer." % iter)
     try:
         miss_meth = _valid_miss_meth[missing]
-    except KeyError:
-        raise ValueError("Unknown missing method %r" % (missing,))
+    except KeyError as e:
+        raise ValueError("Unknown missing method %r" % (missing,)) from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -741,8 +748,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         try:
             init_meth = _valid_init_meth[minit]
-        except KeyError:
-            raise ValueError("Unknown init method %r" % (minit,))
+        except KeyError as e:
+            raise ValueError("Unknown init method %r" % (minit,)) from e
         else:
             code_book = init_meth(data, k)
 

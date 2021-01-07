@@ -3,67 +3,17 @@
 
 from numpy.testing import assert_array_equal
 from pytest import raises as assert_raises
+import pytest
 
 import numpy as np
 
 from scipy.optimize import linear_sum_assignment
+from scipy.sparse import random
 from scipy.sparse.sputils import matrix
-
-
-def test_linear_sum_assignment():
-    for sign in [-1, 1]:
-        for cost_matrix, expected_cost in [
-            # Square
-            ([[400, 150, 400],
-              [400, 450, 600],
-              [300, 225, 300]],
-             [150, 400, 300]
-             ),
-
-            # Rectangular variant
-            ([[400, 150, 400, 1],
-              [400, 450, 600, 2],
-              [300, 225, 300, 3]],
-             [150, 2, 300]),
-
-            # Square
-            ([[10, 10, 8],
-              [9, 8, 1],
-              [9, 7, 4]],
-             [10, 1, 7]),
-
-            # Rectangular variant
-            ([[10, 10, 8, 11],
-              [9, 8, 1, 1],
-              [9, 7, 4, 10]],
-             [10, 1, 4]),
-
-            # n == 2, m == 0 matrix
-            ([[], []],
-             []),
-
-            # Square with positive infinities
-            ([[10, float("inf"), float("inf")],
-              [float("inf"), float("inf"), 1],
-              [float("inf"), 7, float("inf")]],
-             [10, 1, 7]),
-        ]:
-
-            maximize = sign == -1
-            cost_matrix = sign * np.array(cost_matrix)
-            expected_cost = sign * np.array(expected_cost)
-
-            row_ind, col_ind = linear_sum_assignment(cost_matrix,
-                                                     maximize=maximize)
-            assert_array_equal(row_ind, np.sort(row_ind))
-            assert_array_equal(expected_cost, cost_matrix[row_ind, col_ind])
-
-            cost_matrix = cost_matrix.T
-            row_ind, col_ind = linear_sum_assignment(cost_matrix,
-                                                     maximize=maximize)
-            assert_array_equal(row_ind, np.sort(row_ind))
-            assert_array_equal(np.sort(expected_cost),
-                               np.sort(cost_matrix[row_ind, col_ind]))
+from scipy.sparse.csgraph import min_weight_full_bipartite_matching
+from scipy.sparse.csgraph.tests.test_matching import (
+    linear_sum_assignment_assertions, linear_sum_assignment_test_cases
+)
 
 
 def test_linear_sum_assignment_input_validation():
@@ -77,7 +27,7 @@ def test_linear_sum_assignment_input_validation():
                        linear_sum_assignment(matrix(C)))
 
     I = np.identity(3)
-    assert_array_equal(linear_sum_assignment(I.astype(np.bool)),
+    assert_array_equal(linear_sum_assignment(I.astype(np.bool_)),
                        linear_sum_assignment(I))
     assert_raises(ValueError, linear_sum_assignment, I.astype(str))
 
@@ -91,3 +41,60 @@ def test_linear_sum_assignment_input_validation():
     I = np.identity(3)
     I[:, 0] = np.inf
     assert_raises(ValueError, linear_sum_assignment, I)
+
+
+def test_constant_cost_matrix():
+    # Fixes #11602
+    n = 8
+    C = np.ones((n, n))
+    row_ind, col_ind = linear_sum_assignment(C)
+    assert_array_equal(row_ind, np.arange(n))
+    assert_array_equal(col_ind, np.arange(n))
+
+
+@pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
+def test_linear_sum_assignment_trivial_cost(num_rows, num_cols):
+    C = np.empty(shape=(num_cols, num_rows))
+    row_ind, col_ind = linear_sum_assignment(C)
+    assert len(row_ind) == 0
+    assert len(col_ind) == 0
+
+
+@pytest.mark.parametrize('sign,test_case', linear_sum_assignment_test_cases)
+def test_linear_sum_assignment_small_inputs(sign, test_case):
+    linear_sum_assignment_assertions(
+        linear_sum_assignment, np.array, sign, test_case)
+
+
+# Tests that combine scipy.optimize.linear_sum_assignment and
+# scipy.sparse.csgraph.min_weight_full_bipartite_matching
+def test_two_methods_give_same_result_on_many_sparse_inputs():
+    # As opposed to the test above, here we do not spell out the expected
+    # output; only assert that the two methods give the same result.
+    # Concretely, the below tests 100 cases of size 100x100, out of which
+    # 36 are infeasible.
+    np.random.seed(1234)
+    for _ in range(100):
+        lsa_raises = False
+        mwfbm_raises = False
+        sparse = random(100, 100, density=0.06,
+                        data_rvs=lambda size: np.random.randint(1, 100, size))
+        # In csgraph, zeros correspond to missing edges, so we explicitly
+        # replace those with infinities
+        dense = np.full(sparse.shape, np.inf)
+        dense[sparse.row, sparse.col] = sparse.data
+        sparse = sparse.tocsr()
+        try:
+            row_ind, col_ind = linear_sum_assignment(dense)
+            lsa_cost = dense[row_ind, col_ind].sum()
+        except ValueError:
+            lsa_raises = True
+        try:
+            row_ind, col_ind = min_weight_full_bipartite_matching(sparse)
+            mwfbm_cost = sparse[row_ind, col_ind].sum()
+        except ValueError:
+            mwfbm_raises = True
+        # Ensure that if one method raises, so does the other one.
+        assert lsa_raises == mwfbm_raises
+        if not lsa_raises:
+            assert lsa_cost == mwfbm_cost

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 import numpy as np
@@ -117,7 +115,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ----------
     .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
        inertia and solving symmetric linear systems, Math. Comput. Vol.31,
-       1977. DOI: 10.2307/2005787
+       1977. :doi:`10.2307/2005787`
 
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))

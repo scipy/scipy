@@ -1,8 +1,10 @@
-from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 import numpy as np
 import warnings
+from . import distributions
 from ._continuous_distns import chi2
+from scipy.special import gamma, kv, gammaln
+from . import _wilcoxon_data
 
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -130,3 +132,260 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     p = chi2.sf(w, r)
 
     return Epps_Singleton_2sampResult(w, p)
+
+
+class CramerVonMisesResult:
+    def __init__(self, statistic, pvalue):
+        self.statistic = statistic
+        self.pvalue = pvalue
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(statistic={self.statistic}, "
+                f"pvalue={self.pvalue})")
+
+def _psi1_mod(x):
+    """
+    psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
+    This implements a modified version by excluding the term V(x) / 12
+    (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
+    twice in _cdf_cvm.
+
+    Implementation based on MAPLE code of Julian Faraway and R code of the
+    function pCvM in the package goftest (v1.1.1), permission granted
+    by Adrian Baddeley. Main difference in the implementation: the code
+    here keeps adding terms of the series until the terms are small enough.
+    """
+
+    def _ed2(y):
+        z = y**2 / 4
+        b = kv(1/4, z) + kv(3/4, z)
+        return np.exp(-z) * (y/2)**(3/2) * b / np.sqrt(np.pi)
+
+    def _ed3(y):
+        z = y**2 / 4
+        c = np.exp(-z) / np.sqrt(np.pi)
+        return c * (y/2)**(5/2) * (2*kv(1/4, z) + 3*kv(3/4, z) - kv(5/4, z))
+
+    def _Ak(k, x):
+        m = 2*k + 1
+        sx = 2 * np.sqrt(x)
+        y1 = x**(3/4)
+        y2 = x**(5/4)
+
+        e1 = m * gamma(k + 1/2) * _ed2((4 * k + 3)/sx) / (9 * y1)
+        e2 = gamma(k + 1/2) * _ed3((4 * k + 1) / sx) / (72 * y2)
+        e3 = 2 * (m + 2) * gamma(k + 3/2) * _ed3((4 * k + 5) / sx) / (12 * y2)
+        e4 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 1) / sx) / (144 * y1)
+        e5 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 5) / sx) / (144 * y1)
+
+        return e1 + e2 + e3 + e4 + e5
+
+    x = np.asarray(x)
+    tot = np.zeros_like(x, dtype='float')
+    cond = np.ones_like(x, dtype='bool')
+    k = 0
+    while np.any(cond):
+        z = -_Ak(k, x[cond]) / (np.pi * gamma(k + 1))
+        tot[cond] = tot[cond] + z
+        cond[cond] = np.abs(z) >= 1e-7
+        k += 1
+
+    return tot
+
+
+def _cdf_cvm_inf(x):
+    """
+    Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
+
+    See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
+
+    Implementation based on MAPLE code of Julian Faraway and R code of the
+    function pCvM in the package goftest (v1.1.1), permission granted
+    by Adrian Baddeley. Main difference in the implementation: the code
+    here keeps adding terms of the series until the terms are small enough.
+
+    The function is not expected to be accurate for large values of x, say
+    x > 4, when the cdf is very close to 1.
+    """
+    x = np.asarray(x)
+
+    def term(x, k):
+        # this expression can be found in [2], second line of (1.3)
+        u = np.exp(gammaln(k + 0.5) - gammaln(k+1)) / (np.pi**1.5 * np.sqrt(x))
+        y = 4*k + 1
+        q = y**2 / (16*x)
+        b = kv(0.25, q)
+        return u * np.sqrt(y) * np.exp(-q) * b
+
+    tot = np.zeros_like(x, dtype='float')
+    cond = np.ones_like(x, dtype='bool')
+    k = 0
+    while np.any(cond):
+        z = term(x[cond], k)
+        tot[cond] = tot[cond] + z
+        cond[cond] = np.abs(z) >= 1e-7
+        k += 1
+
+    return tot
+
+
+def _cdf_cvm(x, n=None):
+    """
+    Calculate the cdf of the Cramér-von Mises statistic for a finite sample
+    size n. If N is None, use the asymptotic cdf (n=inf)
+
+    See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
+    1.2 for the asymptotic cdf.
+
+    The function is not expected to be accurate for large values of x, say
+    x > 2, when the cdf is very close to 1 and it might return values > 1
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
+    """
+    x = np.asarray(x)
+    if n is None:
+        y = _cdf_cvm_inf(x)
+    else:
+        # support of the test statistic is [12/n, n/3], see 1.1 in [2]
+        y = np.zeros_like(x, dtype='float')
+        sup = (1./(12*n) < x) & (x < n/3.)
+        # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
+        # therefore, we need to add it here
+        y[sup] = _cdf_cvm_inf(x[sup]) * (1 + 1./(12*n)) + _psi1_mod(x[sup]) / n
+        y[x >= n/3] = 1
+
+    if y.ndim == 0:
+        return y[()]
+    return y
+
+
+def cramervonmises(rvs, cdf, args=()):
+    """
+    Perform the Cramér-von Mises test for goodness of fit.
+
+    This performs a test of the goodness of fit of a cumulative distribution
+    function (cdf) :math:`F` compared to the empirical distribution function
+    :math:`F_n` of observed random variates :math:`X_1, ..., X_n` that are
+    assumed to be independent and identically distributed ([1]_).
+    The null hypothesis is that the :math:`X_i` have cumulative distribution
+    :math:`F`.
+
+    Parameters
+    ----------
+    rvs : array_like
+        A 1-D array of observed values of the random variables :math:`X_i`.
+    cdf : str or callable
+        The cumulative distribution function :math:`F` to test the
+        observations against. If a string, it should be the name of a
+        distribution in `scipy.stats`. If a callable, that callable is used
+        to calculate the cdf: ``cdf(x, *args) -> float``.
+    args : tuple, optional
+        Distribution parameters. These are assumed to be known; see Notes.
+
+    Returns
+    -------
+    res : object with attributes
+        statistic : float
+            Cramér-von Mises statistic.
+        pvalue :  float
+            The p-value.
+
+    See Also
+    --------
+    kstest
+
+    Notes
+    -----
+    .. versionadded:: 1.6.0
+
+    The p-value relies on the approximation given by equation 1.8 in [2]_.
+    It is important to keep in mind that the p-value is only accurate if
+    one tests a simple hypothesis, i.e. the parameters of the reference
+    distribution are known. If the parameters are estimated from the data
+    (composite hypothesis), the computed p-value is not reliable.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Cramér-von_Mises_criterion
+    .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
+           Distribution of Cramér-von Mises Statistics. Journal of the
+           Royal Statistical Society, pp. 221-234.
+
+    Examples
+    --------
+
+    Suppose we wish to test whether data generated by ``scipy.stats.norm.rvs``
+    were, in fact, drawn from the standard normal distribution. We choose a
+    significance level of alpha=0.05.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> np.random.seed(626)
+    >>> x = stats.norm.rvs(size=500)
+    >>> res = stats.cramervonmises(x, 'norm')
+    >>> res.statistic, res.pvalue
+    (0.06342154705518796, 0.792680516270629)
+
+    The p-value 0.79 exceeds our chosen significance level, so we do not
+    reject the null hypothesis that the observed sample is drawn from the
+    standard normal distribution.
+
+    Now suppose we wish to check whether the same sampels shifted by 2.1 is
+    consistent with being drawn from a normal distribution with a mean of 2.
+
+    >>> y = x + 2.1
+    >>> res = stats.cramervonmises(y, 'norm', args=(2,))
+    >>> res.statistic, res.pvalue
+    (0.4798693195559657, 0.044782228803623814)
+
+    Here we have used the `args` keyword to specify the mean (``loc``)
+    of the normal distribution to test the data against. This is equivalent
+    to the following, in which we create a frozen normal distribution with
+    mean 2.1, then pass its ``cdf`` method as an argument.
+
+    >>> frozen_dist = stats.norm(loc=2)
+    >>> res = stats.cramervonmises(y, frozen_dist.cdf)
+    >>> res.statistic, res.pvalue
+    (0.4798693195559657, 0.044782228803623814)
+
+    In either case, we would reject the null hypothesis that the observed
+    sample is drawn from a normal distribution with a mean of 2 (and default
+    variance of 1) because the p-value 0.04 is less than our chosen
+    significance level.
+
+    """
+    if isinstance(cdf, str):
+        cdf = getattr(distributions, cdf).cdf
+
+    vals = np.sort(np.asarray(rvs))
+
+    if vals.size <= 1:
+        raise ValueError('The sample must contain at least two observations.')
+    if vals.ndim > 1:
+        raise ValueError('The sample must be one-dimensional.')
+
+    n = len(vals)
+    cdfvals = cdf(vals, *args)
+
+    u = (2*np.arange(1, n+1) - 1)/(2*n)
+    w = 1/(12*n) + np.sum((u - cdfvals)**2)
+
+    # avoid small negative values that can occur due to the approximation
+    p = max(0, 1. - _cdf_cvm(w, n))
+
+    return CramerVonMisesResult(statistic=w, pvalue=p)
+
+
+def _get_wilcoxon_distr(n):
+    """
+    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
+    ranks of positive differences).
+    Returns an array with the counts/frequencies of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    """
+    cnt = _wilcoxon_data.COUNTS.get(n)
+
+    if cnt is None:
+        raise ValueError("The exact distribution of the Wilcoxon test "
+                         "statistic is not implemented for n={}".format(n))
+
+    return np.array(cnt, dtype=int)

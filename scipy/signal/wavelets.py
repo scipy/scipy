@@ -1,7 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.dual import eig
+from scipy.linalg import eig
 from scipy.special import comb
 from scipy.signal import convolve
 
@@ -141,7 +139,7 @@ def cascade(hk, J=7):
 
     indx1 = np.clip(2 * nn - kk, -1, N + 1)
     indx2 = np.clip(2 * nn - kk + 1, -1, N + 1)
-    m = np.zeros((2, 2, N, N), 'd')
+    m = np.empty((2, 2, N, N), 'd')
     m[0, 0] = np.take(thk, indx1, 0)
     m[0, 1] = np.take(thk, indx2, 0)
     m[1, 0] = np.take(tgk, indx1, 0)
@@ -377,7 +375,7 @@ def morlet2(M, s, w=5):
     >>> freq = np.linspace(1, fs/2, 100)
     >>> widths = w*fs / (2*freq*np.pi)
     >>> cwtm = signal.cwt(sig, signal.morlet2, widths, w=w)
-    >>> plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis')
+    >>> plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis', shading='gouraud')
     >>> plt.show()
 
     """
@@ -414,12 +412,12 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     dtype : data-type, optional
         The desired data type of output. Defaults to ``float64`` if the
         output of `wavelet` is real and ``complex128`` if it is complex.
-        
+
         .. versionadded:: 1.4.0
-        
+
     kwargs
         Keyword arguments passed to wavelet function.
-        
+
         .. versionadded:: 1.4.0
 
     Returns
@@ -433,7 +431,7 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     .. versionadded:: 1.4.0
 
     For non-symmetric, complex-valued wavelets, the input signal is convolved
-    with the time-reversed complex-conjugate of the wavelet data [1].    
+    with the time-reversed complex-conjugate of the wavelet data [1].
 
     ::
 
@@ -458,6 +456,8 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
     """
+    if wavelet == ricker:
+        window_size = kwargs.pop('window_size', None)
     # Determine output type
     if dtype is None:
         if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in 'FDG':
@@ -465,9 +465,17 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
         else:
             dtype = np.float64
 
-    output = np.zeros((len(widths), len(data)), dtype=dtype)
+    output = np.empty((len(widths), len(data)), dtype=dtype)
     for ind, width in enumerate(widths):
         N = np.min([10 * width, len(data)])
+        # the conditional block below and the window_size
+        # kwarg pop above may be removed eventually; these
+        # are shims for 32-bit arch + NumPy <= 1.14.5 to
+        # address gh-11095
+        if wavelet == ricker and window_size is None:
+            ceil = np.ceil(N)
+            if ceil != N:
+                N = int(N)
         wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
         output[ind] = convolve(data, wavelet_data, mode='same')
     return output

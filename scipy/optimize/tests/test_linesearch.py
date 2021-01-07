@@ -1,8 +1,6 @@
 """
 Tests for line search routines
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_warns,
                            suppress_warnings)
@@ -50,7 +48,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
     try:
         assert_array_almost_equal_nulp(x, y, nulp)
     except AssertionError as e:
-        raise AssertionError("%s\n%s" % (e, err_msg))
+        raise AssertionError("%s\n%s" % (e, err_msg)) from e
 
 
 class TestLineSearch(object):
@@ -164,6 +162,26 @@ class TestLineSearch(object):
         s, _, _, _ = assert_warns(LineSearchWarning,
                                   ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
         assert_(s is None)
+
+    def test_scalar_search_wolfe2_regression(self):
+        # Regression test for gh-12157
+        # This phi has its minimum at alpha=4/3 ~ 1.333.
+        def phi(alpha):
+            if alpha < 1:
+                return - 3*np.pi/2 * (alpha - 1)
+            else:
+                return np.cos(3*np.pi/2 * alpha - np.pi)
+
+        def derphi(alpha):
+            if alpha < 1:
+                return - 3*np.pi/2
+            else:
+                return - 3*np.pi/2 * np.sin(3*np.pi/2 * alpha - np.pi)
+
+        s, _, _, _ = ls.scalar_search_wolfe2(phi, derphi)
+        # Without the fix in gh-13073, the scalar_search_wolfe2
+        # returned s=2.0 instead.
+        assert_(s < 1.5)
 
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():

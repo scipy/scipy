@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 try:
@@ -152,6 +150,76 @@ def big_sol(x, n):
     y = np.ones((2 * n, x.size))
     y[::2] = x
     return x
+
+
+def big_fun_with_parameters(x, y, p):
+    """ Big version of sl_fun, with two parameters.
+
+    The two differential equations represented by sl_fun are broadcast to the
+    number of rows of y, rotating between the parameters p[0] and p[1].
+    Here are the differential equations:
+
+        dy[0]/dt = y[1]
+        dy[1]/dt = -p[0]**2 * y[0]
+        dy[2]/dt = y[3]
+        dy[3]/dt = -p[1]**2 * y[2]
+        dy[4]/dt = y[5]
+        dy[5]/dt = -p[0]**2 * y[4]
+        dy[6]/dt = y[7]
+        dy[7]/dt = -p[1]**2 * y[6]
+        .
+        .
+        .
+
+    """
+    f = np.zeros_like(y)
+    f[::2] = y[1::2]
+    f[1::4] = -p[0]**2 * y[::4]
+    f[3::4] = -p[1]**2 * y[2::4]
+    return f
+
+
+def big_fun_with_parameters_jac(x, y, p):
+    # big version of sl_fun_jac, with two parameters
+    n, m = y.shape
+    df_dy = np.zeros((n, n, m))
+    df_dy[range(0, n, 2), range(1, n, 2)] = 1
+    df_dy[range(1, n, 4), range(0, n, 4)] = -p[0]**2
+    df_dy[range(3, n, 4), range(2, n, 4)] = -p[1]**2
+
+    df_dp = np.zeros((n, 2, m))
+    df_dp[range(1, n, 4), 0] = -2 * p[0] * y[range(0, n, 4)]
+    df_dp[range(3, n, 4), 1] = -2 * p[1] * y[range(2, n, 4)]
+
+    return df_dy, df_dp
+
+
+def big_bc_with_parameters(ya, yb, p):
+    # big version of sl_bc, with two parameters
+    return np.hstack((ya[::2], yb[::2], ya[1] - p[0], ya[3] - p[1]))
+
+
+def big_bc_with_parameters_jac(ya, yb, p):
+    # big version of sl_bc_jac, with two parameters
+    n = ya.shape[0]
+    dbc_dya = np.zeros((n + 2, n))
+    dbc_dyb = np.zeros((n + 2, n))
+
+    dbc_dya[range(n // 2), range(0, n, 2)] = 1
+    dbc_dyb[range(n // 2, n), range(0, n, 2)] = 1
+
+    dbc_dp = np.zeros((n + 2, 2))
+    dbc_dp[n, 0] = -1
+    dbc_dya[n, 1] = 1
+    dbc_dp[n + 1, 1] = -1
+    dbc_dya[n + 1, 3] = 1
+
+    return dbc_dya, dbc_dyb, dbc_dp
+
+
+def big_sol_with_parameters(x, p):
+    # big version of sl_sol, with two parameters
+    return np.vstack((np.sin(p[0] * x), np.sin(p[1] * x)))
 
 
 def shock_fun(x, y):
@@ -532,6 +600,43 @@ def test_big_problem():
     assert_(np.all(sol.rms_residuals < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
+
+
+def test_big_problem_with_parameters():
+    n = 30
+    x = np.linspace(0, np.pi, 5)
+    x_test = np.linspace(0, np.pi, 100)
+    y = np.ones((2 * n, x.size))
+
+    for fun_jac in [None, big_fun_with_parameters_jac]:
+        for bc_jac in [None, big_bc_with_parameters_jac]:
+            sol = solve_bvp(big_fun_with_parameters, big_bc_with_parameters, x,
+                            y, p=[0.5, 0.5], fun_jac=fun_jac, bc_jac=bc_jac)
+
+            assert_equal(sol.status, 0)
+            assert_(sol.success)
+
+            assert_allclose(sol.p, [1, 1], rtol=1e-4)
+
+            sol_test = sol.sol(x_test)
+
+            for isol in range(0, n, 4):
+                assert_allclose(sol_test[isol],
+                                big_sol_with_parameters(x_test, [1, 1])[0],
+                                rtol=1e-4, atol=1e-4)
+                assert_allclose(sol_test[isol + 2],
+                                big_sol_with_parameters(x_test, [1, 1])[1],
+                                rtol=1e-4, atol=1e-4)
+
+            f_test = big_fun_with_parameters(x_test, sol_test, [1, 1])
+            r = sol.sol(x_test, 1) - f_test
+            rel_res = r / (1 + np.abs(f_test))
+            norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+            assert_(np.all(norm_res < 1e-3))
+
+            assert_(np.all(sol.rms_residuals < 1e-3))
+            assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_shock_layer():

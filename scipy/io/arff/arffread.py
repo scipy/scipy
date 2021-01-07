@@ -1,13 +1,10 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
-from __future__ import division, print_function, absolute_import
-
 import re
 import datetime
 from collections import OrderedDict
 
 import numpy as np
 
-from scipy._lib.six import next
 import csv
 import ctypes
 
@@ -42,7 +39,7 @@ r_datameta = re.compile(r'^@[Dd][Aa][Tt][Aa]')
 r_relation = re.compile(r'^@[Rr][Ee][Ll][Aa][Tt][Ii][Oo][Nn]\s*(\S*)')
 r_attribute = re.compile(r'^\s*@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
-r_nominal = re.compile('{(.+)}')
+r_nominal = re.compile(r'{(.+)}')
 r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
 
 # To get attributes name enclosed with ''
@@ -478,7 +475,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-
+    
+    # Remove potential trailing whitespace
+    line = line.strip()
+    
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -576,8 +576,8 @@ def tokenize_single_comma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -591,8 +591,8 @@ def tokenize_single_wcomma(val):
         try:
             name = m.group(1).strip()
             type = m.group(2).strip()
-        except IndexError:
-            raise ValueError("Error while tokenizing attribute")
+        except IndexError as e:
+            raise ValueError("Error while tokenizing attribute") from e
     else:
         raise ValueError("Error while tokenizing single %s" % val)
     return name, type
@@ -814,7 +814,7 @@ def _loadarff(ofile):
         rel, attr = read_header(ofile)
     except ValueError as e:
         msg = "Error while parsing header, error was: " + str(e)
-        raise ParseArffError(msg)
+        raise ParseArffError(msg) from e
 
     # Check whether we have a string attribute (not supported yet)
     hasstr = False

@@ -1,11 +1,9 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
 
 '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -13,14 +11,12 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy._lib.six import u, text_type
-
 import warnings
 import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, suppress_warnings)
+                           assert_equal, assert_)
 from pytest import raises as assert_raises
 
 import numpy as np
@@ -56,7 +52,7 @@ case_table4.append(
     {'name': 'string',
      'classes': {'teststring': 'char'},
      'expected': {'teststring':
-                  array([u('"Do nine men interpret?" "Nine men," I nod.')])}
+                  array(['"Do nine men interpret?" "Nine men," I nod.'])}
      })
 case_table4.append(
     {'name': 'complex',
@@ -96,7 +92,7 @@ case_table4.append(
 case_table4.append(
     {'name': 'onechar',
      'classes': {'testonechar': 'char'},
-     'expected': {'testonechar': array([u('r')])},
+     'expected': {'testonechar': array(['r'])},
      })
 # Cell arrays stored as object arrays
 CA = mlarr((  # tuple for object array creation
@@ -105,7 +101,7 @@ CA = mlarr((  # tuple for object array creation
         mlarr([[1,2]]),
         mlarr([[1,2,3]])), dtype=object).reshape(1,-1)
 CA[0,0] = array(
-    [u('This cell contains this string and 3 arrays of increasing length')])
+    ['This cell contains this string and 3 arrays of increasing length'])
 case_table5 = [
     {'name': 'cell',
      'classes': {'testcell': 'cell'},
@@ -131,7 +127,7 @@ case_table5.append(
     {'name': 'stringarray',
      'classes': {'teststringarray': 'char'},
      'expected': {'teststringarray': array(
-    [u('one  '), u('two  '), u('three')])},
+    ['one  ', 'two  ', 'three'])},
      })
 case_table5.append(
     {'name': '3dmatrix',
@@ -142,7 +138,7 @@ case_table5.append(
 st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
 st1 = np.zeros((1,1), dtype)
-st1['stringfield'][0,0] = array([u('Rats live on no evil star.')])
+st1['stringfield'][0,0] = array(['Rats live on no evil star.'])
 st1['doublefield'][0,0] = st_sub_arr
 st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
 case_table5.append(
@@ -166,7 +162,7 @@ case_table5.append(
 st2 = np.empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
 st2[0,0]['one'] = mlarr(1)
 st2[0,0]['two'] = np.empty((1,1), dtype=[('three', object)])
-st2[0,0]['two'][0,0]['three'] = array([u('number 3')])
+st2[0,0]['two'][0,0]['three'] = array(['number 3'])
 case_table5.append(
     {'name': 'structnest',
      'classes': {'teststructnest': 'struct'},
@@ -175,8 +171,8 @@ case_table5.append(
 a = np.empty((1,2), dtype=[(n, object) for n in ['one', 'two']])
 a[0,0]['one'] = mlarr(1)
 a[0,0]['two'] = mlarr(2)
-a[0,1]['one'] = array([u('number 1')])
-a[0,1]['two'] = array([u('number 2')])
+a[0,1]['one'] = array(['number 1'])
+a[0,1]['two'] = array(['number 2'])
 case_table5.append(
     {'name': 'structarr',
      'classes': {'teststructarr': 'struct'},
@@ -187,9 +183,9 @@ ODT = np.dtype([(n, object) for n in
                   'isEmpty', 'numArgs', 'version']])
 MO = MatlabObject(np.zeros((1,1), dtype=ODT), 'inline')
 m0 = MO[0,0]
-m0['expr'] = array([u('x')])
-m0['inputExpr'] = array([u(' x = INLINE_INPUTS_{1};')])
-m0['args'] = array([u('x')])
+m0['expr'] = array(['x'])
+m0['inputExpr'] = array([' x = INLINE_INPUTS_{1};'])
+m0['args'] = array(['x'])
 m0['isEmpty'] = mlarr(0)
 m0['numArgs'] = mlarr(1)
 m0['version'] = mlarr(1)
@@ -285,7 +281,7 @@ def _check_level(label, expected, actual):
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
-    if ex_dtype.type in (text_type,  # string or bool
+    if ex_dtype.type in (str,  # string or bool
                          np.unicode_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
@@ -442,9 +438,9 @@ def test_warnings():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         # This should not generate a warning
-        mres = loadmat(fname, struct_as_record=True)
+        loadmat(fname, struct_as_record=True)
         # This neither
-        mres = loadmat(fname, struct_as_record=False)
+        loadmat(fname, struct_as_record=False)
 
 
 def test_regression_653():
@@ -1001,12 +997,9 @@ def test_mat_struct_squeeze():
     in_d = {'st':{'one':1, 'two':2}}
     savemat(stream, in_d)
     # no error without squeeze
-    out_d = loadmat(stream, struct_as_record=False)
+    loadmat(stream, struct_as_record=False)
     # previous error was with squeeze, with mat_struct
-    out_d = loadmat(stream,
-                    struct_as_record=False,
-                    squeeze_me=True,
-                    )
+    loadmat(stream, struct_as_record=False, squeeze_me=True)
 
 
 def test_scalar_squeeze():
@@ -1031,7 +1024,7 @@ def test_str_round():
     stream.truncate(0)
     stream.seek(0)
     # Make Fortran ordered version of string
-    in_str = in_arr.tostring(order='F')
+    in_str = in_arr.tobytes(order='F')
     in_from_str = np.ndarray(shape=a.shape,
                              dtype=in_arr.dtype,
                              order='F',
@@ -1138,7 +1131,7 @@ def test_load_mat4_le():
 def test_unicode_mat4():
     # Mat4 should save unicode as latin1
     bio = BytesIO()
-    var = {'second_cat': u('Schrödinger')}
+    var = {'second_cat': 'Schrödinger'}
     savemat(bio, var, format='4')
     var_back = loadmat(bio)
     assert_equal(var_back['second_cat'], var['second_cat'])
@@ -1232,3 +1225,13 @@ def test_filenotfound():
     # Check the correct error is thrown
     assert_raises(IOError, loadmat, "NotExistentFile00.mat")
     assert_raises(IOError, loadmat, "NotExistentFile00")
+
+
+def test_simplify_cells():
+    # Test output when simplify_cells=True
+    filename = pjoin(test_data_path, 'testsimplecell.mat')
+    res1 = loadmat(filename, simplify_cells=True)
+    res2 = loadmat(filename, simplify_cells=False)
+    assert_(isinstance(res1["s"], dict))
+    assert_(isinstance(res2["s"], np.ndarray))
+    assert_array_equal(res1["s"]["mycell"], np.array(["a", "b", "c"]))

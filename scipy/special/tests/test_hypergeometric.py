@@ -19,6 +19,11 @@ class TestHyperu(object):
     def test_special_cases(self):
         assert sc.hyperu(0, 1, 1) == 1.0
 
+    @pytest.mark.parametrize('a', [0.5, 1, np.nan])
+    @pytest.mark.parametrize('b', [1, 2, np.nan])
+    @pytest.mark.parametrize('x', [0.25, 3, np.nan])
+    def test_nan_inputs(self, a, b, x):
+        assert np.isnan(sc.hyperu(a, b, x)) == np.any(np.isnan([a, b, x]))
 
 class TestHyp1f1(object):
 

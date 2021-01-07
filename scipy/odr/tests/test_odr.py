@@ -1,12 +1,17 @@
-from __future__ import division, print_function, absolute_import
+import tempfile
+import shutil
+import os
 
-# SciPy imports.
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
                            assert_equal, assert_warns)
+import pytest
 from pytest import raises as assert_raises
-from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
+
+from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
+                       multilinear, exponential, unilinear, quadratic,
+                       polynomial)
 
 
 class TestODR(object):
@@ -358,3 +363,164 @@ class TestODR(object):
         odr2 = ODR(data, model, beta0=np.array([1.]), ifixx=fix)
         sol2 = odr2.run()
         assert_equal(sol1.beta, sol2.beta)
+
+    # verify bugfix for #11800 in #11802
+    def test_ticket_11800(self):
+        # parameters
+        beta_true = np.array([1.0, 2.3, 1.1, -1.0, 1.3, 0.5])
+        nr_measurements = 10
+
+        std_dev_x = 0.01
+        x_error = np.array([[0.00063445, 0.00515731, 0.00162719, 0.01022866,
+            -0.01624845, 0.00482652, 0.00275988, -0.00714734, -0.00929201, -0.00687301],
+            [-0.00831623, -0.00821211, -0.00203459, 0.00938266, -0.00701829,
+            0.0032169, 0.00259194, -0.00581017, -0.0030283, 0.01014164]])
+
+        std_dev_y = 0.05
+        y_error = np.array([[0.05275304, 0.04519563, -0.07524086, 0.03575642,
+            0.04745194, 0.03806645, 0.07061601, -0.00753604, -0.02592543, -0.02394929],
+            [0.03632366, 0.06642266, 0.08373122, 0.03988822, -0.0092536,
+            -0.03750469, -0.03198903, 0.01642066, 0.01293648, -0.05627085]])
+
+        beta_solution = np.array([
+            2.62920235756665876536e+00, -1.26608484996299608838e+02, 1.29703572775403074502e+02,
+            -1.88560985401185465804e+00, 7.83834160771274923718e+01, -7.64124076838087091801e+01])
+
+        # model's function and Jacobians
+        def func(beta, x):
+            y0 = beta[0] + beta[1] * x[0, :] + beta[2] * x[1, :]
+            y1 = beta[3] + beta[4] * x[0, :] + beta[5] * x[1, :]
+
+            return np.vstack((y0, y1))
+
+        def df_dbeta_odr(beta, x):
+            nr_meas = np.shape(x)[1]
+            zeros = np.zeros(nr_meas)
+            ones = np.ones(nr_meas)
+
+            dy0 = np.array([ones, x[0, :], x[1, :], zeros, zeros, zeros])
+            dy1 = np.array([zeros, zeros, zeros, ones, x[0, :], x[1, :]])
+
+            return np.stack((dy0, dy1))
+
+        def df_dx_odr(beta, x):
+            nr_meas = np.shape(x)[1]
+            ones = np.ones(nr_meas)
+
+            dy0 = np.array([beta[1] * ones, beta[2] * ones])
+            dy1 = np.array([beta[4] * ones, beta[5] * ones])
+            return np.stack((dy0, dy1))
+
+        # do measurements with errors in independent and dependent variables
+        x0_true = np.linspace(1, 10, nr_measurements)
+        x1_true = np.linspace(1, 10, nr_measurements)
+        x_true = np.array([x0_true, x1_true])
+
+        y_true = func(beta_true, x_true)
+
+        x_meas = x_true + x_error
+        y_meas = y_true + y_error
+
+        # estimate model's parameters
+        model_f = Model(func, fjacb=df_dbeta_odr, fjacd=df_dx_odr)
+
+        data = RealData(x_meas, y_meas, sx=std_dev_x, sy=std_dev_y)
+
+        odr_obj = ODR(data, model_f, beta0=0.9 * beta_true, maxit=100)
+        #odr_obj.set_iprint(init=2, iter=0, iter_step=1, final=1)
+        odr_obj.set_job(deriv=3)
+
+        odr_out = odr_obj.run()
+
+        # check results
+        assert_equal(odr_out.info, 1)
+        assert_array_almost_equal(odr_out.beta, beta_solution)
+
+    def test_multilinear_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 10.0 + 5.0 * x
+        data = Data(x, y)
+        odr_obj = ODR(data, multilinear)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [10.0, 5.0])
+
+    def test_exponential_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = -10.0 + np.exp(0.5*x)
+        data = Data(x, y)
+        odr_obj = ODR(data, exponential)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [-10.0, 0.5])
+
+    def test_polynomial_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 + 2.0 * x + 3.0 * x ** 2 + 4.0 * x ** 3
+        poly_model = polynomial(3)
+        data = Data(x, y)
+        odr_obj = ODR(data, poly_model)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0, 4.0])
+
+    def test_unilinear_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+        odr_obj = ODR(data, unilinear)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0])
+
+    def test_quadratic_model(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x ** 2 + 2.0 * x + 3.0
+        data = Data(x, y)
+        odr_obj = ODR(data, quadratic)
+        output = odr_obj.run()
+        assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0])
+
+    def test_work_ind(self):
+
+        def func(par, x):
+            b0, b1 = par
+            return b0 + b1 * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        # do the fitting
+        linear_model = Model(func)
+        real_data = RealData(x, y, sx=x_err, sy=y_err)
+        odr_obj = ODR(real_data, linear_model, beta0=[0.4, 0.4])
+        odr_obj.set_job(fit_type=0)
+        out = odr_obj.run()
+
+        sd_ind = out.work_ind['sd']
+        assert_array_almost_equal(out.sd_beta,
+                                  out.work[sd_ind:sd_ind + len(out.sd_beta)])
+
+    @pytest.mark.skipif(True, reason="Fortran I/O prone to crashing so better "
+                                     "not to run this test, see gh-13127")
+    def test_output_file_overwrite(self):
+        """
+        Verify fix for gh-1892
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        data = Data(np.arange(10), 12 * np.arange(10))
+        tmp_dir = tempfile.mkdtemp()
+        error_file_path = os.path.join(tmp_dir, "error.dat")
+        report_file_path = os.path.join(tmp_dir, "report.dat")
+        try:
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path, overwrite=True).run()
+        finally:
+            # remove output files for clean up
+            shutil.rmtree(tmp_dir)
+

@@ -1,8 +1,6 @@
 """
 Functions for identifying peaks in signals.
 """
-from __future__ import division, print_function, absolute_import
-
 import math
 import numpy as np
 
@@ -285,8 +283,8 @@ def _arg_peaks_as_expected(value):
         # Safely convert to C-contiguous array of type np.intp
         value = value.astype(np.intp, order='C', casting='safe',
                              subok=False, copy=False)
-    except TypeError:
-        raise TypeError("cannot safely cast `peaks` to dtype('intp')")
+    except TypeError as e:
+        raise TypeError("cannot safely cast `peaks` to dtype('intp')") from e
     if value.ndim != 1:
         raise ValueError('`peaks` must be a 1-D array')
     return value
@@ -1036,9 +1034,8 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065.
-    :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
@@ -1156,8 +1153,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. :doi:`10.1093/bioinformatics/btl355`
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+       :doi:`10.1093/bioinformatics/btl355`
 
     """
     num_points = cwt.shape[1]
@@ -1171,7 +1168,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     # Filter based on SNR
     row_one = cwt[0, :]
-    noises = np.zeros_like(row_one)
+    noises = np.empty_like(row_one)
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)
@@ -1190,7 +1187,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
 
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
-                   gap_thresh=None, min_length=None, min_snr=1, noise_perc=10):
+                   gap_thresh=None, min_length=None,
+                   min_snr=1, noise_perc=10, window_size=None):
     """
     Find peaks in a 1-D array with wavelet transformation.
 
@@ -1233,6 +1231,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         When calculating the noise floor, percentile of data points
         examined below which to consider noise. Calculated using
         `stats.scoreatpercentile`.  Default is 10.
+    window_size : int, optional
+        Size of window to use to calculate noise floor.
+        Default is ``cwt.shape[1] / 20``.
 
     Returns
     -------
@@ -1266,8 +1267,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     References
     ----------
     .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
-        :doi:`10.1093/bioinformatics/btl355`
-        http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+       :doi:`10.1093/bioinformatics/btl355`
 
     Examples
     --------
@@ -1288,10 +1288,11 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if wavelet is None:
         wavelet = ricker
 
-    cwt_dat = cwt(vector, wavelet, widths)
+    cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
-                                   min_snr=min_snr, noise_perc=noise_perc)
+                                   window_size=window_size, min_snr=min_snr,
+                                   noise_perc=noise_perc)
     max_locs = np.asarray([x[1][0] for x in filtered])
     max_locs.sort()
 

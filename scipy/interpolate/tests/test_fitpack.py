@@ -1,17 +1,19 @@
-from __future__ import division, print_function, absolute_import
-
+import itertools
 import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
                            assert_almost_equal, assert_array_almost_equal)
 from pytest import raises as assert_raises
+import pytest
+from scipy._lib._testutils import check_free_memory
 
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate.fitpack2 import dfitpack_int
 
 
 def data_file(basename):
@@ -54,8 +56,7 @@ def f2(x,y=0,dx=0,dy=0):
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
-    # Or itertools.product (>= Python 2.6)
-    xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
+    xy = array(list(itertools.product(asarray(x), asarray(y))))
     return xy.T
 
 
@@ -79,7 +80,7 @@ class TestSmokeTests(object):
             xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
-        v,v1 = f(x),f(x1)
+        v = f(x)
         nk = []
 
         def err_est(k, d):
@@ -192,7 +193,7 @@ class TestSmokeTests(object):
             xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
-        v,v1 = f(x),f(x1)
+        v, _ = f(x),f(x1)
         put(" u = %s   N = %d" % (repr(round(dx,3)),N))
         put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep " % (f(0,None)))
         for k in range(1,6):
@@ -383,11 +384,16 @@ class TestSplder(object):
 
 class TestBisplrep(object):
     def test_overflow(self):
-        a = np.linspace(0, 1, 620)
-        b = np.linspace(0, 1, 620)
-        x, y = np.meshgrid(a, b)
-        z = np.random.rand(*x.shape)
-        assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
+        from numpy.lib.stride_tricks import as_strided
+        if dfitpack_int.itemsize == 8:
+            size = 1500000**2
+        else:
+            size = 400**2
+        # Don't allocate a real array, as it's very big, but rely
+        # on that it's not referenced
+        x = as_strided(np.zeros(()), shape=(size,))
+        assert_raises(OverflowError, bisplrep, x, x, x, w=x,
+                      xb=0, xe=1, yb=0, ye=1, s=0)
 
     def test_regression_1310(self):
         # Regression test for gh-1310
@@ -399,6 +405,16 @@ class TestBisplrep(object):
         # code to crash when compiled with -O3
         bisplrep(data[:,0], data[:,1], data[:,2], kx=3, ky=3, s=0,
                  full_output=True)
+
+    @pytest.mark.skipif(dfitpack_int != np.int64, reason="needs ilp64 fitpack")
+    def test_ilp64_bisplrep(self):
+        check_free_memory(28000)  # VM size, doesn't actually use the pages
+        x = np.linspace(0, 1, 400)
+        y = np.linspace(0, 1, 400)
+        x, y = np.meshgrid(x, y)
+        z = np.zeros_like(x)
+        tck = bisplrep(x, y, z, kx=3, ky=3, s=0)
+        assert_allclose(bisplev(0.5, 0.5, tck), 0.0)
 
 
 def test_dblint():
@@ -441,6 +457,19 @@ def test_splev_der_k():
     x = [t[0] - 1., t[-1] + 1.]
     tck2 = splder((t, c, k), k)
     assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+
+
+def test_splprep_segfault():
+    # regression test for gh-3847: splprep segfaults if knots are specified
+    # for task=-1
+    t = np.arange(0, 1.1, 0.1)
+    x = np.sin(2*np.pi*t)
+    y = np.cos(2*np.pi*t)
+    tck, u = interpolate.splprep([x, y], s=0)
+    unew = np.arange(0, 1.01, 0.01)
+
+    uknots = tck[0]  # using the knots from the previous fitting
+    tck, u = interpolate.splprep([x, y], task=-1, t=uknots)  # here is the crash
 
 
 def test_bisplev_integer_overflow():

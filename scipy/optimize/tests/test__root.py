@@ -1,8 +1,6 @@
 """
 Unit tests for optimization routines from _root.py.
 """
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import assert_
 from pytest import raises as assert_raises
 import numpy as np
@@ -40,6 +38,22 @@ class TestRoot(object):
             assert_(abs(func(sol1.x)).max() < abs(func(sol2.x)).max(),
                     msg)
 
+    def test_tol_norm(self):
+
+        def norm(x):
+            return abs(x[0])
+
+        for method in ['excitingmixing',
+                       'diagbroyden',
+                       'linearmixing',
+                       'anderson',
+                       'broyden1',
+                       'broyden2',
+                       'krylov']:
+
+            root(np.zeros_like, np.zeros(2), method=method,
+                options={"tol_norm": norm})
+
     def test_minimize_scalar_coerce_args_param(self):
         # github issue #3503
         def func(z, f=1):
@@ -68,4 +82,4 @@ class TestRoot(object):
 
         F = fun()
         with assert_raises(ValueError):
-            sol = root(F, [0.1, 0.0], method='lm')
+            root(F, [0.1, 0.0], method='lm')

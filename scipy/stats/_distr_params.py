@@ -29,8 +29,6 @@ distcont = [
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
-    ['frechet_l', (3.6279911255583239,)],
-    ['frechet_r', (1.8928171603534227,)],
     ['gamma', (1.9932305483800778,)],
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
                     2.5145980350183019, 5.1811649903971615)],  # veryslow
@@ -63,8 +61,10 @@ distcont = [
     ['kappa4', (0.1, 0.0)],
     ['kappa3', (1.0,)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
+    ['kstwo', (10,)],
     ['kstwobign', ()],
     ['laplace', ()],
+    ['laplace_asymmetric', (2,)],
     ['levy', ()],
     ['levy_l', ()],
     ['levy_stable', (1.8, -0.5)],
@@ -96,7 +96,7 @@ distcont = [
     ['semicircular', ()],
     ['skewnorm', (4.0,)],
     ['t', (2.7433514990818093,)],
-    ['trapz', (0.2, 0.8)],
+    ['trapezoid', (0.2, 0.8)],
     ['triang', (0.15785029824528218,)],
     ['truncexpon', (4.6907725456810478,)],
     ['truncnorm', (-1.0978730080013919, 2.7306754109031979)],
@@ -129,5 +129,6 @@ distdiscrete = [
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.5,)],
-    ['yulesimon',(11.0,)]
+    ['yulesimon', (11.0,)],
+    ['nhypergeom', (20, 7, 1)]
 ]

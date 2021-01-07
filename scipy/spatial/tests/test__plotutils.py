@@ -1,13 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import pytest
 from numpy.testing import assert_, assert_array_equal, suppress_warnings
 try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
-    from matplotlib import MatplotlibDeprecationWarning
     has_matplotlib = True
 except Exception:
     has_matplotlib = False

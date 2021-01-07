@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import copy
 
 import numpy as np
@@ -821,3 +819,29 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+    def test_find_peaks_window_size(self):
+        """
+        Verify that window_size is passed correctly to private function and
+        affects the result.
+        """
+        sigmas = [2.0, 2.0]
+        num_points = 1000
+        test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
+        widths = np.arange(0.1, max(sigmas), 0.2)
+        noise_amp = 0.05
+        np.random.seed(18181911)
+        test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+
+        # Possibly contrived negative region to throw off peak finding
+        # when window_size is too large
+        test_data[250:320] -= 1
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=None)
+        with pytest.raises(AssertionError):
+            assert found_locs.size == act_locs.size
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=20)
+        assert found_locs.size == act_locs.size

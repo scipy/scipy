@@ -2,7 +2,7 @@
 
 import tempfile
 import shutil
-from os import path, unlink
+from os import path
 from glob import iglob
 import re
 
@@ -221,7 +221,7 @@ def test_fortran_eof_broken_record(tmpdir):
 def test_fortran_eof_multidimensional(tmpdir):
     filename = path.join(str(tmpdir), "scratch")
     n, m, q = 3, 5, 7
-    dt = np.dtype([("field", np.float, (n, m))])
+    dt = np.dtype([("field", np.float64, (n, m))])
     a = np.zeros(q, dtype=dt)
     with FortranFile(filename, 'w') as f:
         f.write_record(a[0])

@@ -9,8 +9,6 @@ features are:
     - exponential format for float values, and int format
 
 """
-from __future__ import division, print_function, absolute_import
-
 # TODO:
 #   - Add more support (symmetric/complex matrices, non-assembled matrices ?)
 
@@ -302,10 +300,10 @@ class HBInfo(object):
 def _expect_int(value, msg=None):
     try:
         return int(value)
-    except ValueError:
+    except ValueError as e:
         if msg is None:
             msg = "Expected an int, got %s"
-        raise ValueError(msg % value)
+        raise ValueError(msg % value) from e
 
 
 def _read_hb_data(content, header):
@@ -396,8 +394,8 @@ class HBMatrixType(object):
             structure = cls._f2q_structure[fmt[1]]
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
-        except KeyError:
-            raise ValueError("Unrecognized format %s" % fmt)
+        except KeyError as e:
+            raise ValueError("Unrecognized format %s" % fmt) from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type
@@ -492,6 +490,19 @@ def hb_read(path_or_open_file):
         - integer for pointer/indices
         - exponential format for float values, and int format
 
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
+
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -529,6 +540,19 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - assembled, non-symmetric, real matrices
         - integer for pointer/indices
         - exponential format for float values, and int format
+
+    Examples
+    --------
+    We can read and write a harwell-boeing format file:
+
+    >>> from scipy.io.harwell_boeing import hb_read, hb_write
+    >>> from scipy.sparse import csr_matrix, eye
+    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> hb_write("data.hb", data)  # write a hb file
+    >>> print(hb_read("data.hb"))  # read a hb file
+      (0, 0)	1.0
+      (1, 1)	1.0
+      (2, 2)	1.0
 
     """
     m = m.tocsc(copy=False)
