@@ -3,10 +3,8 @@ import numpy as np
 from scipy._lib._util import check_random_state
 
 
-def _resampled_dist_1samp(data, statistic, axis=0, n_resamples=None,
-                          random_state=None):
-    '''Distribution of a 1-sample statistic under resampling'''
-    data = np.moveaxis(data, axis, -1)
+def _resample_data(data, n_resamples=None, random_state=None):
+    '''Resample the data'''
     n = data.shape[-1]
     if n_resamples:
         # bootstrap - each row is a random resample of original observations
@@ -18,9 +16,8 @@ def _resampled_dist_1samp(data, statistic, axis=0, n_resamples=None,
         i = np.arange(n)
         i = np.broadcast_to(i, (n, n))
         i = i[j].reshape((n, n-1))
-    samples = data[..., i]
-    dist = statistic(samples, axis=-1)
-    return dist
+    resamples = data[..., i]
+    return resamples
 
 
 def _percentile_of_score(data, score, axis):
@@ -43,6 +40,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     """Bias-corrected and accelerated interval """
     # closely follows [1] "BCa Bootstrap CIs"
+    data = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
     theta_hat = statistic(data, axis=axis)[..., None]
@@ -50,7 +48,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     z0_hat = stats.norm.ppf(percentile)
 
     # calculate a_hat
-    theta_hat_i = _resampled_dist_1samp(data, statistic, axis=axis)
+    jackknife_data = _resample_data(data)
+    theta_hat_i = statistic(jackknife_data, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1)[..., None]
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
     den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
@@ -74,10 +73,17 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    data = np.atleast_1d(data)
-    if data.shape[axis] <= 1:
-        raise ValueError("`data` must contain two or more observations "
-                         "along `axis`.")
+    if not data:
+        raise ValueError("`data` must be a sequence of samples.")
+
+    data_iv = []
+    for sample in data:
+        sample = np.atleast_1d(sample)
+        if sample.shape[axis] <= 1:
+            raise ValueError("`data` must contain two or more observations "
+                             "along `axis`.")
+        sample = np.moveaxis(sample, axis_int, -1)
+        data_iv.append(sample)
 
     # should we try: statistic(data, axis=axis) here?
 
@@ -87,64 +93,68 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
         raise ValueError("`n_resamples` must be a positive integer.")
 
-    methods = {'basic', 'bca'}
+    methods = {'percentile', 'bca'}
     method = method.lower()
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
     random_state = check_random_state(random_state)
 
-    return (data, statistic, axis_int, confidence_level_float,
+    return (data_iv, statistic, axis_int, confidence_level_float,
             n_resamples_int, method, random_state)
 
 
-def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
-                       n_resamples=1000, method='bca', random_state=None):
+def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
+                 n_resamples=1000, method='bca', random_state=None):
     r"""
-    Compute a two-sided bootstrap confidence interval of a one-sample statistic
+    Compute a two-sided bootstrap confidence interval of a statistic
 
-    When `method` is ``'basic'``, a bootstrap confidence interval is computed
-    according to the following procedure.
+    When `method` is ``'percentile'``, a bootstrap confidence interval is
+    computed according to the following procedure.
 
-    1. Form a bootstrap distribution: for each of `n_resamples`,
+    1. Resample the data: for each sample in `data` and for each of
+       `n_resamples`, take a random sample of the original sample
+       (with replacement) of the same size as the original sample.
 
-        - take a random sample of the original `data` (with replacement) of
-          the same size as the original data, and
-        - compute the `statistic`.
+    2. Compute the bootstrap distribution of the statistic: for each set of
+       resamples, compute the test statistic.
 
-    2. Find the interval of the bootstrap distribution that is
+    3. Find the interval of the bootstrap distribution that is
 
         - symmetric about the median and
         - contains `confidence_level` of the resampled statistic values.
 
     When `method` is ``'bca'``, the bias-corrected and accelerated
-    interval [1]_ is used.
+    interval [1]_ is used in step 3.
 
-    If `data` is sampled at random from an underlying distribution
-    :math:`n` times, the confidence interval returned by `bootstrap_ci`
-    will contain the distribution's true value of the statistic
-    approximately `confidence_level`:math:`\times n` times.
+    If the samples in `data` are  taken at random from their respective
+    distributions :math:`n` times, the confidence interval returned by
+    `bootstrap_ci` will contain the true value of the statistic for those
+    distributions approximately `confidence_level`:math:`\times n` times.
 
     Parameters
     ----------
-    data : array-like
-        Data sampled from an underlying distribution.
+    data : sequence of array-like
+         Each element of data is a sample from an underlying distribution.
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
-        `statistic` must be vectorized to compute the statistic along `axis`.
+        `statistic` must be a callable that accepts ``len(data)`` samples
+        as separate arguments and returns the resulting statistic.
+        ``statistic`` must also accept a keyword argument `axis` and be
+        vectorized to compute the statistic along the provided `axis`.
     axis : int, optional
-        The axis of `data` along which the `statistic` is calculated.
-        The default is ``0``.
+        The axis of the samples in `data` along which the `statistic` is
+        calculated. The default is ``0``.
     confidence_level : float, optional
         The confidence level of the confidence interval.
         The default is ``0.95``.
     n_samples : int, optional
         The number of resamples performed to form the bootstrap distribution
         of the statistic. The default is ``10000``.
-    method : str in {'basic', 'bca'}, optional
-        Whether to return the basic bootstrap confidence interval (``'basic'``)
-        or the bias-corrected and accelerated bootstrap confidence interval
-        (``'bca'``). The default is 'bca'.
+    method : str in {'percentile', 'bca'}, optional
+        Whether to return the 'percentile' bootstrap confidence interval
+        (``'percentile'``) or the bias-corrected and accelerated bootstrap
+        confidence interval (``'bca'``). The default is 'bca'.
     random_state: int, RandomState, or Generator, optional
         Pseudorandom number generator state used to generate resamples.
 
@@ -180,10 +190,11 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     4.0315289788663184
 
     We can calculate a 90% confidence interval of the statistic using
-    `bootstrap_ci_1samp`.
+    `bootstrap_ci`.
 
-    >>> from scipy.stats import bootstrap_ci_1samp
-    >>> ci_l, ci_u = bootstrap_ci_1samp(data, np.std, confidence_level=0.9)
+    >>> from scipy.stats import bootstrap_ci
+    >>> data = (data,)  # samples must be in a sequence
+    >>> ci_l, ci_u = bootstrap_ci(data, np.std, confidence_level=0.9)
     >>> print(ci_l, ci_u)
     3.6358417469634423 4.505860501007106
 
@@ -194,8 +205,8 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     >>> n_trials = 1000
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
-    ...    data = dist.rvs(size=100)
-    ...    ci = bootstrap_ci_1samp(data, np.std, confidence_level=0.9)
+    ...    data = (dist.rvs(size=100),)
+    ...    ci = bootstrap_ci(data, np.std, confidence_level=0.9)
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std+=1
     >>> print(ci_contains_true_std)
@@ -204,8 +215,8 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
 
-    >>> data = dist.rvs(size=(n_trials, 100))
-    >>> ci_l, ci_u = bootstrap_ci_1samp(data, np.std, axis=-1,
+    >>> data = (dist.rvs(size=(n_trials, 100)),)
+    >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1,
     ...                                 confidence_level=0.9)
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
     885
@@ -217,10 +228,15 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     data, statistic, axis, confidence_level = args[:4]
     n_resamples, method, random_state = args[4:]
 
-    # Generate bootstrap distribution
-    theta_hat_b = _resampled_dist_1samp(data, statistic, axis=axis,
-                                        n_resamples=n_resamples,
-                                        random_state=random_state)
+    # Generate resamples
+    resampled_data = []
+    for sample in data:
+        resample = _resample_data(sample, n_resamples=n_resamples,
+                                  random_state=random_state)
+        resampled_data.append(resample)
+
+    # Compute bootstrap distribution of statistic
+    theta_hat_b = statistic(*resampled_data, axis=-1)
 
     # Calculate percentile interval
     alpha = (1 - confidence_level)/2
