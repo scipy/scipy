@@ -29,13 +29,23 @@ def _percentile_of_score(data, score, axis):
     return (data < score).sum(axis=axis) / B
 
 
+def _percentile_along_axis(theta_hat_b, alpha):
+    shape = theta_hat_b.shape[:-1]
+    alpha = np.broadcast_to(alpha, shape)
+    percentiles = np.zeros_like(alpha)
+    for indices, alpha_i in np.ndenumerate(alpha):
+        theta_hat_b_i = theta_hat_b[indices]
+        percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
+    return percentiles
+
+
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     """Bias-corrected and accelerated interval """
     # closely follows [1] "BCa Bootstrap CIs"
 
     # calculate z0_hat
     theta_hat = statistic(data, axis=axis)[..., None]
-    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis)
+    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = stats.norm.ppf(percentile)
 
     # calculate a_hat
@@ -175,7 +185,8 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     >>> print(ci_l, ci_u)
     3.6358417469634423 4.505860501007106
 
-    If we sample from the distribution 1000 times, the confidence interval
+    If we sample from the distribution 1000 times and form a bootstrap
+    confidence interval for each sample, the confidence interval
     contains the true value of the statistic approximately 900 times.
 
     >>> n_trials = 1000
@@ -193,9 +204,9 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
 
     >>> data = dist.rvs(size=(n_trials, 100))
     >>> ci_l, ci_u = bootstrap_ci_1samp(data, np.std, axis=-1,
-    ...                                 confidence_level=0.9, method='basic')
+    ...                                 confidence_level=0.9)
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    870
+    885
 
     """
     # Input validation
@@ -213,10 +224,12 @@ def bootstrap_ci_1samp(data, statistic, axis=0, confidence_level=0.95,
     alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
+        percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
+        percentile_fun = lambda a, q: np.percentile(a=a, q=q, axis=-1)
 
     # Calculate confidence interval of statistic
-    ci_l = np.percentile(theta_hat_b, interval[0]*100, axis=-1)
-    ci_u = np.percentile(theta_hat_b, interval[1]*100, axis=-1)
+    ci_l = percentile_fun(theta_hat_b, interval[0]*100)
+    ci_u = percentile_fun(theta_hat_b, interval[1]*100)
     return ci_l, ci_u
