@@ -30,6 +30,7 @@ def _percentile_of_score(data, score, axis):
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
+    '''np.percentile with different percentile for each slice'''
     shape = theta_hat_b.shape[:-1]
     alpha = np.broadcast_to(alpha, shape)
     percentiles = np.zeros_like(alpha)
@@ -68,16 +69,17 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
 def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
                      method, random_state):
     """Input validation for bootstrap_ci"""
-    data = np.atleast_1d(data)
-    if data.shape[axis] <= 1:
-        raise ValueError("`data` must contain 2 or more observations "
-                         "along axis.")
-
-    # should we try: statistic(data, axis=axis) here?
 
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
+
+    data = np.atleast_1d(data)
+    if data.shape[axis] <= 1:
+        raise ValueError("`data` must contain two or more observations "
+                         "along `axis`.")
+
+    # should we try: statistic(data, axis=axis) here?
 
     confidence_level_float = float(confidence_level)
 
