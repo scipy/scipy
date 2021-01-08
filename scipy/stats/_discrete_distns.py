@@ -492,18 +492,48 @@ class hypergeom_gen(rv_discrete):
         vals = self.pmf(k, M, n, N)
         return np.sum(entr(vals), axis=0)
 
-    def _sf(self, k, M, n, N):
-        # This for loop is needed because `k` can be an array. If that's the
-        # case, the sf() method makes M, n and N arrays of the same shape. We
-        # therefore unpack all inputs args, so we can do the manual
-        # integration.
+    def _sum_pmf(self, k, M, n, N, cdf):
+        # Sum the tail of the PMF, and then subtract the sum from 1 if
+        # necessary to return the value indicated by the boolean `cdf`.
+        # If k > mode, sum the right tail.  Otherwise sum the left tail.
+        #
+        # k, M, n and N are either all scalars or all 1-d arrays.
+        scalar = False
+        if np.isscalar(k):
+            k = np.array([k])
+            M = np.array([M])
+            n = np.array([n])
+            N = np.array([N])
+            scalar = True
+        # The mode of the distribution.  When there are two, this is the
+        # lower value.
+        modes = np.ceil((N + 1)*(n + 1)/(M + 2)).astype(int) - 1
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
-            # Manual integration over probability mass function. More accurate
-            # than integrate.quad.
-            k2 = np.arange(quant + 1, draw + 1)
-            res.append(np.sum(self._pmf(k2, tot, good, draw)))
-        return np.asarray(res)
+        for quant, tot, good, draw, mode in zip(k, M, n, N, modes):
+            if quant < mode:
+                # Sum the left tail, left to right.
+                k2 = np.arange(np.maximum(0, good + draw - tot), quant + 1)
+                total = np.sum(self._pmf(k2, tot, good, draw))
+                if not cdf:
+                    total = 1 - total
+                res.append(total)
+            else:
+                # Sum the right tail, right to left.
+                k2 = np.arange(draw, quant, -1)
+                total = np.sum(self._pmf(k2, tot, good, draw))
+                if cdf:
+                    total = 1 - total
+                res.append(total)
+        if scalar:
+            return res[0]
+        else:
+            return np.asarray(res)
+
+    def _cdf(self, k, M, n, N):
+        return self._sum_pmf(k, M, n, N, cdf=True)
+
+    def _sf(self, k, M, n, N):
+        return self._sum_pmf(k, M, n, N, cdf=False)
 
     def _logsf(self, k, M, n, N):
         res = []
