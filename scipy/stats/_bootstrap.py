@@ -221,6 +221,29 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
     885
 
+    `bootstrap_ci` can also be used to estimate confidence intervals of
+    multi-sample statistics, including those calculated by hypothesis
+    tests. `scipy.stats.mood` perform's Mood's test for equal scale parameters,
+    and it returns two outputs: a statistic, and a p-value. To get a
+    confidence interval on the test statistic, we first wrap `scipy.stats.mood`
+    in a function that accepts two sample arguments, accepts an `axis` keyword
+    argument, and returns only the statistic.
+
+    >>> from scipy.stats import mood
+    >>> def my_statistic(sample1, sample2, axis):
+    ...     statistic, _ = mood(sample1, sample2, axis=-1)
+    ...     return statistic
+
+    Here, we use the 'percentile' method with the default 95% confidence level.
+
+    >>> np.random.seed(0)
+    >>> sample1 = norm.rvs(scale=1, size=100)
+    >>> sample2 = norm.rvs(scale=2, size=100)
+    >>> data = (sample1, sample2)
+    >>> ci = bootstrap_ci(data, my_statistic, method='percentile')
+    >>> print(ci)
+    (-8.14095008342057, -5.131676847309245)
+
     """
     # Input validation
     args = _bootstrap_ci_iv(data, statistic, axis, confidence_level,
