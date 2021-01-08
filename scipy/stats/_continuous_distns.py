@@ -9008,9 +9008,13 @@ crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Functi
 def _argus_phi(chi):
     """
     Utility function for the argus distribution
-    used in the CDF and norm of the Argus Funktion
+    used in the pdf, sf and moment calculation.
+    For small chi, use a Taylor approximation
     """
-    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
+    p = [1/4224, 0, -1/432, 0, 1/56, 0, -0.1, 0, 1/3]
+    return _lazywhere(chi > 1e-3, (chi,),
+                      lambda c: _norm_cdf(c) - c * _norm_pdf(c) - 0.5,
+                      f2=lambda c: c**3 * np.polyval(p, c) / _norm_pdf_C)
 
 
 class argus_gen(rv_continuous):
@@ -9050,10 +9054,13 @@ class argus_gen(rv_continuous):
 
     %(example)s
     """
+    def _logpdf(self, x, chi):
+        y = 1.0 - x*x
+        A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
+        return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+
     def _pdf(self, x, chi):
-        y = 1.0 - x**2
-        A = chi**3 / (_norm_pdf_C * _argus_phi(chi))
-        return A * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        return np.exp(self._logpdf(x, chi))
 
     def _cdf(self, x, chi):
         return 1.0 - self._sf(x, chi)
@@ -9161,8 +9168,11 @@ class argus_gen(rv_continuous):
         chi2 = chi**2
         phi = _argus_phi(chi)
         m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
-        v = (1 - 3 / chi2 + chi * _norm_pdf(chi) / phi) - m**2
-        return m, v, None, None
+        # compute second moment, use Taylor expansion for small chi
+        mu2 = _lazywhere(chi > 1e-3, (chi,),
+            lambda c: 1 - 3 / c**2 + c * _norm_pdf(c) / _argus_phi(c),
+            f2=lambda c: np.polyval([2./2625, 0, 6./175, 0, 0.4], c))
+        return m, mu2 - m**2, None, None
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
