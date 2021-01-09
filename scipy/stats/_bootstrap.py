@@ -93,7 +93,7 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
         raise ValueError("`n_resamples` must be a positive integer.")
 
-    methods = {'percentile', 'bca'}
+    methods = {'percentile', 'basic', 'bca'}
     method = method.lower()
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
@@ -105,7 +105,7 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
 
 
 def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
-                 n_resamples=1000, method='bca', random_state=None):
+                 n_resamples=1000, method='basic', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic
 
@@ -119,13 +119,16 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     2. Compute the bootstrap distribution of the statistic: for each set of
        resamples, compute the test statistic.
 
-    3. Find the interval of the bootstrap distribution that is
+    3. Determine the confidence interval: find the interval of the bootstrap
+       distribution that is
 
         - symmetric about the median and
         - contains `confidence_level` of the resampled statistic values.
 
-    When `method` is ``'bca'``, the bias-corrected and accelerated
-    interval [1]_ is used in step 3.
+    While the ``'percentile'`` method is the most intuitive, it is rarely
+    used in practice. Two more common methods are available, ``'basic'``
+    ('reverse percentile') and ``'BCa'`` ('bias-corrected and accelerated');
+    they differ in how step 3 is performed.
 
     If the samples in `data` are  taken at random from their respective
     distributions :math:`n` times, the confidence interval returned by
@@ -140,7 +143,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
         as separate arguments and returns the resulting statistic.
-        ``statistic`` must also accept a keyword argument `axis` and be
+        `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
     axis : int, optional
         The axis of the samples in `data` along which the `statistic` is
@@ -151,10 +154,10 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     n_samples : int, optional
         The number of resamples performed to form the bootstrap distribution
         of the statistic. The default is ``10000``.
-    method : str in {'percentile', 'bca'}, optional
+    method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``) or the bias-corrected and accelerated bootstrap
-        confidence interval (``'bca'``). The default is 'bca'.
+        (``'percentile'``), the 'reverse'or the bias-corrected and accelerated
+        bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
     random_state: int, RandomState, or Generator, optional
         Pseudorandom number generator state used to generate resamples.
 
@@ -169,6 +172,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     ----------
     .. [1] Nathaniel E. Helwig, "Bootstrap Confidence Intervals",
        http://users.stat.umn.edu/~helwig/notes/bootci-Notes.pdf
+    .. [2] Bootstrapping (statistics), Wikipedia,
+       https://en.wikipedia.org/wiki/Bootstrapping_(statistics)
 
     Examples
     --------
@@ -225,9 +230,9 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     multi-sample statistics, including those calculated by hypothesis
     tests. `scipy.stats.mood` perform's Mood's test for equal scale parameters,
     and it returns two outputs: a statistic, and a p-value. To get a
-    confidence interval on the test statistic, we first wrap `scipy.stats.mood`
-    in a function that accepts two sample arguments, accepts an `axis` keyword
-    argument, and returns only the statistic.
+    confidence interval for the test statistic, we first wrap
+    `scipy.stats.mood` in a function that accepts two sample arguments,
+    accepts an `axis` keyword argument, and returns only the statistic.
 
     >>> from scipy.stats import mood
     >>> def my_statistic(sample1, sample2, axis):
@@ -240,9 +245,9 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> sample1 = norm.rvs(scale=1, size=100)
     >>> sample2 = norm.rvs(scale=2, size=100)
     >>> data = (sample1, sample2)
-    >>> ci = bootstrap_ci(data, my_statistic, method='percentile')
+    >>> ci = bootstrap_ci(data, my_statistic, method='basic')
     >>> print(ci)
-    (-8.14095008342057, -5.131676847309245)
+    (-8.395704005413752, -5.386430769302427)
 
     """
     # Input validation
@@ -273,4 +278,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     # Calculate confidence interval of statistic
     ci_l = percentile_fun(theta_hat_b, interval[0]*100)
     ci_u = percentile_fun(theta_hat_b, interval[1]*100)
+    if method == 'basic':  # see [2]
+        theta_hat = statistic(*data, axis=-1)
+        ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
+
     return ci_l, ci_u
