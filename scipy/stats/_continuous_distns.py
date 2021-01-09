@@ -7018,14 +7018,25 @@ class skew_cauchy_gen(rv_continuous):
 
     Notes
     -----
-    The pdf is::
 
-        skewcauchy.pdf(x, a) = 1 / (pi * (x**2 / (a * sign(x) + 1)**2 + 1))
+    The probability density function for `skewcauchy` is:
 
-    `skewcauchy` takes ``-1 < a < 1`` as a skewness parameter
-    When a=0 the distribution is identical to the usual Cauchy distribution.
+    .. math::
+
+        f(x) = \frac{1}{\pi \left(\frac{x^2}{\left(a\, \text{sign}(x) + 1
+                                                   \right)^2} + 1 \right)}
+
+    for a real number :math:`x` and skewness parameter :math:`-1 < a < 1`.
+
+    When :math:`a=0`, the distribution is identical to the usual Cauchy
+    distribution.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Skewed generalized *t* distribution", Wikipedia
+       https://en.wikipedia.org/wiki/Skewed_generalized_t_distribution#Skewed_Cauchy_distribution
 
     %(example)s
     """
