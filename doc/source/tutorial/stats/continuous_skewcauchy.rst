@@ -1,12 +1,11 @@
 .. _continuous-skew-cauchy:
 
-Skew Cauchy Distribution
-========================
+Skewed Cauchy Distribution
+==========================
 
 This distribution is a generalization of the Cauchy distribution. It
-has a single shape parameter :math:`a>0` that species the
-distribution's skewness. The special case :math:`a=0` yields the
-Cauchy distribution.
+has a single shape parameter :math:`-1 < a < 1` that skews the distribution.
+The special case :math:`a=0` yields the Cauchy distribution.
 
 Functions
 ---------

@@ -7016,6 +7016,10 @@ class skew_cauchy_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    cauchy : Cauchy distribution
+
     Notes
     -----
 
@@ -7028,7 +7032,7 @@ class skew_cauchy_gen(rv_continuous):
 
     for a real number :math:`x` and skewness parameter :math:`-1 < a < 1`.
 
-    When :math:`a=0`, the distribution is identical to the usual Cauchy
+    When :math:`a=0`, the distribution reduces to the usual Cauchy
     distribution.
 
     %(after_notes)s
