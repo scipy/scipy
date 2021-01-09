@@ -8,8 +8,6 @@
 # Modified: Ilhan Polat <ilhanpolat@gmail.com>
 # September 13, 2016
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
@@ -25,6 +23,7 @@ from .special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+           'solve_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
@@ -54,11 +53,11 @@ def solve_sylvester(a, b, q):
     Notes
     -----
     Computes a solution to the Sylvester matrix equation via the Bartels-
-    Stewart algorithm.  The A and B matrices first undergo Schur
-    decompositions.  The resulting matrices are used to construct an
+    Stewart algorithm. The A and B matrices first undergo Schur
+    decompositions. The resulting matrices are used to construct an
     alternative Sylvester equation (``RY + YS^T = F``) where the R and S
     matrices are in quasi-triangular form (or, when R, S or F are complex,
-    triangular form).  The simplified equation is then solved using
+    triangular form). The simplified equation is then solved using
     ``*TRSYL`` from LAPACK directly.
 
     .. versionadded:: 0.11.0
@@ -81,10 +80,10 @@ def solve_sylvester(a, b, q):
 
     """
 
-    # Compute the Schur decomp form of a
+    # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
 
-    # Compute the Schur decomp of b
+    # Compute the Schur decomposition of b
     s, v = schur(b.conj().transpose(), output='real')
 
     # Construct f = u'*q*v
@@ -171,7 +170,7 @@ def solve_continuous_lyapunov(a, q):
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
 
-    # Compute the Schur decomp form of a
+    # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
 
     # Construct f = u'*q*u
@@ -196,6 +195,7 @@ def solve_continuous_lyapunov(a, q):
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
+
 
 # For backwards compatibility, keep the old name
 solve_lyapunov = solve_continuous_lyapunov
@@ -264,7 +264,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     and ``bilinear`` otherwise.
 
     Method *direct* uses a direct analytical solution to the discrete Lyapunov
-    equation. The algorithm is given in, for example, [1]_. However it requires
+    equation. The algorithm is given in, for example, [1]_. However, it requires
     the linear solution of a system with dimension :math:`M^2` so that
     performance degrades rapidly for even moderately sized matrices.
 
@@ -281,7 +281,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     ----------
     .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
        University Press, 1994.  265.  Print.
-       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+       http://doc1.lbfl.li/aca/FLMF037168.pdf
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -349,7 +349,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix with sizes compatible with ``a`` and
-    ``b`` respectively.
+    ``b``, respectively.
 
     Parameters
     ----------
@@ -398,7 +398,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     In this algorithm, the fail conditions are linked to the symmetry
     of the product :math:`U_2 U_1^{-1}` and condition number of
     :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the
-    eigenvectors spanning the stable subspace with 2m rows and partitioned
+    eigenvectors spanning the stable subspace with 2-m rows and partitioned
     into two m-row matrices. See [1]_ and [2]_ for more details.
 
     In order to improve the QZ decomposition accuracy, the pencil goes
@@ -412,7 +412,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -420,7 +420,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------
@@ -512,11 +512,12 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated Hamiltonian pencil has eigenvalues '
@@ -600,7 +601,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     In this algorithm, the fail conditions are linked to the symmetry
     of the product :math:`U_2 U_1^{-1}` and condition number of
     :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the
-    eigenvectors spanning the stable subspace with 2m rows and partitioned
+    eigenvectors spanning the stable subspace with 2-m rows and partitioned
     into two m-row matrices. See [1]_ and [2]_ for more details.
 
     In order to improve the QZ decomposition accuracy, the pencil goes
@@ -616,7 +617,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -624,7 +625,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------
@@ -719,11 +720,12 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated symplectic pencil has eigenvalues'
@@ -740,12 +742,12 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     Essentially, it performs:
 
-        - a check whether the input is free of NaN and Infs.
+        - a check whether the input is free of NaN and Infs
         - a pass for the data through ``numpy.atleast_2d()``
-        - squareness check of the relevant arrays,
-        - shape consistency check of the arrays,
-        - singularity check of the relevant arrays,
-        - symmetricity check of the relevant matrices,
+        - squareness check of the relevant arrays
+        - shape consistency check of the arrays
+        - singularity check of the relevant arrays
+        - symmetricity check of the relevant matrices
         - a check whether the regular or the generalized version is asked.
 
     This function is used by ``solve_continuous_are`` and
@@ -780,7 +782,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
     r = np.atleast_2d(_asarray_validated(r, check_finite=True))
 
-    # Get the correct data types otherwise Numpy complains
+    # Get the correct data types otherwise NumPy complains
     # about pushing complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 

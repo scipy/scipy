@@ -1,4 +1,5 @@
       real*8 function splint(t,n,c,k,a,b,wrk)
+      implicit none
 c  function splint calculates the integral of a spline function s(x)
 c  of degree k, which is given in its normalized b-spline representation
 c

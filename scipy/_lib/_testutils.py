@@ -3,14 +3,17 @@ Generic test utilities.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import re
 import sys
 
 
 __all__ = ['PytestTester', 'check_free_memory']
+
+
+class FPUModeChangeWarning(RuntimeWarning):
+    """Warning about FPU mode change"""
+    pass
 
 
 class PytestTester(object):
@@ -22,13 +25,13 @@ class PytestTester(object):
         self.module_name = module_name
 
     def __call__(self, label="fast", verbose=1, extra_argv=None, doctests=False,
-                 coverage=False, tests=None):
+                 coverage=False, tests=None, parallel=None):
         import pytest
 
         module = sys.modules[self.module_name]
         module_path = os.path.abspath(module.__path__[0])
 
-        pytest_args = ['-l']
+        pytest_args = ['--showlocals', '--tb=short']
 
         if doctests:
             raise ValueError("Doctests not supported")
@@ -50,6 +53,14 @@ class PytestTester(object):
         if tests is None:
             tests = [self.module_name]
 
+        if parallel is not None and parallel > 1:
+            if _pytest_has_xdist():
+                pytest_args += ['-n', str(parallel)]
+            else:
+                import warnings
+                warnings.warn('Could not run tests in parallel because '
+                              'pytest-xdist plugin is not available.')
+
         pytest_args += ['--pyargs'] + list(tests)
 
         try:
@@ -58,6 +69,15 @@ class PytestTester(object):
             code = exc.code
 
         return (code == 0)
+
+
+def _pytest_has_xdist():
+    """
+    Check if the pytest-xdist plugin is installed, providing parallel tests
+    """
+    # Check xdist exists without importing, otherwise pytests emits warnings
+    from importlib.util import find_spec
+    return find_spec('xdist') is not None
 
 
 def check_free_memory(free_mb):
@@ -118,6 +138,6 @@ def _get_mem_available():
             # Linux >= 3.14
             return info['memavailable']
         else:
-            return info['memfree'] + info['memcached']
+            return info['memfree'] + info['cached']
 
     return None

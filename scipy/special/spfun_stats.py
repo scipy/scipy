@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Last Change: Sat Mar 21 02:00 PM 2009 J
 
 # Copyright (c) 2001, 2002 Enthought, Inc.
@@ -32,8 +31,6 @@
 
 """Some more special functions which may be useful for multivariate statistical
 analysis."""
-
-from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.special import gammaln as loggam

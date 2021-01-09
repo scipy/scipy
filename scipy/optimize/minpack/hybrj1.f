@@ -1,4 +1,5 @@
-      subroutine hybrj1(fcn,n,x,fvec,fjac,ldfjac,tol,info,wa,lwa)
+      recursive
+     *subroutine hybrj1(fcn,n,x,fvec,fjac,ldfjac,tol,info,wa,lwa)
       integer n,ldfjac,info,lwa
       double precision tol
       double precision x(n),fvec(n),fjac(ldfjac,n),wa(lwa)

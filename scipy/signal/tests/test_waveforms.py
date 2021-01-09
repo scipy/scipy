@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_, assert_raises,
-                           assert_allclose, assert_array_equal)
+                           assert_, assert_allclose, assert_array_equal)
+from pytest import raises as assert_raises
 
 import scipy.signal.waveforms as waveforms
 
@@ -38,7 +36,7 @@ def compute_frequency(t, theta):
     """
     Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
     """
-    # Assume theta and t are 1D numpy arrays.
+    # Assume theta and t are 1-D NumPy arrays.
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
     f = np.diff(theta)/(2*np.pi) / dt
@@ -344,10 +342,10 @@ class TestUnitImpulse(object):
 
     def test_dtype(self):
         imp = waveforms.unit_impulse(7)
-        assert_(np.issubdtype(imp.dtype, np.float))
+        assert_(np.issubdtype(imp.dtype, np.floating))
 
         imp = waveforms.unit_impulse(5, 3, dtype=int)
         assert_(np.issubdtype(imp.dtype, np.integer))
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
-        assert_(np.issubdtype(imp.dtype, np.complex))
+        assert_(np.issubdtype(imp.dtype, np.complexfloating))

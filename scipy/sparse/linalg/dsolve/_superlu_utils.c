@@ -6,7 +6,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 
 #include "_superluobject.h"
-#include "numpy/npy_3kcompat.h"
 #include <setjmp.h>
 
 
@@ -181,12 +180,7 @@ static void SuperLUGlobal_dealloc(SuperLUGlobalObject *self)
 
 
 PyTypeObject SuperLUGlobalType = {
-#if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
-#else
-    PyObject_HEAD_INIT(NULL)
-    0,
-#endif
     "_SuperLUGlobal",
     sizeof(SuperLUGlobalObject),
     0,

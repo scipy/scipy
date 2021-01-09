@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, sign, sin, sqrt, sum, tan, tanh)
+from numpy import abs, arctan2, asarray, cos, exp, arange, pi, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 

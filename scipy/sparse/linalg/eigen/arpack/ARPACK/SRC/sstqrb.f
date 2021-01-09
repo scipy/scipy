@@ -66,9 +66,9 @@ c     slae2   LAPACK routine that computes the eigenvalues of a 2-by-2
 c             symmetric matrix.
 c     slaev2  LAPACK routine that eigendecomposition of a 2-by-2 symmetric 
 c             matrix.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslanst  LAPACK routine that computes the norm of a matrix.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slanst  LAPACK routine that computes the norm of a matrix.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     slartg  LAPACK Givens rotation construction routine.
 c     slascl  LAPACK routine for careful scaling of a matrix.
 c     slaset  LAPACK matrix initialization routine.
@@ -136,8 +136,8 @@ c     ..
 c     .. external functions ..
       logical            lsame
       Real
-     &                   wslamch, wslanst, wslapy2
-      external           lsame, wslamch, wslanst, wslapy2
+     &                   slamch, slanst, slapy2
+      external           lsame, slamch, slanst, slapy2
 c     ..
 c     .. external subroutines ..
       external           slae2, slaev2, slartg, slascl, slaset, slasr,
@@ -191,9 +191,9 @@ c
 c
 c     determine the unit roundoff and over/underflow thresholds.
 c
-      eps = wslamch( 'e' )
+      eps = slamch( 'e' )
       eps2 = eps**2
-      safmin = wslamch( 's' )
+      safmin = slamch( 's' )
       safmax = one / safmin
       ssfmax = sqrt( safmax ) / three
       ssfmin = sqrt( safmin ) / eps2
@@ -254,7 +254,7 @@ c
 c
 c     scale submatrix in rows and columns l to lend
 c
-      anorm = wslanst( 'i', lend-l+1, d( l ), e( l ) )
+      anorm = slanst( 'i', lend-l+1, d( l ), e( l ) )
       iscale = 0
       if( anorm.eq.zero )
      $   go to 10
@@ -340,7 +340,7 @@ c
 c        form shift.
 c
          g = ( d( l+1 )-p ) / ( two*e( l ) )
-         r = wslapy2( g, one )
+         r = slapy2( g, one )
          g = d( m ) - p + ( e( l ) / ( g+sign( r, g ) ) )
 c
          s = one
@@ -460,7 +460,7 @@ c
 c        form shift.
 c
          g = ( d( l-1 )-p ) / ( two*e( l-1 ) )
-         r = wslapy2( g, one )
+         r = slapy2( g, one )
          g = d( m ) - p + ( e( l-1 ) / ( g+sign( r, g ) ) )
 c
          s = one

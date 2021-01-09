@@ -1,23 +1,18 @@
 """
 Check the speed of the conjugate gradient solver.
 """
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 from numpy.testing import assert_equal
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import linalg, sparse
-    from scipy.sparse.linalg import cg, minres, spsolve
-except ImportError:
-    pass
-
-try:
+    from scipy.sparse.linalg import cg, minres, gmres, spsolve
+with safe_import():
     from scipy.sparse.linalg import lgmres
-except ImportError:
-    pass
-
-from .common import Benchmark
+with safe_import():
+    from scipy.sparse.linalg import gcrotmk
 
 
 def _create_sparse_poisson1d(n):
@@ -38,7 +33,7 @@ def _create_sparse_poisson2d(n):
 class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100],
-        ['dense', 'spsolve', 'cg', 'minres', 'lgmres']
+        ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk']
     ]
     param_names = ['(n,n)', 'solver']
 
@@ -59,8 +54,12 @@ class Bench(Benchmark):
             cg(self.P_sparse, self.b)
         elif solver == 'minres':
             minres(self.P_sparse, self.b)
+        elif solver == 'gmres':
+            gmres(self.P_sparse, self.b)
         elif solver == 'lgmres':
             lgmres(self.P_sparse, self.b)
+        elif solver == 'gcrotmk':
+            gcrotmk(self.P_sparse, self.b)
         elif solver == 'spsolve':
             spsolve(self.P_sparse, self.b)
         else:

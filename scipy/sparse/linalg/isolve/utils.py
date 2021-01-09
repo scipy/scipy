@@ -1,12 +1,10 @@
-from __future__ import division, print_function, absolute_import
-
 __docformat__ = "restructuredtext en"
 
 __all__ = []
 
-from warnings import warn
 
-from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
+from numpy import asanyarray, asarray, array, matrix, zeros
+from scipy.sparse.sputils import asmatrix
 
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator, \
      IdentityOperator
@@ -31,7 +29,7 @@ def id(x):
     return x
 
 
-def make_system(A, M, x0, b, xtype=None):
+def make_system(A, M, x0, b):
     """Make a linear system Ax=b
 
     Parameters
@@ -45,8 +43,6 @@ def make_system(A, M, x0, b, xtype=None):
         initial guess to iterative method
     b : array_like
         right hand side
-    xtype : {'f', 'd', 'F', 'D', None}, optional
-        dtype of the x vector
 
     Returns
     -------
@@ -75,7 +71,8 @@ def make_system(A, M, x0, b, xtype=None):
     b = asanyarray(b)
 
     if not (b.shape == (N,1) or b.shape == (N,)):
-        raise ValueError('A and b have incompatible dimensions')
+        raise ValueError('shapes of A {} and b {} are incompatible'
+                         .format(A.shape, b.shape))
 
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
@@ -85,21 +82,11 @@ def make_system(A, M, x0, b, xtype=None):
             x = asmatrix(x)
         return x.reshape(b.shape)
 
-    if xtype is None:
-        if hasattr(A,'dtype'):
-            xtype = A.dtype.char
-        else:
-            xtype = A.matvec(b).dtype.char
-        xtype = coerce(xtype, b.dtype.char)
+    if hasattr(A,'dtype'):
+        xtype = A.dtype.char
     else:
-        warn('Use of xtype argument is deprecated. '
-                'Use LinearOperator( ... , dtype=xtype) instead.',
-                DeprecationWarning)
-        if xtype == 0:
-            xtype = b.dtype.char
-        else:
-            if xtype not in 'fdFD':
-                raise ValueError("xtype must be 'f', 'd', 'F', or 'D'")
+        xtype = A.matvec(b).dtype.char
+    xtype = coerce(xtype, b.dtype.char)
 
     b = asarray(b,dtype=xtype)  # make b the same type as x
     b = b.ravel()
@@ -109,7 +96,8 @@ def make_system(A, M, x0, b, xtype=None):
     else:
         x = array(x0, dtype=xtype)
         if not (x.shape == (N,1) or x.shape == (N,)):
-            raise ValueError('A and x have incompatible dimensions')
+            raise ValueError('shapes of A {} and x0 {} are incompatible'
+                            .format(A.shape, x.shape))
         x = x.ravel()
 
     # process preconditioner

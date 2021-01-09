@@ -1,13 +1,11 @@
 """LU decomposition functions."""
 
-from __future__ import division, print_function, absolute_import
-
 from warnings import warn
 
 from numpy import asarray, asarray_chkfinite
 
 # Local imports
-from .misc import _datacopied
+from .misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 from .flinalg import get_flinalg_funcs
 
@@ -53,6 +51,20 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     -----
     This is a wrapper to the ``*GETRF`` routines from LAPACK.
 
+    Examples
+    --------
+    >>> from scipy.linalg import lu_factor
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> lu, piv = lu_factor(A)
+    >>> piv
+    array([2, 2, 3, 3], dtype=int32)
+
+    Convert LAPACK's ``piv`` array to NumPy index and test the permutation
+
+    >>> piv_py = [2, 0, 3, 1]
+    >>> L, U = np.tril(lu, k=-1) + np.eye(4), np.triu(lu)
+    >>> np.allclose(A[piv_py] - L @ U, np.zeros((4, 4)))
+    True
     """
     if check_finite:
         a1 = asarray_chkfinite(a)
@@ -64,11 +76,11 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of '
-                                'internal getrf (lu_factor)' % -info)
+        raise ValueError('illegal value in %dth argument of '
+                         'internal getrf (lu_factor)' % -info)
     if info > 0:
         warn("Diagonal number %d is exactly zero. Singular matrix." % info,
-                    RuntimeWarning)
+             LinAlgWarning, stacklevel=2)
     return lu, piv
 
 
@@ -107,6 +119,16 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     --------
     lu_factor : LU factorize a matrix
 
+    Examples
+    --------
+    >>> from scipy.linalg import lu_factor, lu_solve
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> b = np.array([1, 1, 1, 1])
+    >>> lu, piv = lu_factor(A)
+    >>> x = lu_solve((lu, piv), b)
+    >>> np.allclose(A @ x - b, np.zeros((4,)))
+    True
+
     """
     (lu, piv) = lu_and_piv
     if check_finite:
@@ -115,14 +137,15 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         b1 = asarray(b)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if lu.shape[0] != b1.shape[0]:
-        raise ValueError("incompatible dimensions.")
+        raise ValueError("Shapes of lu {} and b {} are incompatible"
+                         .format(lu.shape, b1.shape))
 
     getrs, = get_lapack_funcs(('getrs',), (lu, b1))
-    x,info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
+    x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
     if info == 0:
         return x
-    raise ValueError('illegal value in %d-th argument of internal gesv|posv'
-                                                                    % -info)
+    raise ValueError('illegal value in %dth argument of internal gesv|posv'
+                     % -info)
 
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
@@ -141,7 +164,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     a : (M, N) array_like
         Array to decompose
     permute_l : bool, optional
-        Perform the multiplication P*L  (Default: do not permute)
+        Perform the multiplication P*L (Default: do not permute)
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : bool, optional
@@ -171,7 +194,15 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
 
     Notes
     -----
-    This is a LU factorization routine written for Scipy.
+    This is a LU factorization routine written for SciPy.
+
+    Examples
+    --------
+    >>> from scipy.linalg import lu
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> p, l, u = lu(A)
+    >>> np.allclose(A - p @ l @ u, np.zeros((4, 4)))
+    True
 
     """
     if check_finite:
@@ -184,8 +215,8 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     flu, = get_flinalg_funcs(('lu',), (a1,))
     p, l, u, info = flu(a1, permute_l=permute_l, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of '
-                                            'internal lu.getrf' % -info)
+        raise ValueError('illegal value in %dth argument of '
+                         'internal lu.getrf' % -info)
     if permute_l:
         return l, u
     return p, l, u

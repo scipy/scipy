@@ -4,7 +4,7 @@
 Anglit Distribution
 ===================
 
-Defined over :math:`x\in\left[-\frac{\pi}{4},\frac{\pi}{4}\right]`
+Defined over :math:`x\in\left[-\frac{\pi}{4},\frac{\pi}{4}\right]`.
 
 .. math::
    :nowrap:

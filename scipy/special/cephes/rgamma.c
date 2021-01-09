@@ -85,23 +85,25 @@ double x;
     }
     if (x < -34.034) {
 	w = -x;
-	z = sin(NPY_PI * w);
-	if (z == 0.0)
-	    return (0.0);
+	z = sinpi(w);
+	if (z == 0.0) {
+	    return 0.0;
+	}
 	if (z < 0.0) {
 	    sign = 1;
 	    z = -z;
 	}
-	else
+	else {
 	    sign = -1;
+	}
 
 	y = log(w * z) - log(NPY_PI) + lgam(w);
 	if (y < -MAXLOG) {
-	    mtherr(name, UNDERFLOW);
+	    sf_error(name, SF_ERROR_UNDERFLOW, NULL);
 	    return (sign * 0.0);
 	}
 	if (y > MAXLOG) {
-	    mtherr(name, OVERFLOW);
+	    sf_error(name, SF_ERROR_OVERFLOW, NULL);
 	    return (sign * NPY_INFINITY);
 	}
 	return (sign * exp(y));

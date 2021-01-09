@@ -1,11 +1,9 @@
 """
 Tests for line search routines
 """
-from __future__ import division, print_function, absolute_import
-
-from numpy.testing import assert_, assert_equal, \
-     assert_array_almost_equal, assert_array_almost_equal_nulp
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
+                           assert_array_almost_equal_nulp, assert_warns,
+                           suppress_warnings)
 import scipy.optimize.linesearch as ls
 from scipy.optimize.linesearch import LineSearchWarning
 import numpy as np
@@ -50,7 +48,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
     try:
         assert_array_almost_equal_nulp(x, y, nulp)
     except AssertionError as e:
-        raise AssertionError("%s\n%s" % (e, err_msg))
+        raise AssertionError("%s\n%s" % (e, err_msg)) from e
 
 
 class TestLineSearch(object):
@@ -154,6 +152,37 @@ class TestLineSearch(object):
                 assert_fp_equal(derphi1, derphi(s), name)
             assert_wolfe(s, phi, derphi, err_msg="%s %g" % (name, old_phi0))
 
+    def test_scalar_search_wolfe2_with_low_amax(self):
+        def phi(alpha):
+            return (alpha - 5) ** 2
+
+        def derphi(alpha):
+            return 2 * (alpha - 5)
+
+        s, _, _, _ = assert_warns(LineSearchWarning,
+                                  ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
+        assert_(s is None)
+
+    def test_scalar_search_wolfe2_regression(self):
+        # Regression test for gh-12157
+        # This phi has its minimum at alpha=4/3 ~ 1.333.
+        def phi(alpha):
+            if alpha < 1:
+                return - 3*np.pi/2 * (alpha - 1)
+            else:
+                return np.cos(3*np.pi/2 * alpha - np.pi)
+
+        def derphi(alpha):
+            if alpha < 1:
+                return - 3*np.pi/2
+            else:
+                return - 3*np.pi/2 * np.sin(3*np.pi/2 * alpha - np.pi)
+
+        s, _, _, _ = ls.scalar_search_wolfe2(phi, derphi)
+        # Without the fix in gh-13073, the scalar_search_wolfe2
+        # returned s=2.0 instead.
+        assert_(s < 1.5)
+
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1 = ls.scalar_search_armijo(phi, phi(0), derphi(0))
@@ -186,12 +215,14 @@ class TestLineSearch(object):
 
     def test_line_search_wolfe2(self):
         c = 0
-        smax = 100
+        smax = 512
         for name, f, fprime, x, p, old_f in self.line_iter():
             f0 = f(x)
             g0 = fprime(x)
             self.fcount = 0
             with suppress_warnings() as sup:
+                sup.filter(LineSearchWarning,
+                           "The line search algorithm could not find a solution")
                 sup.filter(LineSearchWarning,
                            "The line search algorithm did not converge")
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
@@ -206,6 +237,32 @@ class TestLineSearch(object):
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert_(c > 3)  # check that the iterator really works...
+
+    def test_line_search_wolfe2_bounds(self):
+        # See gh-7475
+
+        # For this f and p, starting at a point on axis 0, the strong Wolfe
+        # condition 2 is met if and only if the step length s satisfies
+        # |x + s| <= c2 * |x|
+        f = lambda x: np.dot(x, x)
+        fp = lambda x: 2 * x
+        p = np.array([1, 0])
+
+        # Smallest s satisfying strong Wolfe conditions for these arguments is 30
+        x = -60 * p
+        c2 = 0.5
+
+        s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p, amax=30, c2=c2)
+        assert_line_wolfe(x, p, s, f, fp)
+
+        s, _, _, _, _, _ = assert_warns(LineSearchWarning,
+                                        ls.line_search_wolfe2, f, fp, x, p,
+                                        amax=29, c2=c2)
+        assert_(s is None)
+
+        # s=30 will only be tried on the 6th iteration, so this won't converge
+        assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
+                     c2=c2, maxiter=5)
 
     def test_line_search_armijo(self):
         c = 0

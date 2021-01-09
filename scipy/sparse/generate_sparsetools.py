@@ -1,5 +1,6 @@
-#!/usr/bin/env python
 """
+python generate_sparsetools.py
+
 Generate manual wrappers for C++ sparsetools code.
 
 Type codes used:
@@ -12,6 +13,7 @@ Type codes used:
     'W':  std::vector<data>*
     '*':  indicates that the next argument is an output argument
     'v':  void
+    'l':  64-bit integer scalar
 
 See sparsetools.cxx for more details.
 
@@ -29,11 +31,12 @@ from distutils.dep_util import newer
 # bsr.h
 BSR_ROUTINES = """
 bsr_diagonal        v iiiiiIIT*T
+bsr_tocsr           v iiiiIIT*I*I*T
 bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
 bsr_transpose       v iiiiIIT*I*I*T
-bsr_matmat_pass2    v iiiiiIITIIT*I*I*T
+bsr_matmat          v iiiiiiIITIIT*I*I*T
 bsr_matvec          v iiiiIITT*T
 bsr_matvecs         v iiiiiIITT*T
 bsr_elmul_bsr       v iiiiIITIIT*I*I*T
@@ -53,8 +56,8 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 CSC_ROUTINES = """
 csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
-csc_matmat_pass1    v iiIIII*I
-csc_matmat_pass2    v iiIITIIT*I*I*T
+csc_matmat_maxnnz   l iiIIII
+csc_matmat          v iiIITIIT*I*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
 csc_elmul_csc       v iiIITIIT*I*I*T
@@ -72,8 +75,8 @@ csc_ge_csc          v iiIITIIT*I*I*B
 
 # csr.h
 CSR_ROUTINES = """
-csr_matmat_pass1    v iiIIII*I
-csr_matmat_pass2    v iiIITIIT*I*I*T
+csr_matmat_maxnnz   l iiIIII
+csr_matmat          v iiIITIIT*I*I*T
 csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
@@ -97,6 +100,10 @@ csr_sort_indices    v iI*I*T
 csr_eliminate_zeros v ii*I*I*T
 csr_sum_duplicates  v ii*I*I*T
 get_csr_submatrix   v iiIITiiii*V*V*W
+csr_row_index       v iIIIT*I*T
+csr_row_slice       v iiiIIT*I*T
+csr_column_index1   v iIiiII*I*I
+csr_column_index2   v IIiIT*I*T
 csr_sample_values   v iiIITiII*T
 csr_count_blocks    i iiiiII
 csr_sample_offsets  i iiIIiII*I
@@ -109,8 +116,8 @@ csr_has_canonical_format  i iII
 # coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
-coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
+coo_todense         v iilIIT*Ti
+coo_matvec          v lIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -159,7 +166,7 @@ T_TYPES = [
 #
 
 THUNK_TEMPLATE = """
-static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
+static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 {
     %(thunk_content)s
 }
@@ -281,6 +288,8 @@ def parse_routine(name, args, types):
                 if const:
                     raise ValueError("'W' argument must be an output arg")
                 args.append("(std::vector<%s>*)a[%d]" % (T_type, j,))
+            elif t == 'l':
+                args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
                 raise ValueError("Invalid spec character %r" % (t,))
             j += 1
@@ -292,26 +301,19 @@ def parse_routine(name, args, types):
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
         arglist = get_arglist(I_type, T_type)
-        if T_type is None:
-            dispatch = "%s" % (I_type,)
-        else:
-            dispatch = "%s,%s" % (I_type, T_type)
-        if 'B' in arg_spec:
-            dispatch += ",npy_bool_wrapper"
 
         piece = """
         case %(j)s:"""
         if ret_spec == 'v':
             piece += """
-            (void)%(name)s<%(dispatch)s>(%(arglist)s);
+            (void)%(name)s(%(arglist)s);
             return 0;"""
         else:
             piece += """
-            return %(name)s<%(dispatch)s>(%(arglist)s);"""
+            return %(name)s(%(arglist)s);"""
         thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type,
                                       I_typenum=I_typenum, T_typenum=T_typenum,
-                                      arglist=arglist, name=name,
-                                      dispatch=dispatch)
+                                      arglist=arglist, name=name)
 
     thunk_content += """
     default:
@@ -330,7 +332,7 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=__doc__.strip())
+    p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
     options, args = p.parse_args()
@@ -352,8 +354,8 @@ def main():
 
             try:
                 name, args = line.split(None, 1)
-            except ValueError:
-                raise ValueError("Malformed line: %r" % (line,))
+            except ValueError as e:
+                raise ValueError("Malformed line: %r" % (line,)) from e
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:

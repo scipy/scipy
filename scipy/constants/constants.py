@@ -4,17 +4,15 @@ Collection of physical constants and conversion factors.
 Most constants are in SI units, so you can do
 print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 'knots'
 
-The list is not meant to be comprehensive, but just a convenient list for everyday use.
+The list is not meant to be comprehensive, but just convenient for everyday use.
 """
-from __future__ import division, print_function, absolute_import
-
 """
 BasSw 2006
 physical constants: imported from CODATA
-unit conversion: see e.g. NIST special publication 811
+unit conversion: see e.g., NIST special publication 811
 Use at own risk: double-check values before calculating your Mars orbit-insertion burn.
 Some constants exist in a few variants, which are marked with suffixes.
-The ones without any suffix should be the most common one.
+The ones without any suffix should be the most common ones.
 """
 
 import math as _math
@@ -58,8 +56,8 @@ yobi = 2**80
 
 # physical constants
 c = speed_of_light = _cd('speed of light in vacuum')
-mu_0 = 4e-7*pi
-epsilon_0 = 1 / (mu_0*c*c)
+mu_0 = _cd('vacuum mag. permeability')
+epsilon_0 = _cd('vacuum electric permittivity')
 h = Planck = _cd('Planck constant')
 hbar = h / (2 * pi)
 G = gravitational_constant = _cd('Newtonian constant of gravitation')
@@ -120,7 +118,7 @@ nautical_mile = 1852.0
 fermi = 1e-15
 angstrom = 1e-10
 micron = 1e-6
-au = astronomical_unit = 149597870691.0
+au = astronomical_unit = 149597870700.0
 light_year = Julian_year * c
 parsec = au / arcsec
 
@@ -147,7 +145,7 @@ fluid_ounce_imp = gallon_imp / 160
 # speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
-mach = speed_of_sound = 340.5  # approx value at 15 degrees in 1 atm. is this a common value?
+mach = speed_of_sound = 340.5  # approx value at 15 degrees in 1 atm. Is this a common value?
 knot = nautical_mile / hour
 
 # temperature in kelvin
@@ -178,7 +176,7 @@ kgf = kilogram_force = g  # * 1 kg
 def convert_temperature(val, old_scale, new_scale):
     """
     Convert from a temperature scale to another one among Celsius, Kelvin,
-    Fahrenheit and Rankine scales.
+    Fahrenheit, and Rankine scales.
 
     Parameters
     ----------
@@ -190,14 +188,14 @@ def convert_temperature(val, old_scale, new_scale):
         Specifies as a string the original scale from which the temperature
         value(s) will be converted. Supported scales are Celsius ('Celsius',
         'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
-        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f'), and Rankine
         ('Rankine', 'rankine', 'R', 'r').
 
     new_scale: str
         Specifies as a string the new scale to which the temperature
         value(s) will be converted. Supported scales are Celsius ('Celsius',
         'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
-        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f'), and Rankine
         ('Rankine', 'rankine', 'R', 'r').
 
     Returns
@@ -212,7 +210,7 @@ def convert_temperature(val, old_scale, new_scale):
     Examples
     --------
     >>> from scipy.constants import convert_temperature
-    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
+    >>> convert_temperature(np.array([-40, 40]), 'Celsius', 'Kelvin')
     array([ 233.15,  313.15])
 
     """
@@ -222,12 +220,12 @@ def convert_temperature(val, old_scale, new_scale):
     elif old_scale.lower() in ['kelvin', 'k']:
         tempo = _np.asanyarray(val)
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+        tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = _np.asanyarray(val) * 5. / 9.
+        tempo = _np.asanyarray(val) * 5 / 9
     else:
         raise NotImplementedError("%s scale is unsupported: supported scales "
-                                  "are Celsius, Kelvin, Fahrenheit and "
+                                  "are Celsius, Kelvin, Fahrenheit, and "
                                   "Rankine" % old_scale)
     # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
@@ -235,231 +233,15 @@ def convert_temperature(val, old_scale, new_scale):
     elif new_scale.lower() in ['kelvin', 'k']:
         res = tempo
     elif new_scale.lower() in ['fahrenheit', 'f']:
-        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+        res = (tempo - zero_Celsius) * 9 / 5 + 32
     elif new_scale.lower() in ['rankine', 'r']:
-        res = tempo * 9. / 5.
+        res = tempo * 9 / 5
     else:
         raise NotImplementedError("'%s' scale is unsupported: supported "
                                   "scales are 'Celsius', 'Kelvin', "
-                                  "'Fahrenheit' and 'Rankine'" % new_scale)
+                                  "'Fahrenheit', and 'Rankine'" % new_scale)
 
     return res
-
-
-@_np.deprecate(message="scipy.constants.C2K is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def C2K(C):
-    """
-    Convert Celsius to Kelvin
-
-    Parameters
-    ----------
-    C : array_like
-        Celsius temperature(s) to be converted.
-
-    Returns
-    -------
-    K : float or array of floats
-        Equivalent Kelvin temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``K = C + zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
-    (the absolute value of) temperature "absolute zero" as measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants import C2K
-    >>> C2K(np.array([-40, 40.0]))
-    array([ 233.15,  313.15])
-
-    """
-    return _np.asanyarray(C) + zero_Celsius
-
-
-@_np.deprecate(message="scipy.constants.K2C is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def K2C(K):
-    """
-    Convert Kelvin to Celsius
-
-    Parameters
-    ----------
-    K : array_like
-        Kelvin temperature(s) to be converted.
-
-    Returns
-    -------
-    C : float or array of floats
-        Equivalent Celsius temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``C = K - zero_Celsius`` where `zero_Celsius` = 273.15, i.e.,
-    (the absolute value of) temperature "absolute zero" as measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants import K2C
-    >>> K2C(np.array([233.15, 313.15]))
-    array([-40.,  40.])
-
-    """
-    return _np.asanyarray(K) - zero_Celsius
-
-
-@_np.deprecate(message="scipy.constants.F2C is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def F2C(F):
-    """
-    Convert Fahrenheit to Celsius
-
-    Parameters
-    ----------
-    F : array_like
-        Fahrenheit temperature(s) to be converted.
-
-    Returns
-    -------
-    C : float or array of floats
-        Equivalent Celsius temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``C = (F - 32) / 1.8``.
-
-    Examples
-    --------
-    >>> from scipy.constants import F2C
-    >>> F2C(np.array([-40, 40.0]))
-    array([-40.        ,   4.44444444])
-
-    """
-    return (_np.asanyarray(F) - 32) / 1.8
-
-
-@_np.deprecate(message="scipy.constants.C2F is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def C2F(C):
-    """
-    Convert Celsius to Fahrenheit
-
-    Parameters
-    ----------
-    C : array_like
-        Celsius temperature(s) to be converted.
-
-    Returns
-    -------
-    F : float or array of floats
-        Equivalent Fahrenheit temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``F = 1.8 * C + 32``.
-
-    Examples
-    --------
-    >>> from scipy.constants import C2F
-    >>> C2F(np.array([-40, 40.0]))
-    array([ -40.,  104.])
-
-    """
-    return 1.8 * _np.asanyarray(C) + 32
-
-
-@_np.deprecate(message="scipy.constants.F2K is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def F2K(F):
-    """
-    Convert Fahrenheit to Kelvin
-
-    Parameters
-    ----------
-    F : array_like
-        Fahrenheit temperature(s) to be converted.
-
-    Returns
-    -------
-    K : float or array of floats
-        Equivalent Kelvin temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``K = (F - 32)/1.8 + zero_Celsius`` where `zero_Celsius` =
-    273.15, i.e., (the absolute value of) temperature "absolute zero" as
-    measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants import F2K
-    >>> F2K(np.array([-40, 104]))
-    array([ 233.15,  313.15])
-
-    """
-    return C2K(F2C(_np.asanyarray(F)))
-
-
-@_np.deprecate(message="scipy.constants.K2F is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_temperature instead. "
-                       "Note that the new function has a different signature.")
-def K2F(K):
-    """
-    Convert Kelvin to Fahrenheit
-
-    Parameters
-    ----------
-    K : array_like
-        Kelvin temperature(s) to be converted.
-
-    Returns
-    -------
-    F : float or array of floats
-        Equivalent Fahrenheit temperature(s).
-
-    See also
-    --------
-    convert_temperature
-
-    Notes
-    -----
-    Computes ``F = 1.8 * (K - zero_Celsius) + 32`` where `zero_Celsius` =
-    273.15, i.e., (the absolute value of) temperature "absolute zero" as
-    measured in Celsius.
-
-    Examples
-    --------
-    >>> from scipy.constants import K2F
-    >>> K2F(np.array([233.15,  313.15]))
-    array([ -40.,  104.])
-
-    """
-    return C2F(K2C(_np.asanyarray(K)))
 
 
 # optics
@@ -491,7 +273,7 @@ def lambda2nu(lambda_):
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return _np.asanyarray(c) / lambda_
+    return c / _np.asanyarray(lambda_)
 
 
 def nu2lambda(nu):

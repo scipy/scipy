@@ -4,25 +4,20 @@
 """ Test functions for linalg.matfuncs module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import random
 import functools
 
 import numpy as np
-from numpy import array, matrix, identity, dot, sqrt, double
+from numpy import array, identity, dot, sqrt
 from numpy.testing import (
         assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_)
+        assert_array_almost_equal,
+        assert_allclose, assert_, assert_warns)
 import pytest
-
-from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond, norm)
-from scipy.linalg.matfuncs import expm2, expm3
+                          expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
@@ -68,7 +63,7 @@ class TestSignM(object):
 
     def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective2(self):
@@ -78,7 +73,7 @@ class TestSignM(object):
             [-10.0,6.0,-20.0,-18.0,-2.0],
             [-9.6,9.6,-25.5,-15.4,-2.0],
             [9.8,-4.8,18.0,18.2,2.0]))
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
     def test_defective3(self):
@@ -89,7 +84,7 @@ class TestSignM(object):
                    [0., 0., 0., 0., 3., 10., 0.],
                    [0., 0., 0., 0., 0., -2., 25.],
                    [0., 0., 0., 0., 0., 0., -3.]])
-        r = signm(a, disp=False)
+        signm(a, disp=False)
         #XXX: what would be the correct result?
 
 
@@ -193,7 +188,7 @@ class TestLogM(object):
             w = scipy.linalg.eigvals(X)
             assert_(1e-2 < np.absolute(w.imag).sum())
             Y, info = logm(X, disp=False)
-            assert_(np.issubdtype(Y.dtype, dt))
+            assert_(np.issubdtype(Y.dtype, np.inexact))
             assert_allclose(expm(Y), X)
 
     def test_real_mixed_sign_spectrum(self):
@@ -205,21 +200,21 @@ class TestLogM(object):
             for dt in float, complex:
                 A = np.array(M, dtype=dt)
                 A_logm, info = logm(A, disp=False)
-                assert_(np.issubdtype(A_logm.dtype, complex))
+                assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
             expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
-            L, info = _assert_warns(expected_warning, logm, M, disp=False)
+            L, info = assert_warns(expected_warning, logm, M, disp=False)
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
-        L, info = _assert_warns(expected_warning, logm, M, disp=False)
+        L, info = assert_warns(expected_warning, logm, M, disp=False)
         E = expm(L)
         assert_allclose(E, M, atol=1e-14)
 
@@ -261,7 +256,7 @@ class TestSqrtM(object):
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_bad(self):
-        # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
+        # See https://web.archive.org/web/20051220232650/http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
         se = sqrt(e)
         a = array([[1.0,0,0,1],
@@ -381,7 +376,6 @@ class TestSqrtM(object):
             assert_(np.isnan(B_sqrtm).all())
 
     def test_disp(self):
-        from io import StringIO
         np.random.seed(1234)
 
         A = np.random.rand(3, 3)
@@ -391,6 +385,30 @@ class TestSqrtM(object):
     def test_opposite_sign_complex_eigenvalues(self):
         M = [[2j, 4], [0, -2j]]
         R = [[1+1j, 2], [0, 1-1j]]
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
+    def test_gh4866(self):
+        M = np.array([[1, 0, 0, 1],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0],
+                      [1, 0, 0, 1]])
+        R = np.array([[sqrt(0.5), 0, 0, sqrt(0.5)],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0],
+                      [sqrt(0.5), 0, 0, sqrt(0.5)]])
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
+    def test_gh5336(self):
+        M = np.diag([2, 1, 0])
+        R = np.diag([sqrt(2), 1, 0])
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
+    def test_gh7839(self):
+        M = np.zeros((2, 2))
+        R = np.zeros((2, 2))
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
@@ -584,28 +602,6 @@ class TestExpM(object):
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm.` is deprecated")
-            assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
-            assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
-
-    def test_consistency(self):
-        a = array([[0.,1],[-1,0]])
-        b = array([[1j,1],[-1,-2j]])
-
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm.` is deprecated")
-            assert_array_almost_equal(expm(a), expm2(a))
-            assert_array_almost_equal(expm(a), expm3(a))
-
-            assert_array_almost_equal(expm(b), expm2(b))
-            assert_array_almost_equal(expm(b), expm3(b))
-
-    def test_npmatrix(self):
-        a = matrix([[3.,0],[0,-3.]])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm2` is deprecated")
-            assert_array_almost_equal(expm(a), expm2(a))
 
     def test_single_elt(self):
         # See gh-5853
@@ -627,6 +623,12 @@ class TestExpM(object):
                                               -0.8978045395698304))
         assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
                                               -0.84864425749518878))
+
+    def test_empty_matrix_input(self):
+        # handle gh-11082
+        A = np.zeros((0, 0))
+        result = expm(A)
+        assert result.size == 0
 
 
 class TestExpmFrechet(object):
@@ -724,7 +726,7 @@ class TestExpmFrechet(object):
                 [1.87864034, 2.07055038],
                 [1.34102727, 0.67341123],
                 ], dtype=float)
-        A_norm_1 = scipy.linalg.norm(A, 1)
+        scipy.linalg.norm(A, 1)
         sps_expm, sps_frechet = expm_frechet(
                 A, E, method='SPS')
         blockEnlarge_expm, blockEnlarge_frechet = expm_frechet(
@@ -834,3 +836,60 @@ class TestExpmConditionNumber(object):
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
+
+class TestKhatriRao(object):
+
+    def test_basic(self):
+        a = khatri_rao(array([[1, 2], [3, 4]]),
+                       array([[5, 6], [7, 8]]))
+
+        assert_array_equal(a, array([[5, 12],
+                                     [7, 16],
+                                     [15, 24],
+                                     [21, 32]]))
+
+        b = khatri_rao(np.empty([2, 2]), np.empty([2, 2]))
+        assert_array_equal(b.shape, (4, 2))
+
+    def test_number_of_columns_equality(self):
+        with pytest.raises(ValueError):
+            a = array([[1, 2, 3],
+                       [4, 5, 6]])
+            b = array([[1, 2],
+                       [3, 4]])
+            khatri_rao(a, b)
+
+    def test_to_assure_2d_array(self):
+        with pytest.raises(ValueError):
+            # both arrays are 1-D
+            a = array([1, 2, 3])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # first array is 1-D
+            a = array([1, 2, 3])
+            b = array([
+                [1, 2, 3],
+                [4, 5, 6]
+            ])
+            khatri_rao(a, b)
+
+        with pytest.raises(ValueError):
+            # second array is 1-D
+            a = array([
+                [1, 2, 3],
+                [7, 8, 9]
+            ])
+            b = array([4, 5, 6])
+            khatri_rao(a, b)
+
+    def test_equality_of_two_equations(self):
+        a = array([[1, 2], [3, 4]])
+        b = array([[5, 6], [7, 8]])
+
+        res1 = khatri_rao(a, b)
+        res2 = np.vstack([np.kron(a[:, k], b[:, k])
+                          for k in range(b.shape[1])]).T
+
+        assert_array_equal(res1, res2)
