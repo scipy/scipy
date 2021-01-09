@@ -2135,9 +2135,6 @@ class TestRvDiscrete(object):
 
 
 class TestSkewCauchy(object):
-    def setup_method(self):
-        np.random.seed(1234)
-
     def test_cauchy(self):
         x = np.linspace(-5, 5, 100)
         assert_array_almost_equal(stats.skewcauchy.pdf(x, a=0),
@@ -2150,6 +2147,7 @@ class TestSkewCauchy(object):
     def test_skewcauchy_R(self):
         # options(digits=16)
         # library(sgt)
+        # # lmbda, x contain the values generated for a, x below
         # lmbda <- c(0.0976270078546495, 0.430378732744839, 0.2055267521432877,
         #            0.0897663659937937, -0.15269040132219, 0.2917882261333122,
         #            -0.12482557747462, 0.7835460015641595, 0.9273255210020589,

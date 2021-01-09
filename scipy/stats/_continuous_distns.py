@@ -7043,6 +7043,7 @@ class skew_cauchy_gen(rv_continuous):
        https://en.wikipedia.org/wiki/Skewed_generalized_t_distribution#Skewed_Cauchy_distribution
 
     %(example)s
+
     """
 
     def _argcheck(self, a):
