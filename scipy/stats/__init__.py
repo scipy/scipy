@@ -204,7 +204,7 @@ Summary statistics
    entropy
    median_absolute_deviation
    median_abs_deviation
-   bootstrap_ci_1samp
+   bootstrap_ci
 
 Frequency statistics
 ====================
