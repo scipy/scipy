@@ -7012,7 +7012,7 @@ semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
 class skew_cauchy_gen(rv_continuous):
-    """A skewed Cauchy random variable.
+    r"""A skewed Cauchy random variable.
 
     %(before_notes)s
 
