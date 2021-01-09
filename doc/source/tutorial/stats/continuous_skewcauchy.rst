@@ -14,9 +14,9 @@ Functions
    :nowrap:
     \begin{eqnarray*}
     f(x, a) & = & \frac{1}{\pi \left(\frac{x^2}{\left(a x + 1 \right)^2} + 1 \right)},\quad x\ge0; \\
-                 & = & \frac{1}{\pi \left(\frac{x^2}{\left(-a x + 1 \right)^2} + 1 \right)},\quad x<0.
+                 & = & \frac{1}{\pi \left(\frac{x^2}{\left(-a x + 1 \right)^2} + 1 \right)},\quad x<0. \\
     F(x, a) & = & \frac{1 - a}{2} + \frac{1 + a}{\pi} \arctan\left(\frac{x}{1 + a} \right),\quad x\ge0; \\
-                 & = & \frac{1 - a}{2} + \frac{1 - a}{\pi} \arctan\left(\frac{x}{1 - a} \right),\quad x<0. \\
+                 & = & \frac{1 - a}{2} + \frac{1 - a}{\pi} \arctan\left(\frac{x}{1 - a} \right),\quad x<0.
     \end{eqnarray*}
 
 The mean, variance, skewness, and kurtosis are all undefined.
