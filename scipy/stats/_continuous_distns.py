@@ -9055,9 +9055,12 @@ class argus_gen(rv_continuous):
     %(example)s
     """
     def _logpdf(self, x, chi):
-        y = 1.0 - x*x
-        A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
-        return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+        def _lpdf(x, chi):
+            y = 1.0 - x*x
+            A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
+            return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
+
+        return _lazywhere((x > 0) & (x < 1), (x, chi), _lpdf, -np.inf)
 
     def _pdf(self, x, chi):
         return np.exp(self._logpdf(x, chi))

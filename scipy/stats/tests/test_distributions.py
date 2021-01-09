@@ -5648,6 +5648,7 @@ class TestArgus:
         val = stats.argus.stats(chi, moments='mv')
         assert_allclose(val, expected, rtol=1e-13)
 
+
 class TestNakagami:
 
     def test_logpdf(self):
