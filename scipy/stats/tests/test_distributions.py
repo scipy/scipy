@@ -44,7 +44,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus']
+         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus', 'skewcauchy']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -3109,7 +3109,7 @@ class TestHistogram(object):
         histogram = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
-        
+
         data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
@@ -3157,7 +3157,7 @@ class TestHistogram(object):
         assert_allclose(self.template.ppf(self.template.cdf(x)), x)
         x = np.linspace(0.0, 1.0, 100)
         assert_allclose(self.template.cdf(self.template.ppf(x)), x)
-        
+
         x = np.linspace(-2, 2, 10)
         assert_allclose(self.norm_template.cdf(x),
                         stats.norm.cdf(x, loc=1.0, scale=2.5), rtol=0.1)
@@ -3188,7 +3188,7 @@ class TestHistogram(object):
         for n in range(4):
             assert_allclose(self.norm_template._munp(n),
                             stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
-    
+
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)

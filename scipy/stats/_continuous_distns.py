@@ -25,7 +25,7 @@ from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
 # In numpy 1.12 and above, np.power refuses to raise integers to negative
-# powers, and `np.float_power` is a new replacement. 
+# powers, and `np.float_power` is a new replacement.
 try:
     float_power = np.float_power
 except AttributeError:
@@ -4620,7 +4620,7 @@ class skew_cauchy_gen(rv_continuous):
 
         skewcauchy.pdf(x, a) = 1 / (pi * (x**2 / (a * sign(x) + 1)**2 + 1))
 
-    `skewcauchy` takes ``a`` as a skewness parameter
+    `skewcauchy` takes ``-1 < a < 1`` as a skewness parameter
     When a=0 the distribution is identical to the usual Cauchy distribution.
 
     %(after_notes)s
@@ -4629,7 +4629,7 @@ class skew_cauchy_gen(rv_continuous):
     """
 
     def _argcheck(self, a):
-        return np.isfinite(a) and np.abs(a) != 1
+        return np.abs(a) < 1
 
     def _pdf(self, x, a):
         return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
@@ -4646,6 +4646,7 @@ class skew_cauchy_gen(rv_continuous):
 
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
+
 
 skewcauchy = skew_cauchy_gen(name='skewcauchy')
 
@@ -5295,7 +5296,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(after_notes)s
-    
+
     .. versionadded:: 0.19.0
 
     %(example)s
@@ -5331,7 +5332,7 @@ class rv_histogram(rv_continuous):
     a collection of generic methods (see `rv_continuous` for the full list),
     and implements them based on the properties of the provided binned
     datasample.
-        
+
     Parameters
     ----------
     histogram : tuple of array_like
