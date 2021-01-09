@@ -12,6 +12,7 @@ Functions
 
 .. math::
    :nowrap:
+
     \begin{eqnarray*}
     f(x, a) & = & \frac{1}{\pi \left(\frac{x^2}{\left(a x + 1 \right)^2} + 1 \right)},\quad x\ge0; \\
                  & = & \frac{1}{\pi \left(\frac{x^2}{\left(-a x + 1 \right)^2} + 1 \right)},\quad x<0. \\
