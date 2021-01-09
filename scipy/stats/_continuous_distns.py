@@ -7021,42 +7021,60 @@ semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
 class skew_cauchy_gen(rv_continuous):
-    """A skewed Cauchy random variable.
+    r"""A skewed Cauchy random variable.
 
     %(before_notes)s
 
+    See Also
+    --------
+    cauchy : Cauchy distribution
+
     Notes
     -----
-    The pdf is::
 
-        skewcauchy.pdf(x, a) = 1 / (pi * (x**2 / (a * sign(x) + 1)**2 + 1))
+    The probability density function for `skewcauchy` is:
 
-    `skewcauchy` takes ``a`` as a skewness parameter
-    When a=0 the distribution is identical to the usual Cauchy distribution.
+    .. math::
+
+        f(x) = \frac{1}{\pi \left(\frac{x^2}{\left(a\, \text{sign}(x) + 1
+                                                   \right)^2} + 1 \right)}
+
+    for a real number :math:`x` and skewness parameter :math:`-1 < a < 1`.
+
+    When :math:`a=0`, the distribution reduces to the usual Cauchy
+    distribution.
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Skewed generalized *t* distribution", Wikipedia
+       https://en.wikipedia.org/wiki/Skewed_generalized_t_distribution#Skewed_Cauchy_distribution
+
     %(example)s
+
     """
 
     def _argcheck(self, a):
-        return np.isfinite(a) and np.abs(a) != 1
+        return np.abs(a) < 1
 
     def _pdf(self, x, a):
         return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
 
     def _cdf(self, x, a):
         return np.where(x <= 0,
-                        (1 - a) / 2.0 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
-                        (1 - a) / 2.0 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
+                        (1 - a) / 2 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
+                        (1 - a) / 2 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
 
     def _ppf(self, x, a):
-        return np.where(x <= 0,
+        i = x < self._cdf(0, a)
+        return np.where(i,
                         np.tan(np.pi / (1 - a) * (x - (1 - a) / 2)) * (1 - a),
                         np.tan(np.pi / (1 + a) * (x - (1 - a) / 2)) * (1 + a))
 
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
+
 
 skewcauchy = skew_cauchy_gen(name='skewcauchy')
 
