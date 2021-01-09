@@ -12,7 +12,6 @@ Functions
 
 .. math::
    :nowrap:
-    \frac{1 - a}{2} + \frac{1 - a}{\pi} \atan\left(\frac{x}{1 - a} \right)
     \begin{eqnarray*}
     f(x, a) & = & \frac{1}{\pi \left(\frac{x^2}{\left(a x + 1 \right)^2} + 1 \right)},\quad x\ge0; \\
                  & = & \frac{1}{\pi \left(\frac{x^2}{\left(-a x + 1 \right)^2} + 1 \right)},\quad x<0.
