@@ -4762,7 +4762,7 @@ class TestAlexanderGovern(object):
         # test for zero length input args
         with assert_raises(ValueError) as e:
             stats.alexandergovern([1, 2], [])
-        assert "is of length zero" in str(e)
+        assert "cannot be zero-dimensional" in str(e)
 
         with assert_raises(ValueError) as e:
             stats.alexandergovern([1, 2], 2)
