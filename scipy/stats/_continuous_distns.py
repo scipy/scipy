@@ -7038,11 +7038,12 @@ class skew_cauchy_gen(rv_continuous):
 
     def _cdf(self, x, a):
         return np.where(x <= 0,
-                        (1 - a) / 2.0 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
-                        (1 - a) / 2.0 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
+                        (1 - a) / 2 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
+                        (1 - a) / 2 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
 
     def _ppf(self, x, a):
-        return np.where(x <= 0,
+        i = x < self._cdf(0, a)
+        return np.where(i,
                         np.tan(np.pi / (1 - a) * (x - (1 - a) / 2)) * (1 - a),
                         np.tan(np.pi / (1 + a) * (x - (1 - a) / 2)) * (1 + a))
 
