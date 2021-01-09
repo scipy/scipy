@@ -332,6 +332,15 @@ class TestCorr(object):
                             25, 80, 80, 80, 80, 80, 80, 0, 10, 45, np.nan, 0])
         result = mstats.kendalltau(x, y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
+
+        # test for namedtuple attributes
+        attributes = ('correlation', 'pvalue')
+        check_named_results(result, attributes, ma=True)
+
+    @pytest.mark.skipif(platform.machine() == 'ppc64le',
+                        reason="fails/crashes on ppc64le")
+    @pytest.mark.slow
+    def test_kendalltau_large(self):
         # make sure internal variable use correct precision with
         # larger arrays
         x = np.arange(2000, dtype=float)
@@ -340,10 +349,6 @@ class TestCorr(object):
         y = np.concatenate((y[1000:], y[:1000]))
         assert_(np.isfinite(mstats.kendalltau(x, y)[1]))
 
-        # test for namedtuple attributes
-        res = mstats.kendalltau(x, y)
-        attributes = ('correlation', 'pvalue')
-        check_named_results(res, attributes, ma=True)
 
     def test_kendalltau_seasonal(self):
         # Tests the seasonal Kendall tau.
@@ -358,27 +363,37 @@ class TestCorr(object):
                             [0.18,0.53,0.20,0.04])
 
 
-def test_kendall_p_exact_large():
-    # Test for the exact method with large samples (n >= 171)
-    # expected values generated using SymPy
-    expectations = {(100, 2393): 0.62822615287956040664,
-                    (101, 2436): 0.60439525773513602669,
-                    (170, 0): 2.755801935583541e-307,
-                    (171, 0): 0.0,
-                    (171, 1): 2.755801935583541e-307,
-                    (172, 1): 0.0,
-                    (200, 9797): 0.74753983745929675209,
-                    (201, 9656): 0.40959218958120363618,
-                    (400, 38965): 0.48444283672113314099,
-                    (401, 39516): 0.66363159823474837662,
-                    (800, 156772): 0.42265448483120932055,
-                    (801, 157849): 0.53437553412194416236,
-                    (1600, 637472): 0.84200727400323538419,
-                    (1601, 630304): 0.34465255088058593946}
-    
-    for nc, expected in expectations.items():
-        res = mstats_basic._kendall_p_exact(nc[0], nc[1])
-        assert_almost_equal(res, expected)
+    def test_kendall_p_exact_medium(self):
+        # Test for the exact method with medium samples (some n >= 171)
+        # expected values generated using SymPy
+        expectations = {(100, 2393): 0.62822615287956040664,
+                        (101, 2436): 0.60439525773513602669,
+                        (170, 0): 2.755801935583541e-307,
+                        (171, 0): 0.0,
+                        (171, 1): 2.755801935583541e-307,
+                        (172, 1): 0.0,
+                        (200, 9797): 0.74753983745929675209,
+                        (201, 9656): 0.40959218958120363618}
+        for nc, expected in expectations.items():
+            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            assert_almost_equal(res, expected)
+
+
+    @pytest.mark.slow
+    def test_kendall_p_exact_large(self):
+        # Test for the exact method with large samples (n >= 171)
+        # expected values generated using SymPy
+        expectations = {(400, 38965): 0.48444283672113314099,
+                        (401, 39516): 0.66363159823474837662,
+                        (800, 156772): 0.42265448483120932055,
+                        (801, 157849): 0.53437553412194416236,
+                        (1600, 637472): 0.84200727400323538419,
+                        (1601, 630304): 0.34465255088058593946}
+
+        for nc, expected in expectations.items():
+            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            assert_almost_equal(res, expected)
+
 
     def test_pointbiserial(self):
         x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
@@ -529,6 +544,13 @@ class TestMoments(object):
     def test_variation(self):
         y = mstats.variation(self.testcase)
         assert_almost_equal(y,0.44721359549996, 10)
+
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = np.array([1, 2, 3, 4, 5])
+        y = mstats.variation(a, ddof=1)
+        assert_almost_equal(y, 0.5270462766947299)
 
     def test_skewness(self):
         y = mstats.skew(self.testmathworks)

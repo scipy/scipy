@@ -1411,7 +1411,7 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
     where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
@@ -1482,7 +1482,7 @@ def yeojohnson_llf(lmb, data):
 def yeojohnson_normmax(x, brack=(-2, 2)):
     """
     Compute optimal Yeo-Johnson transform parameter.
-    
+
     Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
@@ -1742,7 +1742,7 @@ def anderson(x, dist='norm'):
     -----
     Critical values provided are for the following significance levels:
 
-    normal/exponenential
+    normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
@@ -2445,6 +2445,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
 
+    Note: `binom_test` is deprecated; it is recommended that `binomtest`
+    be used instead.
+
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
@@ -2829,7 +2832,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         two sets of measurements.)  Must be one-dimensional.
     zero_method : {"pratt", "wilcox", "zsplit"}, optional
         The following options are available (default is "wilcox"):
-     
+
           * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
           * "wilcox": Discards all zero-differences, the default.
@@ -2866,8 +2869,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is 
-    positive against the alternative that it is negative 
+    zero. The one-sided test has the null hypothesis that the median is
+    positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)

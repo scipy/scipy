@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import List, Tuple, Callable, Optional
+
 import pytest
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings
@@ -37,7 +40,7 @@ TEST_POINTS = {
 }
 
 
-PARAMS = [
+PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
@@ -86,8 +89,8 @@ PARAMS = [
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
     (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
     (special.erfi, cython_special.erfi, ('d', 'D'), None),
-    (special.erfinv, cython_special.erfinv, ('d'), None),
-    (special.erfcinv, cython_special.erfcinv, ('d'), None),
+    (special.erfinv, cython_special.erfinv, ('d',), None),
+    (special.erfcinv, cython_special.erfcinv, ('d',), None),
     (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
     (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),
      'd and l differ for negative int'),

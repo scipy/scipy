@@ -1876,7 +1876,7 @@ class TestMode(object):
         assert np.all(m.count == 2) and m.count.shape == (1, 1)
 
 
-class TestVariability(object):
+class TestSEM:
 
     testcase = [1, 2, 3, 4]
     scalar_testcase = 4.
@@ -1905,12 +1905,20 @@ class TestVariability(object):
         assert_raises(ValueError, stats.sem, x, nan_policy='raise')
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
-    def test_zmap(self):
-        # not in R, so tested by using:
-        #     (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zmap(self.testcase,self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
-        assert_array_almost_equal(desired,y,decimal=12)
+
+class TestZmapZscore:
+
+    @pytest.mark.parametrize(
+        'x, y',
+        [([1, 2, 3, 4], [1, 2, 3, 4]),
+         ([1, 2, 3], [0, 1, 2, 3, 4])]
+    )
+    def test_zmap(self, x, y):
+        z = stats.zmap(x, y)
+        # For these simple cases, calculate the expected result directly
+        # by using the formula for the z-score.
+        expected = (x - np.mean(y))/np.std(y)
+        assert_allclose(z, expected, rtol=1e-12)
 
     def test_zmap_axis(self):
         # Test use of 'axis' keyword in zmap.
@@ -1947,12 +1955,45 @@ class TestVariability(object):
         assert_array_almost_equal(z[0], z0_expected)
         assert_array_almost_equal(z[1], z1_expected)
 
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit(self, ddof):
+        # nans in `scores` are propagated, regardless of `nan_policy`.
+        # `nan_policy` only affects how nans in `compare` are handled.
+        scores = np.array([-3, -1, 2, np.nan])
+        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        z = stats.zmap(scores, compare, ddof=ddof, nan_policy='omit')
+        assert_allclose(z, stats.zmap(scores, compare[~np.isnan(compare)],
+                                      ddof=ddof))
+
+    @pytest.mark.parametrize('ddof', [0, 2])
+    def test_zmap_nan_policy_omit_with_axis(self, ddof):
+        scores = np.arange(-5.0, 9.0).reshape(2, -1)
+        compare = np.linspace(-8, 6, 24).reshape(2, -1)
+        compare[0, 4] = np.nan
+        compare[0, 6] = np.nan
+        compare[1, 1] = np.nan
+        z = stats.zmap(scores, compare, nan_policy='omit', axis=1, ddof=ddof)
+        expected = np.array([stats.zmap(scores[0],
+                                        compare[0][~np.isnan(compare[0])],
+                                        ddof=ddof),
+                             stats.zmap(scores[1],
+                                        compare[1][~np.isnan(compare[1])],
+                                        ddof=ddof)])
+        assert_allclose(z, expected, rtol=1e-14)
+
+    def test_zmap_nan_policy_raise(self):
+        scores = np.array([1, 2, 3])
+        compare = np.array([-8, -3, 2, 7, 12, np.nan])
+        with pytest.raises(ValueError, match='input contains nan'):
+            stats.zmap(scores, compare, nan_policy='raise')
+
     def test_zscore(self):
         # not in R, so tested by using:
         #    (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zscore(self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
-        assert_array_almost_equal(desired,y,decimal=12)
+        y = stats.zscore([1, 2, 3, 4])
+        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996,
+                    1.3416407864999])
+        assert_array_almost_equal(desired, y, decimal=12)
 
     def test_zscore_axis(self):
         # Test use of 'axis' keyword in zscore.
@@ -2006,6 +2047,12 @@ class TestVariability(object):
                              1.2649110640673518
                              ])
         assert_array_almost_equal(z, expected)
+
+    def test_zscore_nan_omit_with_ddof(self):
+        x = np.array([np.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
+        z = stats.zscore(x, ddof=1, nan_policy='omit')
+        expected = np.r_[np.nan, stats.zscore(x[1:], ddof=1)]
+        assert_allclose(z, expected, rtol=1e-13)
 
     def test_zscore_nan_raise(self):
         x = np.array([1, 2, np.nan, 4, 5])
@@ -2520,6 +2567,16 @@ class TestMoments(object):
         vv = stats.variation(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
 
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = array([1, 2, 3, 4, 5])
+        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
+        y = stats.variation(a, ddof=1)
+        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
+        assert_approx_equal(y, 0.5270462766947299)
+        np.testing.assert_equal(y, nan_y)
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
@@ -2553,6 +2610,19 @@ class TestMoments(object):
         with np.errstate(invalid='ignore'):
             s = stats.skew(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
+
+    def test_skew_constant_value(self):
+        # Skewness of a constant input should be zero even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.skew(a) == 0.0
+        assert stats.skew(a * float(2**50)) == 0.0
+        assert stats.skew(a / float(2**50)) == 0.0
+        assert stats.skew(a, bias=False) == 0.0
+
+        # similarly, from gh-11086:
+        assert stats.skew([14.3]*7) == 0.0
+        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
 
     def test_kurtosis(self):
         # Scalar test case
@@ -2591,6 +2661,15 @@ class TestMoments(object):
         a[1, 0] = np.nan
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
+
+    def test_kurtosis_constant_value(self):
+        # Kurtosis of a constant input should be zero, even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.kurtosis(a, fisher=False) == 0.0
+        assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -2969,6 +3048,26 @@ class TestPowerDivergence(object):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_power_divergence_gh_12282(self):
+        # The sums of observed and expected frequencies must match
+        f_obs = np.array([[10, 20], [30, 20]])
+        f_exp = np.array([[5, 15], [35, 25]])
+        with assert_raises(ValueError, match='For each axis slice...'):
+            stats.power_divergence(f_obs=[10, 20], f_exp=[30, 60])
+        with assert_raises(ValueError, match='For each axis slice...'):
+            stats.power_divergence(f_obs=f_obs, f_exp=f_exp, axis=1)
+        stat, pval = stats.power_divergence(f_obs=f_obs, f_exp=f_exp)
+        assert_allclose(stat, [5.71428571, 2.66666667])
+        assert_allclose(pval, [0.01682741, 0.10247043])
+
+
+def test_gh_chisquare_12282():
+    # Currently `chisquare` is implemented via power_divergence
+    # in case that ever changes, perform a basic test like
+    # test_power_divergence_gh_12282
+    with assert_raises(ValueError, match='For each axis slice...'):
+        stats.chisquare(f_obs=[10, 20], f_exp=[30, 60])
+
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
 def test_chiquare_data_types(n, dtype):
@@ -3060,28 +3159,19 @@ def test_power_divergence_against_cressie_read_data():
     # J. R. Statist. Soc. B (1984), Vol 46, No. 3, pp. 440-464.
     # This tests the calculation for several values of lambda.
 
+    # Table 4 data recalculated for greater precision according to:
+    # Shelby J. Haberman, Analysis of Qualitative Data: Volume 1
+    # Introductory Topics, Academic Press, New York, USA (1978).
+    obs = np.array([15, 11, 14, 17, 5, 11, 10, 4, 8,
+                    10, 7, 9, 11, 3, 6, 1, 1, 4])
+    beta = -0.083769  # Haberman (1978), p. 15
+    i = np.arange(1, len(obs) + 1)
+    alpha = np.log(obs.sum() / np.exp(beta*i).sum())
+    expected_counts = np.exp(alpha + beta*i)
+
     # `table4` holds just the second and third columns from Table 4.
-    table4 = np.array([
-        # observed, expected,
-        15, 15.171,
-        11, 13.952,
-        14, 12.831,
-        17, 11.800,
-        5, 10.852,
-        11, 9.9796,
-        10, 9.1777,
-        4, 8.4402,
-        8, 7.7620,
-        10, 7.1383,
-        7, 6.5647,
-        9, 6.0371,
-        11, 5.5520,
-        3, 5.1059,
-        6, 4.6956,
-        1, 4.3183,
-        1, 3.9713,
-        4, 3.6522,
-        ]).reshape(-1, 2)
+    table4 = np.vstack((obs, expected_counts)).T
+
     table5 = np.array([
         # lambda, statistic
         -10.0, 72.2e3,
@@ -3463,6 +3553,8 @@ class TestKSTwoSamples(object):
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
+
+    @pytest.mark.slow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
         # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
@@ -4692,42 +4784,46 @@ class TestGeometricStandardDeviation(object):
 
 def test_binomtest():
     # precision tests compared to R for ticket:986
-    pp = np.concatenate((np.linspace(0.1,0.2,5), np.linspace(0.45,0.65,5),
-                          np.linspace(0.85,0.95,5)))
+    pp = np.concatenate((np.linspace(0.1, 0.2, 5),
+                         np.linspace(0.45, 0.65, 5),
+                         np.linspace(0.85, 0.95, 5)))
     n = 501
     x = 450
     results = [0.0, 0.0, 1.0159969301994141e-304,
-    2.9752418572150531e-275, 7.7668382922535275e-250,
-    2.3381250925167094e-099, 7.8284591587323951e-081,
-    9.9155947819961383e-065, 2.8729390725176308e-050,
-    1.7175066298388421e-037, 0.0021070691951093692,
-    0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
-    2.6102587134694721e-006]
+               2.9752418572150531e-275, 7.7668382922535275e-250,
+               2.3381250925167094e-099, 7.8284591587323951e-081,
+               9.9155947819961383e-065, 2.8729390725176308e-050,
+               1.7175066298388421e-037, 0.0021070691951093692,
+               0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
+               2.6102587134694721e-006]
 
-    for p, res in zip(pp,results):
+    for p, res in zip(pp, results):
         assert_approx_equal(stats.binom_test(x, n, p), res,
                             significant=12, err_msg='fail forp=%f' % p)
 
-    assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
-                            significant=12, err_msg='fail forp=%f' % p)
+    assert_approx_equal(stats.binom_test(50, 100, 0.1),
+                        5.8320387857343647e-024,
+                        significant=12)
 
 
 def test_binomtest2():
     # test added for issue #2384
     res2 = [
-    [1.0, 1.0],
-    [0.5,1.0,0.5],
-    [0.25,1.00,1.00,0.25],
-    [0.125,0.625,1.000,0.625,0.125],
-    [0.0625,0.3750,1.0000,1.0000,0.3750,0.0625],
-    [0.03125,0.21875,0.68750,1.00000,0.68750,0.21875,0.03125],
-    [0.015625,0.125000,0.453125,1.000000,1.000000,0.453125,0.125000,0.015625],
-    [0.0078125,0.0703125,0.2890625,0.7265625,1.0000000,0.7265625,0.2890625,
-     0.0703125,0.0078125],
-    [0.00390625,0.03906250,0.17968750,0.50781250,1.00000000,1.00000000,
-     0.50781250,0.17968750,0.03906250,0.00390625],
-    [0.001953125,0.021484375,0.109375000,0.343750000,0.753906250,1.000000000,
-     0.753906250,0.343750000,0.109375000,0.021484375,0.001953125]
+        [1.0, 1.0],
+        [0.5, 1.0, 0.5],
+        [0.25, 1.00, 1.00, 0.25],
+        [0.125, 0.625, 1.000, 0.625, 0.125],
+        [0.0625, 0.3750, 1.0000, 1.0000, 0.3750, 0.0625],
+        [0.03125, 0.21875, 0.68750, 1.00000, 0.68750, 0.21875, 0.03125],
+        [0.015625, 0.125000, 0.453125, 1.000000, 1.000000, 0.453125, 0.125000,
+         0.015625],
+        [0.0078125, 0.0703125, 0.2890625, 0.7265625, 1.0000000, 0.7265625,
+         0.2890625, 0.0703125, 0.0078125],
+        [0.00390625, 0.03906250, 0.17968750, 0.50781250, 1.00000000,
+         1.00000000, 0.50781250, 0.17968750, 0.03906250, 0.00390625],
+        [0.001953125, 0.021484375, 0.109375000, 0.343750000, 0.753906250,
+         1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
+         0.001953125]
     ]
 
     for k in range(1, 11):
@@ -4738,12 +4834,17 @@ def test_binomtest2():
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k) for v in range(1, 11)
-                                           for k in range(2, 11)]
+    res3 = [stats.binom_test(v, v*k, 1./k)
+            for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
-    #> bt=c()
-    #> for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > bt=c()
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
     binom_testm1 = np.array([
          0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
          0.5981224279835393, 0.603430543396034, 0.607304096221924,
@@ -4777,7 +4878,12 @@ def test_binomtest3():
         ])
 
     # > bt=c()
-    # > for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
 
     binom_testp1 = np.array([
          0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
@@ -4810,10 +4916,10 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
+    res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+               for v in range(1, 11) for k in range(2, 11)]
+    res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+               for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
@@ -5186,6 +5292,14 @@ class TestKruskal(object):
         y = [2, 2, 2]
         z = []
         assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+
+    def test_nd_arrays(self):
+        # Inputs must be exactly one-dimensional
+        x = [1]
+        y = [2]
+        z = np.random.rand(2, 2)
+        with assert_raises(ValueError, match="Samples must be one-dimensional."):
+            stats.kruskal(x, y, z)
 
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]

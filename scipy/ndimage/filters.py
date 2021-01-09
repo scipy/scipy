@@ -51,23 +51,32 @@ def _invalid_origin(origin, lenw):
     return (origin < -(lenw // 2)) or (origin > (lenw - 1) // 2)
 
 
-def _complex_via_real_components(func, input, weights, output, **kwargs):
+def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
     """Complex convolution via a linear combination of real convolutions."""
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input and complex_weights:
         # real component of the output
-        func(input.real, weights.real, output=output.real, **kwargs)
-        output.real -= func(input.imag, weights.imag, output=None, **kwargs)
+        func(input.real, weights.real, output=output.real,
+             cval=numpy.real(cval), **kwargs)
+        output.real -= func(input.imag, weights.imag, output=None,
+                            cval=numpy.imag(cval), **kwargs)
         # imaginary component of the output
-        func(input.real, weights.imag, output=output.imag, **kwargs)
-        output.imag += func(input.imag, weights.real, output=None, **kwargs)
+        func(input.real, weights.imag, output=output.imag,
+             cval=numpy.real(cval), **kwargs)
+        output.imag += func(input.imag, weights.real, output=None,
+                            cval=numpy.imag(cval), **kwargs)
     elif complex_input:
-        func(input.real, weights, output=output.real, **kwargs)
-        func(input.imag, weights, output=output.imag, **kwargs)
+        func(input.real, weights, output=output.real, cval=numpy.real(cval),
+             **kwargs)
+        func(input.imag, weights, output=output.imag, cval=numpy.imag(cval),
+             **kwargs)
     else:
-        func(input, weights.real, output=output.real, **kwargs)
-        func(input, weights.imag, output=output.imag, **kwargs)
+        if numpy.iscomplexobj(cval):
+            raise ValueError("Cannot provide a complex-valued cval when the "
+                             "input is real.")
+        func(input, weights.real, output=output.real, cval=cval, **kwargs)
+        func(input, weights.imag, output=output.imag, cval=cval, **kwargs)
     return output
 
 
@@ -104,10 +113,10 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
         if complex_weights:
             weights = weights.conj()
             weights = weights.astype(numpy.complex128, copy=False)
-        kwargs = dict(axis=axis, mode=mode, cval=cval, origin=origin)
+        kwargs = dict(axis=axis, mode=mode, origin=origin)
         output = _ni_support._get_output(output, input, complex_output=True)
         return _complex_via_real_components(correlate1d, input, weights,
-                                            output, **kwargs)
+                                            output, cval, **kwargs)
 
     output = _ni_support._get_output(output, input)
     weights = numpy.asarray(weights, dtype=numpy.float64)
@@ -638,12 +647,12 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
             # As for numpy.correlate, conjugate weights rather than input.
             weights = weights.conj()
         kwargs = dict(
-            mode=mode, cval=cval, origin=origin, convolution=convolution
+            mode=mode, origin=origin, convolution=convolution
         )
         output = _ni_support._get_output(output, input, complex_output=True)
 
         return _complex_via_real_components(_correlate_or_convolve, input,
-                                            weights, output, **kwargs)
+                                            weights, output, cval, **kwargs)
 
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     weights = numpy.asarray(weights, dtype=numpy.float64)
@@ -889,9 +898,9 @@ def uniform_filter1d(input, size, axis=-1, output=None,
                                    origin)
     else:
         _nd_image.uniform_filter1d(input.real, size, axis, output.real, mode,
-                                   cval, origin)
+                                   numpy.real(cval), origin)
         _nd_image.uniform_filter1d(input.imag, size, axis, output.imag, mode,
-                                   cval, origin)
+                                   numpy.imag(cval), origin)
     return output
 
 
