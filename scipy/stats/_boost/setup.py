@@ -1,5 +1,5 @@
-import inspect
 import pathlib
+import sys
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -17,8 +17,11 @@ def configuration(parent_package='', top_path=None):
     DEFINES = [
         # return nan instead of throwing
         ('BOOST_MATH_DOMAIN_ERROR_POLICY', 'ignore_error'),
-        ('BOOST_MATH_PROMOTE_DOUBLE_POLICY', 'false'),
     ]
+    if sys.maxsize > 2**32:
+        # 32-bit machines loose too much precision with no promotion,
+        # so only set this policy for 64-bit machines
+        DEFINES += [('BOOST_MATH_PROMOTE_DOUBLE_POLICY', 'false')]
     INCLUDES = [
         'include/',
         'src/',
