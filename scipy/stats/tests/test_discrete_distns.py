@@ -164,24 +164,28 @@ class TestZipfian:
         assert_allclose(zipfian.pmf(k, a, n)[1:], pmf[1:], rtol=1e-6)
         assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
 
-
-    @pytest.mark.parametrize("a, n", [(1.01, 10), (1.56712977, 70),
-                                      (3.681, 33), (5.492, 66)])
+    np.random.seed(0)
+    naive_tests = np.vstack((np.logspace(-2, 1, 10),
+                             np.random.randint(2, 40, 10))).T
+    @pytest.mark.parametrize("a, n", naive_tests)
     def test_zipfian_naive(self, a, n):
         # test against bare-bones implementation
+
+        @np.vectorize
         def Hns(n, s):
             """Naive implementation of harmonic sum"""
             return (1/np.arange(1, n+1)**s).sum()
 
+        @np.vectorize
         def pzip(k, a, n):
             """Naive implementation of zipfian pmf"""
             if k < 1 or k > n:
-                return 0
+                return 0.
             else:
                 return 1 / k**a / Hns(n, a)
 
-        k = np.arange(n+1, dtype=int)
-        pmf = np.asarray([pzip(ki, a, n) for ki in k])
+        k = np.arange(n+1)
+        pmf = pzip(k, a, n)
         cdf = np.cumsum(pmf)
         mean = np.average(k, weights=pmf)
         var = np.average((k - mean)**2, weights=pmf)

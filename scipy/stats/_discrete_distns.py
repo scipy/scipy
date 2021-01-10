@@ -1084,8 +1084,6 @@ def _gen_harmonic_leq1(n, a):
     for i in np.arange(n_max, 0, -1, dtype=float):
         mask = i <= n  # don't add terms after nth
         out[mask] += 1/i**a[mask]
-    if out.ndim == 0:
-        return out.item()
     return out
 
 
@@ -1142,7 +1140,8 @@ class zipfian_gen(rv_discrete):
 
     """
     def _argcheck(self, a, n):
-        return (a >= 0) & (n > 0)
+        # we need np.asarray here because moment (maybe others) don't convert
+        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
 
     def _get_support(self, a, n):
         return 1, n
