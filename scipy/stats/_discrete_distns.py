@@ -292,10 +292,13 @@ class nbinom_gen(rv_discrete):
         k = floor(x)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
+        
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
+            
         def f2(k, n, p):
             return np.log(cdf)
+            
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
