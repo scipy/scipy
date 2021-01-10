@@ -30,11 +30,7 @@ class binom_gen(rv_discrete):
 
     for :math:`k \in \{0, 1, \dots, n\}`, :math:`0 \leq p \leq 1`
 
-<<<<<<< HEAD
-    `binom` takes ``n`` and ``p`` as shape parameters,
-=======
     `binom` takes :math:`n` and :math:`p` as shape parameters,
->>>>>>> upstream/master
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
