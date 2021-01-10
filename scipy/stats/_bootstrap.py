@@ -122,8 +122,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     3. Determine the confidence interval: find the interval of the bootstrap
        distribution that is
 
-        - symmetric about the median and
-        - contains `confidence_level` of the resampled statistic values.
+       - symmetric about the median and
+       - contains `confidence_level` of the resampled statistic values.
 
     While the ``'percentile'`` method is the most intuitive, it is rarely
     used in practice. Two more common methods are available, ``'basic'``
@@ -133,7 +133,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     If the samples in `data` are  taken at random from their respective
     distributions :math:`n` times, the confidence interval returned by
     `bootstrap_ci` will contain the true value of the statistic for those
-    distributions approximately `confidence_level`:math:`\times n` times.
+    distributions approximately `confidence_level`:math:`\, \times \, n` times.
 
     Parameters
     ----------
@@ -151,13 +151,13 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     confidence_level : float, optional
         The confidence level of the confidence interval.
         The default is ``0.95``.
-    n_samples : int, optional
+    n_resamples : int, optional
         The number of resamples performed to form the bootstrap distribution
         of the statistic. The default is ``10000``.
     method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse'or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
+        bootstrap confidence interval (``'BCa'``). The default is ``'basic'``.
     random_state: int, RandomState, or Generator, optional
         Pseudorandom number generator state used to generate resamples.
 
@@ -201,7 +201,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> data = (data,)  # samples must be in a sequence
     >>> ci_l, ci_u = bootstrap_ci(data, np.std, confidence_level=0.9)
     >>> print(ci_l, ci_u)
-    3.6358417469634423 4.505860501007106
+    3.644693455782651 4.5001372759222935
 
     If we sample from the distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
@@ -215,7 +215,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std+=1
     >>> print(ci_contains_true_std)
-    891
+    881
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
@@ -224,7 +224,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1,
     ...                                 confidence_level=0.9)
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    885
+    882
 
     `bootstrap_ci` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
