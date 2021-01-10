@@ -92,6 +92,7 @@ def configuration(parent_package='', top_path=None):
         join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
+    config.add_data_files('__nnls.pyi')
     ext = config.add_extension('__nnls', sources=[
         join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook

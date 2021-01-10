@@ -2567,6 +2567,16 @@ class TestMoments(object):
         vv = stats.variation(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
 
+    def test_variation_ddof(self):
+        # test variation with delta degrees of freedom
+        # regression test for gh-13341
+        a = array([1, 2, 3, 4, 5])
+        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
+        y = stats.variation(a, ddof=1)
+        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
+        assert_approx_equal(y, 0.5270462766947299)
+        np.testing.assert_equal(y, nan_y)
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
@@ -2600,6 +2610,19 @@ class TestMoments(object):
         with np.errstate(invalid='ignore'):
             s = stats.skew(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
+
+    def test_skew_constant_value(self):
+        # Skewness of a constant input should be zero even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.skew(a) == 0.0
+        assert stats.skew(a * float(2**50)) == 0.0
+        assert stats.skew(a / float(2**50)) == 0.0
+        assert stats.skew(a, bias=False) == 0.0
+
+        # similarly, from gh-11086:
+        assert stats.skew([14.3]*7) == 0.0
+        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
 
     def test_kurtosis(self):
         # Scalar test case
@@ -2638,6 +2661,15 @@ class TestMoments(object):
         a[1, 0] = np.nan
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
+
+    def test_kurtosis_constant_value(self):
+        # Kurtosis of a constant input should be zero, even when the mean is not
+        # exact (gh-13245)
+        a = np.repeat(-0.27829495, 10)
+        assert stats.kurtosis(a, fisher=False) == 0.0
+        assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
+        assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -4752,42 +4784,46 @@ class TestGeometricStandardDeviation(object):
 
 def test_binomtest():
     # precision tests compared to R for ticket:986
-    pp = np.concatenate((np.linspace(0.1,0.2,5), np.linspace(0.45,0.65,5),
-                          np.linspace(0.85,0.95,5)))
+    pp = np.concatenate((np.linspace(0.1, 0.2, 5),
+                         np.linspace(0.45, 0.65, 5),
+                         np.linspace(0.85, 0.95, 5)))
     n = 501
     x = 450
     results = [0.0, 0.0, 1.0159969301994141e-304,
-    2.9752418572150531e-275, 7.7668382922535275e-250,
-    2.3381250925167094e-099, 7.8284591587323951e-081,
-    9.9155947819961383e-065, 2.8729390725176308e-050,
-    1.7175066298388421e-037, 0.0021070691951093692,
-    0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
-    2.6102587134694721e-006]
+               2.9752418572150531e-275, 7.7668382922535275e-250,
+               2.3381250925167094e-099, 7.8284591587323951e-081,
+               9.9155947819961383e-065, 2.8729390725176308e-050,
+               1.7175066298388421e-037, 0.0021070691951093692,
+               0.12044570587262322, 0.88154763174802508, 0.027120993063129286,
+               2.6102587134694721e-006]
 
-    for p, res in zip(pp,results):
+    for p, res in zip(pp, results):
         assert_approx_equal(stats.binom_test(x, n, p), res,
                             significant=12, err_msg='fail forp=%f' % p)
 
-    assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
-                            significant=12, err_msg='fail forp=%f' % p)
+    assert_approx_equal(stats.binom_test(50, 100, 0.1),
+                        5.8320387857343647e-024,
+                        significant=12)
 
 
 def test_binomtest2():
     # test added for issue #2384
     res2 = [
-    [1.0, 1.0],
-    [0.5,1.0,0.5],
-    [0.25,1.00,1.00,0.25],
-    [0.125,0.625,1.000,0.625,0.125],
-    [0.0625,0.3750,1.0000,1.0000,0.3750,0.0625],
-    [0.03125,0.21875,0.68750,1.00000,0.68750,0.21875,0.03125],
-    [0.015625,0.125000,0.453125,1.000000,1.000000,0.453125,0.125000,0.015625],
-    [0.0078125,0.0703125,0.2890625,0.7265625,1.0000000,0.7265625,0.2890625,
-     0.0703125,0.0078125],
-    [0.00390625,0.03906250,0.17968750,0.50781250,1.00000000,1.00000000,
-     0.50781250,0.17968750,0.03906250,0.00390625],
-    [0.001953125,0.021484375,0.109375000,0.343750000,0.753906250,1.000000000,
-     0.753906250,0.343750000,0.109375000,0.021484375,0.001953125]
+        [1.0, 1.0],
+        [0.5, 1.0, 0.5],
+        [0.25, 1.00, 1.00, 0.25],
+        [0.125, 0.625, 1.000, 0.625, 0.125],
+        [0.0625, 0.3750, 1.0000, 1.0000, 0.3750, 0.0625],
+        [0.03125, 0.21875, 0.68750, 1.00000, 0.68750, 0.21875, 0.03125],
+        [0.015625, 0.125000, 0.453125, 1.000000, 1.000000, 0.453125, 0.125000,
+         0.015625],
+        [0.0078125, 0.0703125, 0.2890625, 0.7265625, 1.0000000, 0.7265625,
+         0.2890625, 0.0703125, 0.0078125],
+        [0.00390625, 0.03906250, 0.17968750, 0.50781250, 1.00000000,
+         1.00000000, 0.50781250, 0.17968750, 0.03906250, 0.00390625],
+        [0.001953125, 0.021484375, 0.109375000, 0.343750000, 0.753906250,
+         1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
+         0.001953125]
     ]
 
     for k in range(1, 11):
@@ -4798,12 +4834,17 @@ def test_binomtest2():
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k) for v in range(1, 11)
-                                           for k in range(2, 11)]
+    res3 = [stats.binom_test(v, v*k, 1./k)
+            for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
-    #> bt=c()
-    #> for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > bt=c()
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i-1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
     binom_testm1 = np.array([
          0.5, 0.5555555555555556, 0.578125, 0.5904000000000003,
          0.5981224279835393, 0.603430543396034, 0.607304096221924,
@@ -4837,7 +4878,12 @@ def test_binomtest3():
         ])
 
     # > bt=c()
-    # > for(i in as.single(1:10)){for(k in as.single(2:10)){bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value); print(c(i+1, k*i,(1/k)))}}
+    # > for(i in as.single(1:10)) {
+    # +     for(k in as.single(2:10)) {
+    # +         bt = c(bt, binom.test(i+1, k*i,(1/k))$p.value);
+    # +         print(c(i+1, k*i,(1/k)))
+    # +     }
+    # + }
 
     binom_testp1 = np.array([
          0.5, 0.259259259259259, 0.26171875, 0.26272, 0.2632244513031551,
@@ -4870,10 +4916,10 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k) for v in range(1, 11)
-                                                for k in range(2, 11)]
+    res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+               for v in range(1, 11) for k in range(2, 11)]
+    res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+               for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
