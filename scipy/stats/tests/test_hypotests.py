@@ -160,62 +160,49 @@ class TestCvm(object):
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds"),
-                         [(stats.pearsonr, tuple(), dict()),
-                          (stats.ranksums, tuple(), dict()),
-                          (stats.ansari, tuple(), dict()),
-                          (stats.brunnermunzel, ("less",),
-                           {"distribution": 'normal'}),
-                          (stats.epps_singleton_2samp, ((.35, 0.75),), {})
-                          ])
+vectorization_nanpolicy_cases = [
+    (stats.pearsonr, tuple(), dict(), 2),
+    (stats.ranksums, tuple(), dict(), 2),
+    (stats.ansari, tuple(), dict(), 2),
+    (stats.brunnermunzel, ("less",),
+     {"distribution": 'normal'}, 2),
+    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
+    (stats.shapiro, tuple(), dict(), 1),
+    (stats.jarque_bera, tuple(), dict(), 1),
+    ]
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
+                         vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit"))
-def test_hypotest_vectorization(hypotest, args, kwds, nan_policy):
+@pytest.mark.parametrize(("axis"), (0, 1))
+def test_hypotest_vectorization(hypotest, args, kwds, nsamp, nan_policy, axis):
     # test that hypothesis tests using _vectorize_2s_hypotest_factory decorator
     # vectorize as expected
     m, n = 8, 9
 
     np.random.seed(0)
-    x = np.random.rand(m, n)
-    y = np.random.rand(m, n)
+    x = np.random.rand(nsamp, m, n)
 
     if nan_policy == 'omit':
         nan_mask = np.random.rand(m, n) > 0.85
-        x[nan_mask] = np.nan
-        y[nan_mask] = np.nan
+        x[:, nan_mask] = np.nan  # e.g. pearson requires x and y same mask
 
-    axis = 1
-    stats, ps = np.zeros(m), np.zeros(m)
-    for i in range(m):
-        xi, yi = x[i], y[i]
+    # perform test along last axis for each element of second to last axis
+    # consider rewriting for arbitrary number of dimensions, though
+    x2 = np.moveaxis(x.copy(), axis+1, -1)
+    output_size = x2.shape[-2]
+    stats, ps = np.zeros(output_size), np.zeros(output_size)
+    for i in range(output_size):
+        xi = x2[:, i, :]
         if nan_policy == 'omit':
-            xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
-        stats[i], ps[i] = hypotest(xi, yi, *args, **kwds)
-    res = hypotest(x, y, axis=axis, nan_policy=nan_policy, *args, **kwds)
-    assert_equal(res[0], stats)
-    assert_equal(res[1], ps)
-
-    axis = 0
-    stats, ps = np.zeros(n), np.zeros(n)
-    for i in range(n):
-        xi, yi = x.T[i], y.T[i]
-        if nan_policy == 'omit':
-            xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
-        stats[i], ps[i] = hypotest(xi, yi, *args, **kwds)
-    res = hypotest(x, y, axis=axis, nan_policy=nan_policy, *args, **kwds)
+            xi = [xji[~np.isnan(xji)] for xji in xi]
+        stats[i], ps[i] = hypotest(*xi, *args, **kwds)
+    res = hypotest(*x, axis=axis, nan_policy=nan_policy, *args, **kwds)
     assert_equal(res[0], stats)
     assert_equal(res[1], ps)
 
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
-                         [(stats.pearsonr, tuple(), dict(), 2),
-                          (stats.ranksums, tuple(), dict(), 2),
-                          (stats.ansari, tuple(), dict(), 2),
-                          (stats.brunnermunzel, ("less",),
-                           {"distribution": 'normal'}, 2),
-                          (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
-                          (stats.shapiro, tuple(), dict(), 1),
-                          (stats.jarque_bera, tuple(), dict(), 1),
-                          ])
+                         vectorization_nanpolicy_cases)
 def test_hypotest_nan_raise(hypotest, args, kwds, nsamp):
     m, n = 8, 9
     np.random.seed(0)
