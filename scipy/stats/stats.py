@@ -186,8 +186,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import (epps_singleton_2samp, cramervonmises,
-                         _vectorize_2s_hypotest_factory)
-
+                         _vectorize_2s_hypotest_factory,
+                         _vectorize_1s_hypotest_factory)
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -1715,6 +1715,11 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
 
 
+def _jarque_bera_result_creator(res):
+    return Jarque_beraResult(res[..., 0], res[..., 1])
+
+
+@_vectorize_1s_hypotest_factory(_jarque_bera_result_creator)
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.

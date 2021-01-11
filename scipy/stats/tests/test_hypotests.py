@@ -201,28 +201,27 @@ def test_hypotest_vectorization(hypotest, args, kwds, nan_policy):
         if nan_policy == 'omit':
             xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
         stats[i], ps[i] = hypotest(xi, yi, *args, **kwds)
-
     res = hypotest(x, y, axis=axis, nan_policy=nan_policy, *args, **kwds)
     assert_equal(res[0], stats)
     assert_equal(res[1], ps)
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds"),
-                         [(stats.pearsonr, tuple(), dict()),
-                          (stats.ranksums, tuple(), dict()),
-                          (stats.ansari, tuple(), dict()),
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
+                         [(stats.pearsonr, tuple(), dict(), 2),
+                          (stats.ranksums, tuple(), dict(), 2),
+                          (stats.ansari, tuple(), dict(), 2),
                           (stats.brunnermunzel, ("less",),
-                           {"distribution": 'normal'}),
-                          (stats.epps_singleton_2samp, ((.35, 0.75),), {})
+                           {"distribution": 'normal'}, 2),
+                          (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
+                          (stats.shapiro, tuple(), dict(), 1),
+                          (stats.jarque_bera, tuple(), dict(), 1),
                           ])
-def test_hypotest_nan_raise(hypotest, args, kwds):
+def test_hypotest_nan_raise(hypotest, args, kwds, nsamp):
     m, n = 8, 9
     np.random.seed(0)
-    x = np.random.rand(m, n)
-    y = np.random.rand(m, n)
-    nan_mask = np.random.rand(m, n) > 0.85
+    x = np.random.rand(nsamp, m, n)
+    nan_mask = np.random.rand(nsamp, m, n) > 0.85
     x[nan_mask] = np.nan
-    y[nan_mask] = np.nan
 
     with assert_raises(ValueError, match="The input contains nan values"):
-        hypotest(x, y, nan_policy="raise", *args, **kwds)
+        hypotest(*x, nan_policy="raise", *args, **kwds)

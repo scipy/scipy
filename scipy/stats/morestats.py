@@ -17,7 +17,9 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 
-from ._hypotests import _get_wilcoxon_distr, _vectorize_2s_hypotest_factory
+from ._hypotests import (_get_wilcoxon_distr, _vectorize_2s_hypotest_factory,
+                         _vectorize_1s_hypotest_factory)
+
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
@@ -1606,6 +1608,12 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
+
+def _shapiro_result_creator(res):
+    return ShapiroResult(res[..., 0], res[..., 1])
+
+
+@_vectorize_1s_hypotest_factory(_shapiro_result_creator)
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.

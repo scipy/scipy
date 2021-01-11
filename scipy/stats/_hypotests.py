@@ -7,10 +7,45 @@ from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 import scipy.stats.stats
+from functools import wraps
 
 
+# although _vectorize_2s_hypotest_factorycan be generalized to n-d,
+# it might make some sense to have a separate decorator for the 1d case
+# because it can be quite a bit simpler - we can use np.apply_along_axis,
+# for instance
+def _vectorize_1s_hypotest_factory(result_creator):
+    def vectorize_hypotest_decorator(hypotest_fun_in):
+        @wraps(hypotest_fun_in)
+        def vectorize_hypotest_wrapper(x, *args, axis=0,
+                                       nan_policy='propagate', **kwds):
+
+            x = np.atleast_1d(x)
+
+            # Addresses nan_policy="raise"
+            _, nan_policy = scipy.stats.stats._contains_nan(x, nan_policy)
+
+            # Addresses nan_policy="omit"
+            if nan_policy == 'omit':
+                def hypotest_fun(x, *args, **kwds):
+                    x = x[~np.isnan(x)]
+                    return hypotest_fun_in(x, *args, **kwds)
+            else:
+                hypotest_fun = hypotest_fun_in
+
+            x = np.moveaxis(x, axis, -1)
+            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
+            return result_creator(res)
+
+        return vectorize_hypotest_wrapper
+    return vectorize_hypotest_decorator
+
+
+# this can be generalized to n-d, and it should use the
+# approach for the "omit" nan_policy used above
 def _vectorize_2s_hypotest_factory(result_creator):
     def vectorize_hypotest_decorator(hypotest_fun):
+        @wraps(hypotest_fun)
         def vectorize_hypotest_wrapper(x, y, *args, axis=0,
                                        nan_policy='propagate', **kwds):
 
