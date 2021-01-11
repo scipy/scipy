@@ -528,7 +528,9 @@ cdef double _genhyperbolic_pdf(double x, void *user_data) nogil except *:
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cpdef double genhyperbolic_logpdf(double x, double p, double a, double b) nogil:
+cpdef double genhyperbolic_logpdf(
+        double x, double p, double a, double b
+        ) nogil:
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
@@ -542,7 +544,9 @@ cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 
-cdef double _genhyperbolic_logpdf_kernel(double x, double p, double a, double b) nogil:
+cdef double _genhyperbolic_logpdf_kernel(
+        double x, double p, double a, double b
+        ) nogil:
     cdef double t1, t2, t3, t4, t5, t6
 
     t1 = _log_norming_constant(p, a, b)

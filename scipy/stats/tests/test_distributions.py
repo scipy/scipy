@@ -380,7 +380,7 @@ class TestGenHyperbolic(object):
         # x <- seq(-10, 10, length.out = 10)
         # GeneralizedHyperbolic::dghyp(
         #    x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
-        #)
+        # )
         vals_R = np.array([
             2.94895678275316e-13, 1.75746848647696e-10, 9.48149804073045e-08,
             4.17862521692026e-05, 0.0103947630463822, 0.240864958986839,
@@ -396,14 +396,14 @@ class TestGenHyperbolic(object):
 
         alpha_hat = alpha * delta
         beta_hat = beta * delta
-            
+
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(
             p=lmbda,
             a=alpha_hat,
             b=beta_hat,
-            loc = mu,
-            scale = delta
+            loc=mu,
+            scale=delta
             )
 
         assert_allclose(gh.pdf(x), vals_R, atol=1e-9)
@@ -415,8 +415,8 @@ class TestGenHyperbolic(object):
         #   x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
         # )
         vals_R = np.array([
-            1.01881590921421e-13 ,6.13697274983578e-11 ,3.37504977637992e-08,
-            1.55258698166181e-05 ,0.00447005453832497 ,0.228935323956347,
+            1.01881590921421e-13, 6.13697274983578e-11, 3.37504977637992e-08,
+            1.55258698166181e-05, 0.00447005453832497, 0.228935323956347,
             0.755759458895243, 0.953061062884484, 0.992598013917513,
             0.998942646586662
             ])
@@ -429,14 +429,14 @@ class TestGenHyperbolic(object):
 
         alpha_hat = alpha * delta
         beta_hat = beta * delta
-            
+
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(
             p=lmbda,
             a=alpha_hat,
             b=beta_hat,
-            loc = mu,
-            scale = delta
+            loc=mu,
+            scale=delta
             )
 
         assert_allclose(gh.cdf(x), vals_R, atol=1e-9, rtol=1e-5)
@@ -449,7 +449,7 @@ class TestGenHyperbolic(object):
         #        beta = 1, delta = 1.5, mu = 0.5
         #        momType = 'mu')
         # )
-        
+
         vals_R = np.array([
             1.86848366948115, 6.35545100844345,
             26.8275110062306, 141.581144754983
@@ -483,7 +483,7 @@ class TestGenHyperbolic(object):
 
     def test_rvs(self):
         # KS test
-        #p = 1, alpha = 1, beta = 0
+        # p = 1, alpha = 1, beta = 0
         gh = stats.genhyperbolic(p=1, a=1, b=0)
         _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
 
