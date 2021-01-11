@@ -71,8 +71,7 @@ class Distribution(Benchmark):
     # maintain previous benchmarks' values
     custom_input = {'gamma': [5], 'beta': [5, 3]}
 
-    # these distributions are the slowest quartile and are only run if is_xslow
-    # is set
+    # these are the distributions that are the slowest
     slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
                   'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
                   'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
@@ -80,7 +79,6 @@ class Distribution(Benchmark):
     slow_methods = ['moment']
 
     def setup(self, distribution, properties):
-
         if not is_xslow() and (distribution in self.slow_dists or
                                properties in self.slow_methods):
             raise NotImplementedError("Skipped")
@@ -90,9 +88,11 @@ class Distribution(Benchmark):
         shapes = self.dist_data[distribution]
 
         if isinstance(self.dist, stats.rv_discrete):
+            # discrete distributions only use location
             self.isCont = False
             kwds = {'loc': 4}
         else:
+            # continuous distributions use location and scale
             self.isCont = True
             kwds = {'loc': 4, 'scale': 10}
 
@@ -101,11 +101,12 @@ class Distribution(Benchmark):
         args = [x, *self.custom_input.get(distribution, shapes)]
 
         if properties == 'fit':
-            # provide only the data to fit in args
+            # the only positional argument is the data to be fitted
             self.args = self.dist.rvs(size=100, **kwds)
         elif properties == 'rvs':
-            # add size for creation of data
+            # add size keyword argument for data creation
             kwds['size'] = 1000
+            # keep shapes as positional arguments, omit linearly spaced data
             self.args = args[1:]
         elif properties == 'pdf/pmf':
             properties = ('pmf' if isinstance(self.dist, stats.rv_discrete)
@@ -118,6 +119,7 @@ class Distribution(Benchmark):
         elif properties in ['ppf', 'isf']:
             self.args = [np.linspace((0, 1), 100), *args[1:]]
         elif properties == 'moment':
+            # the first four moments may be optimized, so compute the fifth
             self.args = [5, *args[1:]]
         elif properties.startswith('stats_'):
             properties = 'stats'
