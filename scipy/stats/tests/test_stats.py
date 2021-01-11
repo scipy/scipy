@@ -4766,10 +4766,10 @@ class TestAlexanderGovern(object):
 
         with assert_raises(ValueError) as e:
             stats.alexandergovern([1, 2], 2)
-        assert "Input samples cannot be zero-dimentional." in str(e)
+        assert "samples cannot be zero-dimensional" in str(e)
 
         with assert_raises(ValueError) as e:
-            stats.alexandergovern([1, 2], [np.nan])
+            stats.alexandergovern([1, 2], [np.nan, np.nan])
         assert "Input samples must be finite." in str(e)
 
     def test_compare_r(self):

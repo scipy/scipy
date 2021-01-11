@@ -3808,7 +3808,7 @@ def _alexandergovern_input_validation(args):
     args = [np.ravel(np.asarray(arg, dtype=float)) for arg in args]
 
     for arg in args:
-        if np.size(arg) <= 0:
+        if np.size(arg) <= 1:
             raise ValueError("Input samples cannot be zero-dimensional.")
         if False in np.isfinite(arg):
             raise ValueError("Input samples must be finite.")
