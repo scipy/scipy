@@ -153,6 +153,7 @@ class TestShapiro(object):
         x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
               0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
+        x1 = np.ravel(x1)
         w, pw = stats.shapiro(x1)
         shapiro_test = stats.shapiro(x1)
         assert_almost_equal(w, 0.90047299861907959, decimal=6)
@@ -163,6 +164,7 @@ class TestShapiro(object):
         x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
               3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
               0.08, 3.67, 2.81, 3.49]]
+        x2 = np.ravel(x2)
         w, pw = stats.shapiro(x2)
         shapiro_test = stats.shapiro(x2)
         assert_almost_equal(w, 0.9590270, decimal=6)

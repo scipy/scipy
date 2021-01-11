@@ -4235,9 +4235,9 @@ class TestJarqueBera(object):
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
 
-        jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
-        jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))
-        jb_test3 = JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+        jb_test1 = JB1, p1 = stats.jarque_bera(list(x), axis=-1)
+        jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x), axis=-1)
+        jb_test3 = JB3, p3 = stats.jarque_bera(x.reshape(2, 50000).ravel())
 
         assert_(JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic)
         assert_(p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue)
