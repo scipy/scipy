@@ -5823,7 +5823,7 @@ def _broadcast_concatenate(xs, axis):
 
 
 def _data_permutations(data, n, axis=-1, random_state=None):
-    """Vectorized permutation of data"""
+    """Vectorized permutation of data, assumes `random_state` is already checked"""
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
