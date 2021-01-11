@@ -2962,7 +2962,7 @@ class genhyperbolic_gen(rv_continuous):
 
     .. [2] Eberlein E., Prause K. (2002) The Generalized Hyperbolic Model:
         Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
-        Pliska S.R., Vorst T. (eds) Mathematical Finance — Bachelier
+        Pliska S.R., Vorst T. (eds) Mathematical Finance - Bachelier
         Congress 2000. Springer Finance. Springer, Berlin, Heidelberg.
         https://doi.org/10.1007/978-3-662-12429-1_12
 
