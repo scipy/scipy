@@ -2919,10 +2919,10 @@ class genhyperbolic_gen(rv_continuous):
             (\hat{\alpha} \sqrt{1 + x^2})}
             {(\sqrt{1 + x^2})^{1/2 - \lambda}}
 
-    for :math:`x \in (- \infty; \infty)`, 
-    :math:`\lambda, \mu \in \mathbb{R}`, 
-    :math:`0 \leq |\hat{\beta}| < \hat{\alpha} \hat{\beta}`, 
-    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
+    for :math:`x \in (- \infty; \infty)`,
+     :math:`\lambda, \mu \in \mathbb{R}`,
+     :math:`0 \leq |\hat{\beta}| < \hat{\alpha} \hat{\beta}`,
+     :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
     kind and order :math:`\lambda` (`scipy.special.kn`)
 
     `genhyperbolic` takes ``p`` as a tail parameter for :math:`\lambda`,
@@ -2944,11 +2944,11 @@ class genhyperbolic_gen(rv_continuous):
            (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
            {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \lambda}}
 
-    for :math:`x \in (- \infty; \infty)`, 
-    :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`, 
-    :math:`\lambda, \mu \in \mathbb{R}`, 
-    :math:`0 \leq |\beta| < \alpha \beta`, 
-    and :math:`\delta \in \mathbb{R}_{>0}`.
+    for :math:`x \in (- \infty; \infty)`,
+     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`,
+     :math:`\lambda, \mu \in \mathbb{R}`,
+     :math:`0 \leq |\beta| < \alpha \beta`,
+     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     The location-scale-based parameterization implemented in
     scipy is based on [2]_, where :math:`\hat{\alpha} = \alpha\delta`
@@ -2963,7 +2963,8 @@ class genhyperbolic_gen(rv_continuous):
     .. [2] Eberlein E., Prause K. (2002) The Generalized Hyperbolic Model:
         Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
         Pliska S.R., Vorst T. (eds) Mathematical Finance — Bachelier
-        Congress 2000. Springer Finance. Springer, Berlin, Heidelberg. https://doi.org/10.1007/978-3-662-12429-1_12
+        Congress 2000. Springer Finance. Springer, Berlin, Heidelberg.
+        https://doi.org/10.1007/978-3-662-12429-1_12
 
     .. [3] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
        Thanh Tam, (2009), Moments of the generalized hyperbolic
@@ -3011,14 +3012,18 @@ class genhyperbolic_gen(rv_continuous):
 
         @np.vectorize
         def _cdf_single(x, p, a, b):
-            user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf', user_data)
+            user_data = np.array(
+                [p, a, b], float
+                ).ctypes.data_as(ctypes.c_void_p)
+            llc = LowLevelCallable.from_cython(
+                _stats, '_genhyperbolic_pdf', user_data
+                )
 
             t1 = integrate.quad(llc, -np.inf, x)[0]
 
             if np.isnan(t1):
                 msg = ("Infinite values encountered in scipy.special.kve. "
-                    "Values replaced by NaN to avoid incorrect results.")
+                       "Values replaced by NaN to avoid incorrect results.")
                 warnings.warn(msg, RuntimeWarning)
 
             return t1
@@ -3026,7 +3031,8 @@ class genhyperbolic_gen(rv_continuous):
         return _cdf_single(x, p, a, b)
 
     def _rvs(self, p, a, b, size=None, random_state=None):
-        # note: X = b * V + sqrt(V) * X  has a generalized hyperbolic distribution
+        # note: X = b * V + sqrt(V) * X  has a
+        # generalized hyperbolic distribution
         # if X is standard normal and V is
         # geninvgauss(p = p, b = t4, loc = loc, scale = t4)
         t1 = np.float_power(a, 2) - np.float_power(b, 2)
