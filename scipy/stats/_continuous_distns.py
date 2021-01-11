@@ -2911,28 +2911,48 @@ class genhyperbolic_gen(rv_continuous):
 
     .. math::
 
+        f(x, \lambda, \hat{\alpha}, \hat{\beta)} =
+            \frac{(\hat{\alpha}^2 - \hat{\beta}^2)^{\lambda/2}}
+            {\sqrt{2\pi}\hat{\alpha}^{\lambda-0.5}\delta
+            K_\lambda(\sqrt{\hat{\alpha}^2 - \hat{\beta}^2})}
+            e^{\hat{\beta}(x)} \times \frac{K_{\lambda - 1/2}
+            (\hat{\alpha} \sqrt{1 + x^2})}
+            {(\sqrt{1 + x^2})^{1/2 - \lambda}}
+
+    for :math:`x \in (- \infty; \infty)`, 
+    :math:`\lambda, \mu \in \mathbb{R}`, 
+    :math:`0 \leq |\hat{\beta}| < \hat{\alpha} \hat{\beta}`, 
+    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
+    kind and order :math:`\lambda` (`scipy.special.kn`)
+
+    `genhyperbolic` takes ``p`` as a tail parameter for :math:`\lambda`,
+    ``a`` as a shape parameter for :math:`\hat{\alpha}`,
+    ``b`` as a skewness parameter for :math:`\hat{\beta}`,
+
+    Moments are based on [3]_.
+
+    %(after_notes)s
+
+    The original parameterization of the Generalized Hyperbolic Distribution
+    is found in [1]_ as follows
+
+    .. math::
+
         f(x, \lambda, \alpha, \beta, \delta, \mu) =
            \frac{(\gamma/\delta)^\lambda}{\sqrt{2\pi}K_\lambda(\delta \gamma)}
            e^{\beta (x - \mu)} \times \frac{K_{\lambda - 1/2}
            (\alpha \sqrt{\delta^2 + (x - \mu)^2})}
            {(\sqrt{\delta^2 + (x - \mu)^2} / \alpha)^{1/2 - \lambda}}
 
-    for :math:`x \in (- \infty; \infty)`,
-    :math:`\lambda, \mu \in \mathbb{R}`,
-    :math:`0 \leq |\beta| < \alpha \beta`,
+    for :math:`x \in (- \infty; \infty)`, 
+    :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`, 
+    :math:`\lambda, \mu \in \mathbb{R}`, 
+    :math:`0 \leq |\beta| < \alpha \beta`, 
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
-    :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`.
-    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
-    kind and order :math:`\lambda` (`scipy.special.kn`)
-
-    `genhyperbolic` takes ``lmbda`` as a tail parameter for :math:`\lambda`,
-    ``alpha`` as a shape parameter for :math:`\alpha`,
-    ``beta`` as a skewness parameter for :math:`\beta`,
-    ``delta`` as a scale parameter for :math:`\delta`, and
-    ``mu`` as a location parameter for :math:`\mu`.
-
-    %(after_notes)s
+    The location-scale-based parameterization implemented in
+    scipy is based on [2]_, where :math:`\hat{\alpha} = \alpha\delta`
+    and :math:`\hat{\beta} = \beta\delta`
 
     References
     ----------
@@ -2940,7 +2960,12 @@ class genhyperbolic_gen(rv_continuous):
        on Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
        pp. 151-157, 1978.
 
-    .. [2] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
+    .. [2] Eberlein E., Prause K. (2002) The Generalized Hyperbolic Model:
+        Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
+        Pliska S.R., Vorst T. (eds) Mathematical Finance — Bachelier
+        Congress 2000. Springer Finance. Springer, Berlin, Heidelberg. https://doi.org/10.1007/978-3-662-12429-1_12
+
+    .. [3] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
        Thanh Tam, (2009), Moments of the generalized hyperbolic
        distribution, MPRA Paper, University Library of Munich, Germany,
        https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
@@ -2949,79 +2974,94 @@ class genhyperbolic_gen(rv_continuous):
 
     """
 
-    def _argcheck(self, lmbda, alpha, beta, delta):
+    def _argcheck(self, p, a, b):
 
         @np.vectorize
-        def _argcheck_single(lmbda, alpha, beta, delta):
-            if lmbda > 0:
-                return np.all((np.absolute(beta) < alpha) & (delta >= 0))
-            elif lmbda == 0:
-                return np.all((np.absolute(beta) < alpha) & (delta > 0))
+        def _argcheck_single(p, a, b):
+            if p > 0:
+                return np.absolute(b) < a
+            elif p == 0:
+                return np.absolute(b) < a
             else:
-                return np.all((np.absolute(beta) <= alpha) & (delta > 0))
+                return np.absolute(b) <= a
 
-        return _argcheck_single(lmbda, alpha, beta, delta)
+        return _argcheck_single(p, a, b)
 
-    def _pdf(self, x, lmbda, alpha, beta, delta):
+    def _logpdf(self, x, p, a, b):
+        # kve instead of kv works better for large values of p
+        # and smaller values of sqrt(a^2  - b^2)
+        @np.vectorize
+        def _logpdf_single(x, p, a, b):
+            return _stats.genhyperbolic_logpdf(x, p, a, b)
+
+        return _logpdf_single(x, p, a, b)
+
+    def _pdf(self, x, p, a, b):
         # https://www.jstor.org/stable/4615705
+        # https://doi.org/10.1007/978-3-662-12429-1_12
+        # kve instead of kv works better for large values of p
+        # and smaller values of sqrt(a^2  - b^2)
         @np.vectorize
-        def _pdf_single(x, lmbda, alpha, beta, delta):
-            return _stats.genhyperbolic_pdf(x, lmbda, alpha, beta, delta)
+        def _pdf_single(x, p, a, b):
+            return _stats.genhyperbolic_pdf(x, p, a, b)
 
-        return _pdf_single(x, lmbda, alpha, beta, delta)
+        return _pdf_single(x, p, a, b)
 
-    def _cdf(self, x, lmbda, alpha, beta, delta):
+    def _cdf(self, x, p, a, b):
 
         @np.vectorize
-        def _cdf_single(x, lmbda, alpha, beta, delta):
-            user_data = np.array([lmbda, alpha, beta, delta], float).ctypes.data_as(ctypes.c_void_p)
+        def _cdf_single(x, p, a, b):
+            user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf', user_data)
 
-            return integrate.quad(llc, -np.inf, x)[0]
+            t1 = integrate.quad(llc, -np.inf, x)[0]
 
-        return _cdf_single(x, lmbda, alpha, beta, delta)
+            if np.isnan(t1):
+                msg = ("Infinite values encountered in scipy.special.kve. "
+                    "Values replaced by NaN to avoid incorrect results.")
+                warnings.warn(msg, RuntimeWarning)
 
-    def _rvs(self, lmbda, alpha, beta, delta, size=None, random_state=None):
-        # note: X = b * V + sqrt(V) * X  has a generalized hyperbolic distribution if X is standard
-        # normal and V is geninvgauss(a = ?, b = ?)
-        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
-        t2 = np.float_power(delta, 2)
+            return t1
+
+        return _cdf_single(x, p, a, b)
+
+    def _rvs(self, p, a, b, size=None, random_state=None):
+        # note: X = b * V + sqrt(V) * X  has a generalized hyperbolic distribution
+        # if X is standard normal and V is
+        # geninvgauss(p = p, b = t4, loc = loc, scale = t4)
+        t1 = np.float_power(a, 2) - np.float_power(b, 2)
+        t2 = np.float_power(1, 2)
         # b in the GIG
         t3 = np.float_power(t1 * t2, 0.5)
         # scale in the GIG
         t4 = 1 / np.float_power(t1 / t2, 0.5)
         gig = geninvgauss.rvs(
-            p=lmbda,
+            p=p,
             b=t3,
-            scale = t4,
+            scale=t4,
             size=size,
             random_state=random_state
             )
         normst = norm.rvs(size=size, random_state=random_state)
-        return beta * gig + np.sqrt(gig) * normst
 
-    def _stats(self, lmbda, alpha, beta, delta):
+        return b * gig + np.sqrt(gig) * normst
+
+    def _stats(self, p, a, b):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
-        # raw moments
-        t1 = np.float_power(alpha, 2) - np.float_power(beta, 2)
-        t1 = delta * np.float_power(t1, 0.5)
-        t2 = np.float_power(delta, 2) * np.float_power(t1, - 1)
-        b0 = sc.kv(lmbda, t1)
-        b1 = sc.kv(lmbda + 1, t1)
-        b2 = sc.kv(lmbda + 2, t1)
-        b3 = sc.kv(lmbda + 3, t1)
-        b4 = sc.kv(lmbda + 4, t1)
-        r1 = b1 * np.float_power(b0, - 1)
-        r2 = b2 * np.float_power(b0, - 1)
-        r3 = b3 * np.float_power(b0, - 1)
-        r4 = b4 * np.float_power(b0, - 1)
-        m1 = t2 * beta * r1
-        m2 = t2 * r1 + np.float_power(t2 * beta, 2) * r2
-        m3 = 3 * beta * np.float_power(t2, 2) * r2 \
-            + np.float_power(t2 * beta, 3) * r3
+        # standardized moments
+        t1 = np.float_power(a, 2) - np.float_power(b, 2)
+        t1 = np.float_power(t1, 0.5)
+        t2 = np.float_power(1, 2) * np.float_power(t1, - 1)
+        b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5), t1)
+        r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
+        m1 = t2 * b * r1
+        m2 = t2 * r1 + np.float_power(t2, 2) * np.float_power(b, 2) * r2
+        m3 = 3 * b * np.float_power(t2, 2) * r2 \
+            + np.float_power(t2, 3) * np.float_power(b, 3) * r3
         m4 = 3 * np.float_power(t2, 2) * r2 \
-            + 6 * np.float_power(t2 * beta, 3) * r3 \
-            + np.float_power(t2 * beta, 4) * r4
+            + 6 * np.float_power(t2, 3) * np.float_power(b, 2) * r3 \
+            + np.float_power(t2, 4) * np.float_power(b, 4) * r4
+
         return m1, m2, m3, m4
 
 
