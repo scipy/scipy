@@ -3,6 +3,7 @@ from dataclasses import make_dataclass
 import numpy as np
 import warnings
 from itertools import combinations
+import scipy.stats
 from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
@@ -712,7 +713,7 @@ def cramervonmises_2samp(x, y, method='auto'):
         A 1-D array of observed values of the random variables :math:`X_i`.
     y : array_like
         A 1-D array of observed values of the random variables :math:`Y_i`.
-    method : {'auto', 'asymp', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.
 
@@ -735,7 +736,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     The statistic is computed according to equation 9 in [2]_. The
     calculation of the p-value depends on the keyword `method`:
 
-    - ``asymp``: The p-value is approximated by using the limiting
+    - ``asymptotic``: The p-value is approximated by using the limiting
       distribution of the test statistic.
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
@@ -747,7 +748,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     otherwise the asymptotic distribution is used.
 
     If the underlying distribution is not continuous, the p-value is likely to
-    be conservative (Section 6.2 in [3]_).
+    be conservative (Section 6.2 in [3]_). When ranking the data to compute
+    the test statistic, midranks are used if there are ties.
 
     References
     ----------
@@ -788,7 +790,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     The p-value based on the asymptotic distribution is a good approximation
     even though the sample size is small.
     
-    >>> res = stats.cramervonmises_2samp(x, y, method='asymp')
+    >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
     >>> res.statistic, res.pvalue
     (0.2655677655677655, 0.17974247316290415)
 
@@ -803,23 +805,22 @@ def cramervonmises_2samp(x, y, method='auto'):
         raise ValueError('x and y must contain at least two observations.')
     if xa.ndim > 1 or ya.ndim > 1:
         raise ValueError('The samples must be one-dimensional.')
-    if method not in ['auto', 'exact', 'asymp']:
-        raise ValueError('method must be either auto, exact or asymp.')
+    if method not in ['auto', 'exact', 'asymptotic']:
+        raise ValueError('method must be either auto, exact or asymptotic.')
 
     nx = len(xa)
     ny = len(ya)
 
     if method == 'auto':
         if max(nx, ny) > 10:
-            method = 'asymp'
+            method = 'asymptotic'
         else:
             method = 'exact'
 
     # get ranks of x and y in the pooled sample
     z = np.concatenate([xa, ya])
-    # import here to avoid circular import
-    from scipy.stats import rankdata
-    r = rankdata(z)
+    # in case of ties, use midrank (see [1])
+    r = scipy.stats.rankdata(z, method='average')
     rx = r[:nx]
     ry = r[nx:]
 
@@ -844,8 +845,8 @@ def cramervonmises_2samp(x, y, method='auto'):
 
         # approximate distribution of tn with limiting distribution
         # of the one-sample test statistic
-        # if tn < 0.002, the cdf is < 1.15 * 1e-27, return 1.0 directly
-        if tn < 0.002:
+        # if tn < 0.0035, the _cdf_cvm_inf(tn) < 4.9*1e-16, return 1.0 directly
+        if tn < 0.0035:
             p = 1.0
         else:
             p = max(0, 1. - _cdf_cvm_inf(tn))
