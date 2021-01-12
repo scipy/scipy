@@ -293,7 +293,7 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
         assert_raises(
             RuntimeError,
             ndimage.distance_transform_bf(
@@ -434,12 +434,15 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        indices_out = numpy.zeros(data.shape)
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
+        indices_out = numpy.zeros((data.ndim,) + data.shape, dtype=numpy.int32)
         assert_raises(
             RuntimeError,
             ndimage.distance_transform_bf(
-                data, return_distances=True, return_indices=False, indices=indices_out
+                data,
+                return_distances=True,
+                return_indices=False,
+                indices=indices_out
             )
         )
 
@@ -561,12 +564,15 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        distances_out = numpy.zeros(data.shape)
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
+        distances_out = numpy.zeros(data.shape, dtype=numpy.float64)
         assert_raises(
             RuntimeError,
             ndimage.distance_transform_bf(
-                data, return_distances=False, return_indices=True, distances=distances_out
+                data,
+                return_indices=True,
+                return_distances=False,
+                distances=distances_out
             )
         )
 
