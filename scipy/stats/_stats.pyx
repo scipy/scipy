@@ -581,7 +581,7 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
 
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
-    K = (<double *>user_data)[0]
+    K = (<double *>user_data)[0] # the Kth moment to calc.
     k = (<double *>user_data)[1]
     v = (<double *>user_data)[2]
 
@@ -591,13 +591,11 @@ cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data
 
     #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
     cdef double pdf_data[3]
-    pdf_data[0] = 1.5
+    pdf_data[0] = x # Q is integrated over by the third integral
     pdf_data[1] = k
     pdf_data[2] = v
 
-#math.pow(x-0, n) *
-    return  _genstudentized_range_pdf(2, x_arg, pdf_data)
-    #return n * (n-1) * math.pow(w, k)*math.pow(_Phi(x + w) - _Phi(x), n-2)*_phi(x+w)*_phi(x)
+    return  math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
 
 ctypedef fused real:
     float
