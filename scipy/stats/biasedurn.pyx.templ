@@ -107,8 +107,12 @@ cdef class _PyStochasticLib3:
                 rng = np.random.RandomState(random_state)
             elif isinstance(random_state, np.random.RandomState):
                 rng = random_state
+            elif hasattr(np.random, 'Generator') and isinstance(random_state, np.random.Generator):
+                # if we are building in a compatibility mode, we may need
+                # to resolve newer numpy Generator objects
+                rng = random_state
             else:
-                raise TypeError('random_state is not one of None, int, RandomState')
+                raise TypeError('random_state is not one of None, int, RandomState, or Generator')
             global _glob_rng
             _glob_rng = rng
     ELSE:
