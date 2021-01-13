@@ -2953,7 +2953,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`\lambda, \mu \in \mathbb{R}`,
     :math:`\delta \ge 0, |\beta| \lt \alpha` if :math:`\lambda \ge 0`,
     :math:`\delta \gt 0, |\beta| \lt \alpha` if :math:`\lambda = 0`,
-    :math:`\delta \gt 0, |\beta| \leq \alpha ` if :math:`\lambda \lt 0`.
+    :math:`\delta \gt 0, |\beta| \leq \alpha` if :math:`\lambda \lt 0`.
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     The location-scale-based parameterization implemented in
@@ -2983,16 +2983,8 @@ class genhyperbolic_gen(rv_continuous):
 
     def _argcheck(self, p, a, b):
 
-        @np.vectorize
-        def _argcheck_single(p, a, b):
-            if p > 0:
-                return np.absolute(b) < a
-            elif p == 0:
-                return np.absolute(b) < a
-            else:
-                return np.absolute(b) <= a
-
-        return _argcheck_single(p, a, b)
+        return np.logical_and(np.abs(b) < a, p >= 0) | \
+                np.logical_and(np.abs(b) <= a, p < 0)
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
