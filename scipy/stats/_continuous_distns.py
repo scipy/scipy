@@ -2907,7 +2907,7 @@ class genhyperbolic_gen(rv_continuous):
 
     See Also
     --------
-    t, norminvgaus, geninvgauss, laplace, cauchy
+    t, norminvgauss, geninvgauss, laplace, cauchy
 
     Notes
     -----
@@ -2925,7 +2925,6 @@ class genhyperbolic_gen(rv_continuous):
 
     for :math:`x, \lambda \in \mathbb{R}`,
     :math:`|\hat{\beta}| \lt \hat{\alpha}` if :math:`\lambda \ge 0`,
-    :math:`|\hat{\beta}| \lt \hat{\alpha}` if :math:`\lambda = 0`,
     :math:`|\hat{\beta}| \leq \hat{\alpha}` if :math:`\lambda \lt 0`.
     :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second
     kind and order :math:`\lambda` (`scipy.special.kn`)
@@ -2952,9 +2951,9 @@ class genhyperbolic_gen(rv_continuous):
     for :math:`x \in ( - \infty; \infty)`,
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`,
     :math:`\lambda, \mu \in \mathbb{R}`,
-    :math:`|\beta| \lt \alpha` if :math:`\lambda \ge 0`,
-    :math:`|\beta| \lt \alpha` if :math:`\lambda = 0`,
-    :math:`|\beta| \leq \alpha ` if :math:`\lambda \lt 0`.
+    :math:`\delta \ge 0, |\beta| \lt \alpha` if :math:`\lambda \ge 0`,
+    :math:`\delta \gt 0, |\beta| \lt \alpha` if :math:`\lambda = 0`,
+    :math:`\delta \gt 0, |\beta| \leq \alpha ` if :math:`\lambda \lt 0`.
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     The location-scale-based parameterization implemented in
@@ -3074,7 +3073,7 @@ class genhyperbolic_gen(rv_continuous):
             + 6 * np.float_power(t2, 3) * np.float_power(b, 2) * r3 \
             + np.float_power(t2, 4) * np.float_power(b, 4) * r4
 
-        return m1, m2, m3, m4
+        return m1, m2, m3 * np.float_power(m2, - 3 / 2), m4 * np.float_power(m2, - 2) - 3
 
 
 genhyperbolic = genhyperbolic_gen(name='genhyperbolic')

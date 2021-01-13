@@ -476,8 +476,8 @@ class TestGenHyperbolic(object):
 
         # center and de-standardize moments to match R results
         mvsk[0] -= mu
-        mvsk[2] *= np.float_power(delta, 3)
-        mvsk[3] *= np.float_power(delta, 4)
+        mvsk[2] = mvsk[2] * np.float_power(mvsk[1], 3 / 2)
+        mvsk[3] = (mvsk[3] + 3) * np.float_power(mvsk[1], 2)
 
         assert_allclose(mvsk, vals_R, atol=1e-9, rtol=1e-8)
 
