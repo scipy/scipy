@@ -6,6 +6,7 @@ Some CMake files are used to create source lists for compilation
 
 import pathlib
 from datetime import datetime
+import os
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -171,6 +172,8 @@ def configuration(parent_package='', top_path=None):
         language='c++',
     )
     ext._pre_build_hook = pre_build_hook
+
+    config.add_data_files(os.path.join('cython', 'src', '*.pxd'))
 
     return config
 
