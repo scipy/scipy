@@ -68,8 +68,9 @@ class DistributionsAll(Benchmark):
                 'stats_m', 'stats_k', 'stats_mvsk', 'entropy']
     ]
     dist_data = dict(distcont + distdiscrete)
-    # maintain previous benchmarks' values
-    custom_input = {'gamma': [5], 'beta': [5, 3]}
+    # custom shape values can be provided for any distribution in the format
+    # `dist_name`: [shape1, shape2, ...]
+    custom_input = {}
 
     # these are the distributions that are the slowest
     slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
