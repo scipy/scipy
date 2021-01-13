@@ -58,7 +58,8 @@ class InferentialStats(Benchmark):
 
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
-    # remove duplicates that are included in both `distcont` and `distdiscrete`.
+    # remove duplicates that are included in both `distcont` and
+    # `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
     param_names = ['distribution', 'properties']
@@ -88,7 +89,7 @@ class DistributionsAll(Benchmark):
 
         shapes = self.dist_data[distribution]
 
-        if isinstance(self.dist, stats.rv_discrete):
+        if 'discrete' in self.dist.__module__:
             # discrete distributions only use location
             self.isCont = False
             kwds = {'loc': 4}
@@ -100,21 +101,26 @@ class DistributionsAll(Benchmark):
         bounds = self.dist.interval(.99, *shapes, **kwds)
         x = np.linspace(*bounds, 100)
         args = [x, *self.custom_input.get(distribution, shapes)]
-
+        self.args = args
+        self.kwds = kwds
         if properties == 'fit':
+            # there are no fit methods for discrete distributions
+            if 'discrete' in self.dist.__module__:
+                raise NotImplementedError("This attribute is not a member "
+                                          "of the distribution")
             # the only positional argument is the data to be fitted
-            self.args = self.dist.rvs(size=100, **kwds)
+            self.args = [self.dist.rvs(*shapes, size=100, **kwds)]
         elif properties == 'rvs':
             # add size keyword argument for data creation
             kwds['size'] = 1000
             # keep shapes as positional arguments, omit linearly spaced data
             self.args = args[1:]
         elif properties == 'pdf/pmf':
-            properties = ('pmf' if isinstance(self.dist, stats.rv_discrete)
+            properties = ('pmf' if 'discrete' in self.dist.__module__
                           else 'pdf')
             self.args = args
         elif properties == 'logpdf/logpmf':
-            properties = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
+            properties = ('logpmf' if 'discrete' in self.dist.__module__
                           else 'logpdf')
             self.args = args
         elif properties in ['ppf', 'isf']:
@@ -129,15 +135,8 @@ class DistributionsAll(Benchmark):
             self.kwds = kwds
         elif properties == 'entropy':
             self.args = args[1:]
-        else:
-            self.args = args
-        self.kwds = kwds
 
-        try:
-            self.method = getattr(self.dist, properties)
-        except AttributeError:
-            raise NotImplementedError("This attribute is not a member "
-                                      "of the distribution")
+        self.method = getattr(self.dist, properties)
 
     def time_distribution(self, distribution, properties):
         self.method(*self.args, **self.kwds)
