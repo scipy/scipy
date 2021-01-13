@@ -56,7 +56,7 @@ class InferentialStats(Benchmark):
         stats.ttest_ind(self.a, self.c, equal_var=False)
 
 
-class Distribution(Benchmark):
+class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
     # remove duplicates that are files under `distcont` and `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
@@ -142,15 +142,51 @@ class Distribution(Benchmark):
         self.method(*self.args, **self.kwds)
 
 
-class Distribution_old(Benchmark):
-    param_names = ['distribution', 'properties']
-    params = [[], []]
+class Distribution(Benchmark):
+    # though there is a new version of this benchmark that runs all the
+    # distributions, at the time of writing there was odd behavior on
+    # the asv for this benchmark, so it is retained.
+    # https://pv.github.io/scipy-bench/#stats.Distribution.time_distribution
 
-    def setup(self):
-        pass
+    param_names = ['distribution', 'properties']
+    params = [
+        ['cauchy', 'gamma', 'beta'],
+        ['pdf', 'cdf', 'rvs', 'fit']
+    ]
+
+    def setup(self, distribution, properties):
+        np.random.seed(12345678)
+        self.x = np.random.rand(100)
 
     def time_distribution(self, distribution, properties):
-        pass
+        if distribution == 'gamma':
+            if properties == 'pdf':
+                stats.gamma.pdf(self.x, a=5, loc=4, scale=10)
+            elif properties == 'cdf':
+                stats.gamma.cdf(self.x, a=5, loc=4, scale=10)
+            elif properties == 'rvs':
+                stats.gamma.rvs(size=1000, a=5, loc=4, scale=10)
+            elif properties == 'fit':
+                stats.gamma.fit(self.x, loc=4, scale=10)
+        elif distribution == 'cauchy':
+            if properties == 'pdf':
+                stats.cauchy.pdf(self.x, loc=4, scale=10)
+            elif properties == 'cdf':
+                stats.cauchy.cdf(self.x, loc=4, scale=10)
+            elif properties == 'rvs':
+                stats.cauchy.rvs(size=1000, loc=4, scale=10)
+            elif properties == 'fit':
+                stats.cauchy.fit(self.x, loc=4, scale=10)
+        elif distribution == 'beta':
+            if properties == 'pdf':
+                stats.beta.pdf(self.x, a=5, b=3, loc=4, scale=10)
+            elif properties == 'cdf':
+                stats.beta.cdf(self.x, a=5, b=3, loc=4, scale=10)
+            elif properties == 'rvs':
+                stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
+            elif properties == 'fit':
+                stats.beta.fit(self.x, loc=4, scale=10)
+        self.method(*self.args, **self.kwds)
     # Retain old benchmark results (remove this if changing the benchmark)
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
 
