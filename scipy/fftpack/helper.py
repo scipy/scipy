@@ -101,7 +101,7 @@ def _good_shape(x, shape, axes):
 
     scipy.fftpack does not support len(shape) < x.ndim when axes is not given.
     """
-    if shape and not axes:
+    if shape is not None and axes is None:
         shape = _helper._iterable_of_int(shape, 'shape')
         if len(shape) != np.ndim(x):
             raise ValueError("when given, axes and shape arguments"

@@ -1501,7 +1501,7 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
@@ -1821,7 +1821,7 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
+    -----
     This is faster than `scipy.signal.medfilt` when `input.dtype.type`
     is `np.ubyte`, `np.single`, or `np.double`; for other types, this
     falls back to `scipy.signal.medfilt`
@@ -2211,7 +2211,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 

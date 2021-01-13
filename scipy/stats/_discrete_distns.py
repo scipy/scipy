@@ -28,11 +28,11 @@ class binom_gen(rv_discrete):
 
        f(k) = \binom{n}{k} p^k (1-p)^{n-k}
 
-    for ``k`` in ``{0, 1,..., n}``, :math:`0 \leq p \leq 1`
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`0 \leq p \leq 1`
 
-    `binom` takes ``n`` and ``p`` as shape parameters,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    `binom` takes :math:`n` and :math:`p` as shape parameters,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -109,8 +109,8 @@ class bernoulli_gen(binom_gen):
     for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
     `bernoulli` takes :math:`p` as shape parameter,
-    where :math:`p` is the probability of a single success 
-    and :math:`1-p` is the probability of a single failure. 
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -173,7 +173,7 @@ class betabinom_gen(rv_discrete):
 
        f(k) = \binom{n}{k} \frac{B(k + a, n - k + b)}{B(a, b)}
 
-    for ``k`` in ``{0, 1,..., n}``, :math:`n \geq 0`, :math:`a > 0`,
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`n \geq 0`, :math:`a > 0`,
     :math:`b > 0`, where :math:`B(a, b)` is the beta function.
 
     `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
@@ -257,8 +257,8 @@ class nbinom_gen(rv_discrete):
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success, 
-    and :math:`1-p` is the probability of a single failure. 
+    number of successes, :math:`p` is the probability of a single success,
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -284,9 +284,25 @@ class nbinom_gen(rv_discrete):
         return coeff + n*log(p) + special.xlog1py(x, -p)
 
     def _cdf(self, x, n, p):
+        k = floor(x)
         return _boost._nbinom_cdf(x, n, p)
-    
+
+    def _logcdf(self, x, n, p):
+        k = floor(x)
+        cdf = self._cdf(k, n, p)
+        cond = cdf > 0.5
+
+        def f1(k, n, p):
+            return np.log1p(-special.betainc(k + 1, n, 1 - p))
+
+        def f2(k, n, p):
+            return np.log(cdf)
+
+        with np.errstate(divide='ignore'):
+            return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
+
     def _sf(self, x, n, p):
+        k = floor(x)
         return _boost._nbinom_sf(x, n, p)
 
     def _isf(self, x, n, p):
@@ -322,8 +338,8 @@ class geom_gen(rv_discrete):
 
     for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter, 
-    where :math:`p` is the probability of a single success 
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
@@ -737,9 +753,9 @@ class poisson_gen(rv_discrete):
 
     for :math:`k \ge 0`.
 
-    `poisson` takes :math:`\mu` as shape parameter.
-    When mu = 0 then at quantile k = 0, ``pmf`` method
-    returns `1.0`.
+    `poisson` takes :math:`\mu \geq 0` as shape parameter.
+    When :math:`\mu = 0`, the ``pmf`` method
+    returns ``1.0`` at quantile :math:`k = 0`.
 
     %(after_notes)s
 
@@ -805,7 +821,7 @@ class planck_gen(rv_discrete):
 
     `planck` takes :math:`\lambda` as shape parameter. The Planck distribution
     can be written as a geometric distribution (`geom`) with
-    :math:`p = 1 - \exp(-\lambda)` shifted by `loc = -1`.
+    :math:`p = 1 - \exp(-\lambda)` shifted by ``loc = -1``.
 
     %(after_notes)s
 
@@ -933,11 +949,12 @@ class randint_gen(rv_discrete):
 
     .. math::
 
-        f(k) = \frac{1}{high - low}
+        f(k) = \frac{1}{\texttt{high} - \texttt{low}}
 
-    for ``k = low, ..., high - 1``.
+    for :math:`k \in \{\texttt{low}, \dots, \texttt{high} - 1\}`.
 
-    `randint` takes ``low`` and ``high`` as shape parameters.
+    `randint` takes :math:`\texttt{low}` and :math:`\texttt{high}` as shape
+    parameters.
 
     %(after_notes)s
 
@@ -1015,7 +1032,7 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
+    `zipf` takes :math:`a > 1` as shape parameter. :math:`\zeta` is the
     Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
@@ -1101,7 +1118,7 @@ class dlaplace_gen(rv_discrete):
         #     https://www.sciencedirect.com/science/
         #     article/abs/pii/S0378375804003519
         # Furthermore, the two-sided geometric distribution is
-        # equivalent to the difference between two iid geometric 
+        # equivalent to the difference between two iid geometric
         # distributions.
         #   Reference (page 179):
         #     https://pdfs.semanticscholar.org/61b3/
