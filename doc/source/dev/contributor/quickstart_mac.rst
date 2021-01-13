@@ -19,8 +19,8 @@ This quickstart guide will cover:
 in macOS.
 
 Its companion videos `Anaconda SciPy Dev: Part I (macOS)`_ and
-`Anaconda SciPy Dev: Part II (macOS)`_ show many of the steps being performed.
-This guide may diverge slightly from the videos over time, with the goal of keeping
+`Anaconda SciPy Dev: Part II (macOS)`_ show many of the steps being performed, albeit in a slightly
+different order. This guide may diverge slightly from the videos over time, with the goal of keeping
 this guide the simplest, up-to-date procedure.
 
 .. note::
@@ -36,10 +36,8 @@ this guide the simplest, up-to-date procedure.
 
 .. _quickstart-mac-build:
 
-Building SciPy
---------------
-
-*Consider following along with the companion video* `Anaconda SciPy Dev: Part I (macOS)`_
+Setting Up a Developer Environment
+----------------------------------
 
 #. Download, install, and test the latest release of the `Anaconda Distribution of Python`_.
    In addition to the latest version of Python 3, the Anaconda distribution includes
@@ -52,6 +50,39 @@ Building SciPy
    enter the command ``xcode-select --install``, and follow the prompts. Apple
    Developer Tools includes `git <https://git-scm.com/>`_, the software we need to
    download and manage the SciPy source code.
+
+#. In the terminal, ensure that all of SciPy's build dependencies are up to
+   date: ``conda install pybind11``, then ``conda update cython numpy pytest
+   pybind11``.
+
+#. In a terminal window, enter ``conda list``. |br| This shows a list of all
+   the Python packages that came with the Anaconda distribution of Python. Note
+   the latest released version of SciPy is among them; this is not the cutting-edge
+   development version you will be modifying.
+
+#. Enter ``conda create --name scipydev``. |br| This tells ``conda`` to
+   create a virtual environment named ``scipydev``. Note that ``scipydev`` can
+   be replaced by any name you'd like to refer to your virtual environment.
+
+#. You're still in the base environment. Activate your new virtual environment
+   by entering ``conda activate scipydev``. |br| If you're working with an old
+   version of ``conda``, you might need to type ``source activate scipydev``
+   instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
+
+#. (Optional) Enter ``conda list`` again. Note that the new virtual environment
+   has no packages installed. If you were to open a Python interpreter now, you
+   wouldn't be able to import ``numpy``, ``scipy``, etc.
+
+#. Enter ``conda install cython numpy pytest spyder pybind11 compilers``. |br| Note
+   that we're only installing SciPy's build dependencies (and Spyder so we can
+   use the IDE), but not SciPy itself.
+   
+.. note::
+   You may need to add another conda channel to access ``compilers``.
+   This can be done with the commmand: ``conda config --add channels conda-forge``
+
+Building SciPy from Local Source Files
+--------------------------------------
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_
    and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_.
@@ -73,18 +104,6 @@ Building SciPy
    the SciPy source code.
 
 #. In the terminal, navigate to the ``scipy`` root directory (e.g., ``cd scipy``).
-
-#. Install `Homebrew`_. Enter into the terminal
-   |br| ``/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`` |br|
-   or follow the installation instructions listed on the `Homebrew website <https://brew.sh>`_.
-   Homebrew is a package manager for macOS that will help you download ``gcc``,
-   the software we will use to compile C, C++, and Fortran code included in SciPy.
-
-#. Use Homebrew to install ``gcc`` by entering the command ``brew install gcc``.
-
-#. In the terminal, ensure that all of SciPy's build dependencies are up to
-   date: ``conda install pybind11``, then ``conda update cython numpy pytest
-   pybind11``.
 
 #. (Optional) Check your present working directory by entering ``pwd`` at the
    terminal. You should be in the root ``/scipy`` directory, not in a directory
@@ -116,40 +135,15 @@ Anaconda rather than the development version you just built.
 (See `here <https://chrisyeh96.github.io/2017/08/08/definitive-guide-python-imports.html>`__
 for much more information about how Python imports modules.)
 
-.. _quickstart-mac-install:
 
-Installing SciPy
-----------------
-
-*Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
+Linking Local SciPy Source to Development Environment
+-----------------------------------------------------
 
 Currently we have *two* versions of SciPy: the latest release as installed by
 Anaconda, and the development version we just built. Ideally, we'd like to be
 able to switch between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_
 can do just that. With a few keystrokes in the terminal or even the click of an
 icon, we can enable or disable our development version. Let's set that up.
-
-#. In a terminal window, enter ``conda list``. |br| This shows a list of all
-   the Python packages that came with the Anaconda distribution of Python. Note
-   the latest released version of SciPy is among them; this is not the cutting-edge
-   development version you just built and can modify.
-
-#. Enter ``conda create --name scipydev``. |br| This tells ``conda`` to
-   create a virtual environment named ``scipydev``. Note that ``scipydev`` can
-   be replaced by any name you'd like to refer to your virtual environment.
-
-#. You're still in the base environment. Activate your new virtual environment
-   by entering ``conda activate scipydev``. |br| If you're working with an old
-   version of ``conda``, you might need to type ``source activate scipydev``
-   instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__.
-
-#. (Optional) Enter ``conda list`` again. Note that the new virtual environment
-   has no packages installed. If you were to open a Python interpreter now, you
-   wouldn't be able to import ``numpy``, ``scipy``, etc.
-
-#. Enter ``conda install cython numpy pytest spyder pybind11``. |br| Note
-   that we're only installing SciPy's build dependencies (and Spyder so we can
-   use the IDE), but not SciPy itself.
 
 #. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the
    full path of the SciPy root directory. |br| This will allow us to ``import``
@@ -158,6 +152,7 @@ icon, we can enable or disable our development version. Let's set that up.
    `Anaconda SciPy Dev: Part II (macOS)`_ *that modify the ``PYTHONPATH``
    environment variable when the ``scipydev`` virtual environment is activated.
    You can ignore that part of the video from 0:38 to 1:38; this is much simpler!*
+
 
 #. In a new terminal window, test your setup. If you activate your virtual
    environment (e.g., ``conda activate scipydev``) and run Python code that imports
@@ -173,6 +168,14 @@ icon, we can enable or disable our development version. Let's set that up.
    ``dev`` will appear in the output, e.g.::
 
       1.4.0.dev0+be97f1a
+
+
+
+.. _quickstart-mac-install:
+
+
+*Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
+
 
 .. _Anaconda SciPy Dev\: Part I (macOS): https://youtu.be/1rPOSNd0ULI
 
