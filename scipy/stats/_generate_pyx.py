@@ -1,11 +1,10 @@
 import pathlib
 
 def make_biasedurn():
-    # numpy's random C API changes between 17 and 18
-    from numpy import __version__ as __numpy_version__
-    from scipy._lib import _pep440
-    NPY_OLD = _pep440.parse(__numpy_version__) < _pep440.Version('1.18')
-    del _pep440
+    # numpy's random C API changes between 1.17 and 1.18
+    import numpy as np
+    ver = np.__version__.split('.')
+    NPY_OLD = (int(ver[0]) <= 1) and (int(ver[1]) < 18)
     biasedurn_base = (pathlib.Path(__file__).parent / 'biasedurn').absolute()
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
