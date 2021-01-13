@@ -2954,7 +2954,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`\lambda, \mu \in \mathbb{R}`,
     :math:`|\beta| \lt \alpha` if :math:`\lambda \ge 0`,
     :math:`|\beta| \lt \alpha` if :math:`\lambda = 0`,
-    :math:`|\beta| \leq \alpha ` if :math:`\lambda \lt 0`.
+    :math:`|\beta| \leq \alpha` if :math:`\lambda \lt 0`.
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     The location-scale-based parameterization implemented in
