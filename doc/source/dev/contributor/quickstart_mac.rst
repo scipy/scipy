@@ -18,11 +18,6 @@ This quickstart guide will cover:
 
 in macOS.
 
-Its companion videos `Anaconda SciPy Dev: Part I (macOS)`_ and
-`Anaconda SciPy Dev: Part II (macOS)`_ show many of the steps being performed, albeit in a slightly
-different order. This guide may diverge slightly from the videos over time, with the goal of keeping
-this guide the simplest, up-to-date procedure.
-
 .. note::
 
 	This guide does not present the only way to set up a development environment;
@@ -150,11 +145,7 @@ icon, we can enable or disable our development version. Let's set that up.
 #. Enter ``conda develop /scipy``, where ``scipy`` is to be replaced with the
    full path of the SciPy root directory. |br| This will allow us to ``import``
    the development version of SciPy in Python regardless of Python's working
-   directory. *Note: this step replace the steps shown in*
-   `Anaconda SciPy Dev: Part II (macOS)`_ *that modify the ``PYTHONPATH``
-   environment variable when the ``scipydev`` virtual environment is activated.
-   You can ignore that part of the video from 0:38 to 1:38; this is much simpler!*
-
+   directory. 
 
 #. In a new terminal window, test your setup. If you activate your virtual
    environment (e.g., ``conda activate scipydev``) and run Python code that imports
@@ -172,24 +163,9 @@ icon, we can enable or disable our development version. Let's set that up.
       1.4.0.dev0+be97f1a
 
 
-
-
-
-
-*Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
-
-
-.. _Anaconda SciPy Dev\: Part I (macOS): https://youtu.be/1rPOSNd0ULI
-
-.. _Anaconda SciPy Dev\: Part II (macOS): https://youtu.be/Faz29u5xIZc
-
 .. _Anaconda Distribution of Python: https://www.anaconda.com/distribution/
-
-.. _Homebrew: https://brew.sh/
-
 .. |PYTHONPATH| replace:: ``PYTHONPATH``
 .. _PYTHONPATH: https://docs.python.org/3/using/cmdline.html#environment-variables
-
 .. |br| raw:: html
 
     <br>
