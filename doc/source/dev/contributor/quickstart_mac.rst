@@ -34,7 +34,7 @@ this guide the simplest, up-to-date procedure.
 	If you already have Python 3, you might want to uninstall it first to avoid
 	ambiguity over which Python version is being used at the command line.
 
-.. _quickstart-mac-build:
+.. _quickstart-mac-install:
 
 Setting Up a Developer Environment
 ----------------------------------
@@ -80,6 +80,8 @@ Setting Up a Developer Environment
 .. note::
    You may need to add another conda channel to access ``compilers``.
    This can be done with the commmand: ``conda config --add channels conda-forge``
+
+.. _quickstart-mac-build:
 
 Building SciPy from Local Source Files
 --------------------------------------
@@ -171,7 +173,7 @@ icon, we can enable or disable our development version. Let's set that up.
 
 
 
-.. _quickstart-mac-install:
+
 
 
 *Consider following along with the companion video* `Anaconda SciPy Dev: Part II (macOS)`_
