@@ -1854,7 +1854,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         It must be the same shape as `input`, and of type float64 if `metric`
         is 'euclidean', uint32 otherwise.
     indices : int32 ndarray, optional
-        An output array to store the calculated feature transform, instead of 
+        An output array to store the calculated feature transform, instead of
         returning it.
         `return_indicies` must be True.
         Its shape must be `(input.ndim,) + input.shape`.
@@ -1866,10 +1866,10 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         `return_distances` is True and `distances` is not supplied.
         It will have the same shape as the input array.
     indices : int32 ndarray, optional
-        The calculated feature transform. It has an input-shaped array for each 
-        dimension of the input. See distance_transform_edt documentation for an 
+        The calculated feature transform. It has an input-shaped array for each
+        dimension of the input. See distance_transform_edt documentation for an
         example.
-        Returned only when `return_indices` is True and `indices` is not 
+        Returned only when `return_indices` is True and `indices` is not
         supplied.
 
     Notes
@@ -2280,7 +2280,7 @@ def _distance_tranform_arg_check(distances_out, indices_out,
     error_msgs = []
     if (not return_distances) and (not return_indices):
         error_msgs.append(
-            'at least one of return_distances/return_indices must be specified')
+            'at least one of return_distances/return_indices must be True')
     if distances_out and not return_distances:
         error_msgs.append(
             'return_distances must be True if distances is supplied'
@@ -2288,4 +2288,4 @@ def _distance_tranform_arg_check(distances_out, indices_out,
     if indices_out and not return_indices:
         error_msgs.append('return_indices must be True if indices is supplied')
     if error_msgs:
-        RuntimeError(', '.join(error_msgs))
+        raise RuntimeError(', '.join(error_msgs))

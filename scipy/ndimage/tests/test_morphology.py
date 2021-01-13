@@ -293,14 +293,11 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
-        assert_raises(
-            RuntimeError,
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        with assert_raises(RuntimeError):
             ndimage.distance_transform_bf(
                 data, return_distances=False, return_indices=False
             )
-        )
-        assert_raises(RuntimeError, ndimage.distance_transform_bf())
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt01(self, dtype):
@@ -434,17 +431,15 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
         indices_out = numpy.zeros((data.ndim,) + data.shape, dtype=numpy.int32)
-        assert_raises(
-            RuntimeError,
+        with assert_raises(RuntimeError):
             ndimage.distance_transform_bf(
                 data,
                 return_distances=True,
                 return_indices=False,
                 indices=indices_out
             )
-        )
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype):
@@ -564,17 +559,15 @@ class TestNdimageMorphology:
                             [0, 0, 1, 1, 1, 1, 1, 0, 0],
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], numpy.int32)
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]])
         distances_out = numpy.zeros(data.shape, dtype=numpy.float64)
-        assert_raises(
-            RuntimeError,
+        with assert_raises(RuntimeError):
             ndimage.distance_transform_bf(
                 data,
                 return_indices=True,
                 return_distances=False,
                 distances=distances_out
             )
-        )
 
     def test_generate_structure01(self):
         struct = ndimage.generate_binary_structure(0, 1)
