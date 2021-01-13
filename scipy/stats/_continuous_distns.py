@@ -2905,6 +2905,10 @@ class genhyperbolic_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    t, norminvgaus, geninvgauss, laplace, cauchy
+
     Notes
     -----
     The probability density function for `genhyperbolic` is:
@@ -2912,17 +2916,18 @@ class genhyperbolic_gen(rv_continuous):
     .. math::
 
         f(x, \lambda, \hat{\alpha}, \hat{\beta)} =
-            \frac{1}{\delta}\frac{(\hat{\alpha}^2 - \hat{\beta}^2)^{\lambda/2}}
+            \frac{(\hat{\alpha}^2 - \hat{\beta}^2)^{\lambda/2}}
             {\sqrt{2\pi}\hat{\alpha}^{\lambda-0.5}
             K_\lambda\Big(\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}\Big)}
             e^{\hat{\beta}(x)} \times \frac{K_{\lambda - 1/2}
             (\hat{\alpha} \sqrt{1 + x^2})}
             {(\sqrt{1 + x^2})^{1/2 - \lambda}}
 
-    for :math:`x \in ( - \infty; \infty)`,
-    :math:`\lambda \in \mathbb{R}`,
-    :math:`0 \leq |\hat{\beta}| < \hat{\alpha} \hat{\beta}`.
-    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the third
+    for :math:`x, \lambda \in \mathbb{R}`,
+    :math:`|\hat{\beta}| \lt \hat{\alpha}` if :math:`\lambda \ge 0`,
+    :math:`|\hat{\beta}| \lt \hat{\alpha}` if :math:`\lambda = 0`,
+    :math:`|\hat{\beta}| \leq \hat{\alpha}` if :math:`\lambda \lt 0`.
+    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second
     kind and order :math:`\lambda` (`scipy.special.kn`)
 
     `genhyperbolic` takes ``p`` as a tail parameter for :math:`\lambda`,
@@ -2947,7 +2952,9 @@ class genhyperbolic_gen(rv_continuous):
     for :math:`x \in ( - \infty; \infty)`,
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`,
     :math:`\lambda, \mu \in \mathbb{R}`,
-    :math:`0 \leq |\beta| < \alpha \beta`,
+    :math:`|\beta| \lt \alpha` if :math:`\lambda \ge 0`,
+    :math:`|\beta| \lt \alpha` if :math:`\lambda = 0`,
+    :math:`|\beta| \leq \alpha ` if :math:`\lambda \lt 0`.
     and :math:`\delta \in \mathbb{R}_{>0}`.
 
     The location-scale-based parameterization implemented in
@@ -2958,7 +2965,7 @@ class genhyperbolic_gen(rv_continuous):
     ----------
     .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions
        on Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
-       pp. 151-157, 1978.
+       pp. 151-157, 1978. https://www.jstor.org/stable/4615705
 
     .. [2] Eberlein E., Prause K. (2002) The Generalized Hyperbolic Model:
         Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
@@ -3034,17 +3041,16 @@ class genhyperbolic_gen(rv_continuous):
         # note: X = b * V + sqrt(V) * X  has a
         # generalized hyperbolic distribution
         # if X is standard normal and V is
-        # geninvgauss(p = p, b = t4, loc = loc, scale = t4)
+        # geninvgauss(p = p, b = t2, loc = loc, scale = t3)
         t1 = np.float_power(a, 2) - np.float_power(b, 2)
-        t2 = np.float_power(1, 2)
         # b in the GIG
-        t3 = np.float_power(t1 * t2, 0.5)
+        t2 = np.float_power(t1, 0.5)
         # scale in the GIG
-        t4 = 1 / np.float_power(t1 / t2, 0.5)
+        t3 = np.float_power(t1, - 0.5)
         gig = geninvgauss.rvs(
             p=p,
-            b=t3,
-            scale=t4,
+            b=t2,
+            scale=t3,
             size=size,
             random_state=random_state
             )
