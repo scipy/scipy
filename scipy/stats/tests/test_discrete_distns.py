@@ -1,5 +1,5 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, fnch, wnch, randint)
+                         boltzmann, skellam, fnch, wnch, randint, nbinom)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
@@ -256,3 +256,16 @@ class TestNCH():
             # the naive implementation is very wrong in these cases
             assert pmf(x, N, m1, n, w).sum() < .5
             assert_allclose(wnch.pmf(x, N, m1, n, w).sum(), 1)
+
+            
+@pytest.mark.parametrize("mu, q, expected",
+                         [[10, 120, -1.240089881791596e-38],
+                          [1500, 0, -86.61466680572661]])
+def test_nbinom_11465(mu, q, expected):
+    # test nbinom.logcdf at extreme tails
+    size = 20
+    n, p = size, size/(size+mu)
+    # In R:
+    # options(digits=16)
+    # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
+    assert_allclose(nbinom.logcdf(q, n, p), expected)

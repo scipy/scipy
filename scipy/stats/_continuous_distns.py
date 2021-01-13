@@ -55,7 +55,6 @@ def _remove_optimizer_parameters(kwds):
         raise TypeError("Unknown arguments: %s." % kwds)
 
 
-## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
 
@@ -1117,7 +1116,6 @@ class fisk_gen(burr_gen):
 fisk = fisk_gen(a=0.0, name='fisk')
 
 
-# median = loc
 class cauchy_gen(rv_continuous):
     r"""A Cauchy continuous random variable.
 
@@ -1232,7 +1230,6 @@ class chi_gen(rv_continuous):
 chi = chi_gen(a=0.0, name='chi')
 
 
-## Chi-squared (gamma-distributed with loc=0 and scale=2 and shape=df/2)
 class chi2_gen(rv_continuous):
     r"""A chi-squared continuous random variable.
 
@@ -1257,6 +1254,10 @@ class chi2_gen(rv_continuous):
     in the implementation).
 
     `chi2` takes ``df`` as a shape parameter.
+
+    The chi-squared distribution is a special case of the gamma
+    distribution, with gamma parameters ``a = df/2``, ``loc = 0`` and
+    ``scale = 2``.
 
     %(after_notes)s
 
@@ -1450,7 +1451,6 @@ class dweibull_gen(rv_continuous):
 dweibull = dweibull_gen(name='dweibull')
 
 
-## Exponential (gamma distributed with a=1.0, loc=loc and scale=scale)
 class expon_gen(rv_continuous):
     r"""An exponential continuous random variable.
 
@@ -1471,6 +1471,9 @@ class expon_gen(rv_continuous):
     A common parameterization for `expon` is in terms of the rate parameter
     ``lambda``, such that ``pdf = lambda * exp(-lambda * x)``. This
     parameterization corresponds to using ``scale = 1 / lambda``.
+
+    The exponential distribution is a special case of the gamma
+    distributions, with gamma shape parameter ``a = 1``.
 
     %(example)s
 
@@ -1554,11 +1557,10 @@ class expon_gen(rv_continuous):
 expon = expon_gen(a=0.0, name='expon')
 
 
-# Exponentially Modified Normal (exponential distribution
-# convolved with a Normal).
-# This is called an exponentially modified gaussian on wikipedia.
 class exponnorm_gen(rv_continuous):
     r"""An exponentially modified Normal continuous random variable.
+
+    Also known as the exponentially modified Gaussian distribution [1]_.
 
     %(before_notes)s
 
@@ -1580,14 +1582,19 @@ class exponnorm_gen(rv_continuous):
     %(after_notes)s
 
     An alternative parameterization of this distribution (for example, in
-    `Wikipedia <https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
-    involves three parameters, :math:`\mu`, :math:`\lambda` and
-    :math:`\sigma`.
+    the Wikpedia article [1]_) involves three parameters, :math:`\mu`,
+    :math:`\lambda` and :math:`\sigma`.
+
     In the present parameterization this corresponds to having ``loc`` and
     ``scale`` equal to :math:`\mu` and :math:`\sigma`, respectively, and
     shape parameter :math:`K = 1/(\sigma\lambda)`.
 
     .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Exponentially modified Gaussian distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution
 
     %(example)s
 
@@ -1793,6 +1800,13 @@ class fatiguelife_gen(rv_continuous):
 
     def _ppf(self, q, c):
         tmp = c*sc.ndtri(q)
+        return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
+
+    def _sf(self, x, c):
+        return _norm_sf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
+
+    def _isf(self, q, c):
+        tmp = -c*sc.ndtri(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
@@ -2361,11 +2375,14 @@ class genexpon_gen(rv_continuous):
         return (a + b*(-sc.expm1(-c*x)))*np.exp((-a-b)*x +
                                                 b*(-sc.expm1(-c*x))/c)
 
+    def _logpdf(self, x, a, b, c):
+        return np.log(a+b*(-sc.expm1(-c*x))) + (-a-b)*x+b*(-sc.expm1(-c*x))/c
+
     def _cdf(self, x, a, b, c):
         return -sc.expm1((-a-b)*x + b*(-sc.expm1(-c*x))/c)
 
-    def _logpdf(self, x, a, b, c):
-        return np.log(a+b*(-sc.expm1(-c*x))) + (-a-b)*x+b*(-sc.expm1(-c*x))/c
+    def _sf(self, x, a, b, c):
+        return np.exp((-a-b)*x + b*(-sc.expm1(-c*x))/c)
 
 
 genexpon = genexpon_gen(a=0.0, name='genexpon')
@@ -3422,7 +3439,6 @@ class invgamma_gen(rv_continuous):
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 
-# scale is gamma from DATAPLOT and B from Regress
 class invgauss_gen(rv_continuous):
     r"""An inverse Gaussian continuous random variable.
 
@@ -4938,11 +4954,20 @@ class loggamma_gen(rv_continuous):
         # loggamma.pdf(x, c) = exp(c*x-exp(x)) / gamma(c)
         return np.exp(c*x-np.exp(x)-sc.gammaln(c))
 
+    def _logpdf(self, x, c):
+        return c*x - np.exp(x) - sc.gammaln(c)
+
     def _cdf(self, x, c):
         return sc.gammainc(c, np.exp(x))
 
     def _ppf(self, q, c):
         return np.log(sc.gammaincinv(c, q))
+
+    def _sf(self, x, c):
+        return sc.gammaincc(c, np.exp(x))
+
+    def _isf(self, q, c):
+        return np.log(sc.gammainccinv(c, q))
 
     def _stats(self, c):
         # See, for example, "A Statistical Study of Log-Gamma Distribution", by
@@ -5631,6 +5656,7 @@ class kappa3_gen(rv_continuous):
 
 
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
+
 
 class moyal_gen(rv_continuous):
     r"""A Moyal continuous random variable.
@@ -6889,7 +6915,6 @@ class rice_gen(rv_continuous):
 rice = rice_gen(a=0.0, name="rice")
 
 
-# FIXME: PPF does not work.
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
 
@@ -6993,6 +7018,65 @@ class semicircular_gen(rv_continuous):
 
 
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
+
+
+class skew_cauchy_gen(rv_continuous):
+    r"""A skewed Cauchy random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    cauchy : Cauchy distribution
+
+    Notes
+    -----
+
+    The probability density function for `skewcauchy` is:
+
+    .. math::
+
+        f(x) = \frac{1}{\pi \left(\frac{x^2}{\left(a\, \text{sign}(x) + 1
+                                                   \right)^2} + 1 \right)}
+
+    for a real number :math:`x` and skewness parameter :math:`-1 < a < 1`.
+
+    When :math:`a=0`, the distribution reduces to the usual Cauchy
+    distribution.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Skewed generalized *t* distribution", Wikipedia
+       https://en.wikipedia.org/wiki/Skewed_generalized_t_distribution#Skewed_Cauchy_distribution
+
+    %(example)s
+
+    """
+
+    def _argcheck(self, a):
+        return np.abs(a) < 1
+
+    def _pdf(self, x, a):
+        return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
+
+    def _cdf(self, x, a):
+        return np.where(x <= 0,
+                        (1 - a) / 2 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
+                        (1 - a) / 2 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
+
+    def _ppf(self, x, a):
+        i = x < self._cdf(0, a)
+        return np.where(i,
+                        np.tan(np.pi / (1 - a) * (x - (1 - a) / 2)) * (1 - a),
+                        np.tan(np.pi / (1 + a) * (x - (1 - a) / 2)) * (1 + a))
+
+    def _stats(self, a, moments='mvsk'):
+        return np.nan, np.nan, np.nan, np.nan
+
+
+skewcauchy = skew_cauchy_gen(name='skewcauchy')
 
 
 class skew_norm_gen(rv_continuous):
@@ -7875,7 +7959,6 @@ class truncnorm_gen(rv_continuous):
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
 
 
-# FIXME: RVS does not work.
 class tukeylambda_gen(rv_continuous):
     r"""A Tukey-Lamdba continuous random variable.
 

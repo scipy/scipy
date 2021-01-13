@@ -20,7 +20,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result. If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -78,7 +78,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are
         None, `s` is ``x.shape``; if `s` is None but `axes` is
-        not None, then `s` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `s` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -136,7 +136,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -194,7 +194,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
