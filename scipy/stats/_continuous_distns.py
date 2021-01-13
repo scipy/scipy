@@ -2984,16 +2984,7 @@ class genhyperbolic_gen(rv_continuous):
 
     def _argcheck(self, p, a, b):
 
-        @np.vectorize
-        def _argcheck_single(p, a, b):
-            if p > 0:
-                return np.absolute(b) < a
-            elif p == 0:
-                return np.absolute(b) < a
-            else:
-                return np.absolute(b) <= a
-
-        return _argcheck_single(p, a, b)
+return np.logical_and(np.abs(b) < a, p >= 0) | np.logical_and(np.abs(b) <= a, p < 0)
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
