@@ -1705,11 +1705,40 @@ class TestScoreatpercentile(object):
             interpolation_method='foobar')
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
+        # `per` must be 1d
+        assert_raises(ValueError, stats.scoreatpercentile, [1], [[1]])
 
     def test_empty(self):
         assert_equal(stats.scoreatpercentile([], 50), np.nan)
         assert_equal(stats.scoreatpercentile(np.array([[], []]), 50), np.nan)
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
+
+    def test_gh_7178(self):
+        z = np.zeros((0, 6))
+        res = stats.scoreatpercentile(z, [25, 75], axis=1)
+        assert_equal(res.shape, (2, 0))
+
+    def test_gh_7342(self):
+        data = np.arange(5*6).reshape(5, 6)
+        limit=(10, 20)
+        res1 = stats.scoreatpercentile(data, 50, limit=limit, axis=1)
+
+        # "the desired behavior [is] equivalent to what you'd get by
+        # (1) replacing all out-of-limits values with NaN and
+        # (2) applying numpy.nanpercentile to the result"
+        data2 = data.astype(float)  # in order to store NaNs in the array
+        data2[(data2 < limit[0]) | (data2 > limit[1])] = np.nan
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            res2 = np.nanpercentile(data2, 50, axis=1)
+        assert_equal(res1, res2)
+
+    def test_gh_2178(self):
+        a1 = array([1, 2, 3, 4])
+        a2 = array([1, 2, 3, 4, np.nan])
+        assert_equal(stats.scoreatpercentile(a1, 50), 2.5)
+        assert_equal(stats.scoreatpercentile(a2, 50), np.nan)
+        assert_equal(stats.scoreatpercentile(a2, 50, nan_policy='omit'), 2.5)
 
 
 class TestItemfreq(object):

@@ -1829,7 +1829,7 @@ array([[ 0. ,  2. ],
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-                      axis=None):
+                      axis=None, nan_policy='propagate'):
     """
     Calculate the score at a given percentile of the input sequence.
 
@@ -1863,6 +1863,14 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         Axis along which the percentiles are computed. Default is None. If
         None, compute over the whole array `a`.
 
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input `a` contains nans.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': propagate nans to the output
+          * 'raise': throws an error
+          * 'omit': performs the calculations omitting nan values
+
     Returns
     -------
     score : float or ndarray
@@ -1870,15 +1878,13 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 
     See Also
     --------
-    percentileofscore, numpy.percentile
+    percentileofscore, numpy.percentile, numpy.nanpercentile
 
     Notes
     -----
-    This function will become obsolete in the future.
-    For NumPy 1.9 and higher, `numpy.percentile` provides all the functionality
-    that `scoreatpercentile` provides.  And it's significantly faster.
-    Therefore it's recommended to use `numpy.percentile` for users that have
-    numpy >= 1.9.
+    This function is now a wrapper of `numpy.percentile` retained for
+    backwards compatibility. Consider using `numpy.percentile` or
+    `np.nanpercenitle` directly for additional features.
 
     Examples
     --------
@@ -1888,24 +1894,71 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     49.5
 
     """
-    # adapted from NumPy's percentile function.  When we require numpy >= 1.8,
-    # the implementation of this function can be replaced by np.percentile.
     a = np.asarray(a)
+
+    if np.ndim(per) > 1:
+        raise ValueError("`per` must be 1d.")
+
+    # patch for numpy/numpy#18158. nan
+    # If zero size, only returned shape matters.
     if a.size == 0:
-        # empty array, return nan(s) with shape matching `per`
-        if np.isscalar(per):
-            return np.nan
-        else:
-            return np.full(np.asarray(per).shape, np.nan, dtype=np.float64)
+        with warnings.catch_warnings() as _, \
+                np.errstate(invalid='ignore') as _:
+            warnings.filterwarnings("ignore", "Mean of empty slice",
+                                    RuntimeWarning)
+            res = np.mean(a, axis=axis)
+            if np.ndim(per):
+                return np.broadcast_to(res, np.shape(per) + res.shape)
+            else:
+                return res
 
-    if limit:
-        a = a[(limit[0] <= a) & (a <= limit[1])]
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    sorted_ = np.sort(a, axis=axis)
-    if axis is None:
-        axis = 0
+    if nan_policy == 'omit':
+        percentile_fun = np.nanpercentile
+    elif nan_policy == 'propagate':
+        percentile_fun = np.percentile
 
-    return _compute_qth_percentile(sorted_, per, interpolation_method, axis)
+    if interpolation_method == 'fraction':
+        interpolation = 'linear'
+    else:
+        interpolation = interpolation_method
+
+    if limit:  # everything is simple.... unless there are limits
+        with np.errstate(invalid='ignore'):
+            if axis is None:
+                # the array gets flattened, so we can just keep all
+                # values within limits and all nans
+                a = a[(limit[0] <= a) & (a <= limit[1])
+                      | np.isnan(a)]
+            elif nan_policy == 'omit' or not(contains_nan):
+                # either way, it is safe to use `nanpercentile`, replacing
+                # values beyond limits with nans
+                a = a.astype(float)  # to store nans
+                a[(limit[0] > a) | (a > limit[1])] = np.nan
+                percentile_fun = np.nanpercentile
+            elif nan_policy == 'propagate':
+                # we have to distinguish between nans in the data (which cause
+                # nans in output) and nans that come from values beyond limits
+                a = a.astype(float)  # to store nans
+                output_nan = np.any(np.isnan(a), axis=axis)
+                a[(limit[0] > a) | (a > limit[1])] = np.nan
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore",
+                                            "All-NaN slice encountered",
+                                            RuntimeWarning)
+                    res = np.nanpercentile(a=a, q=per, axis=axis,
+                                           interpolation=interpolation)
+                res[..., output_nan] = np.nan
+                return res
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",
+                                "All-NaN slice encountered",
+                                RuntimeWarning)
+        res = percentile_fun(a=a, q=per, axis=axis,
+                             interpolation=interpolation)
+    return res
 
 
 # handle sequence of per's without calling sort multiple times
@@ -2900,10 +2953,14 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     """
     x = asarray(x)
 
-    # This check prevents percentile from raising an error later. Also, it is
-    # consistent with `np.var` and `np.std`.
+    # # This check prevents percentile from raising an error later. Also, it is
+    # # consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        with warnings.catch_warnings() as _, \
+                np.errstate(invalid='ignore') as _:
+            warnings.filterwarnings("ignore", "Mean of empty slice",
+                                    RuntimeWarning)
+            return np.mean(x, axis=axis)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -7565,7 +7622,7 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1: 
+        elif arg.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
     n = np.asarray(list(map(len, args)))
