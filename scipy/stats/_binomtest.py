@@ -95,7 +95,7 @@ class BinomTestResult:
         >>> result.proportion_estimate
         0.14
         >>> result.proportion_ci()
-        ConfidenceInterval(low=0.05819170033997341, high=0.2673960024970084)
+        ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
@@ -282,7 +282,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     confidence interval of the estimate:
 
     >>> result.proportion_ci(confidence_level=0.95)
-    ConfidenceInterval(low=0.056846867590246826, high=1.0)
+    ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
     k = _validate_int(k, 'k', minimum=0)
