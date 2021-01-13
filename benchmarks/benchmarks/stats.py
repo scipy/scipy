@@ -186,7 +186,6 @@ class Distribution(Benchmark):
                 stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
             elif properties == 'fit':
                 stats.beta.fit(self.x, loc=4, scale=10)
-        self.method(*self.args, **self.kwds)
     # Retain old benchmark results (remove this if changing the benchmark)
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
 
