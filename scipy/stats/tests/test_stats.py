@@ -3883,6 +3883,7 @@ class Test_ttest_ind_permutations():
         assert_array_almost_equal(stat_a, stat_p, 5)
         assert_array_almost_equal(pvalue, p_d)
 
+    @pytest.mark.slow()
     def test_ttest_ind_permutations_many_dims(self):
         # Test that permutation test works on many-dimensional arrays
         np.random.seed(0)
