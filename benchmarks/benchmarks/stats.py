@@ -58,7 +58,7 @@ class InferentialStats(Benchmark):
 
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
-    # remove duplicates that are files under `distcont` and `distdiscrete`.
+    # remove duplicates that are included in both `distcont` and `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
     param_names = ['distribution', 'properties']
