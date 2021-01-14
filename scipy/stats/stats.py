@@ -5607,6 +5607,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
+    mean1 = np.asarray(mean1)
+    std1 = np.asarray(std1)
+    mean2 = np.asarray(mean2)
+    std2 = np.asarray(std2)
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
     else:

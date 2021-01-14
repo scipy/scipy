@@ -4280,6 +4280,12 @@ def test_gh5686():
     stats.ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2)
 
 
+def test_ttest_ind_from_stats_inputs_zero():
+    # Regression test for gh-6409.
+    result = stats.ttest_ind_from_stats(0, 0, 6, 0, 0, 6, equal_var=False)
+    assert_equal(result, [np.nan, np.nan])
+
+
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
