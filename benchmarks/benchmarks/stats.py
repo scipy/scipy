@@ -58,7 +58,7 @@ class InferentialStats(Benchmark):
 
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
-    # remove duplicates that are included in both `distcont` and
+    # remove duplicates that appear twince in either `distcont` or
     # `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
