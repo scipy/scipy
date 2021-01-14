@@ -37,6 +37,49 @@ class TestUtils:
                                       u_bounds=bounds[1], reverse=True)
         assert_allclose(scaled_back_space, space)
 
+    def test_scale_random(self):
+        np.random.seed(0)
+        sample = np.random.rand(30, 10)
+        a = -np.random.rand(10) * 10
+        b = np.random.rand(10) * 10
+        scaled = qmc.scale(sample, a, b, reverse=False)
+        unscaled = qmc.scale(scaled, a, b, reverse=True)
+        assert_allclose(unscaled, sample)
+
+    def test_scale_errors(self):
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            space = [0, 1, 0.5]
+            qmc.scale(space, l_bounds=-2, u_bounds=6)
+
+        with pytest.raises(ValueError, match=r"Bounds are not consistent"
+                                             r" a < b"):
+            space = [[0, 0], [1, 1], [0.5, 0.5]]
+            bounds = np.array([[-2, 6], [6, 5]])
+            qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
+
+        with pytest.raises(ValueError, match=r"Bounds do not have the same"
+                                             r" dimensions"):
+            space = [[0, 0], [1, 1], [0.5, 0.5]]
+            l_bounds, u_bounds = [-2, 0, 2], [6, 5]
+            qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
+
+        with pytest.raises(ValueError, match=r"Sample dimension is different "
+                                             r"than bounds dimension"):
+            space = [[0, 0], [1, 1], [0.5, 0.5]]
+            bounds = np.array([[-2, 0, 2], [6, 5, 5]])
+            qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
+
+        with pytest.raises(ValueError, match=r"Sample is not in hypercube"):
+            space = [[0, 0], [1, 1.5], [0.5, 0.5]]
+            bounds = np.array([[-2, 0], [6, 5]])
+            qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
+
+        with pytest.raises(ValueError, match=r"Sample is out of bounds"):
+            out = [[-2, 0], [6, 5], [8, 2.5]]
+            bounds = np.array([[-2, 0], [6, 5]])
+            qmc.scale(out, l_bounds=bounds[0], u_bounds=bounds[1],
+                      reverse=True)
+
     def test_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)

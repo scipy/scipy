@@ -56,7 +56,7 @@ def check_random_state(seed=None):
 
 
 def scale(sample, l_bounds, u_bounds, reverse=False):
-    r"""Sample scaling from unit hypercube to bounds range.
+    r"""Sample scaling from unit hypercube to different bounds.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
     following transformation is used:
@@ -70,10 +70,11 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
     sample : array_like (n, d)
         Sample to scale.
     l_bounds, u_bounds : array_like (d,)
-        Lower and upper bounds of transformed data. If `reverse` is True,
-        range of the original data to transform to the unit hypercube.
+        Lower and upper bounds (resp. ``a, b``) of transformed data. If
+        `reverse` is True, range of the original data to transform to the unit
+        hypercube.
     reverse : bool, optional
-        Reverse the transformation from `bounds` to the unit hypercube.
+        Reverse the transformation from different bounds to the unit hypercube.
         Default is False.
 
     Returns
@@ -83,23 +84,59 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
 
     Examples
     --------
+    Transform 3 samples in the unit hypercube to bounds:
+
     >>> from scipy.stats import qmc
     >>> l_bounds = [-2, 0]
     >>> u_bounds = [6, 5]
-    >>> sample = [[0.5 , 0.5 ],
+    >>> sample = [[0.5 , 0.75],
+    ...           [0.5 , 0.5],
     ...           [0.75, 0.25]]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[2.  , 2.5 ],
+    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+    >>> sample_scaled
+    array([[2.  , 3.75],
+           [2.  , 2.5 ],
            [4.  , 1.25]])
+
+    And convert back to the unit hypercube:
+
+    >>> sample_ = qmc.scale(sample_scaled, l_bounds, u_bounds, reverse=True)
+    >>> sample_
+    array([[0.5 , 0.75],
+           [0.5 , 0.5 ],
+           [0.75, 0.25]])
 
     """
     sample = np.asarray(sample)
-    min_ = np.asarray(l_bounds)
-    max_ = np.asarray(u_bounds)
+    lower = np.atleast_1d(l_bounds)
+    upper = np.atleast_1d(u_bounds)
+
+    # Checking bounds and sample
+    if not sample.ndim == 2:
+        raise ValueError('Sample is not a 2D array')
+
+    dim = len(lower)
+    if dim != len(upper):
+        raise ValueError('Bounds do not have the same dimensions')
+
+    if not np.all(lower < upper):
+        raise ValueError('Bounds are not consistent a < b')
+
+    if dim != sample.shape[1]:
+        raise ValueError('Sample dimension is different than bounds dimension')
+
     if not reverse:
-        return sample * (max_ - min_) + min_
+        # Checking that sample is within the hypercube
+        if not (np.all(sample >= 0) and np.all(sample <= 1)):
+            raise ValueError('Sample is not in hypercube')
+
+        return sample * (upper - lower) + lower
     else:
-        return (sample - min_) / (max_ - min_)
+        # Checking that sample is within the bounds
+        if not (np.all(sample >= lower) and np.all(sample <= upper)):
+            raise ValueError('Sample is out of bounds')
+
+        return (sample - lower) / (upper - lower)
 
 
 def discrepancy(sample, iterative=False, method='CD'):
