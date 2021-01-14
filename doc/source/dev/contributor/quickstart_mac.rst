@@ -3,7 +3,7 @@
 .. _quickstart-mac:
 
 =======================================================
-Development environment quickstart guide (Ubuntu)
+Development environment quickstart guide (MacOS)
 =======================================================
 
 This quickstart guide will cover:
@@ -14,10 +14,7 @@ This quickstart guide will cover:
 * performing an in-place build of SciPy; and
 * creating a virtual environment that adds this development version of SciPy to the Python path
 
-in Ubuntu. (Tested on 16.04, 18.04, and 20.04). *Users running Windows can follow these
-instructions after setting up* `Windows Subsystem for Linux`_ *or an Amazon EC2
-instance with Ubuntu 20.04. However, the instructions for setting up a
-development environment with Docker may be more reliable.*
+in MacOS (Tested on 11.1).
 
 .. note::
 
@@ -25,7 +22,7 @@ development environment with Docker may be more reliable.*
 
 	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
 
-.. _quickstart-ubuntu-build:
+.. _quickstart-macos-build:
 
 Building SciPy
 --------------
@@ -34,7 +31,7 @@ Building SciPy
 
    If you're installing using the terminal, be sure to follow the "Next Steps"
    listed after the installer finishes. You might also need to restart your
-   terminal window or enter ``source ~/.bashrc`` for all the changes to take
+   terminal window or enter ``source ~/.bash_profile`` for all the changes to take
    effect.
 
 #. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list of all the Python packages that came with the Anaconda Distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
@@ -45,11 +42,13 @@ Building SciPy
 
       If ``conda`` is not a recognized command, try restarting your terminal. If it is still not recognized, please see "Should I add Anaconda to the macOS or Linux PATH?" in the `Anaconda FAQ`_.
 
-#. Enter ``conda create --name scipydev python=3.8 numpy pybind11 cython pytest gfortran_linux-64 gxx_linux-64 sphinx matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
+#. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
+
+#. Enter ``conda config --env --add channels conda-forge`` to tell ``conda`` the source we want for our packages. Then enter ``install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy git`` to install packages.
 
    * ``numpy pybind11 cython pytest`` are four packages that SciPy depends on.
 
-   * ``gfortran_linux-64 gxx_linux-64`` are compilers used to build SciPy's Fortran, C, and C++ source code.
+   * ``compilers`` holds compilers used to build SciPy's Fortran, C, and C++ source code.
 
    * ``sphinx`` and ``matplotlib`` are required to render the SciPy documentation.
 
@@ -58,16 +57,6 @@ Building SciPy
    * ``git`` is a version control system used to download and manage the SciPy source code.
 
    Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
-
-   .. note::
-
-      You could ``conda create`` an empty virtual environment first, then
-      ``conda install`` the packages, but creating the virtual environment
-      with all the packages you need is preferable to installing packages
-      individually because it makes it easier for ``conda`` to solve
-      the package dependencies optimally.
-
-#. You're still in the base environment. Activate your new virtual environment by entering ``conda activate scipydev``. |br| If you're working with an old version of ``conda``, you might need to type ``source activate scipydev`` instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__). Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
 #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
@@ -97,19 +86,11 @@ Building SciPy
       1.6.0.dev0+be97f1a
 
 
-.. _Anaconda SciPy Dev\: Part I (macOS): https://youtu.be/1rPOSNd0ULI
-
-.. _Anaconda SciPy Dev\: Part II (macOS): https://youtu.be/Faz29u5xIZc
 
 .. _Anaconda Distribution of Python: https://www.anaconda.com/distribution/
 
-.. _Rename the file: https://www.maketecheasier.com/rename-files-in-linux/
-
 .. _Anaconda FAQ: https://docs.anaconda.com/anaconda/user-guide/faq/
 
-.. _Homebrew on Linux: https://docs.brew.sh/Homebrew-on-Linux
-
-.. _Windows Subsystem for Linux: https://docs.microsoft.com/en-us/windows/wsl/install-win10
 
 .. |PYTHONPATH| replace:: ``PYTHONPATH``
 .. _PYTHONPATH: https://docs.python.org/3/using/cmdline.html#environment-variables
