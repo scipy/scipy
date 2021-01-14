@@ -62,7 +62,7 @@ class DistributionsAll(Benchmark):
     # `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
-    param_names = ['distribution', 'properties']
+    param_names = ['distribution', 'method']
     params = [
         dists, ['pdf/pmf', 'logpdf/logpmf', 'cdf', 'logcdf', 'rvs', 'fit',
                 'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
@@ -80,16 +80,16 @@ class DistributionsAll(Benchmark):
                   'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
     slow_methods = ['moment']
 
-    def setup(self, distribution, properties):
+    def setup(self, distribution, method):
         if not is_xslow() and (distribution in self.slow_dists or
-                               properties in self.slow_methods):
+                               method in self.slow_methods):
             raise NotImplementedError("Skipped")
 
         self.dist = getattr(stats, distribution)
 
         shapes = self.dist_data[distribution]
 
-        if 'discrete' in self.dist.__module__:
+        if isinstance(self.dist, stats.rv_discrete):
             # discrete distributions only use location
             self.isCont = False
             kwds = {'loc': 4}
@@ -103,42 +103,40 @@ class DistributionsAll(Benchmark):
         args = [x, *self.custom_input.get(distribution, shapes)]
         self.args = args
         self.kwds = kwds
-        if properties == 'fit':
+        if method == 'fit':
             # there are no fit methods for discrete distributions
             if 'discrete' in self.dist.__module__:
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
             # the only positional argument is the data to be fitted
             self.args = [self.dist.rvs(*shapes, size=100, **kwds)]
-        elif properties == 'rvs':
+        elif method == 'rvs':
             # add size keyword argument for data creation
             kwds['size'] = 1000
             # keep shapes as positional arguments, omit linearly spaced data
             self.args = args[1:]
-        elif properties == 'pdf/pmf':
-            properties = ('pmf' if 'discrete' in self.dist.__module__
-                          else 'pdf')
+        elif method == 'pdf/pmf':
+            method = ('pmf' if isinstance(self.dist, stats.rv_discrete)
+                      else 'pdf')
             self.args = args
-        elif properties == 'logpdf/logpmf':
-            properties = ('logpmf' if 'discrete' in self.dist.__module__
-                          else 'logpdf')
+        elif method == 'logpdf/logpmf':
+            method = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
+                      else 'logpdf')
             self.args = args
-        elif properties in ['ppf', 'isf']:
+        elif method in ['ppf', 'isf']:
             self.args = [np.linspace((0, 1), 100), *args[1:]]
-        elif properties == 'moment':
+        elif method == 'moment':
             # the first four moments may be optimized, so compute the fifth
             self.args = [5, *args[1:]]
         elif properties.startswith('stats_'):
             properties = 'stats'
             self.args = args[1:]
-            kwds['moments'] = properties[6:]
-            self.kwds = kwds
-        elif properties == 'entropy':
+        elif method == 'entropy':
             self.args = args[1:]
 
-        self.method = getattr(self.dist, properties)
+        self.method = getattr(self.dist, method)
 
-    def time_distribution(self, distribution, properties):
+    def time_distribution(self, distribution, method):
         self.method(*self.args, **self.kwds)
 
 
