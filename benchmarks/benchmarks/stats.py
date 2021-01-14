@@ -128,8 +128,9 @@ class DistributionsAll(Benchmark):
         elif method == 'moment':
             # the first four moments may be optimized, so compute the fifth
             self.args = [5, *args[1:]]
-        elif properties.startswith('stats_'):
-            properties = 'stats'
+        elif method.startswith('stats_'):
+            kwds['moments'] = method[6:]
+            method = 'stats'
             self.args = args[1:]
         elif method == 'entropy':
             self.args = args[1:]
