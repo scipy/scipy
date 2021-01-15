@@ -69,7 +69,7 @@ class TestUtils:
             bounds = np.array([[-2, 0, 2], [6, 5, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"Sample is not in hypercube"):
+        with pytest.raises(ValueError, match=r"Sample is not in unit hypercube"):
             space = [[0, 0], [1, 1.5], [0.5, 0.5]]
             bounds = np.array([[-2, 0], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])

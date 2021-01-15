@@ -129,7 +129,7 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
     if not reverse:
         # Checking that sample is within the hypercube
         if not (np.all(sample >= 0) and np.all(sample <= 1)):
-            raise ValueError('Sample is not in hypercube')
+            raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
     else:
@@ -196,7 +196,7 @@ def discrepancy(sample, iterative=False, method='CD'):
       hypercube
     * ``WD``: Wrap-around Discrepancy - subspace can wrap around bounds
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
-    * ``star``: Star L2-discrepancy - like CD BUT variant to rotation
+    * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
 
     Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
@@ -209,7 +209,7 @@ def discrepancy(sample, iterative=False, method='CD'):
     ----------
     .. [1] Fang et al. Design and modeling for computer experiments,
        Computer Science and Data Analysis Series, 2006.
-    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets
+    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
     .. [3] T. T. Warnock. Computational investigations of low discrepancy point
        sets, Applications of Number Theory to Numerical
@@ -249,9 +249,9 @@ def discrepancy(sample, iterative=False, method='CD'):
         prod_arr = 1
         for i in range(d):
             s0 = sample[:, i]
-            prod_arr *= (1 +
-                         0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5) -
-                         0.5 * abs(s0[:, None] - s0))
+            prod_arr *= (1
+                         + 0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5)
+                         - 0.5 * abs(s0[:, None] - s0))
         disc2 = prod_arr.sum()
 
         return ((13.0 / 12.0) ** d - 2.0 / n * disc1 +
