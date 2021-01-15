@@ -17,8 +17,8 @@ import numpy as np
 
 import scipy.linalg
 from scipy.stats._multivariate import (_PSD,
-                                       _lnB, 
-                                       _cho_inv_batch, 
+                                       _lnB,
+                                       _cho_inv_batch,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
@@ -875,8 +875,12 @@ class TestWishart(object):
             assert_equal(w.scale, true_scale)
             assert_equal(w.scale.shape, true_scale.shape)
 
-        # We cannot call with a df < dim
+        # We cannot call with a df < dim - 1
         assert_raises(ValueError, wishart, 1, np.eye(2))
+
+        # But we can call with dim - 1 < df < dim
+        wishart(1.1, np.eye(2))  # no error
+        # see gh-5562
 
         # We cannot call with a 3-dimension array
         scale = np.array(1, ndmin=3)
@@ -1758,7 +1762,7 @@ class TestMultivariateT:
         assert mock.call_count == 2
 
     def test_shape_correctness(self):
-        # pdf and logpdf should return scalar when the 
+        # pdf and logpdf should return scalar when the
         # number of samples in x is one.
         dim = 4
         loc = np.zeros(dim)
@@ -1770,7 +1774,7 @@ class TestMultivariateT:
         res = multivariate_t(loc, shape, df).logpdf(x)
         assert np.isscalar(res)
 
-        # pdf() and logpdf() should return probabilities of shape 
+        # pdf() and logpdf() should return probabilities of shape
         # (n_samples,) when x has n_samples.
         n_samples = 7
         x = np.random.random((n_samples, dim))
@@ -1783,7 +1787,7 @@ class TestMultivariateT:
         res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs()
         assert np.isscalar(res)
 
-        # rvs() should return vector of shape (size,) if size argument 
+        # rvs() should return vector of shape (size,) if size argument
         # is applied.
         size = 7
         res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs(size=size)
