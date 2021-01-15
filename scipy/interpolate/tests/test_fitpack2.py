@@ -466,6 +466,23 @@ class TestLSQBivariateSpline(object):
             assert_allclose(spl1(2.0, 2.0), spl2(2.0, 2.0))
             assert_equal(len(r), 2)
 
+    def test_unequal_length_of_knots(self):
+        """Test for the case when the input knot-location arrays in x and y are
+        of different lengths.
+        """
+        x, y = np.mgrid[0:100, 0:100]
+        x = x.ravel()
+        y = y.ravel()
+        z = 3.0 * np.ones_like(x)
+        tx = np.linspace(0.1, 98.0, 29)
+        ty = np.linspace(0.1, 98.0, 33)
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            lut = LSQBivariateSpline(x,y,z,tx,ty)
+            assert_equal(len(r), 1)
+
+        assert_almost_equal(lut(x, y, grid=False), z)
+
 
 class TestSmoothBivariateSpline(object):
     def test_linear_constant(self):
