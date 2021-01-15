@@ -1339,7 +1339,7 @@ class MultivariateNormalQMC(QMCEngine):
             # check for square/symmetric cov matrix and mean vector has the
             # same d
             if not mean.shape[0] == cov.shape[0]:
-                raise ValueError("Dimension mismatch between mean and"
+                raise ValueError("Dimension mismatch between mean and "
                                  "covariance.")
             if not np.allclose(cov, cov.transpose()):
                 raise ValueError("Covariance matrix is not symmetric.")
@@ -1356,7 +1356,7 @@ class MultivariateNormalQMC(QMCEngine):
             # root decomposition provided
             cov_root = np.array(cov_root, copy=False, ndmin=2)
             if not mean.shape[0] == cov_root.shape[0]:
-                raise ValueError("Dimension mismatch between mean and"
+                raise ValueError("Dimension mismatch between mean and "
                                  "covariance.")
         else:
             # corresponds to identity covariance matrix
