@@ -58,8 +58,9 @@ def check_random_state(seed=None):
 def scale(sample, l_bounds, u_bounds, reverse=False):
     r"""Sample scaling from unit hypercube to different bounds.
 
-    To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`, the
-    following transformation is used:
+    To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
+    with :math:`a` the lower bounds and :math:`b` the upper bounds.
+    The following transformation is used:
 
     .. math::
 
@@ -70,9 +71,9 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
     sample : array_like (n, d)
         Sample to scale.
     l_bounds, u_bounds : array_like (d,)
-        Lower and upper bounds (resp. ``a, b``) of transformed data. If
-        `reverse` is True, range of the original data to transform to the unit
-        hypercube.
+        Lower and upper bounds (resp. :math:`a`, :math:`b`) of transformed
+        data. If `reverse` is True, range of the original data to transform
+        to the unit hypercube.
     reverse : bool, optional
         Reverse the transformation from different bounds to the unit hypercube.
         Default is False.
