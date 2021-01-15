@@ -189,7 +189,7 @@ cdef int ibits(const int x, const int pos, const int length) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
+cpdef void initialize_v(cnp.intp_t[:, :] v, const int dim):
     cdef int d, i, j, k, m, p, newv, pow2
 
     if dim == 0:
@@ -237,8 +237,8 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
 cpdef void _draw(const int n,
                  const int num_gen,
                  const int dim,
-                 cnp.int_t[:, :] sv,
-                 cnp.int_t[:] quasi,
+                 cnp.intp_t[:, :] sv,
+                 cnp.intp_t[:] quasi,
                  cnp.float_t[:, :] result) nogil:
     cdef int i, j, l, qtmp
     cdef int num_gen_loc = num_gen
@@ -256,8 +256,8 @@ cpdef void _draw(const int n,
 cpdef void _fast_forward(const int n,
                          const int num_gen,
                          const int dim,
-                         cnp.int_t[:, :] sv,
-                         cnp.int_t[:] quasi) nogil:
+                         cnp.intp_t[:, :] sv,
+                         cnp.intp_t[:] quasi) nogil:
     cdef int i, j, l
     cdef int num_gen_loc = num_gen
     for i in range(n):
@@ -269,7 +269,7 @@ cpdef void _fast_forward(const int n,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int cdot_pow2(cnp.int_t[:] a) nogil:
+cdef int cdot_pow2(cnp.intp_t[:] a) nogil:
     cdef int i
     cdef int size = a.shape[0]
     cdef int z = 0
@@ -283,8 +283,8 @@ cdef int cdot_pow2(cnp.int_t[:] a) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _cscramble(const int dim,
-                      cnp.int_t[:, :, :] ltm,
-                      cnp.int_t[:, :] sv) nogil:
+                      cnp.intp_t[:, :, :] ltm,
+                      cnp.intp_t[:, :] sv) nogil:
     cdef int d, i, j, k, l, lsm, lsmdp, p, t1, t2, vdj
 
     # Set diagonals of maxbit x maxbit arrays to 1
@@ -326,7 +326,7 @@ cpdef void _fill_p_cumulative(cnp.float_t[:] p,
 @cython.wraparound(False)
 cpdef void _categorize(cnp.float_t[:] draws,
                        cnp.float_t[:] p_cumulative,
-                       cnp.int_t[:] result) nogil:
+                       cnp.intp_t[:] result) nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):
