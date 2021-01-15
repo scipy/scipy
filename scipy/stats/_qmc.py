@@ -210,8 +210,8 @@ def discrepancy(sample, iterative=False, method='CD'):
        Computer Science and Data Analysis Series, 2006.
     .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
-    .. [3] T. T. Warnock. "Computational investigations of low discrepancy point
-       sets". Applications of Number Theory to Numerical
+    .. [3] T. T. Warnock. "Computational investigations of low discrepancy
+       point sets". Applications of Number Theory to Numerical
        Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
@@ -577,8 +577,8 @@ def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
 class QMCEngine(ABC):
     """A generic Quasi-Monte Carlo sampler class meant for subclassing.
 
-    QMCEngine is a base class to construct a specific Quasi-Monte Carlo sampler.
-    It cannot be used directly as a sampler.
+    QMCEngine is a base class to construct a specific Quasi-Monte Carlo
+    sampler. It cannot be used directly as a sampler.
 
     Parameters
     ----------
@@ -639,8 +639,8 @@ class QMCEngine(ABC):
     ...         self.rng.random((n, self.d))
     ...         return self
 
-    After subclassing `QMCEngine` to define the sampling strategy we want to use,
-    we can create an instance to sample from.
+    After subclassing `QMCEngine` to define the sampling strategy we want to
+    use, we can create an instance to sample from.
 
     >>> engine = RandomEngine(2, seed=12345)
     >>> engine.random(5)
@@ -1336,9 +1336,11 @@ class MultivariateNormalQMC(QMCEngine):
         if cov is not None:
             # covariance matrix provided
             cov = np.array(cov, copy=False, ndmin=2)
-            # check for square/symmetric cov matrix and mean vector has the same d
+            # check for square/symmetric cov matrix and mean vector has the
+            # same d
             if not mean.shape[0] == cov.shape[0]:
-                raise ValueError("Dimension mismatch between mean and covariance.")
+                raise ValueError("Dimension mismatch between mean and"
+                                 "covariance.")
             if not np.allclose(cov, cov.transpose()):
                 raise ValueError("Covariance matrix is not symmetric.")
             # compute Cholesky decomp; if it fails, do the eigen decomposition
@@ -1354,7 +1356,8 @@ class MultivariateNormalQMC(QMCEngine):
             # root decomposition provided
             cov_root = np.array(cov_root, copy=False, ndmin=2)
             if not mean.shape[0] == cov_root.shape[0]:
-                raise ValueError("Dimension mismatch between mean and covariance.")
+                raise ValueError("Dimension mismatch between mean and"
+                                 "covariance.")
         else:
             # corresponds to identity covariance matrix
             cov_root = None

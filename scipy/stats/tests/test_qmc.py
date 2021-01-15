@@ -110,7 +110,7 @@ class TestUtils:
         assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172,
                         atol=1e-4)
 
-        # From Tim P. et al. Minimizing the L2 and L∞ star discrepancies
+        # From Tim P. et al. Minimizing the L2 and Linf star discrepancies
         # of a single point in the unit hypercube. JCAM, 2005
         # Table 1 on Page 283
         refs = [3.333333e-1, 1.111111e-1, 1.234567e-2, 1.524157e-4,
@@ -538,7 +538,8 @@ class TestNormalQMC:
     def test_other_engine(self):
         seed = np.random.RandomState(123456)
         base_engine = qmc.Sobol(d=2, scramble=False, seed=seed)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2), engine=base_engine,
+        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2),
+                                           engine=base_engine,
                                            inv_transform=True, seed=seed)
         samples = engine.random()
         assert_equal(samples.shape, (1, 2))

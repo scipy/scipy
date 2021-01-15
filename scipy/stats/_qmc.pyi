@@ -5,9 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Optional,
-    Union, List,
+    Union,
     type_check_only,
 )
 
@@ -20,7 +19,7 @@ _IntegerType = Union[int, np.integer]
 _FloatingType = Union[float, np.floating]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube', 'OptimalDesign',
+           'OrthogonalLatinHypercube', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -31,8 +30,8 @@ def check_random_state(
 
 
 def scale(
-        sample: npt.ArrayLike, l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike,
-        reverse: bool = ...
+        sample: npt.ArrayLike, l_bounds: npt.ArrayLike,
+        u_bounds: npt.ArrayLike, reverse: bool = ...
 ) -> np.ndarray: ...
 
 
@@ -42,7 +41,8 @@ def discrepancy(
 
 
 def _update_discrepancy(
-        x_new: npt.ArrayLike, sample: npt.ArrayLike, initial_disc: _FloatingType
+        x_new: npt.ArrayLike, sample: npt.ArrayLike,
+        initial_disc: _FloatingType
 ) -> _FloatingType: ...
 
 
@@ -123,7 +123,7 @@ class Sobol(QMCEngine):
 
     def random_base2(self, m: _IntegerType) -> np.ndarray: ...
 
-    def reset(self) -> OptimalDesign: ...
+    def reset(self) -> Sobol: ...
 
     def fast_forward(self, n: _IntegerType) -> Sobol: ...
 
@@ -141,7 +141,8 @@ class MultivariateNormalQMC(QMCEngine):
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray: ...
 
-    def _standard_normal_samples(self, n: _IntegerType = ...) -> np.ndarray: ...
+    def _standard_normal_samples(self,
+                                 n: _IntegerType = ...) -> np.ndarray: ...
 
 
 class MultinomialQMC(QMCEngine):
