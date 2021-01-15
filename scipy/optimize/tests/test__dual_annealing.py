@@ -178,7 +178,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    def test_local_search_option_bounds(self):
+    def test_minimizer_kwargs_bounds(self):
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
@@ -186,6 +186,29 @@ class TestDualAnnealing:
         with np.testing.suppress_warnings() as sup:
             sup.record(RuntimeWarning, "Values in x were outside bounds ")
 
+            dual_annealing(
+                func,
+                bounds=bounds,
+                minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Method CG cannot handle ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
+
+            # Verify warning happened for Method cannot handle bounds.
+            assert sup.log
+
+
+    def test_deprecated_local_search_options_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        with np.testing.suppress_warnings() as sup:
+            sup.record(DeprecationWarning, "dual_annealing argument 'local_search_options'")
             dual_annealing(
                 func,
                 bounds=bounds,
@@ -197,7 +220,28 @@ class TestDualAnnealing:
             dual_annealing(
                 func,
                 bounds=bounds,
-                local_search_options={"method": "CG", "bounds": bounds})
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
+
+            # Verify warning happened for Method cannot handle bounds.
+            assert sup.log
+
+            
+    def test_minimizer_kwargs_bounds(self):
+        func = lambda x: np.sum((x-5) * (x-1))
+        bounds = list(zip([-6, -5], [6, 5]))
+        # Test bounds can be passed (see gh-10831)
+        dual_annealing(
+            func,
+            bounds=bounds,
+            minimizer_kwargs={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Method CG cannot handle ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                minimizer_kwargs={"method": "CG", "bounds": bounds})
 
             # Verify warning happened for Method cannot handle bounds.
             assert sup.log
@@ -257,7 +301,7 @@ class TestDualAnnealing:
     ])
     def test_multi_ls_minimizer(self, method, atol):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             local_search_options=dict(method=method),
+                             minimizer_kwargs=dict(method=method),
                              seed=self.seed)
         assert_allclose(ret.fun, 0., atol=atol)
 
@@ -272,7 +316,7 @@ class TestDualAnnealing:
             'jac': self.rosen_der_wrapper,
         }
         ret = dual_annealing(rosen, self.ld_bounds,
-                             local_search_options=minimizer_opts,
+                             minimizer_kwargs=minimizer_opts,
                              seed=self.seed)
         assert ret.njev == self.ngev
 
