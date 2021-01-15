@@ -1183,12 +1183,12 @@ class Sobol(QMCEngine):
             rg_integers = self.rng.randint
         # Generate shift vector
         self._shift = np.dot(
-            rg_integers(2, size=(self.d, self.MAXBIT)),
-            2 ** np.arange(self.MAXBIT),
+            rg_integers(2, size=(self.d, self.MAXBIT), dtype=int),
+            2 ** np.arange(self.MAXBIT, dtype=int),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT)))
+        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT), dtype=int))
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
