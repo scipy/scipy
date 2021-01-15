@@ -246,6 +246,7 @@ def discrepancy(sample, iterative=False, method='CD'):
         n += 1
 
     if method == 'CD':
+        # reference [1], page 71 Eq (3.7)
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
 
@@ -260,14 +261,17 @@ def discrepancy(sample, iterative=False, method='CD'):
         return ((13.0 / 12.0) ** d - 2.0 / n * disc1 +
                 1.0 / (n ** 2) * disc2)
     elif method == 'WD':
+        # reference [1], page 73 Eq (3.8)
         prod_arr = 1
         for i in range(d):
             s0 = sample[:, i]
             x_kikj = abs(s0[:, None] - s0)
             prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
 
+        # typo in the book sign missing: - (4.0 / 3.0) ** d
         return - (4.0 / 3.0) ** d + 1.0 / (n ** 2) * prod_arr.sum()
     elif method == 'MD':
+        # reference [2], page 290 Eq (18)
         abs_ = abs(sample - 0.5)
         disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2,
                                axis=1))
@@ -287,6 +291,7 @@ def discrepancy(sample, iterative=False, method='CD'):
 
         return disc - disc1 + disc2
     elif method == 'L2-star':
+        # reference [1], page 69 Eq (3.5)
         disc1 = np.sum(np.prod(1 - sample**2, axis=1))
 
         xik = sample[None, :, :]
@@ -342,6 +347,7 @@ def _update_discrepancy(x_new, sample, initial_disc):
     n = len(sample) + 1
     abs_ = abs(x_new - 0.5)
 
+    # derivation from P.T. Roy (@tupui)
     disc1 = - 2 / n * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
     disc2 = 2 / (n ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
                                           1 / 2 * abs(sample - 0.5) -
