@@ -69,7 +69,8 @@ class TestUtils:
             bounds = np.array([[-2, 0, 2], [6, 5, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"Sample is not in unit hypercube"):
+        with pytest.raises(ValueError, match=r"Sample is not in unit "
+                                             r"hypercube"):
             space = [[0, 0], [1, 1.5], [0.5, 0.5]]
             bounds = np.array([[-2, 0], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
@@ -92,6 +93,7 @@ class TestUtils:
 
         # From Zhou Y.-D. et al. Mixture discrepancy for quasi-random point
         # sets. Journal of Complexity, 29 (3-4), pp. 283-301, 2013.
+        # Example 4 on Page 298
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
                            [2, 1, 1, 1, 1, 1],
@@ -107,9 +109,17 @@ class TestUtils:
                         atol=1e-4)
         assert_allclose(qmc.discrepancy(sample, method='CD'), 0.3172,
                         atol=1e-4)
-        assert_allclose(qmc.discrepancy(sample, method='star'), 0.037451,
+        assert_allclose(qmc.discrepancy(sample, method='L2-star'), 0.037451,
                         atol=1e-4)
 
+    def test_discrepancy_errors(self):
+        sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+
+        with pytest.raises(ValueError, match=r"Sample is not in unit "
+                                             r"hypercube"):
+            qmc.discrepancy(sample)
+
+        sample = [[0, 0], [1, 1], [0.5, 0.5]]
         with pytest.raises(ValueError, match=r"toto is not a valid method."):
             qmc.discrepancy(sample, method='toto')
 

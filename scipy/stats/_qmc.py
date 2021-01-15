@@ -141,7 +141,7 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
 
 
 def discrepancy(sample, iterative=False, method='CD'):
-    """Discrepancy on a given sample.
+    """Discrepancy of a given sample.
 
     Parameters
     ----------
@@ -151,8 +151,8 @@ def discrepancy(sample, iterative=False, method='CD'):
         Must be False if not using it for updating the discrepancy.
         Default is False. Refer to the notes for more details.
     method : str, optional
-        Type of discrepancy, can be ['CD', 'WD', 'MD', 'star']. Refer to
-        the notes for more details. Default is ``CD``.
+        Type of discrepancy, can be ``CD``, ``WD``, ``MD`` or ``L2-star``.
+        Refer to the notes for more details. Default is ``CD``.
 
     Returns
     -------
@@ -162,16 +162,14 @@ def discrepancy(sample, iterative=False, method='CD'):
     Notes
     -----
     The discrepancy is a uniformity criterion used to assess the space filling
-    of a number of samples in a hypercube.
-    The discrepancy measures how the spread of the points deviates from a
-    uniform distribution.
+    of a number of samples in a hypercube. A discrepancy quantifies the
+    distance between the continuous uniform distribution on a hypercube and the
+    discrete uniform distribution on :math:`n` distinct sample points.
+
     The lower the value is, the better the coverage of the parameter space is.
 
-    A discrepancy quantifies the distance between the continuous uniform
-    distribution on a hypercube and the discrete uniform distribution on
-    :math:`n` distinct sample points. Smaller values are better. For a
-    collection of subsets of the hypercube, the discrepancy is the greatest
-    absolute difference between the fraction of sample points in one of those
+    For a collection of subsets of the hypercube, the discrepancy is the
+    difference between the fraction of sample points in one of those
     subsets and the volume of that subset. There are different definitions of
     discrepancy corresponding to different collections of subsets. Some
     versions take a root mean square difference over subsets instead of
@@ -195,7 +193,8 @@ def discrepancy(sample, iterative=False, method='CD'):
     * ``CD``: Centered Discrepancy - subspace involves a corner of the
       hypercube
     * ``WD``: Wrap-around Discrepancy - subspace can wrap around bounds
-    * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
+    * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria,
+      see [2]_.
     * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
 
     Lastly, using ``iterative=True``, it is possible to compute the
@@ -207,12 +206,12 @@ def discrepancy(sample, iterative=False, method='CD'):
 
     References
     ----------
-    .. [1] Fang et al. Design and modeling for computer experiments,
+    .. [1] Fang et al. "Design and modeling for computer experiments".
        Computer Science and Data Analysis Series, 2006.
     .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
-    .. [3] T. T. Warnock. Computational investigations of low discrepancy point
-       sets, Applications of Number Theory to Numerical
+    .. [3] T. T. Warnock. "Computational investigations of low discrepancy point
+       sets". Applications of Number Theory to Numerical
        Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
@@ -236,6 +235,10 @@ def discrepancy(sample, iterative=False, method='CD'):
 
     """
     sample = np.asarray(sample)
+
+    # Checking that sample is within the hypercube
+    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        raise ValueError('Sample is not in unit hypercube')
 
     n, d = sample.shape
 
@@ -272,10 +275,10 @@ def discrepancy(sample, iterative=False, method='CD'):
         prod_arr = 1
         for i in range(d):
             s0 = sample[:, i]
-            prod_arr *= (15.0 / 8.0 -
-                         0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5) -
-                         3.0 / 4.0 * abs(s0[:, None] - s0) +
-                         0.5 * abs(s0[:, None] - s0) ** 2)
+            prod_arr *= (15.0 / 8.0
+                         - 0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5)
+                         - 3.0 / 4.0 * abs(s0[:, None] - s0)
+                         + 0.5 * abs(s0[:, None] - s0) ** 2)
         disc2 = prod_arr.sum()
 
         disc = (19.0 / 12.0) ** d
@@ -283,18 +286,20 @@ def discrepancy(sample, iterative=False, method='CD'):
         disc2 = 1.0 / (n ** 2) * disc2
 
         return disc - disc1 + disc2
-    elif method == 'star':
+    elif method == 'L2-star':
+        disc1 = np.sum(np.prod(1 - sample**2, axis=1))
+
+        xik = sample[None, :, :]
+        xjk = sample[:, None, :]
+        disc2 = np.sum(np.sum(np.prod(1 - np.maximum(xik, xjk), axis=2),
+                              axis=1))
+
         return np.sqrt(
-            3 ** (-d) - 2 ** (1 - d) / n
-            * np.sum(np.prod(1 - sample ** 2, axis=1))
-            + np.sum([
-                np.prod(1 - np.maximum(sample[k, :], sample[j, :]))
-                for k in range(n) for j in range(n)
-            ]) / n ** 2
+            3 ** (-d) - 1 / n * 2 ** (1 - d) * disc1 + 1 / (n ** 2) * disc2
         )
     else:
         raise ValueError('{} is not a valid method. Options are '
-                         'CD, WD, MD, star.'.format(method))
+                         'CD, WD, MD, L2-star.'.format(method))
 
 
 def _update_discrepancy(x_new, sample, initial_disc):
