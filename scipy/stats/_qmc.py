@@ -1354,7 +1354,7 @@ class MultivariateNormalQMC(QMCEngine):
                 cov_root = (eigvec * np.sqrt(eigval)).transpose()
         elif cov_root is not None:
             # root decomposition provided
-            cov_root = np.array(cov_root, copy=False, ndmin=2)
+            cov_root = np.atleast_2d(cov_root)
             if not mean.shape[0] == cov_root.shape[0]:
                 raise ValueError("Dimension mismatch between mean and "
                                  "covariance.")
@@ -1410,7 +1410,7 @@ class MultivariateNormalQMC(QMCEngine):
         if self._corr_matrix is not None:
             return base_samples @ self._corr_matrix + self._mean
         else:
-            # avoid mulitplying with identity here
+            # avoid multiplying with identity here
             return base_samples + self._mean
 
     def _standard_normal_samples(self, n=1):

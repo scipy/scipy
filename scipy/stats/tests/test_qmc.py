@@ -113,12 +113,10 @@ class TestUtils:
         # From Tim P. et al. Minimizing the L2 and Linf star discrepancies
         # of a single point in the unit hypercube. JCAM, 2005
         # Table 1 on Page 283
-        refs = [3.333333e-1, 1.111111e-1, 1.234567e-2, 1.524157e-4,
-                2.323057e-8, 5.396595e-16]
-        for dim, ref in zip([2, 4, 8, 16, 32, 64], refs):
+        for dim in [2, 4, 8, 16, 32, 64]:
+            ref = np.sqrt(3**(-dim))
             assert_allclose(qmc.discrepancy(np.array([[1]*dim]),
-                                            method='L2-star'),
-                            ref, atol=1e-4)
+                                            method='L2-star'), ref)
 
     def test_discrepancy_errors(self):
         sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
