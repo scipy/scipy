@@ -239,7 +239,7 @@ def discrepancy(sample, iterative=False, method='CD'):
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
-    >>> update_discrepancy(space[-1], space[:-1], disc_init)
+    >>> qmc.update_discrepancy(space[-1], space[:-1], disc_init)
     0.008142039609053513
 
     """
@@ -349,7 +349,7 @@ def update_discrepancy(x_new, sample, initial_disc):
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
-    >>> update_discrepancy(space[-1], space[:-1], disc_init)
+    >>> qmc.update_discrepancy(space[-1], space[:-1], disc_init)
     0.008142039609053513
 
     """
@@ -386,6 +386,9 @@ def update_discrepancy(x_new, sample, initial_disc):
 
 def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
+
+    Taken from [1]_ by P.T. Roy, licensed under
+    `CC-BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_.
 
     Parameters
     ----------
