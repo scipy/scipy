@@ -294,10 +294,10 @@ def matdims(arr, oned_as='column'):
     """
     shape = arr.shape
     if shape == ():  # scalar
-        return (1,1)
+        return (1, 1)
     if len(shape) == 1:  # 1D
-        if functools.reduce(operator.mul, shape) == 0:  # zero elememts
-            return (0,0)
+        if shape[0] == 0:
+            return (0, 0)
         elif oned_as == 'column':
             return shape + (1,)
         elif oned_as == 'row':
