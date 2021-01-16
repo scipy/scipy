@@ -13,7 +13,8 @@ from scipy.stats._sobol import (
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
 )
 
-__all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
+__all__ = ['scale', 'discrepancy', 'update_discrepancy',
+           'QMCEngine', 'Sobol', 'Halton',
            'OrthogonalLatinHypercube', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
@@ -116,14 +117,12 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    dim = len(lower)
-    if dim != len(upper):
-        raise ValueError('Bounds do not have the same dimensions')
+    lower, upper = np.broadcast_arrays(lower, upper)
 
     if not np.all(lower < upper):
         raise ValueError('Bounds are not consistent a < b')
 
-    if dim != sample.shape[1]:
+    if len(lower) != sample.shape[1]:
         raise ValueError('Sample dimension is different than bounds dimension')
 
     if not reverse:
@@ -193,15 +192,16 @@ def discrepancy(sample, iterative=False, method='CD'):
     * ``CD``: Centered Discrepancy - subspace involves a corner of the
       hypercube
     * ``WD``: Wrap-around Discrepancy - subspace can wrap around bounds
-    * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria,
-      see [2]_.
+    * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
+
+    See [2]_ for precise definitions of each method.
 
     Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
     to add a point to a sampling and check the candidate which would give the
     lowest discrepancy. Then you could just update the discrepancy with
-    each candidate using `_update_discrepancy`. This method is faster than
+    each candidate using `update_discrepancy`. This method is faster than
     computing the discrepancy for a large number of candidates.
 
     References
@@ -233,10 +233,22 @@ def discrepancy(sample, iterative=False, method='CD'):
     >>> qmc.discrepancy(space)
     0.008142039609053464
 
+    We can also compute iteratively the ``CD`` discrepancy by using
+    ``iterative=True``.
+
+    >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
+    >>> disc_init
+    0.04769081147119336
+    >>> update_discrepancy(space[-1], space[:-1], disc_init)
+    0.008142039609053513
+
     """
     sample = np.asarray(sample)
 
-    # Checking that sample is within the hypercube
+    # Checking that sample is within the hypercube and 2D
+    if not sample.ndim == 2:
+        raise ValueError('Sample is not a 2D array')
+
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError('Sample is not in unit hypercube')
 
@@ -307,7 +319,7 @@ def discrepancy(sample, iterative=False, method='CD'):
                          'CD, WD, MD, L2-star.'.format(method))
 
 
-def _update_discrepancy(x_new, sample, initial_disc):
+def update_discrepancy(x_new, sample, initial_disc):
     """Update the centered discrepancy with a new sample.
 
     Parameters
@@ -337,12 +349,26 @@ def _update_discrepancy(x_new, sample, initial_disc):
     >>> disc_init = qmc.discrepancy(space[:-1], iterative=True)
     >>> disc_init
     0.04769081147119336
-    >>> _update_discrepancy(space[-1], space[:-1], disc_init) # doctest: +SKIP
+    >>> update_discrepancy(space[-1], space[:-1], disc_init)
     0.008142039609053513
 
     """
     sample = np.asarray(sample)
     x_new = np.asarray(x_new)
+
+    # Checking that sample is within the hypercube and 2D
+    if not sample.ndim == 2:
+        raise ValueError('Sample is not a 2D array')
+
+    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        raise ValueError('Sample is not in unit hypercube')
+
+    # Checking that x_new is within the hypercube and 1D
+    if not x_new.ndim == 1:
+        raise ValueError('x_new is not a 1D array')
+
+    if not (np.all(x_new >= 0) and np.all(x_new <= 1)):
+        raise ValueError('x_new is not in unit hypercube')
 
     n = len(sample) + 1
     abs_ = abs(x_new - 0.5)
@@ -356,98 +382,6 @@ def _update_discrepancy(x_new, sample, initial_disc):
     disc3 = 1 / (n ** 2) * np.prod(1 + abs_)
 
     return initial_disc + disc1 + disc2 + disc3
-
-
-def _perturb_discrepancy(sample, i1, i2, k, disc):
-    """Centered discrepancy after and elementary perturbation on a LHS.
-
-    An elementary perturbation consists of an exchange of coordinates between
-    two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
-    this operation conserves the LHS properties.
-
-    Parameters
-    ----------
-    sample : array_like (n, d)
-        The sample (before permutation) to compute the discrepancy from.
-    i1 : int
-        The first line of the elementary permutation.
-    i2 : int
-        The second line of the elementary permutation.
-    k : int
-        The column of the elementary permutation.
-    disc : float
-        Centered discrepancy of the design before permutation.
-
-    Returns
-    -------
-    discrepancy : float
-        Centered discrepancy.
-
-    References
-    ----------
-    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
-       of computer experiments", Journal of Statistical Planning and
-       Inference, 2005.
-
-    """
-    sample = np.asarray(sample)
-    n = sample.shape[0]
-
-    z_ij = sample - 0.5
-
-    # Eq (19)
-    c_i1j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
-                                          abs(z_ij) -
-                                          abs(z_ij[i1, :] - z_ij)),
-                                   axis=1)
-    c_i2j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
-                                          abs(z_ij) -
-                                          abs(z_ij[i2, :] - z_ij)),
-                                   axis=1)
-
-    # Eq (20)
-    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
-              2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :]) -
-                               0.5 * z_ij[i1, :] ** 2))
-    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :])) -
-              2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :]) -
-                               0.5 * z_ij[i2, :] ** 2))
-
-    # Eq (22), typo in the article in the denominator i2 -> i1
-    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k]) -
-           abs(z_ij[i2, k] - z_ij[:, k]))
-    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k]) -
-             abs(z_ij[i1, k] - z_ij[:, k]))
-    gamma = num / denum
-
-    # Eq (23)
-    c_p_i1j = gamma * c_i1j
-    # Eq (24)
-    c_p_i2j = c_i2j / gamma
-
-    alpha = (1 + abs(z_ij[i2, k])) / (1 + abs(z_ij[i1, k]))
-    beta = (2 - abs(z_ij[i2, k])) / (2 - abs(z_ij[i1, k]))
-
-    g_i1 = np.prod(1. + abs(z_ij[i1, :]))
-    g_i2 = np.prod(1. + abs(z_ij[i2, :]))
-    h_i1 = np.prod(1. + 0.5 * abs(z_ij[i1, :]) - 0.5 * (z_ij[i1, :] ** 2))
-    h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
-
-    # Eq (25), typo in the article g is missing
-    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
-    # Eq (26), typo in the article n ** 2
-    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
-
-    # Eq (26)
-    sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
-
-    mask = np.ones(n, dtype=bool)
-    mask[[i1, i2]] = False
-    sum_ = sum(sum_[mask])
-
-    disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
-
-    return disc_ep
 
 
 def primes_from_2_to(n):

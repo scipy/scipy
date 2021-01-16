@@ -34,6 +34,7 @@ Helpers
    :toctree: generated/
 
    discrepancy
+   update_discrepancy
    scale
 
 

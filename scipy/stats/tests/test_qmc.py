@@ -1,4 +1,3 @@
-import copy
 from collections import Counter
 
 import pytest
@@ -11,7 +10,7 @@ from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              _perturb_discrepancy, _update_discrepancy,
+                              update_discrepancy,
                               QMCEngine)
 
 
@@ -37,6 +36,15 @@ class TestUtils:
                                       u_bounds=bounds[1], reverse=True)
         assert_allclose(scaled_back_space, space)
 
+        # broadcast
+        space = [[0, 0, 0], [1, 1, 1], [0.5, 0.5, 0.5]]
+        l_bounds, u_bounds = 0, [6, 5, 3]
+        out = [[0, 0, 0], [6, 5, 3], [3, 2.5, 1.5]]
+
+        scaled_space = qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
+
+        assert_allclose(scaled_space, out)
+
     def test_scale_random(self):
         np.random.seed(0)
         sample = np.random.rand(30, 10)
@@ -57,8 +65,9 @@ class TestUtils:
             bounds = np.array([[-2, 6], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"Bounds do not have the same"
-                                             r" dimensions"):
+        with pytest.raises(ValueError, match=r"shape mismatch: objects cannot "
+                                             r"be broadcast to a "
+                                             r"single shape"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             l_bounds, u_bounds = [-2, 0, 2], [6, 5]
             qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
@@ -125,6 +134,9 @@ class TestUtils:
                                              r"hypercube"):
             qmc.discrepancy(sample)
 
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            qmc.discrepancy([1, 3])
+
         sample = [[0, 0], [1, 1], [0.5, 0.5]]
         with pytest.raises(ValueError, match=r"toto is not a valid method."):
             qmc.discrepancy(sample, method='toto')
@@ -134,27 +146,28 @@ class TestUtils:
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
 
         disc_init = qmc.discrepancy(space_1[:-1], iterative=True)
-        disc_iter = _update_discrepancy(space_1[-1], space_1[:-1],
-                                        disc_init)
+        disc_iter = update_discrepancy(space_1[-1], space_1[:-1],
+                                       disc_init)
 
         assert_allclose(disc_iter, 0.0081, atol=1e-4)
 
-    def test_perm_discrepancy(self):
-        doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
+        # errors
+        with pytest.raises(ValueError, match=r"Sample is not in unit "
+                                             r"hypercube"):
+            update_discrepancy(space_1[-1], space_1[:-1] + 1, disc_init)
 
-        disc_init = qmc.discrepancy(doe_init)
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            update_discrepancy(space_1[-1], space_1[0], disc_init)
 
-        row_1, row_2, col = 5, 2, 1
+        x_new = [1, 3]
+        with pytest.raises(ValueError, match=r"x_new is not in unit "
+                                             r"hypercube"):
+            update_discrepancy(x_new, space_1[:-1], disc_init)
 
-        doe = copy.deepcopy(doe_init)
-        doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
+        x_new = [[0.5, 0.5]]
+        with pytest.raises(ValueError, match=r"x_new is not a 1D array"):
+            update_discrepancy(x_new, space_1[:-1], disc_init)
 
-        disc_valid = qmc.discrepancy(doe)
-        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
-                                         disc_init)
-
-        assert_allclose(disc_valid, disc_perm)
 
     def test_n_primes(self):
         primes = n_primes(10)

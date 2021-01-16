@@ -40,15 +40,9 @@ def discrepancy(
 ) -> _FloatingType: ...
 
 
-def _update_discrepancy(
+def update_discrepancy(
         x_new: npt.ArrayLike, sample: npt.ArrayLike,
         initial_disc: _FloatingType
-) -> _FloatingType: ...
-
-
-def _perturb_discrepancy(
-        sample: npt.ArrayLike, i1: _IntegerType, i2: _IntegerType,
-        k: _IntegerType, disc: _FloatingType
 ) -> _FloatingType: ...
 
 
