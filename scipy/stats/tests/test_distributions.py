@@ -1,7 +1,6 @@
 """
 Test functions for stats module
 """
-import itertools
 import warnings
 import re
 import sys
