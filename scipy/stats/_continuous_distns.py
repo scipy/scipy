@@ -5801,10 +5801,12 @@ class nakagami_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,) * self.numargs
         # Empirically good first estimates
         loc = data.mean()
         scale = data.var()
-        return loc, scale
+        return args + (loc, scale)
 
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
