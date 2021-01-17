@@ -5804,8 +5804,8 @@ class nakagami_gen(rv_continuous):
         if args is None:
             args = (1.0,) * self.numargs
         # Empirically good first estimates (see gh-10908)
-        loc = data.mean()
-        scale = data.var()
+        loc = np.mean(data)
+        scale = np.mean(data)
         return args + (loc, scale)
 
 
