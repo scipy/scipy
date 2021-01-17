@@ -2,7 +2,6 @@ import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite
-
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
@@ -147,10 +146,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     """
     QZ decomposition for generalized eigenvalues of a pair of matrices.
 
-    The QZ, or generalized Schur, decomposition for a pair of N x N
-    nonsymmetric matrices (A,B) is::
+    The QZ, or generalized Schur, decomposition for a pair of n-by-n
+    matrices (A,B) is::
 
-        (A,B) = (Q*AA*Z', Q*BB*Z')
+        (A,B) = (Q @ AA @ Z*, Q @ BB @ Z*)
 
     where AA, BB is in generalized Schur form if BB is upper-triangular
     with non-negative diagonal and AA is upper-triangular, or for real QZ
@@ -266,8 +265,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """QZ decomposition for a pair of matrices with reordering.
 
-    .. versionadded:: 0.17.0
-
     Parameters
     ----------
     A : (N, N) array_like
@@ -284,12 +281,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         complex matrix pairs both ``alpha`` and ``beta`` can be
         complex. The callable must be able to accept a NumPy
         array. Alternatively, string parameters may be used:
-
             - 'lhp'   Left-hand plane (x.real < 0.0)
             - 'rhp'   Right-hand plane (x.real > 0.0)
             - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
-
         With the predefined sorting functions, an infinite eigenvalue
         (i.e., ``alpha != 0`` and ``beta = 0``) is considered to lie in
         neither the left-hand nor the right-hand plane, but it is
@@ -307,7 +302,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
-
     Returns
     -------
     AA : (N, N) ndarray
@@ -322,7 +316,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         The left Schur vectors.
     Z : (N, N) ndarray
         The right Schur vectors.
-
     Notes
     -----
     On exit, ``(ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N``, will be the
@@ -334,6 +327,8 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     real; if positive, then the ``j``th and ``(j+1)``st eigenvalues are a
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
+    .. versionadded:: 0.17.0
+
     See also
     --------
     qz
@@ -344,16 +339,11 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])
     >>> AA, BB, alpha, beta, Q, Z = ordqz(A, B, sort='lhp')
-
     Since we have sorted for left half plane eigenvalues, negatives come first
-
     >>> (alpha/beta).real < 0
     array([ True,  True, False, False], dtype=bool)
-
     """
-    # NOTE: should users be able to set these?
-    lwork = None
-    result, typ = _qz(A, B, output=output, lwork=lwork, sort=None,
+    result, typ = _qz(A, B, output=output, sort=None,
                       overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                       check_finite=check_finite)
     AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
@@ -365,24 +355,14 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
-    tgsen, = get_lapack_funcs(('tgsen',), (AA, BB))
-
-    if lwork is None or lwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0].real.astype(np.int_)
-        # looks like wrong value passed to ZTGSYL if not
-        lwork += 1
-
-    liwork = None
-    if liwork is None or liwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, liwork=-1)
-        liwork = result[-2][0]
-
-    result = tgsen(select, AA, BB, Q, Z, lwork=lwork, liwork=liwork)
+    tgsen = get_lapack_funcs('tgsen', (AA, BB))
+    # the real case needs 4n + 16 lwork
+    lwork = 4*AA.shape[0] + 16 if typ in 'sd' else 1
+    result = tgsen(select, AA, BB, Q, Z, ijob=0, lwork=lwork, liwork=1)
 
     info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument %d of tgsen" % -info)
+        raise ValueError(f"Illegal value in argument {-info} of tgsen")
     elif info == 1:
         raise ValueError("Reordering of (A, B) failed because the transformed"
                          " matrix pair (A, B) would be too far from "
