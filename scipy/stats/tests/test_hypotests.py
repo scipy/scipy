@@ -416,10 +416,12 @@ class TestCvm_2samp(object):
         msg = 'The samples must be one-dimensional'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(x, y)
+        with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, x)
         msg = 'x and y must contain at least two observations.'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp([], y)
+        with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, [1])
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
