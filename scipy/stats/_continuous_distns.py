@@ -5803,7 +5803,7 @@ class nakagami_gen(rv_continuous):
     def _fitstart(self, data, args=None):
         if args is None:
             args = (1.0,) * self.numargs
-        # Empirically good first estimates
+        # Empirically good first estimates (see gh-10908)
         loc = data.mean()
         scale = data.var()
         return args + (loc, scale)
