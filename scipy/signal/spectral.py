@@ -1585,7 +1585,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     from each window is returned.
 
     Parameters
-    ---------
+    ----------
     x : array_like
         Array or sequence containing the data to be analyzed.
     y : array_like

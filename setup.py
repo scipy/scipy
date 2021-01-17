@@ -249,7 +249,7 @@ def get_build_ext_override():
             # Disable distutils parallel build, due to race conditions
             # in numpy.distutils (Numpy issue gh-15957)
             if self.parallel:
-                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                print("NOTE: -j build option not supported. Set NPY_NUM_BUILD_JOBS=4 "
                       "for parallel build.")
             self.parallel = None
 
