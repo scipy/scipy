@@ -5297,16 +5297,18 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
-    @pytest.mark.parametrize('nu, loc, scale',
-                             itertools.product(np.linspace(0.5, 5, 4),
-                                               np.linspace(2, 50, 4),
-                                               np.linspace(2, 20, 4)))
+    @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
     def test_fit(self, nu, loc, scale):
-        samples = stats.nakagami.rvs(size=100000, nu=nu, loc=loc, scale=scale, random_state=1337)
+        # The first tuple of the parameters' values is discussed in gh-10908
+        samples = stats.nakagami.rvs(size=100, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
         nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
         assert_almost_equal(nu_est, nu, decimal=0)
         assert_almost_equal(loc_est, loc, decimal=0)
         assert_almost_equal(scale_est, scale, decimal=0)
+
 
 
 def test_rvs_no_size_warning():
