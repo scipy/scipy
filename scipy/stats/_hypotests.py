@@ -845,8 +845,8 @@ def cramervonmises_2samp(x, y, method='auto'):
 
         # approximate distribution of tn with limiting distribution
         # of the one-sample test statistic
-        # if tn < 0.0035, the _cdf_cvm_inf(tn) < 4.9*1e-16, return 1.0 directly
-        if tn < 0.0035:
+        # if tn < 0.003, the _cdf_cvm_inf(tn) < 1.28*1e-18, return 1.0 directly
+        if tn < 0.003:
             p = 1.0
         else:
             p = max(0, 1. - _cdf_cvm_inf(tn))
