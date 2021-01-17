@@ -5800,6 +5800,12 @@ class nakagami_gen(rv_continuous):
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
 
+    def _fitstart(self, data, args=None):
+        # Empirically good first estimates
+        loc = data.mean()
+        scale = data.var()
+        return loc, scale
+
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 
