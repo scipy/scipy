@@ -281,10 +281,12 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         complex matrix pairs both ``alpha`` and ``beta`` can be
         complex. The callable must be able to accept a NumPy
         array. Alternatively, string parameters may be used:
+
             - 'lhp'   Left-hand plane (x.real < 0.0)
             - 'rhp'   Right-hand plane (x.real > 0.0)
             - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+
         With the predefined sorting functions, an infinite eigenvalue
         (i.e., ``alpha != 0`` and ``beta = 0``) is considered to lie in
         neither the left-hand nor the right-hand plane, but it is
@@ -302,6 +304,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
+
     Returns
     -------
     AA : (N, N) ndarray
@@ -316,6 +319,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         The left Schur vectors.
     Z : (N, N) ndarray
         The right Schur vectors.
+
     Notes
     -----
     On exit, ``(ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N``, will be the
@@ -339,9 +343,12 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])
     >>> AA, BB, alpha, beta, Q, Z = ordqz(A, B, sort='lhp')
+
     Since we have sorted for left half plane eigenvalues, negatives come first
+
     >>> (alpha/beta).real < 0
     array([ True,  True, False, False], dtype=bool)
+
     """
     result, typ = _qz(A, B, output=output, sort=None,
                       overwrite_a=overwrite_a, overwrite_b=overwrite_b,
