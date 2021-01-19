@@ -3523,6 +3523,11 @@ class TestCSR(sparse_test_class()):
         ij = vstack((row,col))
         csr = csr_matrix((data,ij),(4,3))
         assert_array_equal(arange(12).reshape(4,3),csr.todense())
+        
+        # using Python lists and a specified dtype
+        csr = csr_matrix(([2**63, 1], ([0, 1], [0, 1])), dtype=np.uint64)
+        dense = array([[2**63, 0], [0, 1]], dtype=np.uint64)
+        assert_array_equal(csr.toarray(), dense)
 
     def test_constructor5(self):
         # infer dimensions from arrays
