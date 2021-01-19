@@ -4065,6 +4065,21 @@ class TestStudentizedRange(object):
         # Because of error caused by the summation, use a relatively large rtol
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
+    def test_moment_against_pdf(self):
+        k, nu = 3, 10
+        moments = [1, 2, 3, 4]
+
+        for moment in moments:
+            res_act = stats.studentized_range.moment(moment, k, nu)
+
+            def wrapper(x):
+                return x ** moment * stats.studentized_range.pdf(x, k, nu)
+            res_exp = quad(wrapper, 0, np.inf)[0]
+
+            # Atol is large B/C of integration innacuracy with quad.
+            # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
+            # range causes the results to converge and pass default atol.
+            assert_allclose(res_act, res_exp, atol=1e-5)
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
