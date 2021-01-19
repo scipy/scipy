@@ -507,11 +507,10 @@ class TestGenHyperbolic(object):
             loc=mu,
             scale=delta
             )
-        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[: , np.newaxis]
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[:, np.newaxis]
         assert_allclose(
             gh.pdf(x), stats.t.pdf(x, df),
             atol=1e-8)
-
 
     def test_pdf_laplace(self):
         # Test Against Laplace with location param [-10, 10]
@@ -536,7 +535,7 @@ class TestGenHyperbolic(object):
             )
         # ppf does not integrate for scale < 5e-4
         # therefore using simple linspace to define the support
-        x = np.linspace(-20, 20, 100)[: , np.newaxis]
+        x = np.linspace(-20, 20, 100)[:, np.newaxis]
         assert_allclose(
             gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
             atol=1e-9)
@@ -562,7 +561,7 @@ class TestGenHyperbolic(object):
             loc=mu,
             scale=delta
             )
-        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[: , np.newaxis]
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[:, np.newaxis]
         assert_allclose(
             gh.pdf(x), stats.norminvgauss.pdf(
                 x, a=alpha, b=beta, loc=mu, scale=delta),
