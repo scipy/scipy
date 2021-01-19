@@ -5681,7 +5681,6 @@ class TestRatioUniforms(object):
                       stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
-        
 
 class TestMGCErrorWarnings(object):
     """ Tests errors and warnings derived from MGC.
