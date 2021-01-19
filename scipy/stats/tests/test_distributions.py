@@ -491,92 +491,83 @@ class TestGenHyperbolic(object):
 
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 30 df
-        res = []
-        for df in np.linspace(1, 30, 20):
-            # in principle alpha should be zero in practice for big lmbdas
-            # alpha cannot be too small else pdf does not integrate
-            alpha = np.float_power(df, 2)*np.finfo(np.float32).eps
-            beta = 0
-            mu = 0
-            delta = np.sqrt(df)
-            alpha_hat = alpha * delta
-            beta_hat = beta * delta
-            gh = stats.genhyperbolic(
-                p=-df/2,
-                a=alpha_hat,
-                b=beta_hat,
-                loc=mu,
-                scale=delta
-                )
-            x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
-            res.append(assert_allclose(
-                gh.pdf(x), stats.t.pdf(x, df),
-                atol=1e-8)
-                )
+        df = np.linspace(1, 30, 20)
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        alpha = np.float_power(df, 2)*np.finfo(np.float32).eps
+        beta = 0
+        mu = 0
+        delta = np.sqrt(df)
+        alpha_hat = alpha * delta
+        beta_hat = beta * delta
+        gh = stats.genhyperbolic(
+            p=-df/2,
+            a=alpha_hat,
+            b=beta_hat,
+            loc=mu,
+            scale=delta
+            )
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[: , np.newaxis]
+        assert_allclose(
+            gh.pdf(x), stats.t.pdf(x, df),
+            atol=1e-8)
 
-        np.all(res)
 
     def test_pdf_laplace(self):
         # Test Against Laplace with location param [-10, 10]
-        res = []
-        for loc in np.linspace(-10, 10, 20):
-            # in principle delta should be zero in practice for big loc delta
-            # cannot be too small else pdf does not integrate
+        loc = np.linspace(-10, 10, 20)
+        # in principle delta should be zero in practice for big loc delta
+        # cannot be too small else pdf does not integrate
 
-            lmbda = 1
-            alpha = 1
-            beta = 0
-            delta = np.finfo(np.float32).eps
+        lmbda = 1
+        alpha = 1
+        beta = 0
+        delta = np.finfo(np.float32).eps
 
-            alpha_hat = alpha * delta
-            beta_hat = beta * delta
+        alpha_hat = alpha * delta
+        beta_hat = beta * delta
 
-            gh = stats.genhyperbolic(
-                p=lmbda,
-                a=alpha_hat,
-                b=beta_hat,
-                loc=loc,
-                scale=delta
-                )
-            # ppf does not integrate for scale < 5e-4
-            # therefore using simple linspace to define the support
-            x = np.linspace(-20, 20, 100)
-            res.append(assert_allclose(
-                gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
-                atol=1e-9)
-                )
-
-        np.all(res)
+        gh = stats.genhyperbolic(
+            p=lmbda,
+            a=alpha_hat,
+            b=beta_hat,
+            loc=loc,
+            scale=delta
+            )
+        # ppf does not integrate for scale < 5e-4
+        # therefore using simple linspace to define the support
+        x = np.linspace(-20, 20, 100)[: , np.newaxis]
+        assert_allclose(
+            gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
+            atol=1e-9)
 
     def test_pdf_norminversegauss(self):
         # Test Against NIG
-        res = []
-        for alpha, beta, delta, mu in zip(
+
+        alpha, beta, delta, mu = (
                 np.linspace(1, 20, 20),
                 np.linspace(0, 19, 20)*np.float_power(-1, range(20)),
                 np.linspace(1, 1, 20),
-                np.linspace(-100, 100, 50)):
-
-            lmbda = - 0.5
-            alpha_hat = alpha * delta
-            beta_hat = beta * delta
-
-            gh = stats.genhyperbolic(
-                p=lmbda,
-                a=alpha_hat,
-                b=beta_hat,
-                loc=mu,
-                scale=delta
+                np.linspace(-100, 100, 20)
                 )
-            x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)
-            res.append(assert_allclose(
-                gh.pdf(x), stats.norminvgauss.pdf(
-                    x, a=alpha, b=beta, loc=mu, scale=delta),
-                atol=1e-9
-                )
+
+        lmbda = - 0.5
+        alpha_hat = alpha * delta
+        beta_hat = beta * delta
+
+        gh = stats.genhyperbolic(
+            p=lmbda,
+            a=alpha_hat,
+            b=beta_hat,
+            loc=mu,
+            scale=delta
             )
-
-        np.all(res)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[: , np.newaxis]
+        assert_allclose(
+            gh.pdf(x), stats.norminvgauss.pdf(
+                x, a=alpha, b=beta, loc=mu, scale=delta),
+            atol=1e-9
+            )
 
 
 class TestNormInvGauss(object):
