@@ -14,33 +14,35 @@ Functions
 Different parameterization exists in literature, scipy implementing the location-scale as for Prause (1999)
 
 .. math::
+   :nowrap:
 
-   \begin{eqnarray*} f(x, p, \hat{\alpha}, \hat{\beta}, \text{location}, \text{scale}) &=&
-            \frac{(\hat{\alpha}^2 - \hat{\beta}^2)^{\lambda/2}}
-            {\sqrt{2\pi}\hat{\alpha}^{\lambda-0.5}
-            K_\lambda\Big(\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}\Big)}
-            e^{\hat{\beta}(x)} \times \frac{K_{\lambda - 1/2}
-            (\hat{\alpha} \sqrt{1 + x^2})}
-            {(\sqrt{1 + x^2})^{1/2 - \lambda}} \end{eqnarray*}
+    \begin{eqnarray*}
+        f(x, p, a, b) & = &
+        \frac{(a^2 - b^2)^{\lambda/2}}
+        {\sqrt{2\pi}a^{\lambda-0.5}
+        K_\lambda\Big(\sqrt{a^2 - b^2}\Big)}
+        e^{b(x)} \times \frac{K_{\lambda - 1/2}
+        (a \sqrt{1 + x^2})}
+        {(\sqrt{1 + x^2})^{1/2 - \lambda}}
+    \end{eqnarray*}
 
 for:
 
 - :math:`x, \lambda \in \mathbb{R}`
-- :math:`\delta \ge 0, |\hat{\beta}| \lt \hat{\alpha}` if :math:`p \ge 0`
-- :math:`\delta \gt 0, |\hat{\beta}| \lt \hat{\alpha}` if :math:`p = 0`
-- :math:`\delta \gt 0, |\hat{\beta}| \leq \hat{\alpha}` if :math:`p \lt 0`
+- :math:`|b| \lt a` if :math:`p \ge 0`
+- :math:`|b| \leq a` if :math:`p \lt 0`
 - :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
 
 which derives from the original parameterization in  Barndorff (1978) by setting:
 
 - :math:`p = \lambda`
-- :math:`\hat{\alpha} = \delta \alpha`
-- :math:`\hat{\beta} = \delta \beta`
+- :math:`a = \hat{\alpha} = \delta \alpha`
+- :math:`b = \hat{\beta} = \delta \beta`
 - :math:`\text{location} = \mu`
 - :math:`\text{scale} = \delta`
 
 
-Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled from the above-mentioned normal variance-mean mixture where `scipy.stats.geninvgauss` is parametrized as :math:`GIG = f\Big(p = p, b = \Big(\hat{\alpha}^2 - \hat{\beta}^2\Big)^{1/2}, \text{loc} = \text{location}, \text{scale} = \Big(\hat{\alpha}^2 - \hat{\beta}^2\Big)^{ - 1/2}\Big)` so that: :math:`GH(p, \hat{\alpha}, \hat{\beta}) = \hat{\beta} \cdot GIG + \sqrt{GIG} \cdot N(0,1)`
+Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled from the above-mentioned normal variance-mean mixture where `scipy.stats.geninvgauss` is parametrized as :math:`GIG = f\Big(p = p, b = \sqrt{\hat{\alpha}^2 - \hat{\beta}^2}, \text{loc} = \text{location}, \text{scale} = \frac{1}{\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}}\Big)` so that: :math:`GH(p, \hat{\alpha}, \hat{\beta}) = \hat{\beta} \cdot GIG + \sqrt{GIG} \cdot N(0,1)`
 
 
 The "generalized" characterization suggests the fact that this distribution is a superclass of several other probability distribution, for instance:
