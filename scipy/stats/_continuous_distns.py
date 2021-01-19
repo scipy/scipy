@@ -5803,9 +5803,10 @@ class nakagami_gen(rv_continuous):
     def _fitstart(self, data, args=None):
         if args is None:
             args = (1.0,) * self.numargs
-        # Empirically good first estimates (see gh-10908)
-        loc = np.mean(data)
-        scale = np.mean(data)
+        # Analytical justified estimates
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
+        loc = np.min(data)
+        scale = np.sqrt(np.sum((data - loc)**2) / len(data))
         return args + (loc, scale)
 
 
