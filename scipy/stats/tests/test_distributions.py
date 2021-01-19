@@ -4065,6 +4065,7 @@ class TestStudentizedRange(object):
         # Because of error caused by the summation, use a relatively large rtol
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
+    @pytest.mark.slow
     def test_moment_against_pdf(self):
         k, nu = 3, 10
         moments = [1, 2, 3, 4]
