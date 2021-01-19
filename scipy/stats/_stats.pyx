@@ -530,11 +530,20 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
 
     s = x[1]
     z = x[0]
-    res = math.pow(s, (v - 1)) * _phi(math.sqrt(v) * s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
-    return res * math.sqrt(2 * math.M_PI) * k * math.pow(v, v / 2) / ( math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
+    # All possible terms are evaluated using logs, to help with overflows.
 
-cdef double _genstudentized_range_cdf_asymptomatic(double z, void *user_data) nogil:
+    log_terms = math.log(k) + (v / 2) * math.log(v) \
+               - (math.lgamma(v / 2) + (v / 2 - 1) * math.log(2)) \
+               + (v - 1) * math.log(s) - (v * s * s / 2) \
+               + math.log(0.3989422804014327) - 0.5 * z * z  # phi estimation.
+
+    #Gives a divide by zero error if put into log. Just leave outside for now.
+    t4 = math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
+
+    return math.exp(log_terms) * t4
+
+cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
     q = (<double *>user_data)[0]
     k = (<double *>user_data)[1]
@@ -547,10 +556,46 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     k = (<double *>user_data)[1]
     v = (<double *>user_data)[2]
 
-    s = x[1]
     z = x[0]
+    s = x[1]
+    #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
+    const_log = (v / 2) * math.log(v) \
+                - math.lgamma(v / 2) \
+                - (v / 2 - 1) * math.log(2) \
+                + (v - 1) * math.log(s) \
+                - v * s * s / 2
 
-    return math.pow(s, v) * _phi(math.sqrt(v) * s) * _phi(z + q*s) * _phi(z) * math.pow(_Phi(z + q * s) - _Phi(z), k - 2)
+    # math.pow(v, v / 2) * math.pow(s, v - 1) * math.exp(
+    # -v * s * s / 2) / (math.tgamma(v / 2) * math.pow(2, v / 2 - 1))
+
+    r_log = math.log(k) \
+        + math.log(k - 1) \
+        + math.log(s) \
+        + math.log(0.3989422804014327) - 0.5 * z * z \
+        + math.log(0.3989422804014327) - 0.5 * (s * q + z) * (s * q + z)
+
+    #Not ln'd B/C causes divide by 0 errors when it is.
+    r_nolog = math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+
+    return math.exp(r_log + const_log) * r_nolog
+
+cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
+    # destined to be used in a LowLevelCallable
+    K = (<double *>user_data)[0] # the Kth moment to calc.
+    k = (<double *>user_data)[1]
+    v = (<double *>user_data)[2]
+
+    z = x_arg[0]
+    s = x_arg[1]
+    x = x_arg[2]
+
+    #https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
+    cdef double pdf_data[3]
+    pdf_data[0] = x # Q is integrated over by the third integral
+    pdf_data[1] = k
+    pdf_data[2] = v
+
+    return  math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
 
 ctypedef fused real:
     float
