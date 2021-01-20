@@ -167,6 +167,7 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
+from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -1093,12 +1094,18 @@ def _moment(a, moment, axis):
         return np.mean(s, axis)
 
 
-def variation(a, axis=0, nan_policy='propagate'):
+def variation(a, axis=0, nan_policy='propagate', ddof=0):
     """
     Compute the coefficient of variation.
 
-    The coefficient of variation is the ratio of the biased standard
-    deviation to the mean.
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
+
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
@@ -1111,9 +1118,12 @@ def variation(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
@@ -1139,9 +1149,9 @@ def variation(a, axis=0, nan_policy='propagate'):
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis)
+        return mstats_basic.variation(a, axis, ddof)
 
-    return a.std(axis) / a.mean(axis)
+    return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
@@ -1229,12 +1239,11 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
-    zero = (m2 == 0)
-    vals = _lazywhere(~zero, (m2, m3),
-                      lambda m2, m3: m3 / m2**1.5,
-                      0.)
+    with np.errstate(all='ignore'):
+        zero = (m2 <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
+        vals = np.where(zero, 0, m3 / m2**1.5)
     if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+        can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -1339,12 +1348,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
-    zero = (m2 == 0)
     with np.errstate(all='ignore'):
+        zero = (m2 <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
         vals = np.where(zero, 0, m4 / m2**2.0)
 
     if not bias:
-        can_correct = (n > 3) & (m2 > 0)
+        can_correct = ~zero & (n > 3)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
@@ -5598,6 +5607,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
+    mean1 = np.asarray(mean1)
+    std1 = np.asarray(std1)
+    mean2 = np.asarray(mean2)
+    std2 = np.asarray(std2)
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
     else:
@@ -5651,7 +5664,7 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              alternative="two-sided"):
+              permutations=None, random_state=None, alternative="two-sided"):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5674,6 +5687,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         population variance [2]_.
 
         .. versionadded:: 0.11.0
+
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5681,6 +5695,25 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+
+        The 'omit' option is not currently available for permutation tests or
+        one-sided asympyotic tests.
+
+    permutations : int or None (default), optional
+        The number of random permutations that will be used to estimate
+        p-values using a permutation test. If `permutations` equals or exceeds
+        the number of distinct permutations, an exact test is performed
+        instead (i.e. each distinct permutation is used exactly once).
+        If None (default), use the t-distribution to calculate p-values.
+
+        .. versionadded:: 1.7.0
+
+    random_state : int, RandomState, or Generator, optional
+        Pseudorandom number generator state used to generate permutations
+        (used only when `permutations` is not None).
+
+        .. versionadded:: 1.7.0
+
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -5700,20 +5733,44 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Notes
     -----
-    We can use this test, if we observe two independent samples from
-    the same or different population, e.g. exam scores of boys and
-    girls or of two ethnic groups. The test measures whether the
-    average (expected) value differs significantly across samples. If
-    we observe a large p-value, for example larger than 0.05 or 0.1,
-    then we cannot reject the null hypothesis of identical average scores.
-    If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
-    then we reject the null hypothesis of equal averages.
+    Suppose we observe two independent samples, e.g. flower petal lengths, and
+    we are considering whether the two samples were drawn from the same
+    population (e.g. the same species of flower or two species with similar
+    petal characteristics) or two different populations.
+
+    The t-test quantifies the difference between the arithmetic means
+    of the two samples. The p-value quantifies the probability of observing
+    as or more extreme values assuming the null hypothesis, that the
+    samples are drawn from populations with the same population means, is true.
+    A p-value larger than a chosen threshold (e.g. 5% or 1%) indicates that
+    our observation is not so unlikely to have occurred by chance. Therefore,
+    we do not reject the null hypothesis of equal population means.
+    If the p-value is smaller than our threshold, then we have evidence
+    against the null hypothesis of equal population means.
+
+    By default, the p-value is determined by comparing the t-statistic of the
+    observed data against a theoretical t-distribution, which assumes that the
+    populations are normally distributed.
+    When ``1 < permutations < factorial(n)``, where ``n`` is the total
+    number of data, the data are randomly assigned to either group `a`
+    or `b`, and the t-statistic is calculated. This process is performed
+    repeatedly (`permutation` times), generating a distribution of the
+    t-statistic under the null hypothesis, and the t-statistic of the observed
+    data is compared to this distribution to determine the p-value. When
+    ``permutations >= factorial(n)``, an exact test is performed: the data are
+    permuted within and between the groups in each distinct way exactly once.
+
+    The permutation test can be computationally expensive and not necessarily
+    more accurate than the analytical test, but it does not make strong
+    assumptions about the shape of the underlying distribution.
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
+
+    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
 
     Examples
     --------
@@ -5722,11 +5779,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Test with sample with identical means:
 
-    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs2)
+    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> stats.ttest_ind(rvs1, rvs2)
     (0.26833823296239279, 0.78849443369564776)
-    >>> stats.ttest_ind(rvs1,rvs2, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
     (0.26833823296239279, 0.78849452749500748)
 
     `ttest_ind` underestimates p for unequal variances:
@@ -5734,16 +5791,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
     (-0.46580283298287162, 0.64145827413436174)
-    >>> stats.ttest_ind(rvs1, rvs3, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
     (-0.46580283298287162, 0.64149646246569292)
 
-    When n1 != n2, the equal variance t-statistic is no longer equal to the
+    When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs4)
     (-0.99882539442782481, 0.3182832709103896)
-    >>> stats.ttest_ind(rvs1, rvs4, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
     (-0.69712570584654099, 0.48716927725402048)
 
     T-test with different means, variance, and n:
@@ -5751,8 +5808,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs5)
     (-1.4679669854490653, 0.14263895620529152)
-    >>> stats.ttest_ind(rvs1, rvs5, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
     (-0.94365973617132992, 0.34744170334794122)
+
+    When performing a permutation test, more permutations typically yields
+    more accurate results. Use a ``np.random.Generator`` to ensure
+    reproducibility:
+
+    >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
+    ...                 random_state=np.random.default_rng(12345))
+    (-1.467966985449, 0.14)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -5765,10 +5830,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if alternative != 'two-sided':
+        if permutations or alternative != 'two-sided':
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by one-sided alternatives.")
+                             "supported by permutation tests or one-sided"
+                             "asymptotic tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
@@ -5776,20 +5842,153 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    v1 = np.var(a, axis, ddof=1)
-    v2 = np.var(b, axis, ddof=1)
-    n1 = a.shape[axis]
-    n2 = b.shape[axis]
+    if permutations:
+        if int(permutations) != permutations or permutations < 0:
+            raise ValueError("Permutations must be a positive integer.")
 
-    if equal_var:
-        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+        res = _permutation_ttest(a, b, permutations=permutations,
+                                 axis=axis, equal_var=equal_var,
+                                 nan_policy=nan_policy,
+                                 random_state=random_state,
+                                 alternative=alternative)
+
     else:
-        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+        v1 = np.var(a, axis, ddof=1)
+        v2 = np.var(b, axis, ddof=1)
+        n1 = a.shape[axis]
+        n2 = b.shape[axis]
 
-    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df,
-                                alternative)
-
+        if equal_var:
+            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+        else:
+            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+        res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis),
+                                    denom, df, alternative)
     return Ttest_indResult(*res)
+
+
+def _broadcast_concatenate(xs, axis):
+    """Concatenate arrays along an axis with broadcasting"""
+    # move the axis we're concatenating along to the end
+    xs = [np.swapaxes(x, axis, -1) for x in xs]
+    # determine final shape of all but the last axis
+    shape = np.broadcast(*[x[..., 0] for x in xs]).shape
+    # broadcast along all but the last axis
+    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
+    # concatenate along last axis
+    res = np.concatenate(xs, axis = -1)
+    # move the last axis back to where it was
+    res = np.swapaxes(res, axis, -1)
+    return res
+
+
+def _data_permutations(data, n, axis=-1, random_state=None):
+    """Vectorized permutation of data, assumes `random_state` is already checked"""
+    random_state = check_random_state(random_state)
+    if axis < 0:  # we'll be adding a new dimension at the end
+        axis = data.ndim + axis
+
+    # prepare permutation indices
+    m = data.shape[axis]
+    n_max = float_factorial(m)  # number of distinct permutations
+
+    if n < n_max:
+        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    else:
+        n = n_max
+        indices = np.array(list(permutations(range(m)))).T
+
+    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
+    data = data[..., indices]        # generate permutations
+    data = data.swapaxes(-2, axis)   # restore original axis order
+    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
+    return data, n
+
+
+def _calc_t_stat(a, b, equal_var, axis=-1):
+    """Calculate the t statistic along the given dimension"""
+    na = a.shape[axis]
+    nb = b.shape[axis]
+    avg_a = np.mean(a, axis=axis)
+    avg_b = np.mean(b, axis=axis)
+    var_a = np.var(a, axis=axis, ddof=1)
+    var_b = np.var(b, axis=axis, ddof=1)
+
+    if not equal_var:
+        denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
+    else:
+        denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
+
+    return (avg_a-avg_b)/denom
+
+
+def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
+                       nan_policy='propagate', random_state=None,
+                       alternative="two-sided"):
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores
+    using permutation methods
+
+    This test is similar to `stats.ttest_ind`, except it doesn't rely on an
+    approximate normality assumption since it uses a permutation test.
+    This function is only called from ttest_ind when permutations is not None.
+
+    Parameters
+    ----------
+    a, b : array_like
+        The arrays must be broadcastable, except along the dimension
+        corresponding to `axis` (the zeroth, by default).
+    axis : int, optional
+        The axis over which to operate on a and b.
+    permutations: int, optional
+        Number of permutations used to calculate p-value. If greater than or
+        equal to the number of distinct permutations, perform an exact test.
+    equal_var: bool, optional
+        If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
+        an ordinary t-test is conducted.
+    random_state : int, RandomState, or Generator, optional
+        Pseudorandom number generator state used for generating random
+        permutations.
+
+    Returns
+    -------
+    statistic : float or array
+        The calculated t-statistic.
+    pvalue : float or array
+        The two-tailed p-value.
+
+    """
+    random_state = check_random_state(random_state)
+
+    t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
+
+    na = a.shape[axis]
+    mat = _broadcast_concatenate((a, b), axis=axis)
+    mat = np.moveaxis(mat, axis, -1)
+
+    mat_perm, permutations = _data_permutations(mat, n=permutations,
+                                                random_state=random_state)
+    a = mat_perm[..., :na]
+    b = mat_perm[..., na:]
+    t_stat = _calc_t_stat(a, b, equal_var)
+
+    compare = {"less": np.less_equal,
+               "greater": np.greater_equal,
+               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
+
+    # Calculate the p-values
+    cmps = compare[alternative](t_stat, t_stat_observed)
+    pvalues = cmps.sum(axis=0) / permutations
+
+    # nans propagate naturally in statistic calculation, but need to be
+    # propagated manually into pvalues
+    if nan_policy == 'propagate' and np.isnan(t_stat_observed).any():
+        if np.ndim(pvalues) == 0:
+            pvalues = np.float64(np.nan)
+        else:
+            pvalues[np.isnan(t_stat_observed)] = np.nan
+
+    return (t_stat_observed, pvalues)
 
 
 def _get_len(a, axis, msg):

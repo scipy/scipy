@@ -407,7 +407,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and
