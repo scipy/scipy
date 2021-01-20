@@ -42,10 +42,10 @@ The probability density function of the :code:`nakagami` distribution in SciPy i
     f(x; \nu, \mu, \sigma) = 2 \frac{\nu^\nu}{ \sigma \Gamma(\nu)}\left(\frac{x-\mu}{\sigma}\right)^{2\nu - 1} \exp\left(-\nu \left(\frac{x-\mu}{\sigma}\right)^2 \right),\tag{1}
     \end{equation}
 
-for :math:`x` such that :math:`\frac{x-\mu}{\sigma} >= 0`, where :math:`\nu \geq \frac{1}{2}` is the shape parameter,
+for :math:`x` such that :math:`\frac{x-\mu}{\sigma} \geq 0`, where :math:`\nu \geq \frac{1}{2}` is the shape parameter,
 :math:`\mu` is the location, and :math:`\sigma` is the scale.
 
-The log-likelihood function is therefore
+The log-likelihood function is therefore:
 
 .. math::
    :nowrap:
@@ -69,17 +69,17 @@ In the absence of other constraints, the likelihood equations provide first-orde
    :nowrap:
 
     \begin{align}
-    \frac{\partial l}{\partial \nu} &= N\left(1 + \log(\nu) - \psi^{(0)}(\nu)\right) + 2 \sum_{i=1}^N \log \left( \frac{x_i - \mu}{\sigma} \right) - \sum_{i=1}^N \left( \frac{x_i - \mu}{\sigma} \right)^2  = 0
+    \frac{\partial l}{\partial \nu}(\nu, \mu, \sigma) &= N\left(1 + \log(\nu) - \psi^{(0)}(\nu)\right) + 2 \sum_{i=1}^N \log \left( \frac{x_i - \mu}{\sigma} \right) - \sum_{i=1}^N \left( \frac{x_i - \mu}{\sigma} \right)^2  = 0
     \text{,} \tag{4}\\
-    \frac{\partial l}{\partial \mu} &= (1 - 2 \nu) \sum_{i=1}^N \frac{1}{x_i-\mu} + \frac{2\nu}{\sigma^2} \sum_{i=1}^N x_i-\mu = 0
+    \frac{\partial l}{\partial \mu}(\nu, \mu, \sigma) &= (1 - 2 \nu) \sum_{i=1}^N \frac{1}{x_i-\mu} + \frac{2\nu}{\sigma^2} \sum_{i=1}^N x_i-\mu = 0
     \text{, and} \tag{5}\\
-    \frac{\partial l}{\partial \sigma} &= -2 N \nu \frac{1}{\sigma} + 2 \nu \sigma^{-3} \sum_{i=1}^N \left(x_i-\mu\right)^2 = 0
+    \frac{\partial l}{\partial \sigma}(\nu, \mu, \sigma) &= -2 N \nu \frac{1}{\sigma} + 2 \nu \sigma^{-3} \sum_{i=1}^N \left(x_i-\mu\right)^2 = 0
     \text{,}\tag{6}
     \end{align}
 
-where :math:`\psi^{(0)}(\cdot)` is the polygamma function of order :math:`0`; i.e. :math:`\psi^{(0)} = \frac{d}{d\nu} \log \Gamma(\nu)`.
+where :math:`\psi^{(0)}` is the polygamma function of order :math:`0`; i.e. :math:`\psi^{(0)}(\nu) = \frac{d}{d\nu} \log \Gamma(\nu)`.
 
-However, the support of the distribution is the values of :math:`x` for which :math:`\frac{x-\mu}{\sigma} >= 0`, and this provides an additional constraint that
+However, the support of the distribution is the values of :math:`x` for which :math:`\frac{x-\mu}{\sigma} \geq 0`, and this provides an additional constraint that
 
 .. math::
    :nowrap:
@@ -88,13 +88,13 @@ However, the support of the distribution is the values of :math:`x` for which :m
     \mu \leq \min_i{x_i}.\tag{7}
     \end{equation}
 
-For :math:`\nu = \frac{1}{2}`, the partial derivative of the log-likelihood with respect to the location reduces to
+For :math:`\nu = \frac{1}{2}`, the partial derivative of the log-likelihood with respect to the location reduces to:
 
 .. math::
    :nowrap:
 
     \begin{equation}
-    \frac{\partial l}{\partial \mu} = {\sigma^2} \sum_{i=1}^N x_i-\mu,
+    \frac{\partial l}{\partial \mu}(\nu, \mu, \sigma) = {\sigma^2} \sum_{i=1}^N x_i-\mu,
     \end{equation}
 
 which is positive when the support constraint is satisfied. Because the partial derivative with respect to the location
@@ -107,7 +107,7 @@ is positive, increasing :math:`\mu` increases the log-likelihood, and therefore 
     \mu = \min_i{x_i}, \quad \nu = \frac{1}{2}. \tag{8}
     \end{equation}
 
-For :math:`\nu` sufficiently greater than :math:`\frac{1}{2}`, the likelihood equation :math:`\frac{\partial l}{\partial \mu}=0` has a solution, and this solution provides the maximum likelihood estimate for :math:`\mu`. In either case, however, the condition :math:`\mu = \min_i{x_i}` provides a reasonable initial guess for numerical optimization.
+For :math:`\nu` sufficiently greater than :math:`\frac{1}{2}`, the likelihood equation :math:`\frac{\partial l}{\partial \mu}(\nu, \mu, \sigma)=0` has a solution, and this solution provides the maximum likelihood estimate for :math:`\mu`. In either case, however, the condition :math:`\mu = \min_i{x_i}` provides a reasonable initial guess for numerical optimization.
 
 The likelihood equation for :math:`\sigma` can be solved explicitly, and it provides the maximum likelihood estimate of the scale:
 
