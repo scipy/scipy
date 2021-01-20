@@ -31,7 +31,7 @@ Implementation: `scipy.stats.nakagami`
 
 
 MLE of the Nakagami Distribution in SciPy (:code:`nakagami.fit`)
-================================================================
+----------------------------------------------------------------
 
 The probability density function of the :code:`nakagami` distribution in SciPy is
 
