@@ -5310,6 +5310,25 @@ class TestNakagami:
         assert_allclose(scale_est, scale, rtol=0.2)
 
 
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit_nu(self, loc, scale):
+        # For nu = 0.5, we have analytical values for
+        # the MLE of the loc and the scale
+        nu = 0.5
+        n = 100
+        samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=0.5)
+
+        # Analytical values
+        loc_theo = np.min(samples)
+        scale_theo = np.sqrt(np.mean((samples - loc_est) ** 2))
+
+        assert_allclose(nu_est, nu, rtol=1e-7)
+        assert_allclose(loc_est, loc_theo, rtol=1e-7)
+        assert_allclose(scale_est, scale_theo, rtol=1e-7)
+
 
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):
