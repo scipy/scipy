@@ -19,6 +19,7 @@ import numpy as np
 
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
+from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
@@ -598,7 +599,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         highs_solvers = {'highs-ipm': 'ipm', 'highs-ds': 'simplex',
                          'highs': None}
 
-        from ._linprog_highs import _linprog_highs
         sol = _linprog_highs(lp, solver=highs_solvers[meth],
                              **solver_options)
         sol['status'], sol['message'] = (
