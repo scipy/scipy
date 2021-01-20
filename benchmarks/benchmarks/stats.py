@@ -58,16 +58,19 @@ class InferentialStats(Benchmark):
 
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
-    # remove duplicates that appear twince in either `distcont` or
+    # remove duplicates that appear more than once in either `distcont` or
     # `distdiscrete`.
     dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
 
-    param_names = ['distribution', 'method']
+    param_names = ['dist_name', 'method']
     params = [
         dists, ['pdf/pmf', 'logpdf/logpmf', 'cdf', 'logcdf', 'rvs', 'fit',
                 'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
                 'stats_m', 'stats_k', 'stats_mvsk', 'entropy']
     ]
+    # stats_mvsk is tested separately because of gh-11742
+    # `moment` tests a higher moment (order 5)
+
     dist_data = dict(distcont + distdiscrete)
     # custom shape values can be provided for any distribution in the format
     # `dist_name`: [shape1, shape2, ...]
@@ -81,13 +84,13 @@ class DistributionsAll(Benchmark):
     slow_methods = ['moment']
 
     def setup(self, distribution, method):
-        if not is_xslow() and (distribution in self.slow_dists or
-                               method in self.slow_methods):
+        if not is_xslow() and (distribution in self.slow_dists
+                               or method in self.slow_methods):
             raise NotImplementedError("Skipped")
 
         self.dist = getattr(stats, distribution)
 
-        shapes = self.dist_data[distribution]
+        dist_shapes = self.dist_data[distribution]
 
         if isinstance(self.dist, stats.rv_discrete):
             # discrete distributions only use location
@@ -98,18 +101,18 @@ class DistributionsAll(Benchmark):
             self.isCont = True
             kwds = {'loc': 4, 'scale': 10}
 
-        bounds = self.dist.interval(.99, *shapes, **kwds)
+        bounds = self.dist.interval(.99, *dist_shapes, **kwds)
         x = np.linspace(*bounds, 100)
-        args = [x, *self.custom_input.get(distribution, shapes)]
+        args = [x, *self.custom_input.get(distribution, dist_shapes)]
         self.args = args
         self.kwds = kwds
         if method == 'fit':
             # there are no fit methods for discrete distributions
-            if 'discrete' in self.dist.__module__:
+            if isinstance(self.dist, stats.rv_discrete):
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
             # the only positional argument is the data to be fitted
-            self.args = [self.dist.rvs(*shapes, size=100, **kwds)]
+            self.args = [self.dist.rvs(*dist_shapes, size=100, **kwds)]
         elif method == 'rvs':
             # add size keyword argument for data creation
             kwds['size'] = 1000
@@ -118,11 +121,9 @@ class DistributionsAll(Benchmark):
         elif method == 'pdf/pmf':
             method = ('pmf' if isinstance(self.dist, stats.rv_discrete)
                       else 'pdf')
-            self.args = args
         elif method == 'logpdf/logpmf':
             method = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
                       else 'logpdf')
-            self.args = args
         elif method in ['ppf', 'isf']:
             self.args = [np.linspace((0, 1), 100), *args[1:]]
         elif method == 'moment':
@@ -185,6 +186,7 @@ class Distribution(Benchmark):
                 stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
             elif properties == 'fit':
                 stats.beta.fit(self.x, loc=4, scale=10)
+
     # Retain old benchmark results (remove this if changing the benchmark)
     time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
 
