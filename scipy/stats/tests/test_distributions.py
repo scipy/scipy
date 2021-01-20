@@ -5300,6 +5300,7 @@ class TestNakagami:
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
     @pytest.mark.parametrize('scale', [13, 5, 20])
     def test_fit(self, nu, loc, scale):
+        # Regression test for gh-13396 (21/27 cases failed previously)
         # The first tuple of the parameters' values is discussed in gh-10908
         samples = stats.nakagami.rvs(size=100, nu=nu, loc=loc,
                                      scale=scale, random_state=1337)
