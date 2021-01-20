@@ -6362,11 +6362,14 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     -----
     There are three options for the null and corresponding alternative
     hypothesis that can be selected using the `alternative` parameter.
+
     - `two-sided`: The null hypothesis is that the two distributions are
       identical, F(x)=G(x) for all x; the alternative is that they are not
       identical.
+
     - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
       alternative is that F(x) < G(x) for at least one x.
+
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
       alternative is that F(x) > G(x) for at least one x.
 
@@ -6770,11 +6773,14 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     -----
     There are three options for the null and corresponding alternative
     hypothesis that can be selected using the `alternative` parameter.
+
     - `two-sided`: The null hypothesis is that the two distributions are
       identical, F(x)=G(x) for all x; the alternative is that they are not
       identical.
+
     - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
       alternative is that F(x) < G(x) for at least one x.
+
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
       alternative is that F(x) > G(x) for at least one x.
 
