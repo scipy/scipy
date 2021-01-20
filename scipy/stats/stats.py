@@ -6399,7 +6399,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
     (0.0072115233216311081, 0.98531158590396395)
 
-    Reject null hypothesis in favor of alternative hypothesis: less
+    Reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.ks_1samp(x, stats.norm.cdf)
     (0.12464329735846891, 0.08197335233541582)
