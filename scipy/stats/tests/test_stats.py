@@ -4760,17 +4760,12 @@ class TestAlexanderGovern(object):
 
     def test_bad_inputs(self):
         # test for zero length input args
-        with assert_raises(ValueError) as e:
+        with assert_raises(ValueError, match=r"Input sample size must be greater than one."):
             stats.alexandergovern([1, 2], [])
-        assert "cannot be zero-dimensional" in str(e)
-
-        with assert_raises(ValueError) as e:
+        with assert_raises(ValueError, match=r"Input samples must be one-dimensional"):
             stats.alexandergovern([1, 2], 2)
-        assert "samples cannot be zero-dimensional" in str(e)
-
-        with assert_raises(ValueError) as e:
+        with assert_raises(ValueError, match=r"Input samples must be finite."):
             stats.alexandergovern([1, 2], [np.nan, np.nan])
-        assert "Input samples must be finite." in str(e)
 
     def test_compare_r(self):
         '''
@@ -4937,6 +4932,16 @@ class TestAlexanderGovern(object):
         '''
         assert_allclose(soln.statistic, 0.7135182)
         assert_allclose(soln.pvalue, 0.3982783)
+
+    def test_compare_different_dimensions(self):
+        x = np.asarray([[1, 2, 3], [4, 5, 6]])
+        y = np.asarray([[6, 4, 5], [2, 1, 3]])
+
+        not_flattened = stats.alexandergovern(x, y)
+        flattened = stats.alexandergovern(np.ravel(x), np.ravel(y))
+
+        assert_allclose(not_flattened.statistic, flattened.statistic)
+        assert_allclose(not_flattened.pvalue, flattened.pvalue)
 
 
 class TestFOneWay(object):
