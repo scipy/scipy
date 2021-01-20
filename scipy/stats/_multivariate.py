@@ -1719,8 +1719,8 @@ class wishart_gen(multi_rv_generic):
     distribution :math:`W_1(\nu, 1)` collapses to the :math:`\chi^2(\nu)`
     distribution.
 
-    The algorithm [2]_ implemented by the `rvs` method occasionally
-    produces numerically singular matrices with :math:`p - 1 < \nu < p`; the
+    The algorithm [2]_ implemented by the `rvs` method may
+    produce numerically singular matrices with :math:`p - 1 < \nu < p`; the
     user may wish to check for this condition and generate replacement samples
     as necessary.
 
