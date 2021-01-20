@@ -3724,7 +3724,7 @@ def alexandergovern(*args):
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
        instead relaxing the assumption of equal variances.
-    4. The input samples are one dimentional with size greater than one.
+    4. The input samples are one dimensional with size greater than one.
 
     See Also
     --------
@@ -3742,8 +3742,14 @@ def alexandergovern(*args):
         >>> from scipy.stats import alexandergovern
 
         Here are some data on annual percentage rate of interest charged on
-        new car loans at nine of the largest banks in 4 American cities.
-        https://www.itl.nist.gov/div898/education/datasets.htm#anova
+        new car loans at nine of the largest banks in four American cities
+        taken from the National Institute of Standards and Technology's
+        ANOVA datasets.
+
+        We use `alexandergovern` to test the null hypothesis that all cities
+        have the same mean APR against the alternative that the cities do not
+        all have the same mean APR. We decide that a confidence level of 95%
+        is required to reject the null hypothesis in favor of the alternative.
 
         >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
         >>> chicago = [14.25, 13.0, 12.75, 12.5, 12.5, 12.4, 12.3, 11.9, 11.9]
@@ -3753,6 +3759,11 @@ def alexandergovern(*args):
         >>> alexandergovern(atlanta, chicago, houston, memphis)
         AlexanderGovernResult(statistic=4.65087071883494,
                               pvalue=0.19922132490385214)
+
+        The p-value is 0.1992, indicating a nearly 20% chance of observing
+        such an extreme value of the test statistic under the null hypothesis.
+        This exceeds 5%, so we do not reject the null hypothesis in favor of
+        the alternative.
     """
 
     args = _alexandergovern_input_validation(args)
