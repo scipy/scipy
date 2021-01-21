@@ -22,8 +22,23 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
+# for these distributions, discrete_basic_test is only run in test mode full
+distslow = {'zipfian', 'nhypergeom'}
+
+cases_all = list(cases_test_discrete_basic())
+cases_fast = [case for case in cases_all if case[0] not in distslow]
+cases_slow = [case for case in cases_all if case[0] in distslow]
+
+@pytest.mark.slow
+@pytest.mark.parametrize('distname,arg,first_case', cases_slow)
+def test_discrete_basic_slow(distname, arg, first_case):
+    discrete_basic_test(distname, arg, first_case)
+
+@pytest.mark.parametrize('distname,arg,first_case', cases_fast)
 def test_discrete_basic(distname, arg, first_case):
+    discrete_basic_test(distname, arg, first_case)
+
+def discrete_basic_test(distname, arg, first_case):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
