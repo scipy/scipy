@@ -14,31 +14,22 @@ from scipy.stats._distr_params import distdiscrete
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
+# For these distributions, test_discrete_basic only runs with test mode full
+distslow = {'zipfian', 'nhypergeom'}
+
 
 def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
-        yield distname, arg, distname not in seen
+        if distname in distslow:
+            yield pytest.param(distname, arg, distname, marks=pytest.mark.slow)
+        else:
+            yield distname, arg, distname not in seen
         seen.add(distname)
 
 
-# for these distributions, discrete_basic_test is only run in test mode full
-distslow = {'zipfian', 'nhypergeom'}
-
-cases_all = list(cases_test_discrete_basic())
-cases_fast = [case for case in cases_all if case[0] not in distslow]
-cases_slow = [case for case in cases_all if case[0] in distslow]
-
-@pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,first_case', cases_slow)
-def test_discrete_basic_slow(distname, arg, first_case):
-    discrete_basic_test(distname, arg, first_case)
-
-@pytest.mark.parametrize('distname,arg,first_case', cases_fast)
+@pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
-    discrete_basic_test(distname, arg, first_case)
-
-def discrete_basic_test(distname, arg, first_case):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
