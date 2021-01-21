@@ -5310,10 +5310,11 @@ class TestNakagami:
         assert_allclose(loc_est, loc, rtol=0.2)
         assert_allclose(scale_est, scale, rtol=0.2)
 
-        # Testing the first-order necessary condition for optimality for nu
-        # and scale solely as there's a constraint on loc (loc <= min_i x_i)
-        # which has not been introduced in the objective
         def dlogl_dnu(nu, loc, scale):
+            return ((-2*nu + 1) * np.sum(1/(samples - loc)) \
+                   + 2*nu/scale**2 * np.sum(samples - loc))
+
+        def dlogl_dloc(nu, loc, scale):
             return (N * (1 + np.log(nu) - polygamma(0, nu)) +
                     2 * np.sum(np.log((samples - loc) / scale))
                     - np.sum(((samples - loc) / scale)**2))
@@ -5323,6 +5324,7 @@ class TestNakagami:
                     + 2 * nu / scale ** 3 * np.sum((samples - loc) ** 2))
 
         assert_allclose(dlogl_dnu(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dloc(nu_est, loc_est, scale_est), 0, atol=1e-3)
         assert_allclose(dlogl_dscale(nu_est, loc_est, scale_est), 0, atol=1e-3)
 
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
