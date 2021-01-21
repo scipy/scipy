@@ -4759,11 +4759,19 @@ class TestAlexanderGovern(object):
                 res_unit8.statistic == res_float64.statistic)
 
     def test_bad_inputs(self):
-        # test for zero length input args
-        with assert_raises(ValueError, match=r"Input sample size must be greater than one."):
+        # input array is of size zero
+        with assert_raises(ValueError, match=r"Input sample size must be"
+                                             r" greater than one."):
             stats.alexandergovern([1, 2], [])
-        with assert_raises(ValueError, match=r"Input samples must be one-dimensional"):
+        # input is not in list format
+        with assert_raises(ValueError, match=r"Input sample size must be"
+                                             r" greater than one."):
             stats.alexandergovern([1, 2], 2)
+        # input list is of size 1
+        with assert_raises(ValueError, match=r"Input sample size must be"
+                                             r" greater than one."):
+            stats.alexandergovern([1, 2], [2])
+        # inputs are not finite
         with assert_raises(ValueError, match=r"Input samples must be finite."):
             stats.alexandergovern([1, 2], [np.nan, np.nan])
 

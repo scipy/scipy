@@ -3821,7 +3821,7 @@ def _alexandergovern_input_validation(args):
     for arg in args:
         if np.size(arg) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        elif arg.ndim != 1:
+        if arg.ndim != 1:
             raise ValueError("Input samples must be one-dimensional")
         if False in np.isfinite(arg):
             raise ValueError("Input samples must be finite.")
