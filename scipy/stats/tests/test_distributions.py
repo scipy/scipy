@@ -5311,7 +5311,7 @@ class TestNakagami:
         assert_allclose(scale_est, scale, rtol=0.2)
 
         def dlogl_dnu(nu, loc, scale):
-            return ((-2*nu + 1) * np.sum(1/(samples - loc)) \
+            return ((-2*nu + 1) * np.sum(1/(samples - loc))
                    + 2*nu/scale**2 * np.sum(samples - loc))
 
         def dlogl_dloc(nu, loc, scale):
