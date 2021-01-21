@@ -2989,6 +2989,8 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         # Construct the extrapolated point
         direc1 = x - x1
         x2 = 2*x - x1
+        if bounds and (np.any(lower_bound > x2) or np.any(x2 > upper_bound)):
+            continue
         x1 = x.copy()
         fx2 = squeeze(func(x2))
 

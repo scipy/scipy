@@ -260,6 +260,13 @@ class CheckOptimizeParameterized(CheckOptimize):
             # affect the rounding error.
             assert self.funccalls <= 131 + 20
             assert self.gradcalls == 0
+        
+        # Test the case in which extrapolated points may be outside of bounds
+        def func(x):
+            assert_(x>1e-9)
+            return np.exp(x)
+        
+        optimize.minimize(fun=func,x0=[0.5],method='powell',bounds=optimize.Bounds(lb=np.array([0,]), ub=np.array([1,]), keep_feasible=np.array([True,])))
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
