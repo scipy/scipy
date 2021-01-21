@@ -25,7 +25,7 @@ import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy
+from scipy.special import xlogy, polygamma
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root
@@ -5302,13 +5302,25 @@ class TestNakagami:
     def test_fit(self, nu, loc, scale):
         # Regression test for gh-13396 (21/27 cases failed previously)
         # The first tuple of the parameters' values is discussed in gh-10908
-        samples = stats.nakagami.rvs(size=100, nu=nu, loc=loc,
+        N = 100
+        samples = stats.nakagami.rvs(size=N, nu=nu, loc=loc,
                                      scale=scale, random_state=1337)
         nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
         assert_allclose(nu_est, nu, rtol=0.2)
         assert_allclose(loc_est, loc, rtol=0.2)
         assert_allclose(scale_est, scale, rtol=0.2)
 
+        # Testing the first-order necessary condition for optimality for nu and scale (𝛔)
+        # solely as there's a constraint on loc (μ ≤ min_i x_i) which has not
+        # been introduced in the objective
+        def dlogl_dnu(nu, loc, scale):
+            return N * (1 + np.log(nu) - polygamma(0, nu)) + 2 * np.sum(np.log((samples - loc) / scale)) - np.sum(((samples - loc) / scale)**2)
+
+        def dlogl_dscale(nu, loc, scale):
+            return - 2 * N * nu / scale + 2 * nu / scale ** 3 * np.sum((samples - loc) ** 2)
+
+        assert_allclose(dlogl_dnu(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dscale(nu_est, loc_est, scale_est), 0, atol=1e-3)
 
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
     @pytest.mark.parametrize('scale', [13, 5, 20])
