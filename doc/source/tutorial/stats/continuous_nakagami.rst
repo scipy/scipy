@@ -45,7 +45,7 @@ The probability density function of the :code:`nakagami` distribution in SciPy i
 for :math:`x` such that :math:`\frac{x-\mu}{\sigma} \geq 0`, where :math:`\nu \geq \frac{1}{2}` is the shape parameter,
 :math:`\mu` is the location, and :math:`\sigma` is the scale.
 
-The log-likelihood function is therefore:
+The log-likelihood function is therefore
 
 .. math::
    :nowrap:
@@ -98,7 +98,7 @@ For :math:`\nu = \frac{1}{2}`, the partial derivative of the log-likelihood with
     \end{equation}
 
 which is positive when the support constraint is satisfied. Because the partial derivative with respect to the location
-is positive, increasing :math:`\mu` increases the log-likelihood, and therefore the constraint is active at the maximum likelihood estimate for the location:
+is positive, increasing :math:`\mu` increases the log-likelihood, and therefore the constraint is active at the maximum likelihood estimate for the location
 
 .. math::
    :nowrap:
@@ -109,7 +109,7 @@ is positive, increasing :math:`\mu` increases the log-likelihood, and therefore 
 
 For :math:`\nu` sufficiently greater than :math:`\frac{1}{2}`, the likelihood equation :math:`\frac{\partial l}{\partial \mu}(\nu, \mu, \sigma)=0` has a solution, and this solution provides the maximum likelihood estimate for :math:`\mu`. In either case, however, the condition :math:`\mu = \min_i{x_i}` provides a reasonable initial guess for numerical optimization.
 
-The likelihood equation for :math:`\sigma` can be solved explicitly, and it provides the maximum likelihood estimate of the scale:
+The likelihood equation for :math:`\sigma` can be solved explicitly, and it provides the maximum likelihood estimate of the scale
 
 .. math::
    :nowrap:
@@ -118,7 +118,7 @@ The likelihood equation for :math:`\sigma` can be solved explicitly, and it prov
     \sigma = \sqrt{ \frac{\sum_{i=1}^N \left(x_i-\mu\right)^2}{N}}. \tag{9}
     \end{equation}
 
-Accordingly, the :code:`_fitstart` method for :code:`nakagami` uses:
+Accordingly, the :code:`_fitstart` method for :code:`nakagami` uses
 
 .. math::
    :nowrap:
