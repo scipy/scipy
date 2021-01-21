@@ -5311,7 +5311,7 @@ class TestNakagami:
         assert_allclose(scale_est, scale, rtol=0.2)
 
         # Testing the first-order necessary condition for optimality for nu
-        # and scale (𝛔) solely as there's a constraint on loc (μ ≤ min_i x_i)
+        # and scale solely as there's a constraint on loc (loc <= min_i x_i)
         # which has not been introduced in the objective
         def dlogl_dnu(nu, loc, scale):
             return (N * (1 + np.log(nu) - polygamma(0, nu)) +
