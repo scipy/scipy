@@ -260,13 +260,13 @@ class CheckOptimizeParameterized(CheckOptimize):
             # affect the rounding error.
             assert self.funccalls <= 131 + 20
             assert self.gradcalls == 0
-        
+
         # Test the case in which extrapolated points may be outside of bounds
         def func(x):
-            assert_(x>1e-9)
+            assert_(x > 1e-9)
             return np.exp(x)
-        
-        optimize.minimize(fun=func,x0=[0.5],method='powell',bounds=optimize.Bounds(lb=np.array([0,]), ub=np.array([1,]), keep_feasible=np.array([True,])))
+
+        optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=optimize.Bounds(lb=np.array([0,]), ub=np.array([1,]), keep_feasible=np.array([True,])))
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
@@ -1986,9 +1986,9 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-         
+
 def test_cobyla_threadsafe():
-   
+
     # Verify that cobyla is threadsafe. Will segfault if it is not.
 
     import concurrent.futures
@@ -2020,8 +2020,8 @@ def test_cobyla_threadsafe():
         tasks.append(pool.submit(minimizer2))
         for t in tasks:
             res = t.result()
-   
-   
+
+
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
@@ -2215,4 +2215,4 @@ def test_show_options():
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
         assert_raises(ValueError, show_options, solver, method)
-        
+
