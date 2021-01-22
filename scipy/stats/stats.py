@@ -3695,7 +3695,7 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-def alexandergovern(*args):
+def alexandergovern(*args, nan_policy='propagate'):
     """
     Performs the Alexander Govern test.
 
@@ -3708,6 +3708,13 @@ def alexandergovern(*args):
     sample1, sample2, ... : array_like
         The sample measurements for each group.  There must be at least
         two samples.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -3724,7 +3731,9 @@ def alexandergovern(*args):
     2. Each sample is from a normally distributed population.
     3. Unlike `f_oneway`, this test does not assume on homoscedasticity,
        instead relaxing the assumption of equal variances.
-    4. The input samples are one dimensional with size greater than one.
+
+    Input samples must be finite, one dimensional, and with size greater than
+    one. Inputs that are not one dimensional will be flattened.
 
     See Also
     --------
@@ -3744,7 +3753,7 @@ def alexandergovern(*args):
         Here are some data on annual percentage rate of interest charged on
         new car loans at nine of the largest banks in four American cities
         taken from the National Institute of Standards and Technology's
-        ANOVA datasets.
+        ANOVA dataset.
 
         We use `alexandergovern` to test the null hypothesis that all cities
         have the same mean APR against the alternative that the cities do not
@@ -3766,7 +3775,7 @@ def alexandergovern(*args):
         the alternative.
     """
 
-    args = _alexandergovern_input_validation(args)
+    args = _alexandergovern_input_validation(args, nan_policy)
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -3774,7 +3783,8 @@ def alexandergovern(*args):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.asarray([len(arg) for arg in args])
+    lengths = np.asarray([ma.count(arg) if nan_policy == 'omit' else len(arg)
+                          for arg in args])
     means = np.asarray([np.mean(arg) for arg in args])
 
     # (1) determine standard error of the mean for each sample
@@ -3811,20 +3821,24 @@ def alexandergovern(*args):
     return AlexanderGovernResult(A, p)
 
 
-def _alexandergovern_input_validation(args):
+def _alexandergovern_input_validation(args, nan_policy):
     if len(args) < 2:
         raise TypeError(f"2 or more inputs required, got {len(args)}")
 
-    # the current intended behavior is that the samples are flattened into 1d
+    # input arrays are flattened
     args = [np.ravel(np.asarray(arg, dtype=float)) for arg in args]
 
-    for arg in args:
+    for i, arg in enumerate(args):
         if np.size(arg) <= 1:
             raise ValueError("Input sample size must be greater than one.")
         if arg.ndim != 1:
             raise ValueError("Input samples must be one-dimensional")
-        if False in np.isfinite(arg):
+        if True in np.isinf(arg):
             raise ValueError("Input samples must be finite.")
+
+        contains_nan, nan_policy = _contains_nan(arg, nan_policy=nan_policy)
+        if contains_nan and nan_policy == 'omit':
+            args[i] = ma.masked_invalid(arg)
     return args
 
 
