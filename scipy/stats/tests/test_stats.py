@@ -4763,7 +4763,7 @@ class TestAlexanderGovern(object):
         with assert_raises(ValueError, match=r"Input sample size must be"
                                              r" greater than one."):
             stats.alexandergovern([1, 2], [])
-        # input is not in list format
+        # input is a singular non list element
         with assert_raises(ValueError, match=r"Input sample size must be"
                                              r" greater than one."):
             stats.alexandergovern([1, 2], 2)
@@ -4771,9 +4771,9 @@ class TestAlexanderGovern(object):
         with assert_raises(ValueError, match=r"Input sample size must be"
                                              r" greater than one."):
             stats.alexandergovern([1, 2], [2])
-        # inputs are not finite
+        # inputs are not finite (infinity)
         with assert_raises(ValueError, match=r"Input samples must be finite."):
-            stats.alexandergovern([1, 2], [np.nan, np.nan])
+            stats.alexandergovern([1, 2], [np.inf, np.inf])
 
     def test_compare_r(self):
         '''
@@ -4950,6 +4950,26 @@ class TestAlexanderGovern(object):
 
         assert_allclose(not_flattened.statistic, flattened.statistic)
         assert_allclose(not_flattened.pvalue, flattened.pvalue)
+
+    def test_nan_policy_propogate(self):
+        args = [[1, 2, 3, 4], [1, np.nan]]
+        # default nan_policy is 'propagate'
+        res = stats.alexandergovern(*args)
+        assert_equal(res.pvalue, np.nan)
+        assert_equal(res.statistic, np.nan)
+
+    def test_nan_policy_raise(self):
+        args = [[1, 2, 3, 4], [1, np.nan]]
+        with assert_raises(ValueError, match="The input contains nan values"):
+            stats.alexandergovern(*args, nan_policy='raise')
+
+    def test_nan_policy_omit(self):
+        args_nan = [[1, 2, 3, None, 4], [1, np.nan, 19, 25]]
+        args_no_nan = [[1, 2, 3, 4], [1, 19, 25]]
+        res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
+        res_no_nan = stats.alexandergovern(*args_no_nan)
+        assert_equal(res_nan.pvalue, res_no_nan.pvalue)
+        assert_equal(res_nan.statistic, res_no_nan.statistic)
 
 
 class TestFOneWay(object):
