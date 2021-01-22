@@ -83,14 +83,14 @@ class DistributionsAll(Benchmark):
                   'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
     slow_methods = ['moment']
 
-    def setup(self, distribution, method):
-        if not is_xslow() and (distribution in self.slow_dists
+    def setup(self, dist_name, method):
+        if not is_xslow() and (dist_name in self.slow_dists
                                or method in self.slow_methods):
             raise NotImplementedError("Skipped")
 
-        self.dist = getattr(stats, distribution)
+        self.dist = getattr(stats, dist_name)
 
-        dist_shapes = self.dist_data[distribution]
+        dist_shapes = self.dist_data[dist_name]
 
         if isinstance(self.dist, stats.rv_discrete):
             # discrete distributions only use location
@@ -103,7 +103,7 @@ class DistributionsAll(Benchmark):
 
         bounds = self.dist.interval(.99, *dist_shapes, **kwds)
         x = np.linspace(*bounds, 100)
-        args = [x, *self.custom_input.get(distribution, dist_shapes)]
+        args = [x, *self.custom_input.get(dist_name, dist_shapes)]
         self.args = args
         self.kwds = kwds
         if method == 'fit':
@@ -112,10 +112,11 @@ class DistributionsAll(Benchmark):
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
             # the only positional argument is the data to be fitted
-            self.args = [self.dist.rvs(*dist_shapes, size=100, **kwds)]
+            self.args = [self.dist.rvs(*dist_shapes, size=100, random_state=0, **kwds)]
         elif method == 'rvs':
             # add size keyword argument for data creation
             kwds['size'] = 1000
+            kwds['random_state'] = 0
             # keep shapes as positional arguments, omit linearly spaced data
             self.args = args[1:]
         elif method == 'pdf/pmf':
@@ -138,7 +139,7 @@ class DistributionsAll(Benchmark):
 
         self.method = getattr(self.dist, method)
 
-    def time_distribution(self, distribution, method):
+    def time_distribution(self, dist_name, method):
         self.method(*self.args, **self.kwds)
 
 
