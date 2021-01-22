@@ -36,6 +36,10 @@ class lil_matrix(spmatrix, IndexMixin):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
+        lil_matrix((data, rows), shape=(M, N), [dtype])
+            to construct matrix of shape (M, N) directly with existing data
+            and rows.
+
     Attributes
     ----------
     dtype : dtype
