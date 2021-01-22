@@ -111,6 +111,29 @@ class lil_matrix(spmatrix, IndexMixin):
                 for i in range(M):
                     self.rows[i] = []
                     self.data[i] = []
+            elif len(arg1) == 2:
+                # (data, rows) format
+                (data, rows) = arg1
+                rows_len = len(rows)
+
+                if len(data) != rows_len:
+                    raise ValueError('data and rows should have same length')
+                
+                if shape is None:
+                    raise ValueError('shape parameter is required with (data, rows) format')
+
+                self._shape = check_shape(shape)
+                
+                if shape[0] != rows_len:
+                    raise ValueError('shape should match with length of data and rows') 
+
+                self.data = np.empty(rows_len, dtype=object)
+                self.rows = np.empty(rows_len, dtype=object)
+
+                for i in range(rows_len):
+                    self.data[i] = list(data[i])
+                    self.rows[i] = list(rows[i])
+                
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
         else:
