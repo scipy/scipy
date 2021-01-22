@@ -3972,6 +3972,28 @@ class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
     math_dtypes = [np.int_, np.float_, np.complex_]
 
+    def test_constructor1(self):
+        # (data, rows), shape=(M, N) format
+        data1 = [[1], [2], [3]]
+        rows1 = [[0], [1], [2]]
+        A = diag([1, 2, 3])
+        B = lil_matrix((data1, rows1), shape=(3, 3))
+
+        assert_array_equal(A, B.todense())
+        assert_equal(B.sum(), A.sum())
+
+        with assert_raises(ValueError):
+            # no shape
+            lil_matrix((data1, rows1))
+
+        with assert_raises(ValueError):
+            # shape mismatch
+            lil_matrix((data1, rows1), shape=(2, 2))
+
+        with assert_raises(ValueError):
+            # data and rows length mismatch
+            lil_matrix((data1[:1], rows1), shape=(3, 3))        
+
     def test_dot(self):
         A = zeros((10, 10), np.complex128)
         A[0, 3] = 10
