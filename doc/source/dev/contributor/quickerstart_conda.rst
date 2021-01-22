@@ -1,10 +1,11 @@
-.. _quickstart-ultra:
+.. _quickerstart-conda:
 
-======================================================
-Development environment ultra-quickstart guide (Linux)
-======================================================
+==============================================================
+Development environment quickerstart guide (Linux and Mac)
+==============================================================
 
-With `Anaconda <https://www.anaconda.com/products/individual>`_ installed,
+With `Anaconda <https://www.anaconda.com/products/individual>`_ (and, on macOS,
+the `Xcode Command Line Tools <https://webkit.org/build-tools/>`_) installed,
 execute the following commands at the terminal from the base directory of
 your `SciPy <https://github.com/scipy/scipy>`_ clone::
 
@@ -21,5 +22,4 @@ your `SciPy <https://github.com/scipy/scipy>`_ clone::
     # Build SciPy for development work plus run tests
     python runtests.py    # Alternatively, it's fine to use `python setup.py develop`
 
-Cross your fingers and hope for the best. For more detailed instructions, see
-the other :ref:`dev-env` guides.
+For more detailed instructions, see the other :ref:`dev-env` guides.

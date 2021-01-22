@@ -35,7 +35,7 @@ If you're interested in contributing to SciPy, start here:
 
    dev/conduct/code_of_conduct
    hacking
-   dev/contributor/quickstart_ultra
+   dev/contributor/quickerstart_conda
    dev/contributor/contributor_toc
 
 To get an overview of where help or new features are desired or planned, see
