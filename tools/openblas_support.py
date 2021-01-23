@@ -29,7 +29,7 @@ sha256_vals = {
 'openblas-v0.3.9-manylinux2010_i686.tar.gz': 
 'fde39b3a5a7b01530abf0ba69dd075cc75ea8fc82652a5e67a437aa6044ab381',
 'openblas-v0.3.9-manylinux2010_x86_64.tar.gz':
-'8e3b8ee31004cdc86fc4301beb4ee7238f2cf1e86136cb2bf9482bfc562dce5',
+'68e3b8ee31004cdc86fc4301beb4ee7238f2cf1e86136cb2bf9482bfc562dce5',
 'openblas-v0.3.9-win32-gcc_7_1_0.zip':
 '69a7dc265e8a8e45b358637d11cb1710ce88c4456634c7ce37d429b1d9bc9aaa',
 'openblas-v0.3.9-win_amd64-gcc_7_1_0.zip': 
@@ -97,12 +97,13 @@ def download_openblas(target, arch, ilp64):
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
             req = Request(url=filename, headers=headers)
             fid.write(urlopen(req).read())
-        # with open(target, 'rb') as binary_to_check:
-        #     data = binary_to_check.read()
-        #     sha256_returned = hashlib.sha256(data).hexdigest()
-        #     sha256_expected = sha256_vals[os.path.basename(filename)]
-        #     if sha256_returned != sha256_expected:
-        #         raise ValueError('sha256 hash mismatch for downloaded OpenBLAS')
+        with open(target, 'rb') as binary_to_check:
+            data = binary_to_check.read()
+            sha256_returned = hashlib.sha256(data).hexdigest()
+            sha256_expected = sha256_vals[os.path.basename(filename)]
+            print('got:', sha256_returned)
+            if sha256_returned != sha256_expected:
+                raise ValueError('sha256 hash mismatch for downloaded OpenBLAS')
 
     except HTTPError as e:
         print(f'Could not download "{filename}"')
