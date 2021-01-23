@@ -3777,21 +3777,6 @@ class TestGroupDelay(object):
                               0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    def test_singular(self):
-        # Let's create a filter with zeros and poles on the unit circle and
-        # check if warning is raised and the group delay is set to zero at
-        # these frequencies.
-        z1 = np.exp(1j * 0.1 * pi)
-        z2 = np.exp(1j * 0.25 * pi)
-        p1 = np.exp(1j * 0.5 * pi)
-        p2 = np.exp(1j * 0.8 * pi)
-        b = np.convolve([1, -z1], [1, -z2])
-        a = np.convolve([1, -p1], [1, -p2])
-        w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
-
-        w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
-        assert_allclose(gd, 0)
-
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
         w1, gd1 = group_delay((1, 1))
