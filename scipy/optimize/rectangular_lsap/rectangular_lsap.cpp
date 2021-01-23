@@ -116,7 +116,7 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
     return sink;
 }
 
-static intptr_t
+static int
 solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
 {
 
@@ -184,7 +184,7 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
 extern "C" {
 #endif
 
-intptr_t
+int
 solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
                                         int64_t* col4row)
 {
