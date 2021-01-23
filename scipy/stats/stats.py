@@ -347,7 +347,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def gmean(a, axis=0, dtype=None):
+def gmean(a, axis=0, dtype=None, weights=None):
     """
     Compute the geometric mean along the specified axis.
 
@@ -367,6 +367,10 @@ def gmean(a, axis=0, dtype=None):
         dtype of a, unless a has an integer dtype with a precision less than
         that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
 
     Returns
     -------
@@ -389,6 +393,10 @@ def gmean(a, axis=0, dtype=None):
     arise in the calculations such as Not a Number and infinity because masked
     arrays automatically mask any non-finite values.
 
+    References
+    ----------
+    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+
     Examples
     --------
     >>> from scipy.stats import gmean
@@ -409,7 +417,11 @@ def gmean(a, axis=0, dtype=None):
             log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
-    return np.exp(log_a.mean(axis=axis))
+
+    if weights is not None:
+        weights = np.asanyarray(weights, dtype=dtype)
+
+    return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
 def hmean(a, axis=0, dtype=None):
