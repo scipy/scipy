@@ -128,8 +128,7 @@ class TestShapiro(object):
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
         # Verified against R
-        np.random.seed(12345678)
-        x3 = stats.norm.rvs(loc=5, scale=3, size=100)
+        x3 = stats.norm.rvs(loc=5, scale=3, size=100, random_state=12345678)
         w, pw = stats.shapiro(x3)
         shapiro_test = stats.shapiro(x3)
         assert_almost_equal(w, 0.9772805571556091, decimal=6)
@@ -272,6 +271,9 @@ class TestAnderson(object):
         rs = RandomState(1234567890)
         x1 = rs.gumbel(size=100)
         x2 = np.ones(100)
+        # A constant array is a degenerate case and breaks gumbel_r.fit, so
+        # change one value in x2.
+        x2[0] = 0.996
         A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
         A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
 
@@ -619,39 +621,192 @@ class TestLevene(object):
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP(object):
+class TestBinomP:
+    """Tests for stats.binom_test."""
+
+    binom_test_func = staticmethod(stats.binom_test)
 
     def test_data(self):
-        pval = stats.binom_test(100, 250)
+        pval = self.binom_test_func(100, 250)
         assert_almost_equal(pval, 0.0018833009350757682, 11)
-        pval = stats.binom_test(201, 405)
+        pval = self.binom_test_func(201, 405)
         assert_almost_equal(pval, 0.92085205962670713, 11)
-        pval = stats.binom_test([682, 243], p=3.0/4)
+        pval = self.binom_test_func([682, 243], p=3/4)
         assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
         # Length of x must be 1 or 2.
-        assert_raises(ValueError, stats.binom_test, [1, 2, 3])
+        assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
         # Missing n
-        assert_raises(ValueError, stats.binom_test, [100])
+        assert_raises(ValueError, self.binom_test_func, [100])
         # n less than x[0]
-        assert_raises(ValueError, stats.binom_test, [100], n=50)
+        assert_raises(ValueError, self.binom_test_func, [100], n=50)
 
     def test_bad_p(self):
-        assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
+        assert_raises(ValueError,
+                      self.binom_test_func, [50, 50], p=2.0)
 
     def test_alternatives(self):
-        res = stats.binom_test(51, 235, p=1./6, alternative='less')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='less')
         assert_almost_equal(res, 0.982022657605858)
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='greater')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
         assert_almost_equal(res, 0.02654424571169085)
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='two-sided')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
+
+
+class TestBinomTestP(TestBinomP):
+    """
+    Tests for stats.binomtest as a replacement for stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
+
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
+
+
+class TestBinomTest:
+    """Tests for stats.binomtest."""
+
+    # Expected results here are from R 3.6.2 binom.test
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less', 0.1488311, 0.0, 0.2772002),
+                              ('greater', 0.9004696, 0.1366613, 1.0),
+                              ('two-sided', 0.2983721, 0.1266556, 0.2918427)])
+    def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.2)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less',
+                               0.005656361, 0.0, 0.1872093),
+                              ('greater',
+                               0.9987146, 0.008860761, 1.0),
+                              ('two-sided',
+                               0.01191714, 0.006872485, 0.202706269)])
+    def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.06)
+        ci = res.proportion_ci(confidence_level=0.99)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_high',
+                             [('less', 0.05631351, 0.2588656),
+                              ('greater', 1.0, 1.0),
+                              ('two-sided', 0.07604122, 0.3084971)])
+    def test_confidence_interval_exact_k0(self, alternative, pval, ci_high):
+        # Test with k=0, n = 10.
+        res = stats.binomtest(0, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.low, 0.0)
+        assert_allclose(ci.high, ci_high, rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low',
+                             [('less', 1.0, 0.0),
+                              ('greater', 9.536743e-07, 0.7411344),
+                              ('two-sided', 9.536743e-07, 0.6915029)])
+    def test_confidence_interval_exact_k_is_n(self, alternative, pval, ci_low):
+        # Test with k = n = 10.
+        res = stats.binomtest(10, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.high, 1.0)
+        assert_allclose(ci.low, ci_low, rtol=1e-6)
+
+    # Expected results are from the prop.test function in R 3.6.2.
+    @pytest.mark.parametrize(
+        'k, alternative, corr, conf, ci_low, ci_high',
+        [[3, 'two-sided', True, 0.95, 0.08094782, 0.64632928],
+         [3, 'two-sided', True, 0.99, 0.0586329, 0.7169416],
+         [3, 'two-sided', False, 0.95, 0.1077913, 0.6032219],
+         [3, 'two-sided', False, 0.99, 0.07956632, 0.6799753],
+         [3, 'less', True, 0.95, 0.0, 0.6043476],
+         [3, 'less', True, 0.99, 0.0, 0.6901811],
+         [3, 'less', False, 0.95, 0.0, 0.5583002],
+         [3, 'less', False, 0.99, 0.0, 0.6507187],
+         [3, 'greater', True, 0.95, 0.09644904, 1.0],
+         [3, 'greater', True, 0.99, 0.06659141, 1.0],
+         [3, 'greater', False, 0.95, 0.1268766, 1.0],
+         [3, 'greater', False, 0.99, 0.08974147, 1.0],
+
+         [0, 'two-sided', True, 0.95, 0.0, 0.3445372],
+         [0, 'two-sided', False, 0.95, 0.0, 0.2775328],
+         [0, 'less', True, 0.95, 0.0, 0.2847374],
+         [0, 'less', False, 0.95, 0.0, 0.212942],
+         [0, 'greater', True, 0.95, 0.0, 1.0],
+         [0, 'greater', False, 0.95, 0.0, 1.0],
+
+         [10, 'two-sided', True, 0.95, 0.6554628, 1.0],
+         [10, 'two-sided', False, 0.95, 0.7224672, 1.0],
+         [10, 'less', True, 0.95, 0.0, 1.0],
+         [10, 'less', False, 0.95, 0.0, 1.0],
+         [10, 'greater', True, 0.95, 0.7152626, 1.0],
+         [10, 'greater', False, 0.95, 0.787058, 1.0]]
+    )
+    def test_ci_wilson_method(self, k, alternative, corr, conf,
+                              ci_low, ci_high):
+        res = stats.binomtest(k, n=10, p=0.1, alternative=alternative)
+        if corr:
+            method = 'wilsoncc'
+        else:
+            method = 'wilson'
+        ci = res.proportion_ci(confidence_level=conf, method=method)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    def test_estimate_equals_hypothesized_prop(self):
+        # Test the special case where the estimated proportion equals
+        # the hypothesized proportion.  When alternative is 'two-sided',
+        # the p-value is 1.
+        res = stats.binomtest(4, 16, 0.25)
+        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.pvalue, 1.0)
+
+    @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
+    def test_invalid_k_n(self, k, n):
+        with pytest.raises(ValueError,
+                           match="must be an integer not less than"):
+            stats.binomtest(k, n)
+
+    def test_invalid_k_too_big(self):
+        with pytest.raises(ValueError,
+                           match="k must not be greater than n"):
+            stats.binomtest(11, 10, 0.25)
+
+    def test_invalid_confidence_level(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="must be in the interval"):
+            res.proportion_ci(confidence_level=-1)
+
+    def test_invalid_ci_method(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="method must be"):
+            res.proportion_ci(method="plate of shrimp")
 
 
 class TestFligner(object):
@@ -828,8 +983,7 @@ class TestMood(object):
 class TestProbplot(object):
 
     def test_basic(self):
-        np.random.seed(12345)
-        x = stats.norm.rvs(size=20)
+        x = stats.norm.rvs(size=20, random_state=12345)
         osm, osr = stats.probplot(x, fit=False)
         osm_expected = [-1.8241636, -1.38768012, -1.11829229, -0.91222575,
                         -0.73908135, -0.5857176, -0.44506467, -0.31273668,
@@ -844,8 +998,7 @@ class TestProbplot(object):
         assert_allclose(res_fit, res_fit_expected)
 
     def test_sparams_keyword(self):
-        np.random.seed(123456)
-        x = stats.norm.rvs(size=100)
+        x = stats.norm.rvs(size=100, random_state=123456)
         # Check that None, () and 0 (loc=0, for normal distribution) all work
         # and give the same results
         osm1, osr1 = stats.probplot(x, sparams=None, fit=False)
@@ -859,8 +1012,7 @@ class TestProbplot(object):
         osm, osr = stats.probplot(x, sparams=(), fit=False)
 
     def test_dist_keyword(self):
-        np.random.seed(12345)
-        x = stats.norm.rvs(size=20)
+        x = stats.norm.rvs(size=20, random_state=12345)
         osm1, osr1 = stats.probplot(x, fit=False, dist='t', sparams=(3,))
         osm2, osr2 = stats.probplot(x, fit=False, dist=stats.t, sparams=(3,))
         assert_allclose(osm1, osm2)
@@ -881,10 +1033,9 @@ class TestProbplot(object):
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
-        np.random.seed(7654321)
         fig = plt.figure()
         fig.add_subplot(111)
-        x = stats.t.rvs(3, size=100)
+        x = stats.t.rvs(3, size=100, random_state=7654321)
         res1, fitres1 = stats.probplot(x, plot=plt)
         plt.close()
         res2, fitres2 = stats.probplot(x, plot=None)
@@ -1087,6 +1238,21 @@ class TestWilcoxon(object):
         d = np.arange(26) + 1
         assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
 
+    # These inputs were chosen to give a W statistic that is either the
+    # center of the distribution (when the length of the support is odd), or
+    # the value to the left of the center (when the length of the support is
+    # even).  Also, the numbers are chosen so that the W statistic is the
+    # sum of the positive values.
+    @pytest.mark.parametrize('x', [[-1, -2, 3],
+                                   [-1, 2, -3, -4, 5],
+                                   [-1, -2, 3, -4, -5, -6, 7, 8]])
+    def test_exact_p_1(self, x):
+        w, p = stats.wilcoxon(x)
+        x = np.array(x)
+        wtrue = x[x > 0].sum()
+        assert_equal(w, wtrue)
+        assert_equal(p, 1)
+
     def test_auto(self):
         # auto default to exact if there are no ties and n<= 25
         x = np.arange(0, 25) + 0.5
@@ -1156,8 +1322,7 @@ class TestKstatVar(object):
 
 class TestPpccPlot(object):
     def setup_method(self):
-        np.random.seed(7654321)
-        self.x = stats.loggamma.rvs(5, size=500) + 5
+        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1216,13 +1381,13 @@ class TestPpccMax(object):
         assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
     def test_ppcc_max_basic(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
         assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=7)
 
     def test_dist(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
 
         # Test that we can specify distributions both by name and as objects.
         max1 = stats.ppcc_max(x, dist='tukeylambda')
@@ -1235,8 +1400,8 @@ class TestPpccMax(object):
         assert_almost_equal(max3, -0.71215366521264145, decimal=5)
 
     def test_brack(self):
-        np.random.seed(1234567)
-        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000,
+                                  random_state=1234567) + 1e4
         assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
 
         assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
@@ -1249,16 +1414,14 @@ class TestPpccMax(object):
 class TestBoxcox_llf(object):
 
     def test_basic(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=10000, loc=10)
+        x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
         assert_allclose(llf, llf_expected)
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, list(x))
@@ -1268,8 +1431,7 @@ class TestBoxcox_llf(object):
         # Note: boxcox_llf() was already working with 2-D input (sort of), so
         # keep it like that.  boxcox() doesn't work with 2-D input though, due
         # to brent() returning a scalar.
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.boxcox_llf(lmbda, x)
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
@@ -1342,8 +1504,7 @@ _boxcox_data = [
 class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
-        np.random.seed(12345)
-        x = stats.loggamma.rvs(5, size=50) + 5
+        x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
         xt = stats.boxcox(x, lmbda=1)
         assert_allclose(xt, x - 1)
         xt = stats.boxcox(x, lmbda=-1)
@@ -1361,20 +1522,18 @@ class TestBoxcox(object):
         assert_equal(xt, np.zeros(10))
 
     def test_lmbda_None(self):
-        np.random.seed(1234567)
         # Start from normal rv's, do inverse transform to check that
         # optimization function gets close to the right answer.
-        np.random.seed(1245)
         lmbda = 2.5
-        x = stats.norm.rvs(loc=10, size=50000)
+        x = stats.norm.rvs(loc=10, size=50000, random_state=1245)
         x_inv = (x * lmbda + 1)**(-lmbda)
         xt, maxlog = stats.boxcox(x_inv)
 
         assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
 
     def test_alpha(self):
-        np.random.seed(1234)
-        x = stats.loggamma.rvs(5, size=50) + 5
+        rng = np.random.RandomState(1234)
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
 
         # Some regular values for alpha, on a small sample size
         _, _, interval = stats.boxcox(x, alpha=0.75)
@@ -1383,7 +1542,7 @@ class TestBoxcox(object):
         assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
 
         # Try some extreme values, see we don't hit the N=500 limit
-        x = stats.loggamma.rvs(7, size=500) + 15
+        x = stats.loggamma.rvs(7, size=500, random_state=rng) + 15
         _, _, interval = stats.boxcox(x, alpha=0.001)
         assert_allclose(interval, [0.3988867, 11.40553131])
         _, _, interval = stats.boxcox(x, alpha=0.999)
@@ -1412,8 +1571,7 @@ class TestBoxcox(object):
 
 class TestBoxcoxNormmax(object):
     def setup_method(self):
-        np.random.seed(12345)
-        self.x = stats.loggamma.rvs(5, size=50) + 5
+        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
@@ -1434,8 +1592,7 @@ class TestBoxcoxNormmax(object):
 
 class TestBoxcoxNormplot(object):
     def setup_method(self):
-        np.random.seed(7654321)
-        self.x = stats.loggamma.rvs(5, size=500) + 5
+        self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
     def test_basic(self):
         N = 5
@@ -1471,16 +1628,14 @@ class TestBoxcoxNormplot(object):
 class TestYeojohnson_llf(object):
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=0)
+        x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
     def test_2d_input(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
@@ -1493,10 +1648,10 @@ class TestYeojohnson_llf(object):
 class TestYeojohnson(object):
 
     def test_fixed_lmbda(self):
-        np.random.seed(12345)
+        rng = np.random.RandomState(12345)
 
         # Test positive input
-        x = stats.loggamma.rvs(5, size=50) + 5
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) + 5
         assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
@@ -1508,7 +1663,7 @@ class TestYeojohnson(object):
         assert_allclose(xt, x)
 
         # Test negative input
-        x = stats.loggamma.rvs(5, size=50) - 5
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 5
         assert np.all(x < 0)
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt, -np.log(-x + 1))
@@ -1518,7 +1673,7 @@ class TestYeojohnson(object):
         assert_allclose(xt, 1 / (-x + 1) - 1)
 
         # test both positive and negative input
-        x = stats.loggamma.rvs(5, size=50) - 2
+        x = stats.loggamma.rvs(5, size=50, random_state=rng) - 2
         assert not np.all(x < 0)
         assert not np.all(x >= 0)
         pos = x >= 0
@@ -1563,8 +1718,8 @@ class TestYeojohnson(object):
 
             return x_inv
 
-        np.random.seed(1234567)
         n_samples = 20000
+        np.random.seed(1234567)
         x = np.random.normal(loc=0, scale=1, size=(n_samples))
 
         x_inv = _inverse_transform(x, lmbda)
@@ -1580,8 +1735,7 @@ class TestYeojohnson(object):
         assert_(stats.yeojohnson([]).shape == (0,))
 
     def test_array_like(self):
-        np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=0)
+        x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         xt1, _ = stats.yeojohnson(x)
         xt2, _ = stats.yeojohnson(list(x))
         assert_allclose(xt1, xt2, rtol=1e-12)
@@ -1606,8 +1760,7 @@ class TestYeojohnson(object):
 
 class TestYeojohnsonNormmax(object):
     def setup_method(self):
-        np.random.seed(12345)
-        self.x = stats.loggamma.rvs(5, size=50) + 5
+        self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
     def test_mle(self):
         maxlog = stats.yeojohnson_normmax(self.x)
@@ -1644,6 +1797,17 @@ class TestCircFuncs(object):
         S1 = x.std()
         S2 = stats.circstd(x, high=360)
         assert_allclose(S2, S1, rtol=1e-4)
+
+    @pytest.mark.parametrize("test_func, numpy_func",
+                             [(stats.circmean, np.mean),
+                              (stats.circvar, np.var),
+                              (stats.circstd, np.std)])
+    def test_circfuncs_close(self, test_func, numpy_func):
+        # circfuncs should handle very similar inputs (gh-12740)
+        x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
+        circstat = test_func(x)
+        normal = numpy_func(x)
+        assert_allclose(circstat, normal, atol=1e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],

@@ -1,31 +1,19 @@
 import numpy as np
 
-try:
+from .common import Benchmark, LimitedParamBenchmark, safe_import
+
+with safe_import():
     from scipy.spatial import cKDTree, KDTree
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import distance
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import ConvexHull, Voronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import SphericalVoronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import geometric_slerp
-except ImportError:
-    pass
-
-from .common import Benchmark, LimitedParamBenchmark
+with safe_import():
+    from scipy.spatial.transform import Rotation
 
 
 class Build(Benchmark):
@@ -341,30 +329,34 @@ class Xdist(Benchmark):
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
     'yule', 'dice', 'kulsinski', 'rogerstanimoto', 'russellrao',
-    'sokalmichener', 'sokalsneath', 'wminkowski'])
+    'sokalmichener', 'sokalsneath', 'wminkowski', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
-        # use an equal weight vector to satisfy those metrics
-        # that require weights
-        if metric == 'wminkowski':
-            self.w = np.ones(3)
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'wminkowski':
+            # use an equal weight vector since weights are required
+            self.kwargs = {'w': np.ones(3)}
         else:
-            self.w = None
+            self.kwargs = {}
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric, w=self.w)
+        distance.cdist(self.points, self.points, self.metric, **self.kwargs)
 
     def time_pdist(self, num_points, metric):
         """Time scipy.spatial.distance.pdist over a range of input data
         sizes and metrics.
         """
-        distance.pdist(self.points, metric, w=self.w)
+        distance.pdist(self.points, self.metric, **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):
@@ -425,3 +417,31 @@ class GeometricSlerpBench(Benchmark):
         geometric_slerp(start=self.start,
                         end=self.end,
                         t=self.t)
+
+class RotationBench(Benchmark):
+    params = [1, 10, 1000, 10000]
+    param_names = ['num_rotations']
+
+    def setup(self, num_rotations):
+        np.random.seed(1234)
+        self.rotations = Rotation.random(num_rotations)
+
+    def time_matrix_conversion(self, num_rotations):
+        '''Time converting rotation from and to matrices'''
+        Rotation.from_matrix(self.rotations.as_matrix())
+
+    def time_euler_conversion(self, num_rotations):
+        '''Time converting rotation from and to euler angles'''
+        Rotation.from_euler("XYZ", self.rotations.as_euler("XYZ"))
+
+    def time_rotvec_conversion(self, num_rotations):
+        '''Time converting rotation from and to rotation vectors'''
+        Rotation.from_rotvec(self.rotations.as_rotvec())
+
+    def time_mrp_conversion(self, num_rotations):
+        '''Time converting rotation from and to Modified Rodrigues Parameters'''
+        Rotation.from_mrp(self.rotations.as_mrp())
+
+    def time_mul_inv(self, num_rotations):
+        '''Time multiplication and inverse of rotations'''
+        self.rotations * self.rotations.inv()

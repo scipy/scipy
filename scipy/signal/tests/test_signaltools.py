@@ -21,7 +21,7 @@ from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d,
+    correlate, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -31,6 +31,7 @@ from scipy.signal.windows import hann
 from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
+from scipy._lib import _testutils
 
 
 class _TestConvolve(object):
@@ -407,6 +408,22 @@ class TestConvolve2d(_TestConvolve2d):
         assert_raises(ValueError, convolve2d, 3, 4)
         assert_raises(ValueError, convolve2d, [3], [4])
         assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    def test_large_array(self):
+        # Test indexing doesn't overflow an int (gh-10761)
+        n = 2**31 // (1000 * np.int64().itemsize)
+        _testutils.check_free_memory(2 * n * 1001 * np.int64().itemsize / 1e6)
+
+        # Create a chequered pattern of 1s and 0s
+        a = np.zeros(1001 * n, dtype=np.int64)
+        a[::2] = 1
+        a = np.lib.stride_tricks.as_strided(a, shape=(n, 1000), strides=(8008, 8))
+
+        count = signal.convolve2d(a, [[1, 1]])
+        fails = np.where(count > 1)
+        assert fails[0].size == 0
 
 
 class TestFFTConvolve(object):
@@ -1005,36 +1022,49 @@ class TestAllFreqConvolves(object):
 
 class TestMedFilt(object):
 
-    def test_basic(self):
-        f = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
-             [50, 50, 50, 50, 50, 0, 72, 77, 68, 66],
-             [50, 50, 50, 50, 50, 46, 47, 19, 64, 77],
-             [50, 50, 50, 50, 50, 42, 15, 29, 95, 35],
-             [50, 50, 50, 50, 50, 46, 34, 9, 21, 66],
-             [70, 97, 28, 68, 78, 77, 61, 58, 71, 42],
-             [64, 53, 44, 29, 68, 32, 19, 68, 24, 84],
-             [3, 33, 53, 67, 1, 78, 74, 55, 12, 83],
-             [7, 11, 46, 70, 60, 47, 24, 43, 61, 26],
-             [32, 61, 88, 7, 39, 4, 92, 64, 45, 61]]
+    IN = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
+          [50, 50, 50, 50, 50, 0, 72, 77, 68, 66],
+          [50, 50, 50, 50, 50, 46, 47, 19, 64, 77],
+          [50, 50, 50, 50, 50, 42, 15, 29, 95, 35],
+          [50, 50, 50, 50, 50, 46, 34, 9, 21, 66],
+          [70, 97, 28, 68, 78, 77, 61, 58, 71, 42],
+          [64, 53, 44, 29, 68, 32, 19, 68, 24, 84],
+          [3, 33, 53, 67, 1, 78, 74, 55, 12, 83],
+          [7, 11, 46, 70, 60, 47, 24, 43, 61, 26],
+          [32, 61, 88, 7, 39, 4, 92, 64, 45, 61]]
 
-        d = signal.medfilt(f, [7, 3])
-        e = signal.medfilt2d(np.array(f, float), [7, 3])
-        assert_array_equal(d, [[0, 50, 50, 50, 42, 15, 15, 18, 27, 0],
-                               [0, 50, 50, 50, 50, 42, 19, 21, 29, 0],
-                               [50, 50, 50, 50, 50, 47, 34, 34, 46, 35],
-                               [50, 50, 50, 50, 50, 50, 42, 47, 64, 42],
-                               [50, 50, 50, 50, 50, 50, 46, 55, 64, 35],
-                               [33, 50, 50, 50, 50, 47, 46, 43, 55, 26],
-                               [32, 50, 50, 50, 50, 47, 46, 45, 55, 26],
-                               [7, 46, 50, 50, 47, 46, 46, 43, 45, 21],
-                               [0, 32, 33, 39, 32, 32, 43, 43, 43, 0],
-                               [0, 7, 11, 7, 4, 4, 19, 19, 24, 0]])
+    OUT = [[0, 50, 50, 50, 42, 15, 15, 18, 27, 0],
+           [0, 50, 50, 50, 50, 42, 19, 21, 29, 0],
+           [50, 50, 50, 50, 50, 47, 34, 34, 46, 35],
+           [50, 50, 50, 50, 50, 50, 42, 47, 64, 42],
+           [50, 50, 50, 50, 50, 50, 46, 55, 64, 35],
+           [33, 50, 50, 50, 50, 47, 46, 43, 55, 26],
+           [32, 50, 50, 50, 50, 47, 46, 45, 55, 26],
+           [7, 46, 50, 50, 47, 46, 46, 43, 45, 21],
+           [0, 32, 33, 39, 32, 32, 43, 43, 43, 0],
+           [0, 7, 11, 7, 4, 4, 19, 19, 24, 0]]
+
+    KERNEL_SIZE = [7,3]
+
+    def test_basic(self):
+        d = signal.medfilt(self.IN, self.KERNEL_SIZE)
+        e = signal.medfilt2d(np.array(self.IN, float), self.KERNEL_SIZE)
+        assert_array_equal(d, self.OUT)
         assert_array_equal(d, e)
 
+    @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
+                                       np.uint, int, np.ulonglong, np.ulonglong,
+                                       np.float32, np.float64, np.longdouble])
+    def test_types(self, dtype):
+        # volume input and output types match
+        in_typed = np.array(self.IN, dtype=dtype)
+        assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
     def test_none(self):
-        # Ticket #1124. Ensure this does not segfault.
+        # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
-            signal.medfilt(None)
+            assert_raises(TypeError, signal.medfilt, None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1059,6 +1089,11 @@ class TestMedFilt(object):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])
 
+    def test_object(self,):
+        in_object = np.array(self.IN, dtype=object)
+        out_object = np.array(self.OUT, dtype=object)
+        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                           out_object)
 
 class TestWiener(object):
 
@@ -1918,6 +1953,34 @@ class TestCorrelate(object):
         assert_allclose(correlate(a, b, mode='same'), [17, 32, 23])
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
+
+
+@pytest.mark.parametrize("mode", ["valid", "same", "full"])
+@pytest.mark.parametrize("behind", [True, False])
+@pytest.mark.parametrize("input_size", [100, 101, 1000, 1001, 10000, 10001])
+def test_correlation_lags(mode, behind, input_size):
+    # generate random data
+    rng = np.random.RandomState(0)
+    in1 = rng.standard_normal(input_size)
+    offset = int(input_size/10)
+    # generate offset version of array to correlate with
+    if behind:
+        # y is behind x
+        in2 = np.concatenate([rng.standard_normal(offset), in1])
+        expected = -offset
+    else:
+        # y is ahead of x
+        in2 = in1[offset:]
+        expected = offset
+    # cross correlate, returning lag information
+    correlation = correlate(in1, in2, mode=mode)
+    lags = correlation_lags(in1.size, in2.size, mode=mode)
+    # identify the peak
+    lag_index = np.argmax(correlation)
+    # Check as expected
+    assert_equal(lags[lag_index], expected)
+    # Correlation and lags shape should match
+    assert_equal(lags.shape, correlation.shape)
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])

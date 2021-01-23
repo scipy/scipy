@@ -113,6 +113,21 @@ pygments_style = 'sphinx'
 
 # Ensure all our internal links work
 nitpicky = True
+nitpick_ignore = [
+    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # which inherit methods from `dict`. missing references to builtins get
+    # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
+    # but that fix doesn't work for inherited methods.
+    ("py:class", "a shallow copy of D"),
+    ("py:class", "a set-like object providing a view on D's keys"),
+    ("py:class", "a set-like object providing a view on D's items"),
+    ("py:class", "an object providing a view on D's values"),
+    ("py:class", "None.  Remove all items from D."),
+    ("py:class", "(k, v), remove and return some (key, value) pair as a"),
+    ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "v, remove specified key and return the corresponding value."),
+]
+
 exclude_patterns = [  # glob-style
 
 ]
@@ -125,9 +140,9 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        "'U' mode is deprecated",  # sphinx io
-        "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'U' mode is deprecated",  # sphinx io
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -138,13 +153,9 @@ warnings.filterwarnings(  # matplotlib<->pyparsing issue
 # TODO: eventually these should be eliminated!
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
-        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
-        'slepian is deprecated',  # signal.windows.slepian deprecation
         'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
-        '`frechet_l` is deprecated',  # stats.frechet_l
-        '`frechet_r` is deprecated',  # stats.frechet_r
         'underflow encountered in nextafter',  # tuterial/interpolate.rst
         # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde,
         # tutorial/stats.rst (twice):

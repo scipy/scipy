@@ -647,7 +647,7 @@ from ._ellip_harm import (
     ellip_harm_2,
     ellip_normal
 )
-from .lambertw import lambertw
+from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,

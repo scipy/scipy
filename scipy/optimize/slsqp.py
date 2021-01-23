@@ -15,14 +15,16 @@ Functions
 
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
+import warnings
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function)
+                       _prepare_scalar_function, _clip_x_for_func,
+                       _check_clip_x)
 from ._numdiff import approx_derivative
-from ._constraints import old_bound_to_new
+from ._constraints import old_bound_to_new, _arr_to_scalar
 
 
 __docformat__ = "restructuredtext en"
@@ -246,6 +248,19 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if not disp:
         iprint = 0
 
+    # Transform x0 into an array.
+    x = asfarray(x0).flatten()
+
+    # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
+    # ScalarFunction
+    if bounds is None or len(bounds) == 0:
+        new_bounds = (-np.inf, np.inf)
+    else:
+        new_bounds = old_bound_to_new(bounds)
+
+    # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
+    x = np.clip(x, new_bounds[0], new_bounds[1])
+
     # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
         constraints = (constraints, )
@@ -255,13 +270,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check type
         try:
             ctype = con['type'].lower()
-        except KeyError:
-            raise KeyError('Constraint %d has no type defined.' % ic)
-        except TypeError:
+        except KeyError as e:
+            raise KeyError('Constraint %d has no type defined.' % ic) from e
+        except TypeError as e:
             raise TypeError('Constraints must be defined using a '
-                            'dictionary.')
-        except AttributeError:
-            raise TypeError("Constraint's type must be a string.")
+                            'dictionary.') from e
+        except AttributeError as e:
+            raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
                 raise ValueError("Unknown constraint type '%s'." % con['type'])
@@ -277,12 +292,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
+                    x = _check_clip_x(x, new_bounds)
+
                     if jac in ['2-point', '3-point', 'cs']:
                         return approx_derivative(fun, x, method=jac, args=args,
-                                                 rel_step=finite_diff_rel_step)
+                                                 rel_step=finite_diff_rel_step,
+                                                 bounds=new_bounds)
                     else:
                         return approx_derivative(fun, x, method='2-point',
-                                                 abs_step=epsilon, args=args)
+                                                 abs_step=epsilon, args=args,
+                                                 bounds=new_bounds)
 
                 return cjac
             cjac = cjac_factory(con['fun'])
@@ -303,19 +322,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                    7: "Rank-deficient equality constraint subproblem HFTI",
                    8: "Positive directional derivative for linesearch",
                    9: "Iteration limit reached"}
-
-    # Transform x0 into an array.
-    x = asfarray(x0).flatten()
-
-    # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
-    # ScalarFunction
-    if bounds is None or len(bounds) == 0:
-        new_bounds = (-np.inf, np.inf)
-    else:
-        new_bounds = old_bound_to_new(bounds)
-
-    # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
-    x = np.clip(x, new_bounds[0], new_bounds[1])
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -346,7 +352,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl.fill(np.nan)
         xu.fill(np.nan)
     else:
-        bnds = array(bounds, float)
+        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
+                      for (l, u) in bounds], float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
@@ -368,6 +375,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
                                   bounds=new_bounds)
+    # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
+    # doesn't get sent to the func/grad evaluator.
+    wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
+    wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
 
     # Initialize the iteration counter and the mode value
     mode = array(0, int)
@@ -402,12 +413,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
     # ScalarFunction
-    fx = sf.fun(x)
+    fx = wrapped_fun(x)
     try:
         fx = float(np.asarray(fx))
-    except (TypeError, ValueError):
-        raise ValueError("Objective function must return a scalar")
-    g = append(sf.grad(x), 0.0)
+    except (TypeError, ValueError) as e:
+        raise ValueError("Objective function must return a scalar") from e
+    g = append(wrapped_grad(x), 0.0)
     c = _eval_constraint(x, cons)
     a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
@@ -419,11 +430,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
               n1, n2, n3)
 
         if mode == 1:  # objective and constraint evaluation required
-            fx = sf.fun(x)
+            fx = wrapped_fun(x)
             c = _eval_constraint(x, cons)
 
         if mode == -1:  # gradient evaluation required
-            g = append(sf.grad(x), 0.0)
+            g = append(wrapped_grad(x), 0.0)
             a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
         if majiter > majiter_prev:

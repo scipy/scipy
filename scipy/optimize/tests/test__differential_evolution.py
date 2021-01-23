@@ -536,6 +536,24 @@ class TestDifferentialEvolutionSolver(object):
                       *(rosen, self.bounds),
                       **{'init': population})
 
+        # provide an initial solution
+        # bounds are [(0, 2), (0, 2)]
+        x0 = np.random.uniform(low=0.0, high=2.0, size=2)
+        solver = DifferentialEvolutionSolver(
+            rosen, self.bounds, x0=x0
+        )
+        # parameters are scaled to unit interval
+        assert_allclose(solver.population[0], x0 / 2.0)
+
+    def test_x0(self):
+        # smoke test that checks that x0 is usable.
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        assert res.success
+
+        # check what happens if some of the x0 lay outside the bounds
+        with assert_raises(ValueError):
+            differential_evolution(rosen, self.bounds, x0=[0.2, 2.1])
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs
@@ -998,12 +1016,12 @@ class TestDifferentialEvolutionSolver(object):
         assert_allclose(f(x_opt), f_opt, atol=0.001)
         assert_allclose(res.fun, f_opt, atol=0.001)
 
-        # selectively use higher tol here for 32-bit
-        # Windows based on gh-11693
+        # use higher tol here for 32-bit Windows, see gh-11693
         if (platform.system() == 'Windows' and np.dtype(np.intp).itemsize < 8):
             assert_allclose(res.x, x_opt, rtol=2.4e-6, atol=0.0035)
         else:
-            assert_allclose(res.x, x_opt, atol=0.002)
+            # tolerance determined from macOS + MKL failure, see gh-12701
+            assert_allclose(res.x, x_opt, rtol=5e-6, atol=0.0024)
 
         assert res.success
         assert_(np.all(A @ res.x <= b))
@@ -1034,7 +1052,6 @@ class TestDifferentialEvolutionSolver(object):
 
         x_opt = (1.22797135, 4.24537337)
         f_opt = -0.095825
-        print(res)
         assert_allclose(f(x_opt), f_opt, atol=2e-5)
         assert_allclose(res.fun, f_opt, atol=1e-4)
         assert res.success

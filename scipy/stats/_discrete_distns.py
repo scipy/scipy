@@ -28,13 +28,19 @@ class binom_gen(rv_discrete):
 
        f(k) = \binom{n}{k} p^k (1-p)^{n-k}
 
-    for ``k`` in ``{0, 1,..., n}``.
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`0 \leq p \leq 1`
 
-    `binom` takes ``n`` and ``p`` as shape parameters.
+    `binom` takes :math:`n` and :math:`p` as shape parameters,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
     %(example)s
+
+    See Also
+    --------
+    hypergeom, nbinom, nhypergeom
 
     """
     def _rvs(self, n, p, size=None, random_state=None):
@@ -104,9 +110,11 @@ class bernoulli_gen(binom_gen):
        f(k) = \begin{cases}1-p  &\text{if } k = 0\\
                            p    &\text{if } k = 1\end{cases}
 
-    for :math:`k` in :math:`\{0, 1\}`.
+    for :math:`k` in :math:`\{0, 1\}`, :math:`0 \leq p \leq 1`
 
-    `bernoulli` takes :math:`p` as shape parameter.
+    `bernoulli` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -166,7 +174,7 @@ class betabinom_gen(rv_discrete):
 
        f(k) = \binom{n}{k} \frac{B(k + a, n - k + b)}{B(a, b)}
 
-    for ``k`` in ``{0, 1,..., n}``, :math:`n \geq 0`, :math:`a > 0`,
+    for :math:`k \in \{0, 1, \dots, n\}`, :math:`n \geq 0`, :math:`a > 0`,
     :math:`b > 0`, where :math:`B(a, b)` is the beta function.
 
     `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
@@ -247,21 +255,26 @@ class nbinom_gen(rv_discrete):
 
        f(k) = \binom{k+n-1}{n-1} p^n (1-p)^k
 
-    for :math:`k \ge 0`.
+    for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
     `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, whereas p is the probability of a single success.
+    number of successes, :math:`p` is the probability of a single success,
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
     %(example)s
+
+    See Also
+    --------
+    hypergeom, binom, nhypergeom
 
     """
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.negative_binomial(n, p, size)
 
     def _argcheck(self, n, p):
-        return (n > 0) & (p >= 0) & (p <= 1)
+        return (n > 0) & (p > 0) & (p <= 1)
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
@@ -274,6 +287,20 @@ class nbinom_gen(rv_discrete):
     def _cdf(self, x, n, p):
         k = floor(x)
         return special.betainc(n, k+1, p)
+
+    def _logcdf(self, x, n, p):
+        k = floor(x)
+        cdf = self._cdf(k, n, p)
+        cond = cdf > 0.5
+        
+        def f1(k, n, p):
+            return np.log1p(-special.betainc(k + 1, n, 1 - p))
+            
+        def f2(k, n, p):
+            return np.log(cdf)
+            
+        with np.errstate(divide='ignore'):
+            return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
     def _sf_skip(self, x, n, p):
         # skip because special.nbdtrc doesn't work for 0<n<1
@@ -312,9 +339,11 @@ class geom_gen(rv_discrete):
 
         f(k) = (1-p)^{k-1} p
 
-    for :math:`k \ge 1`.
+    for :math:`k \ge 1`, :math:`0 < p \leq 1`
 
-    `geom` takes :math:`p` as shape parameter.
+    `geom` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -329,7 +358,7 @@ class geom_gen(rv_discrete):
         return random_state.geometric(p, size=size)
 
     def _argcheck(self, p):
-        return (p <= 1) & (p >= 0)
+        return (p <= 1) & (p > 0)
 
     def _pmf(self, k, p):
         return np.power(1-p, k-1) * p
@@ -426,6 +455,10 @@ class hypergeom_gen(rv_discrete):
 
     >>> R = hypergeom.rvs(M, n, N, size=10)
 
+    See Also
+    --------
+    nhypergeom, binom, nbinom
+
     """
     def _rvs(self, M, n, N, size=None, random_state=None):
         return random_state.hypergeometric(n, M-n, N, size=size)
@@ -514,6 +547,144 @@ class hypergeom_gen(rv_discrete):
 hypergeom = hypergeom_gen(name='hypergeom')
 
 
+class nhypergeom_gen(rv_discrete):
+    r"""A negative hypergeometric discrete random variable.
+
+    Consider a box containing :math:`M` balls:, :math:`n` red and
+    :math:`M-n` blue. We randomly sample balls from the box, one
+    at a time and *without* replacement, until we have picked :math:`r`
+    blue balls. `nhypergeom` is the distribution of the number of
+    red balls :math:`k` we have picked.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The symbols used to denote the shape parameters (`M`, `n`, and `r`) are not
+    universally accepted. See the Examples for a clarification of the
+    definitions used here.
+
+    The probability mass function is defined as,
+
+    .. math:: f(k; M, n, r) = \frac{{{k+r-1}\choose{k}}{{M-r-k}\choose{n-k}}}
+                                   {{M \choose n}}
+
+    for :math:`k \in [0, n]`, :math:`n \in [0, M]`, :math:`r \in [0, M-n]`,
+    and the binomial coefficient is:
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
+
+    It is equivalent to observing :math:`k` successes in :math:`k+r-1`
+    samples with :math:`k+r`'th sample being a failure. The former
+    can be modelled as a hypergeometric distribution. The probability
+    of the latter is simply the number of failures remaining
+    :math:`M-n-(r-1)` divided by the size of the remaining population
+    :math:`M-(k+r-1)`. This relationship can be shown as:
+
+    .. math:: NHG(k;M,n,r) = HG(k;M,n,k+r-1)\frac{(M-n-(r-1))}{(M-(k+r-1))}
+
+    where :math:`NHG` is probability mass function (PMF) of the
+    negative hypergeometric distribution and :math:`HG` is the
+    PMF of the hypergeometric distribution.
+
+    %(after_notes)s
+
+    Examples
+    --------
+    >>> from scipy.stats import nhypergeom
+    >>> import matplotlib.pyplot as plt
+
+    Suppose we have a collection of 20 animals, of which 7 are dogs.
+    Then if we want to know the probability of finding a given number
+    of dogs (successes) in a sample with exactly 12 animals that
+    aren't dogs (failures), we can initialize a frozen distribution
+    and plot the probability mass function:
+
+    >>> M, n, r = [20, 7, 12]
+    >>> rv = nhypergeom(M, n, r)
+    >>> x = np.arange(0, n+2)
+    >>> pmf_dogs = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_dogs, 'bo')
+    >>> ax.vlines(x, 0, pmf_dogs, lw=2)
+    >>> ax.set_xlabel('# of dogs in our group with given 12 failures')
+    >>> ax.set_ylabel('nhypergeom PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `nhypergeom`
+    methods directly.  To for example obtain the probability mass
+    function, use:
+
+    >>> prb = nhypergeom.pmf(x, M, n, r)
+
+    And to generate random numbers:
+
+    >>> R = nhypergeom.rvs(M, n, r, size=10)
+
+    To verify the relationship between `hypergeom` and `nhypergeom`, use:
+
+    >>> from scipy.stats import hypergeom, nhypergeom
+    >>> M, n, r = 45, 13, 8
+    >>> k = 6
+    >>> nhypergeom.pmf(k, M, n, r)
+    0.06180776620271643
+    >>> hypergeom.pmf(k, M, n, k+r-1) * (M - n - (r-1)) / (M - (k+r-1))
+    0.06180776620271644
+
+    See Also
+    --------
+    hypergeom, binom, nbinom
+
+    References
+    ----------
+    .. [1] Negative Hypergeometric Distribution on Wikipedia
+           https://en.wikipedia.org/wiki/Negative_hypergeometric_distribution
+
+    .. [2] Negative Hypergeometric Distribution from
+           http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
+
+    """
+    def _get_support(self, M, n, r):
+        return 0, n
+
+    def _argcheck(self, M, n, r):
+        cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
+        return cond
+
+    def _logpmf(self, k, M, n, r):
+        cond = ((r == 0) & (k == 0))
+        result = _lazywhere(~cond, (k, M, n, r),
+                            lambda k, M, n, r:
+                                (-betaln(k+1, r) + betaln(k+r, 1) -
+                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
+                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
+                            fillvalue=0.0)
+        return result
+
+    def _pmf(self, k, M, n, r):
+        # same as the following but numerically more precise
+        # return comb(k+r-1, k) * comb(M-r-k, n-k) / comb(M, n)
+        return exp(self._logpmf(k, M, n, r))
+
+    def _stats(self, M, n, r):
+        # Promote the datatype to at least float
+        # mu = rn / (M-n+1)
+        M, n, r = 1.*M, 1.*n, 1.*r
+        mu = r*n / (M-n+1)
+
+        var = r*(M+1)*n / ((M-n+1)*(M-n+2)) * (1 - r / (M-n+1))
+
+        # The skew and kurtosis are mathematically
+        # intractable so return `None`. See [2]_.
+        g1, g2 = None, None
+        return mu, var, g1, g2
+
+
+nhypergeom = nhypergeom_gen(name='nhypergeom')
+
+
 # FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
     r"""A Logarithmic (Log-Series, Series) discrete random variable.
@@ -528,9 +699,11 @@ class logser_gen(rv_discrete):
 
         f(k) = - \frac{p^k}{k \log(1-p)}
 
-    for :math:`k \ge 1`.
+    for :math:`k \ge 1`, :math:`0 < p < 1`
 
-    `logser` takes :math:`p` as shape parameter.
+    `logser` takes :math:`p` as shape parameter,
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure.
 
     %(after_notes)s
 
@@ -583,7 +756,9 @@ class poisson_gen(rv_discrete):
 
     for :math:`k \ge 0`.
 
-    `poisson` takes :math:`\mu` as shape parameter.
+    `poisson` takes :math:`\mu \geq 0` as shape parameter.
+    When :math:`\mu = 0`, the ``pmf`` method
+    returns ``1.0`` at quantile :math:`k = 0`.
 
     %(after_notes)s
 
@@ -649,7 +824,7 @@ class planck_gen(rv_discrete):
 
     `planck` takes :math:`\lambda` as shape parameter. The Planck distribution
     can be written as a geometric distribution (`geom`) with
-    :math:`p = 1 - \exp(-\lambda)` shifted by `loc = -1`.
+    :math:`p = 1 - \exp(-\lambda)` shifted by ``loc = -1``.
 
     %(after_notes)s
 
@@ -777,11 +952,12 @@ class randint_gen(rv_discrete):
 
     .. math::
 
-        f(k) = \frac{1}{high - low}
+        f(k) = \frac{1}{\texttt{high} - \texttt{low}}
 
-    for ``k = low, ..., high - 1``.
+    for :math:`k \in \{\texttt{low}, \dots, \texttt{high} - 1\}`.
 
-    `randint` takes ``low`` and ``high`` as shape parameters.
+    `randint` takes :math:`\texttt{low}` and :math:`\texttt{high}` as shape
+    parameters.
 
     %(after_notes)s
 
@@ -859,7 +1035,7 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the
+    `zipf` takes :math:`a > 1` as shape parameter. :math:`\zeta` is the
     Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
@@ -945,7 +1121,7 @@ class dlaplace_gen(rv_discrete):
         #     https://www.sciencedirect.com/science/
         #     article/abs/pii/S0378375804003519
         # Furthermore, the two-sided geometric distribution is
-        # equivalent to the difference between two iid geometric 
+        # equivalent to the difference between two iid geometric
         # distributions.
         #   Reference (page 179):
         #     https://pdfs.semanticscholar.org/61b3/

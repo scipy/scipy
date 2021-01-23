@@ -280,7 +280,8 @@ def least_squares(
         always uses the '2-point' scheme. If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
-        is applied), a sparse matrix or a `scipy.sparse.linalg.LinearOperator`.
+        is applied), a sparse matrix (csr_matrix preferred for performance) or
+        a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -303,8 +304,11 @@ def least_squares(
         Tolerance for termination by the change of the cost function. Default
         is 1e-8. The optimization process is stopped when ``dF < ftol * F``,
         and there was an adequate agreement between a local quadratic model and
-        the true model in the last step. If None, the termination by this
-        condition is disabled.
+        the true model in the last step.
+
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     xtol : float or None, optional
         Tolerance for termination by the change of the independent variables.
         Default is 1e-8. The exact condition depends on the `method` used:
@@ -314,7 +318,9 @@ def least_squares(
               a trust-region radius and ``xs`` is the value of ``x``
               scaled according to `x_scale` parameter (see below).
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     gtol : float or None, optional
         Tolerance for termination by the norm of the gradient. Default is 1e-8.
         The exact condition depends on a `method` used:
@@ -329,7 +335,9 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
@@ -431,55 +439,57 @@ def least_squares(
 
     Returns
     -------
-    `OptimizeResult` with the following fields defined:
-    x : ndarray, shape (n,)
-        Solution found.
-    cost : float
-        Value of the cost function at the solution.
-    fun : ndarray, shape (m,)
-        Vector of residuals at the solution.
-    jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
-        Modified Jacobian matrix at the solution, in the sense that J^T J
-        is a Gauss-Newton approximation of the Hessian of the cost function.
-        The type is the same as the one used by the algorithm.
-    grad : ndarray, shape (m,)
-        Gradient of the cost function at the solution.
-    optimality : float
-        First-order optimality measure. In unconstrained problems, it is always
-        the uniform norm of the gradient. In constrained problems, it is the
-        quantity which was compared with `gtol` during iterations.
-    active_mask : ndarray of int, shape (n,)
-        Each component shows whether a corresponding constraint is active
-        (that is, whether a variable is at the bound):
+    result : OptimizeResult
+        `OptimizeResult` with the following fields defined:
 
-            *  0 : a constraint is not active.
-            * -1 : a lower bound is active.
-            *  1 : an upper bound is active.
+            x : ndarray, shape (n,)
+                Solution found.
+            cost : float
+                Value of the cost function at the solution.
+            fun : ndarray, shape (m,)
+                Vector of residuals at the solution.
+            jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
+                Modified Jacobian matrix at the solution, in the sense that J^T J
+                is a Gauss-Newton approximation of the Hessian of the cost function.
+                The type is the same as the one used by the algorithm.
+            grad : ndarray, shape (m,)
+                Gradient of the cost function at the solution.
+            optimality : float
+                First-order optimality measure. In unconstrained problems, it is
+                always the uniform norm of the gradient. In constrained problems,
+                it is the quantity which was compared with `gtol` during iterations.
+            active_mask : ndarray of int, shape (n,)
+                Each component shows whether a corresponding constraint is active
+                (that is, whether a variable is at the bound):
 
-        Might be somewhat arbitrary for 'trf' method as it generates a sequence
-        of strictly feasible iterates and `active_mask` is determined within a
-        tolerance threshold.
-    nfev : int
-        Number of function evaluations done. Methods 'trf' and 'dogbox' do not
-        count function calls for numerical Jacobian approximation, as opposed
-        to 'lm' method.
-    njev : int or None
-        Number of Jacobian evaluations done. If numerical Jacobian
-        approximation is used in 'lm' method, it is set to None.
-    status : int
-        The reason for algorithm termination:
+                    *  0 : a constraint is not active.
+                    * -1 : a lower bound is active.
+                    *  1 : an upper bound is active.
 
-            * -1 : improper input parameters status returned from MINPACK.
-            *  0 : the maximum number of function evaluations is exceeded.
-            *  1 : `gtol` termination condition is satisfied.
-            *  2 : `ftol` termination condition is satisfied.
-            *  3 : `xtol` termination condition is satisfied.
-            *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
+                Might be somewhat arbitrary for 'trf' method as it generates a
+                sequence of strictly feasible iterates and `active_mask` is
+                determined within a tolerance threshold.
+            nfev : int
+                Number of function evaluations done. Methods 'trf' and 'dogbox' do
+                not count function calls for numerical Jacobian approximation, as
+                opposed to 'lm' method.
+            njev : int or None
+                Number of Jacobian evaluations done. If numerical Jacobian
+                approximation is used in 'lm' method, it is set to None.
+            status : int
+                The reason for algorithm termination:
 
-    message : str
-        Verbal description of the termination reason.
-    success : bool
-        True if one of the convergence criteria is satisfied (`status` > 0).
+                    * -1 : improper input parameters status returned from MINPACK.
+                    *  0 : the maximum number of function evaluations is exceeded.
+                    *  1 : `gtol` termination condition is satisfied.
+                    *  2 : `ftol` termination condition is satisfied.
+                    *  3 : `xtol` termination condition is satisfied.
+                    *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
+
+            message : str
+                Verbal description of the termination reason.
+            success : bool
+                True if one of the convergence criteria is satisfied (`status` > 0).
 
     See Also
     --------
@@ -836,10 +846,10 @@ def least_squares(
         J0 = jac(x0, *args, **kwargs)
 
         if issparse(J0):
-            J0 = csr_matrix(J0)
+            J0 = J0.tocsr()
 
             def jac_wrapped(x, _=None):
-                return csr_matrix(jac(x, *args, **kwargs))
+                return jac(x, *args, **kwargs).tocsr()
 
         elif isinstance(J0, LinearOperator):
             def jac_wrapped(x, _=None):

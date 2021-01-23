@@ -411,7 +411,7 @@ def _calc_uniform_order_statistic_medians(n):
     >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
 
     """
-    v = np.zeros(n, dtype=np.float64)
+    v = np.empty(n, dtype=np.float64)
     v[-1] = 0.5**(1.0 / n)
     v[0] = 1 - v[-1]
     i = np.arange(2, n)
@@ -440,8 +440,8 @@ def _parse_dist_kw(dist, enforce_subclass=True):
     elif isinstance(dist, str):
         try:
             dist = getattr(distributions, dist)
-        except AttributeError:
-            raise ValueError("%s is not a valid distribution name" % dist)
+        except AttributeError as e:
+            raise ValueError("%s is not a valid distribution name" % dist) from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -601,7 +601,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if _perform_fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
@@ -993,7 +993,7 @@ def boxcox(x, lmbda=None, alpha=None):
     -----
     The Box-Cox transform is given by::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda > 0
+        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
             log(x),                  for lmbda = 0
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
@@ -1160,7 +1160,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=float)
+        maxlog = np.empty(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -1426,7 +1426,7 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
     where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
@@ -1732,8 +1732,7 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r',
-        'extreme1'}, optional
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
@@ -1758,7 +1757,7 @@ def anderson(x, dist='norm'):
     -----
     Critical values provided are for the following significance levels:
 
-    normal/exponenential
+    normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
@@ -2098,9 +2097,9 @@ def ansari(x, y):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
 
-    The Ansari-Bradley test is a non-parametric test for the equality
-    of the scale parameter of the distributions from which two
-    samples were drawn.
+    The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
+    for the equality of the scale parameter of the distributions
+    from which two samples were drawn.
 
     Parameters
     ----------
@@ -2127,9 +2126,45 @@ def ansari(x, y):
 
     References
     ----------
-    .. [1] Sprent, Peter and N.C. Smeeton.  Applied nonparametric statistical
-           methods.  3rd ed. Chapman and Hall/CRC. 2001.  Section 5.8.2.
+    .. [1] Ansari, A. R. and Bradley, R. A. (1960) Rank-sum tests for
+           dispersions, Annals of Mathematical Statistics, 31, 1174-1189.
+    .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
+           statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
+           Section 5.8.2.
 
+    Examples
+    --------
+    >>> from scipy.stats import ansari
+
+    For these examples, we'll create three random data sets.  The first
+    two, with sizes 35 and 25, are drawn from a normal distribution with
+    mean 0 and standard deviation 2.  The third data set has size 25 and
+    is drawn from a normal distribution with standard deviation 1.25.
+
+    >>> np.random.seed(1234567890)
+    >>> x1 = np.random.normal(loc=0, scale=2, size=35)
+    >>> x2 = np.random.normal(loc=0, scale=2, size=25)
+    >>> x3 = np.random.normal(loc=0, scale=1.25, size=25)
+
+    First we apply `ansari` to `x1` and `x2`.  These samples are drawn
+    from the same distribution, so we expect the Ansari-Bradley test
+    should not lead us to conclude that the scales of the distributions
+    are different.
+
+    >>> ansari(x1, x2)
+    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+
+    With a p-value of 0.355, we cannot conclude that there is a
+    significant difference in the scales (as expected).
+
+    Now apply the test to `x1` and `x3`:
+
+    >>> ansari(x1, x3)
+    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+
+    With a p-value of 0.00628, the test provides strong evidence that
+    the scales of the distributions from which the samples were drawn
+    are not equal.
     """
     x, y = asarray(x), asarray(y)
     n = len(x)
@@ -2273,8 +2308,8 @@ def bartlett(*args):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    Ni = zeros(k)
-    ssq = zeros(k, 'd')
+    Ni = np.empty(k)
+    ssq = np.empty(k, 'd')
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
@@ -2292,7 +2327,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, **kwds):
+def levene(*args, center='median', proportiontocut=0.05):
     """
     Perform Levene test for equal variances.
 
@@ -2366,17 +2401,8 @@ def levene(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("levene() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(args)
     if k < 2:
@@ -2386,12 +2412,8 @@ def levene(*args, **kwds):
         if np.asanyarray(args[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    Ni = zeros(k)
-    Yci = zeros(k, 'd')
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         " or 'trimmed'.")
+    Ni = np.empty(k)
+    Yci = np.empty(k, 'd')
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2413,7 +2435,7 @@ def levene(*args, **kwds):
         Zij[i] = abs(asarray(args[i]) - Yci[i])
 
     # compute Zbari
-    Zbari = zeros(k, 'd')
+    Zbari = np.empty(k, 'd')
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
@@ -2437,6 +2459,9 @@ def levene(*args, **kwds):
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
+
+    Note: `binom_test` is deprecated; it is recommended that `binomtest`
+    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
@@ -2541,7 +2566,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, **kwds):
+def fligner(*args, center='median', proportiontocut=0.05):
     """
     Perform Fligner-Killeen test for equality of variance.
 
@@ -2628,30 +2653,17 @@ def fligner(*args, **kwds):
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
     """
+    if center not in ['mean', 'median', 'trimmed']:
+        raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
+
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    # Handle keyword arguments.
-    center = 'median'
-    proportiontocut = 0.05
-    for kw, value in kwds.items():
-        if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword "
-                            "argument '%s'" % kw)
-        if kw == 'center':
-            center = value
-        else:
-            proportiontocut = value
-
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-
-    if center not in ['mean', 'median', 'trimmed']:
-        raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2781,7 +2793,7 @@ def mood(x, y, axis=0):
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
     # performance consider vectorizing rankdata function.
-    all_ranks = np.zeros_like(xy)
+    all_ranks = np.empty_like(xy)
     for j in range(xy.shape[1]):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
@@ -2825,21 +2837,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        Either the first set of measurements (in which case `y` is the second
+        Either the first set of measurements (in which case ``y`` is the second
         set of measurements), or the differences between two sets of
-        measurements (in which case `y` is not to be specified.)  Must be
+        measurements (in which case ``y`` is not to be specified.)  Must be
         one-dimensional.
     y : array_like, optional
-        Either the second set of measurements (if `x` is the first set of
-        measurements), or not specified (if `x` is the differences between
+        Either the second set of measurements (if ``x`` is the first set of
+        measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
-        The following options are available (default is 'wilcox'):
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+        The following options are available (default is "wilcox"):
 
-          * 'pratt': Includes zero-differences in the ranking process,
+          * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
-          * 'wilcox': Discards all zero-differences, the default.
-          * 'zsplit': Includes zero-differences in the ranking process and
+          * "wilcox": Discards all zero-differences, the default.
+          * "zsplit": Includes zero-differences in the ranking process and
             split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2854,11 +2866,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Returns
     -------
     statistic : float
-        If `alternative` is "two-sided", the sum of the ranks of the
+        If ``alternative`` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative` and `mode`.
+        The p-value for the test depending on ``alternative`` and ``mode``.
 
     See Also
     --------
@@ -3050,9 +3062,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
-            p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-            p_greater = np.sum(cnt[r_plus:]) / 2**count
-            prob = 2*min(p_greater, p_less)
+            if r_plus == (len(cnt) - 1) // 2:
+                # r_plus is the center of the distribution.
+                prob = 1.0
+            else:
+                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
+                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
             prob = np.sum(cnt[r_plus:]) / 2**count
         else:
@@ -3061,7 +3077,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, **kwds):
+def median_test(*args, ties='below', correction=True, lambda_=1,
+                nan_policy='propagate'):
     """
     Perform a Mood's median test.
 
@@ -3200,16 +3217,6 @@ def median_test(*args, **kwds):
     choice of `ties`.
 
     """
-    ties = kwds.pop('ties', 'below')
-    correction = kwds.pop('correction', True)
-    lambda_ = kwds.pop('lambda_', None)
-    nan_policy = kwds.pop('nan_policy', 'propagate')
-
-    if len(kwds) > 0:
-        bad_kwd = kwds.keys()[0]
-        raise TypeError("median_test() got an unexpected keyword "
-                        "argument %r" % bad_kwd)
-
     if len(args) < 2:
         raise ValueError('median_test requires two or more samples.')
 
@@ -3425,9 +3432,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    return ((high - low)/2.0/pi)**2 * -2 * log(R)
 
 
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3479,6 +3488,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))

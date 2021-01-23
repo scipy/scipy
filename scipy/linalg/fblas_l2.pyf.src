@@ -22,8 +22,8 @@ subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols
 
   callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&m,&n,&alpha,a,&m, &
        x+offx,&incx,&beta,y+offy,&incy)
-  callprotoargument char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*, &
-       <ctype>*,int*
+  callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*, &
+       <ctype>*,F_INT*
 
   integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
   integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
@@ -65,7 +65,7 @@ subroutine <prefix>gbmv(m,n,kl,ku,alpha,a,lda,x,incx,offx,beta,y,incy,offy,trans
   ! m by n band matrix, with kl sub-diagonals and ku super-diagonals.
 
   callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&m,&n,&kl,&ku,&alpha,a,&lda,x+offx,&incx,&beta,y+offy,&incy)
-  callprotoargument char*,int*,int*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*
+  callprotoargument char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
   integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
   integer intent(in), depend(ku,kl),check(m>=ku+kl+1) :: m
@@ -107,7 +107,7 @@ subroutine <prefix><s,s,h,h>bmv(n,k,alpha,a,lda,x,incx,offx,beta,y,incy,offy,low
   ! A is an n by n symmetric band matrix, with k super-diagonals.
 
   callstatement (*f2py_func)((lower?"L":"U"),&n,&k,&alpha,a,&lda,x+offx,&incx,&beta,y+offy,&incy)
-  callprotoargument char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*
+  callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
   integer intent(hide),depend(a),check(n>=0) :: n = shape(a,1)
@@ -143,7 +143,7 @@ subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,low
   ! Calculate y <- alpha * A * x + beta * y, A is symmmetric in packed form.
 
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,ap,x+offx,&incx,&beta,y+offy,&incy)
-  callprotoargument char*,int*,<ctype6>*,<ctype6>*,<ctype6>*,int*,<ctype6>*,<ctype6>*,int*
+  callprotoargument char*,F_INT*,<ctype6>*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*,<ctype6>*,F_INT*
 
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
   integer intent(in),check(n>=0) :: n
@@ -178,8 +178,8 @@ subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lowe
 
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,a,&n,x+offx,&incx,&beta, &
        y+offy,&incy)
-  callprotoargument char*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*, &
-       <ctype>*,int*
+  callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*, &
+       <ctype>*,F_INT*
 
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
@@ -236,7 +236,7 @@ subroutine <prefix6><sy,\0,\0,\0, he,\4>r(alpha,x,lower,incx,offx,n,a)
   ! Calculate a <- alpha*x*x^H + a
   !
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,a,&n)
-    callprotoargument char*, int*, <ctype6>*, <ctype6>*, int*, <ctype6>*, int*
+    callprotoargument char*, F_INT*, <ctype6>*, <ctype6>*, F_INT*, <ctype6>*, F_INT*
 
     integer, optional, intent(in), check(lower == 0 || lower == 1) :: lower = 0
     <ftype6> intent(in) :: alpha
@@ -264,7 +264,7 @@ subroutine <prefix><sy, \0, he, \2>r2(alpha,x,y,lower,incx,offx,incy,offy,n,a)
   ! Calculate a <- alpha*x*y^H + alpha*y*x^H + a
   !
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,y+offy,&incy,a,&n)
-    callprotoargument char*, int*, <ctype>*, <ctype>*, int*, <ctype>*, int*, <ctype>*, int*
+    callprotoargument char*, F_INT*, <ctype>*, <ctype>*, F_INT*, <ctype>*, F_INT*, <ctype>*, F_INT*
 
     integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
     <ftype> intent(in) :: alpha
@@ -295,7 +295,7 @@ subroutine <prefix6><s,s,s,s,h,h>pr(n,alpha,x,incx,offx,ap,lower)
   ! symmetric/hermitian matrix, supplied in packed form.
 
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,ap)
-    callprotoargument char*,int*,<ctype6creal>*,<ctype6>*,int*,<ctype6>*
+    callprotoargument char*,F_INT*,<ctype6creal>*,<ctype6>*,F_INT*,<ctype6>*
 
     integer intent(in),check(n>=0) :: n
     integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -322,7 +322,7 @@ subroutine <prefix><s,s,h,h>pr2(n,alpha,x,incx,offx,y,incy,offy,ap,lower)
   ! where alpha is a scalar, x and y are n element vectors and A is an
   ! n by n symmetric/hermitian matrix, supplied in packed form.
     callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,y+offy,&incy,ap)
-    callprotoargument char*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*
+    callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*
 
     integer intent(in),check(n>=0) :: n
     integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -359,7 +359,7 @@ subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! routine. Such tests must be performed before calling this routine.
 
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -392,7 +392,7 @@ subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
   ! routine. Such tests must be performed before calling this routine.
 
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
   integer intent(in),check(n>=0) :: n
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -419,7 +419,7 @@ subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,diag)
 
   callstatement (*f2py_func)((lower?"L":"U"), (trans?(trans==2?"C":"T"):"N"), &
        (diag?"U":"N"),&n,a,&n,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
   integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
@@ -451,7 +451,7 @@ subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
   ! routine. Such tests must be performed before calling this routine.
 
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,a,&lda,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,0)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -480,7 +480,7 @@ subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! upper or lower triangular band matrix, with ( k + 1 ) diagonals.
 
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
@@ -510,7 +510,7 @@ subroutine <prefix>tpmv(n,ap,x,incx,offx,lower,trans,diag)
   ! non-unit, upper or lower triangular matrix, supplied in packed form.
 
   callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
+  callprotoargument char*,char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
 
   integer intent(in),check(n>=0) :: n
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0

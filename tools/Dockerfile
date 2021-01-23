@@ -17,16 +17,25 @@
 #
 # docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 #
-# The available Python executables are python3.6 and python3.7 (along with
-# pip3.6 and pip3.7.
+# The available Python executables are python3.7 and python3.8 (along with
+# pip3.7 and pip3.8.
 # The image does not come bundled with cython/numpy/pytest/pybind11, those need to
 # be installed with pip before trying to build/run scipy.
 #
 # pip3 install cython numpy pytest pybind11
 #
+# You can find the detailed guide in:
+# Development environment quickstart guide (Docker)
+# http://scipy.github.io/devdocs/dev/contributor/quickstart_docker.html#quickstart-docker
 
 
-FROM ubuntu:bionic
+# ubuntu focal has python 3.8 as default
+FROM ubuntu:focal
+
+# add deadsnakes ppa to install python 3.7
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa
 
 RUN apt-get update && apt-get install -y \
 	python3.7 \
@@ -36,6 +45,7 @@ RUN apt-get update && apt-get install -y \
 	vim \
 	libatlas-base-dev \
 	gfortran \
+	libgfortran4 \
 	liblapack-dev \
 	curl \
 	libgmp-dev \
@@ -43,5 +53,5 @@ RUN apt-get update && apt-get install -y \
 	libsuitesparse-dev \
 	libmpc-dev
 
-# setup pips, pip3.6 and pip3.7
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && python3.6 get-pip.py && rm get-pip.py
+# setup pips, pip3.7 and pip3.8
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && python3.8 get-pip.py && rm get-pip.py

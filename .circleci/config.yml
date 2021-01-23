@@ -1,13 +1,23 @@
 version: 2
+
+# Aliases to reuse
+_defaults: &defaults
+  docker:
+    # CircleCI maintains a library of pre-built images
+    # documented at https://circleci.com/docs/2.0/circleci-images/
+    - image: circleci/python:3.7.0
+  working_directory: ~/repo
+
+_debian: &debian
+  name: install Debian dependencies
+  command: |
+    sudo apt-get update
+    sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+
 jobs:
-  build_docs:
-    docker:
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      - image: circleci/python:3.7.0
-
-    working_directory: ~/repo
-
+# Build SciPy from source
+  build_scipy:
+    <<: *defaults
     steps:
       - checkout
 
@@ -30,10 +40,7 @@ jobs:
             git submodule update
 
       - run:
-          name: install Debian dependencies
-          command: |
-            sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+          <<: *debian
 
       - run:
           name: setup Python venv
@@ -42,8 +49,30 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
+            pip install nose mpmath argparse Pillow codecov matplotlib "Sphinx!=3.1.0" asv
             pip install pybind11
+
+      - run:
+          name: build SciPy
+          command: |
+            . venv/bin/activate
+            export SHELL=$(which bash)
+            python -u runtests.py -gbj2
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - repo
+
+# Build docs
+  build_docs:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          <<: *debian
 
       - run:
           name: build docs
@@ -67,6 +96,33 @@ jobs:
           paths:
             - html-scipyorg
 
+# Run benchmarks
+
+  run_benchmarks:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          <<: *debian
+
+      - run:
+          name: run asv
+          command: |
+            . venv/bin/activate
+            pip install pyfftw cffi pytest
+            export PYTHONPATH=$PWD/build/testenv/lib/python3.7/site-packages
+            cd benchmarks
+            asv machine --machine CircleCI
+            export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
+            export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            asv --config asv.conf.json publish
+
+      - store_artifacts:
+          path: benchmarks/html
+          destination: html-benchmarks
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on master branch.
@@ -74,11 +130,7 @@ jobs:
 # https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
 
   deploy:
-    docker:
-      - image: circleci/python:3.7.0
-
-    working_directory: ~/repo
-
+    <<: *defaults
     steps:
       - attach_workspace:
           at: /tmp/build
@@ -112,11 +164,16 @@ workflows:
   version: 2
   default:
     jobs:
-      - build_docs
+      - build_scipy
+      - build_docs:
+          requires:
+            - build_scipy
+      - run_benchmarks:
+          requires:
+            - build_scipy
       - deploy:
           requires:
             - build_docs
-
           filters:
             branches:
               only: master

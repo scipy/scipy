@@ -37,10 +37,12 @@ from libc.stdlib cimport malloc, free
 from numpy.math cimport NAN, PI
 
 cdef extern from "lapack_defs.h":
-    void c_dstevr(char *jobz, char *range, int *n, double *d, double *e,
-                  double *vl, double *vu, int *il, int *iu, double *abstol,
-                  int *m, double *w, double *z, int *ldz, int *isuppz,
-                  double *work, int *lwork, int *iwork, int *liwork, int *info) nogil
+    ctypedef int CBLAS_INT  # actual type defined in the header
+    void c_dstevr(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
+                  double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                  CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                  double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork,
+                  CBLAS_INT *info) nogil
 
 
 @cython.wraparound(False)
@@ -67,7 +69,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         return NULL
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
-    cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
+    cdef CBLAS_INT r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef Py_UNICODE t
 
     r = n/2
@@ -91,7 +93,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     vu = 0
 
     cdef void *buffer = malloc((sizeof(double)*(7*size + lwork))
-                               + (sizeof(int)*(2*size + liwork)))
+                               + (sizeof(CBLAS_INT)*(2*size + liwork)))
     bufferp[0] = buffer
     if not buffer:
         sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
@@ -106,8 +108,8 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     cdef double *eigv = dd + size
     cdef double *work = eigv + size
 
-    cdef int *iwork = <int *>(work + lwork)
-    cdef int *isuppz = iwork + liwork
+    cdef CBLAS_INT *iwork = <CBLAS_INT *>(work + lwork)
+    cdef CBLAS_INT *isuppz = iwork + liwork
 
     if t == 'K':
         for j in range(0, r + 1):

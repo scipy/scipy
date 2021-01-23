@@ -302,7 +302,7 @@ def floyd_warshall(csgraph, directed=True,
     if not isspmatrix(csgraph):
         # for dense array input, zero entries represent non-edge
         dist_matrix[dist_matrix == 0] = INFINITY
-        
+
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
 
@@ -548,8 +548,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         dist_matrix = np.full(N, np.inf, dtype=DTYPE)
         dist_matrix[indices] = 0
     else:
-        dist_matrix = np.zeros((len(indices), N), dtype=DTYPE)
-        dist_matrix.fill(np.inf)
+        dist_matrix = np.full((len(indices), N), np.inf, dtype=DTYPE)
         dist_matrix[np.arange(len(indices)), indices] = 0
 
     #------------------------------
@@ -721,14 +720,14 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                         pred[i, j_current] = v.index
 
 @cython.boundscheck(False)
-cdef _dijkstra_directed(
+cdef int _dijkstra_directed(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -740,6 +739,8 @@ cdef _dijkstra_directed(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_directed")
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -763,9 +764,10 @@ cdef _dijkstra_directed(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_directed_multi(
+cdef int _dijkstra_directed_multi(
             const int[:] source_indices,
             const double[:] csr_weights,
             const int[:] csr_indices,
@@ -773,7 +775,7 @@ cdef _dijkstra_directed_multi(
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
@@ -788,6 +790,9 @@ cdef _dijkstra_directed_multi(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_directed_multi")
 
     # initialize the heap with each of the starting
     # nodes on the heap and in a scanned state with 0 values
@@ -808,9 +813,10 @@ cdef _dijkstra_directed_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_undirected(
+cdef int _dijkstra_undirected(
             int[:] source_indices,
             double[:] csr_weights,
             int[:] csr_indices,
@@ -820,7 +826,7 @@ cdef _dijkstra_undirected(
             int[:] csrT_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -832,6 +838,8 @@ cdef _dijkstra_undirected(
         FibonacciNode *v
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_undirected")
 
     for i in range(Nind):
         j_source = source_indices[i]
@@ -859,9 +867,10 @@ cdef _dijkstra_undirected(
             dist_matrix[i, v.index] = v.val
 
     free(nodes)
+    return 0
 
 @cython.boundscheck(False)
-cdef _dijkstra_undirected_multi(
+cdef int _dijkstra_undirected_multi(
             int[:] source_indices,
             double[:] csr_weights,
             int[:] csr_indices,
@@ -872,7 +881,7 @@ cdef _dijkstra_undirected_multi(
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
-            DTYPE_t limit):
+            DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
@@ -885,6 +894,9 @@ cdef _dijkstra_undirected_multi(
         FibonacciNode *current_node
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in "
+                          "_dijkstra_undirected_multi")
 
     _dijkstra_setup_heap_multi(&heap, nodes, source_indices,
                                sources, dist_matrix, return_pred)
@@ -905,6 +917,7 @@ cdef _dijkstra_undirected_multi(
         dist_matrix[v.index] = v.val
 
     free(nodes)
+    return 0
 
 
 def bellman_ford(csgraph, directed=True, indices=None,
