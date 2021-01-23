@@ -347,7 +347,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def gmean(a, axis=0, dtype=None):
+def gmean(a, axis=0, dtype=None, weights=None):
     """
     Compute the geometric mean along the specified axis.
 
@@ -367,6 +367,10 @@ def gmean(a, axis=0, dtype=None):
         dtype of a, unless a has an integer dtype with a precision less than
         that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
 
     Returns
     -------
@@ -389,6 +393,10 @@ def gmean(a, axis=0, dtype=None):
     arise in the calculations such as Not a Number and infinity because masked
     arrays automatically mask any non-finite values.
 
+    References
+    ----------
+    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+
     Examples
     --------
     >>> from scipy.stats import gmean
@@ -409,7 +417,11 @@ def gmean(a, axis=0, dtype=None):
             log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
-    return np.exp(log_a.mean(axis=axis))
+
+    if weights is not None:
+        weights = np.asanyarray(weights, dtype=dtype)
+
+    return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
 def hmean(a, axis=0, dtype=None):
@@ -4633,25 +4645,23 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     unimportant elements [1]_.
 
     The weighting is defined by means of a rank array, which assigns a
-    nonnegative rank to each element, and a weigher function, which
-    assigns a weight based from the rank to each element. The weight of an
-    exchange is then the sum or the product of the weights of the ranks of
-    the exchanged elements. The default parameters compute
-    :math:`\tau_\mathrm h`: an exchange between elements with rank
-    :math:`r` and :math:`s` (starting from zero) has weight
-    :math:`1/(r+1) + 1/(s+1)`.
+    nonnegative rank to each element (higher importance ranks being
+    associated with smaller values, e.g., 0 is the highest possible rank),
+    and a weigher function, which assigns a weight based on the rank to
+    each element. The weight of an exchange is then the sum or the product
+    of the weights of the ranks of the exchanged elements. The default
+    parameters compute :math:`\tau_\mathrm h`: an exchange between
+    elements with rank :math:`r` and :math:`s` (starting from zero) has
+    weight :math:`1/(r+1) + 1/(s+1)`.
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
     not have in mind a specific rank, the weighted :math:`\tau` is
     defined by averaging the values obtained using the decreasing
     lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
-    behavior with default parameters.
-
-    Note that if you are computing the weighted :math:`\tau` on arrays of
-    ranks, rather than of scores (i.e., a larger value implies a lower
-    rank) you must negate the ranks, so that elements of higher rank are
-    associated with a larger value.
+    behavior with default parameters. Note that the convention used
+    here for ranking (lower values imply higher importance) is opposite
+    to that used by other SciPy statistical functions.
 
     Parameters
     ----------

@@ -4785,9 +4785,9 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7, weights=None):
     # Note this doesn't test when axis is not specified
-    x = stats.gmean(array_like, axis=axis, dtype=dtype)
+    x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
@@ -4976,6 +4976,35 @@ class TestGeoMean(object):
         desired = np.nan  # due to log(-1) = nan
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
+
+    def test_weights_1d_list(self):
+        # Desired result from:
+        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
+        weights = [2, 5, 6, 4, 3]
+        a = [1, 2, 3, 4, 5]
+        desired = 2.77748
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_1d_array(self):
+        # Desired result from:
+        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
+        a = np.array([1, 2, 3, 4, 5])
+        weights = np.array([2, 5, 6, 4, 3])
+        desired = 2.77748
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        # Desired result from:
+        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
+        a = np.array([1, 2, 3, 4, 5, 6])
+        weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
+        desired = 2.77748
+        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_bad_input(self):
+        a = np.array([1, 2, 3, 4, 5])
+        weights = "scipy"
+        assert_raises(TypeError, stats.gmean, a, weights=weights)
 
 
 class TestGeometricStandardDeviation(object):

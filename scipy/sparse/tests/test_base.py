@@ -4309,6 +4309,26 @@ class TestBSR(sparse_test_class(getset=False,
         indices = np.arange(n, dtype=np.int32)
         bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
 
+    def test_constructor5(self):
+        # check for validations introduced in gh-13400
+        n = 8
+        data_1dim = np.ones(n)
+        data = np.ones((n, n, n))
+        indptr = np.array([0, n])
+        indices = np.arange(n)
+
+        with assert_raises(ValueError):
+            # data ndim check
+            bsr_matrix((data_1dim, indices, indptr))
+
+        with assert_raises(ValueError):
+            # invalid blocksize
+            bsr_matrix((data, indices, indptr), blocksize=(1, 1, 1))
+
+        with assert_raises(ValueError):
+            # mismatching blocksize
+            bsr_matrix((data, indices, indptr), blocksize=(1, 1))
+
     def test_bsr_tocsr(self):
         # check native conversion from BSR to CSR
         indptr = array([0, 2, 2, 4])
