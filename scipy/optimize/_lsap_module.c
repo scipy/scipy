@@ -81,7 +81,7 @@ calculate_assignment(PyObject* self, PyObject* args)
     for (npy_intp i = 0; i < num_rows; i++)
         adata[i] = i;
 
-    npy_intp ret = solve_rectangular_linear_sum_assignment(
+    int ret = solve_rectangular_linear_sum_assignment(
       num_rows, num_cols, cost_matrix, PyArray_DATA((PyArrayObject*)b));
     if (ret != 0) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
