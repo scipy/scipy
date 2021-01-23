@@ -97,12 +97,12 @@ def download_openblas(target, arch, ilp64):
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'}
             req = Request(url=filename, headers=headers)
             fid.write(urlopen(req).read())
-        with open(target, 'rb') as binary_to_check:
-            data = binary_to_check.read()
-            sha256_returned = hashlib.sha256(data).hexdigest()
-            sha256_expected = sha256_vals[os.path.basename(filename)]
-            if sha256_returned != sha256_expected:
-                raise ValueError('sha256 hash mismatch for downloaded OpenBLAS')
+        # with open(target, 'rb') as binary_to_check:
+        #     data = binary_to_check.read()
+        #     sha256_returned = hashlib.sha256(data).hexdigest()
+        #     sha256_expected = sha256_vals[os.path.basename(filename)]
+        #     if sha256_returned != sha256_expected:
+        #         raise ValueError('sha256 hash mismatch for downloaded OpenBLAS')
 
     except HTTPError as e:
         print(f'Could not download "{filename}"')
