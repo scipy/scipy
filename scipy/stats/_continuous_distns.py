@@ -2093,14 +2093,16 @@ class truncweibull_min_gen(rv_continuous):
     `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
     parameters.
 
-    Notice that the truncation values, :math:`a` and :math:`b`, is defined in
+    Notice that the truncation values, :math:`a` and :math:`b`, are defined in
     standardized form::
 
         a = (u_l - loc)/scale
         b = (u_r - loc)/scale
 
     where :math:`u_l` and :math:`u_r` are the specific left and right
-    truncation values, respectively.
+    truncation values, respectively. In other words, the support of the
+    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
+    :math:`loc` and/or :math:`scale` are provided.
 
     %(after_notes)s
 
