@@ -1606,12 +1606,14 @@ class exponnorm_gen(rv_continuous):
     def _cdf(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
-        return _norm_cdf(x) - np.exp(expval) * _norm_cdf(x - invK)
+        logprod = expval + _norm_logcdf(x - invK)
+        return _norm_cdf(x) - np.exp(logprod)
 
     def _sf(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
-        return _norm_cdf(-x) + np.exp(expval) * _norm_cdf(x - invK)
+        logprod = expval + _norm_logcdf(x - invK)
+        return _norm_cdf(-x) + np.exp(logprod)
 
     def _stats(self, K):
         K2 = K * K

@@ -2298,6 +2298,57 @@ class TestExponNorm(object):
     def test_std_pdf(self, x, K, expected):
         assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
 
+    # Expected values for the CDF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_cdf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(z)
+    #               - mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[0, 0.01, 1, 0.4960109760186432],
+                              [-5, 0.005, 1, 2.7939945412195734e-07],
+                              [-1e4, 0.01, 100, 0.0],
+                              [-1e4, 0.01, 1000, 6.920401854427357e-24],
+                              [5, 0.001, 1, 0.9999997118542392]])
+    def test_cdf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.cdf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=1e-13)
+
+    # Expected values for the SF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_sf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(-z)
+    #               + mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[10, 0.01, 1, 8.474702916146657e-24],
+                              [2, 0.005, 1, 0.02302280664231312],
+                              [5, 0.005, 0.5, 8.024820681931086e-24],
+                              [10, 0.005, 0.5, 3.0603340062892486e-89],
+                              [20, 0.005, 0.5, 0.0],
+                              [-3, 0.001, 1, 0.9986545205566117]])
+    def test_sf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.sf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=5e-13)
+
 
 class TestGenExpon(object):
     def test_pdf_unity_area(self):
