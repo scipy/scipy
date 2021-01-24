@@ -6,6 +6,7 @@ from functools import partial
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._util import _lazywhere, rng_integers
+from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -292,13 +293,13 @@ class nbinom_gen(rv_discrete):
         k = floor(x)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
-        
+
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
-            
+
         def f2(k, n, p):
             return np.log(cdf)
-            
+
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
@@ -652,6 +653,36 @@ class nhypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, r):
         cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
         return cond
+
+    def _rvs(self, M, n, r, size=None, random_state=None):
+
+        def rvs1(M, n, r, size, random_state):
+            # invert cdf by calculating all values in support, scalar M, n, r
+            a, b = self.support(M, n, r)
+            ks = np.arange(a, b+1)
+            cdf = self.cdf(ks, M, n, r)
+            ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
+            rvs = ppf(random_state.random(size)).astype(int)
+            if size is None:
+                return rvs.item()
+            return rvs
+
+        M, n, r = np.broadcast_arrays(M, n, r)
+
+        if M.ndim == 0:
+            return rvs1(M, n, r, size, random_state)
+
+        res = np.zeros(size)
+
+        # move shape parameters axes to beginning for easier indexing
+        j0 = np.arange(res.ndim)
+        j1 = np.roll(j0, -M.ndim)
+        res = np.moveaxis(res, j0, j1)
+
+        for i, _ in np.ndenumerate(M):
+            res[i] = rvs1(M[i], n[i], r[i], size[:-M.ndim], random_state)
+
+        return np.moveaxis(res, j1, j0)  # move them back before returning
 
     def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
