@@ -2940,9 +2940,9 @@ class genhyperbolic_gen(rv_continuous):
             (\hat{\alpha} \sqrt{1 + x^2})}
             {(\sqrt{1 + x^2})^{1/2 - \lambda}}
 
-    for :math:`x, \lambda \in \mathbb{R}`,
-    :math:`|\hat{\beta}| \lt \hat{\alpha}` if :math:`\lambda \ge 0`,
-    :math:`|\hat{\beta}| \leq \hat{\alpha}` if :math:`\lambda \lt 0`.
+    for :math:`x, \lambda \in ( - \infty; \infty)`,
+    :math:`|\hat{\beta}| < \hat{\alpha}` if :math:`\lambda \ge 0`,
+    :math:`|\hat{\beta}| \le \hat{\alpha}` if :math:`\lambda < 0`.
     :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second
     kind and order :math:`\lambda` (`scipy.special.kn`)
 
@@ -2967,11 +2967,11 @@ class genhyperbolic_gen(rv_continuous):
 
     for :math:`x \in ( - \infty; \infty)`,
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`,
-    :math:`\lambda, \mu \in \mathbb{R}`,
-    :math:`\delta \ge 0, |\beta| \lt \alpha` if :math:`\lambda \ge 0`,
-    :math:`\delta \gt 0, |\beta| \lt \alpha` if :math:`\lambda = 0`,
-    :math:`\delta \gt 0, |\beta| \leq \alpha` if :math:`\lambda \lt 0`.
-    and :math:`\delta \in \mathbb{R}_{>0}`.
+    :math:`\lambda, \mu \in ( - \infty; \infty)`,
+    :math:`\delta \ge 0, |\beta| < \alpha` if :math:`\lambda \ge 0`,
+    :math:`\delta > 0, |\beta| < \alpha` if :math:`\lambda = 0`,
+    :math:`\delta > 0, |\beta| \le \alpha` if :math:`\lambda < 0`.
+    and :math:`\delta > 0`.
 
     The location-scale-based parameterization implemented in
     scipy is based on [2]_, where :math:`\hat{\alpha} = \alpha\delta`
@@ -6064,7 +6064,7 @@ class ncf_gen(rv_continuous):
             {B(n_1/2, n_2/2)
                 \gamma\left(\frac{n_1 + n_2}{2}\right)}
 
-    for :math:`n_1, n_2 > 0`, :math:`\lambda\geq 0`.  Here :math:`n_1` is the
+    for :math:`n_1, n_2 > 0`, :math:`\lambda > 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
     the denominator, :math:`\lambda` the non-centrality parameter,
     :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a

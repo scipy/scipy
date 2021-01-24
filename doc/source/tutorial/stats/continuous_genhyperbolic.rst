@@ -2,11 +2,10 @@
 .. _continuous-genhyperbolic:
 
 Generalized Hyperbolic Distribution
-======================================
+===================================
 
 The Generalized Hyperbolic Distribution is defined as the normal variance-mean mixture with Generalized Inverse Gaussian distribution as mixing distribution.
 The "hyperbolic" characterization refers to the fact that shape the log-probability distribution can be described as an hyperbola. Hyperbolic distributions are sometime referred as semi-fat tail because their probability density decrease slower than "sub-hyperbolic" distributions (e.g. normal distribution, whose log-probability decreases quadratically), but faster than other "extreme value" distributions (e.g. `pareto` distribution, whose log-probability decreases logarithmically).
-
 
 Functions
 ---------
@@ -28,18 +27,18 @@ Different parameterization exists in literature, scipy implementing the location
 
 for:
 
-- :math:`x, \lambda \in \mathbb{R}`
-- :math:`|b| \lt a` if :math:`p \ge 0`
-- :math:`|b| \leq a` if :math:`p \lt 0`
-- :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
+-  :math:`x, \lambda \in ( - \infty; \infty)`
+-  :math:`|b| < a` if :math:`p \ge 0`
+-  :math:`|b| \le a` if :math:`p < 0`
+-  :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
 
 which derives from the original parameterization in  Barndorff (1978) by setting:
 
-- :math:`p = \lambda`
-- :math:`a = \hat{\alpha} = \delta \alpha`
-- :math:`b = \hat{\beta} = \delta \beta`
-- :math:`\text{location} = \mu`
-- :math:`\text{scale} = \delta`
+-  :math:`p = \lambda`
+-  :math:`a = \hat{\alpha} = \delta \alpha`
+-  :math:`b = \hat{\beta} = \delta \beta`
+-  :math:`\text{location} = \mu`
+-  :math:`\text{scale} = \delta`
 
 
 Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled from the above-mentioned normal variance-mean mixture where `scipy.stats.geninvgauss` is parametrized as :math:`GIG = f\Big(p = p, b = \sqrt{\hat{\alpha}^2 - \hat{\beta}^2}, \text{loc} = \text{location}, \text{scale} = \frac{1}{\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}}\Big)` so that: :math:`GH(p, \hat{\alpha}, \hat{\beta}) = \hat{\beta} \cdot GIG + \sqrt{GIG} \cdot N(0,1)`
@@ -47,10 +46,10 @@ Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled f
 
 The "generalized" characterization suggests the fact that this distribution is a superclass of several other probability distribution, for instance:
 
-- :math:`f(p = \nu,  a = 0, b = 0, \text{loc} = 0, \text{scale} = \sqrt{\delta})` has a Student's t-distribution (`scipy.stats.t`) with :math:`\nu` degrees of freedom.
-- :math:`f(p = 1, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \delta, \text{scale} = \mu)` has a Hyperbolic Distribution.
-- :math:`f(p = - 1/2, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Normal Inverse Gaussian Distribution (`scipy.stats.norminvgauss`).
-- :math:`f(p = 1, a = 0, b = 0, loc = \mu, \text{scale} = \delta)` has a Laplace Distribution (`scipy.stats.laplace`) for :math:`\delta \rightarrow 0`
+-  :math:`f(p = \nu,  a = 0, b = 0, \text{loc} = 0, \text{scale} = \sqrt{\delta})` has a Student's t-distribution (`scipy.stats.t`) with :math:`\nu` degrees of freedom.
+-  :math:`f(p = 1, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \delta, \text{scale} = \mu)` has a Hyperbolic Distribution.
+-  :math:`f(p = - 1/2, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Normal Inverse Gaussian Distribution (`scipy.stats.norminvgauss`).
+-  :math:`f(p = 1, a = 0, b = 0, loc = \mu, \text{scale} = \delta)` has a Laplace Distribution (`scipy.stats.laplace`) for :math:`\delta \rightarrow 0`
 
 
 Examples
