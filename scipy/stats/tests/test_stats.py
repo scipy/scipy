@@ -5819,7 +5819,7 @@ class TestMGCStat(object):
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
 
-class TestPageL:
+class TestPageTrendTest:
     # expected statistic and p-values generated using R at
     # https://rdrr.io/cran/cultevo/, e.g.
     # library(cultevo)
@@ -5832,7 +5832,7 @@ class TestPageL:
     # result = page.test(data, verbose=FALSE)
     # Most test cases generated to achieve common critical p-values so that
     # results could be checked (to limited precision) against tables in
-    # scipy.stats.pagel reference [1]
+    # scipy.stats.page_trend_test reference [1]
 
     np.random.seed(0)
     data_3_25 = np.random.rand(3, 25)
@@ -5885,7 +5885,7 @@ class TestPageL:
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
     def test_accuracy(self, L, p, ranked, method, data):
         np.random.seed(42)
-        res = stats.pagel(data, ranked=ranked, method=method)
+        res = stats.page_trend_test(data, ranked=ranked, method=method)
         assert_equal(L, res.statistic)
         assert_allclose(p, res.pvalue)
         assert_equal(method, res.method)
@@ -5915,7 +5915,7 @@ class TestPageL:
     @pytest.mark.slow()
     def test_accuracy2(self, L, p, ranked, method, data):
         np.random.seed(42)
-        res = stats.pagel(data, ranked=ranked, method=method)
+        res = stats.page_trend_test(data, ranked=ranked, method=method)
         assert_equal(L, res.statistic)
         assert_allclose(p, res.pvalue)
         assert_equal(method, res.method)
@@ -5927,19 +5927,19 @@ class TestPageL:
         perm = np.random.permutation(np.arange(n))
         data = np.random.rand(m, n)
         ranks = stats.rankdata(data, axis=1)
-        res1 = stats.pagel(ranks)
-        res2 = stats.pagel(ranks, ranked=True)
-        res3 = stats.pagel(data, ranked=False)
-        res4 = stats.pagel(ranks, predicted_ranks=predicted_ranks)
-        res5 = stats.pagel(ranks[:, perm],
-                           predicted_ranks=predicted_ranks[perm])
+        res1 = stats.page_trend_test(ranks)
+        res2 = stats.page_trend_test(ranks, ranked=True)
+        res3 = stats.page_trend_test(data, ranked=False)
+        res4 = stats.page_trend_test(ranks, predicted_ranks=predicted_ranks)
+        res5 = stats.page_trend_test(ranks[:, perm],
+                                     predicted_ranks=predicted_ranks[perm])
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.statistic, res3.statistic)
         assert_equal(res1.statistic, res4.statistic)
         assert_equal(res1.statistic, res5.statistic)
 
     def test_Ames_assay(self):
-        # test from _pagel.py [2] page 151; data on page 144
+        # test from _page_trend_test.py [2] page 151; data on page 144
         np.random.seed(42)
 
         data = [[101, 117, 111], [91, 90, 107], [103, 133, 121],
@@ -5947,61 +5947,68 @@ class TestPageL:
         data = np.array(data).T
         predicted_ranks = np.arange(1, 7)
 
-        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks,
-                          method="asymptotic")
+        res = stats.page_trend_test(data, ranked=False,
+                                    predicted_ranks=predicted_ranks,
+                                    method="asymptotic")
         assert_equal(res.statistic, 257)
         assert_almost_equal(res.pvalue, 0.0035, decimal=4)
 
-        res = stats.pagel(data, ranked=False, predicted_ranks=predicted_ranks,
-                          method="exact")
+        res = stats.page_trend_test(data, ranked=False,
+                                    predicted_ranks=predicted_ranks,
+                                    method="exact")
         assert_equal(res.statistic, 257)
         assert_almost_equal(res.pvalue, 0.0023, decimal=4)
 
     def test_input_validation(self):
         # test data not a 2d array
         assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.pagel, None)
+                                 stats.page_trend_test, None)
         assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.pagel, [])
+                                 stats.page_trend_test, [])
         assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.pagel, [1, 2])
+                                 stats.page_trend_test, [1, 2])
         assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.pagel, [[[1]]])
+                                 stats.page_trend_test, [[[1]]])
 
         # test invalid dimensions
         assert_raises_with_match(ValueError, "Page's L is only appropriate",
-                                 stats.pagel, np.random.rand(1, 3))
+                                 stats.page_trend_test, np.random.rand(1, 3))
         assert_raises_with_match(ValueError, "Page's L is only appropriate",
-                                 stats.pagel, np.random.rand(2, 2))
+                                 stats.page_trend_test, np.random.rand(2, 2))
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
         message = "`predicted_ranks` must include each integer"
-        assert_raises_with_match(ValueError, message, stats.pagel,
+        assert_raises_with_match(ValueError, message, stats.page_trend_test,
                                  data=[[1, 2, 3], [1, 2, 3]],
                                  predicted_ranks=[0, 1, 2])
-        assert_raises_with_match(ValueError, message, stats.pagel,
+        assert_raises_with_match(ValueError, message, stats.page_trend_test,
                                  data=[[1, 2, 3], [1, 2, 3]],
                                  predicted_ranks=[1.1, 2, 3])
-        assert_raises_with_match(ValueError, message, stats.pagel,
+        assert_raises_with_match(ValueError, message, stats.page_trend_test,
                                  data=[[1, 2, 3], [1, 2, 3]],
                                  predicted_ranks=[1, 2, 3, 3])
-        assert_raises_with_match(ValueError, message, stats.pagel,
+        assert_raises_with_match(ValueError, message, stats.page_trend_test,
                                  data=[[1, 2, 3], [1, 2, 3]],
                                  predicted_ranks="invalid")
 
         # test improperly ranked data
         assert_raises_with_match(ValueError, "`data` is not properly ranked",
-                                 stats.pagel, [[0, 2, 3], [1, 2, 3]], True)
+                                 stats.page_trend_test,
+                                 [[0, 2, 3], [1, 2, 3]], True)
         assert_raises_with_match(ValueError, "`data` is not properly ranked",
-                                 stats.pagel, [[1, 2, 3], [1, 2, 4]], True)
+                                 stats.page_trend_test,
+                                 [[1, 2, 3], [1, 2, 4]], True)
 
         # various
         assert_raises_with_match(ValueError, "`data` contains NaNs",
-                                 stats.pagel, [[1, 2, 3], [1, 2, np.nan]],
+                                 stats.page_trend_test,
+                                 [[1, 2, 3], [1, 2, np.nan]],
                                  ranked=False)
         assert_raises_with_match(ValueError, "`method` must be in",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]],
+                                 stats.page_trend_test,
+                                 data=[[1, 2, 3], [1, 2, 3]],
                                  method="ekki")
         assert_raises_with_match(TypeError, "`ranked` must be boolean.",
-                                 stats.pagel, data=[[1, 2, 3], [1, 2, 3]],
+                                 stats.page_trend_test,
+                                 data=[[1, 2, 3], [1, 2, 3]],
                                  ranked="ekki")

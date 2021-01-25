@@ -5,14 +5,15 @@ import scipy.stats
 from dataclasses import make_dataclass
 
 
-PageLResult = make_dataclass("PageLResult", ("statistic", "pvalue", "method"))
+PageTrendTestResult = make_dataclass("PageTrendTestResult",
+                                     ("statistic", "pvalue", "method"))
 
 
-def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
+def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     r"""
-    Compute Page's L, a measure of trend in observations between treatments.
+    Perform Page's Test, a measure of trend in observations between treatments.
 
-    Page's L is useful when:
+    Page's Test (also known as Page's :math:`L` test) is useful when:
 
     * there are :math:`n \geq 3` treatments,
     * :math:`m \geq 2` subjects are observed for each treatment, and
@@ -79,7 +80,7 @@ def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
 
     Returns
     -------
-    res : PageLResult
+    res : PageTrendTestResult
         An object containing attributes:
 
         statistic : float
@@ -205,13 +206,13 @@ def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
     column corresponding with tutorial rankings should be first; the seminar
     is hypothesized to have the highest ratings, so its column should be last.
     Since the columns are already arranged in this order of increasing
-    predicted mean, we can pass the table directly into `pagel`.
+    predicted mean, we can pass the table directly into `page_trend_test`.
 
-    >>> from scipy.stats import pagel
-    >>> res = pagel(table)
+    >>> from scipy.stats import page_trend_test
+    >>> res = page_trend_test(table)
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0018191161948127822,
-                method='exact')
+    PageTrendTestResult(statistic=133.5, pvalue=0.0018191161948127822,
+                        method='exact')
 
     This *p*-value indicates that there is a 0.1819% chance that
     the :math:`L` statistic would reach such an extreme value under the null
@@ -258,26 +259,27 @@ def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
     >>> p
     0.0012693433690751756
 
-    This does not precisely match the *p*-value reported by `pagel` above.
-    The asymptotic distribution is not very accurate, nor conservative, for
-    :math:`m \leq 12` and :math:`n \leq 8`, so `pagel` chose to use
-    ``method='exact'`` based on the dimensions of the table and the
-    recommendations in Page's original paper [1]_. To override `pagel`'s
-    choice, provide the `method` argument.
+    This does not precisely match the *p*-value reported by `page_trend_test`
+    above. The asymptotic distribution is not very accurate, nor conservative,
+    for :math:`m \leq 12` and :math:`n \leq 8`, so `page_trend_test` chose to
+    use ``method='exact'`` based on the dimensions of the table and the
+    recommendations in Page's original paper [1]_. To override
+    `page_trend_test`'s choice, provide the `method` argument.
 
-    >>> res = pagel(table, method="asymptotic")
+    >>> res = page_trend_test(table, method="asymptotic")
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0012693433690751756,
-                method='asymptotic')
+    PageTrendTestResult(statistic=133.5, pvalue=0.0012693433690751756,
+                        method='asymptotic')
 
     If the data are already ranked, we can pass in the ``ranks`` instead of
     the ``table`` to save computation time.
 
-    >>> res = pagel(ranks,                     # ranks of data
-    ...             ranked=True,               # data is already ranked
-    ...             )
+    >>> res = page_trend_test(ranks,             # ranks of data
+    ...                       ranked=True,       # data is already ranked
+    ...                       )
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0018191161948127822, method='exact')
+    PageTrendTestResult(statistic=133.5, pvalue=0.0018191161948127822,
+                        method='exact')
 
     Suppose the raw data had been tabulated in an order different from the
     order of predicted means, say lecture, seminar, tutorial.
@@ -290,11 +292,12 @@ def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
     to have the middle rank, the seminar the highest, and tutorial the lowest,
     we pass:
 
-    >>> res = pagel(table,                      # data as originally tabulated
-    ...             predicted_ranks=[2, 3, 1],  # we predict these ranks
-    ...             )
+    >>> res = page_trend_test(table,             # data as originally tabulated
+    ...                       predicted_ranks=[2, 3, 1],  # our predicted order
+    ...                       )
     >>> res
-    PageLResult(statistic=133.5, pvalue=0.0018191161948127822, method='exact')
+    PageTrendTestResult(statistic=133.5, pvalue=0.0018191161948127822,
+                        method='exact')
 
     """
 
@@ -353,8 +356,8 @@ def pagel(data, ranked=False, predicted_ranks=None, method='auto'):
     p_fun = methods[method]  # get the function corresponding with the method
     p = p_fun(L, m, n)
 
-    pagel_result = PageLResult(statistic=L, pvalue=p, method=method)
-    return pagel_result
+    page_result = PageTrendTestResult(statistic=L, pvalue=p, method=method)
+    return page_result
 
 
 def _choose_method(ranks):
@@ -402,8 +405,8 @@ def _l_p_exact(L, m, n):
     return _pagel_state.sf(L, n)
 
 
-class PageL:
-    '''Class to maintain state of Page's L between `pagel` executions'''
+class _PageL:
+    '''Maintains state between `page_trend_test` executions'''
 
     def __init__(self):
         '''Lightweight initialization'''
@@ -468,5 +471,5 @@ class PageL:
         return p
 
 
-# Maintain state for faster repeat calls to pagel w/ method='exact'
-_pagel_state = PageL()
+# Maintain state for faster repeat calls to page_trend_test w/ method='exact'
+_pagel_state = _PageL()
