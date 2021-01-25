@@ -34,7 +34,8 @@ failing_fits = [
         'vonmises',
         'wrapcauchy',
         'levy_stable',
-        'trapezoid'
+        'trapezoid',
+        'truncweibull_min',
 ]
 
 # Don't run the fit test on these:
