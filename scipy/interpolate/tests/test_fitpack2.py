@@ -944,6 +944,26 @@ class TestRectBivariateSpline(object):
                                    bbox=bbox.tolist())
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
+    def test_not_increasing_input(self):
+        # gh-8565
+        NSamp = 20
+        Theta = np.random.uniform(0, np.pi, NSamp)
+        Phi = np.random.uniform(0, 2 * np.pi, NSamp)
+        Data = np.ones(NSamp)
+
+        Interpolator = SmoothSphereBivariateSpline(Theta, Phi, Data, s=3.5)
+
+        NLon = 6
+        NLat = 3
+        GridPosLons = np.arange(NLon) / NLon * 2 * np.pi
+        GridPosLats = np.arange(NLat) / NLat * np.pi
+        LatsGrid, LonsGrid = np.meshgrid(GridPosLats, GridPosLons)
+        Lats = LatsGrid.ravel()
+        Lons = LonsGrid.ravel()
+
+        with assert_raises(ValueError):
+            Interpolator(Lats, Lons)
+
 
 class TestRectSphereBivariateSpline(object):
     def test_defaults(self):
