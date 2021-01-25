@@ -5336,7 +5336,7 @@ class TestNakagami:
         n = 100
         samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
                                      scale=scale, random_state=1337)
-        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=0.5)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=nu)
 
         # Analytical values
         loc_theo = np.min(samples)
