@@ -100,6 +100,20 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+@pytest.mark.parametrize('kappa', np.linspace(0.1, 10, 4))
+@pytest.mark.parametrize('loc', np.linspace(-5, 5, 4))
+@pytest.mark.parametrize('scale', np.linspace(1, 10, 4))
+def test_vonmises_fit(kappa, loc, scale):
+    n = 100
+    samples = stats.vonmises.rvs(size=n, kappa=kappa, loc=loc,
+                                 scale=scale, random_state=1337)
+    kappa_est, loc_est, scale_est = stats.vonmises.fit(samples)
+
+    assert_allclose(kappa_est, kappa, rtol=0.1)
+    assert_allclose(loc_est, loc, rtol=0.1)
+    assert_allclose(scale_est, scale, rtol=0.1)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
