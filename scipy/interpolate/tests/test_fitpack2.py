@@ -961,8 +961,9 @@ class TestRectBivariateSpline(object):
         Lats = LatsGrid.ravel()
         Lons = LonsGrid.ravel()
 
-        with assert_raises(ValueError):
+        with assert_raises(ValueError) as exc_info:
             Interpolator(Lats, Lons)
+        assert "x must be strictly increasing" in str(exc_info.value)
 
 
 class TestRectSphereBivariateSpline(object):
