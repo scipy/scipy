@@ -217,6 +217,7 @@ Continuous Distributions in `scipy.stats`
    continuous_burr
    continuous_burr12
    continuous_cauchy
+   continuous_skewcauchy
    continuous_chi
    continuous_chi2
    continuous_cosine

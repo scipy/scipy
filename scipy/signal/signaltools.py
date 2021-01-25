@@ -1501,7 +1501,7 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
@@ -1519,7 +1519,7 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1821,11 +1821,21 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
+    -----
+    This is faster than `scipy.signal.medfilt` when `input.dtype.type`
+    is `np.ubyte`, `np.single`, or `np.double`; for other types, this
+    falls back to `scipy.signal.medfilt`
+
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
@@ -2201,7 +2211,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
@@ -3428,7 +3438,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape

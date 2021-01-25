@@ -1022,36 +1022,49 @@ class TestAllFreqConvolves(object):
 
 class TestMedFilt(object):
 
-    def test_basic(self):
-        f = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
-             [50, 50, 50, 50, 50, 0, 72, 77, 68, 66],
-             [50, 50, 50, 50, 50, 46, 47, 19, 64, 77],
-             [50, 50, 50, 50, 50, 42, 15, 29, 95, 35],
-             [50, 50, 50, 50, 50, 46, 34, 9, 21, 66],
-             [70, 97, 28, 68, 78, 77, 61, 58, 71, 42],
-             [64, 53, 44, 29, 68, 32, 19, 68, 24, 84],
-             [3, 33, 53, 67, 1, 78, 74, 55, 12, 83],
-             [7, 11, 46, 70, 60, 47, 24, 43, 61, 26],
-             [32, 61, 88, 7, 39, 4, 92, 64, 45, 61]]
+    IN = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
+          [50, 50, 50, 50, 50, 0, 72, 77, 68, 66],
+          [50, 50, 50, 50, 50, 46, 47, 19, 64, 77],
+          [50, 50, 50, 50, 50, 42, 15, 29, 95, 35],
+          [50, 50, 50, 50, 50, 46, 34, 9, 21, 66],
+          [70, 97, 28, 68, 78, 77, 61, 58, 71, 42],
+          [64, 53, 44, 29, 68, 32, 19, 68, 24, 84],
+          [3, 33, 53, 67, 1, 78, 74, 55, 12, 83],
+          [7, 11, 46, 70, 60, 47, 24, 43, 61, 26],
+          [32, 61, 88, 7, 39, 4, 92, 64, 45, 61]]
 
-        d = signal.medfilt(f, [7, 3])
-        e = signal.medfilt2d(np.array(f, float), [7, 3])
-        assert_array_equal(d, [[0, 50, 50, 50, 42, 15, 15, 18, 27, 0],
-                               [0, 50, 50, 50, 50, 42, 19, 21, 29, 0],
-                               [50, 50, 50, 50, 50, 47, 34, 34, 46, 35],
-                               [50, 50, 50, 50, 50, 50, 42, 47, 64, 42],
-                               [50, 50, 50, 50, 50, 50, 46, 55, 64, 35],
-                               [33, 50, 50, 50, 50, 47, 46, 43, 55, 26],
-                               [32, 50, 50, 50, 50, 47, 46, 45, 55, 26],
-                               [7, 46, 50, 50, 47, 46, 46, 43, 45, 21],
-                               [0, 32, 33, 39, 32, 32, 43, 43, 43, 0],
-                               [0, 7, 11, 7, 4, 4, 19, 19, 24, 0]])
+    OUT = [[0, 50, 50, 50, 42, 15, 15, 18, 27, 0],
+           [0, 50, 50, 50, 50, 42, 19, 21, 29, 0],
+           [50, 50, 50, 50, 50, 47, 34, 34, 46, 35],
+           [50, 50, 50, 50, 50, 50, 42, 47, 64, 42],
+           [50, 50, 50, 50, 50, 50, 46, 55, 64, 35],
+           [33, 50, 50, 50, 50, 47, 46, 43, 55, 26],
+           [32, 50, 50, 50, 50, 47, 46, 45, 55, 26],
+           [7, 46, 50, 50, 47, 46, 46, 43, 45, 21],
+           [0, 32, 33, 39, 32, 32, 43, 43, 43, 0],
+           [0, 7, 11, 7, 4, 4, 19, 19, 24, 0]]
+
+    KERNEL_SIZE = [7,3]
+
+    def test_basic(self):
+        d = signal.medfilt(self.IN, self.KERNEL_SIZE)
+        e = signal.medfilt2d(np.array(self.IN, float), self.KERNEL_SIZE)
+        assert_array_equal(d, self.OUT)
         assert_array_equal(d, e)
 
+    @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
+                                       np.uint, int, np.ulonglong, np.ulonglong,
+                                       np.float32, np.float64, np.longdouble])
+    def test_types(self, dtype):
+        # volume input and output types match
+        in_typed = np.array(self.IN, dtype=dtype)
+        assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
     def test_none(self):
-        # Ticket #1124. Ensure this does not segfault.
+        # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
-            signal.medfilt(None)
+            assert_raises(TypeError, signal.medfilt, None)
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
@@ -1076,6 +1089,11 @@ class TestMedFilt(object):
             assert_(sys.getrefcount(a) < n)
         assert_equal(x, [a, a])
 
+    def test_object(self,):
+        in_object = np.array(self.IN, dtype=object)
+        out_object = np.array(self.OUT, dtype=object)
+        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                           out_object)
 
 class TestWiener(object):
 
