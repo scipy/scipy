@@ -300,8 +300,6 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
-    
-    a_fn = lambda x1:binom.pmf(x1,n,p)
     if alternative == 'less':
         pval = binom.cdf(k, n, p)
     elif alternative == 'greater':
@@ -314,10 +312,13 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            y = n-binary_search_for_binom_tst(a_fn,d*rerr,np.ceil(p * n),n)+1
+            y = n-_binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
+                                               d*rerr, np.ceil(p * n), n)+1
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            y = binary_search_for_binom_tst(a_fn,d*rerr,0,np.floor(p*n) + 1,True)+1
+            y = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
+                                             d*rerr, 0, np.floor(p * n) + 1,
+                                             True)+1
             pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
@@ -327,7 +328,19 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     return result
 
 
-def binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
+def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
+    """
+    Conducts an implicit binary search on a funcion specified by a.
+    args:
+        a: The function over which to perform binary search. Its values
+            for inputs lo and hi should be in ascending or descending
+            order as required by asc_order.
+        d: The value to search.
+        lo: The lower end of range to search.
+        hi: The higher end of the range to search.
+        asc_order: Weather the values returned by the function are in
+                   ascending or descending order.
+    """
     while lo < hi:
         mid = (lo+hi)//2
         midval = a(mid)
@@ -343,8 +356,29 @@ def binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
                 lo = mid+1
         else:
             return mid
-    if a(lo)<=d:
+    if a(lo) <= d:
         return lo
     else:
         return lo-(asc_order-0.5)*2
 
+
+def test_binomtest():
+    """
+    Some tests for binomtest. Should print all True when run.
+    """
+    pval1 = binomtest(9, 21, 0.48).pvalue
+    print(pval1 == 0.6689672431938848)
+    p_val3 = binomtest(10079999, 21000000, 0.48).pvalue
+    print(p_val3 == 0.979042561004596)
+    p_val5 = binomtest(10079990, 21000000, 0.48).pvalue
+    print(p_val5 == 0.9785298857599378)
+    p_val7 = binomtest(4, 21, 0.48).pvalue
+    print(p_val7 == 0.008139563452105921)
+    p_val9 = binomtest(11, 21, 0.48).pvalue
+    print(p_val9 == 0.8278629664608201)
+    p_val11 = binomtest(10080009, 21000000, 0.48).pvalue
+    print(p_val11 == 0.9786038762958954)
+    p_val13 = binomtest(10080017, 21000000, 0.48).pvalue
+    print(p_val13 == 0.9778567637538729)
+    p_val15 = binomtest(7, 21, 0.48).pvalue
+    print(p_val15 == 0.19667729017182273)
