@@ -2094,7 +2094,9 @@ class truncweibull_min_gen(rv_continuous):
     parameters.
 
     Notice that the truncation values, :math:`a` and :math:`b`, are defined in
-    standardized form::
+    standardized form:
+
+    .. math::
 
         a = (u_l - loc)/scale
         b = (u_r - loc)/scale
