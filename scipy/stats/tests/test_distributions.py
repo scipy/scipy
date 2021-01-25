@@ -929,6 +929,27 @@ class TestHypergeom(object):
 
 class TestLoggamma(object):
 
+    # Expected sf values were computed with mpmath. For given x and c,
+    #     x = mpmath.mpf(x)
+    #     c = mpmath.mpf(c)
+    #     sf = mpmath.gammainc(c, mpmath.exp(x), mpmath.inf,
+    #                          regularized=True)
+    @pytest.mark.parametrize('x, c, sf', [(4, 1.5, 1.6341528919488565e-23),
+                                          (6, 100, 8.23836829202024e-74)])
+    def test_sf_isf(self, x, c, sf):
+        s = stats.loggamma.sf(x, c)
+        assert_allclose(s, sf, rtol=1e-12)
+        y = stats.loggamma.isf(s, c)
+        assert_allclose(y, x, rtol=1e-12)
+
+    def test_logpdf(self):
+        # Test logpdf with x=-500, c=2.  ln(gamma(2)) = 0, and
+        # exp(-500) ~= 7e-218, which is far smaller than the ULP
+        # of c*x=-1000, so logpdf(-500, 2) = c*x - exp(x) - ln(gamma(2))
+        # should give -1000.0.
+        lp = stats.loggamma.logpdf(-500, 2)
+        assert_allclose(lp, -1000.0, rtol=1e-14)
+
     def test_stats(self):
         # The following precomputed values are from the table in section 2.2
         # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
@@ -1966,6 +1987,14 @@ def test_moments_t():
     assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
 
 
+def test_t_entropy():
+    df = [1, 2, 25, 100]
+    # Expected values were computed with mpmath.
+    expected = [2.5310242469692907, 1.9602792291600821,
+                1.459327578078393, 1.4289633653182439]
+    assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
+
+
 class TestRvDiscrete(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -2124,6 +2153,51 @@ class TestRvDiscrete(object):
         # also check the second moment
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
+
+
+class TestSkewCauchy(object):
+    def test_cauchy(self):
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewcauchy.pdf(x, a=0),
+                                  stats.cauchy.pdf(x))
+        assert_array_almost_equal(stats.skewcauchy.cdf(x, a=0),
+                                  stats.cauchy.cdf(x))
+        assert_array_almost_equal(stats.skewcauchy.ppf(x, a=0),
+                                  stats.cauchy.ppf(x))
+
+    def test_skewcauchy_R(self):
+        # options(digits=16)
+        # library(sgt)
+        # # lmbda, x contain the values generated for a, x below
+        # lmbda <- c(0.0976270078546495, 0.430378732744839, 0.2055267521432877,
+        #            0.0897663659937937, -0.15269040132219, 0.2917882261333122,
+        #            -0.12482557747462, 0.7835460015641595, 0.9273255210020589,
+        #            -0.2331169623484446)
+        # x <- c(2.917250380826646, 0.2889491975290444, 0.6804456109393229,
+        #        4.25596638292661, -4.289639418021131, -4.1287070029845925,
+        #        -4.797816025596743, 3.32619845547938, 2.7815675094985046,
+        #        3.700121482468191)
+        # pdf = dsgt(x, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #            var.adj = sqrt(2))
+        # cdf = psgt(x, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #            var.adj = sqrt(2))
+        # qsgt(cdf, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #      var.adj = sqrt(2))
+
+        np.random.seed(0)
+        a = np.random.rand(10) * 2 - 1
+        x = np.random.rand(10) * 10 - 5
+        pdf = [0.039473975217333909, 0.305829714049903223, 0.24140158118994162,
+               0.019585772402693054, 0.021436553695989482, 0.00909817103867518,
+               0.01658423410016873, 0.071083288030394126, 0.103250045941454524,
+               0.013110230778426242]
+        cdf = [0.87426677718213752, 0.37556468910780882, 0.59442096496538066,
+               0.91304659850890202, 0.09631964100300605, 0.03829624330921733,
+               0.08245240578402535, 0.72057062945510386, 0.62826415852515449,
+               0.95011308463898292]
+        assert_allclose(stats.skewcauchy.pdf(x, a), pdf)
+        assert_allclose(stats.skewcauchy.cdf(x, a), cdf)
+        assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
 class TestSkewNorm(object):
@@ -2310,6 +2384,20 @@ class TestGenExpon(object):
         # CDF should always be positive
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
+
+    def test_sf_tail(self):
+        # Expected value computed with mpmath. This script
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf('15.0')
+        #     a = mpmath.mpf('1.0')
+        #     b = mpmath.mpf('2.0')
+        #     c = mpmath.mpf('1.5')
+        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
+        # prints
+        #     1.0859444834514553e-19
+        s = stats.genexpon.sf(15, 1, 2, 1.5)
+        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
 
 
 class TestExponpow(object):
@@ -3552,6 +3640,47 @@ class TestRice(object):
         assert_equal(rvs(b=3.).size, 1)
         assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
 
+    def test_rice_gh9836(self):
+        # test that gh-9836 is resolved; previously jumped to 1 at the end
+
+        cdf = stats.rice.cdf(np.arange(10, 160, 10), np.arange(10, 160, 10))
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # x = seq(10, 150, 10)
+        # print(price(x, sigma=1, vee=x))
+        cdf_exp = [0.4800278103504522, 0.4900233218590353, 0.4933500379379548,
+                   0.4950128317658719, 0.4960103776798502, 0.4966753655438764,
+                   0.4971503395812474, 0.4975065620443196, 0.4977836197921638,
+                   0.4980052636649550, 0.4981866072661382, 0.4983377260666599,
+                   0.4984655952615694, 0.4985751970541413, 0.4986701850071265]
+        assert_allclose(cdf, cdf_exp)
+
+        probabilities = np.arange(0.1, 1, 0.1)
+        ppf = stats.rice.ppf(probabilities, 500/4, scale=4)
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # p = seq(0.1, .9, by = .1)
+        # print(qrice(p, vee = 500, sigma = 4))
+        ppf_exp = [494.8898762347361, 496.6495690858350, 497.9184315188069,
+                   499.0026277378915, 500.0159999146250, 501.0293721352668,
+                   502.1135684981884, 503.3824312270405, 505.1421247157822]
+        assert_allclose(ppf, ppf_exp)
+
+        ppf = scipy.stats.rice.ppf(0.5, np.arange(10, 150, 10))
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # b <- seq(10, 140, 10)
+        # print(qrice(0.5, vee = b, sigma = 1))
+        ppf_exp = [10.04995862522287, 20.02499480078302, 30.01666512465732,
+                   40.01249934924363, 50.00999966676032, 60.00833314046875,
+                   70.00714273568241, 80.00624991862573, 90.00555549840364,
+                   100.00499995833597, 110.00454542324384, 120.00416664255323,
+                   130.00384613488120, 140.00357141338748]
+        assert_allclose(ppf, ppf_exp)
+
 
 class TestErlang(object):
     def setup_method(self):
@@ -3677,6 +3806,29 @@ class TestExponWeib(object):
         logp = stats.exponweib.logpdf(x, a, c)
         expected = stats.expon.logpdf(x)
         assert_allclose(logp, expected)
+
+
+class TestFatigueLife:
+
+    def test_sf_tail(self):
+        # Expected value computed with mpmath:
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf(800.0)
+        #     c = mpmath.mpf(2.5)
+        #     s = float(1 - mpmath.ncdf(1/c * (mpmath.sqrt(x)
+        #                                      - 1/mpmath.sqrt(x))))
+        #     print(s)
+        # Output:
+        #     6.593376447038406e-30
+        s = stats.fatiguelife.sf(800.0, 2.5)
+        assert_allclose(s, 6.593376447038406e-30, rtol=1e-13)
+
+    def test_isf_tail(self):
+        # See test_sf_tail for the mpmath code.
+        p = 6.593376447038406e-30
+        q = stats.fatiguelife.isf(p, 2.5)
+        assert_allclose(q, 800.0, rtol=1e-13)
 
 
 class TestWeibull(object):
@@ -4534,6 +4686,39 @@ def test_ncx2_zero_nc_rvs():
     result = stats.ncx2.rvs(df=10, nc=0, random_state=1)
     expected = stats.chi2.rvs(df=10, random_state=1)
     assert_allclose(result, expected, atol=1e-15)
+
+
+def test_ncx2_gh12731():
+    # test that gh-12731 is resolved; previously these were all 0.5
+    nc = 10**np.arange(5, 10)
+    assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
+
+
+def test_ncx2_gh8665():
+    # test that gh-8665 is resolved; previously this tended to nonzero value
+    x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
+                  4.99515382e+01, 1.07617327e+02, 2.31854502e+02,
+                  4.99515382e+02, 1.07617327e+03, 2.31854502e+03,
+                  4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+                  4.99515382e+04])
+    nu, lam = 20, 499.51538166556196
+
+    sf = stats.ncx2.sf(x, df=nu, nc=lam)
+    # computed in R. Couldn't find a survival function implementation
+    # options(digits=16)
+    # x <- c(4.99515382e+00, 1.07617327e+01, 2.31854502e+01, 4.99515382e+01,
+    #        1.07617327e+02, 2.31854502e+02, 4.99515382e+02, 1.07617327e+03,
+    #        2.31854502e+03, 4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+    #        4.99515382e+04)
+    # nu <- 20
+    # lam <- 499.51538166556196
+    # 1 - pchisq(x, df = nu, ncp = lam)
+    sf_expected = [1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
+                   1.0000000000000000, 1.0000000000000000, 0.9999999999999888,
+                   0.6646525582135460, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000]
+    assert_allclose(sf, sf_expected, atol=1e-12)
 
 
 def test_foldnorm_zero():

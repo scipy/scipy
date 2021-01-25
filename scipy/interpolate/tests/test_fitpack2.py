@@ -466,6 +466,23 @@ class TestLSQBivariateSpline(object):
             assert_allclose(spl1(2.0, 2.0), spl2(2.0, 2.0))
             assert_equal(len(r), 2)
 
+    def test_unequal_length_of_knots(self):
+        """Test for the case when the input knot-location arrays in x and y are
+        of different lengths.
+        """
+        x, y = np.mgrid[0:100, 0:100]
+        x = x.ravel()
+        y = y.ravel()
+        z = 3.0 * np.ones_like(x)
+        tx = np.linspace(0.1, 98.0, 29)
+        ty = np.linspace(0.1, 98.0, 33)
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            lut = LSQBivariateSpline(x,y,z,tx,ty)
+            assert_equal(len(r), 1)
+
+        assert_almost_equal(lut(x, y, grid=False), z)
+
 
 class TestSmoothBivariateSpline(object):
     def test_linear_constant(self):
@@ -998,16 +1015,16 @@ class TestRectSphereBivariateSpline(object):
                       np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
 
         with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(-1, 170, 9) * np.pi / 180.
+            lats = np.linspace(0, 170, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
+        assert "u should be between (0, pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
-            lats = np.linspace(10, 181, 9) * np.pi / 180.
+            lats = np.linspace(10, 180, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
+        assert "u should be between (0, pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             lats = np.linspace(10, 170, 9) * np.pi / 180.

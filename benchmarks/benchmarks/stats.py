@@ -1,12 +1,12 @@
 import warnings
 
 import numpy as np
-from .common import Benchmark, safe_import
+from .common import Benchmark, safe_import, is_xslow
 
 with safe_import():
     import scipy.stats as stats
 with safe_import():
-    from scipy.stats._distr_params import distcont
+    from scipy.stats._distr_params import distcont, distdiscrete
 
 try:  # builtin lib
     from itertools import compress
@@ -56,7 +56,99 @@ class InferentialStats(Benchmark):
         stats.ttest_ind(self.a, self.c, equal_var=False)
 
 
+class DistributionsAll(Benchmark):
+    # all distributions are in this list. A conversion to a set is used to
+    # remove duplicates that appear more than once in either `distcont` or
+    # `distdiscrete`.
+    dists = sorted(list(set([d[0] for d in distcont + distdiscrete])))
+
+    param_names = ['dist_name', 'method']
+    params = [
+        dists, ['pdf/pmf', 'logpdf/logpmf', 'cdf', 'logcdf', 'rvs', 'fit',
+                'sf', 'logsf', 'ppf', 'isf', 'moment', 'stats_s', 'stats_v',
+                'stats_m', 'stats_k', 'stats_mvsk', 'entropy']
+    ]
+    # stats_mvsk is tested separately because of gh-11742
+    # `moment` tests a higher moment (order 5)
+
+    dist_data = dict(distcont + distdiscrete)
+    # custom shape values can be provided for any distribution in the format
+    # `dist_name`: [shape1, shape2, ...]
+    custom_input = {}
+
+    # these are the distributions that are the slowest
+    slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
+                  'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
+                  'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
+                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
+    slow_methods = ['moment']
+
+    def setup(self, dist_name, method):
+        if not is_xslow() and (dist_name in self.slow_dists
+                               or method in self.slow_methods):
+            raise NotImplementedError("Skipped")
+
+        self.dist = getattr(stats, dist_name)
+
+        dist_shapes = self.dist_data[dist_name]
+
+        if isinstance(self.dist, stats.rv_discrete):
+            # discrete distributions only use location
+            self.isCont = False
+            kwds = {'loc': 4}
+        else:
+            # continuous distributions use location and scale
+            self.isCont = True
+            kwds = {'loc': 4, 'scale': 10}
+
+        bounds = self.dist.interval(.99, *dist_shapes, **kwds)
+        x = np.linspace(*bounds, 100)
+        args = [x, *self.custom_input.get(dist_name, dist_shapes)]
+        self.args = args
+        self.kwds = kwds
+        if method == 'fit':
+            # there are no fit methods for discrete distributions
+            if isinstance(self.dist, stats.rv_discrete):
+                raise NotImplementedError("This attribute is not a member "
+                                          "of the distribution")
+            # the only positional argument is the data to be fitted
+            self.args = [self.dist.rvs(*dist_shapes, size=100, random_state=0, **kwds)]
+        elif method == 'rvs':
+            # add size keyword argument for data creation
+            kwds['size'] = 1000
+            kwds['random_state'] = 0
+            # keep shapes as positional arguments, omit linearly spaced data
+            self.args = args[1:]
+        elif method == 'pdf/pmf':
+            method = ('pmf' if isinstance(self.dist, stats.rv_discrete)
+                      else 'pdf')
+        elif method == 'logpdf/logpmf':
+            method = ('logpmf' if isinstance(self.dist, stats.rv_discrete)
+                      else 'logpdf')
+        elif method in ['ppf', 'isf']:
+            self.args = [np.linspace((0, 1), 100), *args[1:]]
+        elif method == 'moment':
+            # the first four moments may be optimized, so compute the fifth
+            self.args = [5, *args[1:]]
+        elif method.startswith('stats_'):
+            kwds['moments'] = method[6:]
+            method = 'stats'
+            self.args = args[1:]
+        elif method == 'entropy':
+            self.args = args[1:]
+
+        self.method = getattr(self.dist, method)
+
+    def time_distribution(self, dist_name, method):
+        self.method(*self.args, **self.kwds)
+
+
 class Distribution(Benchmark):
+    # though there is a new version of this benchmark that runs all the
+    # distributions, at the time of writing there was odd behavior on
+    # the asv for this benchmark, so it is retained.
+    # https://pv.github.io/scipy-bench/#stats.Distribution.time_distribution
+
     param_names = ['distribution', 'properties']
     params = [
         ['cauchy', 'gamma', 'beta'],
@@ -228,3 +320,36 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
+
+
+class BenchMoment(Benchmark):
+    params = [
+        [1, 2, 3, 8],
+        [100, 1000, 10000],
+    ]
+    param_names = ["order", "size"]
+
+    def setup(self, order, size):
+        np.random.random(1234)
+        self.x = np.random.random(size)
+
+    def time_moment(self, order, size):
+        stats.moment(self.x, order)
+
+class BenchSkewKurtosis(Benchmark):
+    params = [
+        [1, 2, 3, 8],
+        [100, 1000, 10000],
+        [False, True]
+    ]
+    param_names = ["order", "size", "bias"]
+
+    def setup(self, order, size, bias):
+        np.random.random(1234)
+        self.x = np.random.random(size)
+
+    def time_skew(self, order, size, bias):
+        stats.skew(self.x, bias=bias)
+
+    def time_kurtosis(self, order, size, bias):
+        stats.kurtosis(self.x, bias=bias)
