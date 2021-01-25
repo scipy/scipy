@@ -54,11 +54,6 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-def assert_raises_with_match(exception_type, match, function, *args, **kwargs):
-    with assert_raises(exception_type, match=match):
-        function(*args, **kwargs)
-
-
 class TestTrimmedStats(object):
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -5961,54 +5956,49 @@ class TestPageTrendTest:
 
     def test_input_validation(self):
         # test data not a 2d array
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.page_trend_test, None)
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.page_trend_test, [])
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.page_trend_test, [1, 2])
-        assert_raises_with_match(ValueError, "`data` must be a 2d array.",
-                                 stats.page_trend_test, [[[1]]])
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test(None)
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([])
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([1, 2])
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([[[1]]])
 
         # test invalid dimensions
-        assert_raises_with_match(ValueError, "Page's L is only appropriate",
-                                 stats.page_trend_test, np.random.rand(1, 3))
-        assert_raises_with_match(ValueError, "Page's L is only appropriate",
-                                 stats.page_trend_test, np.random.rand(2, 2))
+        with assert_raises(ValueError, match="Page's L is only appropriate"):
+            stats.page_trend_test(np.random.rand(1, 3))
+        with assert_raises(ValueError, match="Page's L is only appropriate"):
+            stats.page_trend_test(np.random.rand(2, 2))
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
         message = "`predicted_ranks` must include each integer"
-        assert_raises_with_match(ValueError, message, stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 predicted_ranks=[0, 1, 2])
-        assert_raises_with_match(ValueError, message, stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 predicted_ranks=[1.1, 2, 3])
-        assert_raises_with_match(ValueError, message, stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 predicted_ranks=[1, 2, 3, 3])
-        assert_raises_with_match(ValueError, message, stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 predicted_ranks="invalid")
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[0, 1, 2])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[1.1, 2, 3])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[1, 2, 3, 3])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks="invalid")
 
         # test improperly ranked data
-        assert_raises_with_match(ValueError, "`data` is not properly ranked",
-                                 stats.page_trend_test,
-                                 [[0, 2, 3], [1, 2, 3]], True)
-        assert_raises_with_match(ValueError, "`data` is not properly ranked",
-                                 stats.page_trend_test,
-                                 [[1, 2, 3], [1, 2, 4]], True)
+        with assert_raises(ValueError, match="`data` is not properly ranked"):
+            stats.page_trend_test([[0, 2, 3], [1, 2, 3]], True)
+        with assert_raises(ValueError, match="`data` is not properly ranked"):
+            stats.page_trend_test([[1, 2, 3], [1, 2, 4]], True)
 
         # various
-        assert_raises_with_match(ValueError, "`data` contains NaNs",
-                                 stats.page_trend_test,
-                                 [[1, 2, 3], [1, 2, np.nan]],
-                                 ranked=False)
-        assert_raises_with_match(ValueError, "`method` must be in",
-                                 stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 method="ekki")
-        assert_raises_with_match(TypeError, "`ranked` must be boolean.",
-                                 stats.page_trend_test,
-                                 data=[[1, 2, 3], [1, 2, 3]],
-                                 ranked="ekki")
+        with assert_raises(ValueError, match="`data` contains NaNs"):
+            stats.page_trend_test([[1, 2, 3], [1, 2, np.nan]],
+                                  ranked=False)
+        with assert_raises(ValueError, match="`method` must be in"):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  method="ekki")
+        with assert_raises(TypeError, match="`ranked` must be boolean."):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  ranked="ekki")
