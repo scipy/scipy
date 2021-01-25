@@ -2076,9 +2076,13 @@ weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
 class truncweibull_min_gen(rv_continuous):
-    r"""A truncated Weibull minimum continuous random variable.
+    r"""A doubly truncated Weibull minimum continuous random variable.
 
     %(before_notes)s
+
+    See Also
+    --------
+    weibull_min, truncexpon
 
     Notes
     -----
