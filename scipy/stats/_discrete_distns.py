@@ -662,7 +662,7 @@ class nhypergeom_gen(rv_discrete):
             ks = np.arange(a, b+1)
             cdf = self.cdf(ks, M, n, r)
             ppf = interp1d(cdf, ks, kind='next', fill_value='extrapolate')
-            rvs = ppf(random_state.random(size)).astype(int)
+            rvs = ppf(random_state.uniform(size=size)).astype(int)
             if size is None:
                 return rvs.item()
             return rvs
@@ -672,7 +672,7 @@ class nhypergeom_gen(rv_discrete):
         if M.ndim == 0:
             return rvs1(M, n, r, size, random_state)
 
-        res = np.zeros(size)
+        res = np.empty(size)
 
         # move shape parameters axes to beginning for easier indexing
         j0 = np.arange(res.ndim)
