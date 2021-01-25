@@ -300,7 +300,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
-
+    
+    a_fn = lambda x1:binom.pmf(x1,n,p)
     if alternative == 'less':
         pval = binom.cdf(k, n, p)
     elif alternative == 'greater':
@@ -313,12 +314,10 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            i = np.arange(np.ceil(p * n), n+1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            y = n-binary_search_for_binom_tst(a_fn,d*rerr,np.ceil(p * n),n)+1
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            i = np.arange(np.floor(p*n) + 1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            y = binary_search_for_binom_tst(a_fn,d*rerr,0,np.floor(p*n) + 1,True)+1
             pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
@@ -326,3 +325,26 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     result = BinomTestResult(k=k, n=n, alternative=alternative,
                              proportion_estimate=k/n, pvalue=pval)
     return result
+
+
+def binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
+    while lo < hi:
+        mid = (lo+hi)//2
+        midval = a(mid)
+        if midval < d:
+            if asc_order:
+                lo = mid+1
+            else:
+                hi = mid-1
+        elif midval > d:
+            if asc_order:
+                hi = mid-1
+            else:
+                lo = mid+1
+        else:
+            return mid
+    if a(lo)<=d:
+        return lo
+    else:
+        return lo-(asc_order-0.5)*2
+
