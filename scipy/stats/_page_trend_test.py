@@ -185,11 +185,11 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     We use the example from [3]_: 10 students are asked to rate three
     teaching methods - tutorial, lecture, and seminar - on a scale of 1-5,
     with 1 being the lowest and 5 being the highest. We have decided that
-    a confidence level of 99% is required to reject the null hypothsis in favor
-    of our alternative: that the seminar will have the highest ratings and the
-    tutorial will have the lowest. Initially, the data have been tabulated with
-    each row representing an individual student's ratings of the three methods
-    in the following order: tutorial, lecture, seminar.
+    a confidence level of 99% is required to reject the null hypothesis in
+    favor of our alternative: that the seminar will have the highest ratings
+    and the tutorial will have the lowest. Initially, the data have been
+    tabulated with each row representing an individual student's ratings of
+    the three methods in the following order: tutorial, lecture, seminar.
 
     >>> table = [[3, 4, 3],
     ...          [2, 2, 4],
