@@ -567,7 +567,7 @@ cdef double _log_norming_constant(double p, double a, double b) nogil:
 
     t1 = math.pow(a, 2) - math.pow(b, 2)
     t2 = p * 0.5 * math.log(t1)
-    t3 = 0.5 * math.log(2*PI)
+    t3 = 0.5 * math.log(2 * PI)
     t4 = (p - 0.5) * math.log(a)
     t5 = math.pow(t1, 0.5)
     t6 = math.log(cs.kve(p, t5)) - t5
