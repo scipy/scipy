@@ -1211,7 +1211,7 @@ class TestWilcoxon(object):
         for n in range(1, 26):
             cnt = _get_wilcoxon_distr(n)
             assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 2**n)
+            assert_equal(sum(cnt), 1)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1235,8 +1235,6 @@ class TestWilcoxon(object):
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-        d = np.arange(26) + 1
-        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
 
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
@@ -1268,7 +1266,7 @@ class TestWilcoxon(object):
         assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
 
         # use approximation for samples > 25
-        d = np.arange(1, 27)
+        d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 

@@ -4,7 +4,6 @@ import warnings
 from . import distributions
 from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
-from . import _wilcoxon_data
 
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -377,15 +376,22 @@ def cramervonmises(rvs, cdf, args=()):
 
 def _get_wilcoxon_distr(n):
     """
-    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum of
     ranks of positive differences).
-    Returns an array with the counts/frequencies of all the possible ranks
+    Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    cnt = _wilcoxon_data.COUNTS.get(n)
+    result = []
+    c = np.ones(1, dtype=np.double)
+    result.append(c)
 
-    if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
+    # uint64max = 2**64 - 1
+    for k in range(1, n + 1):
+        prev_c = c
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        m = len(prev_c)
+        c[:m] = prev_c * 0.5
+        c[-m:] += prev_c * 0.5
+        result.append(c)
 
-    return np.array(cnt, dtype=int)
+    return result[n]

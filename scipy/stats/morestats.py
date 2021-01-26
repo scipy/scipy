@@ -2874,8 +2874,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)
-    can be used for sample sizes of up to 25. The default ``mode == 'auto'``
-    uses the exact distribution if there are at most 25 observations and no
+    can be used for small sample sizes. The default ``mode == 'auto'``
+    uses the exact distribution if there are at most 50 observations and no
     ties, otherwise a normal approximation is used (``mode == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
@@ -2959,7 +2959,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if mode == "auto":
-        if len(d) <= 25:
+        if len(d) <= 50:
             mode = "exact"
         else:
             mode = "approx"
@@ -3051,13 +3051,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
-                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                p_less = np.sum(cnt[:r_plus + 1])
+                p_greater = np.sum(cnt[r_plus:])
                 prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
-            prob = np.sum(cnt[r_plus:]) / 2**count
+            prob = np.sum(cnt[r_plus:])
         else:
-            prob = np.sum(cnt[:r_plus + 1]) / 2**count
+            prob = np.sum(cnt[:r_plus + 1])
 
     return WilcoxonResult(T, prob)
 
