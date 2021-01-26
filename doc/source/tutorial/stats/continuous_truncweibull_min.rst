@@ -4,7 +4,7 @@
 Truncated Weibull Minimum Extreme Value Distribution
 ====================================================
 
-A double truncated version of Weibull minimum extreme value distribution.
+A doubly truncated version of Weibull minimum extreme value distribution.
 Defined for :math:`a<x<=b` and :math:`c>0`.
 
 .. math::
