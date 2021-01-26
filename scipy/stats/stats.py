@@ -3733,7 +3733,7 @@ def alexandergovern(*args, nan_policy='propagate'):
        instead relaxing the assumption of equal variances.
 
     Input samples must be finite, one dimensional, and with size greater than
-    one. Inputs that are not one dimensional will be flattened.
+    one.
 
     See Also
     --------
@@ -3826,7 +3826,7 @@ def _alexandergovern_input_validation(args, nan_policy):
         raise TypeError(f"2 or more inputs required, got {len(args)}")
 
     # input arrays are flattened
-    args = [np.ravel(np.asarray(arg, dtype=float)) for arg in args]
+    args = [np.asarray(arg, dtype=float) for arg in args]
 
     for i, arg in enumerate(args):
         if np.size(arg) <= 1:
