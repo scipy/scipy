@@ -298,6 +298,17 @@ class TestNCH():
         assert_allclose(wnch.var(M, n, N, odds), var, rtol=1e-11)
 
 
+    @pytest.mark.parametrize('dist_name', ['fnch', 'wnch'])
+    def test_rvs_shape(self, dist_name):
+        # Check that when given a size with more dimensions than the
+        # dimensions of the broadcast parameters, rvs returns an array
+        # with the correct shape.
+        dists = {'fnch': fnch, 'wnch': wnch}
+        dist = dists[dist_name]
+        x = dist.rvs(50, 30, [[10], [20]], [0.5, 1.0, 2.0], size=(5, 1, 2, 3))
+        assert x.shape == (5, 1, 2, 3)
+
+
 @pytest.mark.parametrize("mu, q, expected",
                          [[10, 120, -1.240089881791596e-38],
                           [1500, 0, -86.61466680572661]])

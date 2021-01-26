@@ -295,13 +295,13 @@ class nbinom_gen(rv_discrete):
         k = floor(x)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
-        
+
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
-            
+
         def f2(k, n, p):
             return np.log(cdf)
-            
+
         with np.errstate(divide='ignore'):
             return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
 
@@ -1280,6 +1280,37 @@ class yulesimon_gen(rv_discrete):
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
 
+def _vectorize_rvs_over_shapes(_rvs1):
+    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
+    # _rvs1 must be a _function_ that accepts _scalar_ shapes as positional
+    # arguments, and `size` and `random_state` as keyword arguments.
+    # _rvs1 must return a random variate array with shape `size`. If `size` is
+    # None, _rvs1 must return a scalar.
+    # When applied to _rvs1, this decorator broadcasts ndarray shape arguments,
+    # and loops over them, calling _rvs1 for each set of scalar shapes.
+    # For usage example, see _nch_gen
+    def _rvs(*args, size, random_state):
+        args = np.broadcast_arrays(*args)
+
+        shape0 = args[0]  # 0th is not special; we just need its shape, really
+        if shape0.ndim == 0:
+            return _rvs1(*args, size, random_state)
+
+        res = np.empty(size)
+
+        # move shape parameters axes to beginning for easier indexing
+        j0 = np.arange(res.ndim)
+        j1 = np.roll(j0, -shape0.ndim)
+        res = np.moveaxis(res, j0, j1)
+
+        for i, _ in np.ndenumerate(shape0):
+            res[i] = _rvs1(*[shape[i] for shape in args],
+                          size[:-shape0.ndim], random_state)
+
+        return np.moveaxis(res, j1, j0)  # move them back before returning
+    return _rvs
+
+
 class _nch_gen(rv_discrete):
     r"""A noncentral hypergeometric discrete random variable.
 
@@ -1310,23 +1341,16 @@ class _nch_gen(rv_discrete):
 
     def _rvs(self, M, n, N, odds, size=None, random_state=None):
 
-        def _rvs1(M, n, N, odds, length, random_state=None):
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, N, odds, size, random_state):
+            length = np.prod(size)
             urn = _PyStochasticLib3()
             rv_gen = getattr(urn, self.rvs_name)
             rvs = rv_gen(N, n, M, odds, length, random_state)
+            rvs = rvs.reshape(size)
             return rvs
 
-        # If all the shapes are scalar, we can generate all the random numbers
-        # in one call to rvs_fisher and reshape to the desired result.
-        # Otherwise, we need to resort to np.vectorize.
-        if (np.size(M) == 1 and np.size(n) == 1
-                and np.size(N) == 1 and np.size(odds) == 1):
-            rvs = _rvs1(M, n, N, odds,
-                        np.prod(size), random_state).reshape(size)
-        else:
-            fun = np.vectorize(_rvs1, excluded=['size', 'random_state'])
-            rvs = fun(M, n, N, odds, 1, random_state)
-        return rvs
+        return _rvs1(M, n, N, odds, size=size, random_state=random_state)
 
     def _pmf(self, x, M, n, N, odds):
 
