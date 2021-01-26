@@ -3043,7 +3043,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = distributions.norm.cdf(z)
     elif mode == "exact":
         # get frequencies cnt of the possible positive ranksums r_plus
-        cnt = _get_wilcoxon_distr(count)
+        pmf = _get_wilcoxon_distr(count)
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
@@ -3051,13 +3051,13 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
-                p_less = np.sum(cnt[:r_plus + 1])
-                p_greater = np.sum(cnt[r_plus:])
+                p_less = np.sum(pmf[:r_plus + 1])
+                p_greater = np.sum(pmf[r_plus:])
                 prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
-            prob = np.sum(cnt[r_plus:])
+            prob = np.sum(pmf[r_plus:])
         else:
-            prob = np.sum(cnt[:r_plus + 1])
+            prob = np.sum(pmf[:r_plus + 1])
 
     return WilcoxonResult(T, prob)
 
