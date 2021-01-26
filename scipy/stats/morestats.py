@@ -3047,7 +3047,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
-            if r_plus == (len(cnt) - 1) // 2:
+            if r_plus == (len(pmf) - 1) // 2:
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
