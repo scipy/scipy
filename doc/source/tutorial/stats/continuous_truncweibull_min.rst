@@ -12,7 +12,7 @@ Defined for :math:`a<x<=b` and :math:`c>0`.
 
     \begin{eqnarray*}
         f\left(x;c,a,b\right) & = & \frac{cx^{c-1}\exp\left(-x^{c}\right)}{\exp\left(-a^{c}\right) - \exp\left(-b^{c}\right)} \\
-        F\left(x;c,a,b\right) & = & \frac{\exp\left(-a^{c} - \exp\left(-x^{c}\right)}{\exp\left(-a^{c}\right) - \exp\left(-b^{c}\right)} \\
+        F\left(x;c,a,b\right) & = & \frac{\exp\left(-a^{c}\right) - \exp\left(-x^{c}\right)}{\exp\left(-a^{c}\right) - \exp\left(-b^{c}\right)} \\
         G\left(q;c,a,b\right) & = & \left[-\log\left(\left(1-q\right)\exp\left(-a^{c}\right)+q\exp\left(-b^{c}\right)\right)\right]^{1/c}
     \end{eqnarray*}
 
