@@ -101,6 +101,7 @@ Correlation Functions
 
    pearsonr
    fisher_exact
+   barnard_exact
    spearmanr
    pointbiserialr
    kendalltau
@@ -202,7 +203,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
+           'pearsonr', 'fisher_exact', 'barnard_exact', 'SpearmanRConstantInputWarning',
            'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
@@ -4159,6 +4160,178 @@ def fisher_exact(table, alternative='two-sided'):
     pvalue = min(pvalue, 1.0)
 
     return oddsratio, pvalue
+
+
+def _barnard_exact_compute_gammaln_combination(n):
+    """Compute all log combination of C(n, k)"""
+    gammaln_arr = special.gammaln(np.arange(n + 1) + 1)
+    return special.gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
+
+
+def barnard_exact(
+        table,
+        alternative='two-sided',
+        pooled=True,
+        num_it=4):
+    """
+    Perform a Barnard exact test on a 2x2 contingency table.
+
+    Parameters
+    ----------
+    table : array_like of ints
+        A 2x2 contingency table.  Elements should be non-negative integers.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+    pooled : bool, optional
+        Whether to compute score statistic with pooled variance or
+        unpooled (Wald statistic)
+
+    num_it : int, optional
+        Number of iterations of the grid search. Default is 4. Must be
+        non-negative.
+
+    Returns
+    -------
+    score_statistic : float
+        Z statistic with pooled (Score) or unpooled (Wald) variance, depending
+        on the user choice of `pooled` param.
+    p_value : float
+        P-value, the probability of obtaining a distribution at least as
+        extreme as the one that was actually observed, assuming that the
+        null hypothesis is true.
+
+    See Also
+    --------
+    chi2_contingency : Chi-square test of independence of variables in a
+        contingency table.
+    fisher_exact : Fisher exact test on a 2x2 contingency table.
+
+    References
+    ----------
+    .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003). Conditional
+    versus Unconditional Exact Tests for Comparing Two Binomials`__.
+
+    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf
+
+    Examples
+    --------
+    examples from [1]_.
+
+    Consider the following example of a vaccine efficacy study (Chan, 1998).
+    In a randomized clinical trial of 30 subjects, 15 were innoculated with a
+    recombinant DNA influenza vaccine and the 15 were innoculated with a
+    placebo. Twelve of the 15 subjects in the placebo group (80%) eventually
+    became infected with influenza whereas for the vaccine group, only 7 of
+    the 15 subjects (47%) became infected. The data are tabulated as a 2 × 2
+    table::
+
+                    Vaccine  Placebo
+        Yes             8        2
+        No              1        5
+
+    We use this table to find the p-value:
+    >>> import scipy.stats as stats
+    >>> TX, pvalue = stats.barnard_exact([[7, 12], [8, 3]])
+    >>> pvalue
+    0.0681...
+
+    """
+    if num_it < 0:
+        raise ValueError(
+            "Number of iterations must be non-negative, "
+            f"found {num_it!r}"
+        )
+
+    c = np.asarray(
+        table,
+        dtype=np.int64)
+
+    if not c.shape == (2, 2):
+        raise ValueError("The input `table` must be of shape (2, 2).")
+
+    if np.any(c < 0):
+        raise ValueError("All values in `table` must be nonnegative.")
+
+    if 0 in c.sum(axis=0):
+        # If both values in a row or column are zero, the p-value is 1 and
+        # the score's statistic is NaN.
+        return np.nan, 1.0
+
+    total_c1, total_c2 = c.sum(axis=0)
+    n = total_c1 + total_c2
+
+    x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1)
+    x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1)
+
+    p1, p2 = x1 / total_c1, x2 / total_c2
+
+    if pooled:
+        p = (x1 + x2) / (total_c1 + total_c2)
+        var_p1_p2 = p * (1 - p) * (1 / total_c1 + 1 / total_c2)
+    else:
+        var_p1_p2 = p1 * (1 - p1) / total_c1 + p2 * (1 - p2) / total_c2
+
+    # To avoid warning when dividing by 0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
+
+    TX_obs = TX[c[0, 0], c[0, 1]]
+
+    if alternative == "two-sided":
+        idx = np.abs(TX) >= abs(TX_obs)
+    elif alternative == "less":
+        idx = TX <= TX_obs
+    elif alternative == "greater":
+        idx = TX >= TX_obs
+    else:
+        msg = "`alternative` should be one of {'two-sided', 'less', 'greater'},"
+        f" found {alternative!r}"
+        raise ValueError(msg)
+
+    # Pass x1 and x2 in dimension 3
+    x1 = x1.reshape(-1, 1, 1)
+    x2 = x2.reshape(1, -1, 1)
+
+    x1_comb = _barnard_exact_compute_gammaln_combination(total_c1)
+    x2_comb = _barnard_exact_compute_gammaln_combination(total_c2)
+
+    nuisance_num = 100
+    inf_bound, sup_bound = 0, 1
+
+    for i in range(num_it):
+        nuisance_arr = np.linspace(
+            start=inf_bound, stop=sup_bound, num=nuisance_num + 2)
+        nuisance_arr = nuisance_arr[1:-1]  # Remove 0 and 1
+        # Reshape in dimension 3 array
+        nuisance_arr = nuisance_arr.reshape(1, 1, -1)
+
+        PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_arr) * (
+            x1 + x2) + np.log(1 - nuisance_arr) * (n - x1 - x2))
+        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
+
+        max_nuisance_idx = sum_PX.argmax()
+
+        inf_bound = (
+            nuisance_arr[0, 0, max_nuisance_idx - 1]
+            if max_nuisance_idx > 0
+            else 0
+        )
+        sup_bound = (
+            nuisance_arr[0, 0, max_nuisance_idx + 1]
+            if max_nuisance_idx == nuisance_num
+            else 1
+        )
+
+        p_value = sum_PX[max_nuisance_idx]  # take the max value
+        p_value = sum_PX[max_nuisance_idx]  # take the max value
+
+    return TX_obs, p_value
 
 
 class SpearmanRConstantInputWarning(RuntimeWarning):

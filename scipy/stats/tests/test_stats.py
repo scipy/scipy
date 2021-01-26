@@ -538,6 +538,89 @@ class TestFisherExact(object):
         odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
 
 
+class TestBarnardExact(object):
+    """Some tests to show that barnard_exact() works correctly.
+    """
+
+    def test_basic(self):
+        # results test against R's Barnard's Unconditional Test
+
+        barnard_exact = stats.barnard_exact
+        TX_obs, pvalue = barnard_exact([[7, 12], [8, 3]])
+        assert_almost_equal(
+            [TX_obs, pvalue],
+            [1.89433807606, 0.0681534327315], decimal=5)
+
+        TX_obs, pvalue = barnard_exact(
+            [[43, 40], [10, 39]])
+        assert_almost_equal(
+            [TX_obs, pvalue],
+            [-3.55541, 0.000362832], decimal=5)
+
+        res = barnard_exact([[5, 1], [10, 10]])[1]
+        assert_approx_equal(res, 0.1562775463060, significant=4)
+        res = barnard_exact([[5, 15], [20, 20]])[1]
+        assert_approx_equal(res, 0.0663635014149, significant=4)
+        res = barnard_exact([[5, 16], [20, 25]])[1]
+        assert_approx_equal(res, 0.1169848521762, significant=4)
+        res = barnard_exact([[10, 5], [10, 1]])[1]
+        assert_approx_equal(res, 0.177536588912, significant=4)
+        res = barnard_exact([[5, 0], [1, 4]])[1]
+        assert_approx_equal(res, 0.01367187500000, significant=4)
+        res = barnard_exact([[0, 1], [3, 2]])[1]
+        assert_approx_equal(res, 0.509667991865, significant=4)
+        res = barnard_exact([[0, 2], [6, 4]])[1]
+        assert_approx_equal(res, 0.1970196187397, significant=4)
+        res = barnard_exact([[2, 7], [8, 2]])
+        assert_approx_equal(res[1], 0.01921081542969, significant=4)
+        assert_approx_equal(res[0], 2.51847494516, significant=4)
+
+    def test_raises(self):
+        # test we raise an error for wrong input number of nuisances.
+        with assert_raises(ValueError):
+            stats.barnard_exact([[1, 2], [3, 4]], num_it=-10)
+        # test we raise an error for wrong shape of input.
+        assert_raises(ValueError, stats.barnard_exact,
+                      np.arange(6).reshape(2, 3))
+        # Test all values must be positives
+        assert_raises(ValueError, stats.barnard_exact,
+                      [[-1, 2], [3, 4]])
+        # Test value error on wrong alternative param
+        assert_raises(ValueError, stats.barnard_exact,
+                      [[-1, 2], [3, 4]], "not-correct")
+
+    def test_row_or_col_zero(self):
+        tables = ([[0, 0], [5, 10]],
+                  [[5, 10], [0, 0]],
+                  [[0, 5], [0, 10]],
+                  [[5, 0], [10, 0]])
+        for table in tables:
+            TX_obs, pval = stats.fisher_exact(table)
+            assert_equal(pval, 1.0)
+            assert_equal(TX_obs, np.nan)
+
+    def test_less_greater(self):
+        tables = (
+            # Some tables to compare with R:
+            [[2, 7], [8, 2]],
+        )
+        pvals = (
+            # from R:
+            [1 - 0.00988614084283, 0.00988614084283],
+        )
+        for table, pval in zip(tables, pvals):
+            res = []
+            res.append(
+                stats.barnard_exact(
+                    table,
+                    alternative="less")[1])
+            res.append(
+                stats.barnard_exact(
+                    table,
+                    alternative="greater")[1])
+            assert_allclose(res, pval, atol=0, rtol=1e-2)
+
+
 class TestCorrSpearmanr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
