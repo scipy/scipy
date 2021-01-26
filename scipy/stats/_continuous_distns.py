@@ -2932,25 +2932,25 @@ class genhyperbolic_gen(rv_continuous):
 
     .. math::
 
-        f(x, \lambda, \hat{\alpha}, \hat{\beta)} =
-            \frac{(\hat{\alpha}^2 - \hat{\beta}^2)^{\lambda/2}}
-            {\sqrt{2\pi}\hat{\alpha}^{\lambda-0.5}
-            K_\lambda\Big(\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}\Big)}
-            e^{\hat{\beta}(x)} \times \frac{K_{\lambda - 1/2}
-            (\hat{\alpha} \sqrt{1 + x^2})}
-            {(\sqrt{1 + x^2})^{1/2 - \lambda}}
+        f(x, p, a, b) =
+            \frac{(a^2 - b^2)^{p/2}}
+            {\sqrt{2\pi}a^{p-0.5}
+            K_p\Big(\sqrt{a^2 - b^2}\Big)}
+            e^{b(x)} \times \frac{K_{p - 1/2}
+            (a \sqrt{1 + x^2})}
+            {(\sqrt{1 + x^2})^{1/2 - p}}
 
-    for :math:`x, \lambda \in ( - \infty; \infty)`,
-    :math:`|\hat{\beta}| < \hat{\alpha}` if :math:`\lambda \ge 0`,
-    :math:`|\hat{\beta}| \le \hat{\alpha}` if :math:`\lambda < 0`.
-    :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`\lambda` (`scipy.special.kn`)
+    for :math:`x, p \in ( - \infty; \infty)`,
+    :math:`|b| < a` if :math:`p \ge 0`,
+    :math:`|b| \le a` if :math:`p < 0`.
+    :math:`K_{p}(.)` denotes the modified Bessel function of the second
+    kind and order :math:`p` (`scipy.special.kn`)
 
-    `genhyperbolic` takes ``p`` as a tail parameter for :math:`\lambda`,
-    ``a`` as a shape parameter for :math:`\hat{\alpha}`,
-    ``b`` as a skewness parameter for :math:`\hat{\beta}`,
+    `genhyperbolic` takes ``p`` as a tail parameter,
+    ``a`` as a shape parameter,
+    ``b`` as a skewness parameter.
 
-    Moments are based on [3]_.
+    Stats are based on [3]_.
 
     %(after_notes)s
 
@@ -2974,8 +2974,8 @@ class genhyperbolic_gen(rv_continuous):
     and :math:`\delta > 0`.
 
     The location-scale-based parameterization implemented in
-    scipy is based on [2]_, where :math:`\hat{\alpha} = \alpha\delta`
-    and :math:`\hat{\beta} = \beta\delta`
+    scipy is based on [2]_, where :math:`a = \alpha\delta`
+    and :math:`b = \beta\delta`
 
     References
     ----------

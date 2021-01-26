@@ -17,31 +17,31 @@ Different parameterization exists in literature, scipy implementing the location
 
     \begin{eqnarray*}
         f(x, p, a, b) & = &
-        \frac{(a^2 - b^2)^{\lambda/2}}
-        {\sqrt{2\pi}a^{\lambda-0.5}
-        K_\lambda\Big(\sqrt{a^2 - b^2}\Big)}
-        e^{b(x)} \times \frac{K_{\lambda - 1/2}
+        \frac{(a^2 - b^2)^{p/2}}
+        {\sqrt{2\pi}a^{p-0.5}
+        K_p\Big(\sqrt{a^2 - b^2}\Big)}
+        e^{b(x)} \times \frac{K_{p - 1/2}
         (a \sqrt{1 + x^2})}
-        {(\sqrt{1 + x^2})^{1/2 - \lambda}}
+        {(\sqrt{1 + x^2})^{1/2 - p}}
     \end{eqnarray*}
 
 for:
 
--  :math:`x, \lambda \in ( - \infty; \infty)`
+-  :math:`x, p \in ( - \infty; \infty)`
 -  :math:`|b| < a` if :math:`p \ge 0`
 -  :math:`|b| \le a` if :math:`p < 0`
--  :math:`K_{\lambda}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
+-  :math:`K_{p}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
 
-which derives from the original parameterization in  Barndorff (1978) by setting:
+which derives from the original :math:`(\lambda, \alpha, \beta, \delta, \mu)` parameterization in  Barndorff (1978) by setting:
 
--  :math:`p = \lambda`
--  :math:`a = \hat{\alpha} = \delta \alpha`
--  :math:`b = \hat{\beta} = \delta \beta`
--  :math:`\text{location} = \mu`
--  :math:`\text{scale} = \delta`
+-  :math:`\lambda = p`
+-  :math:`\alpha = \frac{a}{\delta} = \frac{\hat{\alpha}}{\delta}`
+-  :math:`\beta = \frac{b}{\delta} = \frac{\hat{\beta}}{\delta}`
+-  :math:`\delta = \text{scale}`
+-  :math:`\mu = \text{location}`
 
 
-Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled from the above-mentioned normal variance-mean mixture where `scipy.stats.geninvgauss` is parametrized as :math:`GIG = f\Big(p = p, b = \sqrt{\hat{\alpha}^2 - \hat{\beta}^2}, \text{loc} = \text{location}, \text{scale} = \frac{1}{\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}}\Big)` so that: :math:`GH(p, \hat{\alpha}, \hat{\beta}) = \hat{\beta} \cdot GIG + \sqrt{GIG} \cdot N(0,1)`
+Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled from the above-mentioned normal variance-mean mixture where `scipy.stats.geninvgauss` is parametrized as :math:`GIG\Big(p = p, b = \sqrt{\hat{\alpha}^2 - \hat{\beta}^2}, \text{loc} = \text{location}, \text{scale} = \frac{1}{\sqrt{\hat{\alpha}^2 - \hat{\beta}^2}}\Big)` so that: :math:`GH(p, \hat{\alpha}, \hat{\beta}) = \hat{\beta} \cdot GIG + \sqrt{GIG} \cdot N(0,1)`
 
 
 The "generalized" characterization suggests the fact that this distribution is a superclass of several other probability distribution, for instance:
@@ -55,7 +55,7 @@ The "generalized" characterization suggests the fact that this distribution is a
 Examples
 --------
 
-It is useful to understand how the parameters affect the shape of the distribution. While it is fairly straightforward to interpret the meaning of :math:`\hat{\beta}` as the skeweness, the difference among :math:`\hat{\alpha}` and :math:`p` is not as obvious, as both parameters do in fact affect the kurtosis of the distribution. :math:`\hat{\alpha}` can be interpreted as the speed of the decay of the probability density (where :math:`\alpha > 1` the asymptotic decay is faster than :math:`log_e` and vice versa) or - equivalently - as the slope of the log-probability hyperbola asymptote (where :math:`\alpha > 1` decay is faster than :math:`|1|` and vice versa), while :math:`p` can be se as the width of the shoulders of the probability density distribution (where :math:`p < 1` narrow shoulders and vice versa) or - equivalently - as the shape of the log-probability hyperbola, which is convex :math:`p < 1` and concave otherwise.
+It is useful to understand how the parameters affect the shape of the distribution. While it is fairly straightforward to interpret the meaning of :math:`b` as the skeweness, understanding the difference among :math:`a` and :math:`p` is not as obvious, as both parameters do in fact affect the kurtosis of the distribution. :math:`a` can be interpreted as the speed of the decay of the probability density (where :math:`a > 1` the asymptotic decay is faster than :math:`log_e` and vice versa) or - equivalently - as the slope of the log-probability hyperbola asymptote (where :math:`a > 1` decay is faster than :math:`|1|` and vice versa), while :math:`p` can be se as the width of the shoulders of the probability density distribution (where :math:`p < 1` narrow shoulders and vice versa) or - equivalently - as the shape of the log-probability hyperbola, which is convex :math:`p < 1` and concave otherwise.
 
 .. code-block:: python
 
