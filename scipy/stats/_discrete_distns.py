@@ -1282,32 +1282,39 @@ yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
 def _vectorize_rvs_over_shapes(_rvs1):
     """Decorator that vectorizes _rvs method to work on ndarray shapes"""
-    # _rvs1 must be a _function_ that accepts _scalar_ shapes as positional
-    # arguments, and `size` and `random_state` as keyword arguments.
+    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
+    # arguments, `size` and `random_state` as keyword arguments.
     # _rvs1 must return a random variate array with shape `size`. If `size` is
     # None, _rvs1 must return a scalar.
-    # When applied to _rvs1, this decorator broadcasts ndarray shape arguments,
-    # and loops over them, calling _rvs1 for each set of scalar shapes.
+    # When applied to _rvs1, this decorator broadcasts ndarray args
+    # and loops over them, calling _rvs1 for each set of scalar args.
     # For usage example, see _nch_gen
     def _rvs(*args, size, random_state):
+        for arg in args:
+            print(arg.shape)
         args = np.broadcast_arrays(*args)
 
-        shape0 = args[0]  # 0th is not special; we just need its shape, really
-        if shape0.ndim == 0:
+        arg_ndim = args[0].ndim
+        arg_shape = args[0].shape
+        _rvs1_size = size[:-arg_ndim]
+
+        if arg_ndim == 0:  # all args are scalars
             return _rvs1(*args, size, random_state)
 
-        res = np.empty(size)
+        out = np.empty(size)
 
-        # move shape parameters axes to beginning for easier indexing
-        j0 = np.arange(res.ndim)
-        j1 = np.roll(j0, -shape0.ndim)
-        res = np.moveaxis(res, j0, j1)
+        # out.shape is currently _rvs1_size + arg_shape
+        # Flip that to arg_shape + _rvs1_size for easy indexing of dimensions
+        # corresponding with the different sets of scalar args
+        j0 = np.arange(out.ndim)
+        j1 = np.roll(j0, -arg_ndim)
+        out = np.moveaxis(out, j0, j1)
 
-        for i, _ in np.ndenumerate(shape0):
-            res[i] = _rvs1(*[shape[i] for shape in args],
-                          size[:-shape0.ndim], random_state)
+        for i in np.ndindex(*arg_shape):
+            out[i] = _rvs1(*[arg[i] for arg in args],
+                           _rvs1_size, random_state)
 
-        return np.moveaxis(res, j1, j0)  # move them back before returning
+        return np.moveaxis(out, j1, j0)  # move axes back before returning
     return _rvs
 
 
