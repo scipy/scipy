@@ -576,9 +576,6 @@ class TestBarnardExact(object):
         assert_approx_equal(res[0], 2.51847494516, significant=4)
 
     def test_raises(self):
-        # test we raise an error for wrong input number of nuisances.
-        with assert_raises(ValueError):
-            stats.barnard_exact([[1, 2], [3, 4]], num_it=-10)
         # test we raise an error for wrong shape of input.
         assert_raises(ValueError, stats.barnard_exact,
                       np.arange(6).reshape(2, 3))
