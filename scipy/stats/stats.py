@@ -4306,15 +4306,16 @@ def barnard_exact(
     nuisance_num = 100
     inf_bound, sup_bound = 0, 1
 
-    for i in range(num_it):
+    for _ in range(num_it):
         nuisance_arr = np.linspace(
-            start=inf_bound, stop=sup_bound, num=nuisance_num + 2)
-        nuisance_arr = nuisance_arr[1:-1]  # Remove 0 and 1
+            start=inf_bound, stop=sup_bound, num=nuisance_num)
+        nuisance_arr = nuisance_arr
         # Reshape in dimension 3 array
         nuisance_arr = nuisance_arr.reshape(1, 1, -1)
 
-        PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_arr) * (
-            x1 + x2) + np.log(1 - nuisance_arr) * (n - x1 - x2))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_arr) * (
+                x1 + x2) + np.log(1 - nuisance_arr) * (n - x1 - x2))
         sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
 
         max_nuisance_idx = sum_PX.argmax()
@@ -4330,7 +4331,6 @@ def barnard_exact(
             else 1
         )
 
-        p_value = sum_PX[max_nuisance_idx]  # take the max value
         p_value = sum_PX[max_nuisance_idx]  # take the max value
 
     return TX_obs, p_value
