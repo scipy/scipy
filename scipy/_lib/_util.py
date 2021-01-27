@@ -20,7 +20,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
     This one only evaluates f(arr1[cond], arr2[cond], ...).
-    
+
     Examples
     --------
 
@@ -269,6 +269,34 @@ def _asarray_validated(a, check_finite=True,
     return a
 
 
+def _validate_int(k, name, minimum=None):
+    """
+    Validate a scalar integer.
+
+    This functon can be used to validate an argument to a function
+    that expects the value to be an integer.  It uses `operator.index`
+    to validate the value (so, for example, k=2.0 results in a
+    TypeError).
+
+    Parameters
+    ----------
+    k : int
+        The value to be validated.
+    name : str
+        The name of the parameter.
+    minimum : int, optional
+        An optional lower bound.
+    """
+    try:
+        k = operator.index(k)
+    except TypeError:
+        raise TypeError(f'{name} must be an integer.') from None
+    if minimum is not None and k < minimum:
+        raise ValueError(f'{name} must be an integer not less '
+                         f'than {minimum}') from None
+    return k
+
+
 # Add a replacement for inspect.getfullargspec()/
 # The version below is borrowed from Django,
 # https://github.com/django/django/pull/4846.
@@ -285,6 +313,7 @@ def _asarray_validated(a, check_finite=True,
 FullArgSpec = namedtuple('FullArgSpec',
                          ['args', 'varargs', 'varkw', 'defaults',
                           'kwonlyargs', 'kwonlydefaults', 'annotations'])
+
 
 def getfullargspec_no_self(func):
     """inspect.getfullargspec replacement using inspect.signature.
@@ -326,7 +355,7 @@ def getfullargspec_no_self(func):
     defaults = tuple(
         p.default for p in sig.parameters.values()
         if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
-           p.default is not p.empty)
+            p.default is not p.empty)
     ) or None
     kwonlyargs = [
         p.name for p in sig.parameters.values()
@@ -382,7 +411,8 @@ class MapWrapper(object):
                 self._own_pool = True
             else:
                 raise RuntimeError("Number of workers specified must be -1,"
-                                   " an int >= 1, or an object with a 'map' method")
+                                   " an int >= 1, or an object with a 'map' "
+                                   "method")
 
     def __enter__(self):
         return self

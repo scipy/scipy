@@ -111,6 +111,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
    t                 -- Student's T
    trapezoid         -- Trapezoidal
@@ -269,6 +270,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   page_trend_test
 
 .. autosummary::
    :toctree: generated/
@@ -280,12 +282,22 @@ Statistical tests
    anderson
    anderson_ksamp
    binom_test
+   binomtest
    fligner
    median_test
    mood
    skewtest
    kurtosistest
    normaltest
+
+Objects returned by some statistical tests
+==========================================
+
+.. autosummary::
+   :toctree: generated/
+
+   BinomTestResult
+
 
 Transformations
 ===============
@@ -375,6 +387,7 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+
 Warnings used in :mod:`scipy.stats`
 ===================================
 
@@ -394,6 +407,7 @@ interface package rpy.
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._binomtest import binomtest, BinomTestResult
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats

@@ -291,7 +291,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     shape : int or array_like of ints or None, optional
         The shape of the result. If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the ith dimension is truncated to
         length ``shape[i]``.

@@ -458,8 +458,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
     r"""
-    Estimate the cross power spectral density, Pxy, using Welch's
-    method.
+    Estimate the cross power spectral density, Pxy, using Welch's method.
 
     Parameters
     ----------
@@ -526,7 +525,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     coherence: Magnitude squared coherence by Welch's method.
 
     Notes
-    --------
+    -----
     By convention, Pxy is computed with the conjugate FFT of X
     multiplied by the FFT of Y.
 
@@ -1514,7 +1513,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     csd: Cross spectral density by Welch's method.
 
     Notes
-    --------
+    -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
     50% is a reasonable trade off between accurately estimating the
@@ -1586,7 +1585,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     from each window is returned.
 
     Parameters
-    ---------
+    ----------
     x : array_like
         Array or sequence containing the data to be analyzed.
     y : array_like

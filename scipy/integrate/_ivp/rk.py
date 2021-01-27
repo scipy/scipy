@@ -73,14 +73,14 @@ def rk_step(fun, t, y, f, h, A, B, C, K):
 
 class RungeKutta(OdeSolver):
     """Base class for explicit Runge-Kutta methods."""
-    C = NotImplemented
-    A = NotImplemented
-    B = NotImplemented
-    E = NotImplemented
-    P = NotImplemented
-    order = NotImplemented
-    error_estimator_order = NotImplemented
-    n_stages = NotImplemented
+    C: np.ndarray = NotImplemented
+    A: np.ndarray = NotImplemented
+    B: np.ndarray = NotImplemented
+    E: np.ndarray = NotImplemented
+    P: np.ndarray = NotImplemented
+    order: int = NotImplemented
+    error_estimator_order: int = NotImplemented
+    n_stages: int = NotImplemented
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,

@@ -316,7 +316,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
         Value of the test statistic
 
     Notes
-    ------
+    -----
     Cramer's V, Tschuprow's T and Pearson's Contingency Coefficient, all
     measure the degree to which two nominal or ordinal variables are related,
     or the level of their association. This differs from correlation, although

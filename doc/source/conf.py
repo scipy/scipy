@@ -113,6 +113,21 @@ pygments_style = 'sphinx'
 
 # Ensure all our internal links work
 nitpicky = True
+nitpick_ignore = [
+    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # which inherit methods from `dict`. missing references to builtins get
+    # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
+    # but that fix doesn't work for inherited methods.
+    ("py:class", "a shallow copy of D"),
+    ("py:class", "a set-like object providing a view on D's keys"),
+    ("py:class", "a set-like object providing a view on D's items"),
+    ("py:class", "an object providing a view on D's values"),
+    ("py:class", "None.  Remove all items from D."),
+    ("py:class", "(k, v), remove and return some (key, value) pair as a"),
+    ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "v, remove specified key and return the corresponding value."),
+]
+
 exclude_patterns = [  # glob-style
 
 ]
