@@ -25,6 +25,8 @@ Different parameterization exists in the literature; SciPy implements the locati
         {(\sqrt{1 + x^2})^{1/2 - p}}
     \end{eqnarray*}
 
+The probability density above is defined in the “standardized” form. To shift and/or scale the distribution use the loc and scale parameters. Specifically, :math:`f(x, p, a, b, \text{loc}, \text{scale})` is identically equivalent to :math:`\frac{1}{\text{scale}}f(y, p, a, b)` with :math:`y = \frac{1}{\text{scale}}(x - \text{loc})`.
+
 for:
 
 -  :math:`x, p \in ( - \infty; \infty)`

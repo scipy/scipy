@@ -3000,8 +3000,8 @@ class genhyperbolic_gen(rv_continuous):
     and :math:`\delta > 0`.
 
     The location-scale-based parameterization implemented in
-    SciPy is based on [2]_, where :math:`a = \alpha\delta`
-    and :math:`b = \beta\delta`
+    SciPy is based on [2]_, where :math:`a = \alpha\delta`,
+    :math:`b = \beta\delta`, :math:`p = \lambda`, :math:`scale=\delta` and :math:`loc=\mu`
 
     References
     ----------
