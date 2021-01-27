@@ -7069,7 +7069,7 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
-class skew_cauchy_gen(rv_continuous):
+class skewcauchy_gen(rv_continuous):
     r"""A skewed Cauchy random variable.
 
     %(before_notes)s
@@ -7125,7 +7125,7 @@ class skew_cauchy_gen(rv_continuous):
         return np.nan, np.nan, np.nan, np.nan
 
 
-skewcauchy = skew_cauchy_gen(name='skewcauchy')
+skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
 class skew_norm_gen(rv_continuous):
