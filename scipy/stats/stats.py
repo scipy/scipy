@@ -4168,7 +4168,8 @@ def _barnard_exact_compute_gammaln_combination(n):
     return special.gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-barnardExactResult = namedtuple('barnardExactResult', ('score_statistic', 'pvalue'))
+barnardExactResult = namedtuple(
+    'barnardExactResult', ('score_statistic', 'pvalue'))
 
 
 def barnard_exact(
