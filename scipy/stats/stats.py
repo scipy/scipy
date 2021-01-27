@@ -4281,6 +4281,8 @@ def barnard_exact(
     with np.errstate(divide='ignore', invalid='ignore'):
         TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
 
+    TX[p1 == p2] = 0  # Removing NaN values
+
     TX_obs = TX[c[0, 0], c[0, 1]]
 
     if alternative == "two-sided":
