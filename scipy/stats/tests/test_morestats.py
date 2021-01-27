@@ -14,7 +14,7 @@ from pytest import raises as assert_raises
 
 from scipy import stats
 from .common_tests import check_named_results
-from .._hypotests import _get_wilcoxon_distr
+from .._hypotests import _get_wilcoxon_distr,_get_wilcoxon_distr2
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -1208,10 +1208,12 @@ class TestWilcoxon(object):
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(1, 26):
-            cnt = _get_wilcoxon_distr(n)
-            assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 1)
+        for n in range(1, 51):
+            pmf1 = _get_wilcoxon_distr(n)
+            pmf2 = _get_wilcoxon_distr2(n)
+            assert_equal(n*(n+1)/2 + 1, len(pmf1))
+            assert_equal(sum(pmf1), 1)
+            assert_array_almost_equal(pmf1,pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
