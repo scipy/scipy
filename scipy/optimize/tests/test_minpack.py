@@ -802,6 +802,13 @@ class TestCurveFit(object):
                       ydata=[5, 9, 13, 17],
                       p0=[1],
                       args=(1,))
+            
+    def test_maxfev_exceded(self):
+        xdata = np.array([1, 2, 3, 4, 5, 6])
+        ydata = np.array([1, 2, 3, 4, 5.5, 6])
+
+        assert_warns(OptimizeWarning, curve_fit,
+                    lambda x, a, b: a*x + b, ydata, xdata, maxfev=1)
 
 
 class TestFixedPoint(object):
