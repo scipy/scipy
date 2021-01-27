@@ -4,13 +4,13 @@
 Generalized Hyperbolic Distribution
 ===================================
 
-The Generalized Hyperbolic Distribution is defined as the normal variance-mean mixture with Generalized Inverse Gaussian distribution as mixing distribution.
-The "hyperbolic" characterization refers to the fact that shape the log-probability distribution can be described as an hyperbola. Hyperbolic distributions are sometime referred as semi-fat tail because their probability density decrease slower than "sub-hyperbolic" distributions (e.g. normal distribution, whose log-probability decreases quadratically), but faster than other "extreme value" distributions (e.g. `pareto` distribution, whose log-probability decreases logarithmically).
+The Generalized Hyperbolic Distribution is defined as the normal variance-mean mixture with Generalized Inverse Gaussian distribution as the mixing distribution.
+The "hyperbolic" characterization refers to the fact that the shape of the log-probability distribution can be described as a hyperbola. Hyperbolic distributions are sometime referred to as semi-fat tailed because their probability density decrease slower than "sub-hyperbolic" distributions (e.g. normal distribution, whose log-probability decreases quadratically), but faster than other "extreme value" distributions (e.g. `pareto` distribution, whose log-probability decreases logarithmically).
 
 Functions
 ---------
 
-Different parameterization exists in literature, scipy implementing the location-scale as for Prause (1999)
+Different parameterization exists in the literature; SciPy implements the location-scale as in Prause (1999).
 
 .. math::
    :nowrap:
@@ -55,7 +55,7 @@ The "generalized" characterization suggests the fact that this distribution is a
 Examples
 --------
 
-It is useful to understand how the parameters affect the shape of the distribution. While it is fairly straightforward to interpret the meaning of :math:`b` as the skeweness, understanding the difference among :math:`a` and :math:`p` is not as obvious, as both parameters do in fact affect the kurtosis of the distribution. :math:`a` can be interpreted as the speed of the decay of the probability density (where :math:`a > 1` the asymptotic decay is faster than :math:`log_e` and vice versa) or - equivalently - as the slope of the log-probability hyperbola asymptote (where :math:`a > 1` decay is faster than :math:`|1|` and vice versa), while :math:`p` can be se as the width of the shoulders of the probability density distribution (where :math:`p < 1` narrow shoulders and vice versa) or - equivalently - as the shape of the log-probability hyperbola, which is convex :math:`p < 1` and concave otherwise.
+It is useful to understand how the parameters affect the shape of the distribution. While it is fairly straightforward to interpret the meaning of :math:`b` as the skewness, understanding the difference between :math:`a` and :math:`p` is not as obvious, as both affect the kurtosis of the distribution. :math:`a` can be interpreted as the speed of the decay of the probability density (where :math:`a > 1` the asymptotic decay is faster than :math:`log_e` and vice versa) or - equivalently - as the slope of the log-probability hyperbola asymptote (where :math:`a > 1` decay is faster than :math:`|1|` and vice versa). :math:`p` can be seen as the width of the shoulders of the probability density distribution (where :math:`p < 1` results in narrow shoulders and vice versa) or - equivalently - as the shape of the log-probability hyperbola, which is convex for :math:`p < 1` and concave otherwise.
 
 .. code-block:: python
 
