@@ -8414,6 +8414,12 @@ class wrapcauchy_gen(rv_continuous):
     def _entropy(self, c):
         return np.log(2*np.pi*(1-c*c))
 
+    def _fitstart(self, data):
+        # Use 0.5 as the initial guess of the shape parameter.
+        # For the location and scale, use the minimum and
+        # peak-to-peak/(2*pi), respectively.
+        return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
+
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 

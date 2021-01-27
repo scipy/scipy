@@ -32,7 +32,6 @@ mle_failing_fits = [
         'truncexpon',
         'tukeylambda',
         'vonmises',
-        'wrapcauchy',
         'levy_stable',
         'trapezoid',
 ]
@@ -46,7 +45,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
                    'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'skewcauchy', 't',
-                   'trapezoid', 'triang', 'tukeylambda', 'wrapcauchy']
+                   'trapezoid', 'triang', 'tukeylambda']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
