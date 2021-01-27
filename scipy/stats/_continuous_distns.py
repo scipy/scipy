@@ -7124,6 +7124,13 @@ class skewcauchy_gen(rv_continuous):
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
 
+    def _fitstart(self, data):
+        # Use 0 as the initial guess of the skewness shape parameter.
+        # For the location and scale, estimate using the median and
+        # quartiles.
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return 0.0, p50, (p75 - p25)/2
+
 
 skewcauchy = skewcauchy_gen(name='skewcauchy')
 
