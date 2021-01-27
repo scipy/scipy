@@ -4231,9 +4231,9 @@ def barnard_exact(
     the 15 subjects (47%) became infected. The data are tabulated as a 2 × 2
     table::
 
-                    Vaccine  Placebo
-        Yes             8        2
-        No              1        5
+            Vaccine  Placebo
+        Yes     7        12
+        No      8        3
 
     We use this table to find the p-value:
     >>> import scipy.stats as stats
