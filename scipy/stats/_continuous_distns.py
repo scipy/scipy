@@ -3975,7 +3975,8 @@ class johnsonsb_gen(rv_continuous):
 
         f(x, a, b) = \frac{b}{x(1-x)}  \phi(a + b \log \frac{x}{1-x} )
 
-    for :math:`0 <= x < =1` and :math:`a, b > 0`, and :math:`\phi` is the normal
+    for all :math:`(x, a, b) \in \mathbb{R}^3` where
+    :math:`0 <= x < =1` and :math:`b > 0`, and :math:`\phi` is the normal
     pdf.
 
     `johnsonsb` takes :math:`a` and :math:`b` as shape parameters.
