@@ -1,10 +1,10 @@
 from collections import namedtuple
 import numpy as np
 import warnings
-from . import distributions
-from ._continuous_distns import chi2
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
+from . import distributions
+from ._continuous_distns import chi2
 
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -403,7 +403,7 @@ def _get_wilcoxon_distr2(n):
     References
     ----------
     .. [1] 1. Harris T, Hardin JW. Exact Wilcoxon Signed-Rank and Wilcoxon
-        Mann–Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
+        Mann-Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
     """
     ai = np.arange(1, n+1)[:, None]
     t = n*(n+1)/2
