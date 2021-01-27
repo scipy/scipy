@@ -4168,6 +4168,9 @@ def _barnard_exact_compute_gammaln_combination(n):
     return special.gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
+barnardExactResult = namedtuple('barnardExactResult', ('score_statistic', 'pvalue'))
+
+
 def barnard_exact(
         table,
         alternative='two-sided',
@@ -4320,7 +4323,7 @@ def barnard_exact(
     # arbitrairly return the negative p_value to fminbound, so that it return
     # the maximum of compute_pvalue and not the minimum
 
-    return TX_obs, max_p_value
+    return barnardExactResult(TX_obs, max_p_value)
 
 
 class SpearmanRConstantInputWarning(RuntimeWarning):
