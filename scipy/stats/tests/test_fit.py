@@ -44,7 +44,8 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'invgamma', 'invweibull', 'johnsonsu',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
-                   'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm', 't',
+                   'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
+                   'skewcauchy', 't',
                    'trapezoid', 'triang', 'tukeylambda', 'wrapcauchy']
 
 # not sure if these fail, but they caused my patience to fail

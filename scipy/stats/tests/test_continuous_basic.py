@@ -78,8 +78,8 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                     'mielke', 'nakagami', 'ncf', 't', 'tukeylambda',
-                     'invweibull']
+                     'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
+                     'tukeylambda', 'invweibull']
                      + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
                         'powerlognorm', 'johnsonsu']
                      + ['pearson3']
@@ -102,7 +102,8 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                         'mielke', 'nakagami', 'ncf', 'nct', 't', 'invweibull']
+                         'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
+                         'invweibull']
                          + ['ksone', 'kstwo', 'pareto', 'powernorm',
                             'powerlognorm', 'johnsonsu']
                          + ['pearson3']
