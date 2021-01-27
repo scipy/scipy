@@ -482,7 +482,7 @@ def minkowski(u, v, p=2, w=None):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -547,7 +547,7 @@ def wminkowski(u, v, p, w):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like
         The weight vector.
