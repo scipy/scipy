@@ -4175,8 +4175,7 @@ barnardExactResult = namedtuple(
 def barnard_exact(
         table,
         alternative='two-sided',
-        pooled=True,
-        num_it=4):
+        pooled=True):
     """
     Perform a Barnard exact test on a 2x2 contingency table.
 
@@ -4195,10 +4194,6 @@ def barnard_exact(
     pooled : bool, optional
         Whether to compute score statistic with pooled variance or
         unpooled (Wald statistic)
-
-    num_it : int, optional
-        Number of iterations of the grid search. Default is 4. Must be
-        non-negative.
 
     Returns
     -------
@@ -4246,12 +4241,6 @@ def barnard_exact(
     0.0681...
 
     """
-    if num_it < 0:
-        raise ValueError(
-            "Number of iterations must be non-negative, "
-            f"found {num_it!r}"
-        )
-
     c = np.asarray(
         table,
         dtype=np.int64)
