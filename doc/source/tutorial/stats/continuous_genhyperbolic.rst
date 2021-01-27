@@ -47,7 +47,7 @@ Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled f
 The "generalized" characterization suggests the fact that this distribution is a superclass of several other probability distribution, for instance:
 
 -  :math:`f(p = \nu,  a = 0, b = 0, \text{loc} = 0, \text{scale} = \sqrt{\delta})` has a Student's t-distribution (`scipy.stats.t`) with :math:`\nu` degrees of freedom.
--  :math:`f(p = 1, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \delta, \text{scale} = \mu)` has a Hyperbolic Distribution.
+-  :math:`f(p = 1, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Hyperbolic Distribution.
 -  :math:`f(p = - 1/2, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Normal Inverse Gaussian Distribution (`scipy.stats.norminvgauss`).
 -  :math:`f(p = 1, a = 0, b = 0, loc = \mu, \text{scale} = \delta)` has a Laplace Distribution (`scipy.stats.laplace`) for :math:`\delta \rightarrow 0`
 
