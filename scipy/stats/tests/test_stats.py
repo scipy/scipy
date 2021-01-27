@@ -4127,6 +4127,7 @@ def test_ttest_ind_with_uneq_var():
     rvs2 = np.linspace(1,100,100)
     rvs1 = np.linspace(5,105,100)
     rvs1_2D = np.array([rvs1, rvs2])
+
     rvs2_2D = np.array([rvs2, rvs1])
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)

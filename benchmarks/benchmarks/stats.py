@@ -320,3 +320,36 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
         self.distn.fit(self.data, **self.fixed)
+
+
+class BenchMoment(Benchmark):
+    params = [
+        [1, 2, 3, 8],
+        [100, 1000, 10000],
+    ]
+    param_names = ["order", "size"]
+
+    def setup(self, order, size):
+        np.random.random(1234)
+        self.x = np.random.random(size)
+
+    def time_moment(self, order, size):
+        stats.moment(self.x, order)
+
+class BenchSkewKurtosis(Benchmark):
+    params = [
+        [1, 2, 3, 8],
+        [100, 1000, 10000],
+        [False, True]
+    ]
+    param_names = ["order", "size", "bias"]
+
+    def setup(self, order, size, bias):
+        np.random.random(1234)
+        self.x = np.random.random(size)
+
+    def time_skew(self, order, size, bias):
+        stats.skew(self.x, bias=bias)
+
+    def time_kurtosis(self, order, size, bias):
+        stats.kurtosis(self.x, bias=bias)
