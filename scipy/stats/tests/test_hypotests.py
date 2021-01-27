@@ -162,15 +162,10 @@ class TestCvm(object):
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
 
-def assert_raises_with_match(exception_type, match, function, *args, **kwargs):
-    with assert_raises(exception_type, match=match):
-        function(*args, **kwargs)
-
-
 class TestSomersD(object):
 
     def test_like_kendalltau(self):
-        # All tests correspond with one in test_stats.py `test_kendalltau
+        # All tests correspond with one in test_stats.py `test_kendalltau`
 
         # case without ties, con-dis equal zero
         x = [5, 2, 1, 3, 6, 4, 7, 8]
@@ -248,11 +243,12 @@ class TestSomersD(object):
 
         # with only ties in one or both inputs
         # SAS will not produce an output for these:
-        '''
-        NOTE: No statistics are computed for x * y because x has fewer than 2 nonmissing levels.
-        WARNING: No OUTPUT data set is produced for this table because a row or column variable has fewer
-            than 2 nonmissing levels and no statistics are computed.
-        '''
+        # NOTE: No statistics are computed for x * y because x has fewer
+        # than 2 nonmissing levels.
+        # WARNING: No OUTPUT data set is produced for this table because a
+        # row or column variable has fewer than 2 nonmissing levels and no
+        # statistics are computed.
+
         res = stats.somersd([2, 2, 2], [2, 2, 2])
         assert_allclose(res.statistic, np.nan)
         assert_allclose(res.pvalue, np.nan)
@@ -367,31 +363,30 @@ class TestSomersD(object):
         s = stats.multinomial.rvs(N, p=np.ones(size)/size).reshape(shape)
 
         s5 = s - 2
-        assert_raises_with_match(ValueError, "All elements of the contingency "
-                                 "table must be non-negative", stats.somersd,
-                                 s5)
+        message = "All elements of the contingency table must be non-negative"
+        with assert_raises(ValueError, match=message):
+            stats.somersd(s5)
 
         s6 = s + 0.01
-        assert_raises_with_match(ValueError, "All elements of the contingency "
-                                 "table must be integer", stats.somersd, s6)
+        message = "All elements of the contingency table must be integer"
+        with assert_raises(ValueError, match=message):
+            stats.somersd(s6)
 
-        assert_raises_with_match(ValueError, "At least two elements of the "
-                                 "contingency table must be nonzero.",
-                                 stats.somersd, [[]])
+        message = ("At least two elements of the contingency "
+                   "table must be nonzero.")
+        with assert_raises(ValueError, match=message):
+            stats.somersd([[]])
 
-        assert_raises_with_match(ValueError, "At least two elements of the "
-                                 "contingency table must be nonzero.",
-                                 stats.somersd, [[1]])
+        with assert_raises(ValueError, match=message):
+            stats.somersd([[1]])
 
         s7 = np.zeros((3, 3))
-        assert_raises_with_match(ValueError, "At least two elements of the "
-                                 "contingency table must be nonzero.",
-                                 stats.somersd, s7)
+        with assert_raises(ValueError, match=message):
+            stats.somersd(s7)
 
         s7[0, 1] = 1
-        assert_raises_with_match(ValueError, "At least two elements of the "
-                                 "contingency table must be nonzero.",
-                                 stats.somersd, s7)
+        with assert_raises(ValueError, match=message):
+            stats.somersd(s7)
 
     def test_only_ranks_matter(self):
         # only ranks of input data should matter
