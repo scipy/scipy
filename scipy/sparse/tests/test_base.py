@@ -3982,9 +3982,9 @@ class TestLIL(sparse_test_class(minmax=False)):
         assert_array_equal(A, B.todense())
         assert_equal(B.sum(), A.sum())
 
-        with assert_raises(ValueError):
-            # no shape
-            lil_matrix((data1, rows1))
+        # check shape infer from rows array
+        C = lil_matrix((data1, rows1))
+        assert_equal((3,3), C.shape)
 
         with assert_raises(ValueError):
             # shape mismatch
