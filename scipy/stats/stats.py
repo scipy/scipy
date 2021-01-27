@@ -4280,7 +4280,6 @@ def barnard_exact(
     # To avoid warning when dividing by 0
     with np.errstate(divide='ignore', invalid='ignore'):
         TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
-        TX[var_p1_p2 == 0] = (p2-p1) * [var_p1_p2 == 0] * np.inf
 
     TX_obs = TX[c[0, 0], c[0, 1]]
 
