@@ -3525,9 +3525,9 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(arange(12).reshape(4,3),csr.todense())
         
         # using Python lists and a specified dtype
-        csr = csr_matrix(([2**63, 1], ([0, 1], [0, 1])), dtype=np.uint64)
-        dense = array([[2**63, 0], [0, 1]], dtype=np.uint64)
-        assert_array_equal(csr.toarray(), dense)
+        csr = csr_matrix(([2**63 + 1, 1], ([0, 1], [0, 1])), dtype=np.uint64)
+        dense = array([[2**63 + 1, 0], [0, 1]], dtype=np.uint64)
+        assert_array_equal(dense, csr.toarray())
 
     def test_constructor5(self):
         # infer dimensions from arrays
@@ -4091,12 +4091,15 @@ class TestCOO(sparse_test_class(getset=False,
         # unsorted triplet format
         row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = array([6., 10., 3., 9., 1., 4.,
-                              11., 2., 8., 5., 7.])
+        data = array([6., 10., 3., 9., 1., 4., 11., 2., 8., 5., 7.])
 
         coo = coo_matrix((data,(row,col)),(4,3))
-
         assert_array_equal(arange(12).reshape(4,3),coo.todense())
+
+        # using Python lists and a specified dtype
+        coo = coo_matrix(([2**63 + 1, 1], ([0, 1], [0, 1])), dtype=np.uint64)
+        dense = array([[2**63 + 1, 0], [0, 1]], dtype=np.uint64)
+        assert_array_equal(dense, coo.toarray())
 
     def test_constructor2(self):
         # unsorted triplet format with duplicates (which are summed)
