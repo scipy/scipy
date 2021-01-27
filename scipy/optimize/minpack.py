@@ -785,7 +785,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         popt, pcov, infodict, errmsg, ier = res
         ysize = len(infodict['fvec'])
         cost = np.sum(infodict['fvec'] ** 2)
-        if ier not in [1, 2, 3, 4]:
+        if ier==5:
+            print("Optimal parameters not found: " + errmsg + " This can be increased by passing the parameter maxfev=n.")
+            ier=1
+        elif ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
         # Rename maxfev (leastsq) to max_nfev (least_squares), if specified.
