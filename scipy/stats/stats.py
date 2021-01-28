@@ -6373,6 +6373,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
       alternative is that F(x) > G(x) for at least one x.
 
+    Note that the alternative hypotheses describe the *CDFs* of the
+    underlying distributions, not the observed values. For example,
+    suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
+    x1 tend to be less than those in x2.
+
     Examples
     --------
     >>> from scipy import stats
@@ -6784,6 +6789,12 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
       alternative is that F(x) > G(x) for at least one x.
 
+    Note that the alternative hypotheses describe the *CDFs* of the
+    underlying distributions, not the observed values. For example,
+    suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
+    x1 tend to be less than those in x2.      
+
+
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
@@ -6999,6 +7010,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
       alternative is that F(x) > G(x) for at least one x.
+
+    Note that the alternative hypotheses describe the *CDFs* of the
+    underlying distributions, not the observed values. For example,
+    suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
+    x1 tend to be less than those in x2.      
+
 
     Examples
     --------
