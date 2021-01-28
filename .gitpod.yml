@@ -1,5 +1,8 @@
 image:
   file: .gitpod.Dockerfile
 tasks:
-  - command: |
-      echo Welcome to Scipy!!!
+  - init: |
+      conda activate scipy 
+      python3 setup.py build_ext --inplace
+      conda develop .
+    command: conda activate scipydev
