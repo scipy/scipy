@@ -21,9 +21,10 @@ RUN apt-get update && \
     lsof \
     ssl-cert \
     && locale-gen en_US.UTF-8 \
-    && mkdir /var/lib/apt/dazzle-marks \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/*
-
+    && apt-get clean \
+    && rm -rf /var/cache/apt/* \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/*
 
 RUN add-apt-repository -y ppa:git-core/ppa \
     && apt-get install -yq git \
@@ -32,10 +33,10 @@ RUN add-apt-repository -y ppa:git-core/ppa \
 # -----------------------------------------------------------------------------
 # ---- Gitpod users ----
 ENV LANG=en_US.UTF-8 \
-    HOME=/home/gitpod
+    HOME=/home/scipy
 
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
-RUN useradd -l -u 33333 -G sudo -md /home/gitpod -s /bin/bash -p gitpod gitpod \
+RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p gitpod gitpod \
     # passwordless sudo for users in the 'sudo' group
     && sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers
 WORKDIR $HOME
