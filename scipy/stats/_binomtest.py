@@ -5,15 +5,7 @@ from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
 from ._discrete_distns import binom
-
-
-@dataclass
-class ConfidenceInterval:
-    """
-    Class for confidence intervals.
-    """
-    low: float
-    high: float
+from ._common import ConfidenceInterval
 
 
 class BinomTestResult:

@@ -1,9 +1,9 @@
 
 import operator
-from collections import namedtuple
 from dataclasses import dataclass
 import numpy as np
 from scipy.special import ndtri
+from ._common import ConfidenceInterval
 
 
 def _validate_int(n, bound, name):
@@ -15,12 +15,6 @@ def _validate_int(n, bound, name):
     if n < bound:
         raise ValueError(msg)
     return n
-
-
-@dataclass
-class ConfidenceInterval:
-    low : float
-    high : float
 
 
 @dataclass
