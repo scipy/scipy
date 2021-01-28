@@ -35,7 +35,7 @@ To run a particular test module, use the ``--test`` option:
 
    python runtests.py -v -t scipy.<module>.tests.<test_file>
 
-Exemple for |test-linprog|_ file tests, run:
+Example for |test-linprog|_ file tests, run:
 
 ::
 
