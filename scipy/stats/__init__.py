@@ -270,6 +270,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   page_trend_test
 
 .. autosummary::
    :toctree: generated/
@@ -385,6 +386,7 @@ Univariate and multivariate kernel density estimation
    :toctree: generated/
 
    gaussian_kde
+
 
 Warnings used in :mod:`scipy.stats`
 ===================================

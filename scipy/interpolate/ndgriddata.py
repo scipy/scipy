@@ -21,7 +21,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     """
     NearestNDInterpolator(x, y)
 
-    Nearest-neighbor interpolation in N dimensions.
+    Nearest-neighbor interpolation in N > 1 dimensions.
 
     .. versionadded:: 0.9
 

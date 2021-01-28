@@ -2372,6 +2372,57 @@ class TestExponNorm(object):
     def test_std_pdf(self, x, K, expected):
         assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
 
+    # Expected values for the CDF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_cdf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(z)
+    #               - mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[0, 0.01, 1, 0.4960109760186432],
+                              [-5, 0.005, 1, 2.7939945412195734e-07],
+                              [-1e4, 0.01, 100, 0.0],
+                              [-1e4, 0.01, 1000, 6.920401854427357e-24],
+                              [5, 0.001, 1, 0.9999997118542392]])
+    def test_cdf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.cdf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=1e-13)
+
+    # Expected values for the SF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_sf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(-z)
+    #               + mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[10, 0.01, 1, 8.474702916146657e-24],
+                              [2, 0.005, 1, 0.02302280664231312],
+                              [5, 0.005, 0.5, 8.024820681931086e-24],
+                              [10, 0.005, 0.5, 3.0603340062892486e-89],
+                              [20, 0.005, 0.5, 0.0],
+                              [-3, 0.001, 1, 0.9986545205566117]])
+    def test_sf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.sf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=5e-13)
+
 
 class TestGenExpon(object):
     def test_pdf_unity_area(self):
@@ -3119,50 +3170,52 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
-    def test_fshapes(self):
+    @pytest.mark.parametrize("method", ["MLE", "MM"])
+    def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
         # fa is equivalent to f0, and fb is equivalent to f1
         a, b = 3., 4.
         x = stats.beta.rvs(a, b, size=100, random_state=1234)
-        res_1 = stats.beta.fit(x, f0=3.)
-        res_2 = stats.beta.fit(x, fa=3.)
+        res_1 = stats.beta.fit(x, f0=3., method=method)
+        res_2 = stats.beta.fit(x, fa=3., method=method)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
-        res_2 = stats.beta.fit(x, fix_a=3.)
+        res_2 = stats.beta.fit(x, fix_a=3., method=method)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
-        res_3 = stats.beta.fit(x, f1=4.)
-        res_4 = stats.beta.fit(x, fb=4.)
+        res_3 = stats.beta.fit(x, f1=4., method=method)
+        res_4 = stats.beta.fit(x, fb=4., method=method)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
-        res_4 = stats.beta.fit(x, fix_b=4.)
+        res_4 = stats.beta.fit(x, fix_b=4., method=method)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
         # cannot specify both positional and named args at the same time
-        assert_raises(ValueError, stats.beta.fit, x, fa=1, f0=2)
+        assert_raises(ValueError, stats.beta.fit, x, fa=1, f0=2, method=method)
 
         # check that attempting to fix all parameters raises a ValueError
         assert_raises(ValueError, stats.beta.fit, x, fa=0, f1=1,
-                      floc=2, fscale=3)
+                      floc=2, fscale=3, method=method)
 
         # check that specifying floc, fscale and fshapes works for
         # beta and gamma which override the generic fit method
-        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1)
+        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1, method=method)
         aa, bb, ll, ss = res_5
         assert_equal([aa, ll, ss], [3., 0, 1])
 
         # gamma distribution
         a = 3.
         data = stats.gamma.rvs(a, size=100)
-        aa, ll, ss = stats.gamma.fit(data, fa=a)
+        aa, ll, ss = stats.gamma.fit(data, fa=a, method=method)
         assert_equal(aa, a)
 
-    def test_extra_params(self):
+    @pytest.mark.parametrize("method", ["MLE", "MM"])
+    def test_extra_params(self, method):
         # unknown parameters should raise rather than be silently ignored
         dist = stats.exponnorm
         data = dist.rvs(K=2, size=100)
         dct = dict(enikibeniki=-101)
-        assert_raises(TypeError, dist.fit, data, **dct)
+        assert_raises(TypeError, dist.fit, data, **dct, method=method)
 
 
 class TestFrozen(object):
