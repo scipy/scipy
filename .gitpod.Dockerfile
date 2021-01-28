@@ -34,12 +34,17 @@ RUN add-apt-repository -y ppa:git-core/ppa \
 # ---- Gitpod user ----
 
 ENV LANG=en_US.UTF-8 \
-    HOME=/home/gitpod
+    HOME=/home/gitpod \
+    GP_USER=gitpod \
+    GP_GROUP=gitpod \
+    CONDA_DIR=/opt/conda
 
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
-RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p gitpod gitpod && \
+RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_USER} && \
     # passwordless sudo for users in the 'sudo' group
     sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers && \
+    # ensuring we can use conda develop
+    chown ${GP_USER}:${GP_GROUP} ${CONDA_DIR} && \
     # vanity custom bash prompt
     echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '"  >> ~/.bashrc
 
