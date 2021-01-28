@@ -1,3 +1,5 @@
+# Optional dependencies left out: mpmath, gmpy2, libsuitesparse, 
+# libgmp,libmpfr, libsuitesparse, libmpc, sparse, scikit-umfpack
 name: scipydev 
 dependencies:
   - pytest=6.2.1
@@ -11,3 +13,5 @@ dependencies:
   - cython=0.29.21
   - pythran=0.9.8.post2
   - ipython=7.19.0  # that version has working autocompletion it looks like
+  - conda-build=3.21.4
+  - openblas=0.3.12

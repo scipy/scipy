@@ -78,7 +78,6 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
     software-properties-common \
-    python3.8-dev \
     build-essential \
     vim \
     libatlas-base-dev \
@@ -86,14 +85,13 @@ RUN apt-get update && \
     libgfortran4 \
     liblapack-dev \
     curl \
-    libgmp-dev \
-    libmpfr-dev \
-    libsuitesparse-dev \
-    libmpc-dev \
     wget \
     ca-certificates && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* &&\
+    rm -rf /var/cache/apt/* && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/*
 
 # -----------------------------------------------------------------------------
 
@@ -113,6 +111,8 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     echo "conda ${CONDA_VERSION}" >> $CONDA_DIR/conda-meta/pinned && \
     conda config --system --set auto_update_conda false && \
     conda config --system --set show_channel_urls true && \
+    # This allows to change the Python version installed by passing the arg `PYTHON_VERSION` at build time
+    # then version is added to conda-meta/pinned 
     if [ ! $PYTHON_VERSION = 'default' ]; then conda install --yes python=$PYTHON_VERSION; fi && \
     conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> $CONDA_DIR/conda-meta/pinned && \
     conda install --quiet --yes \
