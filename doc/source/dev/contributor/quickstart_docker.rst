@@ -34,7 +34,7 @@ There are Docker hosts for several OS's including:
 macOS, Linux, and Windows. Please follow the appropriate
 installation instructions for your operating system at `docs.docker.com`_.
 
-..note::
+.. note::
 
    If you have a version of an operating system that doesn't meet the
    requirements of Docker Desktop, such as Windows 10 Home,
@@ -47,7 +47,7 @@ Before starting SciPy's Docker container, you should create a copy of the
 SciPy source code on your computer. That way, you'll be able to access the
 same files both from your native operating system and within the container.
 
-..note::
+.. note::
    
    Below we will use *terminal window* as a
    collective term that includes the Windows Command Prompt.
@@ -90,7 +90,7 @@ container do not persist after you close it.
    SciPy Docker container by entering the following command in a terminal
    window::
 
-      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
+      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> /bin/bash
 
    This command starts (``run``) an interactive (``-it``) Docker container
    named ``scipy-dev`` (based on Ubuntu focal) from the ``scipy``
@@ -102,9 +102,9 @@ container do not persist after you close it.
 
 #. You should now be in the container, with something like::
 
-      root@468e1b9564e4:/home/scipy#
+      (base) root@468e1b9564e4:/home/scipy#
 
-   as a prompt. 
+   as a prompt. Notice the ``(base)`` at the beginning, since we are using conda.
 
 #. Activate the ``scipydev`` conda environment::
 
