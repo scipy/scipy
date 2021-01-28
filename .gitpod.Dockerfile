@@ -52,7 +52,7 @@ RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_U
     # vanity custom bash prompt
     echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '"  >> ~/.bashrc
 
-USER ROOT
+USER root
 
 RUN fix_permissions $CONDA_DIR && \
     fix_permissions /opt/conda/envs/scipydev/
