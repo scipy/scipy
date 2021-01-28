@@ -3185,7 +3185,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
             # leaf_label_func can also be used together with ``truncate_mode`` parameter,
             # in which case you will get your leaves labeled after truncation:
             dendrogram(Z, leaf_label_func=llf, leaf_rotation=90,
-                    truncate_mode='level', p=2)
+                       truncate_mode='level', p=2)
 
     show_contracted : bool, optional
         When True the heights of non-singleton nodes contracted
