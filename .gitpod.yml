@@ -1,2 +1,7 @@
 image:
   file: ./tools/Docker-dev/Dockerfile-gitpod
+tasks:
+  - command: |
+    echo "Welcome to the SciPy dev gitpod!"
+    conda activate scipydev
+    
