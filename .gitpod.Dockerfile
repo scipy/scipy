@@ -40,8 +40,8 @@ ENV LANG=en_US.UTF-8 \
     CONDA_DIR=/opt/conda 
 
 # Copy a script that we will use to correct permissions after running certain commands
-COPY fix-permissions /usr/local/bin/fix-permissions
-RUN chmod a+rx /usr/local/bin/fix-permissions
+COPY fix_permissions /usr/local/bin/fix_permissions
+RUN chmod a+rx /usr/local/bin/fix_permissions
 
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_USER} && \
@@ -54,8 +54,8 @@ RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_U
 
 USER ROOT
 
-RUN fix-permissions $CONDA_DIR && \
-    fix-permissions /opt/conda/envs/scipydev/
+RUN fix_permissions $CONDA_DIR && \
+    fix_permissions /opt/conda/envs/scipydev/
 
 USER gitpod
 
