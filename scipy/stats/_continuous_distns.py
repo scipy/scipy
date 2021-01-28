@@ -4024,7 +4024,7 @@ class johnsonsu_gen(rv_continuous):
         f(x, a, b) = \frac{b}{\sqrt{x^2 + 1}}
                      \phi(a + b \log(x + \sqrt{x^2 + 1}))
 
-    for all :math:`(x, a, b) \in \mathbb{R}^3` where :math:`x, b > 0`,
+    for all :math:`(x, a, b) \in \mathbb{R}^3` where :math:`b > 0`,
     and :math:`\phi` is the normal pdf.
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
