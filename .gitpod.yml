@@ -3,6 +3,6 @@ image:
 tasks:
   - init: |
       conda activate scipy 
-      python3 setup.py build_ext --inplace
+      python setup.py build_ext --inplace
       conda develop .
     command: conda activate scipydev

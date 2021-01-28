@@ -1,4 +1,4 @@
-ARG BASE_CONTAINER=trallard/scipy:20210127-feature-Docker-b7f5aac1ce8009af05e9011152180cc3112cf13f
+ARG BASE_CONTAINER=trallard/scipy:scipy-dev.3
 FROM ${BASE_CONTAINER}
 
 # -----------------------------------------------------------------------------
@@ -28,12 +28,11 @@ RUN apt-get update && \
 
 RUN add-apt-repository -y ppa:git-core/ppa \
     && apt-get install -yq git \
-    && rm -rf /var/lib/apt/lists/* \
-    conda activate scipydev && \
-    conda install conda-build -y
+    && rm -rf /var/lib/apt/lists/* 
 
 # -----------------------------------------------------------------------------
-# ---- Gitpod users ----
+# ---- Gitpod user ----
+
 ENV LANG=en_US.UTF-8 \
     HOME=/home/gitpod
 
@@ -42,7 +41,7 @@ RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p gitpod gitpod && \
     # passwordless sudo for users in the 'sudo' group
     sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers && \
     # vanity custom bash prompt
-    { echo && echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$'" ; } >> .bashrc
+    echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '"  >> ~/.bashrc
 
 WORKDIR $HOME
 
