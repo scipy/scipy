@@ -4296,24 +4296,37 @@ def barnard_exact(
     x1_comb = _barnard_exact_compute_gammaln_combination(total_c1)
     x2_comb = _barnard_exact_compute_gammaln_combination(total_c2)
 
-    def compute_pvalue(nuisance_param):
+    nuisance_num = 100
+    inf_bound, sup_bound = 0, 1
+
+    for _ in range(num_it):
+        nuisance_arr = np.linspace(
+            start=inf_bound, stop=sup_bound, num=nuisance_num)
+        nuisance_arr = nuisance_arr
+        # Reshape in dimension 3 array
+        nuisance_arr = nuisance_arr.reshape(1, 1, -1)
+
         with np.errstate(divide='ignore', invalid='ignore'):
-            PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_param) * (
-                x1 + x2) + np.log(1 - nuisance_param) * (n - x1 - x2))
+            PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_arr) * (
+                x1 + x2) + np.log(1 - nuisance_arr) * (n - x1 - x2))
+        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
 
-        p_value = PX[idx].sum()  # Just sum where TX >= TX0
-        return p_value
+        max_nuisance_idx = sum_PX.argmax()
 
-    from scipy.optimize import fminbound
-    nuisance_for_pvalue_max, max_p_value, _, _ = fminbound(
-        lambda x: - compute_pvalue(x),
-        x1=0, x2=1, full_output=True)
+        inf_bound = (
+        nuisance_arr[0, 0, max_nuisance_idx - 1]
+        if max_nuisance_idx > 0
+        else nuisance_arr[0,0,0]
+        )
+        sup_bound = (
+        nuisance_arr[0, 0, max_nuisance_idx + 1]
+        if max_nuisance_idx < nuisance_num-1
+        else nuisance_arr[0,0,-1]
+        )
 
-    max_p_value = - max_p_value  # We take the negative value because we
-    # arbitrairly return the negative p_value to fminbound, so that it return
-    # the maximum of compute_pvalue and not the minimum
+        p_value = sum_PX[max_nuisance_idx]  # take the max value
 
-    return barnardExactResult(TX_obs, max_p_value)
+    return barnardExactResult(TX_obs, p_value)
 
 
 class SpearmanRConstantInputWarning(RuntimeWarning):
