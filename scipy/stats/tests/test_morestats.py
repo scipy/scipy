@@ -1213,7 +1213,7 @@ class TestWilcoxon(object):
             pmf2 = _get_wilcoxon_distr2(n)
             assert_equal(n*(n+1)/2 + 1, len(pmf1))
             assert_equal(sum(pmf1), 1)
-            assert_array_almost_equal(pmf1,pmf2)
+            assert_array_almost_equal(pmf1, pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
