@@ -33,7 +33,7 @@ RUN add-apt-repository -y ppa:git-core/ppa \
 # -----------------------------------------------------------------------------
 # ---- Gitpod users ----
 ENV LANG=en_US.UTF-8 \
-    HOME=/home/scipy
+    HOME=/home/gitpod
 
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p gitpod gitpod \
@@ -48,8 +48,8 @@ USER gitpod
 # use sudo so that user does not get sudo usage info on (the first) login
 RUN sudo echo "Running 'sudo' for Gitpod: success" && \
     # create .bashrc.d folder and source it in the bashrc
-    sudo mkdir /home/scipy/.bashrc.d && \
-    (echo; echo "for i in \$(ls \$HOME/.bashrc.d/*); do source \$i; done"; echo) >> /home/scipy/.bashrc
+    mkdir /home/gitpod/.bashrc.d && \
+    (echo; echo "for i in \$(ls \$HOME/.bashrc.d/*); do source \$i; done"; echo) >> /home/gitpod/.bashrc
 
 
 USER gitpod
