@@ -30,8 +30,7 @@ RUN add-apt-repository -y ppa:git-core/ppa \
     && apt-get install -yq git \
     && rm -rf /var/lib/apt/lists/* \
     conda activate scipydev && \
-    conda install conda-build \
-    conda deactivate
+    conda install conda-build -y
 
 # -----------------------------------------------------------------------------
 # ---- Gitpod users ----
