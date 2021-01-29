@@ -1,7 +1,7 @@
 # Using the Scipy-dev Docker image as a base
 # This way, we ensure we have all the needed compilers and dependencies
 # while reducing the build time
-ARG BASE_CONTAINER=trallard/scipy:scipy-dev.3
+ARG BASE_CONTAINER=trallard/scipy:scipy-dev.4
 FROM ${BASE_CONTAINER}
 
 # -----------------------------------------------------------------------------
