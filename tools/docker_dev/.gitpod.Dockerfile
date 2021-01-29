@@ -44,11 +44,11 @@ ENV LANG=en_US.UTF-8 \
 
 # Copy multiple scripts - fix directory permissions and 
 # basic workspace configurations
-COPY fix_permissions /usr/local/bin/fix_permissions
-COPY workspace_config /tmp/workspace_config
+COPY ./tools/docker_dev/fix_permissions /usr/local/bin/fix_permissions
+COPY ./tools/docker_dev/workspace_config /usr/local/bin/workspace_config
 
 RUN chmod a+rx /usr/local/bin/fix_permissions && \
-    chmod a+rx /tmp/workspace_config
+    chmod a+rx /usr/local/bin/workspace_config
 
 # '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_USER} && \
