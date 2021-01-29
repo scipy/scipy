@@ -9,6 +9,7 @@ tasks:
       cd doc 
       make html-scipyorg
       cd /home/gitpod
+      python -m pip install sphinx-autobuild== 2020.09.01
     command: conda activate scipydev
 
 # exposing ports for sphinx-autobuild 
