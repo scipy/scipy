@@ -754,11 +754,24 @@ def barnard_exact(
 
     We use this table to find the p-value:
     >>> import scipy.stats as stats
-    >>> res = stats.barnard_exact([[7, 12], [8, 3]])
+    >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.score_statistic
     1.894...
     >>> res.pvalue
-    0.0681...
+    0.03407...
+
+    In this exemple, we use the `alternative` parameter with the "less" option,
+    because the vaccine has either no effect (H0 hypothesis) or a 'positive'
+    effect (H1 hypothesis). Fisher’s exact test produces an exact
+    p-value of 0.0641 (with
+    `stats.fisher_exact([[7, 12], [8, 3]], alternative="less")`).
+    A commonly used significance level is 5%--if we adopt that, `fisher_exact`
+    would refute H1 and says that this vaccine has no effect.
+    With `barnard_exact`, the probability that we would observe this or an
+    even more imbalanced ratio by chance is about 3.4%. With the same
+    significance level as above, we can therefore conclude that our
+    observed imbalance is statistically significant; The vaccine has a
+    positive effect.
     """
     if num_it < 0:
         raise ValueError(
