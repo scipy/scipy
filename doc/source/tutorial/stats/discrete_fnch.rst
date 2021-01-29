@@ -16,18 +16,17 @@ if its probability mass function is given by
 
 .. math::
 
-    p(x; N, m_1, n, \omega) = \frac{\binom{m_1}{x}\binom{m_2}{n-x}\omega^x}{P_0},
+    p(x; N, m_1, n, \omega) = \frac{\binom{m_1}{x}\binom{N - m_1}{n-x}\omega^x}{P_0},
 
 for
 :math:`x \in [x_l, x_u]`,
 where
-:math:`m_2 = N - m_1`,
-:math:`x_l = \max(0, n - m_2)`,
+:math:`x_l = \max(0, n - (N - m_1))`,
 :math:`x_u = \min(n, m_1)`,
 
 .. math::
 
-    P_k = \sum_{y=x_l}^{x_u} \binom{m_1}{y} \binom{m_2}{n-y} \omega^y y^k,
+    P_k = \sum_{y=x_l}^{x_u} \binom{m_1}{y} \binom{N - m_1}{n-y} \omega^y y^k,
 
 and the binomial coefficients are
 

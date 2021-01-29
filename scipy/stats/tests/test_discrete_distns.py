@@ -297,7 +297,6 @@ class TestNCH():
         assert_allclose(wnch.mean(M, n, N, odds), mean, rtol=1e-13)
         assert_allclose(wnch.var(M, n, N, odds), var, rtol=1e-11)
 
-
     @pytest.mark.parametrize('dist_name', ['fnch', 'wnch'])
     def test_rvs_shape(self, dist_name):
         # Check that when given a size with more dimensions than the

@@ -1410,7 +1410,7 @@ class fnch_gen(_nch_gen):
     .. math::
 
         p(x; N, m_1, n, \omega) =
-        \frac{\binom{m_1}{x}\binom{m_2}{n-x}\omega^x}{P_0},
+        \frac{\binom{m_1}{x}\binom{N - m_1}{n-x}\omega^x}{P_0},
 
     for
     :math:`x \in [x_l, x_u]`,
@@ -1419,13 +1419,12 @@ class fnch_gen(_nch_gen):
     :math:`n \in [0, N]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, n - m_2)`,
+    :math:`x_l = \max(0, n - (N - m_1))`,
     :math:`x_u = \min(n, m_1)`,
-    :math:`m_2 = N - m_1`,
 
     .. math::
 
-        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{m_2}{n-y}\omega^y,
+        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{N - m_1}{n-y}\omega^y,
 
     and the binomial coefficients are defined as
 
@@ -1492,7 +1491,7 @@ class wnch_gen(_nch_gen):
 
     .. math::
 
-        p(x; n, m_1, N) = \binom{m_1}{x} \binom{m_2}{n-x}
+        p(x; n, m_1, N) = \binom{m_1}{x} \binom{N - m_1}{n-x}
         \int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{n-x} dt
 
     for
@@ -1502,13 +1501,12 @@ class wnch_gen(_nch_gen):
     :math:`n \in [0, N]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, n - m_2)`,
+    :math:`x_l = \max(0, n - (N - m_1))`,
     :math:`x_u = \min(n, m_1)`,
-    :math:`m_2 = N - m_1`,
 
     .. math::
 
-        D = \omega(m_1 - x) + (m_2-(n-x)),
+        D = \omega(m_1 - x) + ((N - m_1)-(n-x)),
 
     and the binomial coefficients are defined as
 

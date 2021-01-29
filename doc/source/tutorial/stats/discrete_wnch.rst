@@ -16,18 +16,17 @@ if its probability mass function is given by
 
 .. math::
 
-    p(x; n, m_1, N) = \binom{m_1}{x} \binom{m_2}{n-x}\int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{n-x} dt
+    p(x; n, m_1, N) = \binom{m_1}{x} \binom{N - m_1}{n-x}\int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{n-x} dt
 
 for
 :math:`x \in [x_l, x_u]`,
 where
-:math:`m_2 = N - m_1`,
-:math:`x_l = \max(0, n - m_2)`,
+:math:`x_l = \max(0, n - (N - m_1))`,
 :math:`x_u = \min(n, m_1)`,
 
 .. math::
 
-    D = \omega(m_1 - x) + (m_2-(n-x)),
+    D = \omega(m_1 - x) + ((N - m_1)-(n-x)),
 
 and the binomial coefficients are
 
