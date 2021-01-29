@@ -12,7 +12,8 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+        _check_shape)
 from .biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
@@ -1290,31 +1291,31 @@ def _vectorize_rvs_over_shapes(_rvs1):
     # and loops over them, calling _rvs1 for each set of scalar args.
     # For usage example, see _nch_gen
     def _rvs(*args, size, random_state):
-        for arg in args:
-            print(arg.shape)
-        args = np.broadcast_arrays(*args)
+        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
 
-        arg_ndim = args[0].ndim
-        arg_shape = args[0].shape
-        _rvs1_size = size[:-arg_ndim]
+        size = np.array(size)
+        _rvs1_size = np.array(_rvs1_size)
+        _rvs1_indices = np.array(_rvs1_indices)
 
-        if arg_ndim == 0:  # all args are scalars
+        if np.all(_rvs1_indices):  # all args are scalars
             return _rvs1(*args, size, random_state)
 
         out = np.empty(size)
 
-        # out.shape is currently _rvs1_size + arg_shape
-        # Flip that to arg_shape + _rvs1_size for easy indexing of dimensions
+        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
+        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
         # corresponding with the different sets of scalar args
         j0 = np.arange(out.ndim)
-        j1 = np.roll(j0, -arg_ndim)
-        out = np.moveaxis(out, j0, j1)
+        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
+        out = np.moveaxis(out, j1, j0)
 
-        for i in np.ndindex(*arg_shape):
-            out[i] = _rvs1(*[arg[i] for arg in args],
+        for i in np.ndindex(*size[~_rvs1_indices]):
+            # arg can be squeezed because singleton dimensions will be
+            # associated with _rvs1_size, not arg_shape per _check_shape
+            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
                            _rvs1_size, random_state)
 
-        return np.moveaxis(out, j1, j0)  # move axes back before returning
+        return np.moveaxis(out, j0, j1)  # move axes back before returning
     return _rvs
 
 
