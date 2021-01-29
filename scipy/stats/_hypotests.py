@@ -671,8 +671,8 @@ def _barnard_exact_compute_gammaln_combination(n):
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-BarnardExactResult = make_dataclass("BarnardExactResult", [(
-    'score_statistic', float),
+BarnardExactResult = make_dataclass("BarnardExactResult", [
+    ('statistic', float),
     ("pvalue", float)
 ])
 
