@@ -4267,9 +4267,9 @@ def barnard_exact(
         raise ValueError("All values in `table` must be nonnegative.")
 
     if 0 in c.sum(axis=0):
-        # If both values in a row or column are zero, the p-value is 1 and
+        # If both values in column are zero, the p-value is 1 and
         # the score's statistic is NaN.
-        return np.nan, 1.0
+        return barnardExactResult(np.nan, 1.0)
 
     total_c1, total_c2 = c.sum(axis=0)
     n = total_c1 + total_c2
