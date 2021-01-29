@@ -10,3 +10,8 @@ tasks:
       make html-scipyorg
       cd /home/gitpod
     command: conda activate scipydev
+
+# exposing ports for sphinx-autobuild 
+ports:
+  - port: 8000
+    onOpen: notify
