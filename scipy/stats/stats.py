@@ -170,6 +170,7 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
+from dataclasses import make_dataclass
 from itertools import permutations
 
 import numpy as np
@@ -4168,8 +4169,10 @@ def _barnard_exact_compute_gammaln_combination(n):
     return special.gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-barnardExactResult = namedtuple(
-    'barnardExactResult', ('score_statistic', 'pvalue'))
+barnardExactResult = make_dataclass("barnardExactResult", [(
+    'score_statistic', float),
+    ("pvalue", float)
+])
 
 
 def barnard_exact(
@@ -4236,9 +4239,11 @@ def barnard_exact(
 
     We use this table to find the p-value:
     >>> import scipy.stats as stats
-    >>> TX, pvalue = stats.barnard_exact([[7, 12], [8, 3]])
-    >>> pvalue
-    0.0681...
+    >>> res = stats.barnard_exact([[7, 12], [8, 3]])
+    >>> res.score_statistic
+    1.894...
+    >>> res.pvalue
+    0.068
 
     """
     c = np.asarray(
