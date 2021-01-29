@@ -61,7 +61,9 @@ USER root
 
 # making the directories human writable - this is needed to use conda develop
 # $HOME is by default user writtable
-RUN fix_permissions $CONDA_DIR && \
+RUN conda activate scipydev && \ 
+    python -m pip install sphinx-autobuild== 2020.09.01 && \
+    fix_permissions $CONDA_DIR && \
     fix_permissions ${CONDA_DIR}/envs/scipydev/ && \
     workspace_config
 
