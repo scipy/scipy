@@ -2,7 +2,7 @@
 # set permissions on a directory
 # after any installation, if a directory needs to be (human) user-writable,
 # run this script on it.
-# It will make everything in the directory owned by the group $NB_GID
+# It will make everything in the directory owned by the group $GP_GROUP
 # and writable by that group.
 # Deployments that want to set a specific user id can preserve permissions
 # by adding the `--group-add users` line to `docker run`.

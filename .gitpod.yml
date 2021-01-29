@@ -1,8 +1,12 @@
 image:
-  file: .gitpod.Dockerfile
+  file: ./tools/docker_dev/.gitpod.Dockerfile
 tasks:
   - init: |
       conda activate scipydev
       python setup.py build_ext --inplace
       conda develop .
+      git submodule update --init
+      cd doc 
+      make html-scipyorg
+      cd /home/gitpod
     command: conda activate scipydev
