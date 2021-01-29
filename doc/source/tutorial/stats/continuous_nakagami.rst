@@ -63,7 +63,7 @@ which can be expanded as
     l(\nu, \mu, \sigma) = N \log(2) + N\nu \log(\nu) - N\log\left(\Gamma(\nu)\right) - 2N \nu \log(\sigma) + \left(2 \nu - 1 \right) \sum_{i=1}^N  \log(x_i - \mu) - \nu \sigma^{-2} \sum_{i=1}^N \left(x_i-\mu\right)^2, \tag{3}
     \end{equation}
 
-In the absence of other constraints, the likelihood equations provide first-order conditions for the maximum likelihood estimates:
+Leaving supports constraints out, the first-order condition for optimality on the likelihood derivatives gives estimates of parameters:
 
 .. math::
    :nowrap:
@@ -88,17 +88,17 @@ However, the support of the distribution is the values of :math:`x` for which :m
     \mu \leq \min_i{x_i}.\tag{7}
     \end{equation}
 
-For :math:`\nu = \frac{1}{2}`, the partial derivative of the log-likelihood with respect to the location reduces to:
+For :math:`\nu = \frac{1}{2}`, the partial derivative of the log-likelihood with respect to :math:`\mu` reduces to:
 
 .. math::
    :nowrap:
 
     \begin{equation}
-    \frac{\partial l}{\partial \mu}(\nu, \mu, \sigma) = {\sigma^2} \sum_{i=1}^N x_i-\mu,
+    \frac{\partial l}{\partial \mu}(\nu, \mu, \sigma) = {\sigma^2} \sum_{i=1}^N (x_i-\mu),
     \end{equation}
 
-which is positive when the support constraint is satisfied. Because the partial derivative with respect to the location
-is positive, increasing :math:`\mu` increases the log-likelihood, and therefore the constraint is active at the maximum likelihood estimate for the location
+which is positive when the support constraint is satisfied. Because the partial derivative with respect to :math:`\mu`
+is positive, increasing :math:`\mu` increases the log-likelihood, and therefore the constraint is active at the maximum likelihood estimate for :math:`\mu`
 
 .. math::
    :nowrap:
@@ -109,7 +109,7 @@ is positive, increasing :math:`\mu` increases the log-likelihood, and therefore 
 
 For :math:`\nu` sufficiently greater than :math:`\frac{1}{2}`, the likelihood equation :math:`\frac{\partial l}{\partial \mu}(\nu, \mu, \sigma)=0` has a solution, and this solution provides the maximum likelihood estimate for :math:`\mu`. In either case, however, the condition :math:`\mu = \min_i{x_i}` provides a reasonable initial guess for numerical optimization.
 
-The likelihood equation for :math:`\sigma` can be solved explicitly, and it provides the maximum likelihood estimate of the scale
+Furthermore, the likelihood equation for :math:`\sigma` can be solved explicitly, and it provides the maximum likelihood estimate
 
 .. math::
    :nowrap:
@@ -118,7 +118,7 @@ The likelihood equation for :math:`\sigma` can be solved explicitly, and it prov
     \sigma = \sqrt{ \frac{\sum_{i=1}^N \left(x_i-\mu\right)^2}{N}}. \tag{9}
     \end{equation}
 
-Accordingly, the :code:`_fitstart` method for :code:`nakagami` uses
+Hence, the :code:`_fitstart` method for :code:`nakagami` uses
 
 .. math::
    :nowrap:
@@ -129,4 +129,4 @@ Accordingly, the :code:`_fitstart` method for :code:`nakagami` uses
     \sigma_0 &= \sqrt{ \frac{\sum_{i=1}^N \left(x_i-\mu_0\right)^2}{N}}
     \end{align}
 
-as initial guesses for numerical optimization.
+as initial guesses for numerical optimization accordingly.
