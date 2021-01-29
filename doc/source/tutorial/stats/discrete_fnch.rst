@@ -9,24 +9,24 @@ parameters
 
 :math:`M \in {\mathbb N}`,
 :math:`m_1 \in [0, M]`,
-:math:`n \in [0, M]`,
+:math:`N \in [0, M]`,
 :math:`\omega > 0`,
 
 if its probability mass function is given by
 
 .. math::
 
-    p(x; M, m_1, n, \omega) = \frac{\binom{m_1}{x}\binom{M - m_1}{n-x}\omega^x}{P_0},
+    p(x; M, m_1, N, \omega) = \frac{\binom{m_1}{x}\binom{M - m_1}{N-x}\omega^x}{P_0},
 
 for
 :math:`x \in [x_l, x_u]`,
 where
-:math:`x_l = \max(0, n - (M - m_1))`,
-:math:`x_u = \min(n, m_1)`,
+:math:`x_l = \max(0, N - (M - m_1))`,
+:math:`x_u = \min(N, m_1)`,
 
 .. math::
 
-    P_k = \sum_{y=x_l}^{x_u} \binom{m_1}{y} \binom{M - m_1}{n-y} \omega^y y^k,
+    P_k = \sum_{y=x_l}^{x_u} \binom{m_1}{y} \binom{M - m_1}{N-y} \omega^y y^k,
 
 and the binomial coefficients are
 
