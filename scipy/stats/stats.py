@@ -4296,9 +4296,9 @@ def barnard_exact(
     if alternative == "two-sided":
         idx = np.abs(TX) >= abs(TX_obs)
     elif alternative == "less":
-        idx = TX <= TX_obs
+        idx = TX <= - abs(TX_obs)
     elif alternative == "greater":
-        idx = TX >= TX_obs
+        idx = TX >= abs(TX_obs)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'},"
         f" found {alternative!r}"
