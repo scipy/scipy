@@ -1402,29 +1402,29 @@ class fnch_gen(_nch_gen):
 
     Notes
     -----
-    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`N` correspond
+    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`M` correspond
     with parameters `N`, `n`, and `M` (respectively) as defined above.
 
     The probability mass function is defined as
 
     .. math::
 
-        p(x; N, m_1, n, \omega) =
-        \frac{\binom{m_1}{x}\binom{N - m_1}{n-x}\omega^x}{P_0},
+        p(x; M, m_1, n, \omega) =
+        \frac{\binom{m_1}{x}\binom{M - m_1}{n-x}\omega^x}{P_0},
 
     for
     :math:`x \in [x_l, x_u]`,
-    :math:`N \in {\mathbb N}`,
-    :math:`m_1 \in [0, N]`,
-    :math:`n \in [0, N]`,
+    :math:`M \in {\mathbb N}`,
+    :math:`m_1 \in [0, M]`,
+    :math:`n \in [0, M]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, n - (N - m_1))`,
+    :math:`x_l = \max(0, n - (M - m_1))`,
     :math:`x_u = \min(n, m_1)`,
 
     .. math::
 
-        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{N - m_1}{n-y}\omega^y,
+        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{M - m_1}{n-y}\omega^y,
 
     and the binomial coefficients are defined as
 
@@ -1433,7 +1433,7 @@ class fnch_gen(_nch_gen):
     `fnch` uses the BiasedUrn package by Agner Fog with permission
     for it to be distributed under SciPy's license.
 
-    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
     The choice of corresponding mathematical symbols allows for
     comparison with the references.
@@ -1484,29 +1484,29 @@ class wnch_gen(_nch_gen):
 
     Notes
     -----
-    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`N` correspond
+    Let mathematical symbols :math:`n`, :math:`m_1`, and :math:`M` correspond
     with parameters `N`, `n`, and `M` (respectively) as defined above.
 
     The probability mass function is defined as
 
     .. math::
 
-        p(x; n, m_1, N) = \binom{m_1}{x} \binom{N - m_1}{n-x}
+        p(x; n, m_1, M) = \binom{m_1}{x} \binom{M - m_1}{n-x}
         \int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{n-x} dt
 
     for
     :math:`x \in [x_l, x_u]`,
-    :math:`N \in {\mathbb N}`,
-    :math:`m_1 \in [0, N]`,
-    :math:`n \in [0, N]`,
+    :math:`M \in {\mathbb N}`,
+    :math:`m_1 \in [0, M]`,
+    :math:`n \in [0, M]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, n - (N - m_1))`,
+    :math:`x_l = \max(0, n - (M - m_1))`,
     :math:`x_u = \min(n, m_1)`,
 
     .. math::
 
-        D = \omega(m_1 - x) + ((N - m_1)-(n-x)),
+        D = \omega(m_1 - x) + ((M - m_1)-(n-x)),
 
     and the binomial coefficients are defined as
 
@@ -1515,7 +1515,7 @@ class wnch_gen(_nch_gen):
     `wnch` uses the BiasedUrn package by Agner Fog with permission
     for it to be distributed under SciPy's license.
 
-    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
     The choice of corresponding mathematical symbols allows for
     comparison with the references.
