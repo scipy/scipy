@@ -4323,21 +4323,30 @@ def barnard_exact(
         nuisance_arr = nuisance_arr.reshape(1, 1, -1)
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            PX = np.exp(x1_comb[x1] + x2_comb[x2] + np.log(nuisance_arr) * (
-                x1 + x2) + np.log(1 - nuisance_arr) * (n - x1 - x2))
-        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
+            tmp_log_nuisance = np.log(
+                        nuisance_arr, out=np.zeros_like(nuisance_arr),
+                        where=nuisance_arr >= 0)
+            tmp_log_1_minus_nuisance = (
+                np.log(1 - nuisance_arr, out=np.zeros_like(nuisance_arr),
+                        where=1 - nuisance_arr >= 0)
+            )
+            PX = (
+                np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance * (
+                        x1 + x2) + tmp_log_1_minus_nuisance * (n - x1 - x2))
+            )
 
+        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
         max_nuisance_idx = sum_PX.argmax()
 
         inf_bound = (
-        nuisance_arr[0, 0, max_nuisance_idx - 1]
-        if max_nuisance_idx > 0
-        else nuisance_arr[0,0,0]
+            nuisance_arr[0, 0, max_nuisance_idx - 1]
+            if max_nuisance_idx > 0
+            else nuisance_arr[0, 0, 0]
         )
         sup_bound = (
-        nuisance_arr[0, 0, max_nuisance_idx + 1]
-        if max_nuisance_idx < nuisance_num-1
-        else nuisance_arr[0,0,-1]
+            nuisance_arr[0, 0, max_nuisance_idx + 1]
+            if max_nuisance_idx < nuisance_num-1
+            else nuisance_arr[0, 0, -1]
         )
 
         p_value = sum_PX[max_nuisance_idx]  # take the max value
