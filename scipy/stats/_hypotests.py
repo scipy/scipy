@@ -663,3 +663,194 @@ def somersd(x, y=None):
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table)
     return SomersDResult(d, p, table)
+
+
+def _barnard_exact_compute_gammaln_combination(n):
+    """Compute all log combination of C(n, k)"""
+    gammaln_arr = gammaln(np.arange(n + 1) + 1)
+    return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
+
+
+barnardExactResult = make_dataclass("barnardExactResult", [(
+    'score_statistic', float),
+    ("pvalue", float)
+])
+
+
+def barnard_exact(
+        table,
+        alternative='two-sided',
+        pooled=True,
+        num_it=4):
+    """
+    Perform a Barnard exact test on a 2x2 contingency table.
+
+    Parameters
+    ----------
+    table : array_like of ints
+        A 2x2 contingency table.  Elements should be non-negative integers.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+    pooled : bool, optional
+        Whether to compute score statistic with pooled variance or
+        unpooled (Wald statistic)
+
+    num_it : int, optional
+        Number of iterations of the grid search. Default is 4. Must be
+        non-negative.
+
+    Returns
+    -------
+    score_statistic : float
+        Z statistic with pooled (Score) or unpooled (Wald) variance, depending
+        on the user choice of `pooled` param.
+    p_value : float
+        P-value, the probability of obtaining a distribution at least as
+        extreme as the one that was actually observed, assuming that the
+        null hypothesis is true.
+
+    See Also
+    --------
+    chi2_contingency : Chi-square test of independence of variables in a
+        contingency table.
+    fisher_exact : Fisher exact test on a 2x2 contingency table.
+
+    References
+    ----------
+    .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003). Conditional
+    versus Unconditional Exact Tests for Comparing Two Binomials`__.
+
+    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf
+
+    Examples
+    --------
+    examples from [1]_.
+
+    Consider the following example of a vaccine efficacy study (Chan, 1998).
+    In a randomized clinical trial of 30 subjects, 15 were innoculated with a
+    recombinant DNA influenza vaccine and the 15 were innoculated with a
+    placebo. Twelve of the 15 subjects in the placebo group (80%) eventually
+    became infected with influenza whereas for the vaccine group, only 7 of
+    the 15 subjects (47%) became infected. The data are tabulated as a 2 × 2
+    table::
+
+            Vaccine  Placebo
+        Yes     7        12
+        No      8        3
+
+    We use this table to find the p-value:
+    >>> import scipy.stats as stats
+    >>> res = stats.barnard_exact([[7, 12], [8, 3]])
+    >>> res.score_statistic
+    1.894...
+    >>> res.pvalue
+    0.068
+
+    """
+    if num_it < 0:
+        raise ValueError(
+            "Number of iterations `num_it` must be non-negative, "
+            f"found {num_it!r}")
+
+    c = np.asarray(
+        table,
+        dtype=np.int64)
+
+    if not c.shape == (2, 2):
+        raise ValueError("The input `table` must be of shape (2, 2).")
+
+    if np.any(c < 0):
+        raise ValueError("All values in `table` must be nonnegative.")
+
+    if 0 in c.sum(axis=0):
+        # If both values in column are zero, the p-value is 1 and
+        # the score's statistic is NaN.
+        return barnardExactResult(np.nan, 1.0)
+
+    total_c1, total_c2 = c.sum(axis=0)
+    n = total_c1 + total_c2
+
+    x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1)
+    x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1)
+
+    p1, p2 = x1 / total_c1, x2 / total_c2
+
+    if pooled:
+        p = (x1 + x2) / (total_c1 + total_c2)
+        var_p1_p2 = p * (1 - p) * (1 / total_c1 + 1 / total_c2)
+    else:
+        var_p1_p2 = p1 * (1 - p1) / total_c1 + p2 * (1 - p2) / total_c2
+
+    # To avoid warning when dividing by 0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
+
+    TX[p1 == p2] = 0  # Removing NaN values
+
+    TX_obs = TX[c[0, 0], c[0, 1]]
+
+    if alternative == "two-sided":
+        idx = np.abs(TX) >= abs(TX_obs)
+    elif alternative == "less":
+        idx = TX <= - abs(TX_obs)
+    elif alternative == "greater":
+        idx = TX >= abs(TX_obs)
+    else:
+        msg = (
+            "`alternative` should be one of {'two-sided', 'less', 'greater'},"
+            f" found {alternative!r}")
+        raise ValueError(msg)
+
+    # Pass x1 and x2 in dimension 3
+    x1 = x1.reshape(-1, 1, 1)
+    x2 = x2.reshape(1, -1, 1)
+
+    x1_comb = _barnard_exact_compute_gammaln_combination(total_c1)
+    x2_comb = _barnard_exact_compute_gammaln_combination(total_c2)
+
+    nuisance_num = 100
+    inf_bound, sup_bound = 0, 1
+
+    for _ in range(num_it):
+        nuisance_arr = np.linspace(
+            start=inf_bound, stop=sup_bound, num=nuisance_num)
+        nuisance_arr = nuisance_arr
+        # Reshape in dimension 3 array
+        nuisance_arr = nuisance_arr.reshape(1, 1, -1)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            tmp_log_nuisance = np.log(
+                        nuisance_arr, out=np.zeros_like(nuisance_arr),
+                        where=nuisance_arr >= 0)
+            tmp_log_1_minus_nuisance = (
+                np.log(1 - nuisance_arr, out=np.zeros_like(nuisance_arr),
+                        where=1 - nuisance_arr >= 0)
+            )
+            PX = (
+                np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance * (
+                        x1 + x2) + tmp_log_1_minus_nuisance * (n - x1 - x2))
+            )
+
+        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
+        max_nuisance_idx = sum_PX.argmax()
+
+        inf_bound = (
+            nuisance_arr[0, 0, max_nuisance_idx - 1]
+            if max_nuisance_idx > 0
+            else nuisance_arr[0, 0, 0]
+        )
+        sup_bound = (
+            nuisance_arr[0, 0, max_nuisance_idx + 1]
+            if max_nuisance_idx < nuisance_num-1
+            else nuisance_arr[0, 0, -1]
+        )
+
+        p_value = sum_PX[max_nuisance_idx]  # take the max value
+
+    return barnardExactResult(TX_obs, p_value)
