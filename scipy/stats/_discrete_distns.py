@@ -1402,29 +1402,29 @@ class fnch_gen(_nch_gen):
 
     Notes
     -----
-    Let mathematical symbols :math:`N`, :math:`m_1`, and :math:`M` correspond
+    Let mathematical symbols :math:`N`, :math:`n`, and :math:`M` correspond
     with parameters `N`, `n`, and `M` (respectively) as defined above.
 
     The probability mass function is defined as
 
     .. math::
 
-        p(x; M, m_1, N, \omega) =
-        \frac{\binom{m_1}{x}\binom{M - m_1}{N-x}\omega^x}{P_0},
+        p(x; M, n, N, \omega) =
+        \frac{\binom{n}{x}\binom{M - n}{N-x}\omega^x}{P_0},
 
     for
     :math:`x \in [x_l, x_u]`,
     :math:`M \in {\mathbb N}`,
-    :math:`m_1 \in [0, M]`,
+    :math:`n \in [0, M]`,
     :math:`N \in [0, M]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, N - (M - m_1))`,
-    :math:`x_u = \min(N, m_1)`,
+    :math:`x_l = \max(0, N - (M - n))`,
+    :math:`x_u = \min(N, n)`,
 
     .. math::
 
-        P_0 = \sum_{y=x_l}^{x_u} \binom{m_1}{y}\binom{M - m_1}{N-y}\omega^y,
+        P_0 = \sum_{y=x_l}^{x_u} \binom{n}{y}\binom{M - n}{N-y}\omega^y,
 
     and the binomial coefficients are defined as
 
@@ -1484,29 +1484,29 @@ class wnch_gen(_nch_gen):
 
     Notes
     -----
-    Let mathematical symbols :math:`N`, :math:`m_1`, and :math:`M` correspond
+    Let mathematical symbols :math:`N`, :math:`n`, and :math:`M` correspond
     with parameters `N`, `n`, and `M` (respectively) as defined above.
 
     The probability mass function is defined as
 
     .. math::
 
-        p(x; N, m_1, M) = \binom{m_1}{x} \binom{M - m_1}{N-x}
+        p(x; N, n, M) = \binom{n}{x} \binom{M - n}{N-x}
         \int_0^1 \left(1-t^{\omega/D}\right)^x\left(1-t^{1/D}\right)^{N-x} dt
 
     for
     :math:`x \in [x_l, x_u]`,
     :math:`M \in {\mathbb N}`,
-    :math:`m_1 \in [0, M]`,
+    :math:`n \in [0, M]`,
     :math:`N \in [0, M]`,
     :math:`\omega > 0`,
     where
-    :math:`x_l = \max(0, N - (M - m_1))`,
-    :math:`x_u = \min(N, m_1)`,
+    :math:`x_l = \max(0, N - (M - n))`,
+    :math:`x_u = \min(N, n)`,
 
     .. math::
 
-        D = \omega(m_1 - x) + ((M - m_1)-(N-x)),
+        D = \omega(n - x) + ((M - n)-(N-x)),
 
     and the binomial coefficients are defined as
 
