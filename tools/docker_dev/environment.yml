@@ -19,3 +19,4 @@ dependencies:
   - pip:
     - numpydoc>=1.1.0
     - asv>=0.4.2
+    - flake8

@@ -136,7 +136,9 @@ container do not persist after you close it.
    or import SciPy from any directory other than the SciPy root, you should
    set up SciPy for development::
 
-      python setup.py develop
+      conda develop .
+
+   where ``.`` refers to the present directory (in this case ``home/scipy``).
 
 From here, you can start a Python console (e.g., enter ``python``) or
 execute Python scripts from the command line (e.g.,
