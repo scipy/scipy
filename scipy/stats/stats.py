@@ -4029,6 +4029,8 @@ def fisher_exact(table, alternative='two-sided'):
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
+    barnard_exact : Barnard's exact test which is a more powerful alternative
+        than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----

@@ -671,7 +671,7 @@ def _barnard_exact_compute_gammaln_combination(n):
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-barnardExactResult = make_dataclass("barnardExactResult", [(
+BarnardExactResult = make_dataclass("BarnardExactResult", [(
     'score_statistic', float),
     ("pvalue", float)
 ])
@@ -707,19 +707,27 @@ def barnard_exact(
 
     Returns
     -------
-    score_statistic : float
-        Z statistic with pooled (Score) or unpooled (Wald) variance, depending
-        on the user choice of `pooled` param.
-    p_value : float
-        P-value, the probability of obtaining a distribution at least as
-        extreme as the one that was actually observed, assuming that the
-        null hypothesis is true.
+    ber : ``BarnardExactResult`` object
+            The object has attributes ``score_statistic`` and ``p_value``.
+            ``score_statistic`` is the Z statistic with pooled (Score) or
+            unpooled (Wald) variance, depending on the user choice of
+            `pooled` param.
+            ``p_value`` the probability of obtaining a distribution at least
+            as extreme as the one that was actually observed, assuming that
+            the null hypothesis is true.
 
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
     fisher_exact : Fisher exact test on a 2x2 contingency table.
+
+    Notes
+    -----
+    Barnard's test is an exact test used in the analysis of contingency
+    tables. It examines the association of two categorical variables and
+    is a more powerful alternative than Fisher's exact test
+    for 2x2 contingency tables
 
     References
     ----------
@@ -750,8 +758,7 @@ def barnard_exact(
     >>> res.score_statistic
     1.894...
     >>> res.pvalue
-    0.068
-
+    0.0681...
     """
     if num_it < 0:
         raise ValueError(
@@ -771,7 +778,7 @@ def barnard_exact(
     if 0 in c.sum(axis=0):
         # If both values in column are zero, the p-value is 1 and
         # the score's statistic is NaN.
-        return barnardExactResult(np.nan, 1.0)
+        return BarnardExactResult(np.nan, 1.0)
 
     total_c1, total_c2 = c.sum(axis=0)
     n = total_c1 + total_c2
@@ -853,4 +860,4 @@ def barnard_exact(
 
         p_value = sum_PX[max_nuisance_idx]  # take the max value
 
-    return barnardExactResult(TX_obs, p_value)
+    return BarnardExactResult(TX_obs, p_value)
