@@ -15,3 +15,7 @@ dependencies:
   - ipython=7.19.0  # that version has working autocompletion it looks like
   - conda-build=3.21.4
   - openblas=0.3.12
+  - pip
+  - pip:
+    - numpydoc>=1.1.0
+    - asv>=0.4.2
