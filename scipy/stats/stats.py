@@ -4300,8 +4300,9 @@ def barnard_exact(
     elif alternative == "greater":
         idx = TX >= abs(TX_obs)
     else:
-        msg = "`alternative` should be one of {'two-sided', 'less', 'greater'},"
-        f" found {alternative!r}"
+        msg = (
+            "`alternative` should be one of {'two-sided', 'less', 'greater'},"
+            f" found {alternative!r}")
         raise ValueError(msg)
 
     # Pass x1 and x2 in dimension 3
