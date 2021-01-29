@@ -8313,7 +8313,7 @@ def _sum_of_squares(a, axis=0):
     See Also
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
-    `_sum_of_squares`).
+        `_sum_of_squares`).
 
     """
     a, axis = _chk_asarray(a, axis)
