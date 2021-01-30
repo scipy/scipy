@@ -2,7 +2,6 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
-from itertools import product
 from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
@@ -75,7 +74,7 @@ def _vectorize_2s_hypotest_factory(result_creator):
             shape = x.shape[:-1]
             statistics = np.zeros(shape)
             pvalues = np.zeros(shape)
-            for indices in product(*[range(i) for i in shape]):
+            for indices in np.ndindex(shape):
                 xi = x[indices]
                 yi = y[indices]
                 if nan_policy == "omit":
