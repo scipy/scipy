@@ -111,6 +111,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewcauchy        -- Skew Cauchy
    skewnorm          -- Skew normal
    t                 -- Student's T
    trapezoid         -- Trapezoidal
@@ -237,6 +238,7 @@ Correlation functions
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    siegelslopes
    theilslopes
@@ -269,6 +271,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   page_trend_test
 
 .. autosummary::
    :toctree: generated/
@@ -384,6 +387,7 @@ Univariate and multivariate kernel density estimation
    :toctree: generated/
 
    gaussian_kde
+
 
 Warnings used in :mod:`scipy.stats`
 ===================================

@@ -1,8 +1,9 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam)
+                         boltzmann, skellam, nbinom)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+import pytest
 
 
 def test_hypergeom_logpmf():
@@ -99,6 +100,7 @@ def test_betabinom_bernoulli():
     expected = bernoulli(a / (a + b)).pmf(k)
     assert_almost_equal(p, expected)
 
+
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]
@@ -112,3 +114,16 @@ def test_skellam_gh11474():
                     0.5044605891382528, 0.5019947363350450, 0.5019848365953181,
                     0.5019750827993392, 0.5019466621805060, 0.5018209330219539]
     assert_allclose(cdf, cdf_expected)
+
+
+@pytest.mark.parametrize("mu, q, expected",
+                         [[10, 120, -1.240089881791596e-38],
+                          [1500, 0, -86.61466680572661]])
+def test_nbinom_11465(mu, q, expected):
+    # test nbinom.logcdf at extreme tails
+    size = 20
+    n, p = size, size/(size+mu)
+    # In R:
+    # options(digits=16)
+    # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
+    assert_allclose(nbinom.logcdf(q, n, p), expected)
