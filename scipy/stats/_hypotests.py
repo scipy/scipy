@@ -764,7 +764,10 @@ def barnard_exact(
     because the vaccine has either no effect (H0 hypothesis) or a 'positive'
     effect (H1 hypothesis). Fisher’s exact test produces an exact
     p-value of 0.0641 (with
-    ``stats.fisher_exact([[7, 12], [8, 3]], alternative="less")``).
+>>> res_fisher = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
+>>> res_fisher.pvalue
+0.0641...
+
     A commonly used significance level is 5%--if we adopt that, `fisher_exact`
     would refute H1 and says that this vaccine has no effect.
     With `barnard_exact`, the probability that we would observe this or an
