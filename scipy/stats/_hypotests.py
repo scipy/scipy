@@ -305,7 +305,8 @@ def cramervonmises(rvs, cdf, args=()):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Cramér-von_Mises_criterion
+    .. [1] Cramér-von Mises criterion, Wikipedia,
+           https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
     .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
