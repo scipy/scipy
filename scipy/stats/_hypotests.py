@@ -330,7 +330,7 @@ def cramervonmises(rvs, cdf, args=()):
     reject the null hypothesis that the observed sample is drawn from the
     standard normal distribution.
 
-    Now suppose we wish to check whether the same sampels shifted by 2.1 is
+    Now suppose we wish to check whether the same samples shifted by 2.1 is
     consistent with being drawn from a normal distribution with a mean of 2.
 
     >>> y = x + 2.1
