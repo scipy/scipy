@@ -2445,6 +2445,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
 
+    Note: `binom_test` is deprecated; it is recommended that `binomtest`
+    be used instead.
+
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.

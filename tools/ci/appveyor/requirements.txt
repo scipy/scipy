@@ -1,5 +1,6 @@
 numpy
 cython
+pythran
 pybind11
 pytest
 pytest-timeout

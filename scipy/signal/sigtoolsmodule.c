@@ -824,8 +824,13 @@ COMPARE(ULONGLONG_compare, npy_ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
-        /*return PyObject_Compare(*ip1, *ip2); */
-        return PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) != 1;
+        /* PyObject_RichCompareBool returns -1 on error; not handled here */
+        if(PyObject_RichCompareBool(*ip1, *ip2, Py_LT) == 1)
+          return -1;
+        else if(PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) == 1)
+          return 0;
+        else
+          return 1;
 }
 
 typedef int (*CompareFunction)(const void *, const void *);
