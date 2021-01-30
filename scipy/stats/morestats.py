@@ -1613,7 +1613,7 @@ def _shapiro_result_creator(res):
     return ShapiroResult(res[..., 0], res[..., 1])
 
 
-@_vectorize_1s_hypotest_factory(_shapiro_result_creator)
+@_vectorize_1s_hypotest_factory(_shapiro_result_creator, default_axis=None)
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.

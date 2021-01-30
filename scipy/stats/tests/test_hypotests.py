@@ -160,7 +160,7 @@ class TestCvm(object):
         r2 = cramervonmises(x, "beta", args)
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
-        
+
 class TestSomersD(object):
 
     def test_like_kendalltau(self):
@@ -405,7 +405,7 @@ class TestSomersD(object):
         res = stats.somersd(x, y)
         assert_equal(res.table, np.eye(10))
 
-        
+
 vectorization_nanpolicy_cases = [
     (stats.pearsonr, tuple(), dict(), 2),
     (stats.ranksums, tuple(), dict(), 2),
@@ -458,3 +458,21 @@ def test_hypotest_nan_raise(hypotest, args, kwds, nsamp):
 
     with assert_raises(ValueError, match="The input contains nan values"):
         hypotest(*x, nan_policy="raise", *args, **kwds)
+
+
+# previously,
+# pearsonr raised TypeError calling mean
+# ranksums produced garbage 1d, as far as I can tell
+# ansari produced garbage 1d, as far as I can tell
+# brunnermunzel raised ValueError about broadcasting
+# epps_singleton_2samp raised error that sample must be 1d
+@pytest.mark.parametrize(("hypotest", "nsamp"),
+                         [(stats.jarque_bera, 1),
+                          (stats.shapiro, 1)])
+def test_hypotest_back_compat_no_axis(hypotest, nsamp):
+    m, n = 8, 9
+    np.random.seed(0)
+    x = np.random.rand(nsamp, m, n)
+    res = hypotest(*x)
+    res2 = hypotest([xi.ravel() for xi in x])
+    assert_equal(res, res2)

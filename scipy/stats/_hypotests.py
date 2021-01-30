@@ -16,10 +16,10 @@ from functools import wraps
 # it might make some sense to have a separate decorator for the 1d case
 # because it can be quite a bit simpler - we can use np.apply_along_axis,
 # for instance
-def _vectorize_1s_hypotest_factory(result_creator):
+def _vectorize_1s_hypotest_factory(result_creator, default_axis=0):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
-        def vectorize_hypotest_wrapper(x, *args, axis=0,
+        def vectorize_hypotest_wrapper(x, *args, axis=default_axis,
                                        nan_policy='propagate', **kwds):
 
             x = np.atleast_1d(x)
@@ -28,16 +28,19 @@ def _vectorize_1s_hypotest_factory(result_creator):
             _, nan_policy = scipy.stats.stats._contains_nan(x, nan_policy)
 
             # Addresses nan_policy="omit"
-            if nan_policy == 'omit':
-                def hypotest_fun(x, *args, **kwds):
+            # Assumes nan_policy="propagate" is handled hypotest_fun_in
+            def hypotest_fun(x):
+                if nan_policy == 'omit':
                     x = x[~np.isnan(x)]
-                    return hypotest_fun_in(x, *args, **kwds)
-            else:
-                hypotest_fun = hypotest_fun_in
+                return hypotest_fun_in(x, *args, **kwds)
 
-            x = np.moveaxis(x, axis, -1)
-            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            return result_creator(res)
+            if axis is None:
+                x = x.ravel()
+                return hypotest_fun(x)
+            else:
+                x = np.moveaxis(x, axis, -1)
+                res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
+                return result_creator(res)
 
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator

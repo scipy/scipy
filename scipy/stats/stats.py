@@ -190,7 +190,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import (epps_singleton_2samp, cramervonmises,
                          _vectorize_2s_hypotest_factory,
                          _vectorize_1s_hypotest_factory,
-                        somersd)
+                         somersd)
 from ._page_trend_test import page_trend_test
 
 
@@ -1750,7 +1750,7 @@ def _jarque_bera_result_creator(res):
     return Jarque_beraResult(res[..., 0], res[..., 1])
 
 
-@_vectorize_1s_hypotest_factory(_jarque_bera_result_creator)
+@_vectorize_1s_hypotest_factory(_jarque_bera_result_creator, default_axis=None)
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.
