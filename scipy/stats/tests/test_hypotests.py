@@ -430,7 +430,7 @@ class TestBarnardExact(object):
         for the nuisance parameter of 1e-6.
         """
         res = barnard_exact(input_sample)
-        TX_obs, pvalue = res.score_statistic, res.pvalue
+        TX_obs, pvalue = res.statistic, res.pvalue
         assert_allclose([TX_obs, pvalue], expected)
 
     @pytest.mark.parametrize("input_sample,expected", [
@@ -451,7 +451,7 @@ class TestBarnardExact(object):
         for the nuisance parameter of 1e-6.
         """
         res = barnard_exact(input_sample, pooled=False)
-        TX_obs, pvalue = res.score_statistic, res.pvalue
+        TX_obs, pvalue = res.statistic, res.pvalue
         assert_allclose([TX_obs, pvalue], expected)
 
     def test_raises(self):
@@ -485,7 +485,7 @@ class TestBarnardExact(object):
     ])
     def test_row_or_col_zero(self, input_sample, expected):
         res = barnard_exact(input_sample)
-        TX_obs, pvalue = res.score_statistic, res.pvalue
+        TX_obs, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(TX_obs, expected[1])
 
@@ -500,11 +500,11 @@ class TestBarnardExact(object):
         TX_expect, less_pvalue_expect, greater_value_expect = expected
 
         res = barnard_exact(input_sample, alternative="less")
-        TX_obs, pvalue = res.score_statistic, res.pvalue
+        TX_obs, pvalue = res.statistic, res.pvalue
         pvalue = min((pvalue, 1 - pvalue))
         assert_allclose([TX_obs, pvalue], [TX_expect, less_pvalue_expect], atol=1e-7)
 
         res = barnard_exact(input_sample, alternative="greater")
-        TX_obs, pvalue = res.score_statistic, res.pvalue
+        TX_obs, pvalue = res.statistic, res.pvalue
         pvalue = max((pvalue, 1 - pvalue))
         assert_allclose([TX_obs, pvalue], [TX_expect, greater_value_expect], atol=1e-7)
