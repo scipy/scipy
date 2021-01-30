@@ -388,6 +388,15 @@ Univariate and multivariate kernel density estimation
    gaussian_kde
 
 
+Quasi-Monte Carlo
+=================
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.qmc
+
+
 Warnings used in :mod:`scipy.stats`
 ===================================
 
@@ -411,6 +420,7 @@ from ._binomtest import binomtest, BinomTestResult
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
+from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
