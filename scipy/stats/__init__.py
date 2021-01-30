@@ -399,6 +399,7 @@ Contingency table functions
    contingency.margins
    contingency.association
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------

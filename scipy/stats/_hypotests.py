@@ -734,7 +734,7 @@ def barnard_exact(
     .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003). Conditional
     versus Unconditional Exact Tests for Comparing Two Binomials`__.
 
-    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf # noqa: E501
+    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf  # noqa: E501
 
     Examples
     --------
