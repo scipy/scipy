@@ -3158,7 +3158,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         unspecified, the size based on the number of nodes in the
         dendrogram.
     leaf_label_func : lambda or function, optional
-        When leaf_label_func is a callable function, for each
+        When ``leaf_label_func`` is a callable function, for each
         leaf with cluster index :math:`k < 2n-1`. The function
         is expected to return a string with the label for the
         leaf.
@@ -3177,9 +3177,15 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                     return str(id)
                 else:
                     return '[%d %d %1.2f]' % (id, count, R[n-id,3])
+
             # The text for the leaf nodes is going to be big so force
             # a rotation of 90 degrees.
             dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
+
+            # leaf_label_func can also be used together with ``truncate_mode`` parameter,
+            # in which case you will get your leaves labeled after truncation:
+            dendrogram(Z, leaf_label_func=llf, leaf_rotation=90,
+                       truncate_mode='level', p=2)
 
     show_contracted : bool, optional
         When True the heights of non-singleton nodes contracted

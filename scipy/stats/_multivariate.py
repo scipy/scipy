@@ -1651,7 +1651,9 @@ class wishart_gen(multi_rv_generic):
     specifies the scale matrix, which must be symmetric and positive definite.
     In this context, the scale matrix is often interpreted in terms of a
     multivariate normal precision matrix (the inverse of the covariance
-    matrix).
+    matrix). These arguments must satisfy the relationship
+    ``df > scale.ndim - 1``, but see notes on using the `rvs` method with
+    ``df < scale.ndim``.
 
     Methods
     -------
@@ -1717,6 +1719,12 @@ class wishart_gen(multi_rv_generic):
     distribution :math:`W_1(\nu, 1)` collapses to the :math:`\chi^2(\nu)`
     distribution.
 
+    The algorithm [2]_ implemented by the `rvs` method may
+    produce numerically singular matrices with :math:`p - 1 < \nu < p`; the
+    user may wish to check for this condition and generate replacement samples
+    as necessary.
+
+
     .. versionadded:: 0.16.0
 
     References
@@ -1778,9 +1786,9 @@ class wishart_gen(multi_rv_generic):
             df = dim
         elif not np.isscalar(df):
             raise ValueError("Degrees of freedom must be a scalar.")
-        elif df < dim:
-            raise ValueError("Degrees of freedom cannot be less than dimension"
-                             " of scale matrix, but df = %d" % df)
+        elif df <= dim - 1:
+            raise ValueError("Degrees of freedom must be greater than the "
+                             "dimension of scale matrix minus 1.")
 
         return dim, df, scale
 

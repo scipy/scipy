@@ -15,7 +15,7 @@ fit_sizes = [1000, 5000]  # sample sizes to try
 thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
-failing_fits = [
+mle_failing_fits = [
         'burr',
         'chi2',
         'gausshyper',
@@ -32,10 +32,28 @@ failing_fits = [
         'truncexpon',
         'tukeylambda',
         'vonmises',
-        'wrapcauchy',
         'levy_stable',
-        'trapezoid'
+        'trapezoid',
 ]
+
+mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
+                   'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
+                   'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
+                   'gengamma', 'gennorm', 'genpareto', 'halfcauchy',
+                   'invgamma', 'invweibull', 'johnsonsu',
+                   'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
+                   'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
+                   'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
+                   'skewcauchy', 't',
+                   'trapezoid', 'triang', 'tukeylambda']
+
+# not sure if these fail, but they caused my patience to fail
+mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                'truncexpon', 'vonmises', 'vonmises_line']
+
+failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -54,8 +72,9 @@ def cases_test_cont_fit():
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
-def test_cont_fit(distname, arg):
-    if distname in failing_fits:
+@pytest.mark.parametrize('method', ["MLE", 'MM'])
+def test_cont_fit(distname, arg, method):
+    if distname in failing_fits[method]:
         # Skip failing fits unless overridden
         try:
             xfail = not int(os.environ['SCIPY_XFAIL'])
@@ -80,7 +99,7 @@ def test_cont_fit(distname, arg):
         with np.errstate(all='ignore'), suppress_warnings() as sup:
             sup.filter(category=DeprecationWarning, message=".*frechet_")
             rvs = distfn.rvs(size=fit_size, *arg)
-            est = distfn.fit(rvs)  # start with default values
+            est = distfn.fit(rvs, method=method)  # start with default values
 
         diff = est - truearg
 

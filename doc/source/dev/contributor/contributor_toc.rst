@@ -17,6 +17,7 @@ This guide is designed to help you quickly find the information you need about S
 
 Development environment
 -----------------------
+- :ref:`quickerstart-conda` contains just the commands you need to get started on Mac and Linux
 - :ref:`quickstart-pip` presents an overview of setting up the development environment using pip on Linux
 - :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
 - :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
