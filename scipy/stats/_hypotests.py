@@ -734,7 +734,7 @@ def barnard_exact(
     .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003). Conditional
     versus Unconditional Exact Tests for Comparing Two Binomials`__.
 
-    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf
+    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf # noqa: E501
 
     Examples
     --------
@@ -745,7 +745,7 @@ def barnard_exact(
     recombinant DNA influenza vaccine and the 15 were innoculated with a
     placebo. Twelve of the 15 subjects in the placebo group (80%) eventually
     became infected with influenza whereas for the vaccine group, only 7 of
-    the 15 subjects (47%) became infected. The data are tabulated as a 2 × 2
+    the 15 subjects (47%) became infected. The data are tabulated as a 2 x 2
     table::
 
             Vaccine  Placebo
@@ -762,7 +762,7 @@ def barnard_exact(
 
     In this exemple, we use the `alternative` parameter with the "less" option,
     because the vaccine has either no effect (H0 hypothesis) or a 'positive'
-    effect (H1 hypothesis). Fisher’s exact test produces an exact
+    effect (H1 hypothesis). Fisher's exact test produces an exact
     p-value of 0.0641 (with
 >>> res_fisher = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
 >>> res_fisher.pvalue
