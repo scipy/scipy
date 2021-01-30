@@ -306,7 +306,8 @@ def cramervonmises(rvs, cdf, args=()):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Cramér-von_Mises_criterion
+    .. [1] Cramér-von Mises criterion, Wikipedia,
+           https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
     .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
@@ -330,7 +331,7 @@ def cramervonmises(rvs, cdf, args=()):
     reject the null hypothesis that the observed sample is drawn from the
     standard normal distribution.
 
-    Now suppose we wish to check whether the same sampels shifted by 2.1 is
+    Now suppose we wish to check whether the same samples shifted by 2.1 is
     consistent with being drawn from a normal distribution with a mean of 2.
 
     >>> y = x + 2.1
