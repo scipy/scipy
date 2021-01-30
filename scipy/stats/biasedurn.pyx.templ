@@ -11,6 +11,21 @@ IF not NPY_OLD:
     from numpy.random cimport bitgen_t
     from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
+    # If this were C code we could do this:
+    #     from numpy.random.c_distributions cimport random_normal
+    # But this is C++, so we need to wrap the include with an extern "C"
+    # to prevent name-mangling -- this is probably a Cython bug.
+    # (Note: the double curly braces are due to the use of a format
+    #  string in _generate_pyx.py for simple substitutions -- they will
+    #  be replaced by single curly braces in the generated pyx file)
+    cdef extern from *:
+        """
+        extern "C" {{
+          #include "numpy/random/distributions.h"
+        }}
+        """
+        double random_normal(bitgen_t*, double, double) nogil
+
 cdef class _PyFishersNCHypergeometric:
     cdef unique_ptr[CFishersNCHypergeometric] c_fnch
 
@@ -36,26 +51,26 @@ cdef class _PyFishersNCHypergeometric:
 
 
 cdef class _PyWalleniusNCHypergeometric:
-    cdef unique_ptr[CWalleniusNCHypergeometric] c_fnch
+    cdef unique_ptr[CWalleniusNCHypergeometric] c_wnch
 
     def __cinit__(self, int n, int m, int N, double odds, double accuracy):
-        self.c_fnch = unique_ptr[CWalleniusNCHypergeometric](new CWalleniusNCHypergeometric(n, m, N, odds, accuracy))
+        self.c_wnch = unique_ptr[CWalleniusNCHypergeometric](new CWalleniusNCHypergeometric(n, m, N, odds, accuracy))
 
     def mode(self):
-        return self.c_fnch.get().mode()
+        return self.c_wnch.get().mode()
 
     def mean(self):
-        return self.c_fnch.get().mean()
+        return self.c_wnch.get().mean()
 
     def variance(self):
-        return self.c_fnch.get().variance()
+        return self.c_wnch.get().variance()
 
     def probability(self, int x):
-        return self.c_fnch.get().probability(x)
+        return self.c_wnch.get().probability(x)
 
     def moments(self):
         cdef double mean, var
-        self.c_fnch.get().moments(&mean, &var)
+        self.c_wnch.get().moments(&mean, &var)
         return mean, var
 
 
@@ -64,11 +79,17 @@ IF NPY_OLD:
     cdef double next_double() nogil:
         with gil:
             return _glob_rng.uniform()
+    cdef double next_normal(const double m, const double s) nogil:
+        with gil:
+            return _glob_rng.normal(m, s)
 ELSE:
     cdef bitgen_t* _glob_rng
     cdef double next_double() nogil:
         global _glob_rng
-        return _glob_rng.next_double(_glob_rng.state);
+        return _glob_rng.next_double(_glob_rng.state)
+    cdef double next_normal(const double m, const double s) nogil:
+        global _glob_rng
+        return random_normal(_glob_rng, m, s)
 
     cdef object make_rng(random_state=None):
         # get a bit_generator object
@@ -93,6 +114,7 @@ cdef class _PyStochasticLib3:
     def __cinit__(self):
         self.c_sl3 = unique_ptr[StochasticLib3](new StochasticLib3(0))
         self.c_sl3.get().next_double = &next_double
+        self.c_sl3.get().next_normal = &next_normal
 
     def Random(self):
         return self.c_sl3.get().Random()

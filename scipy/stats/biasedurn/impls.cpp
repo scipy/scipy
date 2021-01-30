@@ -5,7 +5,7 @@
 #include "stocc.h"
 
 double StochasticLib1::Normal(double m, double s) {
-  throw std::runtime_error("No normal generator found!");
+  return next_normal(m, s);
 }
 
 void FatalError(const char* msg) {
