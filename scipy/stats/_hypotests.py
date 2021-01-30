@@ -74,6 +74,7 @@ def _vectorize_2s_hypotest_factory(result_creator):
             shape = x.shape[:-1]
             statistics = np.zeros(shape)
             pvalues = np.zeros(shape)
+
             for indices in np.ndindex(shape):
                 xi = x[indices]
                 yi = y[indices]
@@ -82,6 +83,11 @@ def _vectorize_2s_hypotest_factory(result_creator):
                 statistic, pvalue = hypotest_fun(xi, yi, *args, **kwds)
                 statistics[indices] = statistic
                 pvalues[indices] = pvalue
+
+            if not shape:
+                statistics = statistics.item()
+                pvalues = pvalues.item()
+
             return result_creator(statistics, pvalues)
 
         return vectorize_hypotest_wrapper
