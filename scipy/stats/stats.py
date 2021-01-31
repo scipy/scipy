@@ -105,6 +105,7 @@ Correlation Functions
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    theilslopes
    multiscale_graphcorr
@@ -131,6 +132,7 @@ Inferential Stats
    friedmanchisquare
    brunnermunzel
    combine_pvalues
+   page_trend_test
 
 Statistical Distances
 ---------------------
@@ -185,8 +187,8 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
-from ._hypotests import epps_singleton_2samp, cramervonmises
-
+from ._hypotests import epps_singleton_2samp, cramervonmises, somersd
+from ._page_trend_test import page_trend_test
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -210,7 +212,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises']
+           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
+           'page_trend_test', 'somersd']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -7584,7 +7587,7 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1: 
+        elif arg.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
     n = np.asarray(list(map(len, args)))
@@ -8311,7 +8314,7 @@ def _sum_of_squares(a, axis=0):
     See Also
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
-    `_sum_of_squares`).
+        `_sum_of_squares`).
 
     """
     a, axis = _chk_asarray(a, axis)

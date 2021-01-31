@@ -270,6 +270,7 @@ scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/_sobol.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
