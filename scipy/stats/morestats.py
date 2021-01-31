@@ -3513,6 +3513,9 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation=
             * nearest: ``i`` or ``j``, whichever is nearest.
             * midpoint: ``(i + j) / 2``.
 
+    .. versionadded:: 1.7.0
+
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion
