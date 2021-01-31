@@ -57,10 +57,11 @@ RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_U
     # ensuring we can use conda develop
     chown -R ${GP_USER}:${GP_GROUP} ${CONDA_DIR} 
 
+# Using root to fix permissions - make sure we change to 'gitpod' always
 USER root
 
-# making the directories human writable - this is needed to use conda develop
-# $HOME is by default user writtable
+# Making the directories human writable - this is needed to use `conda develop`
+# $HOME is by default user writable
 RUN fix_permissions $CONDA_DIR && \
     fix_permissions ${CONDA_DIR}/envs/scipydev/ && \
     workspace_config

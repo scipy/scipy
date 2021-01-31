@@ -2,15 +2,25 @@ image:
   file: ./tools/docker_dev/.gitpod.Dockerfile
 tasks:
   - init: |
+      # when the workspace is recreated:
+      # Scipy is built as are the docs
       conda activate scipydev
       python setup.py build_ext --inplace
       conda develop .
       git submodule update --init
       cd doc 
       make html-scipyorg
+    # ensure the conda env is activated when the workspace is started
     command: conda activate scipydev
 
 # exposing ports for sphinx-autobuild 
 ports:
   - port: 8000
     onOpen: notify
+
+# some useful extensions to hve
+vscode:
+  extensions:
+    - eamodio.gitlens@10.2.3:CRhSs/nkGIS3K5yCBlhVTg==
+    - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
+    - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
