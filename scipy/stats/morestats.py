@@ -3042,7 +3042,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         else:
             prob = distributions.norm.cdf(z)
     elif mode == "exact":
-        # get frequencies cnt of the possible positive ranksums r_plus
+        # get pmf of the possible positive ranksums r_plus
         pmf = _get_wilcoxon_distr(count)
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
