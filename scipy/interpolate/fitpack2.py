@@ -1385,8 +1385,8 @@ class SphereBivariateSpline(_BivariateSplineBase):
         a function to evaluate a bivariate B-spline and its derivatives
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
-    SmoothUnivariateSpline :
-        a smooth univariate spline through the given points
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
     LSQUnivariateSpline :
         a univariate spline using weighted least-squares fitting
     """
