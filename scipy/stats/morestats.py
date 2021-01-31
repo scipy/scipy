@@ -3541,7 +3541,8 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation=
     if q[0] == q[1]:
         raise ValueError("q values must differ")
 
-    quartiles = np.quantile(samples, q=(min(q), max(q)), axis=axis, interpolation=interpolation)
+    quartiles = np.quantile(samples, q=(min(q), max(q)),
+                            axis=axis, interpolation=interpolation)
 
     def _calculate_dispersion(quartile_low, quartile_high):
         return (quartile_high - quartile_low)/(quartile_high + quartile_low)
