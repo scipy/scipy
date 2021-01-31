@@ -7,9 +7,15 @@ from numpy.testing import (assert_, assert_equal, assert_allclose,
 import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
+<<<<<<< HEAD
                                     _cdf_cvm)
 from scipy.stats import distributions, barnard_exact
 import scipy.stats as stats
+=======
+                                    _cdf_cvm, barnard_exact)
+import scipy.stats as stats
+from scipy.stats import distributions
+>>>>>>> MAINT: stats: fix scipy import
 from .common_tests import check_named_results
 
 
