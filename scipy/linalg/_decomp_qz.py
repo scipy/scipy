@@ -350,14 +350,17 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     array([ True,  True, False, False], dtype=bool)
 
     """
-    result, typ = _qz(A, B, output=output, sort=None,
-                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                      check_finite=check_finite)
-    AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
-    if typ not in 'cz':
-        alpha, beta = result[3] + result[4]*1.j, result[5]
+    (AA, BB, _, *ab, Q, Z, _, _), typ = _qz(A, B, output=output, sort=None,
+                                            overwrite_a=overwrite_a,
+                                            overwrite_b=overwrite_b,
+                                            check_finite=check_finite)
+
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
     else:
-        alpha, beta = result[3], result[4]
+        alpha, beta = ab
 
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
@@ -365,9 +368,18 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     tgsen = get_lapack_funcs('tgsen', (AA, BB))
     # the real case needs 4n + 16 lwork
     lwork = 4*AA.shape[0] + 16 if typ in 'sd' else 1
-    result = tgsen(select, AA, BB, Q, Z, ijob=0, lwork=lwork, liwork=1)
+    AAA, BBB, *ab, QQ, ZZ, _, _, _, _, info = tgsen(select, AA, BB, Q, Z,
+                                                    ijob=0,
+                                                    lwork=lwork, liwork=1)
 
-    info = result[-1]
+    # Once more for tgsen output
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
+    else:
+        alpha, beta = ab
+
     if info < 0:
         raise ValueError(f"Illegal value in argument {-info} of tgsen")
     elif info == 1:
@@ -375,15 +387,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
                          " matrix pair (A, B) would be too far from "
                          "generalized Schur form; the problem is very "
                          "ill-conditioned. (A, B) may have been partially "
-                         "reorded. If requested, 0 is returned in DIF(*), "
-                         "PL, and PR.")
+                         "reordered.")
 
-    # for real results has a, b, alphar, alphai, beta, q, z, m, pl, pr, dif,
-    # work, iwork, info
-    if typ in ['f', 'd']:
-        alpha = result[2] + result[3] * 1.j
-        return (result[0], result[1], alpha, result[4], result[5], result[6])
-    # for complex results has a, b, alpha, beta, q, z, m, pl, pr, dif, work,
-    # iwork, info
-    else:
-        return result[0], result[1], result[2], result[3], result[4], result[5]
+    return AAA, BBB, alpha, beta, QQ, ZZ

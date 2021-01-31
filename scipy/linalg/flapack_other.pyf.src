@@ -105,7 +105,7 @@ subroutine <prefix2>tgsen_lwork(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alp
     integer intent(hide) :: m
     <ftype2> intent(hide) :: pl
     <ftype2> intent(hide) :: pr
-    <ftype2> intent(hide),dimension(2) :: dif
+    <ftype2> intent(hide) :: dif
     integer intent(hide):: lwork=-1
     integer intent(hide) :: liwork=-1
 
@@ -175,7 +175,7 @@ subroutine <prefix2c>tgsen_lwork(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,bet
     integer intent(hide) :: m
     <ftype2> intent(hide) :: pl
     <ftype2> intent(hide) :: pr
-    <ftype2> intent(hide),dimension(2) :: dif
+    <ftype2> intent(hide) :: dif
     integer intent(hide):: lwork=-1
     integer intent(hide) :: liwork=-1
 
