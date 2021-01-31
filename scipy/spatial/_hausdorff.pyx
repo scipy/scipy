@@ -20,11 +20,11 @@ __all__ = ['directed_hausdorff']
 @cython.boundscheck(False)
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
-    cdef double cmax, cmin, d
+    cdef double cmax, cmin, d = 0
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
-    cdef unsigned int i, j, k
+    cdef int i, j, k
     cdef unsigned int i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
     cdef np.ndarray[np.int64_t, ndim=1, mode='c'] resort1, resort2
 
@@ -44,8 +44,8 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
         cmin = np.inf
         for j in range(N2):
             d = 0
-	    # faster performance with square of distance
-	    # avoid sqrt until very end
+            # faster performance with square of distance
+            # avoid sqrt until very end
             for k in range(data_dims):
                 d += (ar1[i, k] - ar2[j, k])**2
             if d < cmax: # break out of `for j` loop
