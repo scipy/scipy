@@ -1,7 +1,7 @@
 """
 Routines for updating QR decompositions
 
-.. versionadded: 0.16.0
+.. versionadded:: 0.16.0
 
 """
 #
