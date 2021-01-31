@@ -20,7 +20,7 @@ jobs:
       max-parallel: 3
       matrix:
         python-version: [3.7, 3.8, 3.9]
-        numpy-version: ['numpy==1.19.5']
+        numpy-version: ['--upgrade numpy']
 
     steps:
     - uses: actions/checkout@v2
@@ -78,4 +78,6 @@ jobs:
 
     - name: Test SciPy
       run: |
-        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
+        # This is currently broken in combination with NumPy >=1.20.0, see gh-13464
+        #SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
+        python -u runtests.py
