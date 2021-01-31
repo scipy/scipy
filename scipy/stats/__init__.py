@@ -271,6 +271,7 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
+   quartile_coeff_dispersion
 
 .. autosummary::
    :toctree: generated/

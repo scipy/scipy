@@ -3484,8 +3484,9 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation=
     """
     Compute the quartile coefficient of dispersion for a given sample array.
 
-    Let Q1, Q2 be two quartiles of samples such that ￿Q1 < Q2, the quartile
-    coefficient of dispersion is calculated by (￿Q2 - Q1) / (Q1 + Q2).
+    Given two quartiles Q1, Q2 from array samples such that Q1 < Q2, the quartile
+    coefficient of dispersion is calculated by (Q2 - Q1)/(Q1 + Q2).
+    by default it is computed using 3rd and 1st (Q2, Q1 respectively) quartiles.
 
     Parameters
     ----------
@@ -3518,7 +3519,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation=
 
     Returns
     -------
-    dispersion : float
+    dispersion : {float, array_like of float}
         Dispersion for each axis.
 
     Examples
