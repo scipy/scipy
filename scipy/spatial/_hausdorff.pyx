@@ -10,8 +10,6 @@ Directed Hausdorff Code
 # Distributed under the same BSD license as Scipy.
 #
 
-import warnings
-
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -28,20 +26,16 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     cdef int data_dims = ar1.shape[1]
     cdef unsigned int i, j, k
     cdef unsigned int i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
-    cdef long[:] resort1, resort2
+    cdef np.ndarray[np.int64_t, ndim=1, mode='c'] resort1, resort2
 
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
     # performance of the algorithm
     rng = np.random.RandomState(seed)
-    resort1 = np.arange(N1)
-    resort2 = np.arange(N2)
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore",
-                                message="`x` isn't a recognized object")
-        rng.shuffle(resort1)
-        rng.shuffle(resort2)
-
+    resort1 = np.arange(N1, dtype=np.int64)
+    resort2 = np.arange(N2, dtype=np.int64)
+    rng.shuffle(resort1)
+    rng.shuffle(resort2)
     ar1 = np.asarray(ar1)[resort1]
     ar2 = np.asarray(ar2)[resort2]
 
