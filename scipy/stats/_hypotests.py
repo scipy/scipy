@@ -6,7 +6,6 @@ from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from . import distributions
 from ._continuous_distns import chi2, norm
-from scipy.special import gamma, kv, gammaln
 import scipy.stats
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
