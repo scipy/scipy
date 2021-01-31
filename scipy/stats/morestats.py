@@ -26,7 +26,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'quartile_coeff_dispersion'
            ]
 
 
@@ -3478,3 +3478,71 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
+
+
+def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation='lower'):
+    """
+    Compute the quartile coefficient of dispersion for a given sample array.
+
+    Let Q1, Q2 be two quartiles of samples such that ￿Q1 < Q2, the quartile
+    coefficient of dispersion is calculated by (￿Q2 - Q1) / (Q1 + Q2).
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array.
+    q : array_like of float, optional
+        Sequence of 2 quartiles, one of [0.25, 0.5, 0.75].
+        The default is to compute with ￿Q2 = 0.75 (upper quartile), Q1 = 0.25 (lower
+        quartile).
+    axis : {int, tuple of int, None}, optional
+        Axis or axes along which the quantiles are computed. The
+        default is to compute the quartile(s) along a flattened
+        version of the array.
+    interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}
+        This optional parameter specifies the interpolation method to
+        use when the desired quantile lies between two data points
+        ``i < j``:
+
+            * linear: ``i + (j - i) * fraction``, where ``fraction``
+              is the fractional part of the index surrounded by ``i``
+              and ``j``.
+            * lower: ``i``.
+            * higher: ``j``.
+            * nearest: ``i`` or ``j``, whichever is nearest.
+            * midpoint: ``(i + j) / 2``.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion
+
+    Returns
+    -------
+    dispersion : float
+        Dispersion for each axis.
+
+    Examples
+    --------
+    >>> from scipy.stats import quartile_coeff_dispersion
+    >>> quartile_coeff_dispersion(samples=[2, 4, 6, 8, 10, 12, 14, 16])
+    0.5
+
+    >>> quartile_coeff_dispersion(samples=[1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3])
+    0.15999999999999998
+
+    """
+    if len(q) != 2:
+        raise ValueError("Length of q must be 2")
+
+    if not np.all(np.isin(q, (0.25, 0.5, 0.75))):
+        raise ValueError("q values must be 2 from (0.25, 0.5, 0.75)")
+
+    if q[0] == q[1]:
+        raise ValueError("q values must differ")
+
+    quartiles = np.quantile(samples, q=(min(q), max(q)), axis=axis, interpolation=interpolation)
+
+    def _calculate_dispersion(quartile_low, quartile_high):
+        return (quartile_high - quartile_low)/(quartile_high + quartile_low)
+
+    return _calculate_dispersion(quartiles[0], quartiles[1])
