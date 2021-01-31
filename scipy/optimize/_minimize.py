@@ -177,7 +177,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
     tol : float, optional
-        Tolerance for termination. For detailed control, use solver-specific
+        Tolerance for termination. When `tol` is specified, the selected
+        minimization algorithm sets some relevant solver-specific tolerance(s)
+        equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
