@@ -6,12 +6,13 @@ from numpy.testing import (assert_allclose, assert_almost_equal, assert_,
                            assert_equal, assert_array_almost_equal,
                            assert_array_equal)
 from scipy.stats import shapiro
+from scipy.optimize import basinhopping
 
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy,
-                              QMCEngine, check_random_state)
+                              update_discrepancy, check_random_state,
+                              QMCEngine, _perturb_discrepancy)
 
 
 class TestUtils:
@@ -167,6 +168,23 @@ class TestUtils:
         x_new = [[0.5, 0.5]]
         with pytest.raises(ValueError, match=r"x_new is not a 1D array"):
             update_discrepancy(x_new, space_1[:-1], disc_init)
+
+    def test_perm_discrepancy(self):
+        doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
+
+        disc_init = qmc.discrepancy(doe_init)
+
+        row_1, row_2, col = 5, 2, 1
+
+        doe = doe_init.copy()
+        doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
+
+        disc_valid = qmc.discrepancy(doe)
+        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
+                                         disc_init)
+
+        assert_allclose(disc_valid, disc_perm)
 
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
@@ -482,6 +500,71 @@ class TestLHS(QMCEngineTests):
         sorted_sample = np.sort(sample, axis=0)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
+
+
+class TestOptimalDesign(QMCEngineTests):
+    qmce = qmc.OptimalDesign
+    can_scramble = False
+    unscramble_nd = np.array([[0.24583973, 0.01618008],
+                              [0.01587123, 0.82434795],
+                              [0.66702772, 0.35254855],
+                              [0.80642206, 0.89219419],
+                              [0.2825595, 0.41900669],
+                              [0.98003189, 0.52861091],
+                              [0.54709371, 0.23248484],
+                              [0.48715457, 0.72209797]])
+
+    def test_continuing(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: not a sequence.")
+
+    def test_discrepancy_hierarchy(self):
+        # base discrepancy as a reference for testing OptimalDesign is better
+        seed = np.random.RandomState(123456)
+        olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
+        sample_ref = olhs.random(n=20)
+        disc_ref = qmc.discrepancy(sample_ref)
+
+        # all defaults
+        seed = np.random.RandomState(123456)
+        optimal_ = qmc.OptimalDesign(d=2, seed=seed)
+        sample_ = optimal_.random(n=20)
+        disc_ = qmc.discrepancy(sample_)
+
+        assert disc_ < disc_ref
+
+        # using an initial sample
+        seed = np.random.RandomState(123456)
+        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref, seed=seed)
+        sample_1 = optimal_1.random(n=20)
+        disc_1 = qmc.discrepancy(sample_1)
+
+        assert disc_1 < disc_ref
+
+        # 5 iterations is better than 1
+        seed = np.random.RandomState(123456)
+        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=5,
+                                      seed=seed)
+        sample_2 = optimal_2.random(n=20)
+        disc_2 = qmc.discrepancy(sample_2)
+        assert disc_2 < disc_1
+
+        # another optimization method
+        def method(func, x0, bounds):
+            seed = np.random.RandomState(123456)
+            minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+            _ = basinhopping(func, x0, niter=100,
+                             minimizer_kwargs=minimizer_kwargs,
+                             seed=seed)
+
+        seed = np.random.RandomState(123456)
+        optimal_3 = qmc.OptimalDesign(d=2, start_design=sample_ref,
+                                      method=method, seed=seed)
+        sample_3 = optimal_3.random(n=20)
+        disc_3 = qmc.discrepancy(sample_3)
+        assert disc_3 < disc_ref
 
 
 class TestSobol(QMCEngineTests):

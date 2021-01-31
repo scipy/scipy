@@ -7,6 +7,7 @@ import warnings
 
 import numpy as np
 
+from scipy.optimize import basinhopping
 import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
@@ -14,7 +15,8 @@ from scipy.stats._sobol import (
 )
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton',
+           'LatinHypercube', 'OptimalDesign',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -381,6 +383,98 @@ def update_discrepancy(x_new, sample, initial_disc):
     disc3 = 1 / (n ** 2) * np.prod(1 + abs_)
 
     return initial_disc + disc1 + disc2 + disc3
+
+
+def _perturb_discrepancy(sample, i1, i2, k, disc):
+    """Centered discrepancy after and elementary perturbation on a LHS.
+
+    An elementary perturbation consists of an exchange of coordinates between
+    two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
+    this operation conserves the LHS properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample (before permutation) to compute the discrepancy from.
+    i1 : int
+        The first line of the elementary permutation.
+    i2 : int
+        The second line of the elementary permutation.
+    k : int
+        The column of the elementary permutation.
+    disc : float
+        Centered discrepancy of the design before permutation.
+
+    Returns
+    -------
+    discrepancy : float
+        Centered discrepancy.
+
+    References
+    ----------
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
+
+    """
+    sample = np.asarray(sample)
+    n = sample.shape[0]
+
+    z_ij = sample - 0.5
+
+    # Eq (19)
+    c_i1j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
+                                          abs(z_ij) -
+                                          abs(z_ij[i1, :] - z_ij)),
+                                   axis=1)
+    c_i2j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
+                                          abs(z_ij) -
+                                          abs(z_ij[i2, :] - z_ij)),
+                                   axis=1)
+
+    # Eq (20)
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
+              2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :]) -
+                               0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :])) -
+              2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :]) -
+                               0.5 * z_ij[i2, :] ** 2))
+
+    # Eq (22), typo in the article in the denominator i2 -> i1
+    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k]) -
+           abs(z_ij[i2, k] - z_ij[:, k]))
+    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k]) -
+             abs(z_ij[i1, k] - z_ij[:, k]))
+    gamma = num / denum
+
+    # Eq (23)
+    c_p_i1j = gamma * c_i1j
+    # Eq (24)
+    c_p_i2j = c_i2j / gamma
+
+    alpha = (1 + abs(z_ij[i2, k])) / (1 + abs(z_ij[i1, k]))
+    beta = (2 - abs(z_ij[i2, k])) / (2 - abs(z_ij[i1, k]))
+
+    g_i1 = np.prod(1. + abs(z_ij[i1, :]))
+    g_i2 = np.prod(1. + abs(z_ij[i2, :]))
+    h_i1 = np.prod(1. + 0.5 * abs(z_ij[i1, :]) - 0.5 * (z_ij[i1, :] ** 2))
+    h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
+
+    # Eq (25), typo in the article g is missing
+    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
+    # Eq (26), typo in the article n ** 2
+    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
+
+    # Eq (26)
+    sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
+
+    mask = np.ones(n, dtype=bool)
+    mask[[i1, i2]] = False
+    sum_ = sum(sum_[mask])
+
+    disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
+
+    return disc_ep
 
 
 def primes_from_2_to(n):
@@ -879,6 +973,185 @@ class LatinHypercube(QMCEngine):
 
         """
         self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
+        self.num_generated = 0
+        return self
+
+
+class OptimalDesign(QMCEngine):
+    """Optimal design.
+
+    Optimize the design by doing random permutations to lower the centered
+    discrepancy [1]_.
+
+    The specified optimization `method` is used to select a new set of
+    permutations to perform. If `method` is None, *basinhopping* optimization
+    is used. `niter` set of permutations are performed.
+
+    Centered discrepancy-based design shows better space filling robustness
+    toward 2D and 3D subprojections. Distance-based design shows better space
+    filling but less robustness to subprojections [2]_.
+
+    Parameters
+    ----------
+    d : int
+        Dimension of the parameter space.
+    start_design : array_like (n, d), optional
+        Initial design of experiment to optimize. `OrthogonalLatinHypercube`
+        is used to generate a first design otherwise.
+    niter : int, optional
+        Number of iterations to perform. Default is 1.
+    method : callable ``f(func, x0, bounds)``, optional
+        Optimization function used to search new samples. Default to
+        *basinhopping* optimization.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
+
+    References
+    ----------
+    .. [1] Fang et al. Design and modeling for computer experiments,
+       Computer Science and Data Analysis Series, 2006.
+    .. [2] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties",
+       Journal of Simulation, 2013.
+
+    Examples
+    --------
+    Generate samples from an optimal design.
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
+    >>> sample = sampler.random(n=5)
+    >>> sample
+    array([[0.0454672 , 0.58836057],
+           [0.55947309, 0.98977623],
+           [0.26335167, 0.03734684],
+           [0.87822191, 0.33455121],
+           [0.73525093, 0.64964914]])
+
+    Compute the quality of the sample using the discrepancy criterion.
+
+    >>> qmc.discrepancy(sample)
+    0.018581537720176344
+
+    You can possibly improve the quality of the sample by performing more
+    optimization iterations by using `niter`:
+
+    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
+    >>> sample_2 = sampler_2.random(n=5)
+    >>> qmc.discrepancy(sample_2)
+    0.018378401228740238
+
+    Finally, samples can be scaled to bounds.
+
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
+    array([[0.45467204, 3.76508172],
+           [5.59473091, 4.96932869],
+           [2.63351668, 2.11204051],
+           [8.7822191 , 3.00365363],
+           [7.35250934, 3.94894743]])
+
+    """
+
+    def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
+        super().__init__(d=d, seed=seed)
+        self.start_design = start_design
+        self.niter = niter
+
+        if method is None:
+            def method(func, x0, bounds):
+                """Basinhopping optimization."""
+                minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
+                basinhopping(func, x0, niter=100,
+                             minimizer_kwargs=minimizer_kwargs, seed=self.rng)
+
+        self.method = method
+
+        self.best_doe = self.start_design
+        if self.start_design is not None:
+            self.best_disc = discrepancy(self.start_design)
+        else:
+            self.best_disc = np.inf
+
+        self.olhs = OrthogonalLatinHypercube(self.d, seed=self.rng)
+
+    def random(self, n=1):
+        """Draw `n` in the half-open interval ``[0, 1)``.
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of samples to generate in the parameter space. Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            Optimal sample.
+
+        """
+        if self.d == 0:
+            return np.empty((n, 0))
+
+        if self.best_doe is None:
+            self.best_doe = self.olhs.random(n)
+            self.best_disc = discrepancy(self.best_doe)
+
+        def _perturb_best_doe(x: np.ndarray) -> float:
+            """Perturb the DoE and keep track of the best DoE.
+
+            Parameters
+            ----------
+            x : list of int
+                It is a list of:
+                    idx : int
+                        Index value of the components to compute
+
+            Returns
+            -------
+            discrepancy : float
+                Centered discrepancy.
+
+            """
+            # Perturb the DoE
+            doe = self.best_doe.copy()
+            col, row_1, row_2 = np.round(x).astype(int)
+
+            disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
+                                        self.best_disc)
+            if disc < self.best_disc:
+                doe[row_1, col], doe[row_2, col] = doe[row_2, col], \
+                                                   doe[row_1, col]
+                self.best_disc = disc
+                self.best_doe = doe
+
+            return disc
+
+        x0 = [0, 0, 0]
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
+
+        for _ in range(self.niter):
+            self.method(_perturb_best_doe, x0, bounds)
+
+        self.num_generated += n
+        return self.best_doe
+
+    def reset(self):
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine: OptimalDesign
+            Engine reset to its base state.
+
+        """
+        self.__init__(d=self.d, seed=self.rng_seed)
         self.num_generated = 0
         return self
 

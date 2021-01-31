@@ -45,6 +45,12 @@ def update_discrepancy(
 ) -> _FloatingType: ...
 
 
+def _perturb_discrepancy(
+        sample: npt.ArrayLike, i1: _IntegerType, i2: _IntegerType,
+        k: _IntegerType, disc: _FloatingType
+) -> _FloatingType: ...
+
+
 def primes_from_2_to(n: _IntegerType) -> np.ndarray: ...
 
 
@@ -93,6 +99,21 @@ class LatinHypercube(QMCEngine):
     def random(self, n: _IntegerType = ...) -> np.ndarray: ...
 
     def reset(self) -> LatinHypercube: ...
+
+
+class OptimalDesign(QMCEngine):
+    def __init__(
+            self, d: _IntegerType,
+            start_design: Optional[npt.ArrayLike] = ...,
+            niter: _IntegerType = ...,
+            method: Optional[Callable[[Callable, List[int], npt.ArrayLike],
+                                      None]] = ...,
+            seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
+    ) -> None: ...
+
+    def random(self, n: _IntegerType = ...) -> np.ndarray: ...
+
+    def reset(self) -> OptimalDesign: ...
 
 
 class Sobol(QMCEngine):
