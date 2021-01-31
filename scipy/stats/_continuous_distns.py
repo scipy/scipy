@@ -16,6 +16,7 @@ from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
+
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
@@ -9009,12 +9010,26 @@ def _argus_phi(chi):
     """
     Utility function for the argus distribution
     used in the pdf, sf and moment calculation.
-    For small chi, use a Taylor approximation
+    For small chi, use a Padé approximant.
     """
-    p = [1/4224, 0, -1/432, 0, 1/56, 0, -0.1, 0, 1/3]
-    return _lazywhere(chi > 1e-3, (chi,),
+    p = [-1.3191273061071934e-05,
+         0.0007110770769112332,
+         -0.0065672254524213915,
+         0.13298076013381088]
+    q = [3.81130944737768e-05,
+         0.0015075388134494683,
+         0.026960355443430166,
+         0.2506152209852525,
+         1.0]
+
+    def pade_approx(chi):
+        chi2 = chi**2
+        chi3 = chi*chi2
+        return chi3 * np.polyval(p, chi2) / np.polyval(q, chi2)
+
+    return _lazywhere(chi > 0.5, (chi,),
                       lambda c: _norm_cdf(c) - c * _norm_pdf(c) - 0.5,
-                      f2=lambda c: c**3 * np.polyval(p, c) / _norm_pdf_C)
+                      f2=pade_approx)
 
 
 class argus_gen(rv_continuous):
@@ -9172,7 +9187,7 @@ class argus_gen(rv_continuous):
         phi = _argus_phi(chi)
         m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
         # compute second moment, use Taylor expansion for small chi
-        mu2 = _lazywhere(chi > 1e-3, (chi,),
+        mu2 = _lazywhere(chi > 0.01, (chi,),
             lambda c: 1 - 3 / c**2 + c * _norm_pdf(c) / _argus_phi(c),
             f2=lambda c: np.polyval([2./2625, 0, 6./175, 0, 0.4], c))
         return m, mu2 - m**2, None, None
