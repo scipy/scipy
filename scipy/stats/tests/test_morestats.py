@@ -706,6 +706,8 @@ class TestBinomTest:
         assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-8)
         res = stats.binomtest(7, 21, 0.48)
         assert_allclose(res.pvalue, 0.19667729017182273, rtol=1e-8)
+        res = stats.binomtest(3, 10, .5)
+        assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-8)
 
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
