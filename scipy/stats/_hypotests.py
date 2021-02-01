@@ -854,7 +854,7 @@ def barnard_exact(
                         where=nuisance_arr >= 0)
             tmp_log_1_minus_nuisance = (
                 np.log(1 - nuisance_arr, out=np.zeros_like(nuisance_arr),
-                        where=1 - nuisance_arr >= 0)
+                       where=1 - nuisance_arr >= 0)
             )
             PX = (
                 np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance * (
