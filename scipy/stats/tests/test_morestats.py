@@ -689,7 +689,7 @@ class TestBinomTest:
     # Expected results here are from old binom_test function.
     # The alternative will be left unspecified which defaults
     # it to two-sided.
-    def test_two_sided_pvalues1(self, pval):
+    def test_two_sided_pvalues1(self):
         res = stats.binomtest(9, n=21, p=0.48)
         assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-8)
         res = stats.binomtest(10079999, 21000000, 0.48)
