@@ -3539,7 +3539,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
         raise ValueError("Shape of q must be (,2)")
 
     if (q[0] > 1 or q[1] > 1) or (q[0] < 0 or q[1] < 0):
-        raise ValueError("q values must be 2 from (0.25, 0.5, 0.75)")
+        raise ValueError("q values must be 2 floats in range (0.0, 1.0)")
 
     if q[0] == q[1]:
         raise ValueError("q values must differ")
