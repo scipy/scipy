@@ -848,17 +848,21 @@ def barnard_exact(
         # Reshape in dimension 3 array
         nuisance_arr = nuisance_arr.reshape(1, 1, -1)
 
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             tmp_log_nuisance = np.log(
-                        nuisance_arr, out=np.zeros_like(nuisance_arr),
-                        where=nuisance_arr >= 0)
-            tmp_log_1_minus_nuisance = (
-                np.log(1 - nuisance_arr, out=np.zeros_like(nuisance_arr),
-                       where=1 - nuisance_arr >= 0)
+                nuisance_arr, out=np.zeros_like(nuisance_arr),
+                where=nuisance_arr >= 0
             )
-            PX = (
-                np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance 
-                       * (x1 + x2) + tmp_log_1_minus_nuisance * (n - x1 - x2))
+            tmp_log_1_minus_nuisance = np.log(
+                1 - nuisance_arr,
+                out=np.zeros_like(nuisance_arr),
+                where=1 - nuisance_arr >= 0,
+            )
+            PX = np.exp(
+                x1_comb[x1]
+                + x2_comb[x2]
+                + tmp_log_nuisance * (x1 + x2)
+                + tmp_log_1_minus_nuisance * (n - x1 - x2)
             )
 
         sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
