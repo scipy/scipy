@@ -753,6 +753,7 @@ def barnard_exact(
         No      8        3
 
     We use this table to find the p-value:
+
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.statistic
