@@ -280,7 +280,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
     Parameters
     ----------
-    a : array_like
+    x : array_like
         Input array
     n : int, optional
         Number of points along transformation axis in the input to use.
