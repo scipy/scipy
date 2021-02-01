@@ -266,6 +266,7 @@ Discrete Distributions in `scipy.stats`
    discrete_hypergeom
    discrete_nhypergeom
    discrete_zipf
+   discrete_zipfian
    discrete_logser
    discrete_randint
    discrete_dlaplace

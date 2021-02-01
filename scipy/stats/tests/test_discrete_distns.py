@@ -1,5 +1,5 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, nbinom)
+                         boltzmann, skellam, zipf, zipfian, nbinom)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
@@ -114,6 +114,88 @@ def test_skellam_gh11474():
                     0.5044605891382528, 0.5019947363350450, 0.5019848365953181,
                     0.5019750827993392, 0.5019466621805060, 0.5018209330219539]
     assert_allclose(cdf, cdf_expected)
+
+
+class TestZipfian:
+    def test_zipfian_asymptotic(self):
+        # test limiting case that zipfian(a, n) -> zipf(a) as n-> oo
+        a = 6.5
+        N = 10000000
+        k = np.arange(1, 21)
+        assert_allclose(zipfian.pmf(k, a, N), zipf.pmf(k, a))
+        assert_allclose(zipfian.cdf(k, a, N), zipf.cdf(k, a))
+        assert_allclose(zipfian.sf(k, a, N), zipf.sf(k, a))
+        assert_allclose(zipfian.stats(a, N, moments='msvk'),
+                        zipf.stats(a, moments='msvk'))
+
+    def test_zipfian_continuity(self):
+        # test that zipfian(0.999999, n) ~ zipfian(1.000001, n)
+        # (a = 1 switches between methods of calculating harmonic sum)
+        alt1, agt1 = 0.99999999, 1.00000001
+        N = 30
+        k = np.arange(1, N  + 1)
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+
+    def test_zipfian_R(self):
+        # test against R VGAM package
+        # library(VGAM)
+        # k <- c(13, 16,  1,  4,  4,  8, 10, 19,  5,  7)
+        # a <- c(1.56712977, 3.72656295, 5.77665117, 9.12168729, 5.79977172,
+        #        4.92784796, 9.36078764, 4.3739616 , 7.48171872, 4.6824154)
+        # n <- c(70, 80, 48, 65, 83, 89, 50, 30, 20, 20)
+        # pmf <- dzipf(k, N = n, shape = a)
+        # cdf <- pzipf(k, N = n, shape = a)
+        # print(pmf)
+        # print(cdf)
+        np.random.seed(0)
+        k = np.random.randint(1, 20, size=10)
+        a = np.random.rand(10)*10 + 1
+        n = np.random.randint(1, 100, size=10)
+        pmf = [8.076972e-03, 2.950214e-05, 9.799333e-01, 3.216601e-06,
+               3.158895e-04, 3.412497e-05, 4.350472e-10, 2.405773e-06,
+               5.860662e-06, 1.053948e-04]
+        cdf = [0.8964133, 0.9998666, 0.9799333, 0.9999995, 0.9998584,
+               0.9999458, 1.0000000, 0.9999920, 0.9999977, 0.9998498]
+        # skip the first point; zipUC is not accurate for low a, n
+        assert_allclose(zipfian.pmf(k, a, n)[1:], pmf[1:], rtol=1e-6)
+        assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
+
+    np.random.seed(0)
+    naive_tests = np.vstack((np.logspace(-2, 1, 10),
+                             np.random.randint(2, 40, 10))).T
+    @pytest.mark.parametrize("a, n", naive_tests)
+    def test_zipfian_naive(self, a, n):
+        # test against bare-bones implementation
+
+        @np.vectorize
+        def Hns(n, s):
+            """Naive implementation of harmonic sum"""
+            return (1/np.arange(1, n+1)**s).sum()
+
+        @np.vectorize
+        def pzip(k, a, n):
+            """Naive implementation of zipfian pmf"""
+            if k < 1 or k > n:
+                return 0.
+            else:
+                return 1 / k**a / Hns(n, a)
+
+        k = np.arange(n+1)
+        pmf = pzip(k, a, n)
+        cdf = np.cumsum(pmf)
+        mean = np.average(k, weights=pmf)
+        var = np.average((k - mean)**2, weights=pmf)
+        std = var**0.5
+        skew = np.average(((k-mean)/std)**3, weights=pmf)
+        kurtosis = np.average(((k-mean)/std)**4, weights=pmf) - 3
+        assert_allclose(zipfian.pmf(k, a, n), pmf)
+        assert_allclose(zipfian.cdf(k, a, n), cdf)
+        assert_allclose(zipfian.stats(a, n, moments="mvsk"),
+                        [mean, var, skew, kurtosis])
 
 
 @pytest.mark.parametrize("mu, q, expected",
