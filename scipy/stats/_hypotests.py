@@ -857,8 +857,8 @@ def barnard_exact(
                        where=1 - nuisance_arr >= 0)
             )
             PX = (
-                np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance * (
-                        x1 + x2) + tmp_log_1_minus_nuisance * (n - x1 - x2))
+                np.exp(x1_comb[x1] + x2_comb[x2] + tmp_log_nuisance 
+                       * (x1 + x2) + tmp_log_1_minus_nuisance * (n - x1 - x2))
             )
 
         sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
