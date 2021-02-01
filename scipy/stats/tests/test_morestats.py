@@ -686,6 +686,36 @@ class TestBinomTestP(TestBinomP):
 class TestBinomTest:
     """Tests for stats.binomtest."""
 
+    # Expected results here are from old binom_test function.
+    # The alternative will be left unspecified which defaults
+    # it to two-sided.
+    @pytest.mark.parametrize('pval',
+                             [(0.6689672431938848),
+                              (0.979042561004596),
+                              (0.9785298857599378),
+                              (0.008139563452105921),
+                              (0.8278629664608201),
+                              (0.9786038762958954),
+                              (0.9778567637538729),
+                              (0.19667729017182273)])
+    def test_two_sided_pvalues1(self, pval):
+        res = stats.binomtest(9, n=21, p=0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(10079999, 21000000, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(10079990, 21000000, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(4, 21, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(11, 21, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(10080009, 21000000, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(10080017, 21000000, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+        res = stats.binomtest(7, 21, 0.48)
+        assert_allclose(res.pvalue, pval, rtol=1e-8)
+
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
                              [('less', 0.1488311, 0.0, 0.2772002),
