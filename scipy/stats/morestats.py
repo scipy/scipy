@@ -3522,7 +3522,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     Returns
     -------
     dispersion : {float, array_like of float}
-        Dispersion for each axis.
+        Dispersion for each axis slice.
 
     Examples
     --------
