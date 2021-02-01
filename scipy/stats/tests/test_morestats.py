@@ -2047,8 +2047,9 @@ class TestQuartileCoeffOfDispersion(object):
     def test_bad_q_value(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
 
-        # Quartiles are any of (0.25, 0.5, 0.75)
-        assert_raises(ValueError, stats.quartile_coeff_dispersion, arr, q=(0.3, 0.5))
+        # Quartiles are bounded by 0 < q < 1
+        assert_raises(ValueError, stats.quartile_coeff_dispersion, arr, q=(1.01, 0.5))
+        assert_raises(ValueError, stats.quartile_coeff_dispersion, arr, q=(0.01, -0.5))
 
         # Quartile values must differ (otherwise, it's constant zero)
         assert_raises(ValueError, stats.quartile_coeff_dispersion, arr, q=(0.5, 0.5))
