@@ -514,7 +514,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     IndexError
         If `axis` is larger than the last axis of `a`.
 
-    See also
+    See Also
     --------
     rfft : Compute the 1-D FFT for real input.
     ihfft : The inverse of `hfft`.
@@ -586,7 +586,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         indicated by `axis`, or the last one if `axis` is not specified.
         The length of the transformed axis is ``n//2 + 1``.
 
-    See also
+    See Also
     --------
     hfft, irfft
 
