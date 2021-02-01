@@ -7252,7 +7252,7 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
-class skew_cauchy_gen(rv_continuous):
+class skewcauchy_gen(rv_continuous):
     r"""A skewed Cauchy random variable.
 
     %(before_notes)s
@@ -7307,8 +7307,15 @@ class skew_cauchy_gen(rv_continuous):
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
 
+    def _fitstart(self, data):
+        # Use 0 as the initial guess of the skewness shape parameter.
+        # For the location and scale, estimate using the median and
+        # quartiles.
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return 0.0, p50, (p75 - p25)/2
 
-skewcauchy = skew_cauchy_gen(name='skewcauchy')
+
+skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
 class skew_norm_gen(rv_continuous):
@@ -8589,6 +8596,12 @@ class wrapcauchy_gen(rv_continuous):
 
     def _entropy(self, c):
         return np.log(2*np.pi*(1-c*c))
+
+    def _fitstart(self, data):
+        # Use 0.5 as the initial guess of the shape parameter.
+        # For the location and scale, use the minimum and
+        # peak-to-peak/(2*pi), respectively.
+        return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')

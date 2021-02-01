@@ -167,8 +167,9 @@ Discrete distributions
    poisson           -- Poisson
    randint           -- Discrete Uniform
    skellam           -- Skellam
-   zipf              -- Zipf
    yulesimon         -- Yule-Simon
+   zipf              -- Zipf (Zeta)
+   zipfian           -- Zipfian
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in
@@ -238,6 +239,7 @@ Correlation functions
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    siegelslopes
    theilslopes
@@ -270,6 +272,7 @@ Statistical tests
    brunnermunzel
    combine_pvalues
    jarque_bera
+   page_trend_test
 
 .. autosummary::
    :toctree: generated/
@@ -386,6 +389,16 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
+
+Quasi-Monte Carlo
+=================
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.qmc
+
+
 Warnings used in :mod:`scipy.stats`
 ===================================
 
@@ -409,6 +422,7 @@ from ._binomtest import binomtest, BinomTestResult
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
+from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
