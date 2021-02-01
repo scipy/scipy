@@ -755,7 +755,7 @@ def barnard_exact(
     We use this table to find the p-value:
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
-    >>> res.score_statistic
+    >>> res.statistic
     1.894...
     >>> res.pvalue
     0.03407...
@@ -764,9 +764,9 @@ def barnard_exact(
     because the vaccine has either no effect (H0 hypothesis) or a 'positive'
     effect (H1 hypothesis). Fisher's exact test produces an exact
     p-value of 0.0641 with :
-    >>> res_fisher = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
-    >>> res_fisher.pvalue
-    0.0641...
+    >>> _,  pvalue= stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
+    >>> pvalue
+    0.0640...
 
     A commonly used significance level is 5%--if we adopt that, `fisher_exact`
     would refute H1 and says that this vaccine has no effect.
