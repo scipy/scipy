@@ -727,7 +727,16 @@ def barnard_exact(
     Barnard's test is an exact test used in the analysis of contingency
     tables. It examines the association of two categorical variables and
     is a more powerful alternative than Fisher's exact test
-    for 2x2 contingency tables
+    for 2x2 contingency tables.
+    When using Barnard exact test, we can assert three differents null
+    hypothesis :
+    - :math:`H_0 : p_2 \leq p_1`
+    - :math:`H_0 : p_2 \geq p_1`
+    - :math:`H_0 : p_2 = p_1`
+
+    Which can be computed using the ``alternative`` parameter with the
+    values : ``less``, ``greater`` or ``two-sided`` (default one)
+    respectively.
 
     References
     ----------
@@ -751,7 +760,12 @@ def barnard_exact(
             Yes     7        12
             No      8        3
 
-    We use this table to find the p-value:
+    When working with Statistical hypothesis testing, we usually use a
+    threshold probability or a significance level upon which we decide
+    to reject or not the null hypothesis :math:`H_0`. A commonly used
+    significance level is 5%.
+    To compute the p-value with Banard test, let's call `barnard_exact` as
+    follow :
 
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
@@ -760,22 +774,27 @@ def barnard_exact(
     >>> res.pvalue
     0.03407...
 
-    In this exemple, we use the `alternative` parameter with the "less" option,
-    because the vaccine has either no effect (H0 hypothesis) or a 'positive'
-    effect (H1 hypothesis). Fisher's exact test produces an exact
-    p-value of 0.0641 with:
+    Thus, the probability of obtaining test results at least as extreme as the
+    data observed above is 3.4%. In this exemple, we are using the
+    ``alternative`` parameter with the "less" option, because the vaccine has
+    either no effect (:math:`H_0` hypothesis) or a positif effect
+    (:math:`H_1` hypothesis). Therefore, :math:`p_2` is either equal or lower
+    than `p_1` under the null hypothesis. Since our p-value is under our
+    significance level defined above, we reject :math:`H_0`. The vaccine has
+    a positive effect and we have :math:`p_1 \leq p_2` : The probability of
+    contracting the virus if we have been vaccinated is lower than if
+    we are not.
+
+    We can compare with Fisher's exact test which produces an exact
+    p-value of 6.4% :
 
     >>> _,  pvalue= stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
     0.0640...
 
-    A commonly used significance level is 5%--if we adopt that, `fisher_exact`
-    would refute H1 and says that this vaccine has no effect.
-    With `barnard_exact`, the probability that we would observe this or an
-    even more imbalanced ratio by chance is about 3.4%. With the same
-    significance level as above, we can therefore conclude that our
-    observed imbalance is statistically significant; The vaccine has a
-    positive effect.
+    With a similar threshold probabilit of 5%, `fisher_exact` is accepting
+    :math:`H_0` while `barnard_exact` is rejecting it. As stated in [1]_,
+    Barnard test is more powerful than Fisher exact test.
     """
     if num_it <= 0:
         raise ValueError(
