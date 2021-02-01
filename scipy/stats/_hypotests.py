@@ -708,8 +708,8 @@ def barnard_exact(
     Returns
     -------
     ber : ``BarnardExactResult`` object
-            The object has attributes ``score_statistic`` and ``p_value``.
-            ``score_statistic`` is the Z statistic with pooled (Score) or
+            The object has attributes ``statistic`` and ``p_value``.
+            ``statistic`` is the Z statistic with pooled (Score) or
             unpooled (Wald) variance, depending on the user choice of
             `pooled` param.
             ``p_value`` the probability of obtaining a test statistic at least
