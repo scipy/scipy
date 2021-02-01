@@ -3480,25 +3480,26 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
 
 
-def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation='lower'):
+def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
+                              interpolation='lower'):
     """
     Compute the quartile coefficient of dispersion for a given sample array.
 
-    Given two quartiles Q1, Q2 from array samples such that Q1 < Q2, the quartile
-    coefficient of dispersion is calculated by (Q2 - Q1)/(Q1 + Q2).
-    by default it is computed using 3rd and 1st (Q2, Q1 respectively) quartiles.
+    Given two quartiles Q_low, Q_high from array samples such that
+    Q_low < Q_high, the quartile coefficient of dispersion is calculated by
+    (Q_high - Q_low)/(Q_high + Q_low).
+    by default it is computed using 3rd and 1st quartiles.
 
     Parameters
     ----------
     samples : array_like
         Input array.
     q : array_like of float, optional
-        Sequence of 2 quartiles, one of [0.25, 0.5, 0.75].
-        The default is to compute with ￿Q2 = 0.75 (upper quartile), Q1 = 0.25 (lower
-        quartile).
+        Sequence of 2 quartiles,
+        The default is to compute with ￿Q3 = 0.75, Q1 = 0.25.
     axis : {int, tuple of int, None}, optional
         Axis or axes along which the quantiles are computed. The
-        default is to compute the quartile(s) along a flattened
+        default is to compute the quantile(s) along a flattened
         version of the array.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}
         This optional parameter specifies the interpolation method to
@@ -3529,7 +3530,8 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=None, interpolation=
     >>> quartile_coeff_dispersion(samples=[2, 4, 6, 8, 10, 12, 14, 16])
     0.5
 
-    >>> quartile_coeff_dispersion(samples=[1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3])
+    >>> quartile_coeff_dispersion(samples=[1.6, 2.1, 2.3, 2.4,
+    ... 2.6, 2.9, 2.98, 3])
     0.15999999999999998
 
     """
