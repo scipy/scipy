@@ -1190,3 +1190,40 @@ because the p-value is very low and the MGC test statistic is relatively high.
 The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
 in this case is **equivalent to the local scale**, marked by a red spot on the
 map.
+
+Quasi-Monte Carlo
+-----------------
+
+Before talking about Quasi-Monte Carlo (QMC), a quick introduction about Monte
+Carlo (MC). The MC method was called in statistics 'model sampling'. It is
+a method which aims at trying out hypothesis. Once all the hypothesis we
+have defined have been tested, we can compute some statistics such as the
+mean of a given quantity of interest. A scenarios is defined by some variables.
+So, in order to map all scenarios, we use a random number generator.
+
+Generating random numbers is a more complex problem than it sounds. Simple
+Monte Carlo (MC) methods are designed to sample points to be independent and
+identically distributed (IID). But generating multiple sets of random points
+can produce radically different results.
+
+
+
+.. plot:: tutorial/stats/plots/qmc_plot_curse.py
+   :align: center
+   :include-source: 0
+
+
+
+.. plot:: tutorial/stats/plots/qmc_plot_mc_qmc.py
+   :align: center
+   :include-source: 0
+
+This figure presents 2 sets of 256 points. The design of the left is a plain
+MC whereas the design of the right is a QMC design using the Sobol' method.
+We clearly see that the QMC version is more uniform. The points are spread over
+the boundaries and there are less clusters or gaps. One way to assess the
+uniformity is to use a measure called the discrepancy. Here the discrepancy
+of Sobol' points is better than crude MC.
+
+
+
