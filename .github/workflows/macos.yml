@@ -78,6 +78,4 @@ jobs:
 
     - name: Test SciPy
       run: |
-        # This is currently broken in combination with NumPy >=1.20.0, see gh-13464
-        #SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
-        python -u runtests.py
+        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
