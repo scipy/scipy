@@ -810,7 +810,6 @@ class TestCurveFit(object):
         assert_warns(OptimizeWarning, curve_fit,
                     lambda x, a, b: a*x + b, ydata, xdata, maxfev=1)
 
-
 class TestFixedPoint(object):
 
     def test_scalar_trivial(self):
