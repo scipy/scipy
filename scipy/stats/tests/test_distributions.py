@@ -446,13 +446,13 @@ class TestGenHyperbolic(object):
         # sapply(1:4,
         #    function(x) GeneralizedHyperbolic::ghypMom(
         #        order = x, lambda = 2, alpha = 2,
-        #        beta = 1, delta = 1.5, mu = 0.5
-        #        momType = 'mu')
+        #        beta = 1, delta = 1.5, mu = 0.5,
+        #        momType = 'central')
         # )
 
         vals_R = np.array([
-            1.86848366948115, 6.35545100844345,
-            26.8275110062306, 141.581144754983
+            -4.44089209850063e-16, 2.86421978532571,
+            4.24895879539469, 37.6380875493332
             ])
 
         lmbda = 2
@@ -475,7 +475,7 @@ class TestGenHyperbolic(object):
         mvsk = list(mvsk)
 
         # center and de-standardize moments to match R results
-        mvsk[0] -= mu
+        mvsk[0] -= mvsk[0]
         mvsk[2] = mvsk[2] * np.float_power(mvsk[1], 3 / 2)
         mvsk[3] = (mvsk[3] + 3) * np.float_power(mvsk[1], 2)
 

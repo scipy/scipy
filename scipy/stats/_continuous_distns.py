@@ -3094,22 +3094,34 @@ class genhyperbolic_gen(rv_continuous):
 
     def _stats(self, p, a, b):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
+        # https://freidok.uni-freiburg.de/fedora/objects/freidok:7974/datastreams/FILE1/content
         # standardized moments
         t1 = np.float_power(a, 2) - np.float_power(b, 2)
         t1 = np.float_power(t1, 0.5)
         t2 = np.float_power(1, 2) * np.float_power(t1, - 1)
         b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5), t1)
         r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
-        m1 = t2 * b * r1
-        m2 = t2 * r1 + np.float_power(t2, 2) * np.float_power(b, 2) * r2
-        m3 = 3 * b * np.float_power(t2, 2) * r2 \
-            + np.float_power(t2, 3) * np.float_power(b, 3) * r3
-        m4 = 3 * np.float_power(t2, 2) * r2 \
-            + 6 * np.float_power(t2, 3) * np.float_power(b, 2) * r3 \
-            + np.float_power(t2, 4) * np.float_power(b, 4) * r4
+        
+        m = b * t2 * r1
+        v = t2 * r1 + np.float_power(b, 2) * np.float_power(t2, 2) \
+           *(r2 - np.float_power(r1, 2))
+        m3e = np.float_power(b, 3) * np.float_power(t2, 3) \
+           * (r3 - 3 * b2 * b1 * np.float_power(b0, -2) \
+           + 2 * np.float_power(r1, 3)) \
+           + 3 * b * np.float_power(t2, 2) \
+           * (r2 - np.float_power(r1, 2))
+        s = m3e * np.float_power(v, - 3 / 2)
+        m4e = np.float_power(b, 4) * np.float_power(t2, 4) \
+           * (r4 - 4 * b3 * b1 * np.float_power(b0, - 2) \
+           + 6 * b2 * np.float_power(b1, 2) * np.float_power(b0, - 3) \
+           - 3 * np.float_power(r1, 4)) \
+           + np.float_power(b, 2) * np.float_power(t2, 3) \
+           * (6 * r3 - 12 * b2 * b1 * np.float_power(b0, - 2) \
+           + 6 * np.float_power(r1, 3)) \
+           + 3 * np.float_power(t2, 2) * r2
+        k = m4e * np.float_power(v, -2) - 3
 
-        return m1, m2, m3 * np.float_power(m2, - 3 / 2), m4 * np.float_power(m2, - 2) - 3
-
+        return m, v, s, k
 
 genhyperbolic = genhyperbolic_gen(name='genhyperbolic')
 
