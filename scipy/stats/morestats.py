@@ -3535,8 +3535,8 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     0.15999999999999998
 
     """
-    if len(q) != 2:
-        raise ValueError("Length of q must be 2")
+    if np.shape(q) != (2,):
+        raise ValueError("Shape of q must be (,2)")
 
     if not np.all(np.isin(q, (0.25, 0.5, 0.75))):
         raise ValueError("q values must be 2 from (0.25, 0.5, 0.75)")
@@ -3547,7 +3547,4 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     quartiles = np.quantile(samples, q=(min(q), max(q)),
                             axis=axis, interpolation=interpolation)
 
-    def _calculate_dispersion(quartile_low, quartile_high):
-        return (quartile_high - quartile_low)/(quartile_high + quartile_low)
-
-    return _calculate_dispersion(quartiles[0], quartiles[1])
+    return (quartiles[1] - quartiles[0])/(quartiles[1] + quartiles[0])
