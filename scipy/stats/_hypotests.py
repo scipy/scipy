@@ -731,26 +731,25 @@ def barnard_exact(
 
     References
     ----------
-    .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003). Conditional
-    versus Unconditional Exact Tests for Comparing Two Binomials`__.
+    .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003)`_. "Conditional versus Unconditional Exact Tests for Comparing Two Binomials". # noqa: E501
 
-    .. __: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf # noqa: E501
+    .. _`Mehta, Cyrus & Senchaudhuri, Pralay. (2003)`: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf # noqa: E501
 
     Examples
     --------
-    examples from [1]_.
+    An example use of Barnard's test is presented in [1]_.
 
-    Consider the following example of a vaccine efficacy study (Chan, 1998).
-    In a randomized clinical trial of 30 subjects, 15 were innoculated with a
-    recombinant DNA influenza vaccine and the 15 were innoculated with a
-    placebo. Twelve of the 15 subjects in the placebo group (80%) eventually
-    became infected with influenza whereas for the vaccine group, only 7 of
-    the 15 subjects (47%) became infected. The data are tabulated as a 2 x 2
-    table::
+        Consider the following example of a vaccine efficacy study
+        (Chan, 1998). In a randomized clinical trial of 30 subjects, 15 were
+        innoculated with a recombinant DNA influenza vaccine and the 15 were
+        innoculated with a placebo. Twelve of the 15 subjects in the placebo
+        group (80%) eventually became infected with influenza whereas for the
+        vaccine group, only 7 of the 15 subjects (47%) became infected. The
+        data are tabulated as a 2 x 2 table::
 
-            Vaccine  Placebo
-        Yes     7        12
-        No      8        3
+                Vaccine  Placebo
+            Yes     7        12
+            No      8        3
 
     We use this table to find the p-value:
 
