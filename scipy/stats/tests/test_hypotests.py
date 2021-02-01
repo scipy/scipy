@@ -464,9 +464,9 @@ class TestBarnardExact(object):
         # test we raise an error for wrong input number of nuisances.
         error_msg = (
             "Number of iterations `num_it` must be non-negative,"
-            " found -1")
+            " found 0")
         with assert_raises(ValueError, match=error_msg):
-            barnard_exact([[1, 2], [3, 4]], num_it=-1)
+            barnard_exact([[1, 2], [3, 4]], num_it=0)
 
         # test we raise an error for wrong shape of input.
         error_msg = "The input `table` must be of shape \\(2, 2\\)."

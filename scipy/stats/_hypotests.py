@@ -776,9 +776,9 @@ def barnard_exact(
     observed imbalance is statistically significant; The vaccine has a
     positive effect.
     """
-    if num_it < 0:
+    if num_it <= 0:
         raise ValueError(
-            "Number of iterations `num_it` must be non-negative, "
+            "Number of iterations `num_it` must be strictly positive, "
             f"found {num_it!r}")
 
     c = np.asarray(
