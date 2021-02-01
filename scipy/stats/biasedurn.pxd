@@ -24,3 +24,4 @@ cdef extern from "biasedurn/stocc.h" nogil:
         int FishersNCHyp (int n, int m, int N, double odds) except +
         int WalleniusNCHyp (int n, int m, int N, double odds) except +
         double(*next_double)()
+        double(*next_normal)(const double m, const double s)

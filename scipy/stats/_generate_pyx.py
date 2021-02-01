@@ -1,15 +1,22 @@
 import pathlib
 
-def make_biasedurn():
-    # numpy's random C API changes between 1.17 and 1.18
+def isNPY_OLD():
+    '''
+    A new random C API was added in 1.18 and became stable in 1.19.
+    Prefer the new random C API when building with recent numpy.
+    '''
     import numpy as np
-    ver = np.__version__.split('.')
-    NPY_OLD = (int(ver[0]) <= 1) and (int(ver[1]) < 18)
+    ver = tuple(int(num) for num in np.__version__.split('.')[:2])
+    return ver < (1, 19)
+
+
+def make_biasedurn():
+    '''Substitute True/False values for NPY_OLD Cython build variable.'''
     biasedurn_base = (pathlib.Path(__file__).parent / 'biasedurn').absolute()
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
     with open(biasedurn_base.with_suffix('.pyx'), 'w') as dest:
-        dest.write(contents.format(NPY_OLD=str(bool(NPY_OLD))))
+        dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 
 
 if __name__ == '__main__':
