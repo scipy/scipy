@@ -197,15 +197,41 @@ class TestFAQ(QAPCommonTests):
                                    options={'P0': K})
         assert_(11156 <= res.fun < 21000)
 
-        # test padded qap
-        n = 50
-        p = 0.4
-        G1 = _er_matrix(n, p)  # generate an Erdos-Renyi graph
-        G2 = G1[: -1, : -1]  # remove one node
-        res = quadratic_assignment(G1, G2,
-                                   options={'maximize': True})
+    def test_padding(self):
+        n = 25
+        off_diag = _er_matrix(n, 0.1)
 
-        assert 1.0 == (sum(res.col_ind == np.arange(n)) / n)
+        # make a 50x50, [[0.8, 0.1], [0.1, 0.6]] block matrix
+        A = np.block([[_er_matrix(n, 0.8), off_diag],
+                      [off_diag, _er_matrix(n, 0.6)]])
+        # cut 5 nodes from each block, 40x40 block matrix
+        B = np.block([[A[:20, :20], A[:20, 25:-5]],
+                      [A[25:-5, :20], A[25:-5, 25:-5]]])
+
+        # test adopted padding, input 2 padded
+        options = {'maximize': True, 'P0': 'randomized'}
+        res = max([quadratic_assignment(A, B, options=options)
+                   for i in range(20)], key=lambda x: x.fun)
+
+        ind = np.concatenate((range(20), range(25, 45)))
+        assert_(1.0 == np.mean(res.col_ind[ind] == np.arange(40)))
+        assert_(res.fun == np.sum(B))
+
+        # test adopted padding, input 1 padded
+        res = max([quadratic_assignment(B, A, options=options)
+                   for i in range(20)], key=lambda x: x.fun)
+
+        assert_(1.0 == np.mean(res.col_ind[:40] == ind))
+        assert_(res.fun == np.sum(B))
+
+        # test naive padding
+        options = {'maximize': True, 'P0': 'randomized', 'padding': 'naive'}
+        res = max([quadratic_assignment(A, B, options=options)
+                   for i in range(20)], key=lambda x: x.fun)
+
+        ind = np.concatenate((range(20), range(25, 45)))
+        assert_(1.0 == np.mean(res.col_ind[ind] == np.arange(40)))
+        assert_(res.fun == np.sum(B))
 
     def test_specific_input_validation(self):
 
