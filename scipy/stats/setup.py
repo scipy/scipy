@@ -34,9 +34,15 @@ def configuration(parent_package='',top_path=None):
 
     # add mvn module
     config.add_extension('mvn',
-        sources=['mvn.pyf','mvndst.f'],
+        sources=['mvn.pyf', 'mvndst.f'],
     )
 
+    # add _sobol module
+    config.add_extension('_sobol',
+        sources=['_sobol.c', ],
+    )
+    config.add_data_files('_sobol_direction_numbers.npz')
+    
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
     from _generate_pyx import isNPY_OLD

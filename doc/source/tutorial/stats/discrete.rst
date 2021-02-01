@@ -268,6 +268,7 @@ Discrete Distributions in `scipy.stats`
    discrete_fnch
    discrete_wnch
    discrete_zipf
+   discrete_zipfian
    discrete_logser
    discrete_randint
    discrete_dlaplace

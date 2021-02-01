@@ -279,7 +279,7 @@ jobs:
       cython==0.29.18
       matplotlib
       mpmath
-      numpy
+      numpy==1.19.5
       Pillow
       pybind11
       pythran
