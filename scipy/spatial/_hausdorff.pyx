@@ -10,6 +10,8 @@ Directed Hausdorff Code
 # Distributed under the same BSD license as Scipy.
 #
 
+import warnings
+
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -34,8 +36,12 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     rng = np.random.RandomState(seed)
     resort1 = np.arange(N1)
     resort2 = np.arange(N2)
-    rng.shuffle(resort1)
-    rng.shuffle(resort2)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",
+                                message="`x` isn't a recognized object")
+        rng.shuffle(resort1)
+        rng.shuffle(resort2)
+
     ar1 = np.asarray(ar1)[resort1]
     ar2 = np.asarray(ar2)[resort2]
 

@@ -166,8 +166,9 @@ Discrete distributions
    poisson           -- Poisson
    randint           -- Discrete Uniform
    skellam           -- Skellam
-   zipf              -- Zipf
    yulesimon         -- Yule-Simon
+   zipf              -- Zipf (Zeta)
+   zipfian           -- Zipfian
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in
