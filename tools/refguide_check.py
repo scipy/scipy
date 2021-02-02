@@ -45,6 +45,10 @@ from pkg_resources import parse_version
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
+
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
@@ -854,6 +858,43 @@ def init_matplotlib():
         HAVE_MATPLOTLIB = False
 
 
+def check_dist_keyword_names():
+
+    distnames = set(distdata[0] for distdata in distcont + distdiscrete)
+    mod_results = []
+    for distname in distnames:
+        dist = getattr(stats, distname)
+        method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
+        method_names = [method[0] for method in method_members
+                        if not method[0].startswith('_')]
+        for methodname in method_names:
+            dist = getattr(stats, distname)
+            method = getattr(dist, methodname)
+            try:
+                params = NumpyDocString(method.__doc__)['Parameters']
+            except TypeError:
+                result = (f'stats.{distname}.{methodname}',
+                          False,
+                          "Method parameters are not documented.")
+                mod_results.append(result)
+                continue
+            param_names = set(param.name for param in params)
+
+            if not dist.shapes:
+                continue
+            shape_names = dist.shapes.split(', ')
+            intersection = param_names.intersection(shape_names)
+            if intersection:
+                message = ("Distribution/method keyword collision: "
+                           f"{intersection} ")
+                result = (f'stats.{distname}.{methodname}', False, message)
+            else:
+                result = (f'stats.{distname}.{methodname}', True, '')
+            mod_results.append(result)
+
+    return mod_results
+
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_names", metavar="SUBMODULES", default=[],
@@ -920,6 +961,8 @@ def main(argv):
         if args.doctests:
             mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
                                           doctest_warnings=args.doctest_warnings)
+        if module.__name__ == 'scipy.stats':
+            mod_results += check_dist_keyword_names()
 
         for v in mod_results:
             assert isinstance(v, tuple), v
