@@ -3496,7 +3496,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
         Input array.
     q : array_like of float, optional
         Sequence of 2 quartiles,
-        The default is to compute with ￿Q3 = 0.75, Q1 = 0.25.
+        The default is to compute with Q_high = 0.75, Q_low = 0.25.
     axis : {int, tuple of int, None}, optional
         Axis or axes along which the quantiles are computed. The
         default is to compute the quantile(s) along a flattened
