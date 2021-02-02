@@ -1308,6 +1308,99 @@ the more uniform a sample is.
 Using a QMC engine
 ^^^^^^^^^^^^^^^^^^
 
+Several QMC samplers/engines are implemented. Here we look at two of the most
+used QMC methods: Sobol' and Halton sequences.
+
+.. plot:: tutorial/stats/plots/qmc_plot_sobol_halton.py
+   :align: center
+   :include-source: 1
+
+.. warning:: QMC methods require particular care and the user must read the
+   documentation to avoid common pitfalls. Sobol' for instance requires a
+   number of points following a power of 2. Also, thinning, burning or other
+   point selection can break the properties of the sequence and result in a
+   set of points which would not be better than MC.
+
+QMC engines are state aware. Meaning that you can continue the sequence,
+skip some points, or reset it. Let's take 5 points from
+`scipy.stats.qmc.Halton`. And ask again for 5 points.
+
+    >>> from scipy.stats import qmc
+    >>> engine = qmc.Halton(d=2, seed=12345)
+    >>> engine.random(5)
+    array([[0.22166437, 0.07980522],
+           [0.72166437, 0.93165708],
+           [0.47166437, 0.41313856],
+           [0.97166437, 0.19091633],
+           [0.01853937, 0.74647189]])
+    >>> engine.random(5)
+    array([[0.51853937, 0.52424967],
+           [0.26853937, 0.30202745],
+           [0.76853937, 0.857583  ],
+           [0.14353937, 0.63536078],
+           [0.64353937, 0.01807683]])
+
+Then we reset the sequence. Asking for 5 points leads to the same first 5
+points.
+
+    >>> engine.reset()
+    >>> engine.random(5)
+    array([[0.22166437, 0.07980522],
+           [0.72166437, 0.93165708],
+           [0.47166437, 0.41313856],
+           [0.97166437, 0.19091633],
+           [0.01853937, 0.74647189]])
+
+And here we advance the sequence to get the same second set of 5 points.
+
+    >>> engine.reset()
+    >>> engine.fast_forward(5)
+    >>> engine.random(5)
+    array([[0.51853937, 0.52424967],
+           [0.26853937, 0.30202745],
+           [0.76853937, 0.857583  ],
+           [0.14353937, 0.63536078],
+           [0.64353937, 0.01807683]])
+
+.. note:: By default, both `scipy.stats.qmc.Sobol` and `scipy.stats.qmc.Halton`
+   are scrambled. The convergence properties are better, and it prevents the
+   appearance of fringes or noticeable patterns of points in high dimensions.
+   There should be no practical reason not to use the scrambled version.
 
 Making a QMC engine, i.e., subclassing ``QMCEngine``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    >>> from scipy.stats import qmc
+    >>> class RandomEngine(qmc.QMCEngine):
+    ...     def __init__(self, d, seed):
+    ...         super().__init__(d=d, seed=seed)
+    ...         self.rng_seed = seed
+    ...
+    ...
+    ...     def random(self, n=1):
+    ...         return self.rng.random((n, self.d))
+    ...
+    ...
+    ...     def reset(self):
+    ...         super().__init__(d=self.d, seed=self.rng_seed)
+    ...         return self
+    ...
+    ...
+    ...     def fast_forward(self, n):
+    ...         self.rng.random((n, self.d))
+    ...         return self
+
+Key takeaways
+^^^^^^^^^^^^^
+
+* QMC has rules! Be sure to read the documentation or you might have no
+  benefit over MC.
+* Use `scipy.stats.Sobol` if you need **exactly** :math:`2^m` points. You can
+  ask for more points, but you must follow some rules.
+* `scipy.stats.Halton` allows to sample, and skip an arbitrary number of
+  points.
+* Never remove the first points of the sequence. It will destroy the
+  properties.
+* Scrambling is always better.
+* If you use LHS based methods, you cannot add points without loosing the LHS
+  properties. (There are some methods to do so, but this is not implemented.)

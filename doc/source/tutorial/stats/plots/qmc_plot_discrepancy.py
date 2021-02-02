@@ -1,3 +1,4 @@
+"""Calculate the discrepancy of 2 designs and compare them."""
 import numpy as np
 from scipy.stats import qmc
 

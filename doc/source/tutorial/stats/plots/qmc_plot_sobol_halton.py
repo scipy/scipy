@@ -1,4 +1,4 @@
-"""MC vs QMC in terms of space filling."""
+"""Sobol' and Halton sequences."""
 from scipy.stats import qmc
 import numpy as np
 
@@ -12,12 +12,13 @@ dim = 2
 
 sample = {}
 
-# MC
-sample['MC'] = rng.random((n_sample, dim))
-
 # Sobol'
 engine = qmc.Sobol(d=dim, seed=rng)
 sample["Sobol'"] = engine.random(n_sample)
+
+# Halton
+engine = qmc.Halton(d=dim, seed=rng)
+sample["Halton"] = engine.random(n_sample)
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))
 
