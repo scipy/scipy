@@ -352,6 +352,12 @@ def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
     asc_order : bool
       Whether the values returned by the function, `a are in
       ascending or descending order.
+
+    Returns
+    ----------
+    int
+      The index, i between lo and hi
+      such that a(i)<=d<a(i+1)
     """
     while lo < hi:
         mid = (lo+hi)//2
