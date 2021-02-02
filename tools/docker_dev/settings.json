@@ -1,0 +1,8 @@
+{
+    "restructuredtext.languageServer.disabled": true,
+    "restructuredtext.builtDocumentationPath": "${workspaceRoot}/doc/build/html-scipyorg",
+    "restructuredtext.confPath": "${workspaceFolder}/doc/source",
+    "restructuredtext.updateOnTextChanged": "true",
+    "restructuredtext.updateDelay": 300,
+    "python.pythonPath": "/opt/conda/envs/scipydev/bin/python"
+}

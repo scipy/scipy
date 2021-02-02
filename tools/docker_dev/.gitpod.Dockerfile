@@ -75,3 +75,5 @@ RUN sudo echo "Running 'sudo' for Gitpod: success"
 # Ensure we are in the correct directory
 WORKDIR $HOME
 
+# Finally - add some code specific settings
+COPY ./tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
