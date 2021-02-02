@@ -2059,7 +2059,12 @@ class TestQuartileCoeffOfDispersion(object):
         # Quartile values must differ (otherwise, it's constant zero)
         with assert_raises(ValueError) as err:
             stats.quartile_coeff_dispersion(samples=arr, q=(0.5, 0.5))
-        err.match("q values must differ")
+        err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
+
+        # q[0] must be less than q[1]
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(samples=arr, q=(0.75, 0.5))
+        err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
 
     def test_bad_q_len(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
