@@ -3505,7 +3505,6 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
         This optional parameter specifies the interpolation method to
         use when the desired quantile lies between two data points
         ``i < j``:
-
             * linear: ``i + (j - i) * fraction``, where ``fraction``
               is the fractional part of the index surrounded by ``i``
               and ``j``.
@@ -3531,7 +3530,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     0.5
 
     >>> quartile_coeff_dispersion(samples=[1.6, 2.1, 2.3, 2.4,
-    ... 2.6, 2.9, 2.98, 3])
+    ...                           2.6, 2.9, 2.98, 3])
     0.15999999999999998
 
     """
@@ -3544,7 +3543,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     if q[0] >= q[1]:
         raise ValueError("q values should satisfy q[0] < q[1]")
 
-    quartiles = np.quantile(samples, q=(min(q), max(q)),
+    quartiles = np.quantile(samples, q=(q[0], q[1]),
                             axis=axis, interpolation=interpolation)
 
     return (quartiles[1] - quartiles[0])/(quartiles[1] + quartiles[0])
