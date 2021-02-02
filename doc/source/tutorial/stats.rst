@@ -1371,11 +1371,16 @@ And here we advance the sequence to get the same second set of 5 points.
 Making a QMC engine, i.e., subclassing ``QMCEngine``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+To make your own QMC engine, a few methods have to be defined. Following is an
+example wrapping `numpy.random.Generator`.
+
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed):
-    ...         super().__init__(d=d, seed=seed)
+    ...     def __init__(self, d, seed=12345):
+    ...         self.d = d
     ...         self.rng_seed = seed
+    ...         self.rng = np.random.default_rng(seed)
+    ...         self.num_generated = 0
     ...
     ...
     ...     def random(self, n=1):
@@ -1383,13 +1388,31 @@ Making a QMC engine, i.e., subclassing ``QMCEngine``
     ...
     ...
     ...     def reset(self):
-    ...         super().__init__(d=self.d, seed=self.rng_seed)
+    ...         self.rng = np.random.default_rng(self.rng_seed)
+    ...         self.num_generated = 0
     ...         return self
     ...
     ...
     ...     def fast_forward(self, n):
     ...         self.rng.random((n, self.d))
     ...         return self
+
+Then we use it as any other QMC engine.
+
+    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine.random(5)
+    array([[0.22733602, 0.31675834],
+           [0.79736546, 0.67625467],
+           [0.39110955, 0.33281393],
+           [0.59830875, 0.18673419],
+           [0.67275604, 0.94180287]])
+    >>> engine.reset()
+    >>> engine.random(5)
+    array([[0.22733602, 0.31675834],
+           [0.79736546, 0.67625467],
+           [0.39110955, 0.33281393],
+           [0.59830875, 0.18673419],
+           [0.67275604, 0.94180287]])
 
 Key takeaways
 ^^^^^^^^^^^^^
