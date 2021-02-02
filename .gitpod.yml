@@ -15,7 +15,7 @@ tasks:
 
 # exposing ports for sphinx-autobuild 
 ports:
-  - port: 8000
+  - port: 5500
     onOpen: notify
 
 # some useful extensions to hve
@@ -24,3 +24,4 @@ vscode:
     - eamodio.gitlens@10.2.3:CRhSs/nkGIS3K5yCBlhVTg==
     - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
     - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
+    - ritwickdey.liveserver@5.6.1:5Mhl1RgVVDcIym163x8r+w==
