@@ -1206,13 +1206,58 @@ Monte Carlo (MC) methods are designed to sample points to be independent and
 identically distributed (IID). But generating multiple sets of random points
 can produce radically different results.
 
+.. plot:: tutorial/stats/plots/qmc_plot_mc.py
+   :align: center
+   :include-source: 0
 
+In both cases, any points is taken randomly without any knowledge about the
+previous draws. And it is clear that some regions of the space are left
+unexplored. But as the number of sample increases, the space will fill.
+
+A great benefit of MC is that it has some convergence properties.
+Let's look at the mean of the square of sum in 5 dimensions:
+
+.. math::
+
+    f(\mathbf{x}) = \left( \sum_{j=1}^{5}x_j \right)^2,
+
+which has a known mean :math:`\mu = 5/3+5(5-1)/4`. Using MC sampling, we can
+compute the mean and the error follows a theoretical rate
+of :math:`O(n^{-1/2})`.
+
+.. plot:: tutorial/stats/plots/qmc_plot_conv_mc.py
+   :align: center
+   :include-source: 0
+
+Although the convergence is ensured, practitioner tend to want to have an
+exploration process which is more deterministic.
+What is commonly done to walk through all the hypothesis is
+to use a grid, also called a saturated design. Let’s consider the
+unit-hypercube, all bounds range from 0 to 1.
+Now, having a distance of 0.1 between each point, the number of points
+required to fill the unit interval would be 10. In a 2-dimensional hypercube
+the same spacing would require 100 and in 3-dimensions 1 000 points. As the
+number of dimensions goes, the number of experiments which is required to fill
+the space evenly rises exponentially as the volume of the space increases.
+This exponential growth is called the curse-of-dimensionality.
+
+    >>> import numpy as np
+    >>> disc = 5
+    >>> x1 = np.linspace(0, 1, disc)
+    >>> x2 = np.linspace(0, 1, disc)
+    >>> x3 = np.linspace(0, 1, disc)
+    >>> x1, x2, x3 = np.meshgrid(x1, x2, x3)
 
 .. plot:: tutorial/stats/plots/qmc_plot_curse.py
    :align: center
    :include-source: 0
 
-
+To mitigate this issue, QMC methods have been designed.
+They are deterministic, have a good coverage of the space and
+some of them can be continued and retain good properties.
+The main difference with MC methods is that the points are not IID but they
+know about previous points. Hence, some methods are also referred to as
+sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc_qmc.py
    :align: center
@@ -1221,9 +1266,48 @@ can produce radically different results.
 This figure presents 2 sets of 256 points. The design of the left is a plain
 MC whereas the design of the right is a QMC design using the Sobol' method.
 We clearly see that the QMC version is more uniform. The points are spread over
-the boundaries and there are less clusters or gaps. One way to assess the
-uniformity is to use a measure called the discrepancy. Here the discrepancy
-of Sobol' points is better than crude MC.
+the boundaries and there are less clusters or gaps.
+
+One way to assess the uniformity is to use a measure called the discrepancy.
+Here the discrepancy of Sobol' points is better than crude MC.
+
+Coming back to the computation of the mean, QMC also advocate for better
+rate of convergence of the error. They can achieve :math:`O(n^{-1})` and even
+better rates on very smooth functions. Following, Sobol' method has a rate of
+:math:`O(n^{-1})`.
+
+.. plot:: tutorial/stats/plots/qmc_plot_conv_mc_sobol.py
+   :align: center
+   :include-source: 0
+
+Calculate the discrepancy
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's consider 2 sets of points. From the figure bellow, it is clear that
+the design on the left covers more the space than the design on the right.
+This can be quantified using a discrepancy measure. The lower the discrepancy,
+the more uniform a sample is.
+
+    >>> import numpy as np
+    >>> from scipy.stats import qmc
+    >>> space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+    >>> space_2 = np.array([[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]])
+    >>> l_bounds = [0.5, 0.5]
+    >>> u_bounds = [6.5, 6.5]
+    >>> space_1 = qmc.scale(space_1, l_bounds, u_bounds, reverse=True)
+    >>> space_2 = qmc.scale(space_2, l_bounds, u_bounds, reverse=True)
+    >>> qmc.discrepancy(space_1)
+    0.008142039609053464
+    >>> qmc.discrepancy(space_2)
+    0.010456854423869011
+
+.. plot:: tutorial/stats/plots/qmc_plot_discrepancy.py
+   :align: center
+   :include-source: 0
+
+Using a QMC engine
+^^^^^^^^^^^^^^^^^^
 
 
-
+Making a QMC engine, i.e., subclassing ``QMCEngine``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

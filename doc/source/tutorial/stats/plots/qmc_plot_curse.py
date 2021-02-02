@@ -14,7 +14,7 @@ z = np.linspace(0, 1, disc)
 
 xx, yy, zz = np.meshgrid(x, y, z)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(12, 4))
 ax = fig.add_subplot(131)
 ax.set_aspect('equal')
 ax.scatter(xx, yy * 0)
@@ -34,4 +34,5 @@ ax.set_xlabel(r'$x_1$')
 ax.set_ylabel(r'$x_2$')
 ax.set_zlabel(r'$x_3$')
 
+plt.tight_layout(pad=2)
 plt.show()

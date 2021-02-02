@@ -1,4 +1,6 @@
+"""Multiple MC to show how it can be bad."""
 from scipy.stats import qmc
+from scipy.stats._qmc import check_random_state
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -12,11 +14,8 @@ dim = 2
 sample = {}
 
 # MC
-sample['MC'] = rng.random((n_sample, dim))
-
-# Sobol
-engine = qmc.Sobol(d=dim, seed=rng)
-sample["Sobol'"] = engine.random(n_sample)
+sample['MC 1'] = rng.random((n_sample, dim))
+sample["MC 2"] = rng.random((n_sample, dim))
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))
 
@@ -26,7 +25,6 @@ for i, kind in enumerate(sample):
     axs[i].set_aspect('equal')
     axs[i].set_xlabel(r'$x_1$')
     axs[i].set_ylabel(r'$x_2$')
-    axs[i].set_title(f'{kind}—$C^2 = ${qmc.discrepancy(sample[kind]):.2}')
 
 plt.tight_layout()
 plt.show()
