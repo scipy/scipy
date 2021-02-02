@@ -416,6 +416,8 @@ class DifferentialEvolutionSolver(object):
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
               shape ``(M, len(x))``, where M is the total population size and
@@ -579,13 +581,18 @@ class DifferentialEvolutionSolver(object):
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
 
+        if init == 'sobol':
+            # must be Ns=2**m for Sobol'
+            n_s = 2 ** np.ceil(np.log2(self.num_population_members))
+            self.num_population_members = n_s
+
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
         if isinstance(init, str):
-            if init == 'latinhypercube':
-                self.init_population_lhs()
+            if init in ['latinhypercube', 'sobol', 'halton']:
+                self.init_population_qmc(qmc_engine=init)
             elif init == 'random':
                 self.init_population_random()
             else:
@@ -624,16 +631,31 @@ class DifferentialEvolutionSolver(object):
 
         self.disp = disp
 
-    def init_population_lhs(self):
-        """
-        Initializes the population with Latin Hypercube Sampling.
-        Latin Hypercube Sampling ensures that each parameter is uniformly
+    def init_population_qmc(self, qmc_engine):
+        """Initializes the population with a QMC method.
+
+        QMC methods ensures that each parameter is uniformly
         sampled over its range.
+
+        Parameters
+        ----------
+        qmc_engine : str
+            The QMC method to use for initialization. Can be one of
+            ``latinhypercube``, ``sobol`` or ``halton``.
+
         """
         rng = self.random_number_generator
 
         # Create an array for population of candidate solutions.
-        sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        if qmc_engine == 'latinhypercube':
+            sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'sobol':
+            sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'halton':
+            sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+        else:
+            raise ValueError(self.__init_error_msg)
+
         self.population = sampler.random(n=self.num_population_members)
 
         # reset population energies
