@@ -75,9 +75,8 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull']
                      + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
-                        'powerlognorm', 'johnsonsu']
-                     + ['pearson3']
-                     + ['genhyperbolic'])
+                        'powerlognorm', 'johnsonsu', 'genhyperbolic']
+                     + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -98,9 +97,8 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'invweibull']
                          + ['ksone', 'kstwo', 'pareto', 'powernorm',
-                            'powerlognorm', 'johnsonsu']
-                         + ['pearson3']
-                         + ['genhyperbolic'])
+                            'powerlognorm', 'johnsonsu', 'genhyperbolic']
+                         + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
