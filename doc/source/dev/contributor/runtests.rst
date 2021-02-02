@@ -29,33 +29,54 @@ To run tests on a particular submodule, such as ``optimize``, use the
 
    python runtests.py -v -s optimize
 
-To run a particular test module, such as
-|test-linprog|_, use the ``--test`` option:
+To run a particular test module, use the ``--test`` option:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py
+   python runtests.py -v -t scipy.<module>.tests.<test_file>
 
-To run a test class, such as ``TestLinprogIPDense`` from
-``test_linprog.py``:
-
-::
-
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::TestLinprogIPDense
-
-To run a particular test, such as ``test_unknown_solver`` from
-``test_linprog.py``:
+Example for |test-linprog|_ file tests, run:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::test_unknown_solver
+   python runtests.py -v -t scipy.optimize.tests.test_linprog
 
-For tests within a class, you need to specify the class name and the
-test name:
+To run a test class:
 
 ::
 
-   python runtests.py -v -t scipy/optimize/tests/test_linprog.py::TestLinprogIPDense::test_nontrivial_problem
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>
+
+Example for ``TestLinprogRSCommon`` class from ``test_linprog.py``:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
+
+To run a particular test:
+
+::
+
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<test_name>
+
+Example for ``test_unknown_solvers_and_options`` from ``test_linprog.py``:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
+
+For tests within a class, you need to specify the class name and the test name:
+
+::
+
+   python runtests.py -v -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
+
+Example:
+
+::
+
+   python runtests.py -v -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
+
 
 Other useful options include:
 

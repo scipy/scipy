@@ -5002,11 +5002,6 @@ class TestGeoMean(object):
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_weights_bad_input(self):
-        a = np.array([1, 2, 3, 4, 5])
-        weights = "scipy"
-        assert_raises(TypeError, stats.gmean, a, weights=weights)
-
 
 class TestGeometricStandardDeviation(object):
     # must add 1 as `gstd` is only defined for positive values
