@@ -1281,13 +1281,16 @@ better rates on very smooth functions. Following, Sobol' method has a rate of
    :align: center
    :include-source: 0
 
+We refer to the documentation of the submodule :mod:`scipy.stats.qmc` for
+more mathematical details.
+
 Calculate the discrepancy
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's consider 2 sets of points. From the figure bellow, it is clear that
 the design on the left covers more the space than the design on the right.
-This can be quantified using a discrepancy measure. The lower the discrepancy,
-the more uniform a sample is.
+This can be quantified using a :func:`~stats.qmc.discrepancy` measure.
+The lower the discrepancy, the more uniform a sample is.
 
     >>> import numpy as np
     >>> from scipy.stats import qmc
@@ -1310,7 +1313,8 @@ Using a QMC engine
 ^^^^^^^^^^^^^^^^^^
 
 Several QMC samplers/engines are implemented. Here we look at two of the most
-used QMC methods: Sobol' and Halton sequences.
+used QMC methods: :class:`~stats.qmc.Sobol` and :class:`~stats.qmc.Halton`
+sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_sobol_halton.py
    :align: center
@@ -1324,7 +1328,7 @@ used QMC methods: Sobol' and Halton sequences.
 
 QMC engines are state aware. Meaning that you can continue the sequence,
 skip some points, or reset it. Let's take 5 points from
-`scipy.stats.qmc.Halton`. And ask again for 5 points.
+:class:`~stats.qmc.Halton`. And ask again for 5 points.
 
     >>> from scipy.stats import qmc
     >>> engine = qmc.Halton(d=2, seed=12345)
@@ -1363,16 +1367,17 @@ And here we advance the sequence to get the same second set of 5 points.
            [0.14353937, 0.63536078],
            [0.64353937, 0.01807683]])
 
-.. note:: By default, both `scipy.stats.qmc.Sobol` and `scipy.stats.qmc.Halton`
-   are scrambled. The convergence properties are better, and it prevents the
-   appearance of fringes or noticeable patterns of points in high dimensions.
-   There should be no practical reason not to use the scrambled version.
+.. note:: By default, both :class:`~stats.qmc.Sobol` and
+   :class:`~stats.qmc.Halton` are scrambled. The convergence properties are
+   better, and it prevents the appearance of fringes or noticeable patterns
+   of points in high dimensions. There should be no practical reason not to
+   use the scrambled version.
 
 Making a QMC engine, i.e., subclassing ``QMCEngine``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To make your own QMC engine, a few methods have to be defined. Following is an
-example wrapping `numpy.random.Generator`.
+To make your own :class:`~stats.qmc.QMCEngine`, a few methods have to be
+defined. Following is an example wrapping `numpy.random.Generator`.
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
@@ -1419,9 +1424,9 @@ Key takeaways
 
 * QMC has rules! Be sure to read the documentation or you might have no
   benefit over MC.
-* Use `scipy.stats.Sobol` if you need **exactly** :math:`2^m` points. You can
-  ask for more points, but you must follow some rules.
-* `scipy.stats.Halton` allows to sample, and skip an arbitrary number of
+* Use :class:`~stats.qmc.Sobol` if you need **exactly** :math:`2^m` points.
+  You can ask for more points, but you must follow some rules.
+* :class:`~stats.qmc.Halton` allows to sample, and skip an arbitrary number of
   points.
 * Never remove the first points of the sequence. It will destroy the
   properties.
