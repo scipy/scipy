@@ -3498,8 +3498,8 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
         Sequence of 2 quartiles,
         The default is to compute with Q_high = 0.75, Q_low = 0.25.
     axis : {int, tuple of int, None}, optional
-        Axis or axes along which the quantiles are computed. The
-        default is to compute the quantile(s) along a flattened
+        Axis or axes along which the quantiles are computed.
+        The default is 0, computing quantiles along a flattened
         version of the array.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}
         This optional parameter specifies the interpolation method to
@@ -3513,7 +3513,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
             * higher: ``j``.
             * nearest: ``i`` or ``j``, whichever is nearest.
             * midpoint: ``(i + j) / 2``.
-
+        The default is 'lower'.
 
     References
     ----------
