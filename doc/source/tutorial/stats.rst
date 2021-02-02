@@ -5,6 +5,7 @@ Statistics (`scipy.stats`)
 .. sectionauthor:: Josef Perktold
 .. sectionauthor:: Nicky van Foreest
 .. sectionauthor:: Sambit Panda
+.. sectionauthor:: Pamphile T. Roy (@tupui)
 
 .. currentmodule:: scipy
 
@@ -1242,7 +1243,7 @@ the space evenly rises exponentially as the volume of the space increases.
 This exponential growth is called the curse-of-dimensionality.
 
     >>> import numpy as np
-    >>> disc = 5
+    >>> disc = 10
     >>> x1 = np.linspace(0, 1, disc)
     >>> x2 = np.linspace(0, 1, disc)
     >>> x3 = np.linspace(0, 1, disc)

@@ -6,7 +6,7 @@ given discretization.
 import matplotlib.pyplot as plt
 import numpy as np
 
-disc = 5
+disc = 10
 
 x = np.linspace(0, 1, disc)
 y = np.linspace(0, 1, disc)

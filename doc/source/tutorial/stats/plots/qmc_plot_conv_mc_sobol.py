@@ -62,7 +62,7 @@ sample_mc_rmse = np.array(sample_mc_rmse)
 sample_sobol_rmse = np.array(sample_sobol_rmse)
 
 # Plot
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(4, 4))
 ax.set_aspect('equal')
 
 # MC
