@@ -97,7 +97,15 @@ def configuration(parent_package='', top_path=None):
         join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    config.add_extension('_group_columns', sources=['_group_columns.c'],)
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+        import pythran
+        ext = pythran.dist.PythranExtension(
+            'scipy.optimize._group_columns',
+            sources=["scipy/optimize/_group_columns.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+    else:
+        config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])
 

@@ -279,7 +279,7 @@ jobs:
       cython==0.29.18
       matplotlib
       mpmath
-      numpy
+      numpy==1.19.5
       Pillow
       pybind11
       pythran
@@ -315,9 +315,9 @@ jobs:
           $env:CFLAGS = "-m32"
           $env:LDFLAGS = "-m32"
           refreshenv
-          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\ncflags=/std:c++14 -m32\nblas=none\n'); fd.close()"
+          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\ncflags=/std:c++14 -m32\n'); fd.close()"
       }else{
-          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\nblas=none\n'); fd.close()"
+          python -c "import os; fd = open(os.path.expanduser(os.path.join('~', '.pythranrc')), 'w'); fd.write('[compiler]\nCXX=clang-cl.exe\nCC=clang-cl.exe\n'); fd.close()"
       }
       $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 

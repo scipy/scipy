@@ -51,7 +51,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from .coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape))
+                    other = self.__class__(coo_matrix(arg1, shape=shape,
+                                                      dtype=dtype))
                     self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
@@ -1074,8 +1075,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # not sorted => not canonical
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
-            self.has_canonical_format = _sparsetools.csr_has_canonical_format(
-                len(self.indptr) - 1, self.indptr, self.indices)
+            self.has_canonical_format = bool(
+                _sparsetools.csr_has_canonical_format(
+                    len(self.indptr) - 1, self.indptr, self.indices))
         return self._has_canonical_format
 
     def __set_has_canonical_format(self, val):
@@ -1113,8 +1115,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # first check to see if result was cached
         if not hasattr(self, '_has_sorted_indices'):
-            self._has_sorted_indices = _sparsetools.csr_has_sorted_indices(
-                len(self.indptr) - 1, self.indptr, self.indices)
+            self._has_sorted_indices = bool(
+                _sparsetools.csr_has_sorted_indices(
+                    len(self.indptr) - 1, self.indptr, self.indices))
         return self._has_sorted_indices
 
     def __set_sorted(self, val):

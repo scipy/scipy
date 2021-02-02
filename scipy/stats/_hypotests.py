@@ -1,11 +1,12 @@
 from collections import namedtuple
+from dataclasses import make_dataclass
 import numpy as np
 import warnings
 from . import distributions
-from ._continuous_distns import chi2
+from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
-
+import scipy.stats
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -305,7 +306,8 @@ def cramervonmises(rvs, cdf, args=()):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Cramér-von_Mises_criterion
+    .. [1] Cramér-von Mises criterion, Wikipedia,
+           https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
     .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
@@ -329,7 +331,7 @@ def cramervonmises(rvs, cdf, args=()):
     reject the null hypothesis that the observed sample is drawn from the
     standard normal distribution.
 
-    Now suppose we wish to check whether the same sampels shifted by 2.1 is
+    Now suppose we wish to check whether the same samples shifted by 2.1 is
     consistent with being drawn from a normal distribution with a mean of 2.
 
     >>> y = x + 2.1
@@ -389,3 +391,275 @@ def _get_wilcoxon_distr(n):
                          "statistic is not implemented for n={}".format(n))
 
     return np.array(cnt, dtype=int)
+
+
+def _Aij(A, i, j):
+    """Sum of upper-left and lower right blocks of contingency table"""
+    # See [2] bottom of page 309
+    return A[:i, :j].sum() + A[i+1:, j+1:].sum()
+
+
+def _Dij(A, i, j):
+    """Sum of lower-left and upper-right blocks of contingency table"""
+    # See [2] bottom of page 309
+    return A[i+1:, :j].sum() + A[:i, j+1:].sum()
+
+
+def _P(A):
+    """Twice the number of concordant pairs, excluding ties."""
+    # See [2] bottom of page 309
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*_Aij(A, i, j)
+    return count
+
+
+def _Q(A):
+    """Twice the number of discordant pairs, excluding ties."""
+    # See [2] bottom of page 309
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*_Dij(A, i, j)
+    return count
+
+
+def _a_ij_Aij_Dij2(A):
+    """A term that appears in the ASE of Kendall's tau and Somers' D"""
+    # See [2] section 4: Modified ASEs to test the null hypothesis...
+    m, n = A.shape
+    count = 0
+    for i in range(m):
+        for j in range(n):
+            count += A[i, j]*(_Aij(A, i, j) - _Dij(A, i, j))**2
+    return count
+
+
+def _tau_b(A):
+    """Calculate Kendall's tau-b and p-value from contingency table"""
+    # See [2] 2.2 and 4.2
+
+    # contingency table must be truly 2D
+    if A.shape[0] == 1 or A.shape[1] == 1:
+        return np.nan, np.nan
+
+    NA = A.sum()
+    PA = _P(A)
+    QA = _Q(A)
+    Sri2 = (A.sum(axis=1)**2).sum()
+    Scj2 = (A.sum(axis=0)**2).sum()
+    denominator = (NA**2 - Sri2)*(NA**2 - Scj2)
+
+    tau = (PA-QA)/(denominator)**0.5
+
+    numerator = 4*(_a_ij_Aij_Dij2(A) - (PA - QA)**2 / NA)
+    s02_tau_b = numerator/denominator
+    if s02_tau_b == 0:  # Avoid divide by zero
+        return tau, 0
+    Z = tau/s02_tau_b**0.5
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
+    return tau, p
+
+
+def _somers_d(A):
+    """Calculate Somers' D and p-value from contingency table"""
+    # See [3] page 1740
+
+    # contingency table must be truly 2D
+    if A.shape[0] <= 1 or A.shape[1] <= 1:
+        return np.nan, np.nan
+
+    NA = A.sum()
+    NA2 = NA**2
+    PA = _P(A)
+    QA = _Q(A)
+    Sri2 = (A.sum(axis=1)**2).sum()
+
+    d = (PA - QA)/(NA2 - Sri2)
+
+    S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
+    if S == 0:  # Avoid divide by zero
+        return d, 0
+    Z = (PA - QA)/(4*(S))**0.5
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
+    return d, p
+
+
+SomersDResult = make_dataclass("SomersDResult",
+                               ("statistic", "pvalue", "table"))
+
+
+def somersd(x, y=None):
+    r"""
+    Calculates Somers' D, an asymmetric measure of ordinal association
+
+    Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
+    correspondence between two rankings. Both statistics consider the
+    difference between the number of concordant and discordant pairs in two
+    rankings :math:`X` and :math:`Y`, and both are normalized such that values
+    close  to 1 indicate strong agreement and values close to -1 indicate
+    strong disagreement. They differ in how they are normalized. To show the
+    relationship, Somers' :math:`D` can be defined in terms of Kendall's
+    :math:`\tau_a`:
+
+    .. math::
+        D(Y|X) = \frac{\tau_a(X, Y)}{\tau_a(X, X)}
+
+    Suppose the first ranking :math:`X` has :math:`r` distinct ranks and the
+    second ranking :math:`Y` has :math:`s` distinct ranks. These two lists of
+    :math:`n` rankings can also be viewed as an :math:`r \times s` contingency
+    table in which element :math:`i, j` is the number of rank pairs with rank
+    :math:`i` in ranking :math:`X` and rank :math:`j` in ranking :math:`Y`.
+    Accordingly, `somersd` also allows the input data to be supplied as a
+    single, 2D contingency table instead of as two separate, 1D rankings.
+
+    Note that the definition of Somers' :math:`D` is asymmetric: in general,
+    :math:`D(Y|X) \neq D(X|Y)`. ``somersd(x, y)`` calculates Somers'
+    :math:`D(Y|X)`: the "row" variable :math:`X` is treated as an independent
+    variable, and the "column" variable :math:`Y` is dependent. For Somers'
+    :math:`D(X|Y)`, swap the input lists or transpose the input table.
+
+    Parameters
+    ----------
+    x: array_like
+        1D array of rankings, treated as the (row) independent variable.
+        Alternatively, a 2D contingency table.
+    y: array_like
+        If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
+        same length, treated as the (column) dependent variable.
+        If `x` is 2D, `y` is ignored.
+
+    Returns
+    -------
+    res : SomersDResult
+        A `SomersDResult` object with the following fields:
+
+            correlation : float
+               The Somers' :math:`D` statistic.
+            pvalue : float
+               The two-sided p-value for a hypothesis test whose null
+               hypothesis is an absence of association, :math:`D=0`.
+               See notes for more information.
+            table : 2D array
+               The contingency table formed from rankings `x` and `y` (or the
+               provided contingency table, if `x` is a 2D array)
+
+    See Also
+    --------
+    kendalltau : Calculates Kendall's tau, another correlation measure.
+    weightedtau : Computes a weighted version of Kendall's tau.
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    pearsonr : Calculates a Pearson correlation coefficient.
+
+    Notes
+    -----
+    This function follows the contingency table approach of [2]_ and
+    [3]_. *p*-values are computed based on an asymptotic approximation of
+    the test statistic distribution under the null hypothesis :math:`D=0`.
+
+    Theoretically, hypothesis tests based on Kendall's :math:`tau` and Somers'
+    :math:`D` should be identical.
+    However, the *p*-values returned by `kendalltau` are based
+    on the null hypothesis of *independence* between :math:`X` and :math:`Y`
+    (i.e. the population from which pairs in :math:`X` and :math:`Y` are
+    sampled contains equal numbers of all possible pairs), which is more
+    specific than the null hypothesis :math:`D=0` used here. If the null
+    hypothesis of independence is desired, it is acceptable to use the
+    *p*-value returned by `kendalltau` with the statistic returned by
+    `somersd` and vice versa. For more information, see [2]_.
+
+    Contingency tables are formatted according to the convention used by
+    SAS and R: the first ranking supplied (``x``) is the "row" variable, and
+    the second ranking supplied (``y``) is the "column" variable. This is
+    opposite the convention of Somers' original paper [1]_.
+
+    References
+    ----------
+    .. [1] Robert H. Somers, "A New Asymmetric Measure of Association for
+           Ordinal Variables", *American Sociological Review*, Vol. 27, No. 6,
+           pp. 799--811, 1962.
+
+    .. [2] Morton B. Brown and Jacqueline K. Benedetti, "Sampling Behavior of
+           Tests for Correlation in Two-Way Contingency Tables", *Journal of
+           the American Statistical Association* Vol. 72, No. 358, pp.
+           309--315, 1977.
+
+    .. [3] SAS Institute, Inc., "The FREQ Procedure (Book Excerpt)",
+           *SAS/STAT 9.2 User's Guide, Second Edition*, SAS Publishing, 2009.
+
+    .. [4] Laerd Statistics, "Somers' d using SPSS Statistics", *SPSS
+           Statistics Tutorials and Statistical Guides*,
+           https://statistics.laerd.com/spss-tutorials/somers-d-using-spss-statistics.php,
+           Accessed July 31, 2020.
+
+    Examples
+    --------
+    We calculate Somers' D for the example given in [4]_, in which a hotel
+    chain owner seeks to determine the association between hotel room
+    cleanliness and customer satisfaction. The independent variable, hotel
+    room cleanliness, is ranked on an ordinal scale: "below average (1)",
+    "average (2)", or "above average (3)". The dependent variable, customer
+    satisfaction, is ranked on a second scale: "very dissatisfied (1)",
+    "moderately dissatisfied (2)", "neither dissatisfied nor satisfied (3)",
+    "moderately satisfied (4)", or "very satisfied (5)". 189 customers
+    respond to the survey, and the results are cast into a contingency table
+    with the hotel room cleanliness as the "row" variable and customer
+    satisfaction as the "column" variable.
+
+    +-----+-----+-----+-----+-----+-----+
+    |     | (1) | (2) | (3) | (4) | (5) |
+    +=====+=====+=====+=====+=====+=====+
+    | (1) | 27  | 25  | 14  | 7   | 0   |
+    +-----+-----+-----+-----+-----+-----+
+    | (2) | 7   | 14  | 18  | 35  | 12  |
+    +-----+-----+-----+-----+-----+-----+
+    | (3) | 1   | 3   | 2   | 7   | 17  |
+    +-----+-----+-----+-----+-----+-----+
+
+    For example, 27 customers assigned their room a cleanliness ranking of
+    "below average (1)" and a corresponding satisfaction of "very
+    dissatisfied (1)". We perform the analysis as follows.
+
+    >>> from scipy.stats import somersd
+    >>> table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
+    >>> res = somersd(table)
+    >>> res.statistic
+    0.6032766111513396
+    >>> res.pvalue
+    1.0007091191074533e-27
+
+    The value of the Somers' D statistic is approximately 0.6, indicating
+    a positive correlation between room cleanliness and customer satisfaction
+    in the sample.
+    The *p*-value is very small, indicating a very small probability of
+    observing such an extreme value of the statistic under the null
+    hypothesis that the statistic of the entire population (from which
+    our sample of 189 customers is drawn) is zero. This supports the
+    alternative hypothesis that the true value of Somers' D for the population
+    is nonzero.
+    """
+    x, y = np.array(x), np.array(y)
+    if x.ndim == 1:
+        if x.size != y.size:
+            raise ValueError("Rankings must be of equal length.")
+        table = scipy.stats.contingency.crosstab(x, y)[1]
+    elif x.ndim == 2:
+        if np.any(x < 0):
+            raise ValueError("All elements of the contingency table must be "
+                             "non-negative.")
+        if np.any(x != x.astype(int)):
+            raise ValueError("All elements of the contingency table must be "
+                             "integer.")
+        if x.nonzero()[0].size < 2:
+            raise ValueError("At least two elements of the contingency table "
+                             "must be nonzero.")
+        table = x
+    else:
+        raise ValueError("x must be either a 1D or 2D array")
+    d, p = _somers_d(table)
+    return SomersDResult(d, p, table)

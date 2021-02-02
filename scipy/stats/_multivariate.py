@@ -538,11 +538,11 @@ class multivariate_normal_gen(multi_rv_generic):
             Mean of the distribution
         cov : array_like
             Covariance matrix of the distribution
-        maxpts: integer
+        maxpts : integer
             The maximum number of points to use for integration
-        abseps: float
+        abseps : float
             Absolute error tolerance
-        releps: float
+        releps : float
             Relative error tolerance
 
         Notes
@@ -570,12 +570,12 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration
             (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance (default 1e-5)
 
         Returns
@@ -609,12 +609,12 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration
             (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance (default 1e-5)
 
         Returns
@@ -716,13 +716,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
             If `seed` is already a ``RandomState`` or ``Generator`` instance,
             then that object is used.
             Default is None.
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration of the
             cumulative distribution function (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance for the cumulative distribution function
             (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance for the cumulative distribution function
             (default 1e-5)
 
@@ -1162,7 +1162,7 @@ class matrix_normal_frozen(multi_rv_frozen):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-       seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
             This parameter defines the object to use for drawing random
             variates.
             If `seed` is `None` the `~np.random.RandomState` singleton is used.
@@ -1651,7 +1651,9 @@ class wishart_gen(multi_rv_generic):
     specifies the scale matrix, which must be symmetric and positive definite.
     In this context, the scale matrix is often interpreted in terms of a
     multivariate normal precision matrix (the inverse of the covariance
-    matrix).
+    matrix). These arguments must satisfy the relationship
+    ``df > scale.ndim - 1``, but see notes on using the `rvs` method with
+    ``df < scale.ndim``.
 
     Methods
     -------
@@ -1717,6 +1719,12 @@ class wishart_gen(multi_rv_generic):
     distribution :math:`W_1(\nu, 1)` collapses to the :math:`\chi^2(\nu)`
     distribution.
 
+    The algorithm [2]_ implemented by the `rvs` method may
+    produce numerically singular matrices with :math:`p - 1 < \nu < p`; the
+    user may wish to check for this condition and generate replacement samples
+    as necessary.
+
+
     .. versionadded:: 0.16.0
 
     References
@@ -1778,9 +1786,9 @@ class wishart_gen(multi_rv_generic):
             df = dim
         elif not np.isscalar(df):
             raise ValueError("Degrees of freedom must be a scalar.")
-        elif df < dim:
-            raise ValueError("Degrees of freedom cannot be less than dimension"
-                             " of scale matrix, but df = %d" % df)
+        elif df <= dim - 1:
+            raise ValueError("Degrees of freedom must be greater than the "
+                             "dimension of scale matrix minus 1.")
 
         return dim, df, scale
 
@@ -2100,8 +2108,6 @@ class wishart_gen(multi_rv_generic):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        scale : ndarray
-            Scale matrix
         C : ndarray
             Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
@@ -2336,7 +2342,7 @@ def _cho_inv_batch(a, check_finite=True):
     x : array
         Array of inverses of the matrices ``a_i``.
 
-    See also
+    See Also
     --------
     scipy.linalg.cholesky : Cholesky factorization of a matrix
 
@@ -2569,7 +2575,6 @@ class invwishart_gen(wishart_gen):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
             Each quantile must be a symmetric positive definite matrix.
-
         %(_doc_default_callparams)s
 
         Returns

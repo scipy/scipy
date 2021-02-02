@@ -105,6 +105,7 @@ Correlation Functions
    pointbiserialr
    kendalltau
    weightedtau
+   somersd
    linregress
    theilslopes
    multiscale_graphcorr
@@ -131,6 +132,7 @@ Inferential Stats
    friedmanchisquare
    brunnermunzel
    combine_pvalues
+   page_trend_test
 
 Statistical Distances
 ---------------------
@@ -185,8 +187,8 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
-from ._hypotests import epps_singleton_2samp, cramervonmises
-
+from ._hypotests import epps_singleton_2samp, cramervonmises, somersd
+from ._page_trend_test import page_trend_test
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -210,7 +212,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises']
+           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
+           'page_trend_test', 'somersd']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -347,7 +350,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
-def gmean(a, axis=0, dtype=None):
+def gmean(a, axis=0, dtype=None, weights=None):
     """
     Compute the geometric mean along the specified axis.
 
@@ -367,6 +370,10 @@ def gmean(a, axis=0, dtype=None):
         dtype of a, unless a has an integer dtype with a precision less than
         that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
 
     Returns
     -------
@@ -389,6 +396,10 @@ def gmean(a, axis=0, dtype=None):
     arise in the calculations such as Not a Number and infinity because masked
     arrays automatically mask any non-finite values.
 
+    References
+    ----------
+    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+
     Examples
     --------
     >>> from scipy.stats import gmean
@@ -409,7 +420,11 @@ def gmean(a, axis=0, dtype=None):
             log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
-    return np.exp(log_a.mean(axis=axis))
+
+    if weights is not None:
+        weights = np.asanyarray(weights, dtype=dtype)
+
+    return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
 def hmean(a, axis=0, dtype=None):
@@ -1037,13 +1052,15 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mmnt = [_moment(a, i, axis) for i in moment]
+        mean = a.mean(axis, keepdims=True)
+        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
         return np.array(mmnt)
     else:
         return _moment(a, moment, axis)
 
 
-def _moment(a, moment, axis):
+# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
+def _moment(a, moment, axis, *, mean=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
@@ -1080,7 +1097,8 @@ def _moment(a, moment, axis):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - np.mean(a, axis, keepdims=True)
+        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        a_zero_mean = a - mean
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -1237,10 +1255,11 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.skew(a, axis, bias)
 
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
+        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
         vals = np.where(zero, 0, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
@@ -1346,10 +1365,11 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
         return mstats_basic.kurtosis(a, axis, fisher, bias)
 
     n = a.shape[axis]
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m4 = _moment(a, 4, axis, mean=mean)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * a.mean(axis))**2)
+        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
         vals = np.where(zero, 0, m4 / m2**2.0)
 
     if not bias:
@@ -4633,25 +4653,23 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     unimportant elements [1]_.
 
     The weighting is defined by means of a rank array, which assigns a
-    nonnegative rank to each element, and a weigher function, which
-    assigns a weight based from the rank to each element. The weight of an
-    exchange is then the sum or the product of the weights of the ranks of
-    the exchanged elements. The default parameters compute
-    :math:`\tau_\mathrm h`: an exchange between elements with rank
-    :math:`r` and :math:`s` (starting from zero) has weight
-    :math:`1/(r+1) + 1/(s+1)`.
+    nonnegative rank to each element (higher importance ranks being
+    associated with smaller values, e.g., 0 is the highest possible rank),
+    and a weigher function, which assigns a weight based on the rank to
+    each element. The weight of an exchange is then the sum or the product
+    of the weights of the ranks of the exchanged elements. The default
+    parameters compute :math:`\tau_\mathrm h`: an exchange between
+    elements with rank :math:`r` and :math:`s` (starting from zero) has
+    weight :math:`1/(r+1) + 1/(s+1)`.
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
     not have in mind a specific rank, the weighted :math:`\tau` is
     defined by averaging the values obtained using the decreasing
     lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
-    behavior with default parameters.
-
-    Note that if you are computing the weighted :math:`\tau` on arrays of
-    ranks, rather than of scores (i.e., a larger value implies a lower
-    rank) you must negate the ranks, so that elements of higher rank are
-    associated with a larger value.
+    behavior with default parameters. Note that the convention used
+    here for ranking (lower values imply higher importance) is opposite
+    to that used by other SciPy statistical functions.
 
     Parameters
     ----------
@@ -7569,7 +7587,7 @@ def kruskal(*args, nan_policy='propagate'):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1: 
+        elif arg.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
     n = np.asarray(list(map(len, args)))
@@ -8296,7 +8314,7 @@ def _sum_of_squares(a, axis=0):
     See Also
     --------
     _square_of_sums : The square(s) of the sum(s) (the opposite of
-    `_sum_of_squares`).
+        `_sum_of_squares`).
 
     """
     a, axis = _chk_asarray(a, axis)
