@@ -730,19 +730,21 @@ def barnard_exact(
     for 2x2 contingency tables.
     When using Barnard exact test, we can assert three differents null
     hypothesis :
-    - :math:`H_0 : p_2 \leq p_1`
-    - :math:`H_0 : p_2 \geq p_1`
-    - :math:`H_0 : p_2 = p_1`
 
-    Which can be computed using the ``alternative`` parameter with the
-    values : ``less``, ``greater`` or ``two-sided`` (default one)
-    respectively.
+    - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
+      with `alternative` = "less"
+
+    - :math:`H_0 : p_1 \leq p_2` versus :math:`H_1 : p_1 > p_2`,
+      with `alternative` = "greater"
+
+    - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
+      with `alternative` = "two-sided" (default one)
 
     References
     ----------
-    .. [1] `Mehta, Cyrus & Senchaudhuri, Pralay. (2003)`_. "Conditional versus Unconditional Exact Tests for Comparing Two Binomials". # noqa: E501
-
-    .. _`Mehta, Cyrus & Senchaudhuri, Pralay. (2003)`: https://www.statsols.com/hubfs/Resources_/Comparing-Two-Binomials.pdf # noqa: E501
+    .. [1] Mehta, Cyrus & Senchaudhuri, Pralay. (2003).
+           "Conditional versus Unconditional Exact Tests for Comparing Two
+           Binomials"
 
     Examples
     --------
