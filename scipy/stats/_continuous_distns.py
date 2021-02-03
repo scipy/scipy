@@ -2976,8 +2976,6 @@ class genhyperbolic_gen(rv_continuous):
     ``a`` as a shape parameter,
     ``b`` as a skewness parameter.
 
-    Stats are based on [3]_.
-
     %(after_notes)s
 
     The original parameterization of the Generalized Hyperbolic Distribution
@@ -3003,6 +3001,8 @@ class genhyperbolic_gen(rv_continuous):
     SciPy is based on [2]_, where :math:`a = \alpha\delta`,
     :math:`b = \beta\delta`, :math:`p = \lambda`, :math:`scale=\delta` and :math:`loc=\mu`
 
+    Stats are based on [3]_ and [4]_.
+
     References
     ----------
     .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions
@@ -3019,6 +3019,11 @@ class genhyperbolic_gen(rv_continuous):
        Thanh Tam, (2009), Moments of the generalized hyperbolic
        distribution, MPRA Paper, University Library of Munich, Germany,
        https://EconPapers.repec.org/RePEc:pra:mprapa:19081.
+
+    .. [4] E. Eberlein and E. A. von Hammerstein. Generalized hyperbolic
+       and inverse Gaussian distributions: Limiting cases and approximation
+       of processes. FDM Preprint 80, April 2003. University of Freiburg.
+       https://freidok.uni-freiburg.de/fedora/objects/freidok:7974/datastreams/FILE1/content
 
     %(example)s
 
