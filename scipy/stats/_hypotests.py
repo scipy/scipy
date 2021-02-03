@@ -781,7 +781,7 @@ def barnard_exact(
     ``alternative`` parameter with the "less" option, because the vaccine has
     either no effect (:math:`H_0` hypothesis) or a positive effect
     (:math:`H_1` hypothesis). Therefore, :math:`p_2` is either equal or lower
-    than `p_1` under the null hypothesis. Since our p-value is under our
+    than :math:`p_1` under the null hypothesis. Since our p-value is under our
     significance level defined above, we reject :math:`H_0`. The vaccine has
     a positive effect and we have :math:`p_1 \leq p_2` : The probability of
     contracting the virus if we have been vaccinated is lower than if
