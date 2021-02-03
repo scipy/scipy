@@ -779,7 +779,7 @@ def barnard_exact(
     Thus, the probability of obtaining test results at least as extreme as the
     data observed above is around 3.4%. In this exemple, we are using the
     ``alternative`` parameter with the "less" option, because the vaccine has
-    either no effect (:math:`H_0` hypothesis) or a positif effect
+    either no effect (:math:`H_0` hypothesis) or a positive effect
     (:math:`H_1` hypothesis). Therefore, :math:`p_2` is either equal or lower
     than `p_1` under the null hypothesis. Since our p-value is under our
     significance level defined above, we reject :math:`H_0`. The vaccine has
