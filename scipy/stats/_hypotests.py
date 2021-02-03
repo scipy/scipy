@@ -777,7 +777,7 @@ def barnard_exact(
     0.03407...
 
     Thus, the probability of obtaining test results at least as extreme as the
-    data observed above is 3.4%. In this exemple, we are using the
+    data observed above is around 3.4%. In this exemple, we are using the
     ``alternative`` parameter with the "less" option, because the vaccine has
     either no effect (:math:`H_0` hypothesis) or a positif effect
     (:math:`H_1` hypothesis). Therefore, :math:`p_2` is either equal or lower
@@ -796,7 +796,7 @@ def barnard_exact(
 
     With a similar threshold probabilit of 5%, `fisher_exact` is accepting
     :math:`H_0` while `barnard_exact` is rejecting it. As stated in [1]_,
-    Barnard test is more powerful than Fisher exact test.
+    Barnard test is Uniformly more powerful than Fisher exact test.
     """
     if num_it <= 0:
         raise ValueError(
