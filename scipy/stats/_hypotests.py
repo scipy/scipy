@@ -756,7 +756,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
                 Vaccine  Placebo
             Yes     7        12
             No      8        3
-
+                    15        15
     When working with statistical hypothesis testing, we usually use a
     threshold probability or a significance level upon which we decide
     to reject or not the null hypothesis :math:`H_0`. A commonly used
@@ -830,7 +830,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
 
     # To avoid warning when dividing by 0
     with np.errstate(divide="ignore", invalid="ignore"):
-        TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
+        TX = np.divide((p1 - p2), np.sqrt(var_p1_p2))
 
     TX[p1 == p2] = 0  # Removing NaN values
 
