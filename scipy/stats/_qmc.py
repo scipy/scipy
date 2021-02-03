@@ -543,7 +543,8 @@ class QMCEngine(ABC):
     * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
-    * ``random(n)``: draw ``n`` from the engine.
+    * ``random(n)``: draw ``n`` from the engine and increase the counter
+      ``num_generated`` by ``n``.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -560,10 +561,10 @@ class QMCEngine(ABC):
     >>> class RandomEngine(qmc.QMCEngine):
     ...     def __init__(self, d, seed):
     ...         super().__init__(d=d, seed=seed)
-    ...         self.rng_seed = seed
     ...
     ...
     ...     def random(self, n=1):
+    ...         self.num_generated += n
     ...         return self.rng.random((n, self.d))
     ...
     ...
@@ -573,7 +574,7 @@ class QMCEngine(ABC):
     ...
     ...
     ...     def fast_forward(self, n):
-    ...         self.rng.random((n, self.d))
+    ...         self.random(n)
     ...         return self
 
     After subclassing `QMCEngine` to define the sampling strategy we want to
@@ -633,7 +634,8 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.rng = check_random_state(self.rng_seed)
+        seed = copy.deepcopy(self.rng_seed)
+        self.rng = check_random_state(seed)
         self.num_generated = 0
         return self
 
@@ -651,7 +653,7 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.num_generated += n
+        self.random(n=n)
         return self
 
 

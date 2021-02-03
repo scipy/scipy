@@ -11,7 +11,7 @@ from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy,
-                              QMCEngine)
+                              QMCEngine, check_random_state)
 
 
 class TestUtils:
@@ -275,6 +275,43 @@ class TestVDC:
         sample = van_der_corput(7, start_index=3, scramble=True,
                                 seed=seed)
         assert_almost_equal(sample, out[3:])
+
+
+class RandomEngine(qmc.QMCEngine):
+    def __init__(self, d, seed):
+        super().__init__(d=d, seed=seed)
+
+    def random(self, n=1):
+        self.num_generated += n
+        try:
+            sample = self.rng.random((n, self.d))
+        except AttributeError:
+            sample = self.rng.random_sample((n, self.d))
+        return sample
+
+
+def test_subclassing_QMCEngine():
+    seed = np.random.RandomState(123456)
+    engine = RandomEngine(2, seed=seed)
+
+    sample_1 = engine.random(n=5)
+    sample_2 = engine.random(n=7)
+    assert engine.num_generated == 12
+
+    # reset and re-sample
+    engine.reset()
+    assert engine.num_generated == 0
+
+    sample_1_test = engine.random(n=5)
+    assert_equal(sample_1, sample_1_test)
+
+    # repeat reset and fast forward
+    engine.reset()
+    engine.fast_forward(n=5)
+    sample_2_test = engine.random(n=7)
+
+    assert_equal(sample_2, sample_2_test)
+    assert engine.num_generated == 12
 
 
 class QMCEngineTests:
