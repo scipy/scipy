@@ -1102,7 +1102,7 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                          **unknown_options):
     r"""
     Linear programming: minimize a linear objective function subject to linear
-    equality and inequality constraints using the tabluea-based simplex method.
+    equality and inequality constraints using the tableau-based simplex method.
 
     Linear programming solves problems of the following form:
 
