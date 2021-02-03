@@ -762,10 +762,16 @@ def barnard_exact(
             Yes     7        12
             No      8        3
 
-    When working with Statistical hypothesis testing, we usually use a
+    When working with statistical hypothesis testing, we usually use a
     threshold probability or a significance level upon which we decide
     to reject or not the null hypothesis :math:`H_0`. A commonly used
-    significance level is 5%.
+    significance level is 5%. In this example, we are using the
+    `alternative` parameter with the "less" option, because the vaccine has
+    either no effect (:math:`H_0` hypothesis) or a positive effect
+    (:math:`H_1` hypothesis). Therefore, under the null hypothesis
+    (:math:`H_0`), the probability :math:`p_2` of catching the virus
+    **without** any vaccine, is either equal or lower than :math:`p_1`,
+    the probability of catching the virus **with** the vaccine.
     To compute the p-value with Banard test, let's call `barnard_exact` as
     follow :
 
@@ -776,14 +782,10 @@ def barnard_exact(
     >>> res.pvalue
     0.03407...
 
-    Thus, the probability of obtaining test results at least as extreme as the
-    data observed above is around 3.4%. In this exemple, we are using the
-    ``alternative`` parameter with the "less" option, because the vaccine has
-    either no effect (:math:`H_0` hypothesis) or a positive effect
-    (:math:`H_1` hypothesis). Therefore, :math:`p_2` is either equal or lower
-    than :math:`p_1` under the null hypothesis. Since our p-value is under our
+    Then, the probability of obtaining test results at least as extreme as the
+    data observed above is around 3.4%. Since our p-value is under our
     significance level defined above, we reject :math:`H_0`. The vaccine has
-    a positive effect and we have :math:`p_1 \leq p_2` : The probability of
+    a positive effect and we have :math:`p_1 \leq p_2`; the probability of
     contracting the virus if we have been vaccinated is lower than if
     we are not.
 
@@ -796,7 +798,7 @@ def barnard_exact(
 
     With the same threshold probability of 5%, `fisher_exact` is accepting
     :math:`H_0` while `barnard_exact` is rejecting it. As stated in [1]_,
-    Barnard test is Uniformly more powerful than Fisher exact test.
+    Barnard test is uniformly more powerful than Fisher exact test.
     """
     if num_it <= 0:
         raise ValueError(
