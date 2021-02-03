@@ -682,7 +682,7 @@ def barnard_exact(
         alternative='two-sided',
         pooled=True,
         num_it=3):
-    """
+    r"""
     Perform a Barnard exact test on a 2x2 contingency table.
 
     Parameters
