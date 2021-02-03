@@ -693,9 +693,9 @@ def barnard_exact(
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided'
+        * 'less': one-sided
+        * 'greater': one-sided
 
     pooled : bool, optional
         Whether to compute score statistic with pooled variance or
