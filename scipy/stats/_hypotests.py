@@ -712,7 +712,7 @@ def barnard_exact(
             ``statistic`` is the Z statistic with pooled (Score) or
             unpooled (Wald) variance, depending on the user choice of
             `pooled` param.
-            ``p_value`` the probability of obtaining a test statistic at least
+            ``pvalue`` the probability of obtaining a test statistic at least
             as extreme as the one that was actually observed, assuming that
             the null hypothesis is true.
 
