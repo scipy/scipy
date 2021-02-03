@@ -41,9 +41,20 @@ Author: PM Larsen
 */
 
 #include <algorithm>
+#include <numeric>
+#include <vector>
 #include <cmath>
 #include "rectangular_lsap.h"
-#include <vector>
+
+
+template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
+{
+    std::vector<intptr_t> index(v.size());
+    iota(index.begin(), index.end(), 0);
+    std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j)
+              {return v[i] < v[j];});
+    return index;
+}
 
 static intptr_t
 augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
@@ -117,26 +128,14 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 }
 
 static int
-solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
+solve(intptr_t nr, intptr_t nc, std::vector<double>& cost,
+      std::vector<intptr_t>& col4row)
 {
-    // build a non-negative cost matrix
-    std::vector<double> cost(nr * nc);
-    double minval = *std::min_element(input_cost, input_cost + nr * nc);
-    for (intptr_t i = 0; i < nr * nc; i++) {
-        // test for NaN and -inf entries
-        if (input_cost[i] != input_cost[i] || input_cost[i] == -INFINITY) {
-            return -2;
-        }
-
-        cost[i] = input_cost[i] - minval;
-    }
-
     // initialize variables
     std::vector<double> u(nr, 0);
     std::vector<double> v(nc, 0);
     std::vector<double> shortestPathCosts(nc);
     std::vector<intptr_t> path(nc, -1);
-    std::vector<intptr_t> col4row(nr, -1);
     std::vector<intptr_t> row4col(nc, -1);
     std::vector<bool> SR(nr);
     std::vector<bool> SC(nc);
@@ -148,7 +147,7 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
         intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
                                         shortestPathCosts, curRow, SR, SC, &minVal);
         if (sink < 0) {
-            return -1;
+            return RECTANGULAR_LSAP_INFEASIBLE;
         }
 
         // update dual variables
@@ -177,8 +176,59 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
         }
     }
 
+    return 0;
+}
+
+static int
+solve_wrapper(intptr_t nr, intptr_t nc, double* input_cost,
+              int64_t* a, int64_t* b)
+{
+    // build a non-negative cost matrix
+    std::vector<double> cost(nr * nc);
+    double minval = *std::min_element(input_cost, input_cost + nr * nc);
+
+    // tall rectangular cost matrix must be transposed
+    bool transpose = nc < nr;
     for (intptr_t i = 0; i < nr; i++) {
-        output_col4row[i] = col4row[i];
+        for (intptr_t j = 0; j < nc; j++) {
+            // test for NaN and -inf entries
+            intptr_t index = i * nc + j;
+            auto v = input_cost[index];
+            if (v != v || v == -INFINITY) {
+                return RECTANGULAR_LSAP_INVALID;
+            }
+
+            if (transpose) {
+                cost[j * nr + i] = v - minval;
+            }
+            else {
+                cost[index] = v - minval;
+            }
+        }
+    }
+
+    if (transpose) {
+        std::swap(nr, nc);
+    }
+
+    std::vector<intptr_t> col4row(nr, -1);
+    int ret = solve(nr, nc, cost, col4row);
+    if (ret != 0)
+        return ret;
+
+    if (transpose) {
+        intptr_t i = 0;
+        for (auto v: argsort_iter(col4row)) {
+            a[i] = col4row[v];
+            b[i] = v;
+            i++;
+        }
+    }
+    else {
+        for (intptr_t i = 0; i < nr; i++) {
+            a[i] = i;
+            b[i] = col4row[i];
+        }
     }
 
     return 0;
@@ -190,9 +240,9 @@ extern "C" {
 
 int
 solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
-                                        int64_t* col4row)
+                                        int64_t* a, int64_t* b)
 {
-    return solve(nr, nc, input_cost, col4row);
+    return solve_wrapper(nr, nc, input_cost, a, b);
 }
 
 #ifdef __cplusplus
