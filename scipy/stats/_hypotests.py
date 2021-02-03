@@ -790,7 +790,7 @@ def barnard_exact(
     We can compare with Fisher's exact test which produces an exact
     p-value of 6.4% :
 
-    >>> _,  pvalue= stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
+    >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
     0.0640...
 
