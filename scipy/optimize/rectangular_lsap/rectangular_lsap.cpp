@@ -181,28 +181,44 @@ solve(intptr_t nr, intptr_t nc, std::vector<double>& cost,
 
 static int
 solve_wrapper(intptr_t nr, intptr_t nc, double* input_cost,
-              int64_t* a, int64_t* b)
+              int maximize, int64_t* a, int64_t* b)
 {
     // build a non-negative cost matrix
     std::vector<double> cost(nr * nc);
-    double minval = *std::min_element(input_cost, input_cost + nr * nc);
+
+    // find the extreme value (min/max element)
+    double xval = 0;
+    if (maximize) {
+        xval = *std::max_element(input_cost, input_cost + nr * nc);
+    }
+    else {
+        xval = *std::min_element(input_cost, input_cost + nr * nc);
+    }
 
     // tall rectangular cost matrix must be transposed
     bool transpose = nc < nr;
     for (intptr_t i = 0; i < nr; i++) {
         for (intptr_t j = 0; j < nc; j++) {
-            // test for NaN and -inf entries
             intptr_t index = i * nc + j;
             auto v = input_cost[index];
-            if (v != v || v == -INFINITY) {
-                return RECTANGULAR_LSAP_INVALID;
+
+            if (maximize) {
+                v = -v + xval;
+            }
+            else {
+                v = v - xval;
             }
 
             if (transpose) {
-                cost[j * nr + i] = v - minval;
+                cost[j * nr + i] = v;
             }
             else {
-                cost[index] = v - minval;
+                cost[index] = v;
+            }
+
+            // test for NaN and -inf entries
+            if (v != v || v == -INFINITY) {
+                return RECTANGULAR_LSAP_INVALID;
             }
         }
     }
@@ -240,9 +256,9 @@ extern "C" {
 
 int
 solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
-                                        int64_t* a, int64_t* b)
+                                        int maximize, int64_t* a, int64_t* b)
 {
-    return solve_wrapper(nr, nc, input_cost, a, b);
+    return solve_wrapper(nr, nc, input_cost, maximize, a, b);
 }
 
 #ifdef __cplusplus
