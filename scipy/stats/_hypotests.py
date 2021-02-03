@@ -794,7 +794,7 @@ def barnard_exact(
     >>> pvalue
     0.0640...
 
-    With a similar threshold probabilit of 5%, `fisher_exact` is accepting
+    With the same threshold probability of 5%, `fisher_exact` is accepting
     :math:`H_0` while `barnard_exact` is rejecting it. As stated in [1]_,
     Barnard test is Uniformly more powerful than Fisher exact test.
     """
