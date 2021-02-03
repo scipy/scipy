@@ -595,7 +595,7 @@ class DifferentialEvolutionSolver(object):
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
 
-        if init == 'sobol':
+        if isinstance(init, str) and (init == 'sobol'):
             # must be Ns=2**m for Sobol'
             n_s = 2 ** np.ceil(np.log2(self.num_population_members))
             self.num_population_members = n_s
@@ -607,7 +607,7 @@ class DifferentialEvolutionSolver(object):
         if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
-            if init in ['sobol', 'halton']:
+            elif init in ['sobol', 'halton']:
                 self.init_population_qmc(qmc_engine=init)
             elif init == 'random':
                 self.init_population_random()
