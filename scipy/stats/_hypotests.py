@@ -702,7 +702,7 @@ def barnard_exact(
         unpooled (Wald statistic)
 
     num_it : int, optional
-        Number of iterations of the grid search. Default is 4. Must be
+        Number of iterations of the grid search. Default is 3. Must be
         non-negative.
 
     Returns
