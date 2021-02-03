@@ -124,6 +124,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
               shape ``(M, len(x))``, where M is the total population size and
@@ -131,10 +133,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population subset could be used,
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will always use an initial population
+        which is a power of 2. 'halton' has no requirements but is a bit less
+        efficient.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
         for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
@@ -425,11 +433,17 @@ class DifferentialEvolutionSolver(object):
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population could be used, for
-        example, to create a tight bunch of initial guesses in an location
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will always use an initial population
+        which is a power of 2. 'halton' has no requirements but is a bit less
+        efficient.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
+        for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -591,7 +605,9 @@ class DifferentialEvolutionSolver(object):
 
         self._nfev = 0
         if isinstance(init, str):
-            if init in ['latinhypercube', 'sobol', 'halton']:
+            if init == 'latinhypercube':
+                self.init_population_lhs()
+            if init in ['sobol', 'halton']:
                 self.init_population_qmc(qmc_engine=init)
             elif init == 'random':
                 self.init_population_random()
@@ -630,6 +646,44 @@ class DifferentialEvolutionSolver(object):
         self.feasible = np.ones(self.num_population_members, bool)
 
         self.disp = disp
+
+    def init_population_lhs(self):
+        """
+        Initializes the population with Latin Hypercube Sampling.
+        Latin Hypercube Sampling ensures that each parameter is uniformly
+        sampled over its range.
+        """
+        rng = self.random_number_generator
+
+        # Each parameter range needs to be sampled uniformly. The scaled
+        # parameter range ([0, 1)) needs to be split into
+        # `self.num_population_members` segments, each of which has the following
+        # size:
+        segsize = 1.0 / self.num_population_members
+
+        # Within each segment we sample from a uniform random distribution.
+        # We need to do this sampling for each parameter.
+        samples = (segsize * rng.uniform(size=self.population_shape)
+
+        # Offset each segment to cover the entire parameter range [0, 1)
+                   + np.linspace(0., 1., self.num_population_members,
+                                 endpoint=False)[:, np.newaxis])
+
+        # Create an array for population of candidate solutions.
+        self.population = np.zeros_like(samples)
+
+        # Initialize population of candidate solutions by permutation of the
+        # random samples.
+        for j in range(self.parameter_count):
+            order = rng.permutation(range(self.num_population_members))
+            self.population[:, j] = samples[order, j]
+
+        # reset population energies
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
 
     def init_population_qmc(self, qmc_engine):
         """Initializes the population with a QMC method.
