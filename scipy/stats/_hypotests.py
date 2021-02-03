@@ -665,23 +665,18 @@ def somersd(x, y=None):
     return SomersDResult(d, p, table)
 
 
-def _barnard_exact_compute_gammaln_combination(n):
+def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)"""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-BarnardExactResult = make_dataclass("BarnardExactResult", [
-    ('statistic', float),
-    ("pvalue", float)
-])
+BarnardExactResult = make_dataclass(
+    "BarnardExactResult", [("statistic", float), ("pvalue", float)]
+)
 
 
-def barnard_exact(
-        table,
-        alternative='two-sided',
-        pooled=True,
-        num_it=3):
+def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     r"""
     Perform a Barnard exact test on a 2x2 contingency table.
 
@@ -728,7 +723,7 @@ def barnard_exact(
     tables. It examines the association of two categorical variables and
     is a more powerful alternative than Fisher's exact test
     for 2x2 contingency tables.
-    When using Barnard exact test, we can assert three differents null
+    When using Barnard exact test, we can assert three different null
     hypothesis :
 
     - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
@@ -752,8 +747,8 @@ def barnard_exact(
 
         Consider the following example of a vaccine efficacy study
         (Chan, 1998). In a randomized clinical trial of 30 subjects, 15 were
-        innoculated with a recombinant DNA influenza vaccine and the 15 were
-        innoculated with a placebo. Twelve of the 15 subjects in the placebo
+        inoculated with a recombinant DNA influenza vaccine and the 15 were
+        inoculated with a placebo. Twelve of the 15 subjects in the placebo
         group (80%) eventually became infected with influenza whereas for the
         vaccine group, only 7 of the 15 subjects (47%) became infected. The
         data are tabulated as a 2 x 2 table::
@@ -803,11 +798,10 @@ def barnard_exact(
     if num_it <= 0:
         raise ValueError(
             "Number of iterations `num_it` must be strictly positive, "
-            f"found {num_it!r}")
+            f"found {num_it!r}"
+        )
 
-    c = np.asarray(
-        table,
-        dtype=np.int64)
+    c = np.asarray(table, dtype=np.int64)
 
     if not c.shape == (2, 2):
         raise ValueError("The input `table` must be of shape (2, 2).")
@@ -835,7 +829,7 @@ def barnard_exact(
         var_p1_p2 = p1 * (1 - p1) / total_c1 + p2 * (1 - p2) / total_c2
 
     # To avoid warning when dividing by 0
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         TX = np.divide((p2 - p1), np.sqrt(var_p1_p2))
 
     TX[p1 == p2] = 0  # Removing NaN values
@@ -845,48 +839,77 @@ def barnard_exact(
     if alternative == "two-sided":
         idx = np.abs(TX) >= abs(TX_obs)
     elif alternative == "less":
-        idx = TX <= - abs(TX_obs)
+        idx = TX <= TX_obs
     elif alternative == "greater":
-        idx = TX >= abs(TX_obs)
+        idx = TX >= TX_obs
     else:
         msg = (
             "`alternative` should be one of {'two-sided', 'less', 'greater'},"
-            f" found {alternative!r}")
+            f" found {alternative!r}"
+        )
         raise ValueError(msg)
 
-    # Pass x1 and x2 in dimension 3
-    x1 = x1.reshape(-1, 1, 1)
-    x2 = x2.reshape(1, -1, 1)
+    p_value = _binomial_maximisation_of_p_value_with_nuisance_param(
+        total_c1, total_c2, idx, num_it
+    )
+    return BarnardExactResult(TX_obs, p_value)
 
-    x1_comb = _barnard_exact_compute_gammaln_combination(total_c1)
-    x2_comb = _barnard_exact_compute_gammaln_combination(total_c2)
+
+def _binomial_maximisation_of_p_value_with_nuisance_param(
+    total_c1, total_c2, idx, num_it
+):
+    """
+    Maximisation of the pvalue in respect of a nuisance parameter considering
+    a 2x2 sample space.
+    """
+    n = total_c1 + total_c2
+    x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1, 1)
+    x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1, 1)
+
+    x1_comb = _compute_log_combinations(total_c1)
+    x2_comb = _compute_log_combinations(total_c2)
 
     nuisance_num = 100
     inf_bound, sup_bound = 0, 1
 
     for _ in range(num_it):
         nuisance_arr = np.linspace(
-            start=inf_bound, stop=sup_bound, num=nuisance_num)
+            start=inf_bound, stop=sup_bound, num=nuisance_num
+        )
         nuisance_arr = nuisance_arr
         # Reshape in dimension 3 array
         nuisance_arr = nuisance_arr.reshape(1, 1, -1)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            tmp_log_nuisance = np.log(
-                nuisance_arr, out=np.zeros_like(nuisance_arr),
-                where=nuisance_arr >= 0
+            log_nuisance_arr = np.log(
+                nuisance_arr,
+                out=np.zeros_like(nuisance_arr),
+                where=nuisance_arr >= 0,
             )
-            tmp_log_1_minus_nuisance = np.log(
+            log_1_minus_nuisance_arr = np.log(
                 1 - nuisance_arr,
                 out=np.zeros_like(nuisance_arr),
                 where=1 - nuisance_arr >= 0,
             )
+
+            nuisance_power_x1_x2 = log_nuisance_arr * (x1 + x2)
+            nuisance_power_x1_x2[(x1 + x2 == 0)[:, :, 0]] = 0
+
+            nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance_arr * (
+                n - x1 - x2
+            )
+            nuisance_power_n_minus_x1_x2[(x1 + x2 == n)[:, :, 0]] = 0
+
             PX = np.exp(
                 x1_comb[x1]
                 + x2_comb[x2]
-                + tmp_log_nuisance * (x1 + x2)
-                + tmp_log_1_minus_nuisance * (n - x1 - x2)
+                + nuisance_power_x1_x2
+                + nuisance_power_n_minus_x1_x2
             )
+
+        PX /= PX.sum(axis=(0, 1)).reshape(1, 1, -1)  # This operation is to
+        # compensate numerical errors because sums of PX should always be equal
+        # to one.
 
         sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
         max_nuisance_idx = sum_PX.argmax()
@@ -898,10 +921,14 @@ def barnard_exact(
         )
         sup_bound = (
             nuisance_arr[0, 0, max_nuisance_idx + 1]
-            if max_nuisance_idx < nuisance_num-1
+            if max_nuisance_idx < nuisance_num - 1
             else nuisance_arr[0, 0, -1]
         )
 
         p_value = sum_PX[max_nuisance_idx]  # take the max value
 
-    return BarnardExactResult(TX_obs, p_value)
+    if p_value > 1:
+        # Occurs because of numerical errors
+        p_value = 1.0
+
+    return p_value
