@@ -119,11 +119,15 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 static int
 solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
 {
-
     // build a non-negative cost matrix
     std::vector<double> cost(nr * nc);
     double minval = *std::min_element(input_cost, input_cost + nr * nc);
     for (intptr_t i = 0; i < nr * nc; i++) {
+        // test for NaN and -inf entries
+        if (input_cost[i] != input_cost[i] || input_cost[i] == -INFINITY) {
+            return -2;
+        }
+
         cost[i] = input_cost[i] - minval;
     }
 
