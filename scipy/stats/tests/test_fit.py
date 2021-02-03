@@ -42,8 +42,8 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'gengamma', 'gennorm', 'genpareto', 'halfcauchy',
                    'invgamma', 'invweibull', 'johnsonsu',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
-                   'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
-                   'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
+                   'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
+                   'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'skewcauchy', 't',
                    'trapezoid', 'triang', 'tukeylambda']
 
