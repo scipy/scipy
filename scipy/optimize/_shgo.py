@@ -15,7 +15,7 @@ from scipy.stats import qmc
 __all__ = ['shgo']
 
 
-def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
+def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
     Finds the global minimum of a function using SHG optimization.
@@ -276,7 +276,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
-    (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
+    (array([1., 1., 1., 1., 1.]), 2.920392374190081e-18)
 
     Note that bounds determine the dimensionality of the objective
     function and is therefore a required input, however you can specify
@@ -286,7 +286,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> bounds = [(None, None), ]*4
     >>> result = shgo(rosen, bounds)
     >>> result.x
-    array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
+    array([0.99999851, 0.99999704, 0.99999411, 0.9999882 ])
 
     Next, we consider the Eggholder function, a problem with several local
     minima and one global minimum. We will demonstrate the use of arguments and
@@ -306,24 +306,24 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
     >>> result.x, result.fun
-    (array([ 512.        ,  404.23180542]), -959.64066272085051)
+    (array([512.        , 404.23180824]), -959.6406627208397)
 
     `shgo` also has a return for any other local minima that was found, these
     can be called using:
 
     >>> result.xl
-    array([[ 512.        ,  404.23180542],
-           [ 283.07593402, -487.12566542],
+    array([[ 512.        ,  404.23180824],
+           [ 283.0759062 , -487.12565635],
            [-294.66820039, -462.01964031],
-           [-105.87688985,  423.15324143],
-           [-242.97923629,  274.38032063],
+           [-105.87688911,  423.15323845],
+           [-242.97926   ,  274.38030925],
            [-506.25823477,    6.3131022 ],
-           [-408.71981195, -156.10117154],
-           [ 150.23210485,  301.31378508],
-           [  91.00922754, -391.28375925],
-           [ 202.8966344 , -269.38042147],
-           [ 361.66625957, -106.96490692],
-           [-219.40615102, -244.06022436],
+           [-408.71980731, -156.10116949],
+           [ 150.23207937,  301.31376595],
+           [  91.00920901, -391.283763  ],
+           [ 202.89662724, -269.38043241],
+           [ 361.66623976, -106.96493868],
+           [-219.40612786, -244.06020508],
            [ 151.59603137, -100.61082677]])
 
     >>> result.funl
@@ -344,7 +344,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (13, 39)
+    (13, 44)
 
     Note the difference between, e.g., ``n=180, iters=1`` and ``n=60, iters=3``.
     In the first case the promising points contained in the minimiser pool
@@ -404,7 +404,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
           xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
 
     >>> g1(res.x), g2(res.x), h1(res.x)
-    (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
+    (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
 
     """
     # Initiate SHGO class
@@ -597,7 +597,7 @@ class SHGO(object):
         if self.iters is None:
             self.iters = 1
         if self.n is None:
-            self.n = 100
+            self.n = 128
             self.nc = self.n
 
         if not ((self.maxiter is None) and (self.maxfev is None) and (
@@ -1280,10 +1280,7 @@ class SHGO(object):
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore",
-                                    message=r"The balance properties")
-            self.C = self.sobol.random(n=n)
+        self.C = self.sobol.random(n=n)
 
         # Distribute over bounds
         for i in range(len(self.bounds)):
