@@ -3031,8 +3031,8 @@ class genhyperbolic_gen(rv_continuous):
 
     def _argcheck(self, p, a, b):
 
-        return np.logical_and(np.abs(b) < a, p >= 0) | \
-                np.logical_and(np.abs(b) <= a, p < 0)
+        return (np.logical_and(np.abs(b) < a, p >= 0)
+                | np.logical_and(np.abs(b) <= a, p < 0))
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
