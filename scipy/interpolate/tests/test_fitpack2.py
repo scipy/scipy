@@ -955,15 +955,23 @@ class TestRectBivariateSpline(object):
 
         NLon = 6
         NLat = 3
-        GridPosLons = np.arange(NLon) / NLon * 2 * np.pi
         GridPosLats = np.arange(NLat) / NLat * np.pi
-        LatsGrid, LonsGrid = np.meshgrid(GridPosLats, GridPosLons)
-        Lats = LatsGrid.ravel()
-        Lons = LonsGrid.ravel()
+        GridPosLons = np.arange(NLon) / NLon * 2 * np.pi
 
+        # No error
+        Interpolator(GridPosLats, GridPosLons)
+
+        nonGridPosLats = GridPosLats.copy()
+        nonGridPosLats[2] = 0.001
         with assert_raises(ValueError) as exc_info:
-            Interpolator(Lats, Lons)
+            Interpolator(nonGridPosLats, GridPosLons)
         assert "x must be strictly increasing" in str(exc_info.value)
+
+        nonGridPosLons = GridPosLons.copy()
+        nonGridPosLons[2] = 0.001
+        with assert_raises(ValueError) as exc_info:
+            Interpolator(GridPosLats, nonGridPosLons)
+        assert "y must be strictly increasing" in str(exc_info.value)
 
 
 class TestRectSphereBivariateSpline(object):
