@@ -617,15 +617,16 @@ class SHGO(object):
             self.minimizers = self.delaunay_complex_minimisers
             # Sampling method used
             if sampling_method == 'sobol':
-                self.sampling_method = sampling_method
+                self.sampling_method = 'sobol'
                 self.sampling = self.sampling_sobol
-                self.sobol = qmc.Sobol(d=self.dim, scramble=False)  # Init Sobol class
+                # Init Sobol class
+                self.sobol = qmc.Sobol(d=self.dim, scramble=False)
             else:
                 # A user defined sampling method:
                 # self.sampling_points = sampling_method
+                self.sampling_method = 'custom'
                 self.sampling = self.sampling_custom
                 self.sampling_function = sampling_method  # F(n, d)
-                self.sampling_method = 'custom'
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -1279,7 +1280,8 @@ class SHGO(object):
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.filterwarnings("ignore",
+                                    message=r"The balance properties")
             self.C = self.sobol.random(n=n)
 
         # Distribute over bounds
