@@ -620,7 +620,8 @@ class SHGO(object):
                 self.sampling_method = 'sobol'
                 self.sampling = self.sampling_sobol
                 # Init Sobol class
-                self.sobol = qmc.Sobol(d=self.dim, scramble=False)
+                self.sobol = qmc.Sobol(d=self.dim, scramble=False,
+                                       seed=np.random.RandomState())
             else:
                 # A user defined sampling method:
                 # self.sampling_points = sampling_method
