@@ -39,7 +39,7 @@ mle_failing_fits = [
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
-                   'gengamma', , 'genhyperbolic', 'gennorm', 'genpareto',
+                   'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
                    'halfcauchy', 'invgamma', 'invweibull', 'johnsonsu',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
@@ -136,4 +136,3 @@ def test_expon_fit():
     data = [0, 0, 0, 0, 2, 2, 2, 2]
     phat = stats.expon.fit(data, floc=0)
     assert_allclose(phat, [0, 1.0], atol=1e-3)
-
