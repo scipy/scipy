@@ -718,6 +718,38 @@ class TestBinomTest:
         res = stats.binomtest(2, 2, .4)
         assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-8)
 
+    def tst_binary_srch_for_binom_tst(self):
+        # Test that old behavior of binomtest is maintained
+        # by the new binary search method in cases where d
+        # exactly equals the input on one side.
+        n = 10
+        p = 0.5
+        k = 7
+        # First test for the case where k > mode of PMF
+        i = np.arange(np.ceil(p * n), n+1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y, probably consistent with R.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        y2 = stats._binary_search_for_binom_tst(lambda x1:
+                                                stats.binom.pmf(x1, n, p),
+                                                d,
+                                                0, np.floor(p * n) + 1,
+                                                True) + 1
+        assert_allclose(y1, y2, rtol=1e-9)
+        # Now test for the other side.
+        k = 3
+        i = np.arange(np.floor(p * n) + 1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        y2 = n - stats._binary_search_for_binom_tst(lambda x1:
+                                                    stats.binom.pmf(x1, n, p),
+                                                    d,
+                                                    np.ceil(p * n), n) + 1
+        assert_allclose(y1, y2, rtol=1e-9)
+
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
                              [('less', 0.1488311, 0.0, 0.2772002),
