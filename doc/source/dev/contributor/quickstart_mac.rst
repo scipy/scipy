@@ -3,7 +3,7 @@
 .. _quickstart-mac:
 
 =======================================================
-Development environment quickstart guide (MacOS)
+Development environment quickstart guide (macOS)
 =======================================================
 
 This quickstart guide will cover:
@@ -14,7 +14,7 @@ This quickstart guide will cover:
 * performing an in-place build of SciPy; and
 * creating a virtual environment that adds this development version of SciPy to the Python path
 
-in MacOS (Tested on 11.1).
+in macOS (Tested on 11.1).
 
 .. note::
 
@@ -22,12 +22,12 @@ in MacOS (Tested on 11.1).
 
 	This guide assumes that you are starting without an existing Python 3 installation. If you already have Python 3, you might want to uninstall it first to avoid ambiguity over which Python version is being used at the command line.
 
-.. _quickstart-macos-build:
+.. _quickstart-mac-build:
 
 Building SciPy
 --------------
 
-#. If your system does not already have it, install command line tools: ``xcode-select --install``.
+#. Install Apple Developer Tools. An easy way to do this is to `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_, enter the command ``xcode-select --install``, and follow the prompts. Apple Developer Tools includes `git <https://git-scm.com/>`_, the software we need to download and manage the SciPy source code.
 
 #. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda Distribution includes dozens of the most popular Python packages for scientific computing, the ``conda`` package manager, and tools for managing virtual environments.
 
@@ -36,7 +36,7 @@ Building SciPy
    terminal window or enter ``source ~/.bash_profile`` for all the changes to take
    effect.
 
-#. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list of all the Python packages that came with the Anaconda Distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
+#. (Optional) In a terminal window, enter ``conda list``. This shows a list of all the Python packages that came with the Anaconda Distribution of Python. Note the latest released version of SciPy is among them; this is not the development version you are going to build and will be able to modify.
 
    Ideally, we'd like to have both versions, and we'd like to be able to switch between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_ can do just that. With a few keystrokes in the terminal or even the click of an icon, we can enable or disable our development version. Let's set that up.
 
@@ -46,7 +46,7 @@ Building SciPy
 
 #. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell ``conda`` the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy git`` to install packages.
+#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy`` to install the following packages:
 
    * ``numpy pybind11 cython pytest`` are four packages that SciPy depends on.
 
@@ -55,8 +55,6 @@ Building SciPy
    * ``sphinx`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
-
-   * ``git`` is a version control system used to download and manage the SciPy source code.
 
    Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
