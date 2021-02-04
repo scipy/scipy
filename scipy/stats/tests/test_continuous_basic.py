@@ -74,8 +74,8 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull']
-                     + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
-                        'powerlognorm', 'johnsonsu', 'genhyperbolic']
+                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                        'nct', 'pareto', 'powernorm', 'powerlognorm']
                      + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
@@ -96,8 +96,8 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'invweibull']
-                         + ['ksone', 'kstwo', 'pareto', 'powernorm',
-                            'powerlognorm', 'johnsonsu', 'genhyperbolic']
+                         + ['genhyperbolic', 'johnsonsu','ksone', 'kstwo',
+                            'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
@@ -310,9 +310,9 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
-                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
-                          'norminvgauss', 'rice', 'skewnorm', 'semicircular',
-                          'genhyperbolic']
+                          'exponnorm', 'genhyperbolic', 'geninvgauss',
+                          'levy_stable', 'nct', 'norminvgauss', 'rice',
+                          'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

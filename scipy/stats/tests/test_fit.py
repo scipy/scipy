@@ -39,13 +39,13 @@ mle_failing_fits = [
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
-                   'gengamma', 'gennorm', 'genpareto', 'halfcauchy',
-                   'invgamma', 'invweibull', 'johnsonsu',
+                   'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
+                   'halfcauchy', 'invgamma', 'invweibull', 'johnsonsu',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'ncf',
                    'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'skewcauchy', 't',
-                   'trapezoid', 'triang', 'tukeylambda', 'genhyperbolic']
+                   'trapezoid', 'triang', 'tukeylambda']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
