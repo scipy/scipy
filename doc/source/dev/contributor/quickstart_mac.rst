@@ -27,6 +27,8 @@ in MacOS (Tested on 11.1).
 Building SciPy
 --------------
 
+#. If your system does not already have it, install command line tools: ``xcode-select --install``.
+
 #. Download, install, and test the latest release of the `Anaconda Distribution of Python`_. In addition to the latest version of Python 3, the Anaconda Distribution includes dozens of the most popular Python packages for scientific computing, the ``conda`` package manager, and tools for managing virtual environments.
 
    If you're installing using the terminal, be sure to follow the "Next Steps"
@@ -44,7 +46,7 @@ Building SciPy
 
 #. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell ``conda`` the source we want for our packages. Then enter ``install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy git`` to install packages.
+#. Enter ``conda config --env --add channels conda-forge`` to tell ``conda`` the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pytest compilers sphinx matplotlib mypy git`` to install packages.
 
    * ``numpy pybind11 cython pytest`` are four packages that SciPy depends on.
 
