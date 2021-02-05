@@ -736,6 +736,37 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
+    In order to compute Barnard's exact test, we are using the Wald
+    statistic [3]_ with pooled and unpooled variance.
+    Under the assumption that both variances are equals, use pooled variance
+    (`pooled` = True). Otherwise, use the unpooled variance (`pooled` =
+    False). With pooled variance, the statistic is computed as follow :
+
+    .. math::
+
+        T(X) = \frac{
+            \hat{p_1} - \hat{p_2}
+        }{
+            \sqrt{
+                \hat{p}(1 - \hat{p})
+                (\frac{1}{c_1} +
+                \frac{1}{c_2})
+            }
+        }
+
+    and with unpooled variance :
+
+    .. math::
+
+        T(X) = \frac{
+            \hat{p_1} - \hat{p_2}
+        }{
+            \sqrt{
+                \frac{\hat{p_1}(1 - \hat{p_1})}{c_1} +
+                \frac{\hat{p_2}(1 - \hat{p_2})}{c_2}
+            }
+        }
+
     References
     ----------
     .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2×2 TABLES, Biometrika,
