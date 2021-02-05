@@ -706,12 +706,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     Returns
     -------
     ber : BarnardExactResult
-       The object has attributes ``statistic`` and ``pvalue``.
-       ``statistic`` is the Z statistic with
-       pooled or unpooled variance, depending on the user choice of
-       `pooled` param. ``pvalue`` the probability of obtaining a test
-       statistic at least as extreme as the one that was actually
-       observed, assuming that the null hypothesis is true.
+        The object has attributes `statistic` and `pvalue`. `statistic` is
+        the Wald's statistic with pooled or unpooled variance, depending on
+        the user choice of `pooled` param. `pvalue` is the probability of
+        obtaining a test statistic at least as extreme as the one that was
+        actually observed, assuming that the null hypothesis is true.
 
     See Also
     --------
