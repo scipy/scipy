@@ -19,6 +19,11 @@ def add_newdoc(name, doc):
     docdict[name] = doc
 
 
+add_newdoc("_log_iv_asym",
+    """
+    Internal function, use `ellip_harm` instead.
+    """)
+
 add_newdoc("_sf_error_test_function",
     """
     Private function; do not use.

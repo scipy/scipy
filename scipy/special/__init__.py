@@ -76,6 +76,8 @@ Bessel functions
    kve      -- Exponentially scaled modified Bessel function of the second kind.
    iv       -- Modified Bessel function of the first kind of real order.
    ive      -- Exponentially scaled modified Bessel function of the first kind.
+   logiv    -- Log Modified Bessel function of the first kind of real order.
+   logive   -- Log Exponentially scaled modified Bessel function of the first kind.
    hankel1  -- Hankel function of the first kind.
    hankel1e -- Exponentially scaled Hankel function of the first kind.
    hankel2  -- Hankel function of the second kind.
@@ -655,6 +657,11 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
+from ._log_iv import (
+    logiv,
+    logive
+)
+
 __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
@@ -671,6 +678,8 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'logiv',
+    'logive',
 ]
 
 from scipy._lib._testutils import PytestTester

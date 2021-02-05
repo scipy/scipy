@@ -109,6 +109,11 @@ def configuration(parent_package='',top_path=None):
                          sources=['_ellip_harm_2.c', 'sf_error.c',],
                          **cfg)
 
+    # logiv
+    config.add_extension('_logiv',
+                         sources=['_logiv.c'],
+                         define_macros=define_macros)
+
     # Cython API
     config.add_data_files('cython_special.pxd')
 
