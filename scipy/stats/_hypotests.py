@@ -777,9 +777,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
            "Conditional versus Unconditional Exact Tests for Comparing Two
            Binomials"
 
+    .. [3] https://en.wikipedia.org/wiki/Wald_test
+
     Examples
     --------
-    An example use of Barnard's test is presented in [1]_.
+    An example use of Barnard's test is presented in [2]_.
 
         Consider the following example of a vaccine efficacy study
         (Chan, 1998). In a randomized clinical trial of 30 subjects, 15 were
