@@ -933,7 +933,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
             else nuisance_arr[0, 0, -1]
         )
 
-        p_value = sum_PX[max_nuisance_idx]  # take the max value
+    p_value = sum_PX[max_nuisance_idx]  # take the max value
 
     if p_value > 1:
         # Occurs because of numerical errors
