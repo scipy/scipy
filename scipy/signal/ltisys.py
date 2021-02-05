@@ -181,6 +181,8 @@ class lti(LinearTimeInvariant):
     dt: None
     )
 
+    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+
     >>> signal.lti([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
     array([1, 2]),
@@ -188,6 +190,8 @@ class lti(LinearTimeInvariant):
     5,
     dt: None
     )
+
+    .. math:: H(s) = \frac{3s + 4}{1s + 2}
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
@@ -358,6 +362,8 @@ class dlti(LinearTimeInvariant):
     dt: 0.1
     )
 
+    .. math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
+
     >>> signal.dlti([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
     array([1, 2]),
@@ -365,6 +371,8 @@ class dlti(LinearTimeInvariant):
     5,
     dt: 0.1
     )
+
+    .. math:: H(z) = \frac{3z + 4}{1z + 2}
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
@@ -446,7 +454,9 @@ class dlti(LinearTimeInvariant):
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        Transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
+        Transfer function with sampling time 0.5s
+
+        .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
 
         >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
 
@@ -908,9 +918,11 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    ..math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -920,7 +932,9 @@ class ZerosPolesGain(LinearTimeInvariant):
     dt: None
     )
 
-    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Construct the transfer function with a sampling time of 0.1 seconds:
+
+    ..math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -1101,9 +1115,11 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -1173,9 +1189,11 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -1185,7 +1203,9 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     dt: None
     )
 
-    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Construct the transfer function with a sampling time of 0.1 seconds:
+
+    .. math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -2600,7 +2620,9 @@ def freqresp(system, w=None, n=10000):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(s) = 5 / (s-1)^3
+    Transfer function:
+    
+    .. math:: H(s) = \frac{5}{(s-1)^3}
 
     >>> s1 = signal.ZerosPolesGain([], [1, 1, 1], [5])
 
@@ -3720,7 +3742,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Transfer function:
+
+    .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
@@ -3814,7 +3838,9 @@ def dbode(system, w=None, n=100):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Transfer function:
+    
+    .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
