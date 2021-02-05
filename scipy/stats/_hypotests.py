@@ -699,7 +699,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     num_it : int, optional
         Number of iterations of the grid search. Default is 3. Must be
         non-negative. In most cases, 3 iterations is perfectly enough to
-        reach a precision a goood precision. Above a certain number (around
+        reach good precision. Above a certain number (around
         6 iterations), the result will not change anymore. Note that every
         iteration added comes with a performance cost.
 
