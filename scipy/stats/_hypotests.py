@@ -818,7 +818,6 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
         return BarnardExactResult(np.nan, 1.0)
 
     total_c1, total_c2 = c.sum(axis=0)
-    n = total_c1 + total_c2
 
     x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1)
     x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1)
