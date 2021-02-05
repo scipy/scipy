@@ -771,7 +771,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     ----------
     .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2×2 TABLES, Biometrika,
            Volume 34, Issue 1-2, January 1947, Pages 123–138,
-           https://doi.org/10.1093/biomet/34.1-2.123
+           :doi:`dpgkg3`
 
     .. [2] Mehta, Cyrus & Senchaudhuri, Pralay. (2003).
            "Conditional versus Unconditional Exact Tests for Comparing Two
