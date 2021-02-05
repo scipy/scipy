@@ -4693,13 +4693,14 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         ----------
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
-            Number of samples to draw (default 1).
+            Number of samples to draw (default ``None``).
         %(_doc_random_state)s
 
         Returns
         -------
         rvs : array_like
-            Random variates of shape (`size`, `len(p)`)
+            Random variates of shape ``size`` or ``m.shape``
+            (if ``size=None``).
 
         Notes
         -----
