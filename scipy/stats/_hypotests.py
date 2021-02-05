@@ -694,7 +694,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     pooled : bool, optional
         Whether to compute score statistic with pooled variance (Student's
         t-test) or unpooled variance (Welch's t-test). Default is ``True`` :
-        Statistic test is computed using pooled variance
+        Statistic test is computed using pooled variance.
 
     num_it : int, optional
         Number of iterations of the grid search. Default is 3. Must be
