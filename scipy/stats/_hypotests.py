@@ -792,7 +792,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
 
     With the same threshold probability of 5%, `fisher_exact` is accepting
     :math:`H_0` while `barnard_exact` is rejecting it. As stated in [1]_,
-    Barnard's test is uniformly more powerful than Fisher exact test.
+    Barnard's test is uniformly more powerful than Fisher's exact test
+    because Barnard's test do not condition on any margin. Fisher's test
+    should only be used when both sets of marginals are fixed.
+
     """
     if num_it <= 0:
         raise ValueError(
