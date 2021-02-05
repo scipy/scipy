@@ -11,11 +11,16 @@ __all__ = ['norm']
 
 def _sparse_frobenius_norm(x):
     if np.issubdtype(x.dtype, np.complexfloating):
-        sqnorm = abs(x).power(2).sum()
+        try:
+            sqnorm = sum(abs(matrix[i,j])**2 for i, j in zip(*x.nonzero()))**(1/2)
+        except TypeError:
+            sqnorm = abs(x).power(2).sum()
     else:
-        sqnorm = x.power(2).sum()
+        try:
+            sqnorm = sum(matrix[i,j]**2 for i, j in zip(*x.nonzero()))**(1/2)
+        except TypeError:
+            sqnorm = x.power(2).sum()
     return sqrt(sqnorm)
-
 
 def norm(x, ord=None, axis=None):
     """
