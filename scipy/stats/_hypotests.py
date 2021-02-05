@@ -756,6 +756,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
             Yes     7        12
             No      8        3
                     15        15
+
     When working with statistical hypothesis testing, we usually use a
     threshold probability or a significance level upon which we decide
     to reject or not the null hypothesis :math:`H_0`. A commonly used
