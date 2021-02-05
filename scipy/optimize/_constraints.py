@@ -180,8 +180,8 @@ class Bounds(object):
         Default is False. Has no effect for equality constraints.
     """
     def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = lb
-        self.ub = ub
+        self.lb = np.asarray(lb)
+        self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
