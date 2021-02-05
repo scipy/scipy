@@ -28,7 +28,7 @@ import scipy.stats.distributions
 
 from scipy.special import xlogy
 from .test_continuous_basic import distcont, invdistcont
-from .test_discrete_basic import invdistdiscrete
+from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root
 
@@ -36,7 +36,8 @@ from scipy.optimize import root
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 # distributions to skip while testing the fix for the support method
-# introduced in gh-13294.
+# introduced in gh-13294. These distributions are skipped as they
+# always return a non-nan support for every parametrization.
 skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 
@@ -5419,3 +5420,19 @@ def test_support_broadcasting_gh13294_regression():
     assert_equal(b2, ex_b2)
     assert a2.shape == ex_a2.shape
     assert b2.shape == ex_b2.shape
+
+
+def test_distr_params_lists():
+    # distribution objects are extra distributions added in
+    # test_discrete_basic. All other distributions are strings (names)
+    # and so we only choose those to compare whether both lists match.
+    discrete_distnames = {name for name, _ in distdiscrete
+                          if isinstance(name, str)}
+    invdiscrete_distnames = {name for name, _ in invdistdiscrete
+                             if isinstance(name, str)}
+    assert discrete_distnames == invdiscrete_distnames
+
+    cont_distnames = {name for name, _ in distcont if isinstance(name, str)}
+    invcont_distnames = {name for name, _ in invdistcont
+                         if isinstance(name, str)}
+    assert cont_distnames == invcont_distnames

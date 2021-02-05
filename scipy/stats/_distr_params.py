@@ -155,7 +155,8 @@ invdistdiscrete = [
     ['randint', (5, 2)],
     ['skellam', (-5, -2)],
     ['zipf', (-2, )],
-    ['yulesimon', (-2, )]
+    ['yulesimon', (-2, )],
+    ['zipfian', (-0.75, 15)]
 ]
 
 
@@ -259,5 +260,7 @@ invdistcont = [
     ['wald', ()],
     ['weibull_min', (-1, )],
     ['weibull_max', (-1, )],
-    ['wrapcauchy', (2, )]
+    ['wrapcauchy', (2, )],
+    ['reciprocal', (15, 10)],
+    ['skewcauchy', (2, )]
 ]
