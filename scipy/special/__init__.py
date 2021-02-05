@@ -66,16 +66,24 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv            -- Bessel function of the first kind of real order and complex argument.
+   jv            -- Bessel function of the first kind of real order and \
+                    complex argument.
    jve           -- Exponentially scaled Bessel function of order `v`.
-   yn            -- Bessel function of the second kind of integer order and real argument.
-   yv            -- Bessel function of the second kind of real order and complex argument.
-   yve           -- Exponentially scaled Bessel function of the second kind of real order.
-   kn            -- Modified Bessel function of the second kind of integer order `n`
-   kv            -- Modified Bessel function of the second kind of real order `v`
-   kve           -- Exponentially scaled modified Bessel function of the second kind.
+   yn            -- Bessel function of the second kind of integer order and \
+                    real argument.
+   yv            -- Bessel function of the second kind of real order and \
+                    complex argument.
+   yve           -- Exponentially scaled Bessel function of the second kind \
+                    of real order.
+   kn            -- Modified Bessel function of the second kind of integer \
+                    order `n`
+   kv            -- Modified Bessel function of the second kind of real order \
+                    `v`
+   kve           -- Exponentially scaled modified Bessel function of the \
+                    second kind.
    iv            -- Modified Bessel function of the first kind of real order.
-   ive           -- Exponentially scaled modified Bessel function of the first kind.
+   ive           -- Exponentially scaled modified Bessel function of the \
+                    first kind.
    hankel1       -- Hankel function of the first kind.
    hankel1e      -- Exponentially scaled Hankel function of the first kind.
    hankel2       -- Hankel function of the second kind.
