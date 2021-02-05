@@ -878,7 +878,6 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         nuisance_arr = np.linspace(
             start=inf_bound, stop=sup_bound, num=nuisance_num
         )
-        nuisance_arr = nuisance_arr
         # Reshape in dimension 3 array
         nuisance_arr = nuisance_arr.reshape(1, 1, -1)
 
