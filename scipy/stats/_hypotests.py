@@ -769,7 +769,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
 
     References
     ----------
-    .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2×2 TABLES, Biometrika,
+    .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2x2 TABLES, Biometrika,
            Volume 34, Issue 1-2, January 1947, Pages 123–138,
            :doi:`dpgkg3`
 
