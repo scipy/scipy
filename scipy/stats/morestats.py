@@ -3530,8 +3530,10 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
     0.5
 
     >>> quartile_coeff_dispersion(a=[1.6, 2.1, 2.3, 2.4,
-    ...                           2.6, 2.9, 2.98, 3])
-    0.15999999999999998
+    ...                           2.6, 2.9, 2.98, 3],
+    ...                           q=(0.25, 0.5),
+    ...                           interpolation='midpoint')
+    0.0638297872340425
 
     """
     if np.shape(q) != (2,):
