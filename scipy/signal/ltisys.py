@@ -131,7 +131,7 @@ class LinearTimeInvariant(object):
 
 
 class lti(LinearTimeInvariant):
-    """
+    r"""
     Continuous-time linear time invariant system base class.
 
     Parameters
@@ -297,7 +297,7 @@ class lti(LinearTimeInvariant):
 
 
 class dlti(LinearTimeInvariant):
-    """
+    r"""
     Discrete-time linear time invariant system base class.
 
     Parameters
@@ -443,7 +443,7 @@ class dlti(LinearTimeInvariant):
         return dlsim(self, u, t, x0=x0)
 
     def bode(self, w=None, n=100):
-        """
+        r"""
         Calculate Bode magnitude and phase data of a discrete-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
@@ -2578,7 +2578,7 @@ def bode(system, w=None, n=100):
 
 
 def freqresp(system, w=None, n=10000):
-    """Calculate the frequency response of a continuous-time system.
+    r"""Calculate the frequency response of a continuous-time system.
 
     Parameters
     ----------
@@ -3693,7 +3693,7 @@ def dstep(system, x0=None, t=None, n=None):
 
 
 def dfreqresp(system, w=None, n=10000, whole=False):
-    """
+    r"""
     Calculate the frequency response of a discrete-time system.
 
     Parameters
@@ -3793,7 +3793,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
 
 def dbode(system, w=None, n=100):
-    """
+    r"""
     Calculate Bode magnitude and phase data of a discrete-time system.
 
     Parameters
