@@ -3480,7 +3480,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
 
 
-def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
+def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
                               interpolation='lower'):
     """
     Compute the quartile coefficient of dispersion for a given sample array.
@@ -3492,7 +3492,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
 
     Parameters
     ----------
-    samples : array_like
+    a : array_like
         Input array.
     q : array_like of float, optional
         Sequence of 2 quantiles, such that q[0] < q[1].
@@ -3526,10 +3526,10 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     Examples
     --------
     >>> from scipy.stats import quartile_coeff_dispersion
-    >>> quartile_coeff_dispersion(samples=[2, 4, 6, 8, 10, 12, 14, 16])
+    >>> quartile_coeff_dispersion(a=[2, 4, 6, 8, 10, 12, 14, 16])
     0.5
 
-    >>> quartile_coeff_dispersion(samples=[1.6, 2.1, 2.3, 2.4,
+    >>> quartile_coeff_dispersion(a=[1.6, 2.1, 2.3, 2.4,
     ...                           2.6, 2.9, 2.98, 3])
     0.15999999999999998
 
@@ -3543,7 +3543,7 @@ def quartile_coeff_dispersion(samples, q=(0.25, 0.75), axis=0,
     if q[0] >= q[1]:
         raise ValueError("q values should satisfy q[0] < q[1]")
 
-    quartiles = np.quantile(samples, q=(q[0], q[1]),
+    quartiles = np.quantile(a, q=(q[0], q[1]),
                             axis=axis, interpolation=interpolation)
 
     return (quartiles[1] - quartiles[0])/(quartiles[1] + quartiles[0])

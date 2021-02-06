@@ -2049,21 +2049,21 @@ class TestQuartileCoeffOfDispersion(object):
 
         # Quartiles are bounded by 0 < q < 1
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=(1.01, 0.5))
+            stats.quartile_coeff_dispersion(a=arr, q=(1.01, 0.5))
         err.match("q values must be 2 floats in range \\(0.0, 1.0\\)")
 
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=(0.01, -0.5))
+            stats.quartile_coeff_dispersion(a=arr, q=(0.01, -0.5))
         err.match("q values must be 2 floats in range \\(0.0, 1.0\\)")
 
         # Quartile values must differ (otherwise, it's constant zero)
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=(0.5, 0.5))
+            stats.quartile_coeff_dispersion(a=arr, q=(0.5, 0.5))
         err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
 
         # q[0] must be less than q[1]
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=(0.75, 0.5))
+            stats.quartile_coeff_dispersion(a=arr, q=(0.75, 0.5))
         err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
 
     def test_bad_q_len(self):
@@ -2071,11 +2071,11 @@ class TestQuartileCoeffOfDispersion(object):
 
         # Expecting 2 quartiles
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=(0.5, ))
+            stats.quartile_coeff_dispersion(a=arr, q=(0.5,))
         err.match("Shape of q must be \\(,2\\)")
 
         with assert_raises(ValueError) as err:
-            stats.quartile_coeff_dispersion(samples=arr, q=[(0.5, ), (0.5, )])
+            stats.quartile_coeff_dispersion(a=arr, q=[(0.5,), (0.5,)])
         err.match("Shape of q must be \\(,2\\)")
 
 
