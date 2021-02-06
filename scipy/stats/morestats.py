@@ -3515,7 +3515,8 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion
+    .. [1] "Quartile Coefficient of Dispersion", *Wikipedia*,
+    https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion.
 
     Returns
     -------
