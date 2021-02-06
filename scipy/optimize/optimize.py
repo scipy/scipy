@@ -590,7 +590,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             return res['x']
 
 
-def _minimize_neldermead(func, x0, args=(), callback=None,
+def _minimize_neldermead(func, x0, args=(), callback=None, bounds=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
                          xatol=1e-4, fatol=1e-4, adaptive=False,
@@ -679,6 +679,19 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     x0 = asfarray(x0).flatten()
 
+    if bounds is None:
+        lower_bound, upper_bound = np.array((-np.inf, np.inf))
+    else:
+        lower_bound, upper_bound = bounds.lb, bounds.ub
+        # check bounds
+        if (lower_bound > upper_bound).any():
+            raise ValueError("Nelder Mead - one of the lower bounds is greater than an upper bound.")
+        if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
+            warnings.warn("Initial guess is not within the specified bounds",
+                          OptimizeWarning, 3)
+
+    x0 = np.clip(x0, lower_bound, upper_bound)
+
     if initial_simplex is None:
         N = len(x0)
 
@@ -719,6 +732,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         else:
             maxfun = np.inf
 
+    sim = np.clip(sim, lower_bound, upper_bound)
+
     one2np1 = list(range(1, N + 1))
     fsim = np.empty((N + 1,), float)
 
@@ -739,11 +754,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
         xbar = np.add.reduce(sim[:-1], 0) / N
         xr = (1 + rho) * xbar - rho * sim[-1]
+        xr = np.clip(xr, lower_bound, upper_bound)
         fxr = func(xr)
         doshrink = 0
 
         if fxr < fsim[0]:
             xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            xe = np.clip(xe, lower_bound, upper_bound)
             fxe = func(xe)
 
             if fxe < fxr:
@@ -760,6 +777,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 # Perform contraction
                 if fxr < fsim[-1]:
                     xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                    xc = np.clip(xc, lower_bound, upper_bound)
                     fxc = func(xc)
 
                     if fxc <= fxr:
@@ -770,6 +788,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 else:
                     # Perform an inside contraction
                     xcc = (1 - psi) * xbar + psi * sim[-1]
+                    xcc = np.clip(xcc, lower_bound, upper_bound)
                     fxcc = func(xcc)
 
                     if fxcc < fsim[-1]:
@@ -781,6 +800,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 if doshrink:
                     for j in one2np1:
                         sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                        sim[j] = np.clip(sim[j], lower_bound, upper_bound)
                         fsim[j] = func(sim[j])
 
         ind = np.argsort(fsim)

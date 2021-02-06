@@ -4,8 +4,8 @@ from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_less, assert_,
-                           suppress_warnings)
-from pytest import raises
+                           suppress_warnings, assert_allclose)
+from pytest import raises, warns
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
                             Bounds,
@@ -676,3 +676,89 @@ def test_bug_11886():
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
+
+
+class TestBoundedNelderMead(TestCase):
+
+    def test_rosen_brock0(self):
+        prob = Rosenbrock()
+        bounds = Bounds(-np.inf, np.inf)
+
+        result = minimize(prob.fun, prob.x0,
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert_allclose(result.x, [1.0, 1.0], rtol=10 ** -3)
+
+        result_no_bounds = minimize(prob.fun, prob.x0,
+                                    method='Nelder-Mead')
+        assert_allclose(result.x, result_no_bounds.x)
+
+    def test_rosen_brock1(self):
+        prob = Rosenbrock()
+        bounds = Bounds(-np.inf, -0.8)
+        result = minimize(prob.fun, [-10, -10],
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert np.less_equal(bounds.lb, result.x).all()
+        assert np.less_equal(result.x, bounds.ub).all()
+        assert np.allclose(prob.fun(result.x), result.fun)
+
+    def test_rosen_brock2(self):
+        prob = Rosenbrock()
+        bounds = Bounds(3.0, np.inf)
+        result = minimize(prob.fun, [3, 100],
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert np.less_equal(bounds.lb, result.x).all()
+        assert np.less_equal(result.x, bounds.ub).all()
+        assert np.allclose(prob.fun(result.x), result.fun)
+
+    def test_rosen_brock3(self):
+        prob = Rosenbrock()
+        bounds = Bounds([3.0, 1.0], [4.0, 5.0])
+        result = minimize(prob.fun, [3, 1],
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert np.less_equal(bounds.lb, result.x).all()
+        assert np.less_equal(result.x, bounds.ub).all()
+        assert np.allclose(prob.fun(result.x), result.fun)
+
+    def test_rosen_brock4(self):
+        prob = Rosenbrock()
+        bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
+        result = minimize(prob.fun, [-10, 5],
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert np.less_equal(bounds.lb, result.x).all()
+        assert np.less_equal(result.x, bounds.ub).all()
+        assert np.allclose(prob.fun(result.x), result.fun)
+
+    def test_rosen_brock5(self):
+        prob = Rosenbrock()
+        bounds = [(-np.inf, 4.0), (1.0, 5.0)]
+        result = minimize(prob.fun, [-10, 3],
+                          method='Nelder-Mead',
+                          bounds=bounds)
+        assert bounds[0][0] <= result.x[0] <= bounds[0][1]
+        assert bounds[1][0] <= result.x[1] <= bounds[1][1]
+        assert np.allclose(prob.fun(result.x), result.fun)
+
+    def test_invalid_bounds(self):
+        prob = Rosenbrock()
+        with raises(ValueError) as exc_info:
+            bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
+            minimize(prob.fun, [-10, 3],
+                     method='Nelder-Mead',
+                     bounds=bounds)
+        assert "one of the lower bounds is greater than an upper bound." \
+               in str(exc_info.value)
+
+    def test_outside_bounds_warning(self):
+        prob = Rosenbrock()
+        with warns(UserWarning) as exc_info:
+            bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
+            minimize(prob.fun, [-10, 8],
+                     method='Nelder-Mead',
+                     bounds=bounds)
+        assert "Initial guess is not within the specified bounds" in str(
+            exc_info[0].message.args[0])
