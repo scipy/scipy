@@ -1998,7 +1998,7 @@ class TestQuartileCoeffOfDispersion(object):
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
 
         # Q1 = 2.1, Q2 = 2.9 -> dispersion = (2.9-2.1)/(2.9+2.1) = 0.8/5 ~= 0.16
-        assert_almost_equal(stats.quartile_coeff_dispersion(arr), 0.16)
+        assert_allclose(stats.quartile_coeff_dispersion(arr), 0.16)
 
     def test_simple_many(self):
         ref = [2, 4, 6, 8, 10, 12, 14, 16]
@@ -2021,12 +2021,12 @@ class TestQuartileCoeffOfDispersion(object):
         arr = np.array([ref] * len(ref)).transpose()
 
         # Same as above but with arr as repeated columns, expecting len(arr) 1/3 dispersion values
-        assert_array_almost_equal(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5), axis=0), [1/3] * len(ref))
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5), axis=0), [1/3] * len(ref))
 
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
 
         # Q1 (0.25) = 2.1, Q2 (0.5) = 2.4 -> dispersion = (2.4-2.1)/(2.4+2.1) = 0.3/4.5 ~= 0.0666
-        assert_almost_equal(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), (2.4 - 2.1)/(2.4 + 2.1))
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), (2.4 - 2.1)/(2.4 + 2.1))
 
     def test_q2_q3(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
@@ -2038,11 +2038,11 @@ class TestQuartileCoeffOfDispersion(object):
         arr = np.array([ref] * len(ref)).transpose()
 
         # Same as above but with arr as repeated columns, expecting len(arr) 1/5 dispersion values
-        assert_array_almost_equal(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75), axis=0), [1/5] * len(ref))
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75), axis=0), [1/5] * len(ref))
 
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
         # Q1 (0.5) = 2.4, Q2 (0.75) = 2.9 -> dispersion = (2.9-2.4)/(2.9+2.4) ~= 0.0943
-        assert_almost_equal(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4)/(2.9 + 2.4))
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4)/(2.9 + 2.4))
 
     def test_bad_q_value(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
