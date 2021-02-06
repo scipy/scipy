@@ -334,7 +334,7 @@ def ss2zpk(A, B, C, D, input=0):
 
 def cont2discrete(system, dt, method="zoh", alpha=None):
     """
-    Transform a continuous to a discrete state-space system.
+    Transform a continuous system to a discrete one.
 
     Parameters
     ----------
@@ -342,7 +342,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`)
+            * 1: (instance of `lti`,) in a tuple or bare instance of `lti`
             * 2: (num, den)
             * 3: (zeros, poles, gain)
             * 4: (A, B, C, D)
@@ -366,11 +366,12 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     Returns
     -------
-    sysd : tuple containing the discrete system
+    sysd : tuple containing the discrete system or bare instance of `lti`
         Based on the input type, the output will be of the form
 
-        * (num, den, dt)   for transfer function input
-        * (zeros, poles, gain, dt)   for zeros-poles-gain input
+        * bare instance of `lti` for `lti` input (in a tuple or not)
+        * (num, den, dt) for transfer function input
+        * (zeros, poles, gain, dt) for zeros-poles-gain input
         * (A, B, C, D, dt) for state-space system input
 
     Notes
@@ -382,7 +383,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
     approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
-    is based on [4]_.
+    is based on [4]_. All conversions methods take place in the state-space
+    form of a system.
 
     References
     ----------
@@ -400,21 +402,27 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         pp. 204-206, 1998.
 
     """
-    if len(system) == 1:
-        return system.to_discrete()
-    if len(system) == 2:
+    try:
+        n = len(system)
+    except TypeError:
+        return system.to_discrete(dt, method=method, alpha=alpha)
+
+    if n == 1:
+        return system[0].to_discrete(dt, method=method, alpha=alpha)
+    elif n == 2:
         sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
                              alpha=alpha)
         return ss2tf(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
-    elif len(system) == 3:
+    elif n == 3:
         sysd = cont2discrete(zpk2ss(system[0], system[1], system[2]), dt,
                              method=method, alpha=alpha)
         return ss2zpk(sysd[0], sysd[1], sysd[2], sysd[3]) + (dt,)
-    elif len(system) == 4:
+    elif n == 4:
         a, b, c, d = system
     else:
-        raise ValueError("First argument must either be a tuple of 2 (tf), "
-                         "3 (zpk), or 4 (ss) arrays.")
+        raise ValueError(
+            "First argument must either be a tuple of 1 (lti), 2 (tf), "
+            "3 (zpk), or 4 (ss) arrays.")
 
     if method == 'gbt':
         if alpha is None:
