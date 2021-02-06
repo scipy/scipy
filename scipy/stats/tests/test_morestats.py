@@ -1992,12 +1992,12 @@ class TestQuartileCoeffOfDispersion(object):
     def test_simple_flattened(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
 
-        # Q1 = 4, Q2 = 12 -> dispersion = (12-4)/(12+4) = 8/16 = 0.5
+        # Q_low = 4, Q_high = 12 -> dispersion = (12-4)/(12+4) = 8/16 = 0.5
         assert_equal(stats.quartile_coeff_dispersion(arr), 0.5)
 
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
 
-        # Q1 = 2.1, Q2 = 2.9 -> dispersion = (2.9-2.1)/(2.9+2.1) = 0.8/5 ~= 0.16
+        # Q_low = 2.1, Q_high = 2.9 -> dispersion = (2.9-2.1)/(2.9+2.1) = 0.8/5 ~= 0.16
         assert_allclose(stats.quartile_coeff_dispersion(arr), 0.16)
 
     def test_simple_many(self):
@@ -2015,12 +2015,14 @@ class TestQuartileCoeffOfDispersion(object):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
 
         # Tests for different q values
-        # Q1 (0.25) = 4, Q2 (0.5) = 8 -> dispersion = (8-4)/(8+4) = 4/12 = 1/3
+        # Q_low (0.25) = 4, Q_hgih (0.5) = 8 -> dispersion = (8-4)/(8+4) = 4/12 = 1/3
         assert_equal(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), 1/3)
 
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
-        # Q1 (0.5) = 2.4, Q2 (0.75) = 2.9 -> dispersion = (2.9-2.4)/(2.9+2.4) ~= 0.0943
+        # Q_low (0.5) = 2.4, Q_high (0.75) = 2.9 -> dispersion = (2.9-2.4)/(2.9+2.4) ~= 0.0943
         assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4) / (2.9 + 2.4))
+
+    def test_other_
 
     def test_bad_q_value(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
