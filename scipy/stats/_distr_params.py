@@ -123,8 +123,8 @@ distdiscrete = [
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser', (0.6,)],  # re-enabled, numpy ticket:921
-    ['nbinom', (5, 0.5)],
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
+    ['nbinom', (5, 0.5)],
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
