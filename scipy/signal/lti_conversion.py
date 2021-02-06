@@ -383,8 +383,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
     approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
-    is based on [4]_. All conversions methods take place in the state-space
-    form of a system.
+    is based on [4]_. All conversion methods take place in the state-space form
+    of a system.
 
     References
     ----------
