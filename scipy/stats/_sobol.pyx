@@ -138,13 +138,9 @@ cdef int low_0_bit(const int x) nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int z = x
-    cdef int i = 0
-    while True:
+    cdef int i = 1
+    while x & (1 << (i-1)) != 0:
         i += 1
-        if z % 2 == 0:
-            break
-        z = z // 2
     return i
 
 
