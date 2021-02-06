@@ -770,7 +770,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     References
     ----------
     .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2x2 TABLES, Biometrika,
-           Volume 34, Issue 1-2, January 1947, Pages 123–138,
+           Volume 34, Issue 1-2, January 1947, Pages 123-138,
            :doi:`dpgkg3`
 
     .. [2] Mehta, Cyrus & Senchaudhuri, Pralay. (2003).
@@ -811,7 +811,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.statistic
-    - 1.894...
+    -1.894...
     >>> res.pvalue
     0.03407...
 
