@@ -3498,9 +3498,8 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
         Sequence of 2 quantiles, such that q[0] < q[1].
         The default is to compute with Q_high = 0.75, Q_low = 0.25.
     axis : {int, tuple of int, None}, optional
-        Axis or axes along which the quantiles are computed.
-        The default is 0, computing quantiles along a flattened
-        version of the array.
+        Axis along which the coefficient of dispersion is computed.
+        Default is 0. If None, compute over the whole array a.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}
         This optional parameter specifies the interpolation method to
         use when the desired quantile lies between two data points
