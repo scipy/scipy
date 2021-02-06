@@ -2011,38 +2011,16 @@ class TestQuartileCoeffOfDispersion(object):
         # Aggregate over row, so each row has the same value -> Q2 = 0 -> dispersion = 0
         assert_array_equal(stats.quartile_coeff_dispersion(arr, axis=1), [0.0] * len(ref))
 
-    def test_q1_q2(self):
+    def test_q_values(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
 
+        # Tests for different q values
         # Q1 (0.25) = 4, Q2 (0.5) = 8 -> dispersion = (8-4)/(8+4) = 4/12 = 1/3
         assert_equal(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), 1/3)
 
-        ref = [2, 4, 6, 8, 10, 12, 14, 16]
-        arr = np.array([ref] * len(ref)).transpose()
-
-        # Same as above but with arr as repeated columns, expecting len(arr) 1/3 dispersion values
-        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5), axis=0), [1/3] * len(ref))
-
-        arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
-
-        # Q1 (0.25) = 2.1, Q2 (0.5) = 2.4 -> dispersion = (2.4-2.1)/(2.4+2.1) = 0.3/4.5 ~= 0.0666
-        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), (2.4 - 2.1)/(2.4 + 2.1))
-
-    def test_q2_q3(self):
-        arr = [2, 4, 6, 8, 10, 12, 14, 16]
-
-        # Q1 (0.5) = 8, Q2 (0.75) = 12 -> dispersion = (12-8)/(12+8) = 4/20 = 1/5
-        assert_equal(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), 1/5)
-
-        ref = [2, 4, 6, 8, 10, 12, 14, 16]
-        arr = np.array([ref] * len(ref)).transpose()
-
-        # Same as above but with arr as repeated columns, expecting len(arr) 1/5 dispersion values
-        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75), axis=0), [1/5] * len(ref))
-
         arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
         # Q1 (0.5) = 2.4, Q2 (0.75) = 2.9 -> dispersion = (2.9-2.4)/(2.9+2.4) ~= 0.0943
-        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4)/(2.9 + 2.4))
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4) / (2.9 + 2.4))
 
     def test_bad_q_value(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
