@@ -1,8 +1,8 @@
 # distutils: language=c++
 # cython: language_level=3
 
-from HighsOptions cimport HighsOptions
-from HighsLp cimport HighsLp
+from .HighsOptions cimport HighsOptions
+from .HighsLp cimport HighsLp
 
 cdef extern from "HighsMipSolver.h" nogil:
     # From HiGHS/src/mip/HighsMipSolver.h

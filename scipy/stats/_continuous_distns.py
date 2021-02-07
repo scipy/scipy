@@ -4004,8 +4004,9 @@ class johnsonsb_gen(rv_continuous):
 
         f(x, a, b) = \frac{b}{x(1-x)}  \phi(a + b \log \frac{x}{1-x} )
 
-    for :math:`0 <= x < =1` and :math:`a, b > 0`, and :math:`\phi` is the normal
-    pdf.
+    where :math:`x`, :math:`a`, and :math:`b` are real scalars; :math:`b > 0`
+    and :math:`x \in [0,1]`.  :math:`\phi` is the pdf of the normal
+    distribution.
 
     `johnsonsb` takes :math:`a` and :math:`b` as shape parameters.
 
@@ -4052,7 +4053,8 @@ class johnsonsu_gen(rv_continuous):
         f(x, a, b) = \frac{b}{\sqrt{x^2 + 1}}
                      \phi(a + b \log(x + \sqrt{x^2 + 1}))
 
-    for all :math:`x, a, b > 0`, and :math:`\phi` is the normal pdf.
+    where :math:`x`, :math:`a`, and :math:`b` are real scalars; :math:`b > 0`.
+    :math:`\phi` is the pdf of the normal distribution.
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
 
