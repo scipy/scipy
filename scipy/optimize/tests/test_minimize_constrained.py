@@ -755,10 +755,9 @@ class TestBoundedNelderMead(TestCase):
 
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
-        with warns(UserWarning) as exc_info:
+        with raises(UserWarning, match=r"Initial guess is not "
+                                        "within the specified bounds"):
             bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
             minimize(prob.fun, [-10, 8],
                      method='Nelder-Mead',
                      bounds=bounds)
-        assert "Initial guess is not within the specified bounds" in str(
-            exc_info[0].message.args[0])
