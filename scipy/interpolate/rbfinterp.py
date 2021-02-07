@@ -198,17 +198,18 @@ class RBFInterpolator:
     is the center of the RBF.
 
     An RBF interpolant for the vector of observations :math:`d`, which are made
-    at locations :math:`y`, is a linear combination of RBFs centered at
-    :math:`y` plus a polynomial with a specified degree. The RBF interpolant is
-    written as
+    at the distinct locations :math:`y`, is a linear combination of RBFs
+    centered at :math:`y` plus a polynomial with a specified degree. The RBF
+    interpolant is written as
 
     .. math::
         f(x) = K(x, y) a + P(x) b
 
     where :math:`K(x, y)` is a matrix of RBFs with centers at :math:`y`
     evaluated at the interpolation points :math:`x`, and :math:`P(x)` is a
-    matrix of monomials evaluated at :math:`x`. The coefficients :math:`a` and
-    :math:`b` are the solution to the linear equations
+    matrix of monomials, which span polynomials with the specified degree,
+    evaluated at :math:`x`. The coefficients :math:`a` and :math:`b` are the
+    solution to the linear equations
 
     .. math::
         (K(y, y) + \lambda I) a + P(y) b = d
@@ -223,12 +224,13 @@ class RBFInterpolator:
     the smoothing parameter is zero.
 
     For the RBFs 'ga', 'imq', and 'iq', the solution for :math:`a` and
-    :math:`b` is unique if :math:`P(y)` has full rank. As an example,
-    :math:`P(y)` would not have full rank if the observations are collinear in
-    two-dimensional space and the degree of the added polynomial is 1. For the
-    remaining RBFs, the solution for :math:`a` and :math:`b` is unique if
-    :math:`P(y)` has full rank and the degree of the added polynomial is not
-    lower than the minimum value listed above (see Chapter 7 of [1]_ or [2]_).
+    :math:`b` is unique if :math:`P(y)` has full column rank. As an example,
+    :math:`P(y)` would not have full column rank if the observations are
+    collinear in two-dimensional space and the degree of the added polynomial
+    is 1. For the remaining RBFs, the solution for :math:`a` and :math:`b` is
+    unique if :math:`P(y)` has full column rank and the degree of the added
+    polynomial is not lower than the minimum value listed above (see Chapter 7
+    of [1]_ or [2]_).
 
     References
     ----------
@@ -290,21 +292,27 @@ class RBFInterpolator:
         elif degree < min_degree:
             warnings.warn(
                 'The polynomial degree should not be below %d for %s. The '
-                'interpolant may not be uniquely solvable' %
+                'interpolant may not be uniquely solvable, and the smoothing '
+                'parameter may have an unintuitive effect' %
                 (min_degree, kernel)
                 )
 
         degree = int(degree)
+
         # For improved numerical stability, shift the observations so that
         # their centroid is zero
         center = y.mean(axis=0)
         y = y - center
+
         # Build the system of equations and solve for the RBF and monomial
         # coefficients
         Kyy = kernel_func(_distance(y, y)*epsilon)
         Kyy[range(ny), range(ny)] += smoothing
         Py = _vandermonde(y, degree)
         nmonos = Py.shape[1]
+        # In general, the interpolant cannot be solved if Py does not have full
+        # column rank. Py cannot have full column rank if there are fewer
+        # observations than monomials
         if nmonos > ny:
             raise ValueError(
                 'The polynomial degree is too high. The number of monomials, '
@@ -473,7 +481,8 @@ class KNearestRBFInterpolator:
         elif degree < min_degree:
             warnings.warn(
                 'The polynomial degree should not be below %d for %s. The '
-                'interpolant may not be uniquely solvable' %
+                'interpolant may not be uniquely solvable, and the smoothing '
+                'parameter may have an unintuitive effect' %
                 (min_degree, kernel)
                 )
 
