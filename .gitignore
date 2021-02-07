@@ -277,6 +277,6 @@ scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
-scipy/optimize/_highs/cython/src/highs_wrapper.cxx
-scipy/optimize/_highs/cython/src/mpswriter.cxx
-scipy/optimize/_highs/cython/src/constants.cxx
+scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
+scipy/optimize/_highs/cython/src/_mpswriter.cxx
+scipy/optimize/_highs/cython/src/_highs_constants.cxx
