@@ -745,8 +745,8 @@ class TestBoundedNelderMead(TestCase):
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-       with raises(ValueError, match=r"one of the lower bounds "
-                                      "is greater than an upper bound."):
+        with raises(ValueError, match=r"one of the lower bounds is greater "
+                                      r"than an upper bound."):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',
@@ -754,8 +754,8 @@ class TestBoundedNelderMead(TestCase):
 
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
-        with raises(UserWarning, match=r"Initial guess is not "
-                                        "within the specified bounds"):
+        with raises(UserWarning, match=r"Initial guess is not within "
+                                       r"the specified bounds"):
             bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
             minimize(prob.fun, [-10, 8],
                      method='Nelder-Mead',
