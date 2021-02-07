@@ -73,7 +73,7 @@ class TestTrimmedStats(object):
         y = stats.tvar(X, limits=None)
         assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
 
-        x_2d = arange(63, dtype=float64).reshape((9, 7))
+        x_2d = arange(63, dtype=np.float64).reshape((9, 7))
         y = stats.tvar(x_2d, axis=None)
         assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
 

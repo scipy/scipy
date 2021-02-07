@@ -6022,7 +6022,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
            + (math.pow((winsorized_variance_b / trimmed_n2), 2)
               / (trimmed_n2 - 1.0))))
 
-    t, prob = _ttest_finish(df, t)
+    t, prob = _ttest_finish(df, t, alternative='two-sided')
 
     return Ttest_relResult(t, prob)
 
