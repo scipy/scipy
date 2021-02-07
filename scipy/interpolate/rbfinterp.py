@@ -289,8 +289,8 @@ class RBFInterpolator:
             degree = max(min_degree, 0)
         elif degree < min_degree:
             warnings.warn(
-                'The polynomial degree should not be below %d for %s in order '
-                'for the interpolant to be uniquely solvable' %
+                'The polynomial degree should not be below %d for %s. The '
+                'interpolant may not be uniquely solvable' %
                 (min_degree, kernel)
                 )
 
@@ -472,8 +472,8 @@ class KNearestRBFInterpolator:
             degree = max(min_degree, 0)
         elif degree < min_degree:
             warnings.warn(
-                'The polynomial degree should not be below %d for %s in order '
-                'for the interpolant to be uniquely solvable' %
+                'The polynomial degree should not be below %d for %s. The '
+                'interpolant may not be uniquely solvable' %
                 (min_degree, kernel)
                 )
 
