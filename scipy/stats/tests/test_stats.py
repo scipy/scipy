@@ -3991,6 +3991,7 @@ class Test_ttest_ind_permutations():
         assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
         assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
 
+    @pytest.mark.xfail_on_32bit("Uses too much memory")
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
         np.random.seed(0)
