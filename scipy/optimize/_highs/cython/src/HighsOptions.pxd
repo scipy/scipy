@@ -7,7 +7,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-from HConst cimport HighsOptionType
+from .HConst cimport HighsOptionType
 
 cdef extern from "HighsOptions.h" nogil:
 
