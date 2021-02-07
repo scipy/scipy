@@ -3837,34 +3837,34 @@ def test_ttest_ind_with_uneq_var():
                      ([0, np.nan], [1, np.nan]))
 
 
-def test_ttest_trimmed1():
-    a = (1, 2, 3)
-    b = (1.1, 2.9, 4.2)
-    pr = 0.53619490753126731
-    tr = -0.68649512735572582
-    t, p = stats.ttest_trimmed(a, b, equal_var=False)
-    assert_almost_equal(t, tr)
-    assert_almost_equal(p, pr)
+class TestTtestTrimmed(object):
+    def test_ttest_trimmed1(self):
+        a = (1, 2, 3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.53619490753126731
+        tr = -0.68649512735572582
+        t, p = stats.ttest_trimmed(a, b, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
 
+    def test_ttest_trimmed2(self):
+        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.00998909252078421
+        tr = 4.591598691181999
+        t, p = stats.ttest_trimmed(a, b, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
 
-def test_ttest_trimmed2():
-    a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
-    b = (1.1, 2.9, 4.2)
-    pr = 0.00998909252078421
-    tr = 4.591598691181999
-    t, p = stats.ttest_trimmed(a, b, equal_var=False)
-    assert_almost_equal(t, tr)
-    assert_almost_equal(p, pr)
-
-
-def test_ttest_trimmed3():
-    a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
-    b = (1.1, 2.9, 4.2)
-    pr = 0.10512380092302633
-    tr = 2.832256715395378
-    t, p = stats.ttest_trimmed(a, b, equal_var=False, trimming_percentage=32)
-    assert_almost_equal(t, tr)
-    assert_almost_equal(p, pr)
+    def test_ttest_trimmed3(self):
+        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.10512380092302633
+        tr = 2.832256715395378
+        t, p = stats.ttest_trimmed(a, b, equal_var=False,
+                                   trimming_percentage=32)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
 
 
 def test_ttest_ind_nan_2nd_arg():

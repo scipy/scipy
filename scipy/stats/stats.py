@@ -5914,11 +5914,12 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     return Ttest_relResult(t, prob)
 
 
-def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimming_percentage=20.0):
+def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
+                  trimming_percentage=20.0):
     """
     Calculate the Yuen T-test on TWO samples of scores, a and b.
 
-    Data sets with low kurtosis (i.e., a distribution flatter than the normal 
+    Data sets with low kurtosis (i.e., a distribution flatter than the normal
     distribution) should be analyzed with the two-sample trimmed t-test
     for unequal population variances, also called Yuen t-test.
     Yuen t-test, also called "20 percent trimmed means test", is an extension
@@ -5938,8 +5939,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
-    trimming_percentage : percent of trimming for default it is set to 20% For information about
-        trimming values (see table 2 in paper Yuen 1974)
+    trimming_percentage : percent of trimming for default it is set to 20% For
+        information about trimming values (see table 2 in paper Yuen 1974)
     equal_var : bool, optional
         If True (default), perform a standard independent 2 sample test
         that assumes equal population variances.
@@ -5953,7 +5954,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     pvalue : float or array
         two-tailed p-value
 
-    
+
     References
     ----------
     Karen K. Yuen (1974), The two-sample trimmed t for unequal population
@@ -5962,8 +5963,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
 
     Examples
     --------
-    
-    >>> from scipy import stats    
+
+    >>> from scipy import stats
 
     >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     >>> b = (1.1, 2.9, 4.2)
@@ -6006,16 +6007,20 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate', trimmin
     trimmed_mean_a = trim_mean(a, trimming_percentage / 100.0)
     trimmed_mean_b = trim_mean(b, trimming_percentage / 100.0)
 
-    winsorized_variance_a = _calculate_winsorized_variance(trimmed_index_a, trimmed_n1, n1, a)
-    winsorized_variance_b = _calculate_winsorized_variance(trimmed_index_b, trimmed_n2, n2, b)
+    winsorized_variance_a = _calculate_winsorized_variance(trimmed_index_a,
+                                                           trimmed_n1, n1, a)
+    winsorized_variance_b = _calculate_winsorized_variance(trimmed_index_b,
+                                                           trimmed_n2, n2, b)
 
-    t = ((trimmed_mean_a - trimmed_mean_b) / (math.sqrt((winsorized_variance_a / trimmed_n1)
-                                                        + (winsorized_variance_b / trimmed_n2))))
-    df = math.pow(((winsorized_variance_a / trimmed_n1)
-                   + (winsorized_variance_b / trimmed_n2)), 2) / ((math.pow((winsorized_variance_a / trimmed_n1), 2)
-                                                                  / (trimmed_n1 - 1.0))
-                                                                  + (math.pow((winsorized_variance_b / trimmed_n2), 2)
-                                                                  / (trimmed_n2 - 1.0)))
+    t = ((trimmed_mean_a - trimmed_mean_b) /
+         (math.sqrt((winsorized_variance_a / trimmed_n1)
+                    + (winsorized_variance_b / trimmed_n2))))
+    df = (math.pow(((winsorized_variance_a / trimmed_n1)
+                   + (winsorized_variance_b / trimmed_n2)), 2) /
+          ((math.pow((winsorized_variance_a / trimmed_n1), 2) /
+            (trimmed_n1 - 1.0))
+           + (math.pow((winsorized_variance_b / trimmed_n2), 2)
+              / (trimmed_n2 - 1.0))))
 
     t, prob = _ttest_finish(df, t)
 
@@ -6026,16 +6031,19 @@ def _calculate_winsorized_variance(trimmed_index, trimmed_n, n, a):
 
     trimmed_array = a[int(trimmed_index + 1):int(n - trimmed_index - 1)]
     trimmed_sum = sum(trimmed_array)
-    winsorized_mean = (1.0 / n) * (((trimmed_index + 1.0) * a[int(trimmed_index)]) + trimmed_sum
-                                   + ((trimmed_index + 1.0) * a[int(n - trimmed_index - 1.0)]))
-    internal_sum_of_squares = sum([math.pow(value - winsorized_mean, 2) for value in trimmed_array])
-    winsorized_sum_of_squares = ((trimmed_index + 1.0)
-                                 * math.pow((a[int(trimmed_index)]
-                                             - winsorized_mean), 2)) + internal_sum_of_squares \
-                                                                     + ((trimmed_index + 1.0)
-                                                                        * (math.pow((a[int(n - trimmed_index - 1.0)]
-                                                                                    - winsorized_mean), 2)))
-    winsorized_variance = winsorized_sum_of_squares / (trimmed_n - 1.0)
+    winsorized_mean = (1.0 / n) * (((trimmed_index + 1.0) *
+                                    a[int(trimmed_index)]) + trimmed_sum
+                                   + ((trimmed_index + 1.0) *
+                                      a[int(n - trimmed_index - 1.0)]))
+    internal_sum_of_squares = sum([math.pow(value - winsorized_mean, 2)
+                                   for value in trimmed_array])
+    win_sum_sq = (((trimmed_index + 1.0) *
+                  math.pow((a[int(trimmed_index)] - winsorized_mean), 2)) +
+                  internal_sum_of_squares +
+                  ((trimmed_index + 1.0) *
+                  (math.pow((a[int(n - trimmed_index - 1.0)] -
+                             winsorized_mean), 2))))
+    winsorized_variance = win_sum_sq / (trimmed_n - 1.0)
     return winsorized_variance
 
 
