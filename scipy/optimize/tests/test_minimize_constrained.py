@@ -745,13 +745,12 @@ class TestBoundedNelderMead(TestCase):
 
     def test_invalid_bounds(self):
         prob = Rosenbrock()
-        with raises(ValueError) as exc_info:
+       with raises(ValueError, match=r"one of the lower bounds "
+                                      "is greater than an upper bound."):
             bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
             minimize(prob.fun, [-10, 3],
                      method='Nelder-Mead',
                      bounds=bounds)
-        assert "one of the lower bounds is greater than an upper bound." \
-               in str(exc_info.value)
 
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
