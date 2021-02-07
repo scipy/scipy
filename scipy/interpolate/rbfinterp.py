@@ -114,11 +114,11 @@ def _vandermonde(x, degree):
     return out
 
 
-# Interpolation with conditionally positive definite RBFs has no assurances of
-# being well-posed when the order of the added polynomial is not high enough.
-# Define that minimum polynomial order here. These values are from Chapter 8 of
-# Fasshauer's "Meshfree Approximation Methods with MATLAB". The RBFs that are
-# not in this dictionary are positive definite and do not need a polynomial
+# For RBFs that are conditionally positive definite of order m, the interpolant
+# should include polynomial terms with degree >= m - 1. Define the minimum
+# degrees here. These values are from Chapter 8 of Fasshauer's "Meshfree
+# Approximation Methods with MATLAB". The RBFs that are not in this dictionary
+# are positive definite and do not need polynomial terms
 _NAME_TO_MIN_DEGREE = {
     'mq': 0,
     'linear': 0,
@@ -177,10 +177,9 @@ class RBFInterpolator:
         should be tuned for each application.
 
     degree : int, optional
-        Degree of the added polynomial. Set this to -1 for no added polynomial.
-        For some choices of `kernel`, the interpolant may not be well-posed if
-        `degree` is below some value. Those RBFs and their corresponding
-        minimum degrees are:
+        Degree of the added polynomial. Some RBFs have a minimum polynomial
+        degree that is needed for the interpolant to be well-posed. Those RBFs
+        and their corresponding minimum degrees are:
 
             - 'mq'      : 0
             - 'linear'  : 0
@@ -189,7 +188,8 @@ class RBFInterpolator:
             - 'quintic' : 2
 
         The default value is the minimum degree required for `kernel` or 0 if
-        there is no minimum required degree.
+        there is no minimum required degree. Set this to -1 for no added
+        polynomial.
 
     Notes
     -----
@@ -223,11 +223,11 @@ class RBFInterpolator:
     the smoothing parameter is zero.
 
     For the RBFs 'ga', 'imq', and 'iq', the solution for :math:`a` and
-    :math:`b` is unique as long as :math:`P(y)` has full rank. As an example,
+    :math:`b` is unique if :math:`P(y)` has full rank. As an example,
     :math:`P(y)` would not have full rank if the observations are collinear in
     two-dimensional space and the degree of the added polynomial is 1. For the
-    remaining RBFs, the solution for :math:`a` and :math:`b` is unique as long
-    as :math:`P(y)` has full rank and the degree of the added polynomial is not
+    remaining RBFs, the solution for :math:`a` and :math:`b` is unique if
+    :math:`P(y)` has full rank and the degree of the added polynomial is not
     lower than the minimum value listed above (see Chapter 7 of [1]_ or [2]_).
 
     References
@@ -406,10 +406,9 @@ class KNearestRBFInterpolator:
         should be tuned for each application.
 
     degree : int, optional
-        Degree of the added polynomial. Set this to -1 for no added polynomial.
-        For some choices of `kernel`, the interpolant may not be well-posed if
-        `degree` is below some value. Those RBFs and their corresponding
-        minimum degrees are:
+        Degree of the added polynomial. Some RBFs have a minimum polynomial
+        degree that is needed for the interpolant to be well-posed. Those RBFs
+        and their corresponding minimum degrees are:
 
             - 'mq'      : 0
             - 'linear'  : 0
@@ -418,7 +417,8 @@ class KNearestRBFInterpolator:
             - 'quintic' : 2
 
         The default value is the minimum degree required for `kernel` or 0 if
-        there is no minimum required degree.
+        there is no minimum required degree. Set this to -1 for no added
+        polynomial.
 
     """
     def __init__(self, y, d,
