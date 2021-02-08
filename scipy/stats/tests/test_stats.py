@@ -5427,7 +5427,7 @@ class TestFOneWay(object):
         ])
     def test_constant_input(self, a, b, expected):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
-        with assert_warns(stats.ConstantInputWarning):
+        with assert_warns(stats.F_onewayConstantInputWarning):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
 
@@ -5459,7 +5459,7 @@ class TestFOneWay(object):
         else:
             take_axis = 1
 
-        with assert_warns(stats.ConstantInputWarning):
+        with assert_warns(stats.F_onewayConstantInputWarning):
             f, p = stats.f_oneway(a, b, c, axis=axis)
 
         # Verify that the result computed with the 2d arrays matches
@@ -5471,7 +5471,7 @@ class TestFOneWay(object):
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
-            with assert_warns(stats.ConstantInputWarning):
+            with assert_warns(stats.F_onewayConstantInputWarning):
                 fj, pj = stats.f_oneway(np.take(a, j, take_axis),
                                         np.take(b, j, take_axis),
                                         np.take(c, j, take_axis))
