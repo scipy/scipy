@@ -509,7 +509,6 @@ class TestBarnardExact(object):
         assert_equal(pvalue, expected[0])
         assert_equal(TX_obs, expected[1])
 
-    @pytest.mark.slow
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
