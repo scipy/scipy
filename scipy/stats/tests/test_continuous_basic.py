@@ -96,7 +96,7 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'invweibull']
-                         + ['genhyperbolic', 'johnsonsu','ksone', 'kstwo',
+                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                             'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
