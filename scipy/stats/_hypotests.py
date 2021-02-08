@@ -904,7 +904,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     Maximisation of the pvalue in respect of a nuisance parameter considering
     a 2x2 sample space.
 
-    Barnard and Boschloo exact test iterate over a nuisance parameter
+    Barnard exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
     maxima, I am using a grid search algorithm, reducing :math:`\pi`
     bounds after each
