@@ -914,8 +914,8 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     which offer powerful broadcast operations. The different nuisance
     parameters are stored in an ndarray of length 100 and of shape (1, 1,
     100). Also, to compute the different combination used in the
-    p-values' computation formula, I am using gammaln function, which is
-    more tolerant for large value than `scipy.special.comb`. This gives me
+    p-values' computation formula, uses `gammaln` which is
+    more tolerant for large value than `scipy.special.comb`. This gives
     a log combination. For the little precision lost, we gain a lot of
     performance.
     """
