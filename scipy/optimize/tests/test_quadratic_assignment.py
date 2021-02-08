@@ -198,15 +198,17 @@ class TestFAQ(QAPCommonTests):
         assert_(11156 <= res.fun < 21000)
 
     def test_padding(self):
-        n = 25
+        # test is an adaptation of FIG 3 from SGM paper
+        n = 25  # nodes per block
         off_diag = _er_matrix(n, 0.1)
 
         # make a 50x50, [[0.8, 0.1], [0.1, 0.6]] block matrix
         A = np.block([[_er_matrix(n, 0.8), off_diag],
                       [off_diag, _er_matrix(n, 0.6)]])
-        # cut 5 nodes from each block, 40x40 block matrix
-        B = np.block([[A[:20, :20], A[:20, 25:-5]],
-                      [A[25:-5, :20], A[25:-5, 25:-5]]])
+        # cut 5 nodes from each block, yielding 40x40 block matrix
+        m = 5  # nodes per block getting cut
+        B = np.block([[A[:n - m, :n - m], A[:n - m, n:-m]],
+                      [A[n:-m, :n-m], A[n:-m, n:-m]]])
 
         # test adopted padding, input 2 padded
         options = {'maximize': True, 'P0': 'randomized'}
@@ -232,6 +234,34 @@ class TestFAQ(QAPCommonTests):
         ind = np.concatenate((range(20), range(25, 45)))
         assert_(1.0 == np.mean(res.col_ind[ind] == np.arange(40)))
         assert_(res.fun == np.sum(B))
+
+        # testing manual vs. function padding
+        n = 10
+        A = _er_matrix(n, 0.5)
+        m = 2
+        B = A[:-2, :-2]
+        # manually padding
+        B_naive = np.pad(B, (0, 2), 'constant')
+        ones = np.ones((n - m, n - m))
+        B_adopted = np.pad(2 * B - ones, (0, 2), 'constant')
+        A_adopted = 2 * A - np.ones((n, n))
+
+        options = {'maximize': True, 'padding': 'naive'}
+        res = quadratic_assignment(A, B, options=options)
+        res_manual = quadratic_assignment(A, B_naive,
+                                          options={'maximize': True})
+
+        assert_(res.fun == res_manual.fun)
+        assert_((res.col_ind == res_manual.col_ind).all())
+
+        options = {'maximize': True, 'padding': 'adopted'}
+        res = quadratic_assignment(A, B, options=options)
+        res_manual = quadratic_assignment(A_adopted, B_adopted,
+                                          options={'maximize': True})
+
+        # fun is calculated using orginal inputs,
+        # so they wouldn't be equal in this case
+        assert_((res.col_ind == res_manual.col_ind).all())
 
     def test_specific_input_validation(self):
 
@@ -474,4 +504,4 @@ def _er_matrix(n, p):
     # p specifies the probability an edge exists between any two nodes
     x = np.triu(np.random.rand(n, n), k=1)
     m = x + x.T
-    return (m < p).astype(int)
+    return ((m > 0) & (m < p)).astype(int)
