@@ -857,9 +857,6 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
 
     total_col_1, total_col_2 = table.sum(axis=0)
 
-    # We are reshaping x1 and x2 to enable numpy's powerful broadcasting
-    # operators, so that when we are adding or multiplying x1 and x2,
-    # the result is an array of shape (total_col_1 + 1, total_col_2 + 1)
     x1 = np.arange(total_col_1 + 1, dtype=np.int64).reshape(-1, 1)
     x2 = np.arange(total_col_2 + 1, dtype=np.int64).reshape(1, -1)
 
