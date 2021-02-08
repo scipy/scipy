@@ -1,5 +1,6 @@
-import numpy as np
 from copy import deepcopy
+
+import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less)
@@ -20,7 +21,7 @@ class Rosenbrock:
 
     def fun(self, x):
         x = np.asarray(x)
-        r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
+        r = np.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0,
                    axis=0)
         return r
 
@@ -30,19 +31,19 @@ class Rosenbrock:
         xm_m1 = x[:-2]
         xm_p1 = x[2:]
         der = np.zeros_like(x)
-        der[1:-1] = (200 * (xm - xm_m1**2) -
-                     400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
-        der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
-        der[-1] = 200 * (x[-1] - x[-2]**2)
+        der[1:-1] = (200 * (xm - xm_m1 ** 2) -
+                     400 * (xm_p1 - xm ** 2) * xm - 2 * (1 - xm))
+        der[0] = -400 * x[0] * (x[1] - x[0] ** 2) - 2 * (1 - x[0])
+        der[-1] = 200 * (x[-1] - x[-2] ** 2)
         return der
 
     def hess(self, x):
         x = np.atleast_1d(x)
         H = np.diag(-400 * x[:-1], 1) - np.diag(400 * x[:-1], -1)
         diagonal = np.zeros(len(x), dtype=x.dtype)
-        diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
+        diagonal[0] = 1200 * x[0] ** 2 - 400 * x[1] + 2
         diagonal[-1] = 200
-        diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
+        diagonal[1:-1] = 202 + 1200 * x[1:-1] ** 2 - 400 * x[2:]
         H = H + np.diag(diagonal)
         return H
 
@@ -50,18 +51,26 @@ class Rosenbrock:
 class TestHessianUpdateStrategy(TestCase):
 
     def test_hessian_initialization(self):
-        quasi_newton = (BFGS(), SR1())
+        ndims = 5
+        rnd_matrix = np.random.randint(1, 50, size=(ndims, ndims))
+        init_scales = {None: np.eye(ndims),
+                       2: np.eye(ndims) * 2,
+                       np.array(range(1, ndims + 1)): np.eye(ndims) * np.array(range(1, ndims + 1)),
+                       rnd_matrix: rnd_matrix}
+        for init_scale, true_matrix in init_scales.items():
+            quasi_newton = (BFGS(init_scale=init_scale), SR1(init_scale=init_scale))
 
-        for qn in quasi_newton:
-            qn.initialize(5, 'hess')
-            B = qn.get_matrix()
+            for qn in quasi_newton:
+                qn.initialize(ndims, 'hess')
+                B = qn.get_matrix()
 
-            assert_array_equal(B, np.eye(5))
+                assert_array_equal(B, true_matrix)
 
     # For this list of points, it is known
     # that no exception occur during the
     # Hessian update. Hence no update is
     # skiped or damped.
+
     def test_rosenbrock_with_no_exception(self):
         # Define auxiliar problem
         prob = Rosenbrock(n=5)
@@ -106,10 +115,10 @@ class TestHessianUpdateStrategy(TestCase):
                   [0.9999999, 0.9999999, 0.9999999, 0.9999999, 0.99999991]]
         # Get iteration points
         grad_list = [prob.grad(x) for x in x_list]
-        delta_x = [np.array(x_list[i+1])-np.array(x_list[i])
-                   for i in range(len(x_list)-1)]
-        delta_grad = [grad_list[i+1]-grad_list[i]
-                      for i in range(len(grad_list)-1)]
+        delta_x = [np.array(x_list[i + 1]) - np.array(x_list[i])
+                   for i in range(len(x_list) - 1)]
+        delta_grad = [grad_list[i + 1] - grad_list[i]
+                      for i in range(len(grad_list) - 1)]
         # Check curvature condition
         for i in range(len(delta_x)):
             s = delta_x[i]
@@ -132,8 +141,8 @@ class TestHessianUpdateStrategy(TestCase):
                 B = hess.get_matrix()
                 H = inv_hess.get_matrix()
                 assert_array_almost_equal(np.linalg.inv(B), H, decimal=10)
-            B_true = prob.hess(x_list[i+1])
-            assert_array_less(norm(B - B_true)/norm(B_true), 0.1)
+            B_true = prob.hess(x_list[i + 1])
+            assert_array_less(norm(B - B_true) / norm(B_true), 0.1)
 
     def test_SR1_skip_update(self):
         # Define auxiliary problem
@@ -160,14 +169,14 @@ class TestHessianUpdateStrategy(TestCase):
                   [0.9071558, 0.8299587, 0.6771400, 0.4402896, 0.17469338]]
         # Get iteration points
         grad_list = [prob.grad(x) for x in x_list]
-        delta_x = [np.array(x_list[i+1])-np.array(x_list[i])
-                   for i in range(len(x_list)-1)]
-        delta_grad = [grad_list[i+1]-grad_list[i]
-                      for i in range(len(grad_list)-1)]
+        delta_x = [np.array(x_list[i + 1]) - np.array(x_list[i])
+                   for i in range(len(x_list) - 1)]
+        delta_grad = [grad_list[i + 1] - grad_list[i]
+                      for i in range(len(grad_list) - 1)]
         hess = SR1(init_scale=1, min_denominator=1e-2)
         hess.initialize(len(x_list[0]), 'hess')
         # Compare the Hessian and its inverse
-        for i in range(len(delta_x)-1):
+        for i in range(len(delta_x) - 1):
             s = delta_x[i]
             y = delta_grad[i]
             hess.update(s, y)
@@ -192,14 +201,14 @@ class TestHessianUpdateStrategy(TestCase):
                   [0.1651957, -0.0049124, 0.0269665, -0.0040025, 0.02138184]]
         # Get iteration points
         grad_list = [prob.grad(x) for x in x_list]
-        delta_x = [np.array(x_list[i+1])-np.array(x_list[i])
-                   for i in range(len(x_list)-1)]
-        delta_grad = [grad_list[i+1]-grad_list[i]
-                      for i in range(len(grad_list)-1)]
+        delta_x = [np.array(x_list[i + 1]) - np.array(x_list[i])
+                   for i in range(len(x_list) - 1)]
+        delta_grad = [grad_list[i + 1] - grad_list[i]
+                      for i in range(len(grad_list) - 1)]
         hess = BFGS(init_scale=1, min_curvature=10)
         hess.initialize(len(x_list[0]), 'hess')
         # Compare the Hessian and its inverse
-        for i in range(len(delta_x)-1):
+        for i in range(len(delta_x) - 1):
             s = delta_x[i]
             y = delta_grad[i]
             hess.update(s, y)
