@@ -899,20 +899,37 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
 
 
 def _binomial_maximisation_of_p_value_with_nuisance_param(
-    total_c1, total_c2, idx, n_iter
+    total_c1, total_c2, index_arr, n_iter
 ):
     r"""
     Maximisation of the pvalue in respect of a nuisance parameter considering
-    a 2x2 sample space.
+    a 2x2 sample space using the `scipy.optimize.shgo` algorithm.
+
+    Parameters
+    ----------
+     total_c1, total_c2: int
+        The total sum of column 1 and column 2 in the initial variables array
+
+    index_arr: ndarray of boolean
+
+    n_iter: int
+        number of iteration inside shgo algorithm
+
+
+    Returns
+    -------
+    p_value : float
+        Return the maximum p-value considering every nuisance paramater
+        between 0 and 1
+
+    Notes
+    -----
 
     Barnard exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
-    maxima, I am using a grid search algorithm, reducing :math:`\pi`
-    bounds after each
-    iterations `n_iter`. To compute the p-value, I am using numpy ndarrays
-    which offer powerful broadcast operations. The different nuisance
-    parameters are stored in an ndarray of length 100 and of shape (1, 1,
-    100). Also, to compute the different combination used in the
+    maxima, this function uses `scipy.optimize.shgo`, which take
+    `n_iter` as iterations parameter.
+    Also, to compute the different combination used in the
     p-values' computation formula, uses `gammaln` which is
     more tolerant for large value than `scipy.special.comb`. This gives
     a log combination. For the little precision lost, we gain a lot of
@@ -959,7 +976,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         # p_values_arr should always be equal to one.
 
         # Just sum where TX >= TX0
-        p_values_arr = tmp_values_arr[idx].sum(axis=0)
+        p_values_arr = tmp_values_arr[index_arr].sum(axis=0)
         max_pvalue_index = p_values_arr.argmax()
 
         p_value = p_values_arr[max_pvalue_index]  # take the max value
