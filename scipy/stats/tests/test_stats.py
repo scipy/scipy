@@ -3997,7 +3997,7 @@ class Test_ttest_ind_permutations():
         N = 50
         a = np.random.rand(N, 4)
         b = np.random.rand(N, 4)
-        options_p = {'permutations': 50000, "random_state":0}
+        options_p = {'permutations': 500000, "random_state":0}
 
         options_p.update(alternative="greater")
         res_g_ab = stats.ttest_ind(a, b, **options_p)
@@ -4016,13 +4016,13 @@ class Test_ttest_ind_permutations():
         # symmetric, so these identities should be approximately satisfied
         mask = res_g_ab.pvalue <= 0.5
         assert_allclose(2 * res_g_ab.pvalue[mask],
-                        res_2_ab.pvalue[mask], atol=1e-2)
+                        res_2_ab.pvalue[mask], atol=5e-3)
         assert_allclose(2 * (1-res_g_ab.pvalue[~mask]),
-                        res_2_ab.pvalue[~mask], atol=1e-2)
+                        res_2_ab.pvalue[~mask], atol=5e-3)
         assert_allclose(2 * res_l_ab.pvalue[~mask],
-                        res_2_ab.pvalue[~mask], atol=1e-2)
+                        res_2_ab.pvalue[~mask], atol=5e-3)
         assert_allclose(2 * (1-res_l_ab.pvalue[mask]),
-                        res_2_ab.pvalue[mask], atol=1e-2)
+                        res_2_ab.pvalue[mask], atol=5e-3)
 
     def test_ttest_ind_permutation_nanpolicy(self):
         np.random.seed(0)
