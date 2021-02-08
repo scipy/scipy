@@ -3488,18 +3488,18 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
     Given two quartiles Q_low, Q_high from array samples such that
     Q_low < Q_high, the quartile coefficient of dispersion is calculated by
     (Q_high - Q_low)/(Q_high + Q_low).
-    by default it is computed using 3rd and 1st quartiles.
+    By default, it is computed using 3rd and 1st quartiles.
 
     Parameters
     ----------
     a : array_like
         Input array.
     q : array_like of float, optional
-        Sequence of 2 quantiles, such that q[0] < q[1].
-        The default is to compute with Q_high = 0.75, Q_low = 0.25.
+        Sequence of 2 quantiles, (Q_low, Q_high), such that Q_low < Q_high.
+        The default is to compute with Q_low = 0.25, Q_high = 0.75
     axis : {int, tuple of int, None}, optional
         Axis along which the coefficient of dispersion is computed.
-        Default is 0. If None, compute over the whole array a.
+        Default is 0. If None, compute over the whole array `a`.
     interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}
         This optional parameter specifies the interpolation method to
         use when the desired quantile lies between two data points
@@ -3518,7 +3518,7 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
     References
     ----------
     .. [1] "Quartile Coefficient of Dispersion", *Wikipedia*,
-    https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion.
+           https://en.wikipedia.org/wiki/Quartile_coefficient_of_dispersion.
 
     Returns
     -------
@@ -3532,7 +3532,7 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
     0.5
 
     >>> quartile_coeff_dispersion(a=[1.6, 2.1, 2.3, 2.4,
-    ...                           2.6, 2.9, 2.98, 3],
+    ...                              2.6, 2.9, 2.98, 3],
     ...                           q=(0.25, 0.5),
     ...                           interpolation='midpoint')
     0.0638297872340425
