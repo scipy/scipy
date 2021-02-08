@@ -193,9 +193,15 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                 scale = self.init_scale
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
-                self.B *= scale
+                if np.shape(scale) == np.shape(self.B):
+                    self.B = scale.copy()
+                else:
+                    self.B *= scale
             else:
-                self.H *= scale
+                if np.shape(scale) == np.shape(self.H):
+                    self.H = scale.copy()
+                else:
+                    self.H *= scale
             self.first_iteration = False
         self._update_implementation(delta_x, delta_grad)
 
@@ -257,6 +263,8 @@ class BFGS(FullHessianUpdateStrategy):
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+        The scale can be any array-like object that can be multiplied
+        with `np.eye(n)`.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.
@@ -388,6 +396,8 @@ class SR1(FullHessianUpdateStrategy):
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+        The scale can be any array-like object that can be multiplied
+        with `np.eye(n)`.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.
