@@ -401,7 +401,6 @@ class SR1(FullHessianUpdateStrategy):
     .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
            Second Edition (2006).
     """
-
     def __init__(self, min_denominator=1e-8, init_scale='auto'):
         self.min_denominator = min_denominator
         super().__init__(init_scale)
