@@ -426,7 +426,7 @@ Warnings used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
-   F_onewayConstantInputWarning
+   ConstantInputWarning
    F_onewayBadInputSizesWarning
    PearsonRConstantInputWarning
    PearsonRNearConstantInputWarning
