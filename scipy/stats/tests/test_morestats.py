@@ -2033,7 +2033,9 @@ class TestQuartileCoeffOfDispersion(object):
         # Interpolation = 'midpont', Q_low (0.25) = (3+2)/2 = 2.5,
         # Q_high (0.75) = (7+6)/2 = 6.5 => dispersion = 4/9
         assert_equal(stats.quartile_coeff_dispersion(arr, interpolation='midpoint'), 4/9)
-        assert_equal(stats.quartile_coeff_dispersion(arr), 3.5/9)
+        # Interpolation = 'midpont', Q_low (0.25) = 2
+        # Q_high (0.75) = 6 => dispersion = 4/8
+        assert_equal(stats.quartile_coeff_dispersion(arr), 4/8)
 
     def test_bad_q_value(self):
         arr = [2, 4, 6, 8, 10, 12, 14, 16]
