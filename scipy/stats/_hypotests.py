@@ -842,20 +842,20 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
             f"found {n_iter!r}"
         )
 
-    table_nparray = np.asarray(table, dtype=np.int64)
+    table = np.asarray(table, dtype=np.int64)
 
-    if not table_nparray.shape == (2, 2):
+    if not table.shape == (2, 2):
         raise ValueError("The input `table` must be of shape (2, 2).")
 
-    if np.any(table_nparray < 0):
+    if np.any(table < 0):
         raise ValueError("All values in `table` must be nonnegative.")
 
-    if 0 in table_nparray.sum(axis=0):
+    if 0 in table.sum(axis=0):
         # If both values in column are zero, the p-value is 1 and
         # the score's statistic is NaN.
         return BarnardExactResult(np.nan, 1.0)
 
-    total_col_1, total_col_2 = table_nparray.sum(axis=0)
+    total_col_1, total_col_2 = table.sum(axis=0)
 
     # We are reshaping x1 and x2 to enable numpy's powerful broadcasting
     # operators, so that when we are adding or multiplying x1 and x2,
@@ -881,7 +881,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
 
     wald_statistic[p1 == p2] = 0  # Removing NaN values
 
-    wald_stat_obs = wald_statistic[table_nparray[0, 0], table_nparray[0, 1]]
+    wald_stat_obs = wald_statistic[table[0, 0], table[0, 1]]
 
     if alternative == "two-sided":
         index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs)
