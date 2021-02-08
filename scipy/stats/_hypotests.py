@@ -739,8 +739,8 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     In order to compute Barnard's exact test, we are using the Wald
     statistic [3]_ with pooled and unpooled variance.
     Under the assumption that both variances are equals, use pooled variance
-    (`pooled` = True). Otherwise, use the unpooled variance (`pooled` =
-    False). With pooled variance, the statistic is computed as follow :
+    (``pooled = True``). Otherwise, use the unpooled variance (``pooled =
+    False``). With pooled variance, the statistic is computed as follow:
 
     .. math::
 
