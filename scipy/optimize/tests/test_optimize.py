@@ -525,6 +525,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
+    def test_maxfev_test(self):
+
+        for method in ['Powell']:  # extend to more methods
+            result = optimize.minimize(self.func, self.startparams,
+                                       method=method,
+                                       options={'maxfev': 1})
+            assert result["nfev"] <= 1
+
 
 def test_obj_func_returns_scalar():
     match = ("The user-provided "
