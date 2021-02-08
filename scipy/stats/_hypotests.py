@@ -963,8 +963,6 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         max_pvalue_index = p_values_arr.argmax()
 
         p_value = p_values_arr[max_pvalue_index]  # take the max value
-        if p_value > 1:
-            return 1
         return p_value
 
     # Since shgo find the minima, we need to take the negative value of the
@@ -978,4 +976,4 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     )
 
     p_value = -result.fun
-    return p_value
+    return np.clip(p_value, a_min=0, a_max=1)
