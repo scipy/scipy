@@ -743,6 +743,28 @@ class TestBoundedNelderMead(TestCase):
         assert bounds[1][0] <= result.x[1] <= bounds[1][1]
         assert np.allclose(prob.fun(result.x), result.fun)
 
+    def test_equal_all_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 5.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 5.0])
+
+    def test_equal_one_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 20.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 16.0])
+
     def test_invalid_bounds(self):
         prob = Rosenbrock()
         with raises(ValueError, match=r"one of the lower bounds is greater "
