@@ -1367,6 +1367,16 @@ def median_filter(input, size=None, footprint=None, output=None,
     median_filter : ndarray
         Filtered array. Has the same shape as `input`.
 
+    See also
+    --------
+    scipy.signal.medfilt2d
+
+    Notes
+    -----
+    For 2-dimensional images with `np.ubyte`, `np.single` or `np.double`
+    datatypes the specialised function `scipy.signal.medfilt2d` is faster but
+    is limited to constant mode with ``cval=0``.
+
     Examples
     --------
     >>> from scipy import ndimage, misc
