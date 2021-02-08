@@ -129,15 +129,19 @@ _NAME_TO_MIN_DEGREE = {
 
 
 _NAME_TO_FUNC = {
-    'mq': _mq,
     'linear': _linear,
     'tps': _tps,
     'cubic': _cubic,
     'quintic': _quintic,
+    'mq': _mq,
     'imq': _imq,
     'iq': _iq,
     'ga': _ga
     }
+
+
+# The shape parameter does not need to be specified when using these kernels
+_SCALE_INVARIANT = {'linear', 'tps', 'cubic', 'quintic'}
 
 
 class RBFInterpolator:
@@ -172,9 +176,10 @@ class RBFInterpolator:
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
     epsilon : float, optional
-        Shape parameter that scales the input to the RBF. Unless using a
-        polyharmonic spline ('linear', 'tps', 'cubic', or 'quintic'), this
-        should be tuned for each application.
+        Shape parameter that scales the input to the RBF. This can be ignored
+        if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
+        the same effect as scaling the smoothing parameter. This must be
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
@@ -246,8 +251,8 @@ class RBFInterpolator:
     """
     def __init__(self, y, d,
                  smoothing=0.0,
-                 kernel='cubic',
-                 epsilon=1.0,
+                 kernel='tps',
+                 epsilon=None,
                  degree=None):
         y = np.asarray(y, dtype=float)
         if y.ndim != 2:
@@ -279,11 +284,20 @@ class RBFInterpolator:
             kernel_func = _NAME_TO_FUNC[kernel]
         except KeyError:
             raise ValueError(
-                '`kernel` is %s but it should be one of {%s}' %
-                (kernel, ', '.join(_NAME_TO_FUNC.keys()))
+                '`kernel` is "%s" but it should be one of {%s}.' %
+                (kernel, ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys()))
                 )
 
-        if not np.isscalar(epsilon):
+        if epsilon is None:
+            if kernel not in _SCALE_INVARIANT:
+                raise ValueError(
+                    '`epsilon` must be specified if `kernel` is not one of '
+                    '{%s}.' % ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
+                    )
+            else:
+                epsilon = 1.0
+
+        elif not np.isscalar(epsilon):
             raise ValueError('Expected `epsilon` to be a scalar')
 
         min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
@@ -291,22 +305,21 @@ class RBFInterpolator:
             degree = max(min_degree, 0)
         elif degree < min_degree:
             warnings.warn(
-                'The polynomial degree should not be below %d for %s. The '
+                'The polynomial degree should not be below %d for "%s". The '
                 'interpolant may not be uniquely solvable, and the smoothing '
-                'parameter may have an unintuitive effect' %
+                'parameter may have an unintuitive effect.' %
                 (min_degree, kernel)
                 )
 
         degree = int(degree)
 
-        # For improved numerical stability, shift the observations so that
-        # their centroid is zero
+        # Shift the center of the observations to zero for improved numerical
+        # stability
         center = y.mean(axis=0)
-        y = y - center
-
+        y = (y - center)*epsilon
         # Build the system of equations and solve for the RBF and monomial
         # coefficients
-        Kyy = kernel_func(_distance(y, y)*epsilon)
+        Kyy = kernel_func(_distance(y, y))
         Kyy[range(ny), range(ny)] += smoothing
         Py = _vandermonde(y, degree)
         nmonos = Py.shape[1]
@@ -316,7 +329,7 @@ class RBFInterpolator:
         if nmonos > ny:
             raise ValueError(
                 'The polynomial degree is too high. The number of monomials, '
-                '%d, exceeds the number of observations, %d' % (nmonos, ny)
+                '%d, exceeds the number of observations, %d.' % (nmonos, ny)
                 )
 
         Z = np.zeros((nmonos, nmonos), dtype=float)
@@ -368,8 +381,8 @@ class RBFInterpolator:
 
             return out
 
-        x = x - self.center
-        Kxy = self.kernel_func(_distance(x, self.y)*self.epsilon)
+        x = (x - self.center)*self.epsilon
+        Kxy = self.kernel_func(_distance(x, self.y))
         Px = _vandermonde(x, self.degree)
         out = Kxy.dot(self.kernel_coeff) + Px.dot(self.poly_coeff)
         return out
@@ -409,9 +422,10 @@ class KNearestRBFInterpolator:
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
     epsilon : float, optional
-        Shape parameter that scales the input to the RBF. Unless using a
-        polyharmonic spline ('linear', 'tps', 'cubic', or 'quintic'), this
-        should be tuned for each application.
+        Shape parameter that scales the input to the RBF. This can be ignored
+        if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
+        the same effect as scaling the smoothing parameter. This must be
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
@@ -432,8 +446,8 @@ class KNearestRBFInterpolator:
     def __init__(self, y, d,
                  smoothing=0.0,
                  k=50,
-                 kernel='cubic',
-                 epsilon=1.0,
+                 kernel='tps',
+                 epsilon=None,
                  degree=None):
         y = np.asarray(y, dtype=float)
         if y.ndim != 2:
@@ -464,15 +478,25 @@ class KNearestRBFInterpolator:
         # make sure the number of nearest neighbors used for interpolation does
         # not exceed the number of observations
         k = min(int(k), ny)
+
         try:
             kernel_func = _NAME_TO_FUNC[kernel]
         except KeyError:
             raise ValueError(
-                '`kernel` is %s but it should be one of {%s}' %
-                (kernel, ', '.join(_NAME_TO_FUNC.keys()))
+                '`kernel` is "%s" but it should be one of {%s}.' %
+                (kernel, ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys()))
                 )
 
-        if not np.isscalar(epsilon):
+        if epsilon is None:
+            if kernel not in _SCALE_INVARIANT:
+                raise ValueError(
+                    '`epsilon` must be specified if `kernel` is not one of '
+                    '{%s}.' % ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
+                    )
+            else:
+                epsilon = 1.0
+
+        elif not np.isscalar(epsilon):
             raise ValueError('Expected `epsilon` to be a scalar')
 
         min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
@@ -480,9 +504,9 @@ class KNearestRBFInterpolator:
             degree = max(min_degree, 0)
         elif degree < min_degree:
             warnings.warn(
-                'The polynomial degree should not be below %d for %s. The '
+                'The polynomial degree should not be below %d for "%s". The '
                 'interpolant may not be uniquely solvable, and the smoothing '
-                'parameter may have an unintuitive effect' %
+                'parameter may have an unintuitive effect.' %
                 (min_degree, kernel)
                 )
 
@@ -549,10 +573,10 @@ class KNearestRBFInterpolator:
         # Shift the centers of the neighborhoods to zero for improved numerical
         # stability
         centers = y.mean(axis=1)
-        y = y - centers[:, None]
+        y = (y - centers[:, None])*self.epsilon
         # build the left-hand-side interpolation matrix consisting of the RBF
         # and monomials evaluated at each neighborhood
-        Kyy = self.kernel_func(_distance(y, y)*self.epsilon)
+        Kyy = self.kernel_func(_distance(y, y))
         Kyy[:, range(self.k), range(self.k)] += smoothing
         Py = _vandermonde(y, self.degree)
         nmonos = Py.shape[2]
@@ -560,7 +584,7 @@ class KNearestRBFInterpolator:
             raise ValueError(
                 'The polynomial degree is too high. The number of monomials, '
                 '%d, exceeds the number of neighbors used for interpolation, '
-                '%d' % (nmonos, self.k)
+                '%d.' % (nmonos, self.k)
                 )
 
         PyT = np.transpose(Py, (0, 2, 1))
@@ -578,10 +602,10 @@ class KNearestRBFInterpolator:
         y = y[inv]
         centers = centers[inv]
         # evaluate at the interpolation points
-        x = x - centers
+        x = (x - centers)*self.epsilon
         kernel_coeff = coeff[:, :self.k]
         poly_coeff = coeff[:, self.k:]
-        Kxy = self.kernel_func(_distance(x[:, None], y)*self.epsilon)[:, 0]
+        Kxy = self.kernel_func(_distance(x[:, None], y))[:, 0]
         Px = _vandermonde(x, self.degree)
         if self.data_shape:
             # if the data are vector valued, add an extra axis to Kxy and Px to
