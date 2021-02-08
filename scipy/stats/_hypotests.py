@@ -676,7 +676,7 @@ BarnardExactResult = make_dataclass(
 )
 
 
-def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
+def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
     Parameters
@@ -696,7 +696,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
         t-test) or unpooled variance (Welch's t-test). Default is ``True`` :
         Statistic test is computed using pooled variance.
 
-    num_it : int, optional
+    n_iter : int, optional
         Number of iterations of the grid search. Default is 3. Must be
         non-negative. In most cases, 3 iterations is perfectly enough to
         reach good precision. Above a certain number (around
@@ -836,52 +836,59 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
     should only be used when both sets of marginals are fixed.
 
     """
-    if num_it <= 0:
+    if n_iter <= 0:
         raise ValueError(
             "Number of iterations `num_it` must be strictly positive, "
-            f"found {num_it!r}"
+            f"found {n_iter!r}"
         )
 
-    c = np.asarray(table, dtype=np.int64)
+    table_nparray = np.asarray(table, dtype=np.int64)
 
-    if not c.shape == (2, 2):
+    if not table_nparray.shape == (2, 2):
         raise ValueError("The input `table` must be of shape (2, 2).")
 
-    if np.any(c < 0):
+    if np.any(table_nparray < 0):
         raise ValueError("All values in `table` must be nonnegative.")
 
-    if 0 in c.sum(axis=0):
+    if 0 in table_nparray.sum(axis=0):
         # If both values in column are zero, the p-value is 1 and
         # the score's statistic is NaN.
         return BarnardExactResult(np.nan, 1.0)
 
-    total_c1, total_c2 = c.sum(axis=0)
+    total_col_1, total_col_2 = table_nparray.sum(axis=0)
 
-    x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1)
-    x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1)
+    # We are reshaping x1 and x2 to enable numpy's powerful broadcasting
+    # operators, so that when we are adding or multiplying x1 and x2,
+    # the result is an array of shape (total_col_1 + 1, total_col_2 + 1)
+    x1 = np.arange(total_col_1 + 1, dtype=np.int64).reshape(-1, 1)
+    x2 = np.arange(total_col_2 + 1, dtype=np.int64).reshape(1, -1)
 
-    p1, p2 = x1 / total_c1, x2 / total_c2
+    # We need to calculate the wald statistics for each combination of x1 and
+    # x2. To avoid low performance while iterating over multiple nested
+    # for-loop, we are using numpy ndarray, which gives a more readable
+    # and efficient results
+    p1, p2 = x1 / total_col_1, x2 / total_col_2
 
     if pooled:
-        p = (x1 + x2) / (total_c1 + total_c2)
-        var_p1_p2 = p * (1 - p) * (1 / total_c1 + 1 / total_c2)
+        p = (x1 + x2) / (total_col_1 + total_col_2)
+        variances = p * (1 - p) * (1 / total_col_1 + 1 / total_col_2)
     else:
-        var_p1_p2 = p1 * (1 - p1) / total_c1 + p2 * (1 - p2) / total_c2
+        variances = p1 * (1 - p1) / total_col_1 + p2 * (1 - p2) / total_col_2
 
     # To avoid warning when dividing by 0
     with np.errstate(divide="ignore", invalid="ignore"):
-        TX = np.divide((p1 - p2), np.sqrt(var_p1_p2))
+        wald_statistic = np.divide((p1 - p2), np.sqrt(variances))
 
-    TX[p1 == p2] = 0  # Removing NaN values
+    wald_statistic[p1 == p2] = 0  # Removing NaN values
 
-    TX_obs = TX[c[0, 0], c[0, 1]]
+    wald_stat_obs = wald_statistic[table_nparray[0, 0], table_nparray[0, 1]]
 
     if alternative == "two-sided":
-        idx = np.abs(TX) >= abs(TX_obs)
+        index_arr = np.abs(wald_statistic) >= abs(wald_stat_obs)
     elif alternative == "less":
-        idx = TX <= TX_obs
+        index_arr = wald_statistic <= wald_stat_obs
     elif alternative == "greater":
-        idx = TX >= TX_obs
+        index_arr = wald_statistic >= wald_stat_obs
     else:
         msg = (
             "`alternative` should be one of {'two-sided', 'less', 'greater'},"
@@ -890,29 +897,42 @@ def barnard_exact(table, alternative="two-sided", pooled=True, num_it=3):
         raise ValueError(msg)
 
     p_value = _binomial_maximisation_of_p_value_with_nuisance_param(
-        total_c1, total_c2, idx, num_it
+        total_col_1, total_col_2, index_arr, n_iter
     )
-    return BarnardExactResult(TX_obs, p_value)
+    return BarnardExactResult(wald_stat_obs, p_value)
 
 
 def _binomial_maximisation_of_p_value_with_nuisance_param(
-    total_c1, total_c2, idx, num_it
+    total_c1, total_c2, idx, n_iter
 ):
-    """
+    r"""
     Maximisation of the pvalue in respect of a nuisance parameter considering
     a 2x2 sample space.
+
+    Barnard and Boschloo exact test iterate over a nuisance parameter \pi
+    \in [0, 1] to find the maximum p-value. To search this maxima,
+    I am using a grid search algorithm, reducing \pi bounds after each
+    iterations `n_iter`. To compute the p-value, I am using numpy ndarrays
+    which offer powerful broadcast operations. The different nuisance
+    parameters are stored in an ndarray of length 100 and of shape (1, 1,
+    100). Also, to compute the different combination used in the
+    p-values' computation formula, I am using gammaln function, which is
+    more tolerant for large value than `scipy.special.comb`. This gives me
+    a log combination. For the little precision lost, we gain a lot of
+    performance.
     """
     n = total_c1 + total_c2
     x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1, 1)
     x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1, 1)
 
-    x1_comb = _compute_log_combinations(total_c1)
-    x2_comb = _compute_log_combinations(total_c2)
+    x1_log_comb = _compute_log_combinations(total_c1)
+    x2_log_comb = _compute_log_combinations(total_c2)
+    x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
 
     nuisance_num = 100
     inf_bound, sup_bound = 0, 1
 
-    for _ in range(num_it):
+    for _ in range(n_iter):
         nuisance_arr = np.linspace(
             start=inf_bound, stop=sup_bound, num=nuisance_num
         )
@@ -939,32 +959,31 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
             )
             nuisance_power_n_minus_x1_x2[(x1 + x2 == n)[:, :, 0]] = 0
 
-            PX = np.exp(
-                x1_comb[x1]
-                + x2_comb[x2]
+            tmp_values_arr = np.exp(
+                x1_sum_x2_log_comb
                 + nuisance_power_x1_x2
                 + nuisance_power_n_minus_x1_x2
             )
 
-        PX /= PX.sum(axis=(0, 1)).reshape(1, 1, -1)  # This operation is to
-        # compensate numerical errors because sums of PX should always be equal
-        # to one.
+        tmp_values_arr /= tmp_values_arr.sum(axis=(0, 1)).reshape(1, 1, -1)
+        # This operation compensate numerical errors because sums of
+        # p_values_arr should always be equal to one.
 
-        sum_PX = PX[idx].sum(axis=0)  # Just sum where TX >= TX0
-        max_nuisance_idx = sum_PX.argmax()
+        p_values_arr = tmp_values_arr[idx].sum(axis=0)  # Just sum where TX >= TX0
+        max_pvalue_index = p_values_arr.argmax()
 
         inf_bound = (
-            nuisance_arr[0, 0, max_nuisance_idx - 1]
-            if max_nuisance_idx > 0
+            nuisance_arr[0, 0, max_pvalue_index - 1]
+            if max_pvalue_index > 0
             else nuisance_arr[0, 0, 0]
         )
         sup_bound = (
-            nuisance_arr[0, 0, max_nuisance_idx + 1]
-            if max_nuisance_idx < nuisance_num - 1
+            nuisance_arr[0, 0, max_pvalue_index + 1]
+            if max_pvalue_index < nuisance_num - 1
             else nuisance_arr[0, 0, -1]
         )
 
-    p_value = sum_PX[max_nuisance_idx]  # take the max value
+    p_value = p_values_arr[max_pvalue_index]  # take the max value
 
     if p_value > 1:
         # Occurs because of numerical errors
