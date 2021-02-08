@@ -5915,19 +5915,16 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
 
 def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
-                  trimming_percentage=20.0):
+                  trim=20.0):
     """
-    Calculate the Yuen T-test on TWO samples of scores, a and b.
-
     Data sets with low kurtosis (i.e., a distribution flatter than the normal
-    distribution) should be analyzed with the two-sample trimmed t-test
-    for unequal population variances, also called Yuen t-test.
-    Yuen t-test, also called "20 percent trimmed means test", is an extension
-    of Welch t-test and is allegedly more robust in case of non-normal
-    distributions.
-    Yuen t-test consists of removing the lowest and highest 20 percent
-    of the data and applying Welch t-test on the remaining values.
+    Calculate the trimmed t-test on two samples, a and b.
 
+    At times called the Yuen t-test, this is an extention of Welch t-test,
+    with noted difference being the use of winsorized means in calculation of
+    the variance. This test is reccomended if the underlying distribution is
+    long-tailed or contaminated with outliers.
+    
     Parameters
     ----------
     a, b : array_like
@@ -5941,6 +5938,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
         values. Default is 'propagate'.
     trimming_percentage : percent of trimming for default it is set to 20% For
         information about trimming values (see table 2 in paper Yuen 1974)
+    trim : Defines the percentage of trimming off of each end of the input
+        samples.
     equal_var : bool, optional
         If True (default), perform a standard independent 2 sample test
         that assumes equal population variances.
