@@ -5917,18 +5917,16 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
                   trim=20.0):
     """
-    Data sets with low kurtosis (i.e., a distribution flatter than the normal
     Calculate the trimmed t-test on two samples, a and b.
 
     At times called the Yuen t-test, this is an extention of Welch t-test,
     with noted difference being the use of winsorized means in calculation of
     the variance. This test is reccomended if the underlying distribution is
     long-tailed or contaminated with outliers.
-    
+
     Parameters
     ----------
     a, b : array_like
-        The arrays must have the same shape.
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
@@ -5936,8 +5934,6 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
-    trimming_percentage : percent of trimming for default it is set to 20% For
-        information about trimming values (see table 2 in paper Yuen 1974)
     trim : Defines the percentage of trimming off of each end of the input
         samples.
     equal_var : bool, optional
@@ -5959,6 +5955,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     Karen K. Yuen (1974), The two-sample trimmed t for unequal population
     variances, Biometrika Volume 61, Number 1, 165-170,
     DOI: https://doi.org/10.1093/biomet/61.1.165
+    
+    https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
 
     Examples
     --------
@@ -5969,7 +5967,6 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     >>> b = (1.1, 2.9, 4.2)
 
     >>> t, p = stats.ttest_trimmed(a, b, equal_var=False)
-
     (4.591598691181999, 0.00998909252078421)
 
     """
@@ -5991,35 +5988,33 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
-    n1 = a.shape[axis]
-    n2 = b.shape[axis]
+    na = a.shape[axis]
+    nb = b.shape[axis]
 
-    a.sort()
-    b.sort()
+    a = sorted(a)
+    b = sorted(b)
 
-    trimmed_index_a = math.floor((n1 / 100.0) * trimming_percentage)
-    trimmed_index_b = math.floor((n2 / 100.0) * trimming_percentage)
+    # determine the indices to use when slicing the input samples
+    # index to start from on the samples
+    idx_start_a = (na * trim) // 100
+    idx_start_b = (nb * trim) // 100
 
-    trimmed_n1 = n1 - (2 * trimmed_index_a)
-    trimmed_n2 = n2 - (2 * trimmed_index_b)
+    # index to end at on the samples, also the number of elements in trimmed
+    # samples
+    idx_end_a = na - (2 * idx_start_a)
+    idx_end_b = nb - (2 * idx_start_b)
 
-    trimmed_mean_a = trim_mean(a, trimming_percentage / 100.0)
-    trimmed_mean_b = trim_mean(b, trimming_percentage / 100.0)
+    trimmed_mean_a = trim_mean(a, trim / 100.0)
+    trimmed_mean_b = trim_mean(b, trim / 100.0)
 
-    winsorized_variance_a = _calculate_winsorized_variance(trimmed_index_a,
-                                                           trimmed_n1, n1, a)
-    winsorized_variance_b = _calculate_winsorized_variance(trimmed_index_b,
-                                                           trimmed_n2, n2, b)
+    win_var_a = _calculate_winsorized_variance(idx_start_a, idx_end_a, na, a)
+    win_var_b = _calculate_winsorized_variance(idx_start_b, idx_end_b, nb, b)
 
-    t = ((trimmed_mean_a - trimmed_mean_b) /
-         (math.sqrt((winsorized_variance_a / trimmed_n1)
-                    + (winsorized_variance_b / trimmed_n2))))
-    df = (math.pow(((winsorized_variance_a / trimmed_n1)
-                   + (winsorized_variance_b / trimmed_n2)), 2) /
-          ((math.pow((winsorized_variance_a / trimmed_n1), 2) /
-            (trimmed_n1 - 1.0))
-           + (math.pow((winsorized_variance_b / trimmed_n2), 2)
-              / (trimmed_n2 - 1.0))))
+    t = ((trimmed_mean_a - trimmed_mean_b) / ((win_var_a / idx_end_a) +
+                                              (win_var_b / idx_end_b))**.5)
+    df = (math.pow(((win_var_a / idx_end_a) + (win_var_b / idx_end_b)) ** 2) /
+          ((math.pow((win_var_a / idx_end_a), 2) / (idx_end_a - 1.0)) +
+           (math.pow((win_var_b / idx_end_b), 2) / (idx_end_b - 1.0))))
 
     t, prob = _ttest_finish(df, t, alternative='two-sided')
 
