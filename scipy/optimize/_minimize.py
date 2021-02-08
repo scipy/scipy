@@ -607,7 +607,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         constraints = standardize_constraints(constraints, x0, meth)
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, callback, bounds, **options)
+        return _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
+                                    **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':

@@ -590,10 +590,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             return res['x']
 
 
-def _minimize_neldermead(func, x0, args=(), callback=None, bounds=None,
+def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
-                         xatol=1e-4, fatol=1e-4, adaptive=False,
+                         xatol=1e-4, fatol=1e-4, adaptive=False, bounds=None,
                          **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
