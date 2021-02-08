@@ -938,6 +938,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     n = total_c1 + total_c2
     x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1, 1)
     x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1, 1)
+    x1_sum_x2 = x1 + x2
 
     x1_log_comb = _compute_log_combinations(total_c1)
     x2_log_comb = _compute_log_combinations(total_c2)
@@ -946,24 +947,24 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     def get_pvalue_from(nuisance_param):
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            log_nuisance_arr = np.log(
+            log_nuisance = np.log(
                 nuisance_param,
                 out=np.zeros_like(nuisance_param),
                 where=nuisance_param >= 0,
             )
-            log_1_minus_nuisance_arr = np.log(
+            log_1_minus_nuisance = np.log(
                 1 - nuisance_param,
                 out=np.zeros_like(nuisance_param),
                 where=1 - nuisance_param >= 0,
             )
 
-            nuisance_power_x1_x2 = log_nuisance_arr * (x1 + x2)
-            nuisance_power_x1_x2[(x1 + x2 == 0)[:, :, 0]] = 0
+            nuisance_power_x1_x2 = log_nuisance * (x1_sum_x2)
+            nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :, 0]] = 0
 
-            nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance_arr * (
-                n - x1 - x2
+            nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (
+                n - x1_sum_x2
             )
-            nuisance_power_n_minus_x1_x2[(x1 + x2 == n)[:, :, 0]] = 0
+            nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
 
             tmp_values_arr = np.exp(
                 x1_sum_x2_log_comb
@@ -975,7 +976,6 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         # This operation compensate numerical errors because sums of
         # p_values_arr should always be equal to one.
 
-        # Just sum where TX >= TX0
         p_values_arr = tmp_values_arr[index_arr].sum(axis=0)
         max_pvalue_index = p_values_arr.argmax()
 
