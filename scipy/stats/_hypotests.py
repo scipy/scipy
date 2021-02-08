@@ -6,6 +6,7 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
+from scipy.optimize import shgo
 import scipy.stats
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
@@ -676,7 +677,7 @@ BarnardExactResult = make_dataclass(
 )
 
 
-def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
+def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
     Parameters
@@ -925,26 +926,18 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     x2_log_comb = _compute_log_combinations(total_c2)
     x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
 
-    nuisance_num = 100
-    inf_bound, sup_bound = 0, 1
-
-    for _ in range(n_iter):
-        nuisance_arr = np.linspace(
-            start=inf_bound, stop=sup_bound, num=nuisance_num
-        )
-        # Reshape in dimension 3 array
-        nuisance_arr = nuisance_arr.reshape(1, 1, -1)
+    def get_pvalue_from(nuisance_param):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             log_nuisance_arr = np.log(
-                nuisance_arr,
-                out=np.zeros_like(nuisance_arr),
-                where=nuisance_arr >= 0,
+                nuisance_param,
+                out=np.zeros_like(nuisance_param),
+                where=nuisance_param >= 0,
             )
             log_1_minus_nuisance_arr = np.log(
-                1 - nuisance_arr,
-                out=np.zeros_like(nuisance_arr),
-                where=1 - nuisance_arr >= 0,
+                1 - nuisance_param,
+                out=np.zeros_like(nuisance_param),
+                where=1 - nuisance_param >= 0,
             )
 
             nuisance_power_x1_x2 = log_nuisance_arr * (x1 + x2)
@@ -965,24 +958,24 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         # This operation compensate numerical errors because sums of
         # p_values_arr should always be equal to one.
 
-        p_values_arr = tmp_values_arr[idx].sum(axis=0)  # Just sum where TX >= TX0
+        # Just sum where TX >= TX0
+        p_values_arr = tmp_values_arr[idx].sum(axis=0)
         max_pvalue_index = p_values_arr.argmax()
 
-        inf_bound = (
-            nuisance_arr[0, 0, max_pvalue_index - 1]
-            if max_pvalue_index > 0
-            else nuisance_arr[0, 0, 0]
-        )
-        sup_bound = (
-            nuisance_arr[0, 0, max_pvalue_index + 1]
-            if max_pvalue_index < nuisance_num - 1
-            else nuisance_arr[0, 0, -1]
-        )
+        p_value = p_values_arr[max_pvalue_index]  # take the max value
+        if p_value > 1:
+            return 1
+        return p_value
 
-    p_value = p_values_arr[max_pvalue_index]  # take the max value
+    # Since shgo find the minima, we need to take the negative value of the
+    # pvalue
+    result = shgo(
+        lambda x: -get_pvalue_from(x),
+        bounds=((0, 1),),
+        n=32,  # Need to be a power of two since it is used by sobol
+        sampling_method="sobol",
+        iters=n_iter,
+    )
 
-    if p_value > 1:
-        # Occurs because of numerical errors
-        p_value = 1.0
-
+    p_value = -result.fun
     return p_value
