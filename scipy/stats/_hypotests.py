@@ -861,9 +861,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=3):
     x2 = np.arange(total_col_2 + 1, dtype=np.int64).reshape(1, -1)
 
     # We need to calculate the wald statistics for each combination of x1 and
-    # x2. To avoid low performance while iterating over multiple nested
-    # for-loop, we are using numpy ndarray, which gives a more readable
-    # and efficient results
+    # x2.
     p1, p2 = x1 / total_col_1, x2 / total_col_2
 
     if pooled:
