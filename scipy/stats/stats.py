@@ -5955,7 +5955,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     Karen K. Yuen (1974), The two-sample trimmed t for unequal population
     variances, Biometrika Volume 61, Number 1, 165-170,
     DOI: https://doi.org/10.1093/biomet/61.1.165
-    
+
     https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
 
     Examples
@@ -5991,54 +5991,48 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     na = a.shape[axis]
     nb = b.shape[axis]
 
+    # further calculations in this test assume that the inputs are sorted.
     a = sorted(a)
     b = sorted(b)
 
-    # determine the indices to use when slicing the input samples
-    # index to start from on the samples
-    idx_start_a = (na * trim) // 100
-    idx_start_b = (nb * trim) // 100
+    # `g_*` is the number of elements to be replaced on each tail.
+    g_a = int((na * trim) // 100)
+    g_b = int((nb * trim) // 100)
 
-    # index to end at on the samples, also the number of elements in trimmed
-    # samples
-    idx_end_a = na - (2 * idx_start_a)
-    idx_end_b = nb - (2 * idx_start_b)
+    # the total number of elements in the trimmed samples
+    na_t = na - (2 * g_a)
+    nb_t = nb - (2 * g_b)
 
-    trimmed_mean_a = trim_mean(a, trim / 100.0)
-    trimmed_mean_b = trim_mean(b, trim / 100.0)
+    # calculate the g-times trimmed mean
+    x_tg_a = trim_mean(a, trim / 100.0)
+    x_tg_b = trim_mean(b, trim / 100.0)
 
-    win_var_a = _calculate_winsorized_variance(idx_start_a, idx_end_a, na, a)
-    win_var_b = _calculate_winsorized_variance(idx_start_b, idx_end_b, nb, b)
+    # Calcuate the Winsorized variance of the input samples according to
+    # specified `g`
+    var_w_a = _calculate_winsorized_variance(a, g_a)
+    var_w_b = _calculate_winsorized_variance(b, g_a)
 
-    t = ((trimmed_mean_a - trimmed_mean_b) / ((win_var_a / idx_end_a) +
-                                              (win_var_b / idx_end_b))**.5)
-    df = (math.pow(((win_var_a / idx_end_a) + (win_var_b / idx_end_b)) ** 2) /
-          ((math.pow((win_var_a / idx_end_a), 2) / (idx_end_a - 1.0)) +
-           (math.pow((win_var_b / idx_end_b), 2) / (idx_end_b - 1.0))))
+    t = (x_tg_a - x_tg_b) / ((var_w_a / na_t) + (var_w_b / nb_t)) ** .5
+
+    c = (var_w_a / na_t) / ((var_w_a / na_t) + (var_w_b / nb_t))
+    df_inv = (c ** 2) / (na_t - 1) + ((1 - c) ** 2) / (nb_t - 1)
+    df = 1 / df_inv
 
     t, prob = _ttest_finish(df, t, alternative='two-sided')
-
     return Ttest_relResult(t, prob)
 
 
-def _calculate_winsorized_variance(trimmed_index, trimmed_n, n, a):
-
-    trimmed_array = a[int(trimmed_index + 1):int(n - trimmed_index - 1)]
-    trimmed_sum = sum(trimmed_array)
-    winsorized_mean = (1.0 / n) * (((trimmed_index + 1.0) *
-                                    a[int(trimmed_index)]) + trimmed_sum
-                                   + ((trimmed_index + 1.0) *
-                                      a[int(n - trimmed_index - 1.0)]))
-    internal_sum_of_squares = sum([math.pow(value - winsorized_mean, 2)
-                                   for value in trimmed_array])
-    win_sum_sq = (((trimmed_index + 1.0) *
-                  math.pow((a[int(trimmed_index)] - winsorized_mean), 2)) +
-                  internal_sum_of_squares +
-                  ((trimmed_index + 1.0) *
-                  (math.pow((a[int(n - trimmed_index - 1.0)] -
-                             winsorized_mean), 2))))
-    winsorized_variance = win_sum_sq / (trimmed_n - 1.0)
-    return winsorized_variance
+def _calculate_winsorized_variance(a: list, g: 'int'):
+    n = len(a)
+    a = sorted(a)
+    # build a right and left tail to replace the trimmed values, fill new tails
+    # with the leftmost and rightmost value from the trimmed array.
+    left_tail = g * [a[g]]
+    right_tail = g * [a[n - g - 1]]
+    a_win = np.asarray(left_tail + a[g: n - g] + right_tail)
+    # determine the variance. In the paper, the degrees of freedom is
+    # expressed as (n - 2g - 1), and this is converted to numpy's N - `ddof`
+    return np.var(a_win, ddof=(2 * g + 1))
 
 
 # Map from names to lambda_ values used in power_divergence().
