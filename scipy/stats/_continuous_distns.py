@@ -8946,7 +8946,7 @@ class studentized_range_gen(rv_continuous):
                     user_data
                 )
 
-                res = integrate.nquad(
+                return integrate.nquad(
                     llc,
                     ranges=[(-np.inf, np.inf), (_a, _b)],
                     opts=dict(epsabs=self._epsabs)
