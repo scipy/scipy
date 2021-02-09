@@ -2962,7 +2962,7 @@ class genhyperbolic_gen(rv_continuous):
             \frac{(a^2 - b^2)^{p/2}}
             {\sqrt{2\pi}a^{p-0.5}
             K_p\Big(\sqrt{a^2 - b^2}\Big)}
-            e^{b(x)} \times \frac{K_{p - 1/2}
+            e^{bx} \times \frac{K_{p - 1/2}
             (a \sqrt{1 + x^2})}
             {(\sqrt{1 + x^2})^{1/2 - p}}
 
@@ -2993,7 +2993,6 @@ class genhyperbolic_gen(rv_continuous):
     :math:`\gamma := \sqrt{\alpha^2 - \beta^2}`,
     :math:`\lambda, \mu \in ( - \infty; \infty)`,
     :math:`\delta \ge 0, |\beta| < \alpha` if :math:`\lambda \ge 0`,
-    :math:`\delta > 0, |\beta| < \alpha` if :math:`\lambda = 0`,
     :math:`\delta > 0, |\beta| \le \alpha` if :math:`\lambda < 0`.
     and :math:`\delta > 0`.
 
