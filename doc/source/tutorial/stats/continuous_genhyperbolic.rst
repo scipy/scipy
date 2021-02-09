@@ -10,7 +10,7 @@ The "hyperbolic" characterization refers to the fact that the shape of the log-p
 Functions
 ---------
 
-Different parameterization exists in the literature; SciPy implements the location-scale as in Prause (1999).
+Different parameterizations exist in the literature; SciPy implements the "4th parametrization" in Prause (1999).
 
 .. math::
    :nowrap:
@@ -20,12 +20,10 @@ Different parameterization exists in the literature; SciPy implements the locati
         \frac{(a^2 - b^2)^{p/2}}
         {\sqrt{2\pi}a^{p-0.5}
         K_p\Big(\sqrt{a^2 - b^2}\Big)}
-        e^{b(x)} \times \frac{K_{p - 1/2}
+        e^{bx} \times \frac{K_{p - 1/2}
         (a \sqrt{1 + x^2})}
         {(\sqrt{1 + x^2})^{1/2 - p}}
     \end{eqnarray*}
-
-The probability density above is defined in the “standardized” form. To shift and/or scale the distribution use the loc and scale parameters. Specifically, :math:`f(x, p, a, b, \text{loc}, \text{scale})` is identically equivalent to :math:`\frac{1}{\text{scale}}f(y, p, a, b)` with :math:`y = \frac{1}{\text{scale}}(x - \text{loc})`.
 
 for:
 
@@ -34,7 +32,9 @@ for:
 -  :math:`|b| \le a` if :math:`p < 0`
 -  :math:`K_{p}(.)` denotes the modified Bessel function of the second kind and order :math:`p` (`scipy.special.kn`)
 
-which derives from the original :math:`(\lambda, \alpha, \beta, \delta, \mu)` parameterization in  Barndorff (1978) by setting:
+The probability density above is defined in the "standardized" form. To shift and/or scale the distribution use the :math:`\text{loc}` and :math:`\text{scale}` parameters. Specifically, :math:`f(x, p, a, b, \text{loc}, \text{scale})` is identically equivalent to :math:`\frac{1}{\text{scale}}f(y, p, a, b)` with :math:`y = \frac{1}{\text{scale}}(x - \text{loc})`.
+
+This parameterization derives from the original :math:`(\lambda, \alpha, \beta, \delta, \mu)` parameterization in  Barndorff (1978) by setting:
 
 -  :math:`\lambda = p`
 -  :math:`\alpha = \frac{a}{\delta} = \frac{\hat{\alpha}}{\delta}`
@@ -48,10 +48,10 @@ Random variates for the `scipy.stats.genhyperbolic` can be efficiently sampled f
 
 The "generalized" characterization suggests the fact that this distribution is a superclass of several other probability distribution, for instance:
 
--  :math:`f(p = \nu,  a = 0, b = 0, \text{loc} = 0, \text{scale} = \sqrt{\delta})` has a Student's t-distribution (`scipy.stats.t`) with :math:`\nu` degrees of freedom.
+-  :math:`f(p = -\nu/2,  a = 0, b = 0, \text{loc} = 0, \text{scale} = \sqrt{\nu})` has a Student's t-distribution (`scipy.stats.t`) with :math:`\nu` degrees of freedom.
 -  :math:`f(p = 1, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Hyperbolic Distribution.
 -  :math:`f(p = - 1/2, a = \hat{\alpha}, b = \hat{\beta}, \text{loc} = \mu, \text{scale} = \delta)` has a Normal Inverse Gaussian Distribution (`scipy.stats.norminvgauss`).
--  :math:`f(p = 1, a = 0, b = 0, loc = \mu, \text{scale} = \delta)` has a Laplace Distribution (`scipy.stats.laplace`) for :math:`\delta \rightarrow 0`
+-  :math:`f(p = 1, a = \delta, b = 0, loc = \mu, \text{scale} = \delta)` has a Laplace Distribution (`scipy.stats.laplace`) for :math:`\delta \rightarrow 0`
 
 
 Examples
