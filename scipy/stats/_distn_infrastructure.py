@@ -1421,13 +1421,25 @@ class rv_generic(object):
             scale parameter, Default is 1.
         Returns
         -------
-        a, b : float
+        a, b : array_like
             end-points of the distribution's support.
 
         """
         args, loc, scale = self._parse_args(*args, **kwargs)
+        arrs = np.broadcast_arrays(*args, loc, scale)
+        args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
+        cond = self._argcheck(*args) & (scale > 0)
         _a, _b = self._get_support(*args)
-        return _a * scale + loc, _b * scale + loc
+        if cond.all():
+            return _a * scale + loc, _b * scale + loc
+        elif cond.ndim == 0:
+            return self.badvalue, self.badvalue
+        # promote bounds to at least float to fill in the badvalue
+        _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
+        out_a, out_b = _a * scale + loc, _b * scale + loc
+        place(out_a, 1-cond, self.badvalue)
+        place(out_b, 1-cond, self.badvalue)
+        return out_a, out_b
 
 
 def _get_fixed_fit_value(kwds, names):
