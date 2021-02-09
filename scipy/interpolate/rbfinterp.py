@@ -328,8 +328,9 @@ class RBFInterpolator:
         # observations than monomials
         if nmonos > ny:
             raise ValueError(
-                'The polynomial degree is too high. The number of monomials, '
-                '%d, exceeds the number of observations, %d.' % (nmonos, ny)
+                'At least %d observations are required when the polynomial '
+                'degree is %d and the number of dimensions is %d' %
+                (nmonos, degree, y.shape[1])
                 )
 
         Z = np.zeros((nmonos, nmonos), dtype=float)
@@ -371,6 +372,12 @@ class RBFInterpolator:
         x = np.asarray(x, dtype=float)
         if x.ndim != 2:
             raise ValueError('Expected `x` to be a 2-dimensional array')
+
+        if x.shape[1] != self.y.shape[1]:
+            raise ValueError(
+                'Expected the second axis of `x` to have length %d' %
+                self.y.shape[1]
+                )
 
         nx = x.shape[0]
         if chunk_size is not None:
@@ -547,6 +554,12 @@ class KNearestRBFInterpolator:
         if x.ndim != 2:
             raise ValueError('Expected `x` to be a 2-dimensional array')
 
+        if x.shape[1] != self.y.shape[1]:
+            raise ValueError(
+                'Expected the second axis of `x` to have length %d' %
+                self.y.shape[1]
+                )
+
         nx = x.shape[0]
         if chunk_size is not None:
             out = np.zeros((nx,) + self.data_shape, dtype=float)
@@ -582,9 +595,9 @@ class KNearestRBFInterpolator:
         nmonos = Py.shape[2]
         if nmonos > self.k:
             raise ValueError(
-                'The polynomial degree is too high. The number of monomials, '
-                '%d, exceeds the number of neighbors used for interpolation, '
-                '%d.' % (nmonos, self.k)
+                'At least %d neighbors are required when the polynomial '
+                'degree is %d and the number of dimensions is %d' %
+                (nmonos, self.degree, self.y.shape[1])
                 )
 
         PyT = np.transpose(Py, (0, 2, 1))
