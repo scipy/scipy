@@ -63,6 +63,14 @@ class TestHessianUpdateStrategy(TestCase):
                 qn.initialize(ndims, 'hess')
                 B = qn.get_matrix()
 
+                assert_array_equal(B, np.eye(ndims))
+
+                qn.update(np.ones(ndims), np.ones(ndims))
+                # change to make it do the step backwards
+                qn.approx_type = 'inv_hess'
+                qn.update(np.ones(ndims), np.ones(ndims))
+                qn.approx_type = 'hess'
+                B = qn.get_matrix()
                 assert_array_equal(B, true_matrix)
 
     # For this list of points, it is known
