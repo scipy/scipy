@@ -2999,7 +2999,8 @@ class genhyperbolic_gen(rv_continuous):
 
     The location-scale-based parameterization implemented in
     SciPy is based on [2]_, where :math:`a = \alpha\delta`,
-    :math:`b = \beta\delta`, :math:`p = \lambda`, :math:`scale=\delta` and :math:`loc=\mu`
+    :math:`b = \beta\delta`, :math:`p = \lambda`,
+    :math:`scale=\delta` and :math:`loc=\mu`
 
     Stats are based on [3]_ and [4]_.
 
@@ -3106,27 +3107,34 @@ class genhyperbolic_gen(rv_continuous):
         t2 = np.float_power(1, 2) * np.float_power(t1, - 1)
         b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5), t1)
         r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
-        
+
         m = b * t2 * r1
-        v = t2 * r1 + np.float_power(b, 2) * np.float_power(t2, 2) \
-           *(r2 - np.float_power(r1, 2))
-        m3e = np.float_power(b, 3) * np.float_power(t2, 3) \
-           * (r3 - 3 * b2 * b1 * np.float_power(b0, -2) \
-           + 2 * np.float_power(r1, 3)) \
-           + 3 * b * np.float_power(t2, 2) \
-           * (r2 - np.float_power(r1, 2))
+        v = (
+            t2 * r1 + np.float_power(b, 2) * np.float_power(t2, 2) *
+            (r2 - np.float_power(r1, 2))
+        )
+        m3e = (
+            np.float_power(b, 3) * np.float_power(t2, 3) *
+            (r3 - 3 * b2 * b1 * np.float_power(b0, -2) +
+             2 * np.float_power(r1, 3)) +
+            3 * b * np.float_power(t2, 2) *
+            (r2 - np.float_power(r1, 2))
+        )
         s = m3e * np.float_power(v, - 3 / 2)
-        m4e = np.float_power(b, 4) * np.float_power(t2, 4) \
-           * (r4 - 4 * b3 * b1 * np.float_power(b0, - 2) \
-           + 6 * b2 * np.float_power(b1, 2) * np.float_power(b0, - 3) \
-           - 3 * np.float_power(r1, 4)) \
-           + np.float_power(b, 2) * np.float_power(t2, 3) \
-           * (6 * r3 - 12 * b2 * b1 * np.float_power(b0, - 2) \
-           + 6 * np.float_power(r1, 3)) \
-           + 3 * np.float_power(t2, 2) * r2
+        m4e = (
+            np.float_power(b, 4) * np.float_power(t2, 4) *
+            (r4 - 4 * b3 * b1 * np.float_power(b0, - 2) +
+             6 * b2 * np.float_power(b1, 2) * np.float_power(b0, - 3) -
+             3 * np.float_power(r1, 4)) +
+            np.float_power(b, 2) * np.float_power(t2, 3) *
+            (6 * r3 - 12 * b2 * b1 * np.float_power(b0, - 2) +
+             6 * np.float_power(r1, 3)) +
+            3 * np.float_power(t2, 2) * r2
+        )
         k = m4e * np.float_power(v, -2) - 3
 
         return m, v, s, k
+
 
 genhyperbolic = genhyperbolic_gen(name='genhyperbolic')
 
