@@ -410,9 +410,9 @@ class TestGenHyperbolic(object):
 
     def test_cdf_r(self):
         # test against R package GeneralizedHyperbolic
-        # x <- seq(0, 1, length.out = 10)
+        # q <- seq(-10, 10, length.out = 10)
         # GeneralizedHyperbolic::pghyp(
-        #   x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        #   q = q, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
         # )
         vals_R = np.array([
             1.01881590921421e-13, 6.13697274983578e-11, 3.37504977637992e-08,
@@ -447,12 +447,12 @@ class TestGenHyperbolic(object):
         #    function(x) GeneralizedHyperbolic::ghypMom(
         #        order = x, lambda = 2, alpha = 2,
         #        beta = 1, delta = 1.5, mu = 0.5,
-        #        momType = 'central')
+        #        momType = 'raw')
         # )
 
         vals_R = np.array([
-            -4.44089209850063e-16, 2.86421978532571,
-            4.24895879539469, 37.6380875493332
+            2.36848366948115, 2.36848366948115,
+            37.8870502710066, 205.76608511485
             ])
 
         lmbda = 2
@@ -464,22 +464,13 @@ class TestGenHyperbolic(object):
         alpha_hat = alpha * delta
         beta_hat = beta * delta
 
-        mvsk = stats.genhyperbolic(
-            p=lmbda,
-            a=alpha_hat,
-            b=beta_hat,
-            loc=mu,
-            scale=delta
-            ).stats('mvsk')
+        vals_us = [
+            stats.genhyperbolic(p=lmbda, a=alpha_hat, b=beta_hat,
+                                loc=mu, scale=delta).moment(i)
+            for i in range(1, 5)
+            ]
 
-        mvsk = list(mvsk)
-
-        # center and de-standardize moments to match R results
-        mvsk[0] -= mvsk[0]
-        mvsk[2] = mvsk[2] * np.float_power(mvsk[1], 3 / 2)
-        mvsk[3] = (mvsk[3] + 3) * np.float_power(mvsk[1], 2)
-
-        assert_allclose(mvsk, vals_R, atol=1e-9, rtol=1e-8)
+        assert_allclose(vals_us, vals_R, atol=1e-9, rtol=1e-8)
 
     def test_rvs(self):
         # KS test
