@@ -1,13 +1,15 @@
+import warnings
 from collections import namedtuple
 from dataclasses import make_dataclass
+
 import numpy as np
-import warnings
-from . import distributions
-from ._continuous_distns import chi2, norm
+
+import scipy.stats
+from scipy.optimize import shgo
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
-from scipy.optimize import shgo
-import scipy.stats
+from . import distributions
+from ._continuous_distns import chi2, norm
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -698,10 +700,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
         Statistic test is computed using pooled variance.
 
     n_iter : int, optional
-        Number of iterations of the grid search. Default is 3. Must be
-        non-negative. In most cases, 3 iterations is perfectly enough to
-        reach good precision. Above a certain number (around
-        6 iterations), the result will not change anymore. Note that every
+        Number of iterations in shgo's alrogithm optimum search. Default is 1.
+        Must be non-negative. In most cases, 3 iterations is perfectly
+        enough to reach good precision. Above a certain number (around 6
+        iterations), the result will not change anymore. Note that every
         iteration added comes with a performance cost.
 
     Returns
@@ -892,12 +894,17 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
         )
         raise ValueError(msg)
 
-    get_pvalue_from = _binomial_maximisation_of_p_value_with_nuisance_param(
-        total_col_1, total_col_2, index_arr
-    )
+    x1 = x1.reshape(-1, 1, 1)
+    x2 = x2.reshape(1, -1, 1)
+    x1_sum_x2 = x1 + x2
+
+    x1_log_comb = _compute_log_combinations(total_col_1)
+    x2_log_comb = _compute_log_combinations(total_col_2)
+    x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
 
     result = shgo(
-        get_pvalue_from,
+        _binomial_maximisation_of_p_value_with_nuisance_param,
+        args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
         bounds=((0, 1),),
         n=32,  # Need to be a power of two since it is used by sobol
         sampling_method="sobol",
@@ -909,7 +916,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
 
 
 def _binomial_maximisation_of_p_value_with_nuisance_param(
-        total_c1, total_c2, index_arr
+    nuisance_param, x1_sum_x2, x1_sum_x2_log_comb, index_arr
 ):
     r"""
     Maximisation of the pvalue in respect of a nuisance parameter considering
@@ -917,8 +924,15 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
 
     Parameters
     ----------
-     total_c1, total_c2: int
-        The total sum of column 1 and column 2 in the initial variables array
+    nuisance_param: float
+        nuisance parameter used in the computation of the maximisation of
+        the p-value. Must be between 0 and 1
+
+    x1_sum_x2: ndarray
+        Sum of x1 and x2 inside barnard_exact
+
+    x1_sum_x2_log_comb: ndarray
+        sum of the log combination of x1 and x2
 
     index_arr: ndarray of boolean
 
@@ -941,52 +955,38 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     a log combination. For the little precision lost, we gain a lot of
     performance.
     """
-    n = total_c1 + total_c2
-    x1 = np.arange(total_c1 + 1, dtype=np.int64).reshape(-1, 1, 1)
-    x2 = np.arange(total_c2 + 1, dtype=np.int64).reshape(1, -1, 1)
-    x1_sum_x2 = x1 + x2
+    t1, t2, _ = x1_sum_x2.shape
+    n = t1 + t2 - 2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        log_nuisance = np.log(
+            nuisance_param,
+            out=np.zeros_like(nuisance_param),
+            where=nuisance_param >= 0,
+        )
+        log_1_minus_nuisance = np.log(
+            1 - nuisance_param,
+            out=np.zeros_like(nuisance_param),
+            where=1 - nuisance_param >= 0,
+        )
 
-    x1_log_comb = _compute_log_combinations(total_c1)
-    x2_log_comb = _compute_log_combinations(total_c2)
-    x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
+        nuisance_power_x1_x2 = log_nuisance * x1_sum_x2
+        nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :, 0]] = 0
 
-    def get_pvalue_from(nuisance_param):
-        with np.errstate(divide="ignore", invalid="ignore"):
-            log_nuisance = np.log(
-                nuisance_param,
-                out=np.zeros_like(nuisance_param),
-                where=nuisance_param >= 0,
-            )
-            log_1_minus_nuisance = np.log(
-                1 - nuisance_param,
-                out=np.zeros_like(nuisance_param),
-                where=1 - nuisance_param >= 0,
-            )
+        nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (n - x1_sum_x2)
+        nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
 
-            nuisance_power_x1_x2 = log_nuisance * (x1_sum_x2)
-            nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :, 0]] = 0
+        tmp_values_arr = np.exp(
+            x1_sum_x2_log_comb
+            + nuisance_power_x1_x2
+            + nuisance_power_n_minus_x1_x2
+        )
 
-            nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (
-                    n - x1_sum_x2
-            )
-            nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
+    tmp_values_arr /= tmp_values_arr.sum(axis=(0, 1)).reshape(1, 1, -1)
+    # This operation compensate numerical errors because sums of
+    # p_values_arr should always be equal to one.
 
-            tmp_values_arr = np.exp(
-                x1_sum_x2_log_comb
-                + nuisance_power_x1_x2
-                + nuisance_power_n_minus_x1_x2
-            )
+    p_value = tmp_values_arr[index_arr].sum(axis=0).max()
 
-        tmp_values_arr /= tmp_values_arr.sum(axis=(0, 1)).reshape(1, 1, -1)
-        # This operation compensate numerical errors because sums of
-        # p_values_arr should always be equal to one.
-
-        p_values_arr = tmp_values_arr[index_arr].sum(axis=0)
-        max_pvalue_index = p_values_arr.argmax()
-
-        # Since shgo find the minima, we need to take the negative value of the
-        # pvalue
-        p_value = p_values_arr[max_pvalue_index]  # take the max value
-        return - p_value
-
-    return get_pvalue_from
+    # Since shgo find the minima, we need to take the negative value of the
+    # pvalue
+    return - p_value
