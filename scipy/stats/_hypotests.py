@@ -892,14 +892,24 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
         )
         raise ValueError(msg)
 
-    p_value = _binomial_maximisation_of_p_value_with_nuisance_param(
-        total_col_1, total_col_2, index_arr, n_iter
+    get_pvalue_from = _binomial_maximisation_of_p_value_with_nuisance_param(
+        total_col_1, total_col_2, index_arr
     )
+
+    result = shgo(
+        get_pvalue_from,
+        bounds=((0, 1),),
+        n=32,  # Need to be a power of two since it is used by sobol
+        sampling_method="sobol",
+        iters=n_iter,
+    )
+
+    p_value = np.clip(-result.fun, a_min=0, a_max=1)
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
 def _binomial_maximisation_of_p_value_with_nuisance_param(
-    total_c1, total_c2, index_arr, n_iter
+        total_c1, total_c2, index_arr
 ):
     r"""
     Maximisation of the pvalue in respect of a nuisance parameter considering
@@ -912,10 +922,6 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
 
     index_arr: ndarray of boolean
 
-    n_iter: int
-        number of iteration inside shgo algorithm
-
-
     Returns
     -------
     p_value : float
@@ -927,8 +933,8 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
 
     Barnard exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
-    maxima, this function uses `scipy.optimize.shgo`, which take
-    `n_iter` as iterations parameter.
+    maxima, this function return `get_pvalue_from` function, which is used in
+    `scipy.optimize.shgo`.
     Also, to compute the different combination used in the
     p-values' computation formula, uses `gammaln` which is
     more tolerant for large value than `scipy.special.comb`. This gives
@@ -945,7 +951,6 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
 
     def get_pvalue_from(nuisance_param):
-
         with np.errstate(divide="ignore", invalid="ignore"):
             log_nuisance = np.log(
                 nuisance_param,
@@ -962,7 +967,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
             nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :, 0]] = 0
 
             nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (
-                n - x1_sum_x2
+                    n - x1_sum_x2
             )
             nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
 
@@ -979,18 +984,9 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         p_values_arr = tmp_values_arr[index_arr].sum(axis=0)
         max_pvalue_index = p_values_arr.argmax()
 
+        # Since shgo find the minima, we need to take the negative value of the
+        # pvalue
         p_value = p_values_arr[max_pvalue_index]  # take the max value
-        return p_value
+        return - p_value
 
-    # Since shgo find the minima, we need to take the negative value of the
-    # pvalue
-    result = shgo(
-        lambda x: -get_pvalue_from(x),
-        bounds=((0, 1),),
-        n=32,  # Need to be a power of two since it is used by sobol
-        sampling_method="sobol",
-        iters=n_iter,
-    )
-
-    p_value = -result.fun
-    return np.clip(p_value, a_min=0, a_max=1)
+    return get_pvalue_from
