@@ -52,7 +52,7 @@ class TestHessianUpdateStrategy(TestCase):
     def test_hessian_initialization(self):
         ndims = 5
         rnd_matrix = np.random.randint(1, 50, size=(ndims, ndims))
-        init_scales = ((None, np.eye(ndims)),
+        init_scales = (('auto', np.eye(ndims)),
                        (2, np.eye(ndims) * 2),
                        (np.array(range(1, ndims + 1)), np.array(range(1, ndims + 1)) * np.eye(ndims)),
                        (rnd_matrix, rnd_matrix))
