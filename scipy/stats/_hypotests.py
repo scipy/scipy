@@ -924,7 +924,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
 
     Parameters
     ----------
-    nuisance_param: float
+    nuisance_param : float
         nuisance parameter used in the computation of the maximisation of
         the p-value. Must be between 0 and 1
 
