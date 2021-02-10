@@ -3861,8 +3861,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.10512380092302633
         tr = 2.832256715395378
-        t, p = stats.ttest_trimmed(a, b, equal_var=False,
-                                   trim=32)
+        t, p = stats.ttest_trimmed(a, b, equal_var=False, trim=32)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -3926,6 +3925,22 @@ class TestTtestTrimmed(object):
         res = stats.ttest_trimmed(a, b)
         assert_allclose(res.pvalue, 0.005293, atol=1e-5)
         assert_allclose(res.statistic, -3.0983, atol=1e-4)
+
+    def test_compare_SAS(self):
+        # Source of the data used in this test:
+        # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
+        a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
+        b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
+        # In this paper, a trimming percentage of 5% is used. However,
+        # in their implementation, the number of values trimmed is rounded to
+        # the nearest whole number. However, consistent with
+        # `scipy.stats.trimmed_mean`, this test truncates to the lower
+        # whole number. In this example, the paper notes that 1 value is
+        # trimmed off of each side. 10% replicates this amount of trimming.
+        res = stats.ttest_trimmed(a, b, trim=9)
+        assert_allclose(res.pvalue, 0.514522, atol=1e-6)
+        assert_allclose(res.statistic, 0.669169, atol=1e-6)
+        
 
 
 
