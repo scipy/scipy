@@ -148,6 +148,7 @@ change is made.
 
   - ``scipy.stats.distributions``
   - `scipy.stats.mstats`
+  - `scipy.stats.qmc`
 
 
 SciPy structure

@@ -94,11 +94,14 @@ class interp2d(object):
     Interpolate over a 2-D grid.
 
     `x`, `y` and `z` are arrays of values used to approximate some function
-    f: ``z = f(x, y)``. This class returns a function whose call method uses
-    spline interpolation to find the value of new points.
+    f: ``z = f(x, y)`` which returns a scalar value `z`. This class returns a
+    function whose call method uses spline interpolation to find the value
+    of new points.
 
     If `x` and `y` represent a regular grid, consider using
-    RectBivariateSpline.
+    `RectBivariateSpline`.
+
+    If `z` is a vector value, consider using `interpn`.
 
     Note that calling `interp2d` with NaNs present in input values results in
     undefined behaviour.

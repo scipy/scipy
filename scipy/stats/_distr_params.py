@@ -72,7 +72,7 @@ distcont = [
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
-    ['loguniform', (0.01, 1)],
+    ['loguniform', (0.01, 1.25)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
     ['mielke', (10.4, 4.6)],
@@ -82,7 +82,7 @@ distcont = [
     ['nct', (14, 0.24045031331198066)],
     ['ncx2', (21, 1.0560465975116415)],
     ['norm', ()],
-    ['norminvgauss', (1., 0.5)],
+    ['norminvgauss', (1.25, 0.5)],
     ['pareto', (2.621716532144454,)],
     ['pearson3', (0.1,)],
     ['powerlaw', (1.6591133289905851,)],
@@ -91,7 +91,7 @@ distcont = [
     ['rayleigh', ()],
     ['rdist', (1.6,)],
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.01, 1)],
+    ['reciprocal', (0.01, 1.25)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
     ['skewcauchy', (0.5,)],
@@ -123,13 +123,15 @@ distdiscrete = [
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser', (0.6,)],  # re-enabled, numpy ticket:921
-    ['nbinom', (5, 0.5)],
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
+    ['nbinom', (5, 0.5)],
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.5,)],
+    ['zipfian', (0.75, 15)],
+    ['zipfian', (1.25, 10)],
     ['yulesimon', (11.0,)],
     ['nhypergeom', (20, 7, 1)]
 ]

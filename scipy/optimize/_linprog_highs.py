@@ -17,8 +17,8 @@ import inspect
 import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
-from ._highs.highs_wrapper import highs_wrapper
-from ._highs.constants import (
+from ._highs._highs_wrapper import _highs_wrapper
+from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_MINIMAL,
@@ -313,8 +313,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                        lb, ub, options)
+    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
+                         lb, ub, options)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s

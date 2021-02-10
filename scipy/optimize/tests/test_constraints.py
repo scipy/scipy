@@ -181,3 +181,10 @@ def test_bounds_repr():
         assert_array_equal(bounds.lb, bounds2.lb)
         assert_array_equal(bounds.ub, bounds2.ub)
         assert_array_equal(bounds.keep_feasible, bounds2.keep_feasible)
+
+
+def test_Bounds_array():
+    # gh13501
+    b = Bounds(lb=[0.0, 0.0], ub=[1.0, 1.0])
+    assert isinstance(b.lb, np.ndarray)
+    assert isinstance(b.ub, np.ndarray)
