@@ -390,7 +390,7 @@ class TestGenHyperbolic(object):
 
         lmbda, alpha, beta = 2, 2, 1
         mu, delta = 0.5, 1.5
-        args = (lmdba, alpha*delta, beta*delta)
+        args = (lmbda, alpha*delta, beta*delta)
 
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
@@ -412,7 +412,7 @@ class TestGenHyperbolic(object):
 
         lmbda, alpha, beta = 2, 2, 1
         mu, delta = 0.5, 1.5
-        args = (lmdba, alpha*delta, beta*delta)
+        args = (lmbda, alpha*delta, beta*delta)
 
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
@@ -435,7 +435,7 @@ class TestGenHyperbolic(object):
 
         lmbda, alpha, beta = 2, 2, 1
         mu, delta = 0.5, 1.5
-        args = (lmdba, alpha*delta, beta*delta)
+        args = (lmbda, alpha*delta, beta*delta)
 
         vals_us = [
             stats.genhyperbolic(*args, loc=mu, scale=delta).moment(i)
