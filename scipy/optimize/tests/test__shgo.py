@@ -351,16 +351,16 @@ class TestShgoSobolTestFunctions(object):
         # run_test(test4_1, n=500)
         # run_test(test4_1, n=800)
         options = {'infty_constraints': False}
-        run_test(test4_1, n=1024, options=options)
+        run_test(test4_1, n=2048, options=options)
 
     def test_f5_1_sobol(self):
         """NLP: Eggholder, multimodal"""
-        run_test(test5_1, n=32)
+        run_test(test5_1, n=64)
 
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
         # run_test(test5_1, n=60, iters=5)
-        run_test(test5_1, n=32, iters=5)
+        run_test(test5_1, n=128, iters=5)
 
         # def test_t911(self):
         #    """1-D tabletop function"""
@@ -504,7 +504,7 @@ class TestShgoArguments(object):
             'local_iter': 1,
             'infty_constraints': False}
 
-        run_test(test4_1, n=1024, test_atol=1e-5, options=options,
+        run_test(test4_1, n=2048, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
@@ -627,7 +627,7 @@ class TestShgoArguments(object):
     def test_14_local_iter(self):
         """Test limited local iterations for a pseudo-global mode"""
         options = {'local_iter': 4}
-        run_test(test5_1, n=32, options=options)
+        run_test(test5_1, n=64, options=options)
 
     def test_15_min_every_iter(self):
         """Test minimize every iter options and cover function cache"""
@@ -654,7 +654,7 @@ class TestShgoFailures(object):
     def test_1_maxiter(self):
         """Test failure on insufficient iterations"""
         options = {'maxiter': 2}
-        res = shgo(test4_1.f, test4_1.bounds, n=2, iters=None,
+        res = shgo(test4_1.f, test4_1.bounds, n=4, iters=None,
                    options=options, sampling_method='sobol')
 
         numpy.testing.assert_equal(False, res.success)
