@@ -1527,7 +1527,7 @@ class fnch_gen(_nch_gen):
 
     See Also
     --------
-    hypergeom, nhypergeom
+    wnch, hypergeom, nhypergeom
 
     Notes
     -----
@@ -1564,8 +1564,6 @@ class fnch_gen(_nch_gen):
 
     The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
-    The choice of corresponding mathematical symbols allows for
-    comparison with the references.
 
     Note that Fisher's noncentral hypergeometric distribution is distinct
     from Wallenius' noncentral hypergeometric distribution, which models
@@ -1609,7 +1607,7 @@ class wnch_gen(_nch_gen):
 
     See Also
     --------
-    hypergeom, nhypergeom
+    fnch, hypergeom, nhypergeom
 
     Notes
     -----
@@ -1646,8 +1644,6 @@ class wnch_gen(_nch_gen):
 
     The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
-    The choice of corresponding mathematical symbols allows for
-    comparison with the references.
 
     Note that Wallenius' noncentral hypergeometric distribution is distinct
     from Fisher's noncentral hypergeometric distribution, which models

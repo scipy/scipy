@@ -341,7 +341,7 @@ class TestNCH():
             assert_allclose(wnch.pmf(x, N, m1, n, w).sum(), 1)
 
     def test_wallenius_against_mpmath(self):
-        # precompute data with mpmath since niave implementation above
+        # precompute data with mpmath since naive implementation above
         # is not reliable. See source code in gh-13330.
         M = 50
         n = 30

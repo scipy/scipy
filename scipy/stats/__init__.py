@@ -157,10 +157,9 @@ Discrete distributions
    binom             -- Binomial
    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
    dlaplace          -- Discrete Laplacian
+   fnch              -- Fisher's Noncentral Hypergeometric
    geom              -- Geometric
    hypergeom         -- Hypergeometric
-   fnch              -- Fisher's Noncentral Hypergeometric
-   wnch              -- Wallenius's Noncentral Hypergeometric
    logser            -- Logarithmic (Log-Series, Series)
    nbinom            -- Negative Binomial
    nhypergeom        -- Negative Hypergeometric
@@ -168,6 +167,7 @@ Discrete distributions
    poisson           -- Poisson
    randint           -- Discrete Uniform
    skellam           -- Skellam
+   wnch              -- Wallenius's Noncentral Hypergeometric
    yulesimon         -- Yule-Simon
    zipf              -- Zipf (Zeta)
    zipfian           -- Zipfian
