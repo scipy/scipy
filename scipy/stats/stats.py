@@ -211,7 +211,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'alexandergovern']
+           'alexandergovern', 'AlexanderGovernConstantInputWarning']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -3723,6 +3723,12 @@ def alexandergovern(*args, nan_policy='propagate'):
     pvalue : float
         The associated p-value from the chi-squared distribution.
 
+    Warns
+    -----
+    AlexanderGovernConstantInputWarning
+        Raised if an input is a constant array.  The statistic is not defined'
+        in this case, so ``np.nan`` is returned.
+
     Notes
     -----
     The use of this test relies on several assumptions.
@@ -3748,34 +3754,38 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     Examples
     --------
-        >>> from scipy.stats import alexandergovern
+    >>> from scipy.stats import alexandergovern
 
-        Here are some data on annual percentage rate of interest charged on
-        new car loans at nine of the largest banks in four American cities
-        taken from the National Institute of Standards and Technology's
-        ANOVA dataset.
+    Here are some data on annual percentage rate of interest charged on
+    new car loans at nine of the largest banks in four American cities
+    taken from the National Institute of Standards and Technology's
+    ANOVA dataset.
 
-        We use `alexandergovern` to test the null hypothesis that all cities
-        have the same mean APR against the alternative that the cities do not
-        all have the same mean APR. We decide that a confidence level of 95%
-        is required to reject the null hypothesis in favor of the alternative.
+    We use `alexandergovern` to test the null hypothesis that all cities
+    have the same mean APR against the alternative that the cities do not
+    all have the same mean APR. We decide that a sigificance level of 5%
+    is required to reject the null hypothesis in favor of the alternative.
 
-        >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
-        >>> chicago = [14.25, 13.0, 12.75, 12.5, 12.5, 12.4, 12.3, 11.9, 11.9]
-        >>> houston = [14.0, 14.0, 13.51, 13.5, 13.5, 13.25, 13.0, 12.5, 12.5]
-        >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
-        ...           11.89]
-        >>> alexandergovern(atlanta, chicago, houston, memphis)
-        AlexanderGovernResult(statistic=4.65087071883494,
-                              pvalue=0.19922132490385214)
+    >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
+    >>> chicago = [14.25, 13.0, 12.75, 12.5, 12.5, 12.4, 12.3, 11.9, 11.9]
+    >>> houston = [14.0, 14.0, 13.51, 13.5, 13.5, 13.25, 13.0, 12.5, 12.5]
+    >>> memphis = [15.0, 14.0, 13.75, 13.59, 13.25, 12.97, 12.5, 12.25,
+    ...           11.89]
+    >>> alexandergovern(atlanta, chicago, houston, memphis)
+    AlexanderGovernResult(statistic=4.65087071883494,
+                          pvalue=0.19922132490385214)
 
-        The p-value is 0.1992, indicating a nearly 20% chance of observing
-        such an extreme value of the test statistic under the null hypothesis.
-        This exceeds 5%, so we do not reject the null hypothesis in favor of
-        the alternative.
+    The p-value is 0.1992, indicating a nearly 20% chance of observing
+    such an extreme value of the test statistic under the null hypothesis.
+    This exceeds 5%, so we do not reject the null hypothesis in favor of
+    the alternative.
     """
 
     args = _alexandergovern_input_validation(args, nan_policy)
+
+    if True in [(arg == arg[0]).all() for arg in args]:
+        warnings.warn(AlexanderGovernConstantInputWarning())
+        return AlexanderGovernResult(np.nan, np.nan)
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -3783,17 +3793,17 @@ def alexandergovern(*args, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.asarray([ma.count(arg) if nan_policy == 'omit' else len(arg)
-                          for arg in args])
-    means = np.asarray([np.mean(arg) for arg in args])
+    lengths = np.array([ma.count(arg) if nan_policy == 'omit' else len(arg)
+                        for arg in args])
+    means = np.array([np.mean(arg) for arg in args])
 
     # (1) determine standard error of the mean for each sample
     standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
                        for arg, length in zip(args, lengths)]
 
     # (2) define a weight for each sample
-    weights = ((1 / np.square(standard_errors)) /
-               np.sum(1 / np.square(standard_errors)))
+    inv_sq_se = 1 / np.square(standard_errors)
+    weights = inv_sq_se / np.sum(inv_sq_se)
 
     # (3) determine variance-weighted estimate of the common mean
     var_w = np.sum(weights * means)
@@ -3816,7 +3826,7 @@ def alexandergovern(*args, nan_policy='propagate'):
     A = np.sum(np.square(z))
 
     # "[the p value is determined from] central chi-square random deviates
-    # with n_i - 1 degrees of freedom". Alexander, Govern (94)
+    # with k - 1 degrees of freedom". Alexander, Govern (94)
     p = distributions.chi2.sf(A, len(args) - 1)
     return AlexanderGovernResult(A, p)
 
@@ -3833,7 +3843,7 @@ def _alexandergovern_input_validation(args, nan_policy):
             raise ValueError("Input sample size must be greater than one.")
         if arg.ndim != 1:
             raise ValueError("Input samples must be one-dimensional")
-        if True in np.isinf(arg):
+        if np.isinf(arg).any():
             raise ValueError("Input samples must be finite.")
 
         contains_nan, nan_policy = _contains_nan(arg, nan_policy=nan_policy)
@@ -3850,6 +3860,15 @@ class AlexanderGovernResult:
     def __repr__(self):
         return (f"{self.__class__.__name__}(statistic={self.statistic}, "
                 f"pvalue={self.pvalue})")
+
+
+class AlexanderGovernConstantInputWarning(RuntimeWarning):
+    """Warning generated by `alexandergovern` when an input is constant."""
+
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("An input array is constant; the statistic is not defined.")
+        self.args = (msg,)
 
 
 class PearsonRConstantInputWarning(RuntimeWarning):

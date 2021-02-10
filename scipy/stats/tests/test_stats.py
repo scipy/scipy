@@ -4737,7 +4737,7 @@ class TestSigmaClip(object):
         assert_equal(stats.sigmaclip(x)[0], x)
 
 
-class TestAlexanderGovern(object):
+class TestAlexanderGovern:
     def test_compare_dtypes(self):
         args = [[13, 13, 13, 13, 13, 13, 13, 12, 12],
                 [14, 13, 12, 12, 12, 12, 12, 11, 11],
@@ -4760,22 +4760,22 @@ class TestAlexanderGovern(object):
 
     def test_bad_inputs(self):
         # input array is of size zero
-        with assert_raises(ValueError, match=r"Input sample size must be"
-                                             r" greater than one."):
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
             stats.alexandergovern([1, 2], [])
         # input is a singular non list element
-        with assert_raises(ValueError, match=r"Input sample size must be"
-                                             r" greater than one."):
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
             stats.alexandergovern([1, 2], 2)
         # input list is of size 1
-        with assert_raises(ValueError, match=r"Input sample size must be"
-                                             r" greater than one."):
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
             stats.alexandergovern([1, 2], [2])
         # inputs are not finite (infinity)
-        with assert_raises(ValueError, match=r"Input samples must be finite."):
+        with assert_raises(ValueError, match="Input samples must be finite."):
             stats.alexandergovern([1, 2], [np.inf, np.inf])
         # inputs are multidimensional
-        with assert_raises(ValueError, match=r"Input samples must be one"
+        with assert_raises(ValueError, match="Input samples must be one"
                                              "-dimensional"):
             stats.alexandergovern([1, 2], [[1, 2], [3, 4]])
 
@@ -4964,6 +4964,14 @@ class TestAlexanderGovern(object):
         res_no_nan = stats.alexandergovern(*args_no_nan)
         assert_equal(res_nan.pvalue, res_no_nan.pvalue)
         assert_equal(res_nan.statistic, res_no_nan.statistic)
+
+    def test_constant_input(self):
+        # Zero variance input, consistent with `stats.pearsonr`
+        with assert_warns(stats.AlexanderGovernConstantInputWarning):
+            res = stats.alexandergovern([0.667, 0.667, 0.667],
+                                        [0.123, 0.456, 0.789])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
 
 class TestFOneWay(object):
