@@ -747,7 +747,7 @@ class TestBinomTest:
         y2 = n - stats._binary_search_for_binom_tst(lambda x1:
                                                     stats.binom.pmf(x1, n, p),
                                                     d,
-                                                    np.ceil(p * n), n) + 1
+                                                    np.ceil(p * n), n)
         assert_allclose(y1, y2, rtol=1e-9)
 
     # Expected results here are from R 3.6.2 binom.test

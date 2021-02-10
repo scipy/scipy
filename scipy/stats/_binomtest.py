@@ -312,8 +312,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            y = n-_binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
-                                               d*rerr, np.ceil(p * n), n)+1
+            y = n-_binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
+                                               -d*rerr, np.ceil(p * n), n)
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
             y = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
@@ -339,7 +339,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
 
     Parameters
     ----------
-    a : function
+    a : callable
       The function over which to perform binary search. Its values
       for inputs lo and hi should be in ascending or descending
       order as required by `asc_order.
@@ -360,21 +360,15 @@ def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
       such that a(i)<=d<a(i+1)
     """
     while lo < hi:
-        mid = (lo+hi)//2
+        mid = lo + (hi-lo)//2
         midval = a(mid)
         if midval < d:
-            if asc_order:
-                lo = mid+1
-            else:
-                hi = mid-1
+            lo = mid+1
         elif midval > d:
-            if asc_order:
-                hi = mid-1
-            else:
-                lo = mid+1
+            hi = mid-1
         else:
             return mid
     if a(lo) <= d:
         return lo
     else:
-        return lo-(asc_order-0.5)*2
+        return lo-1
