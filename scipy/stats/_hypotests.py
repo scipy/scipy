@@ -770,6 +770,24 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
             }
         }
 
+    The p-value is then computed as follow :
+
+    .. math::
+
+        pvalue =
+        \sum
+            \binom{total\_col\_1}{x_{11}}
+            \binom{total\_col\_2}{x_{12}}
+            \pi^{x_{11} + x_{12}}
+            (1 - \pi)^{total - x_{11} - x_{12}}
+
+    Where :math:`T(X) \leq T(X_0)`, if `alternative` = "less"
+    :math:`T(X) \geq T(X_0)`, if `alternative` = "greater"
+    :math:`T(X) \geq |T(X_0)|`, if `alternative` = "two-sided".
+
+    The returned p-value is the maximum p-value taken over the nuisance
+    parameter :math:`\pi`, where :math:`0 \leq \pi \leq 1`.
+
     References
     ----------
     .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2x2 TABLES, Biometrika,
