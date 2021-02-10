@@ -3726,7 +3726,7 @@ def alexandergovern(*args, nan_policy='propagate'):
     Warns
     -----
     AlexanderGovernConstantInputWarning
-        Raised if an input is a constant array.  The statistic is not defined'
+        Raised if an input is a constant array.  The statistic is not defined
         in this case, so ``np.nan`` is returned.
 
     Notes
@@ -3783,7 +3783,7 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     args = _alexandergovern_input_validation(args, nan_policy)
 
-    if True in [(arg == arg[0]).all() for arg in args]:
+    if np.any([(arg == arg[0]).all() for arg in args]):
         warnings.warn(AlexanderGovernConstantInputWarning())
         return AlexanderGovernResult(np.nan, np.nan)
 
