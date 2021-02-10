@@ -928,7 +928,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         nuisance parameter used in the computation of the maximisation of
         the p-value. Must be between 0 and 1
 
-    x1_sum_x2: ndarray
+    x1_sum_x2 : ndarray
         Sum of x1 and x2 inside barnard_exact
 
     x1_sum_x2_log_comb: ndarray
