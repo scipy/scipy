@@ -335,23 +335,19 @@ def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
     Meant to be used on the binomial PMF for the case of two-sided tests
     to obtain the value on the other side of the mode where the tail prbability
     should be computed. Because the values past the mode are always in
-    ascending or descending order, this makes binary search applicable.
+    ascending order, this makes binary search applicable.
 
     Parameters
     ----------
     a : callable
       The function over which to perform binary search. Its values
-      for inputs lo and hi should be in ascending or descending
-      order as required by `asc_order.
+      for inputs lo and hi should be in ascending order.
     d : float
       The value to search.
     lo : int
       The lower end of range to search.
     hi : int
       The higher end of the range to search.
-    asc_order : bool
-      Whether the values returned by the function, `a are in
-      ascending or descending order.
 
     Returns
     ----------
