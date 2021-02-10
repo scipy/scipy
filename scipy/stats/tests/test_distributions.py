@@ -395,7 +395,7 @@ class TestGenHyperbolic(object):
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
 
-        assert_allclose(gh.pdf(x), vals_R, atol=1e-9)
+        assert_allclose(gh.pdf(x), vals_R, atol=1e-13, rtol=1e-9)
 
     def test_cdf_r(self):
         # test against R package GeneralizedHyperbolic
@@ -417,7 +417,7 @@ class TestGenHyperbolic(object):
         x = np.linspace(-10, 10, 10)
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
 
-        assert_allclose(gh.cdf(x), vals_R, atol=1e-9, rtol=1e-5)
+        assert_allclose(gh.cdf(x), vals_R, atol=1e-8, rtol=1e-6)
 
     def test_moments_r(self):
         # test against R package GeneralizedHyperbolic
@@ -442,7 +442,7 @@ class TestGenHyperbolic(object):
             for i in range(1, 5)
             ]
 
-        assert_allclose(vals_us, vals_R, atol=1e-9, rtol=1e-8)
+        assert_allclose(vals_us, vals_R, atol=1e-13, rtol=1e-9)
 
     def test_rvs(self):
         # Kolmogorov-Smirnov test to ensure alignemnt of analitycal and empirical cdfs
@@ -473,7 +473,8 @@ class TestGenHyperbolic(object):
         x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[:, np.newaxis]
         assert_allclose(
             gh.pdf(x), stats.t.pdf(x, df),
-            atol=1e-8)
+            atol=1e-7, rtol=1e-8
+            )
 
     def test_pdf_laplace(self):
         # Test Against Laplace with location param [-10, 10]
@@ -501,7 +502,8 @@ class TestGenHyperbolic(object):
         x = np.linspace(-20, 20, 100)[:, np.newaxis]
         assert_allclose(
             gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
-            atol=1e-9)
+            atol=1e-13, rtol=1e-9
+            )
 
     def test_pdf_norminvgauss(self):
         # Test Against NIG with varying alpha/beta/delta/mu
@@ -528,7 +530,7 @@ class TestGenHyperbolic(object):
         assert_allclose(
             gh.pdf(x), stats.norminvgauss.pdf(
                 x, a=alpha, b=beta, loc=mu, scale=delta),
-            atol=1e-9
+            atol=1e-13, rtol=1e-9
             )
 
 
