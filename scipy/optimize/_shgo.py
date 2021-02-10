@@ -259,7 +259,7 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
     .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
            approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
            7, 86-112.
-    .. [3] Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with
+    .. [3] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
     .. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
@@ -304,9 +304,9 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
     >>> bounds = [(-512, 512), (-512, 512)]
 
     `shgo` has two built-in low discrepancy sampling sequences. First, we will
-    input 32 initial sampling points of the Sobol sequence:
+    input 64 initial sampling points of the Sobol' sequence:
 
-    >>> result = shgo(eggholder, bounds, n=32, sampling_method='sobol')
+    >>> result = shgo(eggholder, bounds, n=64, sampling_method='sobol')
     >>> result.x, result.fun
     (array([512.        , 404.23180824]), -959.6406627208397)
 
@@ -346,7 +346,7 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
 
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (12, 31)
+    (12, 9)
 
     Note the difference between, e.g., ``n=256, iters=1`` and ``n=64,
     iters=3``.
