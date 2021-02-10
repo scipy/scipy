@@ -2,13 +2,10 @@
 
 """
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.linalg
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class Logm(Benchmark):

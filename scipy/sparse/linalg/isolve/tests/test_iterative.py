@@ -3,6 +3,7 @@
 
 import itertools
 import platform
+import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -447,7 +448,10 @@ def test_zero_rhs(solver):
 
 
 @pytest.mark.parametrize("solver", [
-    gmres, qmr,
+    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
+                                                and sys.version_info[1] == 9,
+                                                reason="gh-13019")),
+    qmr,
     pytest.param(lgmres, marks=pytest.mark.xfail(platform.machine() == 'ppc64le',
                                                  reason="fails on ppc64le")),
     pytest.param(cgs, marks=pytest.mark.xfail),

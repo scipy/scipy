@@ -304,8 +304,11 @@ def least_squares(
         Tolerance for termination by the change of the cost function. Default
         is 1e-8. The optimization process is stopped when ``dF < ftol * F``,
         and there was an adequate agreement between a local quadratic model and
-        the true model in the last step. If None, the termination by this
-        condition is disabled.
+        the true model in the last step.
+
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     xtol : float or None, optional
         Tolerance for termination by the change of the independent variables.
         Default is 1e-8. The exact condition depends on the `method` used:
@@ -315,7 +318,9 @@ def least_squares(
               a trust-region radius and ``xs`` is the value of ``x``
               scaled according to `x_scale` parameter (see below).
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     gtol : float or None, optional
         Tolerance for termination by the norm of the gradient. Default is 1e-8.
         The exact condition depends on a `method` used:
@@ -330,7 +335,9 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
-        If None, the termination by this condition is disabled.
+        If None and 'method' is not 'lm', the termination by this condition is
+        disabled. If 'method' is 'lm', this tolerance must be higher than
+        machine epsilon.
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.

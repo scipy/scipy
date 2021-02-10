@@ -20,7 +20,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result. If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -78,7 +78,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are
         None, `s` is ``x.shape``; if `s` is None but `axes` is
-        not None, then `s` is ``scipy.take(x.shape, axes, axis=0)``.
+        not None, then `s` is ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -136,7 +136,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -194,7 +194,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     s : int or array_like of ints or None, optional
         The shape of the result.  If both `s` and `axes` (see below) are None,
         `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
-        ``scipy.take(x.shape, axes, axis=0)``.
+        ``numpy.take(x.shape, axes, axis=0)``.
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
@@ -504,22 +504,22 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     **Type I**
 
     There are several definitions of the DST-I; we use the following for
-    ``norm="backward"``. DST-I assumes the input is odd around `n=-1` and
-    `n=N`.
+    ``norm="backward"``. DST-I assumes the input is odd around :math:`n=-1` and
+    :math:`n=N`.
 
     .. math::
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(n+1)}{N+1}\right)
 
     Note that the DST-I is only supported for input size > 1.
-    The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
+    The (unnormalized) DST-I is its own inverse, up to a factor :math:`2(N+1)`.
     The orthonormalized DST-I is exactly its own inverse.
 
     **Type II**
 
     There are several definitions of the DST-II; we use the following for
-    ``norm="backward"``. DST-II assumes the input is odd around `n=-1/2` and
-    `n=N-1/2`; the output is odd around :math:`k=-1` and even around `k=N-1`
+    ``norm="backward"``. DST-II assumes the input is odd around :math:`n=-1/2` and
+    :math:`n=N-1/2`; the output is odd around :math:`k=-1` and even around :math:`k=N-1`
 
     .. math::
 
@@ -536,8 +536,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
     **Type III**
 
     There are several definitions of the DST-III, we use the following (for
-    ``norm="backward"``). DST-III assumes the input is odd around `n=-1` and
-    even around `n=N-1`
+    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1` and
+    even around :math:`n=N-1`
 
     .. math::
 
@@ -545,20 +545,20 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None):
         \frac{\pi(2k+1)(n+1)}{2N}\right)
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
+    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse of the
     orthonormalized DST-II.
 
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
-    ``norm="backward"``). DST-IV assumes the input is odd around `n=-0.5` and
-    even around ``n=N-0.5``
+    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5` and
+    even around :math:`n=N-0.5`
 
     .. math::
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(2k+1)(2n+1)}{4N}\right)
 
-    The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
+    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`. The
     orthonormalized DST-IV is exactly its own inverse.
 
     References

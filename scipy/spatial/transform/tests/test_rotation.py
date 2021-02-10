@@ -7,6 +7,8 @@ from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
 
+import pickle
+import copy
 
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
@@ -1247,3 +1249,16 @@ def test_rotation_within_numpy_array():
 
     array = np.array([multiple, multiple, multiple])
     assert_equal(array.shape, (3, 2))
+
+
+def test_pickling():
+    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    pkl = pickle.dumps(r)
+    unpickled = pickle.loads(pkl)
+    assert_allclose(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
+
+
+def test_deepcopy():
+    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    r1 = copy.deepcopy(r)
+    assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)

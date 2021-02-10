@@ -704,6 +704,8 @@ def correlation(u, v, w=None, centered=True):
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
+    centered : bool, optional
+        If True, `u` and `v` will be centered. Default is True.
 
     Returns
     -------
@@ -1799,7 +1801,8 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry ``ij``.
+        is computed and stored in entry 
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
     --------

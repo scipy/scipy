@@ -17,7 +17,7 @@ from scipy.special import (
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
-    ellip_harm, ellip_harm_2, spherical_jn, spherical_yn,
+    ellip_harm, ellip_harm_2, spherical_jn, spherical_yn, wright_bessel
 )
 from scipy.integrate import IntegrationWarning
 
@@ -559,6 +559,7 @@ LOCAL_TESTS = [
     data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-11),
     data_local(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
     data_local(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
+    data_local(wright_bessel, 'wright_bessel', (0, 1, 2), 3, rtol=1e-11),
 ]
 
 

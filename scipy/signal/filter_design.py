@@ -1,5 +1,4 @@
-"""Filter design.
-"""
+"""Filter design."""
 import math
 import operator
 import warnings
@@ -17,7 +16,6 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
-import math
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -2013,13 +2011,16 @@ def bilinear(b, a, fs=1.0):
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
-    >>> filts = signal.lti(*signal.butter(4, bf, btype='bandpass', analog=True))
+    >>> filts = signal.lti(*signal.butter(4, bf, btype='bandpass',
+    ...                                   analog=True))
     >>> filtz = signal.lti(*signal.bilinear(filts.num, filts.den, fs))
     >>> wz, hz = signal.freqz(filtz.num, filtz.den)
     >>> ws, hs = signal.freqs(filts.num, filts.den, worN=fs*wz)
 
-    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hz).clip(1e-15)), label=r'$|H(j \omega)|$')
-    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hs).clip(1e-15)), label=r'$|H_z(e^{j \omega})|$')
+    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hz).clip(1e-15)),
+    ...              label=r'$|H_z(e^{j \omega})|$')
+    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hs).clip(1e-15)),
+    ...              label=r'$|H(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')
@@ -2111,9 +2112,25 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
-        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba' for backwards
-        compatibility, but 'sos' should be used for general-purpose filtering.
+        Filter form of the output:
+
+            - second-order sections (recommended): 'sos'
+            - numerator/denominator (default)    : 'ba'
+            - pole-zero                          : 'zpk'
+
+        In general the second-order sections ('sos') form  is
+        recommended because inferring the coefficients for the
+        numerator/denominator form ('ba') suffers from numerical
+        instabilities. For reasons of backward compatibility the default
+        form is the numerator/denominator form ('ba'), where the 'b'
+        and the 'a' in 'ba' refer to the commonly used names of the
+        coefficients used.
+
+        Note: Using the second-order sections form ('sos') is sometimes
+        associated with additional computational costs: for
+        data-intense use cases it is therefore recommended to also
+        investigate the numerator/denominator form ('ba').
+
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2197,7 +2214,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     if wp.shape[0] == 2:
         if wp[0] < 0 or ws[0] < 0:
             raise ValueError("Values for wp, ws can't be negative")
-        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+        elif 1 < wp[1] or 1 < ws[1]:
+            raise ValueError("Values for wp, ws can't be larger than 1")
+        elif not((ws[0] < wp[0] and wp[1] < ws[1]) or
             (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                          " or vice versa")
@@ -2257,9 +2276,25 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk', 'sos'}, optional
-        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
-        second-order sections ('sos'). Default is 'ba' for backwards
-        compatibility, but 'sos' should be used for general-purpose filtering.
+        Filter form of the output:
+
+            - second-order sections (recommended): 'sos'
+            - numerator/denominator (default)    : 'ba'
+            - pole-zero                          : 'zpk'
+
+        In general the second-order sections ('sos') form  is
+        recommended because inferring the coefficients for the
+        numerator/denominator form ('ba') suffers from numerical
+        instabilities. For reasons of backward compatibility the default
+        form is the numerator/denominator form ('ba'), where the 'b'
+        and the 'a' in 'ba' refer to the commonly used names of the
+        coefficients used.
+
+        Note: Using the second-order sections form ('sos') is sometimes
+        associated with additional computational costs: for
+        data-intense use cases it is therefore recommended to also
+        investigate the numerator/denominator form ('ba').
+
     fs : float, optional
         The sampling frequency of the digital system.
 
@@ -2486,12 +2521,17 @@ def bilinear_zpk(z, p, k, fs):
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
-    >>> filts = signal.lti(*signal.butter(4, bf, btype='bandpass', analog=True, output='zpk'))
-    >>> filtz = signal.lti(*signal.bilinear_zpk(filts.zeros, filts.poles, filts.gain, fs))
+    >>> filts = signal.lti(*signal.butter(4, bf, btype='bandpass', analog=True,
+    ...                                   output='zpk'))
+    >>> filtz = signal.lti(*signal.bilinear_zpk(filts.zeros, filts.poles,
+    ...                                         filts.gain, fs))
     >>> wz, hz = signal.freqz_zpk(filtz.zeros, filtz.poles, filtz.gain)
-    >>> ws, hs = signal.freqs_zpk(filts.zeros, filts.poles, filts.gain, worN=fs*wz)
-    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hz).clip(1e-15)), label=r'$|H(j \omega)|$')
-    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hs).clip(1e-15)), label=r'$|H_z(e^{j \omega})|$')
+    >>> ws, hs = signal.freqs_zpk(filts.zeros, filts.poles, filts.gain,
+    ...                           worN=fs*wz)
+    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hz).clip(1e-15)),
+    ...              label=r'$|H_z(e^{j \omega})|$')
+    >>> plt.semilogx(wz*fs/(2*np.pi), 20*np.log10(np.abs(hs).clip(1e-15)),
+    ...              label=r'$|H(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')

@@ -1,5 +1,6 @@
-numpy
+numpy==1.19.5
 cython
+pythran
 pybind11
 pytest
 pytest-timeout

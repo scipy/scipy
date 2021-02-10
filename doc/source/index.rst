@@ -35,6 +35,7 @@ If you're interested in contributing to SciPy, start here:
 
    dev/conduct/code_of_conduct
    hacking
+   dev/contributor/quickerstart_conda
    dev/contributor/contributor_toc
 
 To get an overview of where help or new features are desired or planned, see
@@ -53,6 +54,7 @@ For a more detailed look at how the SciPy project works:
    :maxdepth: 1
 
    dev/core-dev/index
+   dev/api-dev/api-dev-toc
    dev/governance/governance
 
 .. This toctree defines previous/next for contributor guide documents
