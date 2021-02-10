@@ -5949,6 +5949,10 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     pvalue : float or array
         two-tailed p-value
 
+    Notes
+    -----
+    The number of values symmetrically trimmed from each sample are determined
+    by the floor of the length of the sample times the trimming percentage.
 
     References
     ----------
@@ -5992,8 +5996,8 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     nb = b.shape[axis]
 
     # further calculations in this test assume that the inputs are sorted.
-    a = sorted(a)
-    b = sorted(b)
+    a = np.sort(a)
+    b = np.sort(b)
 
     # `g_*` is the number of elements to be replaced on each tail.
     g_a = int((na * trim) // 100)
@@ -6007,7 +6011,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     x_tg_a = trim_mean(a, trim / 100.0)
     x_tg_b = trim_mean(b, trim / 100.0)
 
-    # Calcuate the Winsorized variance of the input samples according to
+    # Calculate the Winsorized variance of the input samples according to
     # specified `g`
     var_w_a = _calculate_winsorized_variance(a, g_a)
     var_w_b = _calculate_winsorized_variance(b, g_a)
@@ -6022,7 +6026,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     return Ttest_relResult(t, prob)
 
 
-def _calculate_winsorized_variance(a: list, g: 'int'):
+def _calculate_winsorized_variance(a, g):
     n = len(a)
     a = sorted(a)
     # build a right and left tail to replace the trimmed values, fill new tails
