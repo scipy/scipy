@@ -745,8 +745,8 @@ class TestBinomTest:
         y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
         # New way with binary search.
         y2 = n - stats._binary_search_for_binom_tst(lambda x1:
-                                                    stats.binom.pmf(x1, n, p),
-                                                    d,
+                                                    -stats.binom.pmf(x1, n, p),
+                                                    -d,
                                                     np.ceil(p * n), n)
         assert_allclose(y1, y2, rtol=1e-9)
 
