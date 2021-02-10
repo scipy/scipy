@@ -190,6 +190,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._hypotests import epps_singleton_2samp, cramervonmises, somersd
 from ._page_trend_test import page_trend_test
+from dataclasses import make_dataclass
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -3955,14 +3956,8 @@ def _alexandergovern_input_validation(args, nan_policy):
     return args
 
 
-class AlexanderGovernResult:
-    def __init__(self, statistic, pvalue):
-        self.statistic = statistic
-        self.pvalue = pvalue
-
-    def __repr__(self):
-        return (f"{self.__class__.__name__}(statistic={self.statistic}, "
-                f"pvalue={self.pvalue})")
+AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
+                                                                 "pvalue"))
 
 
 class AlexanderGovernConstantInputWarning(RuntimeWarning):
