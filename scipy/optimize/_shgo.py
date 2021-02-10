@@ -77,9 +77,11 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
     n : int, optional
         Number of sampling points used in the construction of the simplicial
         complex. Note that this argument is only used for ``sobol`` and other
-        arbitrary `sampling_methods`.
+        arbitrary `sampling_methods`. In case of ``sobol``, it must be a
+        power of 2: ``n=2**m``. Default is 128.
     iters : int, optional
-        Number of iterations used in the construction of the simplicial complex.
+        Number of iterations used in the construction of the simplicial
+        complex. Default is 1.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
@@ -88,7 +90,7 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
         ``scipy.optimize.minimize`` Some important options could be:
 
             * method : str
-                The minimization method (e.g. ``SLSQP``).
+                The minimization method (Default is ``SLSQP``).
             * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).
@@ -187,10 +189,10 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
 
     sampling_method : str or function, optional
         Current built in sampling method options are ``sobol`` and
-        ``simplicial``. The default ``simplicial`` uses less memory and provides
+        ``simplicial``. The default ``simplicial`` provides
         the theoretical guarantee of convergence to the global minimum in finite
         time. The ``sobol`` method is faster in terms of sampling point
-        generation at the cost of higher memory resources and the loss of
+        generation at the cost of the loss of
         guaranteed convergence. It is more appropriate for most "easier"
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
@@ -302,9 +304,9 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
     >>> bounds = [(-512, 512), (-512, 512)]
 
     `shgo` has two built-in low discrepancy sampling sequences. First, we will
-    input 30 initial sampling points of the Sobol sequence:
+    input 32 initial sampling points of the Sobol sequence:
 
-    >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
+    >>> result = shgo(eggholder, bounds, n=32, sampling_method='sobol')
     >>> result.x, result.fun
     (array([512.        , 404.23180824]), -959.6406627208397)
 
@@ -323,14 +325,12 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
            [  91.00920901, -391.283763  ],
            [ 202.89662724, -269.38043241],
            [ 361.66623976, -106.96493868],
-           [-219.40612786, -244.06020508],
-           [ 151.59603137, -100.61082677]])
+           [-219.40612786, -244.06020508]])
 
     >>> result.funl
     array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
            -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
-           -426.48799655, -421.15571437, -419.31194957, -410.98477763,
-           -202.53912972])
+           -426.48799655, -421.15571437, -419.31194957, -410.98477763])
 
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
@@ -339,17 +339,19 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
 
     If we want to find a larger number of local minima, we can increase the
     number of sampling points or the number of iterations. We'll increase the
-    number of sampling points to 60 and the number of iterations from the
-    default of 1 to 5. This gives us 60 x 5 = 300 initial sampling points.
+    number of sampling points to 64 and the number of iterations from the
+    default of 1 to 5. Using ``simplicial`` this would have gives us
+    64 x 3 = 192 initial sampling points. But ``sobol`` requires :math:`2^m`
+    points, hence every iteration, points are doubled. Which means 256 points.
 
-    >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
+    >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (13, 44)
+    (12, 31)
 
-    Note the difference between, e.g., ``n=180, iters=1`` and ``n=60, iters=3``.
+    Note the difference between, e.g., ``n=256, iters=1`` and ``n=64,
+    iters=3``.
     In the first case the promising points contained in the minimiser pool
-    is processed only once. In the latter case it is processed every 60 sampling
-    points for a total of 3 times.
+    is processed only once. In the latter case 3 batches are processed.
 
     To demonstrate solving problems with non-linear constraints consider the
     following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
@@ -896,10 +898,9 @@ class SHGO(object):
 
         Note: called with ``self.iterate_complex()`` after class initiation
         """
-        self.nc += self.n
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
+        self.nc += self.n
         self.n_sampled = self.nc
-        return
 
     # Hypercube minimizers
     def simplex_minimizers(self):
@@ -1280,6 +1281,7 @@ class SHGO(object):
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
+        n = n if self.sobol.num_generated == 0 else self.sobol.num_generated
         self.C = self.sobol.random(n=n)
 
         # Distribute over bounds

@@ -360,7 +360,7 @@ class TestShgoSobolTestFunctions(object):
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
         # run_test(test5_1, n=60, iters=5)
-        run_test(test5_1, n=256, iters=5)
+        run_test(test5_1, n=32, iters=5)
 
         # def test_t911(self):
         #    """1-D tabletop function"""
@@ -673,8 +673,8 @@ class TestShgoFailures(object):
         res = shgo(test_table.f, test_table.bounds, n=4, options=options,
                    sampling_method='sobol')
         numpy.testing.assert_equal(False, res.success)
-        # numpy.testing.assert_equal(9, res.nfev)
-        numpy.testing.assert_equal(12, res.nfev)
+
+        numpy.testing.assert_equal(16, res.nfev)
 
     def test_3_2_no_min_pool_simplicial(self):
         """Check that the routine stops when no minimiser is found
