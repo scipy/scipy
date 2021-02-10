@@ -214,7 +214,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'alexandergovern', 'AlexanderGovernConstantInputWarning']
+           'alexandergovern', 'AlexanderGovernConstantInputWarning',
            'page_trend_test', 'somersd']
 
 
