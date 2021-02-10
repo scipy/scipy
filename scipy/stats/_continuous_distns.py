@@ -2994,7 +2994,6 @@ class genhyperbolic_gen(rv_continuous):
     :math:`\lambda, \mu \in ( - \infty; \infty)`,
     :math:`\delta \ge 0, |\beta| < \alpha` if :math:`\lambda \ge 0`,
     :math:`\delta > 0, |\beta| \le \alpha` if :math:`\lambda < 0`.
-    and :math:`\delta > 0`.
 
     The location-scale-based parameterization implemented in
     SciPy is based on [2]_, where :math:`a = \alpha\delta`,
@@ -3013,7 +3012,7 @@ class genhyperbolic_gen(rv_continuous):
         Financial Derivatives and Risk Measures. In: Geman H., Madan D.,
         Pliska S.R., Vorst T. (eds) Mathematical Finance - Bachelier
         Congress 2000. Springer Finance. Springer, Berlin, Heidelberg.
-        https://doi.org/10.1007/978-3-662-12429-1_12
+        :doi:`10.1007/978-3-662-12429-1_12`
 
     .. [3] Scott, David J, Würtz, Diethelm, Dong, Christine and Tran,
        Thanh Tam, (2009), Moments of the generalized hyperbolic
@@ -3030,7 +3029,6 @@ class genhyperbolic_gen(rv_continuous):
     """
 
     def _argcheck(self, p, a, b):
-
         return (np.logical_and(np.abs(b) < a, p >= 0)
                 | np.logical_and(np.abs(b) <= a, p < 0))
 
@@ -3044,8 +3042,6 @@ class genhyperbolic_gen(rv_continuous):
         return _logpdf_single(x, p, a, b)
 
     def _pdf(self, x, p, a, b):
-        # https://www.jstor.org/stable/4615705
-        # https://doi.org/10.1007/978-3-662-12429-1_12
         # kve instead of kv works better for large values of p
         # and smaller values of sqrt(a^2  - b^2)
         @np.vectorize

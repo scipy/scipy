@@ -388,23 +388,12 @@ class TestGenHyperbolic(object):
             0.000941920705790324
             ])
 
-        lmbda = 2
-        alpha = 2
-        beta = 1
-        delta = 1.5
-        mu = 0.5
-
-        alpha_hat = alpha * delta
-        beta_hat = beta * delta
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmdba, alpha*delta, beta*delta)
 
         x = np.linspace(-10, 10, 10)
-        gh = stats.genhyperbolic(
-            p=lmbda,
-            a=alpha_hat,
-            b=beta_hat,
-            loc=mu,
-            scale=delta
-            )
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
 
         assert_allclose(gh.pdf(x), vals_R, atol=1e-9)
 
@@ -421,23 +410,12 @@ class TestGenHyperbolic(object):
             0.998942646586662
             ])
 
-        lmbda = 2
-        alpha = 2
-        beta = 1
-        delta = 1.5
-        mu = 0.5
-
-        alpha_hat = alpha * delta
-        beta_hat = beta * delta
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmdba, alpha*delta, beta*delta)
 
         x = np.linspace(-10, 10, 10)
-        gh = stats.genhyperbolic(
-            p=lmbda,
-            a=alpha_hat,
-            b=beta_hat,
-            loc=mu,
-            scale=delta
-            )
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
 
         assert_allclose(gh.cdf(x), vals_R, atol=1e-9, rtol=1e-5)
 
@@ -455,25 +433,19 @@ class TestGenHyperbolic(object):
             37.8870502710066, 205.76608511485
             ])
 
-        lmbda = 2
-        alpha = 2
-        beta = 1
-        delta = 1.5
-        mu = 0.5
-
-        alpha_hat = alpha * delta
-        beta_hat = beta * delta
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmdba, alpha*delta, beta*delta)
 
         vals_us = [
-            stats.genhyperbolic(p=lmbda, a=alpha_hat, b=beta_hat,
-                                loc=mu, scale=delta).moment(i)
+            stats.genhyperbolic(*args, loc=mu, scale=delta).moment(i)
             for i in range(1, 5)
             ]
 
         assert_allclose(vals_us, vals_R, atol=1e-9, rtol=1e-8)
 
     def test_rvs(self):
-        # KS test
+        # Kolmogorov-Smirnov test to ensure alignemnt of analitycal and empirical cdfs
         # p = 1, alpha = 1, beta = 0
         gh = stats.genhyperbolic(p=1, a=1, b=0)
         _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
@@ -531,8 +503,8 @@ class TestGenHyperbolic(object):
             gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
             atol=1e-9)
 
-    def test_pdf_norminversegauss(self):
-        # Test Against NIG
+    def test_pdf_norminvgauss(self):
+        # Test Against NIG with varying alpha/beta/delta/mu
 
         alpha, beta, delta, mu = (
                 np.linspace(1, 20, 20),

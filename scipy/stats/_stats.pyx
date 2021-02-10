@@ -547,7 +547,7 @@ cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
 cdef double _genhyperbolic_logpdf_kernel(
         double x, double p, double a, double b
         ) nogil:
-    cdef double t1, t2, t3, t4, t5, t6
+    cdef double t1, t2, t3, t4, t5
 
     t1 = _log_norming_constant(p, a, b)
 
@@ -555,12 +555,9 @@ cdef double _genhyperbolic_logpdf_kernel(
     t2 = math.pow(t2, 0.5)
     t3 = (p - 0.5) * math.log(t2)
     t4 = math.log(cs.kve(p-0.5, a * t2)) - a * t2
-
     t5 = b * x
 
-    t6 = t5
-
-    return t1 + t3 + t4 + t6
+    return t1 + t3 + t4 + t5
 
 cdef double _log_norming_constant(double p, double a, double b) nogil:
     cdef double t1, t2, t3, t4, t5, t6
