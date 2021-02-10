@@ -934,7 +934,7 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
     x1_sum_x2_log_comb : ndarray
         sum of the log combination of x1 and x2
 
-    index_arr: ndarray of boolean
+    index_arr : ndarray of boolean
 
     Returns
     -------
