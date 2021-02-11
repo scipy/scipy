@@ -194,12 +194,12 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
                 if np.shape(scale) == np.shape(self.B):
-                    self.B = scale.copy()
+                    self.B = np.array(scale).copy()
                 else:
                     self.B *= scale
             else:
                 if np.shape(scale) == np.shape(self.H):
-                    self.H = scale.copy()
+                    self.H = np.array(scale).copy()
                 else:
                     self.H *= scale
             self.first_iteration = False
