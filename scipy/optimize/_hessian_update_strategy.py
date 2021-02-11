@@ -1,9 +1,9 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
+from warnings import warn
+
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
-from warnings import warn
-
 
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
 
@@ -191,15 +191,26 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                 scale = self._auto_scale(delta_x, delta_grad)
             else:
                 scale = self.init_scale
+
+            # Check for complex: numpy will silently cast a complex array to
+            # a real one but not so for scalar as it raises a TypeError.
+            # Checking here brings a consistent behavior.
+            if np.iscomplexobj(scale):
+                raise TypeError("scale contains complex elements, "
+                                "must be real.")
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
-                if np.shape(scale) == np.shape(self.B):
-                    self.B = np.array(scale).copy()
+                dtype = self.B.dtype
+                scale = np.array(scale, dtype=dtype)
+                if scale.shape == np.shape(self.B):
+                    self.B = scale.copy()
                 else:
                     self.B *= scale
             else:
-                if np.shape(scale) == np.shape(self.H):
-                    self.H = np.array(scale).copy()
+                dtype = self.H.dtype
+                scale = np.array(scale, dtype=dtype)
+                if scale.shape == np.shape(self.H):
+                    self.H = scale.copy()
                 else:
                     self.H *= scale
             self.first_iteration = False
@@ -317,7 +328,7 @@ class BFGS(FullHessianUpdateStrategy):
                Second Edition (2006).
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
-        self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
+        self.H = self._syr((ys + yHy) / ys ** 2, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update the Hessian matrix.
@@ -373,8 +384,8 @@ class BFGS(FullHessianUpdateStrategy):
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
             elif self.exception_strategy == 'damp_update':
-                update_factor = (1-self.min_curvature) / (1 - wz/wMw)
-                z = update_factor*z + (1-update_factor)*Mw
+                update_factor = (1 - self.min_curvature) / (1 - wz / wMw)
+                z = update_factor * z + (1 - update_factor) * Mw
                 wz = np.dot(w, z)
         # Update matrix
         if self.approx_type == 'hess':
@@ -413,6 +424,7 @@ class SR1(FullHessianUpdateStrategy):
     .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
            Second Edition (2006).
     """
+
     def __init__(self, min_denominator=1e-8, init_scale='auto'):
         self.min_denominator = min_denominator
         super().__init__(init_scale)
@@ -435,6 +447,6 @@ class SR1(FullHessianUpdateStrategy):
             return
         # Update matrix
         if self.approx_type == 'hess':
-            self.B = self._syr(1/denominator, z_minus_Mw, a=self.B)
+            self.B = self._syr(1 / denominator, z_minus_Mw, a=self.B)
         else:
-            self.H = self._syr(1/denominator, z_minus_Mw, a=self.H)
+            self.H = self._syr(1 / denominator, z_minus_Mw, a=self.H)

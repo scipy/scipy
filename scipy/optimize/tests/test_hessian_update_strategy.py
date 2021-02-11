@@ -2,7 +2,9 @@ import numpy as np
 from copy import deepcopy
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less)
+                           assert_array_equal, assert_array_less,
+                           assert_raises)
+from pytest import raises
 from scipy.optimize import (BFGS, SR1)
 
 
@@ -62,28 +64,54 @@ class TestHessianUpdateStrategy(TestCase):
             (2, np.eye(ndims) * 2),
             (np.arange(1, ndims + 1), np.arange(1, ndims + 1) * np.eye(ndims)),
             (symmetric_matrix, symmetric_matrix),)
-        for init_scale, true_matrix in init_scales:
-            # large min_{denominator,curvatur} makes them skip an update, so we can have our initial matrix
-            quasi_newton = (BFGS(init_scale=init_scale, min_curvature=1e50, exception_strategy='skip_update'),
-                            SR1(init_scale=init_scale, min_denominator=1e50))
+        for approx_type in ['hess', 'inv_hess']:
+            for init_scale, true_matrix in init_scales:
+                # large min_{denominator,curvatur} makes them skip an update,
+                # so we can have our initial matrix
+                quasi_newton = (BFGS(init_scale=init_scale,
+                                     min_curvature=1e50,
+                                     exception_strategy='skip_update'),
+                                SR1(init_scale=init_scale,
+                                    min_denominator=1e50))
 
-            for qn in quasi_newton:
-                qn.initialize(ndims, 'hess')
-                B = qn.get_matrix()
+                for qn in quasi_newton:
+                    qn.initialize(ndims, approx_type)
+                    B = qn.get_matrix()
 
-                assert_array_equal(B, np.eye(ndims))
-                # don't test the auto init scale
-                if init_scale == 'auto':
-                    continue
+                    assert_array_equal(B, np.eye(ndims))
+                    # don't test the auto init scale
+                    if init_scale == 'auto':
+                        continue
 
-                qn.update(np.ones(ndims) * 1e-5, np.arange(ndims) + 0.2)
-                B = qn.get_matrix()
-                assert_array_equal(B, true_matrix)
+                    qn.update(np.ones(ndims) * 1e-5, np.arange(ndims) + 0.2)
+                    B = qn.get_matrix()
+                    assert_array_equal(B, true_matrix)
 
     # For this list of points, it is known
     # that no exception occur during the
     # Hessian update. Hence no update is
     # skiped or damped.
+
+    def test_initialize_catch_complex(self):
+        ndims = 3
+        init_scales = (complex(3.14),
+                       np.array([3.2, 2.3, 1.2]).astype(np.complex128),
+                       np.array([[43, 24, 33],
+                                 [24, 36, 44, ],
+                                 [33, 44, 37, ]]).astype(np.complex128)
+                       )
+        for approx_type in ['hess', 'inv_hess']:
+            for init_scale in init_scales:
+                # large min_{denominator,curvatur} makes them skip an update,
+                # so we can have our initial matrix
+                quasi_newton = (BFGS(init_scale=init_scale),
+                                SR1(init_scale=init_scale))
+
+                for qn in quasi_newton:
+                    qn.initialize(ndims, approx_type)
+                    with assert_raises(TypeError):
+                        qn.update(np.ones(ndims), np.arange(ndims))
+
     def test_rosenbrock_with_no_exception(self):
         # Define auxiliar problem
         prob = Rosenbrock(n=5)
