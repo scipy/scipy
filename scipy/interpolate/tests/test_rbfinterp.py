@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_raises
+from scipy.spatial import cKDTree
 from scipy.interpolate.rbfinterp import (
     _NAME_TO_MIN_DEGREE, _NAME_TO_FUNC, _SCALE_INVARIANT,
     _vandermonde, _distance,
@@ -251,10 +252,10 @@ class _TestRBFInterpolator:
         # should be able to reproduce the uncorrupted data almost exactly
         assert_allclose(yitp, y, atol=1e-5)
 
-
     def test_inconsistent_dimensions_error(self):
         # ValueError should be raised if the observations points and
         # interpolation points have a different number of dimensions
+        np.random.seed(0)
         x = np.random.uniform(0.0, 1.0, (100, 2))
         y = _2d_test_function(x)
         xitp = np.random.uniform(0.0, 1.0, (100, 1))
@@ -289,7 +290,6 @@ class TestRBFInterpolator(_TestRBFInterpolator):
         yitp2 = Pitp.dot(np.linalg.lstsq(P, y, rcond=None)[0])
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
-
     def test_smoothing_limit_2d(self):
         # For large smoothing parameters, the interpolant should approach a
         # least squares fit of a polynomial with the specified degree
@@ -320,6 +320,23 @@ class TestKNearestRBFInterpolator20(_TestRBFInterpolator):
     def build(self, *args, **kwargs):
         return KNearestRBFInterpolator(*args, **kwargs, k=20)
 
+    def test_equivalent_to_rbf_interpolator(self):
+        # Make sure this is equivalent to using RBFInterpolator with the 20
+        # nearest observations
+        np.random.seed(0)
+        x = np.random.uniform(0.0, 3.0, (50, 1))
+        y = _1d_test_function(x)
+        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+        yitp1 = self.build(x, y)(xitp)
+
+        yitp2 = []
+        tree = cKDTree(x)
+        for xi in xitp:
+            _, nbr = tree.query(xi, 20)
+            yitp2.append(RBFInterpolator(x[nbr], y[nbr])(xi[None])[0])
+
+        assert_allclose(yitp1, yitp2, atol=1e-8)
+
 
 class TestKNearestRBFInterpolatorInf(TestRBFInterpolator):
     # KNearestRBFInterpolator using all points. This should behave exactly like
@@ -328,6 +345,7 @@ class TestKNearestRBFInterpolatorInf(TestRBFInterpolator):
         return KNearestRBFInterpolator(*args, **kwargs, k=np.inf)
 
     def test_equivalent_to_rbf_interpolator(self):
+        np.random.seed(0)
         x = np.random.uniform(0.0, 3.0, (50, 1))
         y = _1d_test_function(x)
         xitp = np.random.uniform(0.0, 3.0, (50, 1))
