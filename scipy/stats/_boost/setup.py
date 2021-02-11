@@ -40,6 +40,7 @@ def configuration(parent_package='', top_path=None):
             language='c++',
             depends=[
                 'include/func_defs.hpp',
+                'include/Templated_PyUFunc.hpp',
             ],
         )
         # Add c++11/14 support:
