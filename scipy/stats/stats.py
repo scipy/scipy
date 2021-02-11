@@ -1480,10 +1480,28 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 
 
+def _normtest_finish(z, alternative):
+    """Common code between all the normality-test functions."""
+    if alternative == 'less':
+        prob = distributions.norm.cdf(z)
+    elif alternative == 'greater':
+        prob = distributions.norm.sf(z)
+    elif alternative == 'two-sided':
+        prob = 2 * distributions.norm.sf(np.abs(z))
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+
+    if z.ndim == 0:
+        z = z[()]
+
+    return z, prob
+
+
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-def skewtest(a, axis=0, nan_policy='propagate'):
+def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     """
     Test whether the skew is different from the normal distribution.
 
@@ -1506,12 +1524,22 @@ def skewtest(a, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
+
     Returns
     -------
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        Two-sided p-value for the hypothesis test.
+        The p-value for the hypothesis test.
 
     Notes
     -----
@@ -1534,6 +1562,10 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
     >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
     SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
+    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8], alternative='less')
+    SkewtestResult(statistic=1.0108048609177787, pvalue=0.8439450819289052)
+    >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8], alternative='greater')
+    SkewtestResult(statistic=1.0108048609177787, pvalue=0.15605491807109484)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1541,6 +1573,10 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
+        if alternative != 'two-sided':
+            raise ValueError("nan-containing/masked inputs with "
+                             "nan_policy='omit' are currently not "
+                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         return mstats_basic.skewtest(a, axis)
 
@@ -1562,13 +1598,13 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
-    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return SkewtestResult(*_normtest_finish(Z, alternative))
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-def kurtosistest(a, axis=0, nan_policy='propagate'):
+def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     """
     Test whether a dataset has normal kurtosis.
 
@@ -1591,12 +1627,22 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
+
     Returns
     -------
     statistic : float
         The computed z-score for this test.
     pvalue : float
-        The two-sided p-value for the hypothesis test.
+        The p-value for the hypothesis test.
 
     Notes
     -----
@@ -1612,6 +1658,10 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     >>> from scipy.stats import kurtosistest
     >>> kurtosistest(list(range(20)))
     KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.08804338332528348)
+    >>> kurtosistest(list(range(20)), alternative='less')
+    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.04402169166264174)
+    >>> kurtosistest(list(range(20)), alternative='greater')
+    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.9559783083373583)
 
     >>> np.random.seed(28041990)
     >>> s = np.random.normal(0, 1, 1000)
@@ -1624,6 +1674,10 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
+        if alternative != 'two-sided':
+            raise ValueError("nan-containing/masked inputs with "
+                             "nan_policy='omit' are currently not "
+                             "supported by one-sided alternatives.")
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosistest(a, axis)
 
@@ -1655,11 +1709,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
         warnings.warn(msg, RuntimeWarning)
 
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
-    if Z.ndim == 0:
-        Z = Z[()]
 
     # zprob uses upper tail, so Z needs to be positive
-    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return KurtosistestResult(*_normtest_finish(Z, alternative))
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -7447,7 +7499,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-def ranksums(x, y):
+def ranksums(x, y, alternative='two-sided'):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
 
@@ -7465,6 +7517,15 @@ def ranksums(x, y):
     ----------
     x,y : array_like
         The data from the two samples.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -7472,7 +7533,7 @@ def ranksums(x, y):
         The test statistic under the large-sample approximation that the
         rank sum statistic is normally distributed.
     pvalue : float
-        The two-sided p-value of the test.
+        The p-value of the test.
 
     References
     ----------
@@ -7489,6 +7550,10 @@ def ranksums(x, y):
     >>> sample2 = np.random.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)
     RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
+    >>> ranksums(sample1, sample2, alternative='less')
+    RanksumsResult(statistic=-7.750585297581713, pvalue=4.573497606342543e-15)
+    >>> ranksums(sample1, sample2, alternative='greater')
+    RanksumsResult(statistic=-7.750585297581713, pvalue=0.9999999999999954)
 
     The p-value of less than ``0.05`` indicates that this test rejects the
     hypothesis at the 5% significance level.
@@ -7503,7 +7568,7 @@ def ranksums(x, y):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    prob = 2 * distributions.norm.sf(abs(z))
+    z, prob = _normtest_finish(z, alternative)
 
     return RanksumsResult(z, prob)
 

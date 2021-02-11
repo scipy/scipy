@@ -4452,14 +4452,26 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
+    st_skew_less, st_kurt_less = st_skew, st_kurt
+    pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
+    st_skew_greater, st_kurt_greater = st_skew, st_kurt
+    pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
     x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
     assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
+    assert_array_almost_equal(stats.skewtest(x, alternative='less'),
+                              (st_skew_less, pv_skew_less))
+    assert_array_almost_equal(stats.skewtest(x, alternative='greater'),
+                              (st_skew_greater, pv_skew_greater))
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
+    assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
+                              (st_kurt_less, pv_kurt_less))
+    assert_array_almost_equal(stats.kurtosistest(x, alternative='greater'),
+                              (st_kurt_greater, pv_kurt_greater))
     check_named_results(stats.kurtosistest(x), attributes)
 
     # Test axis=None (equal to axis=0 for 1-D input)
@@ -4481,6 +4493,12 @@ def test_normalitytests():
     with np.errstate(all='ignore'):
         assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
     assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
+                  alternative='less')
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
+                  alternative='greater')
+    assert_raises(ValueError, stats.skewtest, list(range(8)),
+                  alternative='foobar')
 
     x = np.arange(30.)
     x[29] = np.nan
@@ -4493,6 +4511,12 @@ def test_normalitytests():
 
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
+                  alternative='less')
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
+                  alternative='greater')
+    assert_raises(ValueError, stats.kurtosistest, list(range(20)),
+                  alternative='foobar')
 
     with np.errstate(all='ignore'):
         assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
@@ -4512,9 +4536,26 @@ def test_normalitytests():
 
 class TestRankSums(object):
     def test_ranksums_result_attributes(self):
-        res = stats.ranksums(np.arange(5), np.arange(25))
+        # this example has been taken from:
+        # http://www.sthda.com/english/wiki/unpaired-two-samples-wilcoxon-test-in-r
+        women_weight = [38.9, 61.2, 73.3, 21.8, 63.4, 64.6, 48.4, 48.8, 48.5]
+        men_weight = [67.8, 60, 63.4, 76, 89.4, 73.3, 67.3, 61.3, 62.4]
+        pvalue = 0.024194132827
+        pvalue_less, pvalue_greater = 0.0120970664135, 0.987902933586
+        res = stats.ranksums(women_weight, men_weight)
+        res_less = stats.ranksums(women_weight, men_weight,
+                                  alternative='less')
+        res_greater = stats.ranksums(women_weight, men_weight,
+                                     alternative='greater')
         attributes = ('statistic', 'pvalue')
+        assert_array_almost_equal(res.pvalue, pvalue, decimal=2)
+        assert_array_almost_equal(res_less.pvalue, pvalue_less,
+                                  decimal=3)
+        assert_array_almost_equal(res_greater.pvalue, pvalue_greater,
+                                  decimal=3)
         check_named_results(res, attributes)
+        assert_raises(ValueError, stats.ranksums, women_weight, men_weight,
+                      alternative='foobar')
 
 
 class TestJarqueBera(object):
