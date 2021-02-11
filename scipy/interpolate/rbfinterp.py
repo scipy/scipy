@@ -484,7 +484,7 @@ class KNearestRBFInterpolator:
 
         # make sure the number of nearest neighbors used for interpolation does
         # not exceed the number of observations
-        k = min(int(k), ny)
+        k = int(min(k, ny))
 
         try:
             kernel_func = _NAME_TO_FUNC[kernel]
