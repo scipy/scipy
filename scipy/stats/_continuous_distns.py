@@ -3002,6 +3002,11 @@ class genhyperbolic_gen(rv_continuous):
 
     Stats are based on [3]_ and [4]_.
 
+    For the distributions that are a special case such as Student's t,
+    it is not recommended to rely on the implementation of genhyperbolic.
+    To avoid potential numerical problems and for performance reasons,
+    the methods of the specific distributions should be used. 
+
     References
     ----------
     .. [1] O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions
