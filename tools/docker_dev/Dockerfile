@@ -83,6 +83,7 @@ RUN apt-get update && \
     vim \
     curl \
     wget \
+    git \
     ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* &&\
@@ -97,6 +98,14 @@ RUN apt-get update && \
 RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
     # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
     echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc 
+
+# -----------------------------------------------------------------------------
+
+# Enable basic vim defaults in ~/.vimrc
+RUN echo "set number" >> ~/.vimrc && \
+    echo "syntax enable" >> ~/.vimrc && \
+    echo "filetype plugin indent on" >> ~/.vimrc && \
+    echo "set colorcolumn=80" >> ~/.vimrc
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----
