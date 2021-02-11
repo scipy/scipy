@@ -395,7 +395,7 @@ class TestGenHyperbolic(object):
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
         x = np.linspace(-10, 10, 10)
 
-        assert_allclose(gh.pdf(x), vals_R, atol=1e-13, rtol=1e-9)
+        assert_allclose(gh.pdf(x), vals_R, atol=0, rtol=1e-13)
 
     def test_cdf_r(self):
         # test against R package GeneralizedHyperbolic
@@ -417,7 +417,7 @@ class TestGenHyperbolic(object):
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
         x = np.linspace(-10, 10, 10)
 
-        assert_allclose(gh.cdf(x), vals_R, atol=1e-8, rtol=1e-6)
+        assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
 
     def test_moments_r(self):
         # test against R package GeneralizedHyperbolic
@@ -442,10 +442,11 @@ class TestGenHyperbolic(object):
             for i in range(1, 5)
             ]
 
-        assert_allclose(vals_us, vals_R, atol=1e-13, rtol=1e-9)
+        assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
 
     def test_rvs(self):
-        # Kolmogorov-Smirnov test to ensure alignemnt of analytical and empirical cdfs
+        # Kolmogorov-Smirnov test to ensure alignemnt
+        # of analytical and empirical cdfs
         # p = 1, alpha = 1, beta = 0
         gh = stats.genhyperbolic(p=1, a=1, b=0)
         _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
@@ -455,7 +456,7 @@ class TestGenHyperbolic(object):
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 30 df
         df = np.linspace(1, 30, 20)
-        
+
         # in principle alpha should be zero in practice for big lmbdas
         # alpha cannot be too small else pdf does not integrate
         alpha, beta = np.float_power(df, 2)*np.finfo(np.float32).eps, 0
@@ -467,7 +468,7 @@ class TestGenHyperbolic(object):
 
         assert_allclose(
             gh.pdf(x), stats.t.pdf(x, df),
-            atol=1e-7, rtol=1e-8
+            atol=0, rtol=1e-6
             )
 
     def test_pdf_laplace(self):
@@ -488,7 +489,7 @@ class TestGenHyperbolic(object):
 
         assert_allclose(
             gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
-            atol=1e-13, rtol=1e-9
+            atol=0, rtol=1e-11
             )
 
     def test_pdf_norminvgauss(self):
@@ -510,7 +511,7 @@ class TestGenHyperbolic(object):
         assert_allclose(
             gh.pdf(x), stats.norminvgauss.pdf(
                 x, a=alpha, b=beta, loc=mu, scale=delta),
-            atol=1e-13, rtol=1e-9
+            atol=0, rtol=1e-13
             )
 
 
@@ -5645,6 +5646,7 @@ def test_support_gh13294_regression(dist, args):
         a, b = dist.support(*args)
         assert_equal(a, np.nan)
         assert_equal(b, np.nan)
+
 
 def test_support_broadcasting_gh13294_regression():
     a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])
