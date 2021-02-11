@@ -80,7 +80,7 @@ class TestHessianUpdateStrategy(TestCase):
 
                     assert_array_equal(B, np.eye(ndims))
                     # don't test the auto init scale
-                    if init_scale == 'auto':
+                    if isinstance(init_scale, str) and init_scale == 'auto':
                         continue
 
                     qn.update(np.ones(ndims) * 1e-5, np.arange(ndims) + 0.2)
