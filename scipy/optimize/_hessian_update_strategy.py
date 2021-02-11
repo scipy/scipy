@@ -187,7 +187,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             return
         if self.first_iteration:
             # Get user specific scale
-            if self.init_scale == "auto":
+            if isinstance(self.init_scale, str) and self.init_scale == "auto":
                 scale = self._auto_scale(delta_x, delta_grad)
             else:
                 scale = self.init_scale
