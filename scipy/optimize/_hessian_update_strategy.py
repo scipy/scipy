@@ -260,11 +260,12 @@ class BFGS(FullHessianUpdateStrategy):
         1e-8 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damp_update'``.
     init_scale : {float, np.array, 'auto'}
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
-        The scale can be any array-like object that can be multiplied
-        with `np.eye(n)`.
+        At the first iteration the Hessian matrix or its inverse will
+        be initialized with the scale. In case the dimensionality of
+        the scale is ``(n, n)``, the scale itself will be used as
+        the initial matrix.
+        Otherwise the matrix will be initialized with
+        ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.
@@ -393,11 +394,12 @@ class SR1(FullHessianUpdateStrategy):
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
     init_scale : {float, np.array, 'auto'}, optional
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
-        The scale can be any array-like object that can be multiplied
-        with `np.eye(n)`.
+        At the first iteration the Hessian matrix or its inverse will
+        be initialized with the scale. In case the dimensionality of
+        the scale is ``(n, n)``, the scale itself will be used as
+        the initial matrix.
+        Otherwise the matrix will be initialized with
+        ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.
