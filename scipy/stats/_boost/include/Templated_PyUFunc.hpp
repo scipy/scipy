@@ -5,8 +5,7 @@
 
 // C++ standard dependent implementation
 // TODO: remove C++11 implementation when SciPy supports C++14 on all platforms
-#define USE_CPP14 0
-//(__cplusplus >= 201402L)
+#define USE_CPP14 (__cplusplus >= 201402L)
 
 #if USE_CPP14
 #include <type_traits>
