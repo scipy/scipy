@@ -50,26 +50,33 @@ class Rosenbrock:
 class TestHessianUpdateStrategy(TestCase):
 
     def test_hessian_initialization(self):
+
         ndims = 5
-        rnd_matrix = np.random.randint(1, 50, size=(ndims, ndims))
-        init_scales = (('auto', np.eye(ndims)),
-                       (2, np.eye(ndims) * 2),
-                       (np.array(range(1, ndims + 1)), np.array(range(1, ndims + 1)) * np.eye(ndims)),
-                       (rnd_matrix, rnd_matrix))
+        symmetric_matrix = np.array([[43, 24, 33, 34, 49],
+                                     [24, 36, 44, 15, 44],
+                                     [33, 44, 37, 1, 30],
+                                     [34, 15, 1, 5, 46],
+                                     [49, 44, 30, 46, 22]])
+        init_scales = (
+            ('auto', np.eye(ndims)),
+            (2, np.eye(ndims) * 2),
+            (np.arange(1, ndims + 1), np.arange(1, ndims + 1) * np.eye(ndims)),
+            (symmetric_matrix, symmetric_matrix),)
         for init_scale, true_matrix in init_scales:
-            quasi_newton = (BFGS(init_scale=init_scale), SR1(init_scale=init_scale))
+            # large min_{denominator,curvatur} makes them skip an update, so we can have our initial matrix
+            quasi_newton = (BFGS(init_scale=init_scale, min_curvature=1e50, exception_strategy='skip_update'),
+                            SR1(init_scale=init_scale, min_denominator=1e50))
 
             for qn in quasi_newton:
                 qn.initialize(ndims, 'hess')
                 B = qn.get_matrix()
 
                 assert_array_equal(B, np.eye(ndims))
+                # don't test the auto init scale
+                if init_scale == 'auto':
+                    continue
 
-                qn.update(np.ones(ndims), np.ones(ndims))
-                # change to make it do the step backwards
-                qn.approx_type = 'inv_hess'
-                qn.update(np.ones(ndims), np.ones(ndims))
-                qn.approx_type = 'hess'
+                qn.update(np.ones(ndims) * 1e-5, np.arange(ndims) + 0.2)
                 B = qn.get_matrix()
                 assert_array_equal(B, true_matrix)
 
