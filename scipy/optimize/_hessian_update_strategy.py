@@ -195,6 +195,9 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             # Check for complex: numpy will silently cast a complex array to
             # a real one but not so for scalar as it raises a TypeError.
             # Checking here brings a consistent behavior.
+            if np.size(scale) == 1:
+                # to account for the legacy behavior having the exact same cast
+                scale = float(scale)
             if np.iscomplexobj(scale):
                 raise TypeError("scale contains complex elements, "
                                 "must be real.")
