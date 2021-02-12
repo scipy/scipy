@@ -447,8 +447,12 @@ class TestGenHyperbolic(object):
     def test_rvs(self):
         # Kolmogorov-Smirnov test to ensure alignemnt
         # of analytical and empirical cdfs
-        # p = 1, alpha = 1, beta = 0
-        gh = stats.genhyperbolic(p=1, a=1, b=0)
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
         _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
 
         assert_equal(p > 0.05, True)
