@@ -4608,30 +4608,6 @@ class TestGeoMean(object):
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired)
 
-    def test_weights_1d_list(self):
-        # Desired result from:
-        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        weights = [2, 5, 6, 4, 3]
-        a = [1, 2, 3, 4, 5]
-        desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
-
-    def test_weights_1d_array(self):
-        # Desired result from:
-        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        a = np.array([1, 2, 3, 4, 5])
-        weights = np.array([2, 5, 6, 4, 3])
-        desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
-
-    def test_weights_masked_1d_array(self):
-        # Desired result from:
-        # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        a = np.array([1, 2, 3, 4, 5, 6])
-        weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
-        desired = 2.77748
-        check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
-
 
 class TestGeometricStandardDeviation(object):
     # must add 1 as `gstd` is only defined for positive values
