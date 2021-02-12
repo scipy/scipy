@@ -1528,9 +1528,14 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+          * 'two-sided': p-value is calculated as :math:`2Pr(z \\ge |Z|)`
+                         under the null hypothesis.
+          * 'less': p-value is calculated as :math:`Pr(z \\le Z)` under the
+                    null hypothesis.
+          * 'greater': p-value is calculated as :math:`Pr(z \\ge Z)` under
+                       the null hypothesis.
+
+        where :math:`Z` is the calculated value of the statistic.
 
         .. versionadded:: 1.7.0
 
@@ -1631,9 +1636,14 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+          * 'two-sided': p-value is calculated as :math:`2Pr(z \\ge |Z|)`
+                         under the null hypothesis.
+          * 'less': p-value is calculated as :math:`Pr(z \\le Z)` under the
+                    null hypothesis.
+          * 'greater': p-value is calculated as :math:`Pr(z \\ge Z)` under
+                       the null hypothesis.
+
+        where :math:`Z` is the calculated value of the statistic.
 
         .. versionadded:: 1.7.0
 
@@ -7521,9 +7531,14 @@ def ranksums(x, y, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+          * 'two-sided': p-value is calculated as :math:`2Pr(z \\ge |Z|)`
+                         under the null hypothesis.
+          * 'less': p-value is calculated as :math:`Pr(z \\le Z)` under the
+                    null hypothesis.
+          * 'greater': p-value is calculated as :math:`Pr(z \\ge Z)` under
+                       the null hypothesis.
+
+        where :math:`Z` is the calculated value of the statistic.
 
         .. versionadded:: 1.7.0
 
