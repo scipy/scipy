@@ -504,7 +504,7 @@ class TestShgoArguments(object):
             'local_iter': 1,
             'infty_constraints': False}
 
-        run_test(test4_1, n=2048, test_atol=1e-5, options=options,
+        run_test(test4_1, n=1024, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):

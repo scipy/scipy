@@ -15,7 +15,8 @@ from scipy.stats import qmc
 __all__ = ['shgo']
 
 
-def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
+def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
+         callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
     Finds the global minimum of a function using SHG optimization.
@@ -78,7 +79,9 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
         Number of sampling points used in the construction of the simplicial
         complex. Note that this argument is only used for ``sobol`` and other
         arbitrary `sampling_methods`. In case of ``sobol``, it must be a
-        power of 2: ``n=2**m``. Default is 128.
+        power of 2: ``n=2**m``. Default is 100 for
+        ``sampling_method='simplicial'`` and 128 for
+        ``sampling_method='sobol'``.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -341,17 +344,17 @@ def shgo(func, bounds, args=(), constraints=None, n=128, iters=1, callback=None,
     number of sampling points or the number of iterations. We'll increase the
     number of sampling points to 64 and the number of iterations from the
     default of 1 to 5. Using ``simplicial`` this would have gives us
-    64 x 3 = 192 initial sampling points. But ``sobol`` requires :math:`2^m`
-    points, hence every iteration, points are doubled. Which means 256 points.
+    64 x 3 = 192 initial sampling points.
 
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (12, 9)
+    (12, 23)
 
-    Note the difference between, e.g., ``n=256, iters=1`` and ``n=64,
+    Note the difference between, e.g., ``n=192, iters=1`` and ``n=64,
     iters=3``.
     In the first case the promising points contained in the minimiser pool
-    is processed only once. In the latter case 3 batches are processed.
+    is processed only once. In the latter case it is processed every 64
+    sampling points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
     following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
@@ -599,7 +602,9 @@ class SHGO(object):
         if self.iters is None:
             self.iters = 1
         if self.n is None:
-            self.n = 128
+            self.n = 100
+            if sampling_method == 'sobol':
+                self.n = 128
             self.nc = self.n
 
         if not ((self.maxiter is None) and (self.maxfev is None) and (
@@ -1281,12 +1286,11 @@ class SHGO(object):
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        if self.sobol.num_generated == 0:
-            self.n = n
-        else:
-             self.n = self.sobol.num_generated
+        self.n = n
+        self.sobol.reset()
+        self.sobol.fast_forward(self.iters_done * n)
 
-        self.C = self.sobol.random(n=self.n)
+        self.C = self.sobol.random(n=n)
         # Distribute over bounds
         for i in range(len(self.bounds)):
             self.C[:, i] = (self.C[:, i] *
