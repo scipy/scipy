@@ -3,7 +3,7 @@
 
 from libcpp.string cimport string
 
-from HConst cimport HighsModelStatus
+from .HighsLp cimport HighsModelStatus
 
 cdef extern from "HighsModelUtils.h" nogil:
     # From HiGHS/src/lp_data/HighsModelUtils.h

@@ -5,7 +5,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-from HConst cimport HighsBasisStatus
+from .HConst cimport HighsBasisStatus
 
 cdef extern from "HighsLp.h" nogil:
     # From HiGHS/src/lp_data/HighsLp.h

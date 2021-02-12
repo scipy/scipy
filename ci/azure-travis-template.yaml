@@ -69,6 +69,7 @@ steps:
     cython
     gmpy2
     mpmath
+    pythran
     pybind11
     pytest
     pytest-xdist
@@ -139,6 +140,9 @@ steps:
       COVERAGE: '--coverage --gcov'
     ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
       USE_WHEEL_BUILD: '--no-build'
+  # Only run tests on master for the coverage build
+  ${{ if eq(parameters.coverage, false) }}:
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
   displayName: 'Run tests'
 - ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.refguide_check, true)) }}:
   - script: python runtests.py -g --refguide-check
@@ -154,7 +158,7 @@ steps:
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')
   failOnStderr: true
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.coverage, true)) }}:
+- ${{ if eq(parameters.coverage, true) }}:
   - script: |
       set -e
       RUN_DIR=`echo build/testenv/lib/python*/site-packages`

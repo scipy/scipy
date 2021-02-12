@@ -22,7 +22,7 @@ The following functions still need tests:
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 import pytest
 
 import scipy.special as sp
@@ -404,3 +404,21 @@ def test_nonfinite():
                 # All other inputs should return something (but not
                 # raise exceptions or cause hangs)
                 pass
+
+
+def test_chndtrix_gh2158():
+    # test that gh-2158 is resolved; previously this blew up
+    res = sp.chndtrix(0.999999, 2, np.arange(20.)+1e-6)
+
+    # Generated in R
+    # options(digits=16)
+    # ncp <- seq(0, 19) + 1e-6
+    # print(qchisq(0.999999, df = 2, ncp = ncp))
+    res_exp = [27.63103493142305, 35.25728589950540, 39.97396073236288,
+               43.88033702110538, 47.35206403482798, 50.54112500166103,
+               53.52720257322766, 56.35830042867810, 59.06600769498512,
+               61.67243118946381, 64.19376191277179, 66.64228141346548,
+               69.02756927200180, 71.35726934749408, 73.63759723904816,
+               75.87368842650227, 78.06984431185720, 80.22971052389806,
+               82.35640899964173, 84.45263768373256]
+    assert_allclose(res, res_exp)

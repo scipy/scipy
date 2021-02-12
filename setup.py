@@ -54,7 +54,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 6
+MINOR = 7
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -144,22 +144,6 @@ if not release:
         a.close()
 
 
-try:
-    from sphinx.setup_command import BuildDoc
-    HAVE_SPHINX = True
-except Exception:
-    HAVE_SPHINX = False
-
-if HAVE_SPHINX:
-    class ScipyBuildDoc(BuildDoc):
-        """Run in-place build before Sphinx doc build"""
-        def run(self):
-            ret = subprocess.call([sys.executable, sys.argv[0], 'build_ext', '-i'])
-            if ret != 0:
-                raise RuntimeError("Building Scipy failed!")
-            BuildDoc.run(self)
-
-
 def check_submodules():
     """ verify that the submodules are checked out and clean
         use `git submodule update --init`; on failure
@@ -223,16 +207,33 @@ def get_build_ext_override():
     """
     Custom build_ext command to tweak extension building.
     """
-    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+    from numpy.distutils.command.build_ext import build_ext as npy_build_ext
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        # PythranBuildExt does *not* derive from npy_build_ext
+        # Win the monkey patching race here and patch base class
+        # before it's loaded by Pythran. This should be removed
+        # once Pythran has proper support for base class selection.
+        assert 'pythran' not in sys.modules
+        import distutils.command.build_ext
+        distutils_build_ext = distutils.command.build_ext.build_ext
+        distutils.command.build_ext.build_ext = npy_build_ext
+        try:
+            from pythran.dist import PythranBuildExt as BaseBuildExt
+        except ImportError:
+            BaseBuildExt = npy_build_ext
+        finally:
+            distutils.command.build_ext.build_ext = distutils_build_ext
+    else:
+        BaseBuildExt = npy_build_ext
 
-    class build_ext(old_build_ext):
+    class build_ext(BaseBuildExt):
         def finalize_options(self):
             super().finalize_options()
 
             # Disable distutils parallel build, due to race conditions
             # in numpy.distutils (Numpy issue gh-15957)
             if self.parallel:
-                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                print("NOTE: -j build option not supported. Set NPY_NUM_BUILD_JOBS=4 "
                       "for parallel build.")
             self.parallel = None
 
@@ -254,7 +255,7 @@ def get_build_ext_override():
             hooks = getattr(ext, '_pre_build_hook', ())
             _run_pre_build_hooks(hooks, (self, ext))
 
-            old_build_ext.build_extension(self, ext)
+            super(build_ext, self).build_extension(ext)
 
         def __is_using_gnu_linker(self, ext):
             if not sys.platform.startswith('linux'):
@@ -364,8 +365,7 @@ def parse_setuppy_commands():
     # below and not standalone.  Hence they're not added to good_commands.
     good_commands = ('develop', 'sdist', 'build', 'build_ext', 'build_py',
                      'build_clib', 'build_scripts', 'bdist_wheel', 'bdist_rpm',
-                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg',
-                     'build_sphinx')
+                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg')
 
     for command in good_commands:
         if command in args:
@@ -436,6 +436,7 @@ def parse_setuppy_commands():
         bdist_dumb="`setup.py bdist_dumb` is not supported",
         bdist="`setup.py bdist` is not supported",
         flake8="`setup.py flake8` is not supported, use flake8 standalone",
+        build_sphinx="`setup.py build_sphinx` is not supported, see doc/README.md",
         )
     bad_commands['nosetests'] = bad_commands['test']
     for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
@@ -517,8 +518,6 @@ def setup_package():
     write_version_py()
 
     cmdclass = {'sdist': sdist_checked}
-    if HAVE_SPHINX:
-        cmdclass['build_sphinx'] = ScipyBuildDoc
 
     metadata = dict(
         name='scipy',

@@ -65,7 +65,7 @@ docstring: ``print(stats.norm.__doc__)``.
 To find the support, i.e., upper and lower bounds of the distribution,
 call:
 
-    >>> print('bounds of distribution lower: %s, upper: %s' % (norm.a, norm.b))
+    >>> print('bounds of distribution lower: %s, upper: %s' % norm.support())
     bounds of distribution lower: -inf, upper: inf
 
 We can list all methods and properties of the distribution with
@@ -98,9 +98,9 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 101
+    number of continuous distributions: 102
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
-    number of discrete distributions:   16
+    number of discrete distributions:   17
 
 
 Common methods

@@ -2203,9 +2203,16 @@ def test_show_options():
     unknown_solver_method = {
         'minimize': "ekki",  # unknown method
         'maximize': "cg",  # unknown solver
-        'maximize': "ekki",  # unknown solver and method
+        'maximize_scalar': "ekki",  # unknown solver and method
     }
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
         assert_raises(ValueError, show_options, solver, method)
         
+
+def test_bounds_with_list():
+    # gh13501. Bounds created with lists weren't working for Powell.
+    bounds = optimize.Bounds(lb=[5., 5.], ub=[10., 10.])
+    optimize.minimize(
+        optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
+    )

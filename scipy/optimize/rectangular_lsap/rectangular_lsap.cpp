@@ -45,20 +45,20 @@ Author: PM Larsen
 #include "rectangular_lsap.h"
 #include <vector>
 
-static int
-augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
-                std::vector<double>& v, std::vector<int>& path,
-                std::vector<int>& row4col,
-                std::vector<double>& shortestPathCosts, int i,
+static intptr_t
+augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
+                std::vector<double>& v, std::vector<intptr_t>& path,
+                std::vector<intptr_t>& row4col,
+                std::vector<double>& shortestPathCosts, intptr_t i,
                 std::vector<bool>& SR, std::vector<bool>& SC, double* p_minVal)
 {
     double minVal = 0;
 
     // Crouse's pseudocode uses set complements to keep track of remaining
     // nodes.  Here we use a vector, as it is more efficient in C++.
-    int num_remaining = nc;
-    std::vector<int> remaining(nc);
-    for (int it = 0; it < nc; it++) {
+    intptr_t num_remaining = nc;
+    std::vector<intptr_t> remaining(nc);
+    for (intptr_t it = 0; it < nc; it++) {
         // Filling this up in reverse order ensures that the solution of a
         // constant cost matrix is the identity matrix (c.f. #11602).
         remaining[it] = nc - it - 1;
@@ -69,15 +69,15 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
     std::fill(shortestPathCosts.begin(), shortestPathCosts.end(), INFINITY);
 
     // find shortest augmenting path
-    int sink = -1;
+    intptr_t sink = -1;
     while (sink == -1) {
 
-        int index = -1;
+        intptr_t index = -1;
         double lowest = INFINITY;
         SR[i] = true;
 
-        for (int it = 0; it < num_remaining; it++) {
-            int j = remaining[it];
+        for (intptr_t it = 0; it < num_remaining; it++) {
+            intptr_t j = remaining[it];
 
             double r = minVal + cost[i * nc + j] - u[i] - v[j];
             if (r < shortestPathCosts[j]) {
@@ -96,7 +96,7 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
         }
 
         minVal = lowest;
-        int j = remaining[index];
+        intptr_t j = remaining[index];
         if (minVal == INFINITY) { // infeasible cost matrix
             return -1;
         }
@@ -117,13 +117,13 @@ augmenting_path(int nc, std::vector<double>& cost, std::vector<double>& u,
 }
 
 static int
-solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
+solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
 {
 
     // build a non-negative cost matrix
     std::vector<double> cost(nr * nc);
     double minval = *std::min_element(input_cost, input_cost + nr * nc);
-    for (int i = 0; i < nr * nc; i++) {
+    for (intptr_t i = 0; i < nr * nc; i++) {
         cost[i] = input_cost[i] - minval;
     }
 
@@ -131,40 +131,40 @@ solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
     std::vector<double> u(nr, 0);
     std::vector<double> v(nc, 0);
     std::vector<double> shortestPathCosts(nc);
-    std::vector<int> path(nc, -1);
-    std::vector<int> col4row(nr, -1);
-    std::vector<int> row4col(nc, -1);
+    std::vector<intptr_t> path(nc, -1);
+    std::vector<intptr_t> col4row(nr, -1);
+    std::vector<intptr_t> row4col(nc, -1);
     std::vector<bool> SR(nr);
     std::vector<bool> SC(nc);
 
     // iteratively build the solution
-    for (int curRow = 0; curRow < nr; curRow++) {
+    for (intptr_t curRow = 0; curRow < nr; curRow++) {
 
         double minVal;
-        int sink = augmenting_path(nc, cost, u, v, path, row4col,
-                                   shortestPathCosts, curRow, SR, SC, &minVal);
+        intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
+                                        shortestPathCosts, curRow, SR, SC, &minVal);
         if (sink < 0) {
             return -1;
         }
 
         // update dual variables
         u[curRow] += minVal;
-        for (int i = 0; i < nr; i++) {
+        for (intptr_t i = 0; i < nr; i++) {
             if (SR[i] && i != curRow) {
                 u[i] += minVal - shortestPathCosts[col4row[i]];
             }
         }
 
-        for (int j = 0; j < nc; j++) {
+        for (intptr_t j = 0; j < nc; j++) {
             if (SC[j]) {
                 v[j] -= minVal - shortestPathCosts[j];
             }
         }
 
         // augment previous solution
-        int j = sink;
+        intptr_t j = sink;
         while (1) {
-            int i = path[j];
+            intptr_t i = path[j];
             row4col[j] = i;
             std::swap(col4row[i], j);
             if (i == curRow) {
@@ -173,7 +173,7 @@ solve(int nr, int nc, double* input_cost, int64_t* output_col4row)
         }
     }
 
-    for (int i = 0; i < nr; i++) {
+    for (intptr_t i = 0; i < nr; i++) {
         output_col4row[i] = col4row[i];
     }
 
@@ -185,7 +185,7 @@ extern "C" {
 #endif
 
 int
-solve_rectangular_linear_sum_assignment(int nr, int nc, double* input_cost,
+solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
                                         int64_t* col4row)
 {
     return solve(nr, nc, input_cost, col4row);

@@ -3,7 +3,7 @@
 
 '''Export enum values and constants from HiGHS.'''
 
-from HConst cimport (
+from .HConst cimport (
     HIGHS_CONST_I_INF,
     HIGHS_CONST_INF,
 
@@ -23,14 +23,14 @@ from HConst cimport (
     HighsModelStatusPRIMAL_DUAL_INFEASIBLE,
     HighsModelStatusDUAL_INFEASIBLE,
 )
-from HighsIO cimport (
+from .HighsIO cimport (
     ML_NONE,
     ML_VERBOSE,
     ML_DETAILED,
     ML_MINIMAL,
     ML_ALWAYS,
 )
-from SimplexConst cimport (
+from .SimplexConst cimport (
     # Simplex strategy
     SIMPLEX_STRATEGY_CHOOSE,
     SIMPLEX_STRATEGY_DUAL,

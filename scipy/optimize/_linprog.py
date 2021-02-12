@@ -19,10 +19,10 @@ import numpy as np
 
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
+from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
-from ._linprog_highs import _linprog_highs
 from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
                            _linprog_rs_doc, _linprog_simplex_doc,
                            _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
@@ -407,7 +407,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     For new code involving `linprog`, we recommend explicitly choosing one of
     these three method values.
 
-    .. versionadded:: 1.5.0
+    .. versionadded:: 1.6.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm supports sparse constraint matrices and

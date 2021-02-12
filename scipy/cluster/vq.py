@@ -368,6 +368,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        codebook[i] is represented with the code i. The centroids
        and codes generated represent the lowest distortion seen,
        not necessarily the globally minimal distortion.
+       Note that the number of centroids is not necessarily the same as the
+       ``k_or_guess`` parameter, because centroids assigned to no observations
+       are removed during iterations.
 
     distortion : float
        The mean (non-squared) Euclidean distance between the observations
@@ -383,6 +386,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     whiten : must be called prior to passing an observation matrix
        to kmeans.
+
+    Notes
+    -----
+    For more functionalities or optimal performance, you can use
+    `sklearn.cluster.KMeans <https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html>`_.
+    `This <https://hdbscan.readthedocs.io/en/latest/performance_and_scalability.html#comparison-of-high-performance-implementations>`_
+    is a benchmark result of several implementations.
 
     Examples
     --------

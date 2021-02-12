@@ -329,12 +329,14 @@ def geometric_transform(input, mapping, output_shape=None,
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
     if complex_output:
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter,
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter,
                       output_shape=output_shape,
                       extra_arguments=extra_arguments,
                       extra_keywords=extra_keywords)
-        geometric_transform(input.real, mapping, output=output.real, **kwargs)
-        geometric_transform(input.imag, mapping, output=output.imag, **kwargs)
+        geometric_transform(input.real, mapping, output=output.real,
+                            cval=numpy.real(cval), **kwargs)
+        geometric_transform(input.imag, mapping, output=output.imag,
+                            cval=numpy.imag(cval), **kwargs)
         return output
 
     if prefilter and order > 1:
@@ -437,9 +439,11 @@ def map_coordinates(input, coordinates, output=None, order=3,
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
     if complex_output:
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        map_coordinates(input.real, coordinates, output=output.real, **kwargs)
-        map_coordinates(input.imag, coordinates, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        map_coordinates(input.real, coordinates, output=output.real,
+                        cval=numpy.real(cval), **kwargs)
+        map_coordinates(input.imag, coordinates, output=output.imag,
+                        cval=numpy.imag(cval), **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -543,7 +547,10 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         raise RuntimeError('spline order not supported')
     input = numpy.asarray(input)
     if output_shape is None:
-        output_shape = input.shape
+        if isinstance(output, numpy.ndarray):
+            output_shape = output.shape
+        else:
+            output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
     complex_output = numpy.iscomplexobj(input)
@@ -551,9 +558,11 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
                                      complex_output=complex_output)
     if complex_output:
         kwargs = dict(offset=offset, output_shape=output_shape, order=order,
-                      mode=mode, cval=cval, prefilter=prefilter)
-        affine_transform(input.real, matrix, output=output.real, **kwargs)
-        affine_transform(input.imag, matrix, output=output.imag, **kwargs)
+                      mode=mode, prefilter=prefilter)
+        affine_transform(input.real, matrix, output=output.real,
+                         cval=numpy.real(cval), **kwargs)
+        affine_transform(input.imag, matrix, output=output.imag,
+                         cval=numpy.imag(cval), **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -597,7 +606,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             "SciPy 0.18.0."
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
-                             mode, cval, npad)
+                             mode, cval, npad, False)
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
                                       output, order, mode, cval, npad, None,
@@ -655,9 +664,11 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         # import under different name to avoid confusion with shift parameter
         from scipy.ndimage.interpolation import shift as _shift
 
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        _shift(input.real, shift, output=output.real, **kwargs)
-        _shift(input.imag, shift, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        _shift(input.real, shift, output=output.real, cval=numpy.real(cval),
+               **kwargs)
+        _shift(input.imag, shift, output=output.imag, cval=numpy.imag(cval),
+               **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -673,13 +684,13 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     if not shift.flags.contiguous:
         shift = shift.copy()
     _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval,
-                         npad)
+                         npad, False)
     return output
 
 
 @docfiller
 def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
-         prefilter=True):
+         prefilter=True, *, grid_mode=False):
     """
     Zoom an array.
 
@@ -698,6 +709,22 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     %(mode_interp_constant)s
     %(cval)s
     %(prefilter)s
+    grid_mode : bool, optional
+        If False, the distance from the pixel centers is zoomed. Otherwise, the
+        distance including the full pixel extent is used. For example, a 1d
+        signal of length 5 is considered to have length 4 when `grid_mode` is
+        False, but length 5 when `grid_mode` is True. See the following
+        visual illustration:
+
+        .. code-block:: text
+
+                | pixel 1 | pixel 2 | pixel 3 | pixel 4 | pixel 5 |
+                     |<-------------------------------------->|
+                                        vs.
+                |<----------------------------------------------->|
+
+        The starting point of the arrow in the diagram above corresponds to
+        coordinate location 0 in each mode.
 
     Returns
     -------
@@ -747,9 +774,11 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         # import under different name to avoid confusion with zoom parameter
         from scipy.ndimage.interpolation import zoom as _zoom
 
-        kwargs = dict(order=order, mode=mode, cval=cval, prefilter=prefilter)
-        _zoom(input.real, zoom, output=output.real, **kwargs)
-        _zoom(input.imag, zoom, output=output.imag, **kwargs)
+        kwargs = dict(order=order, mode=mode, prefilter=prefilter)
+        _zoom(input.real, zoom, output=output.real, cval=numpy.real(cval),
+              **kwargs)
+        _zoom(input.imag, zoom, output=output.imag, cval=numpy.imag(cval),
+              **kwargs)
         return output
     if prefilter and order > 1:
         padded, npad = _prepad_for_spline_filter(input, mode, cval)
@@ -758,16 +787,35 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     else:
         npad = 0
         filtered = input
+    if grid_mode:
+        # warn about modes that may have surprising behavior
+        suggest_mode = None
+        if mode == 'constant':
+            suggest_mode = 'grid-constant'
+        elif mode == 'wrap':
+            suggest_mode = 'grid-wrap'
+        if suggest_mode is not None:
+            warnings.warn(
+                ("It is recommended to use mode = {} instead of {} when "
+                 "grid_mode is True."
+                ).format(suggest_mode, mode)
+            )
     mode = _ni_support._extend_mode_to_code(mode)
 
-    zoom_div = numpy.array(output_shape, float) - 1
+    zoom_div = numpy.array(output_shape)
+    zoom_nominator = numpy.array(input.shape)
+    if not grid_mode:
+        zoom_div -= 1
+        zoom_nominator -= 1
+
     # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
-    zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
+    zoom = numpy.divide(zoom_nominator, zoom_div,
                         out=numpy.ones_like(input.shape, dtype=numpy.float64),
                         where=zoom_div != 0)
     zoom = numpy.ascontiguousarray(zoom)
-    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval, npad)
+    _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval, npad,
+                         grid_mode)
     return output
 
 
