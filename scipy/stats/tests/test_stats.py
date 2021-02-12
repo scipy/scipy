@@ -4452,9 +4452,7 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
-    st_skew_less, st_kurt_less = st_skew, st_kurt
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
-    st_skew_greater, st_kurt_greater = st_skew, st_kurt
     pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
     x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
@@ -4463,15 +4461,15 @@ def test_normalitytests():
     check_named_results(stats.normaltest(x), attributes)
     assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
     assert_array_almost_equal(stats.skewtest(x, alternative='less'),
-                              (st_skew_less, pv_skew_less))
+                              (st_skew, pv_skew_less))
     assert_array_almost_equal(stats.skewtest(x, alternative='greater'),
-                              (st_skew_greater, pv_skew_greater))
+                              (st_skew, pv_skew_greater))
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
     assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
-                              (st_kurt_less, pv_kurt_less))
+                              (st_kurt, pv_kurt_less))
     assert_array_almost_equal(stats.kurtosistest(x, alternative='greater'),
-                              (st_kurt_greater, pv_kurt_greater))
+                              (st_kurt, pv_kurt_greater))
     check_named_results(stats.kurtosistest(x), attributes)
 
     # Test axis=None (equal to axis=0 for 1-D input)
