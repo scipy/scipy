@@ -77,19 +77,19 @@ ENV DEBIAN_FRONTEND noninteractive
 # hadolint ignore=DL3008
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
-    software-properties-common \
     build-essential \
-    libatlas-base-dev \
-    vim \
+    ca-certificates \
     curl \
-    wget \
     git \
-    ca-certificates && \
+    libatlas-base-dev \
+    software-properties-common \
+    vim \
+    wget \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* &&\
-    rm -rf /var/cache/apt/* && \
+    rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/*
+    rm -rf /var/cache/apt/* && \
+    rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
 
@@ -102,10 +102,10 @@ RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashr
 # -----------------------------------------------------------------------------
 
 # Enable basic vim defaults in ~/.vimrc
-RUN echo "set number" >> ~/.vimrc && \
-    echo "syntax enable" >> ~/.vimrc && \
-    echo "filetype plugin indent on" >> ~/.vimrc && \
-    echo "set colorcolumn=80" >> ~/.vimrc
+RUN echo "filetype plugin indent on" >> ~/.vimrc && \
+    echo "set colorcolumn=80" >> ~/.vimrc && \
+    echo "set number" >> ~/.vimrc && \
+    echo "syntax enable" >> ~/.vimrc
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----
