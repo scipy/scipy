@@ -4538,19 +4538,26 @@ class TestRankSums(object):
         # http://www.sthda.com/english/wiki/unpaired-two-samples-wilcoxon-test-in-r
         women_weight = [38.9, 61.2, 73.3, 21.8, 63.4, 64.6, 48.4, 48.8, 48.5]
         men_weight = [67.8, 60, 63.4, 76, 89.4, 73.3, 67.3, 61.3, 62.4]
-        pvalue = 0.024194132827
-        pvalue_less, pvalue_greater = 0.0120970664135, 0.987902933586
+        n1, n2 = len(women_weight), len(men_weight)
+        statistic = stats.mannwhitneyu(women_weight, men_weight,
+                                       alternative='two-sided',
+                                       use_continuity=False).statistic
+        mu = n1*n2/2.0
+        sd = np.sqrt(n1 * n2 * (n1+n2+1) / 12.0)
+        z = (statistic - mu) / sd
+        pvalue = 2.0*stats.norm.sf(abs(z))
+        pvalue_less, pvalue_greater = pvalue / 2, 1 - pvalue / 2
         res = stats.ranksums(women_weight, men_weight)
         res_less = stats.ranksums(women_weight, men_weight,
                                   alternative='less')
         res_greater = stats.ranksums(women_weight, men_weight,
                                      alternative='greater')
         attributes = ('statistic', 'pvalue')
-        assert_array_almost_equal(res.pvalue, pvalue, decimal=2)
+        assert_array_almost_equal(res.pvalue, pvalue, decimal=6)
         assert_array_almost_equal(res_less.pvalue, pvalue_less,
-                                  decimal=3)
+                                  decimal=6)
         assert_array_almost_equal(res_greater.pvalue, pvalue_greater,
-                                  decimal=3)
+                                  decimal=6)
         check_named_results(res, attributes)
         assert_raises(ValueError, stats.ranksums, women_weight, men_weight,
                       alternative='foobar')
