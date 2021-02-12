@@ -679,7 +679,7 @@ BarnardExactResult = make_dataclass(
 )
 
 
-def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
+def barnard_exact(table, alternative="two-sided", pooled=True, shgo_n=32):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
     Parameters
@@ -699,12 +699,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
         t-test) or unpooled variance (Welch's t-test). Default is ``True`` :
         Statistic test is computed using pooled variance.
 
-    n_iter : int, optional
-        Number of iterations in shgo's alrogithm optimum search. Default is 1.
-        Must be non-negative. In most cases, 3 iterations is perfectly
-        enough to reach good precision. Above a certain number (around 6
-        iterations), the result will not change anymore. Note that every
-        iteration added comes with a performance cost.
+    shgo_n : int, optional
+        Number of sampling points used in the construction of the sobol
+        sampling method. Note that this argument must be a power of two.
+        Default is 32. Must be non-negative. In most cases, 32 points is
+        enaugh to reach good precision. More points come with performance cost
 
     Returns
     -------
@@ -857,10 +856,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
     should only be used when both sets of marginals are fixed.
 
     """
-    if n_iter <= 0:
+    if shgo_n <= 0:
         raise ValueError(
             "Number of iterations `num_it` must be strictly positive, "
-            f"found {n_iter!r}"
+            f"found {shgo_n!r}"
         )
 
     table = np.asarray(table, dtype=np.int64)
@@ -921,24 +920,25 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n_iter=1):
     x1_sum_x2_log_comb = x1_log_comb[x1] + x2_log_comb[x2]
 
     result = shgo(
-        _binomial_maximisation_of_p_value_with_nuisance_param,
+        _get_binomial_log_p_value_with_nuisance_param,
         args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
         bounds=((0, 1),),
-        n=32,  # Need to be a power of two since it is used by sobol
+        n=shgo_n,  # Need to be a power of two since it is used by sobol
         sampling_method="sobol",
-        iters=n_iter,
     )
 
-    p_value = np.clip(-result.fun, a_min=0, a_max=1)
+    # result.fun is the negative log pvalue and therefore needs to be
+    # changed before return
+    p_value = np.clip(np.exp(-result.fun), a_min=0, a_max=1)
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
-def _binomial_maximisation_of_p_value_with_nuisance_param(
+def _get_binomial_log_p_value_with_nuisance_param(
     nuisance_param, x1_sum_x2, x1_sum_x2_log_comb, index_arr
 ):
     r"""
-    Maximisation of the pvalue in respect of a nuisance parameter considering
-    a 2x2 sample space using the `scipy.optimize.shgo` algorithm.
+    Compute the log pvalue in respect of a nuisance parameter considering
+    a 2x2 sample space.
 
     Parameters
     ----------
@@ -965,15 +965,16 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
 
     Barnard exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
-    maxima, this function return the negative pvalue in respect of the
-    nuisance parameter passed in params. This p-value is then used in `shgo`
-    to find the minimum negative pvalue which is our maximum pvalue.
+    maxima, this function return the negative log pvalue in respect of the
+    nuisance parameter passed in params. This negative log p-value is then
+    used in `shgo` to find the minimum negative pvalue which is our maximum
+    pvalue.
 
     Also, to compute the different combination used in the
     p-values' computation formula, this function uses `gammaln` which is
     more tolerant for large value than `scipy.special.comb`. `gammaln` gives
-    a log combination. For the little precision lost, we gain a lot of
-    performance.
+    a log combination. For the little precision lost, performance are a lot
+    imprioved.
     """
     t1, t2, _ = x1_sum_x2.shape
     n = t1 + t2 - 2
@@ -995,18 +996,22 @@ def _binomial_maximisation_of_p_value_with_nuisance_param(
         nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (n - x1_sum_x2)
         nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
 
-        tmp_values_arr = np.exp(
-            x1_sum_x2_log_comb
-            + nuisance_power_x1_x2
-            + nuisance_power_n_minus_x1_x2
+        tmp_log_values_arr = (
+                x1_sum_x2_log_comb
+                + nuisance_power_x1_x2
+                + nuisance_power_n_minus_x1_x2
         )
 
-    tmp_values_arr /= tmp_values_arr.sum(axis=(0, 1)).reshape(1, 1, -1)
-    # This operation compensate numerical errors because sums of
-    # p_values_arr should always be equal to one.
+    tmp_values_from_index = tmp_log_values_arr[index_arr]
 
-    p_value = tmp_values_arr[index_arr].sum(axis=0)
+    # To have better result's precision, the log pvalue is taken here.
+    # Indeed, pvalue is included inside [0, 1] interval. Passing the
+    # pvalue to log makes the interval a lot bigger ([-inf, 0]), and thus
+    # help us to achieve better precision
+    with np.errstate(divide="ignore", invalid="ignore"):
+        tmp = np.exp(tmp_values_from_index).sum()
+        log_pvalue = np.log(tmp, out=np.full_like(tmp, -np.inf), where = tmp
+                                                                         > 0)
 
-    # Since shgo find the minima, we need to take the negative value of the
-    # pvalue
-    return - p_value
+    # Since shgo find the minima, minus log pvalue is returned
+    return - log_pvalue

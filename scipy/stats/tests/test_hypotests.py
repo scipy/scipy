@@ -476,7 +476,7 @@ class TestBarnardExact(object):
             " found 0"
         )
         with assert_raises(ValueError, match=error_msg):
-            barnard_exact([[1, 2], [3, 4]], n_iter=0)
+            barnard_exact([[1, 2], [3, 4]], shgo_n=0)
 
         # test we raise an error for wrong shape of input.
         error_msg = "The input `table` must be of shape \\(2, 2\\)."
