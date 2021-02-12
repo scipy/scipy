@@ -198,7 +198,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             if np.size(scale) == 1:
                 # to account for the legacy behavior having the exact same cast
                 scale = float(scale)
-            if np.iscomplexobj(scale):
+            elif np.iscomplexobj(scale):
                 raise TypeError("scale contains complex elements, "
                                 "must be real.")
             # Scale initial matrix with ``scale * np.eye(n)``
