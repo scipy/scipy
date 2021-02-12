@@ -455,7 +455,7 @@ class TestGenHyperbolic(object):
 
     def test_pdf_t(self):
         # Test Against T-Student with 1 - 30 df
-        df = np.linspace(1, 30, 20)
+        df = np.linspace(1, 30, 10)
 
         # in principle alpha should be zero in practice for big lmbdas
         # alpha cannot be too small else pdf does not integrate
@@ -464,7 +464,7 @@ class TestGenHyperbolic(object):
         args = (-df/2, alpha, beta)
 
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
-        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[:, np.newaxis]
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
 
         assert_allclose(
             gh.pdf(x), stats.t.pdf(x, df),
@@ -473,7 +473,7 @@ class TestGenHyperbolic(object):
 
     def test_pdf_laplace(self):
         # Test Against Laplace with location param [-10, 10]
-        loc = np.linspace(-10, 10, 20)
+        loc = np.linspace(-10, 10, 10)
 
         # in principle delta should be zero in practice for big loc delta
         # cannot be too small else pdf does not integrate
@@ -485,7 +485,7 @@ class TestGenHyperbolic(object):
         # ppf does not integrate for scale < 5e-4
         # therefore using simple linspace to define the support
         gh = stats.genhyperbolic(*args, loc=loc, scale=delta)
-        x = np.linspace(-20, 20, 100)[:, np.newaxis]
+        x = np.linspace(-20, 20, 50)[:, np.newaxis]
 
         assert_allclose(
             gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
@@ -496,17 +496,17 @@ class TestGenHyperbolic(object):
         # Test Against NIG with varying alpha/beta/delta/mu
 
         alpha, beta, delta, mu = (
-                np.linspace(1, 20, 20),
-                np.linspace(0, 19, 20)*np.float_power(-1, range(20)),
-                np.linspace(1, 1, 20),
-                np.linspace(-100, 100, 20)
+                np.linspace(1, 20, 10),
+                np.linspace(0, 19, 10)*np.float_power(-1, range(10)),
+                np.linspace(1, 1, 10),
+                np.linspace(-100, 100, 10)
                 )
 
         lmbda = - 0.5
         args = (lmbda, alpha * delta, beta * delta)
 
         gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
-        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 100)[:, np.newaxis]
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
 
         assert_allclose(
             gh.pdf(x), stats.norminvgauss.pdf(

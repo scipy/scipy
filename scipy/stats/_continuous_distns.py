@@ -3000,7 +3000,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`b = \beta\delta`, :math:`p = \lambda`,
     :math:`scale=\delta` and :math:`loc=\mu`
 
-    Stats are based on [3]_ and [4]_.
+    Moments are implemented based on [3]_ and [4]_.
 
     For the distributions that are a special case such as Student's t,
     it is not recommended to rely on the implementation of genhyperbolic.
