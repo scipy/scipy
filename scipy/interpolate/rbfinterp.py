@@ -163,7 +163,7 @@ class RBFInterpolator:
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree.
 
-    kernel : str, optional
+    kernel : str or callable, optional
         Type of RBF. This should be one of:
 
             - 'linear'                       : ``-r``
@@ -429,7 +429,7 @@ class KNearestRBFInterpolator:
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0.
 
-    kernel : str, optional
+    kernel : str or callable, optional
         Type of RBF. This should be one of:
 
             - 'linear'                       : ``-r``

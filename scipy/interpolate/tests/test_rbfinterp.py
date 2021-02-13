@@ -280,6 +280,8 @@ class _TestRBFInterpolator:
             self.build(x, y)(xitp)
 
     def test_pickleable(self):
+        # Make sure we can pickle and unpickle the interpolant without any
+        # changes in the behavior
         x = np.random.uniform(0.0, 3.0, (50, 1))
         y = _1d_test_function(x)
         xitp = np.random.uniform(0.0, 3.0, (50, 1))
@@ -287,6 +289,15 @@ class _TestRBFInterpolator:
         yitp1 = interp(xitp)
         yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
         assert_array_equal(yitp1, yitp2)
+
+    def test_callable_kernel(self):
+        # Make sure we can specify kernel as a callable
+        x = np.random.uniform(0.0, 3.0, (50, 1))
+        y = _1d_test_function(x)
+        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+        yitp1 = self.build(x, y, kernel=lambda r: -r, degree=0)(xitp)
+        yitp2 = self.build(x, y, kernel='linear')(xitp)
+        assert_allclose(yitp1, yitp2)
 
 
 class TestRBFInterpolator(_TestRBFInterpolator):
