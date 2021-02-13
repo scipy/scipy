@@ -57,6 +57,7 @@ MAJOR = 1
 MINOR = 7
 MICRO = 0
 ISRELEASED = False
+IS_RELEASE_BRANCH = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -533,6 +534,8 @@ def setup_package():
     # Rewrite the version file every time
     write_version_py()
 
+    cmdclass = {'sdist': sdist_checked}
+
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
@@ -547,7 +550,7 @@ def setup_package():
             "Source Code": "https://github.com/scipy/scipy",
         },
         license='BSD',
-        cmdclass={'sdist': sdist_checked},
+        cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
