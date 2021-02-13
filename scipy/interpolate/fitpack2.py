@@ -1233,17 +1233,24 @@ class LSQBivariateSpline(BivariateSpline):
 
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
-        tx1 = zeros((nx,), float)
-        ty1 = zeros((ny,), float)
+        # The Fortran subroutine "surfit" (called as dfitpack.surfit_lsq)
+        # requires that the knot arrays passed as input should be "real
+        # array(s) of dimension nmax" where "nmax" refers to the greater of nx
+        # and ny. We pad the tx1/ty1 arrays here so that this is satisfied, and
+        # slice them to the desired sizes upon return.
+        nmax = max(nx, ny)
+        tx1 = zeros((nmax,), float)
+        ty1 = zeros((nmax,), float)
         tx1[kx+1:nx-kx-1] = tx
         ty1[ky+1:ny-ky-1] = ty
 
         xb, xe, yb, ye = bbox
-        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
-                                                   xb, xe, yb, ye,
+        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, nx, tx1, ny, ty1,
+                                                   w, xb, xe, yb, ye,
                                                    kx, ky, eps, lwrk2=1)
         if ier > 10:
-            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
+            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z,
+                                                       nx, tx1, ny, ty1, w,
                                                        xb, xe, yb, ye,
                                                        kx, ky, eps, lwrk2=ier)
         if ier in [0, -1, -2]:  # normal return
@@ -1256,7 +1263,7 @@ class LSQBivariateSpline(BivariateSpline):
                 message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tx1, ty1, c
+        self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky
 
 

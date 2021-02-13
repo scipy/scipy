@@ -1,6 +1,7 @@
 # distutils: language=c++
 # cython: language_level=3
 
+
 from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
@@ -10,24 +11,24 @@ from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
 
-from HighsIO cimport (
+from .HighsIO cimport (
     ML_NONE,
 )
-from HConst cimport (
+from .HConst cimport (
     PrimalDualStatusSTATUS_FEASIBLE_POINT,
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
     HighsOptionTypeDOUBLE,
     HighsOptionTypeSTRING,
 )
-from Highs cimport Highs
-from HighsStatus cimport (
+from .Highs cimport Highs
+from .HighsStatus cimport (
     HighsStatus,
     HighsStatusError,
     HighsStatusWarning,
     HighsStatusOK,
 )
-from HighsLp cimport (
+from .HighsLp cimport (
     HighsLp,
     HighsSolution,
     HighsModelStatus,
@@ -45,8 +46,8 @@ from HighsLp cimport (
     HighsModelStatusREACHED_TIME_LIMIT,
     HighsModelStatusREACHED_ITERATION_LIMIT,
 )
-from HighsInfo cimport HighsInfo
-from HighsOptions cimport (
+from .HighsInfo cimport HighsInfo
+from .HighsOptions cimport (
     HighsOptions,
     OptionRecord,
     OptionRecordBool,
@@ -230,7 +231,7 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
-def highs_wrapper(
+def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
         int[::1] aindex,
