@@ -197,6 +197,14 @@ HighsStatus solveLp(HighsModelObject& model, const string message) {
     if (return_status == HighsStatus::Error) return return_status;
     if (imprecise_solution) {
       // IPX+crossover has not obtained a solution satisfying the tolerances.
+      HighsLogMessage(
+          options.logfile, HighsMessageType::WARNING,
+          "Imprecise solution returned from IPX so use simplex to clean up");
+      // Reset the return status (that should be HighsStatus::Warning)
+      // since it will now be determined by the outcome of the simplex
+      // solve
+      assert(return_status == HighsStatus::Warning);
+      return_status = HighsStatus::OK;
       // Use the simplex method to clean up
       call_status = solveLpSimplex(model);
       return_status =
