@@ -515,7 +515,7 @@ def configuration(parent_package='', top_path=None):
 
 def setup_package():
     # In maintenance branch, change np_maxversion to N+3 if numpy is at N
-    # Update here, in scipy/__init__.py and in pyproject.toml
+    # Update here and in scipy/__init__.py
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10

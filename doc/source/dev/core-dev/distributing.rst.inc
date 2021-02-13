@@ -37,6 +37,7 @@ are:
   MKL are all known to work)
 - Cython_
 - setuptools_
+- pybind11_
 
 *Conditional build-time dependencies:*
 
@@ -61,29 +62,21 @@ aren't needed for SciPy to function correctly
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There are some serious issues with how Python packaging tools handle
+There are some issues with how Python packaging tools handle
 dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.
 
 SciPy only reports its dependency on NumPy via ``install_requires`` if NumPy
-isn't installed at all on a system.
-
-The situation with ``setup_requires`` is even worse; pip_ doesn't handle that
-keyword at all, while ``setuptools`` has issues (here's a `current one
-<https://bitbucket.org/pypa/setuptools/issues/391>`_) and invokes
-``easy_install`` which comes with its own set of problems (note that SciPy doesn't
-support ``easy_install`` at all anymore; issues specific to it will be closed
-as "wontfix").
-
-.. note::
-
-    This situation is changing, pip_ versions that don't support PEP
-    517/518 (``pyproject.toml`` and build isolation, avoiding ``setup_requires``),
-    are slowly disappearing.
+isn't installed at all on a system, or when building wheels with
+``bdist_wheel``. SciPy no longer uses ``setup_requires`` (which in the past
+invoked ``easy_install``); build dependencies are now handled only via
+``pyproject.toml``. ``pyproject.toml`` relies on PEP 517; ``pip`` has
+``--no-use-pep517`` and ``--no-build-isolation`` flags that may ignore
+``pyproject.toml`` or treat it differently - if users use those flags, they
+are responsible for installing the correct build dependencies themselves.
 
 
 .. _numpy-version-ranges:
-
 
 Version ranges for NumPy and other dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,7 +98,7 @@ the upper bound to the newest already-released version, then as soon as a new
 NumPy version is released there will be no matching SciPy version that works
 with it. Given that NumPy and SciPy both release in a 6-monthly cadence and
 that features that get deprecated in NumPy should stay around for another two
-releases, we specify the upper bound as ``<1.xx+2.0`` (where ``xx`` is the
+releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx`` is the
 minor version of the latest already-released NumPy.
 
 
@@ -212,6 +205,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
 .. _Cython: https://cython.org
+.. _pybind11: https://github.com/pybind/pybind11
 .. _setuptools: https://bitbucket.org/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/

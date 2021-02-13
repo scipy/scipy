@@ -66,6 +66,21 @@ master branch and add release notes for that new version.  Send an email to
 scipy-dev to let people know that you've done this.
 
 
+Updating upper bounds of dependencies
+-------------------------------------
+In master we do not set upper bounds, because we want to test new releases or
+development versions of dependencies there. In a maintenance branch however,
+the goal is to be able to create releases that stay working for years. Hence
+correct upper bounds must be set. The following places must be updated after
+creating a maintenance branch:
+
+- ``pyproject.toml``: all build-time dependencies
+- ``setup.py``: supported Python and NumPy versions
+- ``scipy/__init__.py``: for NumPy version check
+
+Each file has comments describing how to set the correct upper bounds.
+
+
 Tagging a release
 -----------------
 First ensure that you have set up GPG correctly.  See
