@@ -330,7 +330,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
 def _binary_search_for_binom_tst(a, d, lo, hi):
     r"""
-    Conducts an implicit binary search on a function specified by `a.
+    Conducts an implicit binary search on a function specified by `a`.
 
     Meant to be used on the binomial PMF for the case of two-sided tests
     to obtain the value on the other side of the mode where the tail
