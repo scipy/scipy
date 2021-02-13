@@ -2630,12 +2630,21 @@ class _TestSlicingAssign(object):
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
+        assert_raises(ValueError, A.__setitem__, (slice(4), 0),
+                      [[1, 2], [3, 4]])
 
     def test_assign_empty_spmatrix(self):
         A = self.spmatrix(np.ones((2, 3)))
         B = self.spmatrix((1, 2))
         A[1, :2] = B
         assert_array_equal(A.todense(), [[1, 1, 1], [0, 0, 1]])
+
+    def test_assign_1d_slice(self):
+        A = self.spmatrix(np.ones((3, 3)))
+        x = np.zeros(3)
+        A[:, 0] = x
+        A[1, :] = x
+        assert_array_equal(A.todense(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
 class _TestFancyIndexing(object):
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -3514,6 +3523,11 @@ class TestCSR(sparse_test_class()):
         ij = vstack((row,col))
         csr = csr_matrix((data,ij),(4,3))
         assert_array_equal(arange(12).reshape(4,3),csr.todense())
+        
+        # using Python lists and a specified dtype
+        csr = csr_matrix(([2**63 + 1, 1], ([0, 1], [0, 1])), dtype=np.uint64)
+        dense = array([[2**63 + 1, 0], [0, 1]], dtype=np.uint64)
+        assert_array_equal(dense, csr.toarray())
 
     def test_constructor5(self):
         # infer dimensions from arrays
@@ -3627,6 +3641,7 @@ class TestCSR(sparse_test_class()):
         indptr = np.array([0, 2])
         M = csr_matrix((data, sorted_inds, indptr)).copy()
         assert_equal(True, M.has_sorted_indices)
+        assert type(M.has_sorted_indices) == bool
 
         M = csr_matrix((data, unsorted_inds, indptr)).copy()
         assert_equal(False, M.has_sorted_indices)
@@ -3658,6 +3673,7 @@ class TestCSR(sparse_test_class()):
 
         M = csr_matrix((data, indices, indptr)).copy()
         assert_equal(False, M.has_canonical_format)
+        assert type(M.has_canonical_format) == bool
 
         # set by deduplicating
         M.sum_duplicates()
@@ -4077,12 +4093,15 @@ class TestCOO(sparse_test_class(getset=False,
         # unsorted triplet format
         row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = array([6., 10., 3., 9., 1., 4.,
-                              11., 2., 8., 5., 7.])
+        data = array([6., 10., 3., 9., 1., 4., 11., 2., 8., 5., 7.])
 
         coo = coo_matrix((data,(row,col)),(4,3))
-
         assert_array_equal(arange(12).reshape(4,3),coo.todense())
+
+        # using Python lists and a specified dtype
+        coo = coo_matrix(([2**63 + 1, 1], ([0, 1], [0, 1])), dtype=np.uint64)
+        dense = array([[2**63 + 1, 0], [0, 1]], dtype=np.uint64)
+        assert_array_equal(dense, coo.toarray())
 
     def test_constructor2(self):
         # unsorted triplet format with duplicates (which are summed)
@@ -4299,6 +4318,26 @@ class TestBSR(sparse_test_class(getset=False,
         indptr = np.array([0, n], dtype=np.int32)
         indices = np.arange(n, dtype=np.int32)
         bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+
+    def test_constructor5(self):
+        # check for validations introduced in gh-13400
+        n = 8
+        data_1dim = np.ones(n)
+        data = np.ones((n, n, n))
+        indptr = np.array([0, n])
+        indices = np.arange(n)
+
+        with assert_raises(ValueError):
+            # data ndim check
+            bsr_matrix((data_1dim, indices, indptr))
+
+        with assert_raises(ValueError):
+            # invalid blocksize
+            bsr_matrix((data, indices, indptr), blocksize=(1, 1, 1))
+
+        with assert_raises(ValueError):
+            # mismatching blocksize
+            bsr_matrix((data, indices, indptr), blocksize=(1, 1))
 
     def test_bsr_tocsr(self):
         # check native conversion from BSR to CSR

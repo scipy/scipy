@@ -2464,7 +2464,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               threshold of 0.8 do::
 
                   MR = maxRstat(Z, R, 3)
-                  cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+                  fcluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
           ``maxclust_monocrit`` :
               Forms a flat cluster from a
@@ -2477,7 +2477,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               clusters are formed, do::
 
                   MI = maxinconsts(Z, R)
-                  cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+                  fcluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.
@@ -3158,7 +3158,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         unspecified, the size based on the number of nodes in the
         dendrogram.
     leaf_label_func : lambda or function, optional
-        When leaf_label_func is a callable function, for each
+        When ``leaf_label_func`` is a callable function, for each
         leaf with cluster index :math:`k < 2n-1`. The function
         is expected to return a string with the label for the
         leaf.
@@ -3177,9 +3177,15 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                     return str(id)
                 else:
                     return '[%d %d %1.2f]' % (id, count, R[n-id,3])
+
             # The text for the leaf nodes is going to be big so force
             # a rotation of 90 degrees.
             dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
+
+            # leaf_label_func can also be used together with ``truncate_mode`` parameter,
+            # in which case you will get your leaves labeled after truncation:
+            dendrogram(Z, leaf_label_func=llf, leaf_rotation=90,
+                       truncate_mode='level', p=2)
 
     show_contracted : bool, optional
         When True the heights of non-singleton nodes contracted
@@ -3548,7 +3554,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # Actual indices of a and b
     aa = int(Z[i - n, 0])
     ab = int(Z[i - n, 1])
-    if aa > n:
+    if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
         # The distance between a's two direct children.
@@ -3556,14 +3562,14 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     else:
         na = 1
         da = 0.0
-    if ab > n:
+    if ab >= n:
         nb = Z[ab - n, 3]
         db = Z[ab - n, 2]
     else:
         nb = 1
         db = 0.0
 
-    if count_sort == 'ascending' or count_sort:
+    if count_sort == 'ascending' or count_sort == True:
         # If a has a count greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if na > nb:
@@ -3584,7 +3590,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         else:
             ua = ab
             ub = aa
-    elif distance_sort == 'ascending' or distance_sort:
+    elif distance_sort == 'ascending' or distance_sort == True:
         # If a has a distance greater than b, it and its descendents should
         # be drawn to the right. Otherwise, to the left.
         if da > db:

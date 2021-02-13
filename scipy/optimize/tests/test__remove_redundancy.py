@@ -13,9 +13,11 @@ from numpy.testing import (
     assert_equal)
 
 from .test_linprog import magic_square
-from scipy.optimize._remove_redundancy import _remove_redundancy
-from scipy.optimize._remove_redundancy import _remove_redundancy_dense
-from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_svd
+from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_dense
+from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_id
+
 from scipy.sparse import csc_matrix
 
 
@@ -48,6 +50,19 @@ def _assert_success(
             err_msg="converged to an unexpected solution",
             rtol=rtol,
             atol=atol)
+
+
+def redundancy_removed(A, B):
+    """Checks whether a matrix contains only independent rows of another"""
+    for rowA in A:
+        # `rowA in B` is not a reliable check
+        for rowB in B:
+            if np.all(rowA == rowB):
+                break
+        else:
+            return False
+    return A.shape[0] == np.linalg.matrix_rank(A) == np.linalg.matrix_rank(B)
+
 
 class RRCommonTests(object):
     def test_no_redundancy(self):
@@ -141,12 +156,8 @@ class RRCommonTests(object):
         A[4, 2:] = 0
         b = np.zeros(A.shape[0])
 
-        A2 = A[[0, 1, 3, 4], :]
-        b2 = np.zeros(4)
-
         A1, b1, status, message = self.rr(A, b)
-        assert_allclose(A1, A2)
-        assert_allclose(b1, b2)
+        assert_(redundancy_removed(A1, A))
         assert_equal(status, 0)
 
     def test_dense2(self):
@@ -155,8 +166,7 @@ class RRCommonTests(object):
         A[-1, :] = 1
         b = np.zeros(A.shape[0])
         A1, b1, status, message = self.rr(A, b)
-        assert_allclose(A1, A[:-1, :])
-        assert_allclose(b1, b[:-1])
+        assert_(redundancy_removed(A1, A))
         assert_equal(status, 0)
 
     def test_dense3(self):
@@ -166,8 +176,7 @@ class RRCommonTests(object):
         b = np.random.rand(A.shape[0])
         b[-1] = np.sum(b[:-1])
         A1, b1, status, message = self.rr(A, b)
-        assert_allclose(A1, A[:-1, :])
-        assert_allclose(b1, b[:-1])
+        assert_(redundancy_removed(A1, A))
         assert_equal(status, 0)
 
     def test_m_gt_n_sparse(self):
@@ -226,15 +235,21 @@ class RRCommonTests(object):
 
 class TestRRSVD(RRCommonTests):
     def rr(self, A, b):
-        return _remove_redundancy(A, b)
+        return _remove_redundancy_svd(A, b)
 
 
 class TestRRPivotDense(RRCommonTests):
     def rr(self, A, b):
-        return _remove_redundancy_dense(A, b)
+        return _remove_redundancy_pivot_dense(A, b)
+
+
+class TestRRID(RRCommonTests):
+    def rr(self, A, b):
+        return _remove_redundancy_id(A, b)
 
 
 class TestRRPivotSparse(RRCommonTests):
     def rr(self, A, b):
-        A1, b1, status, message = _remove_redundancy_sparse(csc_matrix(A), b)
+        rr_res = _remove_redundancy_pivot_sparse(csc_matrix(A), b)
+        A1, b1, status, message = rr_res
         return A1.toarray(), b1, status, message

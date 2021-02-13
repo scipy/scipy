@@ -10,11 +10,11 @@
 
  Methods for Integrating Functions given fixed samples.
 
-   trapz         -- Use trapezoidal rule to compute integral from samples.
-   cumtrapz      -- Use trapezoidal rule to cumulatively compute integral.
-   simps         -- Use Simpson's rule to compute integral from samples.
-   romb          -- Use Romberg Integration to compute integral from
-                    (2**k + 1) evenly-spaced samples.
+   trapezoid            -- Use trapezoidal rule to compute integral.
+   cumulative_trapezoid -- Use trapezoidal rule to cumulatively compute integral.
+   simps                -- Use Simpson's rule to compute integral from samples.
+   romb                 -- Use Romberg Integration to compute integral from
+                        -- (2**k + 1) evenly-spaced samples.
 
    See the special module's orthogonal polynomials (special) for Gaussian
       quadrature roots and weights for other weighting factors and regions.

@@ -64,6 +64,7 @@ distcont = [
     ['kstwo', (10,)],
     ['kstwobign', ()],
     ['laplace', ()],
+    ['laplace_asymmetric', (2,)],
     ['levy', ()],
     ['levy_l', ()],
     ['levy_stable', (1.8, -0.5)],
@@ -71,7 +72,7 @@ distcont = [
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],
     ['lognorm', (0.95368226960575331,)],
-    ['loguniform', (0.01, 1)],
+    ['loguniform', (0.01, 1.25)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
     ['mielke', (10.4, 4.6)],
@@ -81,7 +82,7 @@ distcont = [
     ['nct', (14, 0.24045031331198066)],
     ['ncx2', (21, 1.0560465975116415)],
     ['norm', ()],
-    ['norminvgauss', (1., 0.5)],
+    ['norminvgauss', (1.25, 0.5)],
     ['pareto', (2.621716532144454,)],
     ['pearson3', (0.1,)],
     ['powerlaw', (1.6591133289905851,)],
@@ -90,12 +91,13 @@ distcont = [
     ['rayleigh', ()],
     ['rdist', (1.6,)],
     ['recipinvgauss', (0.63004267809369119,)],
-    ['reciprocal', (0.01, 1)],
+    ['reciprocal', (0.01, 1.25)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
+    ['skewcauchy', (0.5,)],
     ['skewnorm', (4.0,)],
     ['t', (2.7433514990818093,)],
-    ['trapz', (0.2, 0.8)],
+    ['trapezoid', (0.2, 0.8)],
     ['triang', (0.15785029824528218,)],
     ['truncexpon', (4.6907725456810478,)],
     ['truncnorm', (-1.0978730080013919, 2.7306754109031979)],
@@ -121,13 +123,15 @@ distdiscrete = [
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser', (0.6,)],  # re-enabled, numpy ticket:921
-    ['nbinom', (5, 0.5)],
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
+    ['nbinom', (5, 0.5)],
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.5,)],
+    ['zipfian', (0.75, 15)],
+    ['zipfian', (1.25, 10)],
     ['yulesimon', (11.0,)],
     ['nhypergeom', (20, 7, 1)]
 ]

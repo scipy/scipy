@@ -1,11 +1,9 @@
 import numpy as np
-from .common import Benchmark
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.optimize import linear_sum_assignment
     from scipy.spatial.distance import cdist
-except ImportError:
-    pass
 
 
 def random_uniform(shape):

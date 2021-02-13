@@ -452,6 +452,8 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
         A @ x == b
             x >= 0
 
+    User-facing documentation is in _linprog_doc.py.
+
     Parameters
     ----------
     c : 1-D array

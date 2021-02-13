@@ -109,6 +109,10 @@ class TestNextFastLen(object):
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
+    def test_keyword_args(self):
+        assert next_fast_len(11, real=True) == 12
+        assert next_fast_len(target=7, real=False) == 7
+
 
 class Test_init_nd_shape_and_axes(object):
 

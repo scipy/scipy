@@ -301,26 +301,19 @@ def parse_routine(name, args, types):
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
         arglist = get_arglist(I_type, T_type)
-        if T_type is None:
-            dispatch = "%s" % (I_type,)
-        else:
-            dispatch = "%s,%s" % (I_type, T_type)
-        if 'B' in arg_spec:
-            dispatch += ",npy_bool_wrapper"
 
         piece = """
         case %(j)s:"""
         if ret_spec == 'v':
             piece += """
-            (void)%(name)s<%(dispatch)s>(%(arglist)s);
+            (void)%(name)s(%(arglist)s);
             return 0;"""
         else:
             piece += """
-            return %(name)s<%(dispatch)s>(%(arglist)s);"""
+            return %(name)s(%(arglist)s);"""
         thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type,
                                       I_typenum=I_typenum, T_typenum=T_typenum,
-                                      arglist=arglist, name=name,
-                                      dispatch=dispatch)
+                                      arglist=arglist, name=name)
 
     thunk_content += """
     default:

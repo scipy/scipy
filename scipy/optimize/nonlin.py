@@ -272,7 +272,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
-    dx = np.inf
+    dx = np.full_like(x, np.inf)
     Fx = func(x)
     Fx_norm = norm(Fx)
 
@@ -942,6 +942,21 @@ class BroydenFirst(GenericBroyden):
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden1(fun, [0, 0])
+    >>> sol
+    array([0.84116396, 0.15883641])
+
     """
 
     def __init__(self, alpha=None, reduction_method='restart', max_rank=None):
@@ -1037,6 +1052,21 @@ class BroydenSecond(BroydenFirst):
 
        https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.broyden2(fun, [0, 0])
+    >>> sol
+    array([0.84116365, 0.15883529])
+
     """
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
@@ -1080,6 +1110,21 @@ class Anderson(GenericBroyden):
     References
     ----------
     .. [Ey] V. Eyert, J. Comp. Phys., 124, 271 (1996).
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.anderson(fun, [0, 0])
+    >>> sol
+    array([0.84116588, 0.15883789])
 
     """
 
@@ -1216,6 +1261,22 @@ class DiagBroyden(GenericBroyden):
     --------
     root : Interface to root finding algorithms for multivariate
            functions. See ``method=='diagbroyden'`` in particular.
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
+    ...             0.5 * (x[1] - x[0])**3 + x[1]]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.diagbroyden(fun, [0, 0])
+    >>> sol
+    array([0.84116403, 0.15883384])
+
     """
 
     def __init__(self, alpha=None):
@@ -1433,6 +1494,21 @@ class KrylovJacobian(Jacobian):
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
            :doi:`10.1137/S0895479803422014`
+
+    Examples
+    --------
+    The following functions define a system of nonlinear equations
+
+    >>> def fun(x):
+    ...     return [x[0] + 0.5 * x[1] - 1.0,
+    ...             0.5 * (x[1] - x[0]) ** 2]
+
+    A solution can be obtained as follows.
+
+    >>> from scipy import optimize
+    >>> sol = optimize.newton_krylov(fun, [0, 0])
+    >>> sol
+    array([0.66731771, 0.66536458])
 
     """
 

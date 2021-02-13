@@ -12,6 +12,7 @@ Examples::
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
+    $ python runtests.py --no-build --bench signal.LTI
 
 Run a debugger:
 
@@ -241,10 +242,13 @@ def main(argv):
             bench_args.extend(['--bench', a])
 
         if not args.bench_compare:
-            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   'run', '-n', '-e', '--python=same'] + bench_args
-            os.execv(sys.executable, [sys.executable] + cmd)
-            sys.exit(1)
+            import scipy
+            print("Running benchmarks for Scipy version %s at %s"
+                  % (scipy.__version__, scipy.__file__))
+            cmd = ['asv', 'run', '--dry-run', '--show-stderr',
+                   '--python=same'] + bench_args
+            retval = run_asv(cmd)
+            sys.exit(retval)
         else:
             if len(args.bench_compare) == 1:
                 commit_a = args.bench_compare[0]
@@ -276,10 +280,9 @@ def main(argv):
             out, err = p.communicate()
             commit_a = out.strip()
 
-            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   'continuous', '-e', '-f', '1.05',
+            cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            os.execv(sys.executable, [sys.executable] + cmd)
+            run_asv(cmd)
             sys.exit(1)
 
     if args.build_only:
@@ -525,6 +528,37 @@ def run_mypy(args):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
     return status
+
+
+def run_asv(cmd):
+    cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                       'benchmarks')
+    # Always use ccache, if installed
+    env = dict(os.environ)
+    env['PATH'] = os.pathsep.join(EXTRA_PATH +
+                                  env.get('PATH', '').split(os.pathsep))
+    # Control BLAS/LAPACK threads
+    env['OPENBLAS_NUM_THREADS'] = '1'
+    env['MKL_NUM_THREADS'] = '1'
+
+    # Limit memory usage
+    sys.path.insert(0, cwd)
+    from benchmarks.common import set_mem_rlimit
+    try:
+        set_mem_rlimit()
+    except (ImportError, RuntimeError):
+        pass
+
+    # Run
+    try:
+        return subprocess.call(cmd, env=env, cwd=cwd)
+    except OSError as err:
+        if err.errno == errno.ENOENT:
+            print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
+            print("You need to install Airspeed Velocity (https://airspeed-velocity.github.io/asv/)")
+            print("to run Scipy benchmarks")
+            return 1
+        raise
 
 
 if __name__ == "__main__":

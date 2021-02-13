@@ -1,4 +1,4 @@
-#include "qhull_src/src/libqhull_r.h"
+#include "qhull_src/src/qhull_ra.h"
 
 #define trace1(args) {}
 

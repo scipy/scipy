@@ -246,7 +246,7 @@ def ss2tf(A, B, C, D, input=0):
 
     >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
-    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
+    (array([[1., 3., 3.]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
 
@@ -273,7 +273,7 @@ def ss2tf(A, B, C, D, input=0):
         return num, den
 
     num_states = A.shape[0]
-    type_test = A[:, 0] + B[:, 0] + C[0, :] + D
+    type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
     num = numpy.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])

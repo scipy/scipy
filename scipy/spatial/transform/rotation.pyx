@@ -529,6 +529,14 @@ cdef class Rotation(object):
         else:
             self._quat = quat.copy() if copy else quat
 
+    def __getstate__(self):
+        return np.asarray(self._quat, dtype=float), self._single
+
+    def __setstate__(self, state):
+        quat, single = state
+        self._quat = quat.copy()
+        self._single = single
+
     @property
     def single(self):
         """Whether this instance represents a single rotation."""
@@ -2124,6 +2132,12 @@ cdef class Rotation(object):
             Contains a single rotation if `num` is None. Otherwise contains a
             stack of `num` rotations.
 
+        Notes
+        -----
+        This function is optimized for efficiently sampling random rotation
+        matrices in three dimensions. For generating random rotation matrices
+        in higher dimensions, see `scipy.stats.special_ortho_group`.
+
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
@@ -2141,6 +2155,10 @@ cdef class Rotation(object):
                [  25.23835501,   45.02035145, -121.67867086],
                [ -51.51414184,  -15.29022692, -172.46870023],
                [ -81.63376847,  -27.39521579,    2.60408416]])
+
+        See Also
+        --------
+        scipy.stats.special_ortho_group
 
        """
         random_state = check_random_state(random_state)

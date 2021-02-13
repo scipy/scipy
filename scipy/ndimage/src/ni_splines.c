@@ -289,17 +289,21 @@ apply_filter(double *coefficients, const npy_intp len, const double *poles,
     init_fn *causal;
     init_fn *anticausal;
 
+    //Note: This switch statement should match the settings used for
+	//      the spline_mode variable in NI_GeometricTransform
     switch(mode) {
-        case NI_EXTEND_NEAREST:
+        case NI_EXTEND_GRID_CONSTANT:
         case NI_EXTEND_CONSTANT:
         case NI_EXTEND_MIRROR:
+        case NI_EXTEND_WRAP:
             causal = &_init_causal_mirror;
             anticausal = &_init_anticausal_mirror;
             break;
-        case NI_EXTEND_WRAP:
+        case NI_EXTEND_GRID_WRAP:
             causal = &_init_causal_wrap;
             anticausal = &_init_anticausal_wrap;
             break;
+        case NI_EXTEND_NEAREST:
         case NI_EXTEND_REFLECT:
             causal = &_init_causal_reflect;
             anticausal = &_init_anticausal_reflect;

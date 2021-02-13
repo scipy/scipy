@@ -1,0 +1,73 @@
+==========================
+SciPy 1.5.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.5.3 is a bug-fix release with no new features
+compared to 1.5.2. In particular, Linux ARM64 wheels are now
+available and a compatibility issue with XCode 12 has
+been fixed.
+
+Authors
+=======
+
+* Peter Bell
+* CJ Carey
+* Thomas Duvernay +
+* Gregory Lee
+* Eric Moore
+* odidev
+* Dima Pasechnik
+* Tyler Reddy
+* Simon Segerblom Rex +
+* Daniel B. Smith
+* Will Tirone +
+* Warren Weckesser
+
+A total of 12 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.5.3
+-----------------------
+
+* `#9611 <https://github.com/scipy/scipy/issues/9611>`__: Overflow error with new way of p-value calculation in kendall...
+* `#10069 <https://github.com/scipy/scipy/issues/10069>`__: scipy.ndimage.watershed_ift regression in 1.0.0
+* `#11260 <https://github.com/scipy/scipy/issues/11260>`__: BUG: DOP853 with complex data computes complex error norm, causing...
+* `#11479 <https://github.com/scipy/scipy/issues/11479>`__: RuntimeError: dictionary changed size during iteration on loading...
+* `#11972 <https://github.com/scipy/scipy/issues/11972>`__: BUG (solved): Error estimation in DOP853 ODE solver fails for...
+* `#12543 <https://github.com/scipy/scipy/issues/12543>`__: BUG: Picture rotated 180 degrees and rotated -180 degrees should...
+* `#12613 <https://github.com/scipy/scipy/issues/12613>`__: Travis X.4 and X.7 failures in master
+* `#12654 <https://github.com/scipy/scipy/issues/12654>`__: scipy.stats.combine_pvalues produces wrong results with method='mudholkar_george'
+* `#12819 <https://github.com/scipy/scipy/issues/12819>`__: BUG: Scipy Sparse slice indexing assignment Bug with zeros
+* `#12834 <https://github.com/scipy/scipy/issues/12834>`__: BUG: ValueError upon calling Scipy Interpolator objects
+* `#12836 <https://github.com/scipy/scipy/issues/12836>`__: ndimage.median can return incorrect values for integer inputs
+* `#12860 <https://github.com/scipy/scipy/issues/12860>`__: Build failure with Xcode 12
+
+Pull requests for 1.5.3
+-----------------------
+
+* `#12611 <https://github.com/scipy/scipy/pull/12611>`__: MAINT: prepare for SciPy 1.5.3
+* `#12614 <https://github.com/scipy/scipy/pull/12614>`__: MAINT: prevent reverse broadcasting
+* `#12617 <https://github.com/scipy/scipy/pull/12617>`__: MAINT: optimize: Handle nonscalar size 1 arrays in fmin_slsqp...
+* `#12623 <https://github.com/scipy/scipy/pull/12623>`__: MAINT: stats: Loosen some test tolerances.
+* `#12638 <https://github.com/scipy/scipy/pull/12638>`__: CI, MAINT: pin pytest for Azure win
+* `#12668 <https://github.com/scipy/scipy/pull/12668>`__: BUG: Ensure factorial is not too large in mstats.kendalltau
+* `#12705 <https://github.com/scipy/scipy/pull/12705>`__: MAINT: \`openblas_support\` added sha256 hash
+* `#12706 <https://github.com/scipy/scipy/pull/12706>`__: BUG: fix incorrect 1d case of the fourier_ellipsoid filter
+* `#12721 <https://github.com/scipy/scipy/pull/12721>`__: BUG: use special.sindg in ndimage.rotate
+* `#12724 <https://github.com/scipy/scipy/pull/12724>`__: BUG: per #12654 adjusted mudholkar_george method to combine p...
+* `#12726 <https://github.com/scipy/scipy/pull/12726>`__: BUG: Fix DOP853 error norm for complex problems
+* `#12730 <https://github.com/scipy/scipy/pull/12730>`__: CI: pin xdist for Azure windows
+* `#12786 <https://github.com/scipy/scipy/pull/12786>`__: BUG: stats: Fix formula in the \`stats\` method of the ARGUS...
+* `#12795 <https://github.com/scipy/scipy/pull/12795>`__: CI: Pin setuptools on windows CI
+* `#12830 <https://github.com/scipy/scipy/pull/12830>`__: [BUG] sparse: Avoid using size attribute in LIL __setitem__
+* `#12833 <https://github.com/scipy/scipy/pull/12833>`__: BUG: change list of globals items to list of a copy
+* `#12842 <https://github.com/scipy/scipy/pull/12842>`__: BUG: Use uint16 for cost in NI_WatershedElement
+* `#12845 <https://github.com/scipy/scipy/pull/12845>`__: BUG: avoid boolean or integer addition error in ndimage.measurements.median
+* `#12864 <https://github.com/scipy/scipy/pull/12864>`__: BLD: replace the #include of libqull_r.h with with this of qhull_ra.h...
+* `#12867 <https://github.com/scipy/scipy/pull/12867>`__: BUG: Fixes a ValueError yielded upon calling Scipy Interpolator...
+* `#12902 <https://github.com/scipy/scipy/pull/12902>`__: CI: Remove 'env' from pytest.ini
+* `#12913 <https://github.com/scipy/scipy/pull/12913>`__: MAINT: Ignore pytest's PytestConfigWarning
+

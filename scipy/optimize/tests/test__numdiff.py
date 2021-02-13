@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
-    group_columns)
+    group_columns, _eps_for_method, _compute_absolute_step)
 
 
 def test_group_columns():
@@ -38,6 +38,42 @@ def test_group_columns():
     groups_1 = group_columns(A)
     groups_2 = group_columns(A)
     assert_equal(groups_1, groups_2)
+
+
+def test_correct_eps():
+    # check that relative step size is correct for FP size
+    EPS = np.finfo(np.float64).eps
+    relative_step = {"2-point": EPS**0.5,
+                    "3-point": EPS**(1/3),
+                     "cs": EPS**0.5}
+    for method in ['2-point', '3-point', 'cs']:
+        assert_allclose(
+            _eps_for_method(np.float64, np.float64, method),
+            relative_step[method])
+        assert_allclose(
+            _eps_for_method(np.complex128, np.complex128, method),
+            relative_step[method]
+        )
+
+    # check another FP size
+    EPS = np.finfo(np.float32).eps
+    relative_step = {"2-point": EPS**0.5,
+                    "3-point": EPS**(1/3),
+                     "cs": EPS**0.5}
+
+    for method in ['2-point', '3-point', 'cs']:
+        assert_allclose(
+            _eps_for_method(np.float64, np.float32, method),
+            relative_step[method]
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float64, method),
+            relative_step[method]
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float32, method),
+            relative_step[method]
+        )
 
 
 class TestAdjustSchemeToBounds(object):
@@ -388,6 +424,59 @@ class TestApproxDerivativesDense(object):
         # math.exp cannot handle complex arguments, hence this raises
         assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
                       **dict(method='cs'))
+
+    def test_fp(self):
+        # checks that approx_derivative works for FP size other than 64.
+        # Example is derived from the minimal working example in gh12991.
+        np.random.seed(1)
+
+        def func(p, x):
+            return p[0] + p[1] * x
+
+        def err(p, x, y):
+            return func(p, x) - y
+
+        x = np.linspace(0, 1, 100, dtype=np.float64)
+        y = np.random.random(100).astype(np.float64)
+        p0 = np.array([-1.0, -1.0])
+
+        jac_fp64 = approx_derivative(err, p0, method='2-point', args=(x, y))
+
+        # parameter vector is float32, func output is float64
+        jac_fp = approx_derivative(err, p0.astype(np.float32),
+                                   method='2-point', args=(x, y))
+        assert err(p0, x, y).dtype == np.float64
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # parameter vector is float64, func output is float32
+        err_fp32 = lambda p: err(p, x, y).astype(np.float32)
+        jac_fp = approx_derivative(err_fp32, p0,
+                                   method='2-point')
+        assert err_fp32(p0).dtype == np.float32
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # check upper bound of error on the derivative for 2-point
+        f = lambda x: np.sin(x)
+        g = lambda x: np.cos(x)
+        hess = lambda x: -np.sin(x)
+
+        def calc_atol(h, x0, f, hess, EPS):
+            # truncation error
+            t0 = h / 2 * max(np.abs(hess(x0)), np.abs(hess(x0 + h)))
+            # roundoff error. There may be a divisor (>1) missing from
+            # the following line, so this contribution is possibly
+            # overestimated
+            t1 = EPS / h * max(np.abs(f(x0)), np.abs(f(x0 + h)))
+            return t0 + t1
+
+        for dtype in [np.float16, np.float32, np.float64]:
+            EPS = np.finfo(dtype).eps
+            x0 = np.array(1.0).astype(dtype)
+            h = _compute_absolute_step(None, x0, f(x0), '2-point')
+            atol = calc_atol(h, x0, f, hess, EPS)
+            err = approx_derivative(f, x0, method='2-point',
+                                    abs_step=h) - g(x0)
+            assert abs(err) < atol
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])

@@ -536,6 +536,24 @@ class TestDifferentialEvolutionSolver(object):
                       *(rosen, self.bounds),
                       **{'init': population})
 
+        # provide an initial solution
+        # bounds are [(0, 2), (0, 2)]
+        x0 = np.random.uniform(low=0.0, high=2.0, size=2)
+        solver = DifferentialEvolutionSolver(
+            rosen, self.bounds, x0=x0
+        )
+        # parameters are scaled to unit interval
+        assert_allclose(solver.population[0], x0 / 2.0)
+
+    def test_x0(self):
+        # smoke test that checks that x0 is usable.
+        res = differential_evolution(rosen, self.bounds, x0=[0.2, 0.8])
+        assert res.success
+
+        # check what happens if some of the x0 lay outside the bounds
+        with assert_raises(ValueError):
+            differential_evolution(rosen, self.bounds, x0=[0.2, 2.1])
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs

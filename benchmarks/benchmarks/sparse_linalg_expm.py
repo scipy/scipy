@@ -2,14 +2,11 @@
 import math
 
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     import scipy.linalg
     from scipy.sparse.linalg import expm_multiply
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse_csr(m, n, nnz_per_row):

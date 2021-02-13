@@ -385,13 +385,13 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     As a brief summary, the slowest and the most robust driver is the
     classical ``<sy/he>ev`` which uses symmetric QR. ``<sy/he>evr`` is seen as
     the optimal choice for the most general cases. However, there are certain
-    occassions that ``<sy/he>evd`` computes faster at the expense of more
+    occasions that ``<sy/he>evd`` computes faster at the expense of more
     memory usage. ``<sy/he>evx``, while still being faster than ``<sy/he>ev``,
     often performs worse than the rest except when very few eigenvalues are
     requested for large arrays though there is still no performance guarantee.
 
 
-    For the generalized problem, normalization with respoect to the given
+    For the generalized problem, normalization with respect to the given
     type argument::
 
             type 1 and 3 :      v.conj().T @ a @ v = w

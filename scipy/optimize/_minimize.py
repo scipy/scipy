@@ -40,6 +40,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
                     'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
 
+MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -95,7 +96,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
         the fixed parameters. If `jac` is a Boolean and is True, `fun` is
-        assumed to return and objective and gradient as and ``(f, g)`` tuple.
+        assumed to return and objective and gradient as an ``(f, g)`` tuple.
         Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
         'trust-krylov' require that either a callable be supplied, or that
         `fun` return the objective and gradient.
@@ -556,8 +557,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         fun = MemoizeJac(fun)
         jac = fun.derivative
     elif (jac in FD_METHODS and
-          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc']):
-        # finite differences
+          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc', 'slsqp']):
+        # finite differences with relative step
         pass
     elif meth in ['trust-constr']:
         # default jac calculation for this method
