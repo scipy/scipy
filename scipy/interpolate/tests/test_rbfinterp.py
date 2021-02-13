@@ -1,5 +1,8 @@
+import pickle
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import (
+    assert_, assert_allclose, assert_raises, assert_array_equal
+    )
 from scipy.spatial import cKDTree
 from scipy.interpolate.rbfinterp import (
     _NAME_TO_MIN_DEGREE, _NAME_TO_FUNC, _SCALE_INVARIANT,
@@ -275,6 +278,15 @@ class _TestRBFInterpolator:
         xitp = np.random.uniform(0.0, 1.0, (100, 1))
         with assert_raises(ValueError):
             self.build(x, y)(xitp)
+
+    def test_pickleable(self):
+        x = np.random.uniform(0.0, 3.0, (50, 1))
+        y = _1d_test_function(x)
+        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+        interp = self.build(x, y)
+        yitp1 = interp(xitp)
+        yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
+        assert_array_equal(yitp1, yitp2)
 
 
 class TestRBFInterpolator(_TestRBFInterpolator):
