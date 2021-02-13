@@ -2445,6 +2445,22 @@ class TestBeta(object):
         p = stats.beta.sf(x, a, b)
         assert_allclose(p, sf, rtol=5e-15)
 
+    # Check the CDF and SF when a and b are "big".  We need a
+    # larger relative tolerance for these tests.
+    @pytest.mark.parametrize('x, a, b, cdf, sf', [
+        [0.6, 999, 250, 6.245625320485236e-52, 1.0],
+        [0.015, 1001, 99000, 1.0, 9.288334021261528e-44],
+    ])
+    def test_cdf_sf_big_ab(self, x, a, b, cdf, sf):
+        p = stats.beta.cdf(x, a, b)
+        assert_allclose(p, cdf, rtol=1e-8)
+        p = stats.beta.sf(x, a, b)
+        assert_allclose(p, sf, rtol=1e-8)
+        p = stats.beta.sf(1 - x, b, a)
+        assert_allclose(p, cdf)
+        p = stats.beta.cdf(1 - x, b, a)
+        assert_allclose(p, sf, rtol=1e-8)
+
     @pytest.mark.parametrize('p, a, b, ppf', _beta_ppf)
     def test_ppf(self, p, a, b, ppf):
         x = stats.beta.ppf(p, a, b)

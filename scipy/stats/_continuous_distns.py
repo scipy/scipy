@@ -606,7 +606,8 @@ class beta_gen(rv_continuous):
         return sc.btdtri(a, b, q)
 
     def _sf(self, x, a, b):
-        return _lazywhere(x < 0.5,
+        median = sc.btdtri(a, b, 0.5)
+        return _lazywhere(x < median,
                           (x, a, b),
                           lambda x, a, b: 1 - sc.btdtr(a, b, x),
                           f2=lambda x, a, b: sc.btdtr(b, a, 1 - x))
