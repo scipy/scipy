@@ -81,7 +81,7 @@ are responsible for installing the correct build dependencies themselves.
 Version ranges for NumPy and other dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 For dependencies it's important to set lower and upper bounds on their
-versions. For _build-time_ dependencies, they are specified in
+versions. For *build-time* dependencies, they are specified in
 ``pyproject.toml`` and the versions will _only_ apply to the SciPy build
 itself. It's fine to specify either a range or a specific version for a
 dependency like ``wheel`` or ``setuptools``. For NumPy we have to worry
@@ -89,7 +89,7 @@ about ABI compatibility too, hence we specify the version with ``==``
 to the lowest supported version (because NumPy's ABI is backward but not
 forward compatible).
 
-For _run-time dependencies_ (currently only ``numpy``), we specify the range
+For *run-time dependencies* (currently only ``numpy``), we specify the range
 of versions in ``install_requires`` in ``setup.py``. Getting the upper bound
 right is slightly tricky.  If we don't set any bound, a too-new version
 will be pulled in a few years down the line, and NumPy may have deprecated and
