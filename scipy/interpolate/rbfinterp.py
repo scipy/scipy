@@ -175,11 +175,19 @@ class RBFInterpolator:
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
+        Alternatively, this can be a callable that takes an array of distances
+        as input and returns an array with the same shape. The callable should
+        be a positive definite or conditionally positive definite RBF.
+
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
         the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'. Smaller values for
+        the shape parameter result in wider RBFs. Smaller values for the shape
+        parameter may also result in a poorly conditioned system of equations
+        to be solved, which can be improved by increasing the smoothing
+        parameter.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
@@ -232,10 +240,10 @@ class RBFInterpolator:
     :math:`b` is unique if :math:`P(y)` has full column rank. As an example,
     :math:`P(y)` would not have full column rank if the observations are
     collinear in two-dimensional space and the degree of the added polynomial
-    is 1. For the remaining RBFs, the solution for :math:`a` and :math:`b` is
-    unique if :math:`P(y)` has full column rank and the degree of the added
-    polynomial is not lower than the minimum value listed above (see Chapter 7
-    of [1]_ or [2]_).
+    is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and 'quintic', the
+    solution for  :math:`a` and :math:`b` is unique if :math:`P(y)` has full
+    column rank and the degree of the added polynomial is not lower than the
+    minimum value listed above (see Chapter 7 of [1]_ or [2]_).
 
     References
     ----------
@@ -280,22 +288,25 @@ class RBFInterpolator:
                     % ny
                     )
 
-        try:
+        if callable(kernel):
+            kernel_func = kernel
+        elif kernel in _NAME_TO_FUNC:
             kernel_func = _NAME_TO_FUNC[kernel]
-        except KeyError:
+        else:
             raise ValueError(
-                '`kernel` is "%s" but it should be one of {%s}.' %
-                (kernel, ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys()))
+                'Expected `kernel` to be callable or one of {%s}' %
+                ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys())
                 )
 
         if epsilon is None:
-            if kernel not in _SCALE_INVARIANT:
-                raise ValueError(
-                    '`epsilon` must be specified if `kernel` is not one of '
-                    '{%s}.' % ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
-                    )
-            else:
+            if callable(kernel) | (kernel in _SCALE_INVARIANT):
                 epsilon = 1.0
+            else:
+                raise ValueError(
+                    '`epsilon` must be specified if `kernel` is not callable '
+                    'or one of {%s}.' %
+                    ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
+                    )
 
         elif not np.isscalar(epsilon):
             raise ValueError('Expected `epsilon` to be a scalar')
@@ -303,7 +314,7 @@ class RBFInterpolator:
         min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
         if degree is None:
             degree = max(min_degree, 0)
-        elif degree < min_degree:
+        elif max(degree, -1) < min_degree:
             warnings.warn(
                 'The polynomial degree should not be below %d for "%s". The '
                 'interpolant may not be uniquely solvable, and the smoothing '
@@ -341,7 +352,6 @@ class RBFInterpolator:
         kernel_coeff, poly_coeff = coeff[:ny], coeff[ny:]
 
         self.y = y
-        self.kernel = kernel
         self.kernel_func = kernel_func
         self.epsilon = epsilon
         self.degree = degree
@@ -431,11 +441,19 @@ class KNearestRBFInterpolator:
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
+        Alternatively, this can be a callable that takes an array of distances
+        as input and returns an array with the same shape. The callable should
+        be a positive definite or conditionally positive definite RBF.
+
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
         the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'. Smaller values for
+        the shape parameter result in wider RBFs. Smaller values for the shape
+        parameter may also result in a poorly conditioned system of equations
+        to be solved, which can be improved by increasing the smoothing
+        parameter.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
@@ -489,22 +507,25 @@ class KNearestRBFInterpolator:
         # not exceed the number of observations
         k = int(min(k, ny))
 
-        try:
+        if callable(kernel):
+            kernel_func = kernel
+        elif kernel in _NAME_TO_FUNC:
             kernel_func = _NAME_TO_FUNC[kernel]
-        except KeyError:
+        else:
             raise ValueError(
-                '`kernel` is "%s" but it should be one of {%s}.' %
-                (kernel, ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys()))
+                'Expected `kernel` to be callable or one of {%s}' %
+                ', '.join('"%s"' % k for k in _NAME_TO_FUNC.keys())
                 )
 
         if epsilon is None:
-            if kernel not in _SCALE_INVARIANT:
-                raise ValueError(
-                    '`epsilon` must be specified if `kernel` is not one of '
-                    '{%s}.' % ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
-                    )
-            else:
+            if callable(kernel) | (kernel in _SCALE_INVARIANT):
                 epsilon = 1.0
+            else:
+                raise ValueError(
+                    '`epsilon` must be specified if `kernel` is not callable '
+                    'or one of {%s}.' %
+                    ', '.join('"%s"' % k for k in _SCALE_INVARIANT)
+                    )
 
         elif not np.isscalar(epsilon):
             raise ValueError('Expected `epsilon` to be a scalar')
@@ -512,7 +533,7 @@ class KNearestRBFInterpolator:
         min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
         if degree is None:
             degree = max(min_degree, 0)
-        elif degree < min_degree:
+        elif max(degree, -1) < min_degree:
             warnings.warn(
                 'The polynomial degree should not be below %d for "%s". The '
                 'interpolant may not be uniquely solvable, and the smoothing '
@@ -527,7 +548,6 @@ class KNearestRBFInterpolator:
         self.d = d
         self.smoothing = smoothing
         self.k = k
-        self.kernel = kernel
         self.kernel_func = kernel_func
         self.epsilon = epsilon
         self.degree = degree
