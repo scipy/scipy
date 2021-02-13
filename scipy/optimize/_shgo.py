@@ -1287,9 +1287,6 @@ class SHGO(object):
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
         self.n = n
-        self.sobol.reset()
-        self.sobol.fast_forward(self.iters_done * n)
-
         self.C = self.sobol.random(n=n)
         # Distribute over bounds
         for i in range(len(self.bounds)):
