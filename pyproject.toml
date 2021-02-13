@@ -4,7 +4,6 @@ requires = [
     "setuptools<=51.0.0",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
-    "pythran",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
