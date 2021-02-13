@@ -692,7 +692,7 @@ class TestBinomTest:
     @pytest.mark.xfail_on_32bit("The large inputs make these tests "
                                 "sensitive to machine epsilon level")
     def test_two_sided_pvalues1(self):
-        # These commented tests work on all OS's but fail on
+        # These tests work on all OS's but fail on
         # Linux_Python_37_32bit_full due to numerical issues caused
         # by large inputs.
         res = stats.binomtest(10079999, 21000000, 0.48)
@@ -717,6 +717,8 @@ class TestBinomTest:
         assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-8)
         res = stats.binomtest(2, 2, .4)
         assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-8)
+        res = stats.binomtest(2, 4, .3)
+        assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-8)
 
     def tst_binary_srch_for_binom_tst(self):
         # Test that old behavior of binomtest is maintained
