@@ -259,7 +259,7 @@ class RBFInterpolator:
             raise ValueError('Expected `y` to be a 2-dimensional array')
 
         ny = y.shape[0]
-        d = np.asarray(d, dtype=float)
+        d = np.asarray(d)
         if (d.ndim != 1) & (d.ndim != 2):
             raise ValueError('Expected `d` to be a 1 or 2-dimensional array')
 
@@ -381,7 +381,10 @@ class RBFInterpolator:
 
         nx = x.shape[0]
         if chunk_size is not None:
-            out = np.zeros((nx,) + self.data_shape, dtype=float)
+            # kernel_coeff is complex if d was complex, otherwise it should be
+            # a float
+            dtype = self.kernel_coeff.dtype
+            out = np.zeros((nx,) + self.data_shape, dtype=dtype)
             for start in range(0, nx, chunk_size):
                 stop = start + chunk_size
                 out[start:stop] = self(x[start:stop], chunk_size=None)
@@ -461,7 +464,7 @@ class KNearestRBFInterpolator:
             raise ValueError('Expected `y` to be a 2-dimensional array')
 
         ny = y.shape[0]
-        d = np.asarray(d, dtype=float)
+        d = np.asarray(d)
         if (d.ndim != 1) & (d.ndim != 2):
             raise ValueError('Expected `d` to be a 1 or 2-dimensional array')
 
@@ -562,7 +565,8 @@ class KNearestRBFInterpolator:
 
         nx = x.shape[0]
         if chunk_size is not None:
-            out = np.zeros((nx,) + self.data_shape, dtype=float)
+            dtype = complex if np.iscomplexobj(self.d) else float
+            out = np.zeros((nx,) + self.data_shape, dtype=dtype)
             for start in range(0, nx, chunk_size):
                 stop = start + chunk_size
                 out[start:stop] = self(x[start:stop], chunk_size=None)

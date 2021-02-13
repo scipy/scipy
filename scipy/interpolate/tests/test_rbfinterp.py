@@ -173,6 +173,20 @@ class _TestRBFInterpolator:
         assert_allclose(yitp1[:, 0], yitp2)
         assert_allclose(yitp1[:, 1], yitp3)
 
+    def test_complex_data(self):
+        # Interpolating complex input should be the same as interpolating the
+        # real and complex components
+        np.random.seed(0)
+
+        x = np.random.uniform(0.0, 1.0, (100, 2))
+        y = _2d_test_function(x) + 1j*_2d_test_function(x[:, ::-1])
+        xitp = np.random.uniform(0.0, 1.0, (100, 2))
+        yitp1 = self.build(x, y)(xitp)
+        yitp2 = self.build(x, y.real)(xitp)
+        yitp3 = self.build(x, y.imag)(xitp)
+        assert_allclose(yitp1.real, yitp2)
+        assert_allclose(yitp1.imag, yitp3)
+
     def test_interpolation_misfit_1d(self):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 1d
