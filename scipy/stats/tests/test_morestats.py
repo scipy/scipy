@@ -734,8 +734,7 @@ class TestBinomTest:
         y2 = stats._binary_search_for_binom_tst(lambda x1:
                                                 stats.binom.pmf(x1, n, p),
                                                 d,
-                                                0, np.floor(p * n) + 1,
-                                                True) + 1
+                                                0, np.floor(p * n) + 1) + 1
         assert_allclose(y1, y2, rtol=1e-9)
         # Now test for the other side.
         k = 3

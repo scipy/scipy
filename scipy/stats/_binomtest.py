@@ -328,14 +328,14 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     return result
 
 
-def _binary_search_for_binom_tst(a, d, lo, hi, asc_order=False):
+def _binary_search_for_binom_tst(a, d, lo, hi):
     r"""
-    Conducts an implicit binary search on a funcion specified by `a.
+    Conducts an implicit binary search on a function specified by `a.
 
     Meant to be used on the binomial PMF for the case of two-sided tests
-    to obtain the value on the other side of the mode where the tail prbability
-    should be computed. Because the values past the mode are always in
-    ascending order, this makes binary search applicable.
+    to obtain the value on the other side of the mode where the tail
+    probability should be computed. The values on either side of
+    the mode are always in order making binary search is applicable.
 
     Parameters
     ----------
