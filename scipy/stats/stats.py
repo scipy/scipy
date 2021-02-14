@@ -3832,6 +3832,10 @@ def alexandergovern(*args, nan_policy='propagate'):
         Raised if an input is a constant array.  The statistic is not defined
         in this case, so ``np.nan`` is returned.
 
+    See Also
+    --------
+    f_oneway : one-way ANOVA
+
     Notes
     -----
     The use of this test relies on several assumptions.
@@ -3843,10 +3847,6 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     Input samples must be finite, one dimensional, and with size greater than
     one.
-
-    See Also
-    --------
-    f_oneway : one-way ANOVA
 
     References
     ----------

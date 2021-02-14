@@ -5356,10 +5356,10 @@ class TestAlexanderGovern:
                 [14, 13, 12, 12, 12, 12, 12, 11, 11],
                 [14, 14, 13, 13, 13, 13, 13, 12, 12],
                 [15, 14, 13, 13, 13, 12, 12, 12, 11]]
-        args_int16 = np.asarray(args, dtype=np.int16)
-        args_int32 = np.asarray(args, dtype=np.int32)
-        args_uint8 = np.asarray(args, dtype=np.uint8)
-        args_float64 = np.asarray(args, dtype=np.float64)
+        args_int16 = np.array(args, dtype=np.int16)
+        args_int32 = np.array(args, dtype=np.int32)
+        args_uint8 = np.array(args, dtype=np.uint8)
+        args_float64 = np.array(args, dtype=np.float64)
 
         res_int16 = stats.alexandergovern(*args_int16)
         res_int32 = stats.alexandergovern(*args_int32)
