@@ -60,6 +60,7 @@ class HighsMipSolver : Highs {
 
   int num_nodes_solved = 0;
   int num_nodes_pruned = 0;
+  int total_simplex_iterations = 0;
   double root_objective_ = HIGHS_CONST_INF;
 };
 

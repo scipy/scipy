@@ -6,8 +6,8 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
-from HighsStatus cimport HighsStatus
-from HighsLp cimport (
+from .HighsStatus cimport HighsStatus
+from .HighsLp cimport (
     ObjSense,
     ObjSenseMINIMIZE,
 )
