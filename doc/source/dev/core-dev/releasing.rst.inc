@@ -75,6 +75,10 @@ creating a GPG key if you do not have one. Note that on some platforms
 it may be more suitable to use ``gpg2`` instead of ``gpg`` so that
 passwords may be stored by ``gpg-agent`` as discussed in
 https://github.com/scipy/scipy/issues/10189.
+When preparing a release remotely, it may be necessary to set
+``pinentry-mode loopback`` in ``~/.gnupg/gpg-agent.conf`` because
+use of ``gpg2`` will otherwise proceed via an inaccessible graphical
+password prompt.
 
 To make your key more readily identifiable as you, consider sending your key
 to public keyservers, with a command such as::
