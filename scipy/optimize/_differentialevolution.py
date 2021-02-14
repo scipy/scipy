@@ -23,6 +23,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
+                           minimizer_kwargs=None,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None):
     """Finds the global minimum of a multivariate function.
@@ -114,10 +115,21 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
     polish : bool, optional
-        If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
-        method is used to polish the best population member at the end, which
-        can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        If True (default), then `scipy.optimize.minimize` with is used to
+        polish the best population member at the end, which
+        can improve the minimization slightly. The minimzation method can be
+        specified in `minimizer_kwargs`, if none is set then `trust-constr`
+        is used for a constrained problem or `L-BFGS-B` otherwise.
+    minimizer_kwargs : dict, optional
+        Extra keyword arguments to be passed to the local minimizer
+        `scipy.optimize.minimize` Some important options could be:
+
+            method : str
+                The minimization method (e.g. `"L-BFGS-B"`)
+            args : tuple
+                Extra arguments passed to the objective function (`func`) and
+                its derivatives (Jacobian, Hessian).
+
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
@@ -307,6 +319,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      mutation=mutation,
                                      recombination=recombination,
                                      seed=seed, polish=polish,
+                                     minimizer_kwargs=minimizer_kwargs,
                                      callback=callback,
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
@@ -319,8 +332,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
 
 class DifferentialEvolutionSolver(object):
-
-    """This class implements the differential evolution solver
+    """This class implements the differential evolution solver.
 
     Parameters
     ----------
@@ -403,10 +415,21 @@ class DifferentialEvolutionSolver(object):
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
     polish : bool, optional
-        If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
-        method is used to polish the best population member at the end, which
-        can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        If True (default), then `scipy.optimize.minimize` with is used to
+        polish the best population member at the end, which
+        can improve the minimization slightly. The minimzation method can be
+        specified in `minimizer_kwargs`, if none is set then `trust-constr`
+        is used for a constrained problem or `L-BFGS-B` otherwise.
+    minimizer_kwargs : dict, optional
+        Extra keyword arguments to be passed to the local minimizer
+        `scipy.optimize.minimize` Some important options could be:
+
+            method : str
+                The minimization method (e.g. `"L-BFGS-B"`)
+            args : tuple
+                Extra arguments passed to the objective function (`func`) and
+                its derivatives (Jacobian, Hessian).
+
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -484,6 +507,7 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
+                 minimizer_kwargs=None,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None):
 
@@ -496,7 +520,6 @@ class DifferentialEvolutionSolver(object):
         self.strategy = strategy
 
         self.callback = callback
-        self.polish = polish
 
         # set the updating / parallelisation options
         if updating in ['immediate', 'deferred']:
@@ -622,6 +645,27 @@ class DifferentialEvolutionSolver(object):
         self.feasible = np.ones(self.num_population_members, bool)
 
         self.disp = disp
+
+        # set up minimizer
+        if minimizer_kwargs is None:
+            minimizer_kwargs = dict()
+
+        if polish:
+            if 'method' not in minimizer_kwargs:
+                if self._wrapped_constraints:
+                    minimizer_kwargs['method'] = 'trust-constr'
+                else:
+                    minimizer_kwargs['method'] = 'L-BFGS-B'
+            if 'constraints' not in minimizer_kwargs:
+                minimizer_kwargs['constraints'] = self.constraints
+
+            if 'bounds' not in minimizer_kwargs:
+                minimizer_kwargs['bounds'] = self.limits.T
+
+            self._wrapped_minimizer = _MinimizerWrapper(minimize, self.func,
+                                                        **minimizer_kwargs)
+        else:
+            self._wrapped_minimizer = None
 
     def init_population_lhs(self):
         """
@@ -816,12 +860,8 @@ class DifferentialEvolutionSolver(object):
             message=status_message,
             success=(warning_flag is not True))
 
-        if self.polish:
-            polish_method = 'L-BFGS-B'
-
+        if self._wrapped_minimizer:
             if self._wrapped_constraints:
-                polish_method = 'trust-constr'
-
                 constr_violation = self._constraint_violation_fn(DE_result.x)
                 if np.any(constr_violation > 0.):
                     warnings.warn("differential evolution didn't find a"
@@ -829,11 +869,7 @@ class DifferentialEvolutionSolver(object):
                                   " attempting to polish from the least"
                                   " infeasible solution", UserWarning)
 
-            result = minimize(self.func,
-                              np.copy(DE_result.x),
-                              method=polish_method,
-                              bounds=self.limits.T,
-                              constraints=self.constraints)
+            result = self._wrapped_minimizer(np.copy(DE_result.x))
 
             self._nfev += result.nfev
             DE_result.nfev = self._nfev
@@ -861,8 +897,8 @@ class DifferentialEvolutionSolver(object):
             if DE_result.maxcv > 0:
                 # if the result is infeasible then success must be False
                 DE_result.success = False
-                DE_result.message = ("The solution does not satisfy the"
-                                    " constraints, MAXCV = " % DE_result.maxcv)
+                DE_result.message = ("The solution does not satisfy the "
+                                     "constraints, MAXCV = " % DE_result.maxcv)
 
         return DE_result
 
@@ -925,7 +961,7 @@ class DifferentialEvolutionSolver(object):
         self.population[[0, l], :] = self.population[[l, 0], :]
         self.feasible[[0, l]] = self.feasible[[l, 0]]
         self.constraint_violation[[0, l], :] = (
-        self.constraint_violation[[l, 0], :])
+            self.constraint_violation[[l, 0], :])
 
     def _constraint_violation_fn(self, x):
         """
@@ -1275,6 +1311,22 @@ class _FunctionWrapper(object):
 
     def __call__(self, x):
         return self.f(x, *self.args)
+
+
+class _MinimizerWrapper(object):
+    """
+    wrap a minimizer function as a minimizer class
+    """
+    def __init__(self, minimizer, func=None, **kwargs):
+        self.minimizer = minimizer
+        self.func = func
+        self.kwargs = kwargs
+
+    def __call__(self, x0):
+        if self.func is None:
+            return self.minimizer(x0, **self.kwargs)
+        else:
+            return self.minimizer(self.func, x0, **self.kwargs)
 
 
 class _ConstraintWrapper(object):
