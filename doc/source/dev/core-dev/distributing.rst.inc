@@ -116,8 +116,9 @@ always taken on the scipy-dev mailing list.
 The lowest supported Numpy_ version for a SciPy version is mentioned in the
 release notes and is encoded in ``pyproject.toml``, ``scipy/__init__.py`` and the
 ``install_requires`` field of ``setup.py``.  Typically the latest SciPy release
-supports ~5 minor versions of NumPy (i.e. up to 2.5 years' old NumPy versions,
-given the frequency of releases is about 2x/year at the time of writing.
+supports ~5-7 minor versions of NumPy: up to 2.5 years' old NumPy versions,
+(given that the frequency of NumPy releases is about 2x/year at the time of
+writing) plus two versions into the future.
 
 Supported versions of optional dependencies and compilers is documented in
 :ref:`toolchain-roadmap`. Note that not all versions of optional dependencies
