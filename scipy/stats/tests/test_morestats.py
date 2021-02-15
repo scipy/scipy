@@ -740,29 +740,29 @@ class TestBinomTest:
         # exactly equals the input on one side.
         n = 10
         p = 0.5
-        k = 7
+        k = 3
         # First test for the case where k > mode of PMF
         i = np.arange(np.ceil(p * n), n+1)
         d = stats.binom.pmf(k, n, p)
         # Old way of calculating y, probably consistent with R.
         y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
         # New way with binary search.
-        y2 = stats._binary_search_for_binom_tst(lambda x1:
-                                                stats.binom.pmf(x1, n, p),
-                                                d,
-                                                0, np.floor(p * n) + 1) + 1
+        ix = stats._binary_search_for_binom_tst(lambda x1:
+                                                -stats.binom.pmf(x1, n, p),
+                                                -d, np.ceil(p * n), n)
+        y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
         assert_allclose(y1, y2, rtol=1e-9)
         # Now test for the other side.
-        k = 3
+        k = 7
         i = np.arange(np.floor(p * n) + 1)
         d = stats.binom.pmf(k, n, p)
         # Old way of calculating y.
         y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
         # New way with binary search.
-        y2 = n - stats._binary_search_for_binom_tst(lambda x1:
-                                                    -stats.binom.pmf(x1, n, p),
-                                                    -d,
-                                                    np.ceil(p * n), n)
+        ix = stats._binary_search_for_binom_tst(lambda x1:
+                                                stats.binom.pmf(x1, n, p),
+                                                d, 0, np.floor(p * n))
+        y2 = ix + 1
         assert_allclose(y1, y2, rtol=1e-9)
 
     # Expected results here are from R 3.6.2 binom.test
