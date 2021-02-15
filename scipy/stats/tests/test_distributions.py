@@ -475,6 +475,23 @@ class TestGenHyperbolic(object):
             atol=0, rtol=1e-6
             )
 
+    def test_pdf_cauchy(self):
+        # Test Against Cauchy distribution
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        lmbda, alpha, beta = -0.5, np.finfo(np.float32).eps, 0
+        mu, delta = 0, 1
+        args = (lmbda, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.cauchy.pdf(x),
+            atol=0, rtol=1e-6
+            )
+
     def test_pdf_laplace(self):
         # Test Against Laplace with location param [-10, 10]
         loc = np.linspace(-10, 10, 10)
