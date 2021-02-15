@@ -9010,27 +9010,12 @@ def _argus_phi(chi):
     """
     Utility function for the argus distribution
     used in the pdf, sf and moment calculation.
-    For small chi, use a Padé approximant.
+    For small chi, use gammaincinv for better precision as for all x > 0:
+    gammaincinv(1.5, x**2/2) = 2 * _norm_cdf(x) - c * _norm_pdf(x) - 0.5
     """
-    p = [-1.3191273061071934e-05,
-         0.0007110770769112332,
-         -0.0065672254524213915,
-         0.13298076013381088]
-    q = [3.81130944737768e-05,
-         0.0015075388134494683,
-         0.026960355443430166,
-         0.2506152209852525,
-         1.0]
-
-    def pade_approx(chi):
-        chi2 = chi**2
-        chi3 = chi*chi2
-        return chi3 * np.polyval(p, chi2) / np.polyval(q, chi2)
-
     return _lazywhere(chi > 0.5, (chi,),
                       lambda c: _norm_cdf(c) - c * _norm_pdf(c) - 0.5,
-                      f2=pade_approx)
-
+                      f2=lambda c: sc.gammainc(1.5, c**2/2) / 2)
 
 class argus_gen(rv_continuous):
     r"""
