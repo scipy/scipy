@@ -632,6 +632,8 @@ class KNearestRBFInterpolator:
         z = np.zeros((nnbr, nmonos) + self.data_shape, dtype=float)
         rhs = np.concatenate((d, z), axis=1)
         # solve for the RBF and polynomial coefficients for each neighborhood
+        # TODO: Replace solve with lstsq to catch ill-conditioned LHS due to
+        # epsilon being too small? Warn when LHS is ill-conditioned?
         coeff = np.linalg.solve(LHS, rhs)
         # expand the arrays from having one entry per neighborhood to one entry
         # per interpolation point
