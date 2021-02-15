@@ -857,10 +857,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     should only be used when both sets of marginals are fixed.
 
     """
-    if shgo_n <= 0:
+    if n <= 0:
         raise ValueError(
             "Number of iterations `num_it` must be strictly positive, "
-            f"found {shgo_n!r}"
+            f"found {n!r}"
         )
 
     table = np.asarray(table, dtype=np.int64)
