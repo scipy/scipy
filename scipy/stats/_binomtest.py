@@ -314,10 +314,12 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         elif k < p * n:
             y = n-_binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
                                                -d*rerr, np.ceil(p * n), n)
+            y = max(np.ceil(p * n), min(y, n))
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
             y = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
                                              d*rerr, 0, np.floor(p * n) + 1)+1
+            y = max(0, min(y, np.floor(p * n) + 1))
             pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
