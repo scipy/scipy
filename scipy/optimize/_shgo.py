@@ -191,11 +191,11 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
             Set to True to print convergence messages.
 
     sampling_method : str or function, optional
-        Current built in sampling method options are ``sobol`` and
+        Current built in sampling method options are ``halton``, ``sobol`` and
         ``simplicial``. The default ``simplicial`` provides
         the theoretical guarantee of convergence to the global minimum in finite
-        time. The ``sobol`` method is faster in terms of sampling point
-        generation at the cost of the loss of
+        time. ``halton`` and ``sobol`` method is faster in terms of sampling
+        point generation at the cost of the loss of
         guaranteed convergence. It is more appropriate for most "easier"
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
@@ -348,7 +348,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
 
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (12, 23)
+    (12, 20)
 
     Note the difference between, e.g., ``n=192, iters=1`` and ``n=64,
     iters=3``.
@@ -452,7 +452,7 @@ class SHGO(object):
                  options=None, sampling_method='sobol'):
 
         # Input checks
-        methods = ['sobol', 'simplicial']
+        methods = ['halton', 'sobol', 'simplicial']
         if isinstance(sampling_method, str) and sampling_method not in methods:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
@@ -619,22 +619,27 @@ class SHGO(object):
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
 
-        elif sampling_method == 'sobol' or not isinstance(sampling_method, str):
+        elif sampling_method in ['halton', 'sobol'] or \
+                not isinstance(sampling_method, str):
             self.iterate_complex = self.iterate_delaunay
             self.minimizers = self.delaunay_complex_minimisers
             # Sampling method used
-            if sampling_method == 'sobol':
-                self.sampling_method = 'sobol'
-                self.sampling = self.sampling_sobol
-                # Init Sobol class
-                self.sobol = qmc.Sobol(d=self.dim, scramble=False,
-                                       seed=np.random.RandomState())
+            if sampling_method in ['halton', 'sobol']:
+                if sampling_method == 'sobol':
+                    self.sampling_method = 'sobol'
+                    self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
+                                                seed=np.random.RandomState())
+                else:
+                    self.sampling_method = 'halton'
+                    self.qmc_engine = qmc.Halton(d=self.dim, scramble=True,
+                                                 seed=np.random.RandomState())
+                sampling_method = lambda n, d: self.qmc_engine.random(n)
             else:
                 # A user defined sampling method:
-                # self.sampling_points = sampling_method
                 self.sampling_method = 'custom'
-                self.sampling = self.sampling_custom
-                self.sampling_function = sampling_method  # F(n, d)
+
+            self.sampling = self.sampling_custom
+            self.sampling_function = sampling_method  # F(n, d)
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -1223,6 +1228,7 @@ class SHGO(object):
         if self.disp:
             print('Generating sampling points')
         self.sampling(self.nc, self.dim)
+        self.n = self.nc
 
         if not infty_cons_sampl:
             # Find subspace of feasible points
@@ -1278,22 +1284,6 @@ class SHGO(object):
                 self.X_min
             except AttributeError:
                 self.X_min = []
-
-    def sampling_sobol(self, n, dim):
-        """
-        Generates uniform sampling points in a hypercube and scales the points
-        to the bound limits.
-        """
-        # Generate sampling points.
-        # Generate uniform sample points in [0, 1]^m \subset R^m
-        self.n = n
-        self.C = self.sobol.random(n=n)
-        # Distribute over bounds
-        for i in range(len(self.bounds)):
-            self.C[:, i] = (self.C[:, i] *
-                            (self.bounds[i][1] - self.bounds[i][0])
-                            + self.bounds[i][0])
-        return self.C
 
     def sampling_custom(self, n, dim):
         """
