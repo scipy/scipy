@@ -966,7 +966,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
 
     Barnard exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
-    maxima, this function return the negative log pvalue in respect of the
+    maxima, this function return the negative log pvalue with respect to the
     nuisance parameter passed in params. This negative log p-value is then
     used in `shgo` to find the minimum negative pvalue which is our maximum
     pvalue.
@@ -974,8 +974,8 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Also, to compute the different combination used in the
     p-values' computation formula, this function uses `gammaln` which is
     more tolerant for large value than `scipy.special.comb`. `gammaln` gives
-    a log combination. For the little precision lost, performance are a lot
-    imprioved.
+    a log combination. For the little precision loss, performances are
+    improved a lot.
     """
     t1, t2, _ = x1_sum_x2.shape
     n = t1 + t2 - 2
