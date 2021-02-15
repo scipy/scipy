@@ -998,9 +998,9 @@ def _get_binomial_log_p_value_with_nuisance_param(
         nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
 
         tmp_log_values_arr = (
-                x1_sum_x2_log_comb
-                + nuisance_power_x1_x2
-                + nuisance_power_n_minus_x1_x2
+            x1_sum_x2_log_comb
+            + nuisance_power_x1_x2
+            + nuisance_power_n_minus_x1_x2
         )
 
     tmp_values_from_index = tmp_log_values_arr[index_arr]
