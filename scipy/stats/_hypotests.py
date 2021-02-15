@@ -679,7 +679,7 @@ BarnardExactResult = make_dataclass(
 )
 
 
-def barnard_exact(table, alternative="two-sided", pooled=True, shgo_n=32):
+def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
     Parameters
@@ -699,11 +699,12 @@ def barnard_exact(table, alternative="two-sided", pooled=True, shgo_n=32):
         t-test) or unpooled variance (Welch's t-test). Default is ``True`` :
         Statistic test is computed using pooled variance.
 
-    shgo_n : int, optional
-        Number of sampling points used in the construction of the sobol
-        sampling method. Note that this argument must be a power of two.
+    n : int, optional
+        Number of sampling points used in the construction of the sampling
+        method. Note that this argument must be a power of two since we are
+        using Sobol's sampling method `scipy.stats.qmc.Sobol`.
         Default is 32. Must be non-negative. In most cases, 32 points is
-        enaugh to reach good precision. More points come with performance cost
+        enaugh to reach good precision. More points comes at performance cost.
 
     Returns
     -------
