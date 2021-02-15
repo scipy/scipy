@@ -924,7 +924,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         _get_binomial_log_p_value_with_nuisance_param,
         args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
         bounds=((0, 1),),
-        n=shgo_n,  # Need to be a power of two since it is used by sobol
+        n=n,  # Need to be a power of two since it is used by sobol
         sampling_method="sobol",
     )
 
