@@ -88,6 +88,7 @@ cdef extern from "HighsOptions.h" nogil:
         double simplex_initial_condition_tolerance
         double dual_steepest_edge_weight_log_error_threshhold
         double dual_simplex_cost_perturbation_multiplier
+        double start_crossover_tolerance
         bool less_infeasible_DSE_check
         bool less_infeasible_DSE_choose_row
         bool use_original_HFactor_logic
