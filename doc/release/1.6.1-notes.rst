@@ -46,6 +46,7 @@ Issues closed for 1.6.1
 * `#13465 <https://github.com/scipy/scipy/issues/13465>`__: KDTree.count_neighbors : 0xC0000005 error for tuple of different...
 * `#13468 <https://github.com/scipy/scipy/issues/13468>`__: directed_hausdorff issue with shuffle
 * `#13472 <https://github.com/scipy/scipy/issues/13472>`__: Failures on FutureWarnings with numpy 1.20.0 for lfilter, sosfilt...
+* `#13565 <https://github.com/scipy/scipy/issues/13565>`__: BUG: 32-bit wheels repo test failure in optimize
 
 Pull requests for 1.6.1
 -----------------------
@@ -69,4 +70,5 @@ Pull requests for 1.6.1
 * `#13485 <https://github.com/scipy/scipy/pull/13485>`__: BUG: KDTree weighted count_neighbors doesn't work between two...
 * `#13503 <https://github.com/scipy/scipy/pull/13503>`__: TST: fix \`test_fortranfile_read_mixed_record\` on big-endian...
 * `#13518 <https://github.com/scipy/scipy/pull/13518>`__: DOC: document that pip >= 20.3.3 is needed for macOS 11
-* `#13520 <https://github.com/scipy/scipy/pull/13520>`__: BLD: use oldest-supported-numpy in pyproject.toml
+* `#13520 <https://github.com/scipy/scipy/pull/13520>`__: BLD: update reqs based on oldest-supported-numpy in pyproject.toml
+* `#13567 <https://github.com/scipy/scipy/pull/13567>`__: TST, BUG: adjust tol on test_equivalence
