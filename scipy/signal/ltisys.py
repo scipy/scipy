@@ -362,7 +362,7 @@ class dlti(LinearTimeInvariant):
     dt: 0.1
     )
 
-    .. math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
+    .. math:: H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
 
     >>> signal.dlti([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -918,9 +918,8 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     Examples
     --------
-    Construct the transfer function:
-
-    ..math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
     >>> from scipy import signal
 
@@ -932,9 +931,9 @@ class ZerosPolesGain(LinearTimeInvariant):
     dt: None
     )
 
-    Construct the transfer function with a sampling time of 0.1 seconds:
-
-    ..math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
+    Construct the transfer function
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -1115,9 +1114,8 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+    Construct the transfer function
+    :math:`H(s)=\frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
     >>> from scipy import signal
 
@@ -1189,9 +1187,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
     >>> from scipy import signal
 
@@ -1203,9 +1200,9 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     dt: None
     )
 
-    Construct the transfer function with a sampling time of 0.1 seconds:
-
-    .. math:: H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
+    Construct the transfer function
+    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -2620,9 +2617,7 @@ def freqresp(system, w=None, n=10000):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function:
-    
-    .. math:: H(s) = \frac{5}{(s-1)^3}
+    Construct the transfer function :math:`H(s) = \frac{5}{(s-1)^3}`:
 
     >>> s1 = signal.ZerosPolesGain([], [1, 1, 1], [5])
 
@@ -3742,9 +3737,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function:
-
-    .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
+    Construct the transfer function
+    :math:`H(z) = \frac{1}{z^2 + 2z + 3}` with a sampling time of 0.05
+    seconds:
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
@@ -3838,9 +3833,8 @@ def dbode(system, w=None, n=100):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function:
-    
-    .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
+    Construct the transfer function :math:`H(z) = \frac{1}{z^2 + 2z + 3}` with
+    a sampling time of 0.05 seconds:
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
