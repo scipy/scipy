@@ -181,7 +181,8 @@ class lti(LinearTimeInvariant):
     dt: None
     )
 
-    .. math:: H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
     >>> signal.lti([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -191,7 +192,7 @@ class lti(LinearTimeInvariant):
     dt: None
     )
 
-    .. math:: H(s) = \frac{3s + 4}{1s + 2}
+    Construct the transfer function :math:`H(s) = \frac{3s + 4}{1s + 2}`:
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
@@ -362,7 +363,9 @@ class dlti(LinearTimeInvariant):
     dt: 0.1
     )
 
-    .. math:: H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}
+    Construct the transfer function
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
 
     >>> signal.dlti([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -372,7 +375,8 @@ class dlti(LinearTimeInvariant):
     dt: 0.1
     )
 
-    .. math:: H(z) = \frac{3z + 4}{1z + 2}
+    Construct the transfer function :math:`H(z) = \frac{3z + 4}{1z + 2}` with
+    a sampling time of 0.1 seconds:
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
@@ -454,9 +458,8 @@ class dlti(LinearTimeInvariant):
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        Transfer function with sampling time 0.5s
-
-        .. math:: H(z) = \frac{1}{z^2 + 2z + 3}
+        Construct the transfer function :math:`H(z) = \frac{1}{z^2 + 2z + 3}`
+        with sampling time 0.5s:
 
         >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
 
@@ -534,9 +537,8 @@ class TransferFunction(LinearTimeInvariant):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+    Construct the transfer function
+    :math:`H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}`:
 
     >>> from scipy import signal
 
@@ -550,9 +552,9 @@ class TransferFunction(LinearTimeInvariant):
     dt: None
     )
 
-    Construct the transfer function with a sampling time of 0.1 seconds:
-
-    .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
+    Construct the transfer function
+    :math:`H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}` with a sampling time of
+    0.1 seconds:
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
@@ -776,9 +778,8 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+    Construct the transfer function
+    :math:`H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}`:
 
     >>> from scipy import signal
 
@@ -855,9 +856,9 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     Examples
     --------
-    Construct the transfer function with a sampling time of 0.5 seconds:
-
-    .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
+    Construct the transfer function
+    :math:`H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}` with a sampling time of
+    0.5 seconds:
 
     >>> from scipy import signal
 
