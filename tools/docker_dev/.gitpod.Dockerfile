@@ -9,38 +9,34 @@ FROM ${BASE_CONTAINER}
 # hadolint ignore=DL3008
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
-    zip \
-    unzip \
     bash-completion \
     build-essential \
+    git \
     htop \
     jq \
     less \
     locales \
+    lsof \
     man-db \
     sudo \
-    time \
-    multitail \
-    lsof \
     ssl-cert \
+    time \
+    zip \
+    unzip \
     && locale-gen en_US.UTF-8 \
     && apt-get clean \
     && rm -rf /var/cache/apt/* \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/*
 
-RUN add-apt-repository -y ppa:git-core/ppa \
-    && apt-get install -yq --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/* 
-
 # -----------------------------------------------------------------------------
 # ---- Gitpod user ----
-
+# by default we are using gitpod as user and group
 ENV LANG=en_US.UTF-8 \
     HOME=/home/gitpod \
     GP_USER=gitpod \
     GP_GROUP=gitpod \
-    CONDA_DIR=/opt/conda 
+    CONDA_DIR=/opt/conda
 
 # Copy multiple scripts - fix directory permissions and 
 # basic workspace configurations
@@ -69,11 +65,5 @@ RUN fix_permissions $CONDA_DIR && \
 # Always favour the least-privileged user, in this case gitpod
 USER gitpod
 
-# Checking passwordless sudo here
-RUN sudo echo "Running 'sudo' for Gitpod: success" 
-
 # Ensure we are in the correct directory
 WORKDIR $HOME
-
-# Finally - add some code specific settings
-COPY ./tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json

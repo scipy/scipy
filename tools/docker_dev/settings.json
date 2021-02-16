@@ -4,5 +4,6 @@
     "restructuredtext.confPath": "${workspaceFolder}/doc/source",
     "restructuredtext.updateOnTextChanged": "true",
     "restructuredtext.updateDelay": 300,
-    "python.pythonPath": "/opt/conda/envs/scipydev/bin/python"
+    "python.pythonPath": "/opt/conda/envs/scipydev/bin/python",
+    "restructuredtext.linter.disabled": true
 }
