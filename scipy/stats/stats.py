@@ -2099,11 +2099,11 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
     # Re-insert nan's
-    perc = ma.filled(perct, np.nan)
+    perct = ma.filled(perct, np.nan)
 
-    if perc.ndim == 0:
-        return perc[()]
-    return perc
+    if perct.ndim == 0:
+        return perct[()]
+    return perct
 
 
 HistogramResult = namedtuple('HistogramResult',
