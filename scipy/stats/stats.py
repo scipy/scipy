@@ -1972,7 +1972,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
-def percentileofscore(a, score, kind='rank'):
+def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     """
     Compute the percentile rank of a score relative to a list of scores.
 
@@ -1999,6 +1999,12 @@ def percentileofscore(a, score, kind='rank'):
             strictly less than the given score are counted.
           * 'mean': The average of the "weak" and "strict" scores, often used
             in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
+    nan_policy : {'propagate', 'raise'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan
+          * 'raise': throws an error
 
     Returns
     -------
@@ -2038,28 +2044,66 @@ def percentileofscore(a, score, kind='rank'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
+    The inputs can also be infinite:
+
+    >>> # import numpy as np
+    >>> stats.percentileofscore([1, np.inf], [100, 10000])
+    array([50., 50.])
+
+    Multidimensional score arrays are also supported:
+
+    >>> scores = [[-np.inf, 0, 3], [np.nan, 4, np.inf]]
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], scores)
+    array([[  0.,   0.,  70.],
+           [ nan, 100., 100.]])
+
+    See also
+    --------
+    scipy.stats.scoreatpercentile, scipy.stats.rankdata
     """
-    if np.isnan(score):
-        return np.nan
+
     a = np.asarray(a)
     n = len(a)
     if n == 0:
         return 100.0
 
+    # Nan treatment
+    contains_nan, nan_policy = _contains_nan(score, nan_policy)
+    if contains_nan and nan_policy == 'propagate':  # 'omit' would be meaningless
+        # ma.masked_invalid would mask +/- inf, which are actually valid inputs.
+        score = ma.masked_where(np.isnan(score), score)
+    elif contains_nan and nan_policy == 'raise':
+        raise ValueError("The input scores contains nan values")
+    else:
+        score = np.asarray(score)
+
+    # Prepare broadcasting
+    score = score[..., None]
+    count = lambda x: np.count_nonzero(x, -1)
+
+    # Compute
     if kind == 'rank':
-        left = np.count_nonzero(a < score)
-        right = np.count_nonzero(a <= score)
-        pct = (right + left + (1 if right > left else 0)) * 50.0/n
-        return pct
+        left  = count(a < score)
+        right = count(a <= score)
+        plus1 = left < right
+        perct = (left + right + plus1) * (50.0 / n)
     elif kind == 'strict':
-        return np.count_nonzero(a < score) / n * 100
+        perct = count(a < score) * (100.0 / n)
     elif kind == 'weak':
-        return np.count_nonzero(a <= score) / n * 100
+        perct = count(a <= score) * (100.0 / n)
     elif kind == 'mean':
-        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / n * 50
-        return pct
+        left  = count(a < score)
+        right = count(a <= score)
+        perct = (left + right) * (50.0 / n)
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
+
+    # Re-insert nan's
+    perc = ma.filled(perct, np.nan)
+
+    if perc.ndim == 0:
+        return perc[()]
+    return perc
 
 
 HistogramResult = namedtuple('HistogramResult',
