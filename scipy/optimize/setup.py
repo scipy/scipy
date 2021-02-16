@@ -128,7 +128,6 @@ def configuration(parent_package='', top_path=None):
 
     # HiGHS linear programming libraries and extensions
     config.add_subpackage('_highs')
-    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
 
     config.add_data_dir('tests')
 
