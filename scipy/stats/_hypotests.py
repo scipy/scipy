@@ -912,8 +912,6 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         )
         raise ValueError(msg)
 
-    x1 = x1.reshape(-1, 1, 1)
-    x2 = x2.reshape(1, -1, 1)
     x1_sum_x2 = x1 + x2
 
     x1_log_comb = _compute_log_combinations(total_col_1)
@@ -977,7 +975,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     a log combination. For the little precision loss, performances are
     improved a lot.
     """
-    t1, t2, _ = x1_sum_x2.shape
+    t1, t2 = x1_sum_x2.shape
     n = t1 + t2 - 2
     with np.errstate(divide="ignore", invalid="ignore"):
         log_nuisance = np.log(
@@ -992,10 +990,10 @@ def _get_binomial_log_p_value_with_nuisance_param(
         )
 
         nuisance_power_x1_x2 = log_nuisance * x1_sum_x2
-        nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :, 0]] = 0
+        nuisance_power_x1_x2[(x1_sum_x2 == 0)[:, :]] = 0
 
         nuisance_power_n_minus_x1_x2 = log_1_minus_nuisance * (n - x1_sum_x2)
-        nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :, 0]] = 0
+        nuisance_power_n_minus_x1_x2[(x1_sum_x2 == n)[:, :]] = 0
 
         tmp_log_values_arr = (
             x1_sum_x2_log_comb
@@ -1005,14 +1003,21 @@ def _get_binomial_log_p_value_with_nuisance_param(
 
     tmp_values_from_index = tmp_log_values_arr[index_arr]
 
+    # To avoid dividing by zero in log function and getting inf value,
+    # values are centered according to the max
+    max_value = tmp_values_from_index.max()
+
     # To have better result's precision, the log pvalue is taken here.
     # Indeed, pvalue is included inside [0, 1] interval. Passing the
     # pvalue to log makes the interval a lot bigger ([-inf, 0]), and thus
     # help us to achieve better precision
     with np.errstate(divide="ignore", invalid="ignore"):
-        tmp = np.exp(tmp_values_from_index).sum()
-        log_pvalue = np.log(tmp, out=np.full_like(tmp, -np.inf), where = tmp
-                                                                         > 0)
+        log_probs = np.exp(tmp_values_from_index - max_value).sum()
+        log_pvalue = max_value + np.log(
+            log_probs,
+            out=np.full_like(log_probs, -np.inf),
+            where=log_probs > 0,
+        )
 
     # Since shgo find the minima, minus log pvalue is returned
-    return - log_pvalue
+    return -log_pvalue
