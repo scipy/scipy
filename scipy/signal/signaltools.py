@@ -1506,7 +1506,7 @@ def medfilt(volume, kernel_size=None):
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
     For 2-dimensional images with `np.ubyte`, `np.single` or `np.double`
-    datatypes the specialised function `scipy.signal.medfilt2d` is fastest.
+    datatypes the specialised function `scipy.signal.medfilt2d` may be faster.
 
     """
     volume = np.atleast_1d(volume)
@@ -1829,7 +1829,8 @@ def medfilt2d(input, kernel_size=3):
     This is faster than `scipy.signal.medfilt` when `input.dtype.type`
     is `np.ubyte`, `np.single`, or `np.double`. For other types, this
     falls back to `scipy.signal.medfilt`; you should use
-    `scipy.ndimage.median_filter` instead as it is much faster.
+    `scipy.ndimage.median_filter` instead as it is much faster. In some
+    situations, `scipy.ndimage.median_filter` may be faster than this function.
 
     """
     image = np.asarray(input)
