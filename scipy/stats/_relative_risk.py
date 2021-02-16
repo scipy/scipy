@@ -42,11 +42,9 @@ class RelativeRiskResult:
 
     Methods
     -------
-    confidence_interval(confidence_level=0.95)
-        Compute the confidence interval of the relative risk for a given
-        confidence level.
-
+    confidence_interval
     """
+
     relative_risk: float
     exposed_cases: int
     exposed_total: int
