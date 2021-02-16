@@ -399,7 +399,7 @@ class TestDifferentialEvolutionSolver(object):
         # obtain a np.random.Generator object
         rng = np.random.default_rng()
 
-        inits = ['random', 'latinhypercube']
+        inits = ['random', 'latinhypercube', 'sobol', 'halton']
         for init in inits:
             differential_evolution(self.quadratic,
                                    [(-100, 100)],
@@ -1029,7 +1029,9 @@ class TestDifferentialEvolutionSolver(object):
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    def test_L5(self):
+    @pytest.mark.parametrize("random_generator",
+                             ['random', 'latinhypercube', 'sobol', 'halton'])
+    def test_L5(self, random_generator):
         # Lampinen ([5]) test problem 5
 
         def f(x):
@@ -1048,6 +1050,7 @@ class TestDifferentialEvolutionSolver(object):
         constraints = (N)
 
         res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
+                                     init=random_generator,
                                      constraints=constraints)
 
         x_opt = (1.22797135, 4.24537337)

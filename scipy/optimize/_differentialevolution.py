@@ -597,7 +597,7 @@ class DifferentialEvolutionSolver(object):
 
         if isinstance(init, str) and (init == 'sobol'):
             # must be Ns=2**m for Sobol'
-            n_s = 2 ** np.ceil(np.log2(self.num_population_members))
+            n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
             self.num_population_members = n_s
 
         self.population_shape = (self.num_population_members,

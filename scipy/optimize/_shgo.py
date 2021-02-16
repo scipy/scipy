@@ -194,7 +194,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
         Current built in sampling method options are ``halton``, ``sobol`` and
         ``simplicial``. The default ``simplicial`` provides
         the theoretical guarantee of convergence to the global minimum in finite
-        time. ``halton`` and ``sobol`` method is faster in terms of sampling
+        time. ``halton`` and ``sobol`` method are faster in terms of sampling
         point generation at the cost of the loss of
         guaranteed convergence. It is more appropriate for most "easier"
         problems where the convergence is relatively fast.
@@ -252,24 +252,21 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
-    The ``sobol`` method points are generated using the `scipy.qmc.Sobol`
-    (1967) [2]_ sequence.
+    The ``halton`` and ``sobol`` method points are generated using
+    `scipy.stats.qmc`. Any other QMC method could be used.
 
     References
     ----------
     .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
            algorithm for lipschitz optimisation", Journal of Global Optimization.
-    .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
-           approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
-           7, 86-112.
-    .. [3] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
+    .. [2] Joe, SW and Kuo, FY (2008) "Constructing Sobol' sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654.
-    .. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
+    .. [3] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
            programming codes", Lecture Notes in Economics and Mathematical
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
-    .. [5] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
+    .. [4] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
            dynamics from the potential energy landscape",
            Journal of Chemical Physics, 142(13), 2015.
 
@@ -306,7 +303,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     ...
     >>> bounds = [(-512, 512), (-512, 512)]
 
-    `shgo` has two built-in low discrepancy sampling sequences. First, we will
+    `shgo` has built-in low discrepancy sampling sequences. First, we will
     input 64 initial sampling points of the Sobol' sequence:
 
     >>> result = shgo(eggholder, bounds, n=64, sampling_method='sobol')
@@ -338,7 +335,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
     can provide insight into the system (for example morphologies
-    in physical chemistry [5]_).
+    in physical chemistry [4]_).
 
     If we want to find a larger number of local minima, we can increase the
     number of sampling points or the number of iterations. We'll increase the
@@ -357,7 +354,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     sampling points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
+    following example from Hock and Schittkowski problem 73 (cattle-feed) [3]_::
 
         minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
@@ -371,7 +368,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
 
                     1 >= x_i >= 0 for all i
 
-    The approximate answer given in [4]_ is::
+    The approximate answer given in [3]_ is::
 
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
