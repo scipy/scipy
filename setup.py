@@ -144,22 +144,6 @@ if not release:
         a.close()
 
 
-try:
-    from sphinx.setup_command import BuildDoc
-    HAVE_SPHINX = True
-except Exception:
-    HAVE_SPHINX = False
-
-if HAVE_SPHINX:
-    class ScipyBuildDoc(BuildDoc):
-        """Run in-place build before Sphinx doc build"""
-        def run(self):
-            ret = subprocess.call([sys.executable, sys.argv[0], 'build_ext', '-i'])
-            if ret != 0:
-                raise RuntimeError("Building Scipy failed!")
-            BuildDoc.run(self)
-
-
 def check_submodules():
     """ verify that the submodules are checked out and clean
         use `git submodule update --init`; on failure
@@ -381,8 +365,7 @@ def parse_setuppy_commands():
     # below and not standalone.  Hence they're not added to good_commands.
     good_commands = ('develop', 'sdist', 'build', 'build_ext', 'build_py',
                      'build_clib', 'build_scripts', 'bdist_wheel', 'bdist_rpm',
-                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg',
-                     'build_sphinx')
+                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg')
 
     for command in good_commands:
         if command in args:
@@ -453,6 +436,7 @@ def parse_setuppy_commands():
         bdist_dumb="`setup.py bdist_dumb` is not supported",
         bdist="`setup.py bdist` is not supported",
         flake8="`setup.py flake8` is not supported, use flake8 standalone",
+        build_sphinx="`setup.py build_sphinx` is not supported, see doc/README.md",
         )
     bad_commands['nosetests'] = bad_commands['test']
     for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
@@ -534,8 +518,6 @@ def setup_package():
     write_version_py()
 
     cmdclass = {'sdist': sdist_checked}
-    if HAVE_SPHINX:
-        cmdclass['build_sphinx'] = ScipyBuildDoc
 
     metadata = dict(
         name='scipy',

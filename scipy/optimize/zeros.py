@@ -888,13 +888,6 @@ def brenth(f, a, b, args=(),
 #  See [1]
 
 
-def _within_tolerance(x, y, rtol, atol):
-    diff = np.abs(x - y)
-    z = np.abs(y)
-    result = (diff <= (atol + rtol * z))
-    return result
-
-
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
     notclosefvals = (
@@ -1121,7 +1114,7 @@ class TOMS748Solver(object):
     def get_status(self):
         """Determine the current status."""
         a, b = self.ab[:2]
-        if _within_tolerance(a, b, self.rtol, self.xtol):
+        if np.isclose(a, b, rtol=self.rtol, atol=self.xtol):
             return _ECONVERGED, sum(self.ab) / 2.0
         if self.iterations >= self.maxiter:
             return _ECONVERR, sum(self.ab) / 2.0
