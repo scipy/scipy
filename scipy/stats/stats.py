@@ -6014,7 +6014,7 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
     var_w_a = _calculate_winsorized_variance(a, g_a)
-    var_w_b = _calculate_winsorized_variance(b, g_a)
+    var_w_b = _calculate_winsorized_variance(b, g_b)
 
     t = (x_tg_a - x_tg_b) / ((var_w_a / na_t) + (var_w_b / nb_t)) ** .5
 
