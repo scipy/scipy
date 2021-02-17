@@ -34,6 +34,11 @@ def configuration(parent_package='',top_path=None):
     )
     config.add_data_files('_sobol_direction_numbers.npz')
 
+    # add _discrepancy module
+    config.add_extension('_discrepancy',
+        sources=['_discrepancy.c', ],
+    )
+
     return config
 
 
