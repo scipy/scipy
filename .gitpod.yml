@@ -4,21 +4,29 @@
 # conda env is activated
 # Note each task opens a new terminal see 
 # https://www.gitpod.io/docs/config-start-tasks/#configuring-the-terminal
-# --------------------------------------------------------
+# With this configuration the prebuild will happen on push to master and
+# with PR coming from the SciPy repository
+# -------------------------------------------------------------------------
 
 image:
   file: ./tools/docker_dev/.gitpod.Dockerfile
 tasks:
   - name: Prebuild Scipy & docs
-    init: |
+    prebuild: |
       conda activate scipydev
       python setup.py build_ext --inplace
+      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Scipy built \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
       conda develop .
+      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Scipy ready for development \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
       git submodule update --init
       cd doc 
       make html-scipyorg
-  - name: Scipy - develop here
-    init: mkdir -p /workspace/scipy/.theia/settings.json && cp ./tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
+      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Documentation built \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
+      conda activate scipydev
+      # needed for the rst extension
+      pip install sphinx-autobuild
+  - name: Develop here
+    init: mkdir -p /workspace/scipy/.theia && && cp ./tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
     command: conda activate scipydev
 
 # --------------------------------------------------------
@@ -42,17 +50,17 @@ github:
   prebuilds:
     # enable for master branch
     master: true
-    # enable for other branches (defaults to false) - testing for now
+    # enable for other branches (defaults to false) 
     branches: true 
-    # enable for pull requests coming from this repo (defaults to true) -keep true for test
+    # enable for pull requests coming from this repo (defaults to true) 
     pullRequests: true
     # enable for pull requests coming from forks (defaults to false)
     pullRequestsFromForks: false
-    # add a "Review in Gitpod" button as a comment to pull requests (defaults to true)
+    # add a check to pull requests (defaults to true)
+    addCheck: true
+    # add a "Review in Gitpod" button as a comment to pull requests (defaults to false)
     addComment: false
-    # add a "Review in Gitpod" badge to pull requests (defaults to false)
+    # add a "Review in Gitpod" button to the pull request's description (defaults to false)
     addBadge: false
     # add a label once the prebuild is ready to pull requests (defaults to false)
     addLabel: false
-    # check to pull request - as a CI
-    addCheck: false
