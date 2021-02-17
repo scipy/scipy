@@ -1590,7 +1590,7 @@ class nchypergeom_fisher_gen(_nchypergeom_gen):
 
 
 nchypergeom_fisher = nchypergeom_fisher_gen(
-    name=r'nchypergeom_fisher',
+    name='nchypergeom_fisher',
     longname="A Fisher's noncentral hypergeometric")
 
 
@@ -1673,7 +1673,7 @@ class nchypergeom_wallenius_gen(_nchypergeom_gen):
 
 
 nchypergeom_wallenius = nchypergeom_wallenius_gen(
-    name=r'nchypergeom_wallenius',
+    name='nchypergeom_wallenius',
     longname="A Wallenius' noncentral hypergeometric")
 
 
