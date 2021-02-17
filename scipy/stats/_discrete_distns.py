@@ -62,10 +62,12 @@ class binom_gen(rv_discrete):
         return _boost._binom_pdf(x, n, p)
 
     def _cdf(self, x, n, p):
-        return _boost._binom_cdf(x, n, p)
+        k = floor(x)
+        return _boost._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
-        return _boost._binom_sf(x, n, p)
+        k = floor(x)
+        return _boost._binom_sf(k, n, p)
 
     def _isf(self, x, n, p):
         return _boost._binom_isf(x, n, p)
@@ -298,14 +300,14 @@ class nbinom_gen(rv_discrete):
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
         return _boost._nbinom_pdf(x, n, p)
-    
+
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
         return coeff + n*log(p) + special.xlog1py(x, -p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_cdf(x, n, p)
+        return _boost._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -323,7 +325,7 @@ class nbinom_gen(rv_discrete):
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_sf(x, n, p)
+        return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
         return _boost._nbinom_isf(x, n, p)
