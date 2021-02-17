@@ -136,7 +136,7 @@ def discrepancy(sample, bint iterative=False, method='CD'):
     elif method == 'L2-star':
         return l2_star_discrepancy(sample, iterative)
     else:
-        raise ValueError('{} is not a valid method. Options are '
+        raise ValueError('{!r} is not a valid method. Options are '
                      'CD, WD, MD, L2-star.'.format(method))
 
 
