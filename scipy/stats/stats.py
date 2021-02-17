@@ -3815,9 +3815,9 @@ def alexandergovern(*args, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------

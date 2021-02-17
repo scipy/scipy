@@ -30,7 +30,8 @@ from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import _broadcast_concatenate, AlexanderGovernConstantInputWarning
+from scipy.stats.stats import (_broadcast_concatenate,
+                               AlexanderGovernConstantInputWarning)
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
