@@ -862,7 +862,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     """
     if n <= 0:
         raise ValueError(
-            "Number of iterations `num_it` must be strictly positive, "
+            "Number of points `n` must be strictly positive, "
             f"found {n!r}"
         )
 

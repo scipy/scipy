@@ -472,8 +472,7 @@ class TestBarnardExact(object):
     def test_raises(self):
         # test we raise an error for wrong input number of nuisances.
         error_msg = (
-            "Number of iterations `num_it` must be strictly positive,"
-            " found 0"
+            "Number of points `n` must be strictly positive, found 0"
         )
         with assert_raises(ValueError, match=error_msg):
             barnard_exact([[1, 2], [3, 4]], n=0)
