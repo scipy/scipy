@@ -3843,7 +3843,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.53619490753126731
         tr = -0.68649512735572582
-        t, p = stats.ttest_trimmed(a, b, equal_var=False)
+        t, p = stats.ttest_trimmed(a, b)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -3852,7 +3852,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.00998909252078421
         tr = 4.591598691181999
-        t, p = stats.ttest_trimmed(a, b, equal_var=False)
+        t, p = stats.ttest_trimmed(a, b)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -3865,54 +3865,66 @@ class TestTtestTrimmed(object):
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
-    def test_compare_r_DescTools(self):
+    def test_compare_r_1(self):
         '''
-        see: https://rdrr.io/cran/DescTools/man/YuenTTest.html
+        Using PairedData's yuen.t.test method. Something to note is that there
+        are at least 3 R packages that come with a trimmed t-test method, and
+        comparisons were made between them. It was found that PairedData's
+        method's results match this method, SAS, and one of the other R
+        methods. A notable discrepancy was the DescTools implementation of the
+        function, which only sometimes agreed with SAS, WRS2, PairedData and
+        this implementation. For this reason, all comparisons in R are made
+        against PairedData's method.
 
-        library(DescTools)
-        d.oxen <- data.frame(ext=c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9),
-                             int=c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1))
-        with(d.oxen, YuenTTest(int, ext, paired=FALSE))
+        > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
+        > b <- c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1)
+        > yuen.t.test(a, b)
 
-        Yuen Two Sample t-test
+            Two-sample Yuen test, trim=0.2
 
-        data:  int and ext
-        t = 4.2461, df = 7.92, trim = 0.20, p-value = 0.002879
-        alternative hypothesis: true difference in trimmed means is not equal to 0
+        data:  x and y
+        t = -4.2461, df = 7.92, p-value = 0.002879
+        alternative hypothesis: true difference in trimmed means is not equal \
+        to 0
         95 percent confidence interval:
-         1.341821 4.543893
+         -4.543893 -1.341821
         sample estimates:
         trimmed mean of x trimmed mean of y
-                 5.385714          2.442857
+                 2.442857          5.385714
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-        res = stats.ttest_trimmed(b, a)
-        assert_allclose(res.pvalue, 0.002879, atol=1e-5)
-        assert_allclose(res.statistic, 4.2461, atol=1e-4)
+        res = stats.ttest_trimmed(a, b)
+        assert_allclose(res.pvalue, 0.00287891, atol=1e-7)
+        assert_allclose(res.statistic, -4.246117, atol=1e-6)
 
-    def test_compare_r_PairedData(self):
+    def test_compare_r_2(self):
         '''
         see: https://rdrr.io/cran/PairedData/man/yuen.t.test.html
         library(PairedData)
 
-        z<-rnorm(20)
-        x<-rnorm(20)+z
-        y<-rnorm(20)+z+1
+        > a <-c(-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
+        +       -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
+        +       -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
+        +       -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376)
+        > b <-c(1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494,
+        +       -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
+        +       1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
+        +       0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023)
+        > yuen.t.test(a, b)
 
-        	Two-sample Yuen test, trim=0.2
+            Two-sample Yuen test, trim=0.2
 
-        data:  x and y
+        data:  a and b
         t = -3.0983, df = 21.749, p-value = 0.005293
-        alternative hypothesis: true difference in trimmed means is not equal to 0
+        alternative hypothesis: true difference in trimmed means is not equal \
+        to 0
         95 percent confidence interval:
          -2.157551 -0.426652
         sample estimates:
         trimmed mean of x trimmed mean of y
                -0.2908835         1.0012182
 
-
-            One sample Yuen test, trim=0.25
         '''
         a = [-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
              -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
@@ -3923,8 +3935,8 @@ class TestTtestTrimmed(object):
              1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
              0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023]
         res = stats.ttest_trimmed(a, b)
-        assert_allclose(res.pvalue, 0.005293, atol=1e-5)
-        assert_allclose(res.statistic, -3.0983, atol=1e-4)
+        assert_allclose(res.pvalue, 0.005293306, atol=1e-7)
+        assert_allclose(res.statistic, -3.098332, atol=1e-6)
 
     def test_compare_SAS(self):
         # Source of the data used in this test:
@@ -3940,8 +3952,6 @@ class TestTtestTrimmed(object):
         res = stats.ttest_trimmed(a, b, trim=9)
         assert_allclose(res.pvalue, 0.514522, atol=1e-6)
         assert_allclose(res.statistic, 0.669169, atol=1e-6)
-        
-
 
 
 def test_ttest_ind_nan_2nd_arg():
