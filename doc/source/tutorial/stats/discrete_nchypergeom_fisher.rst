@@ -1,5 +1,5 @@
 
-.. _discrete-fnch:
+.. _discrete-nchypergeom-fisher:
 
 Fisher's Noncentral Hypergeometric Distribution
 ===============================================
@@ -49,4 +49,4 @@ References
 -  Agner Fog, "Biased Urn Theory", https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
 -  "Fisher's noncentral hypergeometric distribution", Wikipedia, https://en.wikipedia.org/wiki/Fisher's_noncentral_hypergeometric_distribution
 
-Implementation: `scipy.stats.fnch`
+Implementation: `scipy.stats.nchypergeom_fisher`

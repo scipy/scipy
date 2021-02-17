@@ -1,6 +1,6 @@
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          boltzmann, skellam, zipf, zipfian, nbinom,
-                         fnch, wnch, randint)
+                         nchypergeom_fisher, nchypergeom_wallenius, randint)
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
@@ -137,7 +137,7 @@ class TestZipfian:
         # (a = 1 switches between methods of calculating harmonic sum)
         alt1, agt1 = 0.99999999, 1.00000001
         N = 30
-        k = np.arange(1, N  + 1)
+        k = np.arange(1, N + 1)
         assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
         assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
         assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
@@ -171,6 +171,7 @@ class TestZipfian:
     np.random.seed(0)
     naive_tests = np.vstack((np.logspace(-2, 1, 10),
                              np.random.randint(2, 40, 10))).T
+
     @pytest.mark.parametrize("a, n", naive_tests)
     def test_zipfian_naive(self, a, n):
         # test against bare-bones implementation
@@ -216,23 +217,25 @@ class TestNCH():
     odds = np.random.rand(*x.shape)*2
 
     # test output is more readable when function names (strings) are passed
-    @pytest.mark.parametrize('dist_name', ['fnch', 'wnch'])
+    @pytest.mark.parametrize('dist_name',
+                             ['nchypergeom_fisher', 'nchypergeom_wallenius'])
     def test_nch_hypergeom(self, dist_name):
         # Both noncentral hypergeometric distributions reduce to the
         # hypergeometric distribution when odds = 1
-        dists = {'fnch': fnch, 'wnch': wnch}
+        dists = {'nchypergeom_fisher': nchypergeom_fisher,
+                 'nchypergeom_wallenius': nchypergeom_wallenius}
         dist = dists[dist_name]
         x, N, m1, n = self.x, self.N, self.m1, self.n
         assert_allclose(dist.pmf(x, N, m1, n, odds=1),
                         hypergeom.pmf(x, N, m1, n))
 
-    def test_fnch_naive(self):
+    def test_nchypergeom_fisher_naive(self):
         # test against a very simple implementation
         x, N, m1, n, odds = self.x, self.N, self.m1, self.n, self.odds
 
         @np.vectorize
         def pmf_mean_var(x, N, m1, n, w):
-            # simple implementation of FNCH pmf
+            # simple implementation of nchypergeom_fisher pmf
             m2 = N - m1
             xl = np.maximum(0, n-m2)
             xu = np.minimum(n, m1)
@@ -254,11 +257,13 @@ class TestNCH():
             return pmf, mean, var
 
         pmf, mean, var = pmf_mean_var(x, N, m1, n, odds)
-        assert_allclose(fnch.pmf(x, N, m1, n, odds), pmf)
-        assert_allclose(fnch.stats(N, m1, n, odds, moments='m'), mean)
-        assert_allclose(fnch.stats(N, m1, n, odds, moments='v'), var)
+        assert_allclose(nchypergeom_fisher.pmf(x, N, m1, n, odds), pmf)
+        assert_allclose(nchypergeom_fisher.stats(N, m1, n, odds, moments='m'),
+                        mean)
+        assert_allclose(nchypergeom_fisher.stats(N, m1, n, odds, moments='v'),
+                        var)
 
-    def test_wnch_naive(self):
+    def test_nchypergeom_wallenius_naive(self):
         # test against a very simple implementation
 
         np.random.seed(2)
@@ -289,7 +294,8 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(wnch.mean(N, m1, n, w), mean(N, m1, n, w), rtol=2e-2)
+        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                        mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -299,7 +305,7 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(wnch.stats(N, m1, n, w, moments='v'),
+        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
                         variance(N, m1, n, w), rtol=5e-2)
 
         @np.vectorize
@@ -322,7 +328,7 @@ class TestNCH():
             return f(x)
 
         pmf0 = pmf(x, N, m1, n, w)
-        pmf1 = wnch.pmf(x, N, m1, n, w)
+        pmf1 = nchypergeom_wallenius.pmf(x, N, m1, n, w)
 
         atol, rtol = 1e-6, 1e-6
         i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
@@ -338,7 +344,7 @@ class TestNCH():
             # calculate sum of pmf over the support
             # the naive implementation is very wrong in these cases
             assert pmf(x, N, m1, n, w).sum() < .5
-            assert_allclose(wnch.pmf(x, N, m1, n, w).sum(), 1)
+            assert_allclose(nchypergeom_wallenius.pmf(x, N, m1, n, w).sum(), 1)
 
     def test_wallenius_against_mpmath(self):
         # precompute data with mpmath since naive implementation above
@@ -373,19 +379,23 @@ class TestNCH():
         mean = 14.808018384813426
         var = 2.6085975877923717
 
-        # wnch.pmf returns 0 for pmf(0) and pmf(1), and pmf(2)
+        # nchypergeom_wallenius.pmf returns 0 for pmf(0) and pmf(1), and pmf(2)
         # has only three digits of accuracy (~ 2.1511e-14).
-        assert_allclose(wnch.pmf(sup, M, n, N, odds), pmf,
+        assert_allclose(nchypergeom_wallenius.pmf(sup, M, n, N, odds), pmf,
                         rtol=1e-13, atol=1e-13)
-        assert_allclose(wnch.mean(M, n, N, odds), mean, rtol=1e-13)
-        assert_allclose(wnch.var(M, n, N, odds), var, rtol=1e-11)
+        assert_allclose(nchypergeom_wallenius.mean(M, n, N, odds),
+                        mean, rtol=1e-13)
+        assert_allclose(nchypergeom_wallenius.var(M, n, N, odds),
+                        var, rtol=1e-11)
 
-    @pytest.mark.parametrize('dist_name', ['fnch', 'wnch'])
+    @pytest.mark.parametrize('dist_name',
+                             ['nchypergeom_fisher', 'nchypergeom_wallenius'])
     def test_rvs_shape(self, dist_name):
         # Check that when given a size with more dimensions than the
         # dimensions of the broadcast parameters, rvs returns an array
         # with the correct shape.
-        dists = {'fnch': fnch, 'wnch': wnch}
+        dists = {'nchypergeom_fisher': nchypergeom_fisher,
+                 'nchypergeom_wallenius': nchypergeom_wallenius}
         dist = dists[dist_name]
         x = dist.rvs(50, 30, [[10], [20]], [0.5, 1.0, 2.0], size=(5, 1, 2, 3))
         assert x.shape == (5, 1, 2, 3)

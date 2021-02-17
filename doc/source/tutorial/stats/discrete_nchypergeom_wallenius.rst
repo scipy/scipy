@@ -1,5 +1,5 @@
 
-.. _discrete-wnch:
+.. _discrete-nchypergeom-wallenius:
 
 Wallenius' Noncentral Hypergeometric Distribution
 =================================================
@@ -39,4 +39,4 @@ References
 -  Agner Fog, "Biased Urn Theory", https://cran.r-project.org/web/packages/BiasedUrn/vignettes/UrnTheory.pdf
 -  "Wallenius' noncentral hypergeometric distribution", Wikipedia, https://en.wikipedia.org/wiki/Wallenius'_noncentral_hypergeometric_distribution
 
-Implementation: `scipy.stats.wnch`
+Implementation: `scipy.stats.nchypergeom_wallenius`

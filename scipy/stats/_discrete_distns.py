@@ -1418,7 +1418,7 @@ def _vectorize_rvs_over_shapes(_rvs1):
     # None, _rvs1 must return a scalar.
     # When applied to _rvs1, this decorator broadcasts ndarray args
     # and loops over them, calling _rvs1 for each set of scalar args.
-    # For usage example, see _nch_gen
+    # For usage example, see _nchypergeom_gen
     def _rvs(*args, size, random_state):
         _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
 
@@ -1448,10 +1448,10 @@ def _vectorize_rvs_over_shapes(_rvs1):
     return _rvs
 
 
-class _nch_gen(rv_discrete):
+class _nchypergeom_gen(rv_discrete):
     r"""A noncentral hypergeometric discrete random variable.
 
-    For subclassing by fnch_gen and wnch_gen.
+    For subclassing by nchypergeom_fisher_gen and nchypergeom_wallenius_gen.
 
     """
 
@@ -1511,7 +1511,7 @@ class _nch_gen(rv_discrete):
         return m, v, s, k
 
 
-class fnch_gen(_nch_gen):
+class nchypergeom_fisher_gen(_nchypergeom_gen):
     r"""A Fisher's noncentral hypergeometric discrete random variable.
 
     Fisher's noncentral hypergeometric distribution models drawing objects of
@@ -1527,7 +1527,7 @@ class fnch_gen(_nch_gen):
 
     See Also
     --------
-    wnch, hypergeom, nhypergeom
+    nchypergeom_wallenius, hypergeom, nhypergeom
 
     Notes
     -----
@@ -1559,8 +1559,8 @@ class fnch_gen(_nch_gen):
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
-    `fnch` uses the BiasedUrn package by Agner Fog with permission
-    for it to be distributed under SciPy's license.
+    `nchypergeom_fisher` uses the BiasedUrn package by Agner Fog with
+    permission for it to be distributed under SciPy's license.
 
     The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
@@ -1589,10 +1589,12 @@ class fnch_gen(_nch_gen):
     dist = _PyFishersNCHypergeometric
 
 
-fnch = fnch_gen(name=r'fnch', longname="A Fisher's noncentral hypergeometric")
+nchypergeom_fisher = nchypergeom_fisher_gen(
+    name=r'nchypergeom_fisher',
+    longname="A Fisher's noncentral hypergeometric")
 
 
-class wnch_gen(_nch_gen):
+class nchypergeom_wallenius_gen(_nchypergeom_gen):
     r"""A Wallenius' noncentral hypergeometric discrete random variable.
 
     Wallenius' noncentral hypergeometric distribution models drawing objects of
@@ -1607,7 +1609,7 @@ class wnch_gen(_nch_gen):
 
     See Also
     --------
-    fnch, hypergeom, nhypergeom
+    nchypergeom_fisher, hypergeom, nhypergeom
 
     Notes
     -----
@@ -1639,8 +1641,8 @@ class wnch_gen(_nch_gen):
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
-    `wnch` uses the BiasedUrn package by Agner Fog with permission
-    for it to be distributed under SciPy's license.
+    `nchypergeom_wallenius` uses the BiasedUrn package by Agner Fog with
+    permission for it to be distributed under SciPy's license.
 
     The symbols used to denote the shape parameters (`N`, `n`, and `M`) are not
     universally accepted; they are chosen for consistency with `hypergeom`.
@@ -1670,8 +1672,9 @@ class wnch_gen(_nch_gen):
     dist = _PyWalleniusNCHypergeometric
 
 
-wnch = wnch_gen(name=r'wnch',
-                longname="A Wallenius' noncentral hypergeometric")
+nchypergeom_wallenius = nchypergeom_wallenius_gen(
+    name=r'nchypergeom_wallenius',
+    longname="A Wallenius' noncentral hypergeometric")
 
 
 # Collect names of classes and objects in this module.
