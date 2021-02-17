@@ -19,7 +19,7 @@ def configuration(parent_package='', top_path=None):
         ('BOOST_MATH_DOMAIN_ERROR_POLICY', 'ignore_error'),
     ]
     if sys.maxsize > 2**32:
-        # 32-bit machines loose too much precision with no promotion,
+        # 32-bit machines lose too much precision with no promotion,
         # so only set this policy for 64-bit machines
         DEFINES += [('BOOST_MATH_PROMOTE_DOUBLE_POLICY', 'false')]
     INCLUDES = [
