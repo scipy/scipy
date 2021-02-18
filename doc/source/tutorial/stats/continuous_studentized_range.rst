@@ -3,7 +3,7 @@
 
 Studentized Range Distribution
 ==============================
-There are two shape parameters :math:`\nu>0` and :math:`k>0`.
+This distribution has two shape parameters :math:`\nu>0` and :math:`k>0`.
 
 .. math::
    :nowrap:

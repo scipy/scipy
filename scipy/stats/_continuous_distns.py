@@ -8856,25 +8856,36 @@ class rv_histogram(rv_continuous):
 
 class studentized_range_gen(rv_continuous):
     """
-    The upper half of a generalized normal continuous random variable.
+    The generalized studentized range continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    gennorm : generalized normal distribution
-    expon : exponential distribution
-    halfnorm : half normal distribution
+    t: student's t distribution
 
     Notes
     -----
-    The probability density function for `halfgennorm` is:
+    When `v` is arbitrarily large, equal to or greater than 2000, the method to
+    calculate the cdf changes to asymptotic.
 
     References
     ----------
 
-    .. [1] "Generalized normal distribution, Version 1",
-           https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
+    .. [1] "Studentized range distribution",
+           https://en.wikipedia.org/wiki/Studentized_range_distribution
+    .. [2] Batista, Ben Dêivide, et al. “Externally Studentized Normal Midrange
+           Distribution.” Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
+           378–389., doi:10.1590/1413-70542017414047716.
+    .. [3] Harter, H. Leon. “Tables of Range and Studentized Range.” The Annals
+           of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122–1147.
+           JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.
+    .. [4] Lund, R. E., and J. R. Lund. “Algorithm AS 190: Probabilities and
+           Upper Quantiles for the Studentized Range.” Journal of the Royal
+           Statistical Society. Series C (Applied Statistics), vol. 32, no. 2,
+           1983, pp. 204–210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
+           Feb. 2021.
+
 
     %(example)s
 
@@ -8936,6 +8947,10 @@ class studentized_range_gen(rv_continuous):
 
         """The cdf"""
         def _single_cdf(q, k, v):
+            # "When the degrees of freedom V are infinite the probability
+            # integral takes [a] simpler form," and a single asymptotic
+            # integral is evaluated rather than the standard double integral.
+            # (Lund, R. E., and J. R. Lund, 205)
             if (v < 2000 and not self._force_fn) or self._force_fn == "regular":
                 user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
@@ -8952,7 +8967,7 @@ class studentized_range_gen(rv_continuous):
                     opts=dict(epsabs=self._epsabs)
                 )[0]
 
-            else:  # Use asymptomatic method
+            else:
                 user_data = np.array([q, k], float).ctypes.data_as(
                     ctypes.c_void_p)
 
@@ -8968,7 +8983,8 @@ class studentized_range_gen(rv_continuous):
         return ufunc(x, k, v).astype("float64")
 
 
-studentized_range = studentized_range_gen(name='studentized_range', a=0, b=np.inf)
+studentized_range = studentized_range_gen(name='studentized_range', a=0,
+                                          b=np.inf)
 
 
 # Collect names of classes and objects in this module.
