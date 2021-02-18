@@ -12,6 +12,7 @@ jobs:
     name: Build Docker image 
     runs-on: ubuntu-latest
     environment: scipy-dev
+    if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
@@ -42,4 +43,4 @@ jobs:
           file: "./tools/docker_dev/Dockerfile"
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}
+            scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-dev:latest

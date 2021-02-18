@@ -354,7 +354,7 @@ add_newdoc("airye",
     Returns
     -------
     eAi, eAip, eBi, eBip : array_like
-        Exponentially scaled Airy functions eAi and eBi, and their derivatives 
+        Exponentially scaled Airy functions eAi and eBi, and their derivatives
         eAip and eBip
 
     Notes
@@ -370,11 +370,11 @@ add_newdoc("airye",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
-           
+
     Examples
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
-    
+
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -386,9 +386,9 @@ add_newdoc("airye",
     ...     ax[ind].legend(data[2])
     ...     ax[ind].grid(True)
     >>> plt.show()
-    
+
     We can compute these using usual non-scaled Airy functions by:
-    
+
     >>> from scipy.special import airy
     >>> Ai, Aip, Bi, Bip = airy(z)
     >>> np.allclose(eAi, Ai * np.exp(2.0 / 3.0 * z * np.sqrt(z)))
@@ -399,16 +399,16 @@ add_newdoc("airye",
     True
     >>> np.allclose(eBip, Bip * np.exp(-abs(np.real(2.0 / 3.0 * z * np.sqrt(z)))))
     True
-    
-    Comparing non-scaled and exponentially scaled ones, the usual non-scaled 
+
+    Comparing non-scaled and exponentially scaled ones, the usual non-scaled
     function quickly underflows for large values, whereas the exponentially
     scaled function does not.
-    
+
     >>> airy(200)
     (0.0, 0.0, nan, nan)
     >>> airye(200)
     (0.07501041684381093, -1.0609012305109042, 0.15003188417418148, 2.1215836725571093)
-    
+
     """)
 
 add_newdoc("bdtr",
@@ -9547,4 +9547,36 @@ add_newdoc("owens_t",
 add_newdoc("_factorial",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("wright_bessel",
+    r"""
+    wright_bessel(a, b, x)
+
+    Wright's generalized Bessel function.
+
+    Wright's generalized Bessel function is an entire function and defined as
+
+    .. math:: \Phi(a, b; x) = \sum_{k=0}^\infty \frac{x^k}{k! \Gamma(a k + b)}
+
+    See also [1].
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+
+    Notes
+    -----
+    Due to the compexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 10.46.
+           https://dlmf.nist.gov/10.46.E1
     """)

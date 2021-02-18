@@ -529,6 +529,14 @@ cdef class Rotation(object):
         else:
             self._quat = quat.copy() if copy else quat
 
+    def __getstate__(self):
+        return np.asarray(self._quat, dtype=float), self._single
+
+    def __setstate__(self, state):
+        quat, single = state
+        self._quat = quat.copy()
+        self._single = single
+
     @property
     def single(self):
         """Whether this instance represents a single rotation."""

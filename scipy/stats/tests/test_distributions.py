@@ -5360,3 +5360,169 @@ def test_rvs_no_size_warning():
 
     with assert_warns(np.VisibleDeprecationWarning):
         rvs_no_size.rvs()
+
+
+@pytest.mark.parametrize(
+    'dist, args',
+    [  # In each of the following, at least one shape parameter is invalid
+        (stats.hypergeom, (3, 3, 4)),
+        (stats.nhypergeom, (5, 2, 8)),
+        (stats.bernoulli, (1.5, )),
+        (stats.binom, (10, 1.5)),
+        (stats.betabinom, (10, -0.4, -0.5)),
+        (stats.boltzmann, (-1, 4)),
+        (stats.dlaplace, (-0.5, )),
+        (stats.geom, (1.5, )),
+        (stats.logser, (1.5, )),
+        (stats.nbinom, (10, 1.5)),
+        (stats.planck, (-0.5, )),
+        (stats.poisson, (-0.5, )),
+        (stats.randint, (5, 2)),
+        (stats.skellam, (-5, -2)),
+        (stats.zipf, (-2, )),
+        (stats.yulesimon, (-2, )),
+        (stats.alpha, (-1, )),
+        (stats.anglit, ()),
+        (stats.arcsine, ()),
+        (stats.argus, (-1, )),
+        (stats.beta, (-2, 2)),
+        (stats.betaprime, (-2, 2)),
+        (stats.bradford, (-1, )),
+        (stats.burr, (-1, 1)),
+        (stats.burr12, (-1, 1)),
+        (stats.cauchy, ()),
+        (stats.chi, (-1, )),
+        (stats.chi2, (-1, )),
+        (stats.cosine, ()),
+        (stats.crystalball, (-1, 2)),
+        (stats.dgamma, (-1, )),
+        (stats.dweibull, (-1, )),
+        (stats.erlang, (-1, )),
+        (stats.expon, ()),
+        (stats.exponnorm, (-1, )),
+        (stats.exponweib, (1, -1)),
+        (stats.exponpow, (-1, )),
+        (stats.f, (10, -10)),
+        (stats.fatiguelife, (-1, )),
+        (stats.fisk, (-1, )),
+        (stats.foldcauchy, (-1, )),
+        (stats.foldnorm, (-1, )),
+        (stats.genlogistic, (-1, )),
+        (stats.gennorm, (-1, )),
+        (stats.genpareto, (np.inf, )),
+        (stats.genexpon, (1, 2, -3)),
+        (stats.genextreme, (np.inf, )),
+        (stats.gausshyper, (1, 2, 3, -4)),
+        (stats.gamma, (-1, )),
+        (stats.gengamma, (-1, 0)),
+        (stats.genhalflogistic, (-1, )),
+        (stats.geninvgauss, (1, 0)),
+        (stats.gilbrat, ()),
+        (stats.gompertz, (-1, )),
+        (stats.gumbel_r, ()),
+        (stats.gumbel_l, ()),
+        (stats.halfcauchy, ()),
+        (stats.halflogistic, ()),
+        (stats.halfnorm, ()),
+        (stats.halfgennorm, (-1, )),
+        (stats.hypsecant, ()),
+        (stats.invgamma, (-1, )),
+        (stats.invgauss, (-1, )),
+        (stats.invweibull, (-1, )),
+        (stats.johnsonsb, (1, -2)),
+        (stats.johnsonsu, (1, -2)),
+        (stats.kappa4, (np.nan, 0)),
+        (stats.kappa3, (-1, )),
+        (stats.ksone, (-1, )),
+        (stats.kstwo, (-1, )),
+        (stats.kstwobign, ()),
+        (stats.laplace, ()),
+        (stats.laplace_asymmetric, (-1, )),
+        (stats.levy, ()),
+        (stats.levy_l, ()),
+        (stats.levy_stable, (-1, 1)),
+        (stats.logistic, ()),
+        (stats.loggamma, (-1, )),
+        (stats.loglaplace, (-1, )),
+        (stats.lognorm, (-1, )),
+        (stats.loguniform, (10, 5)),
+        (stats.lomax, (-1, )),
+        (stats.maxwell, ()),
+        (stats.mielke, (1, -2)),
+        (stats.moyal, ()),
+        (stats.nakagami, (-1, )),
+        (stats.ncx2, (-1, 2)),
+        (stats.ncf, (10, 20, -1)),
+        (stats.nct, (-1, 2)),
+        (stats.norm, ()),
+        (stats.norminvgauss, (5, -10)),
+        (stats.pareto, (-1, )),
+        # (stats.pearson3, (np.nan, )),
+        (stats.powerlaw, (-1, )),
+        (stats.powerlognorm, (1, -2)),
+        (stats.powernorm, (-1, )),
+        (stats.rdist, (-1, )),
+        (stats.rayleigh, ()),
+        (stats.rice, (-1, )),
+        (stats.recipinvgauss, (-1, )),
+        (stats.semicircular, ()),
+        (stats.skewnorm, (np.inf, )),
+        (stats.t, (-1, )),
+        (stats.trapezoid, (0, 2)),
+        (stats.triang, (2, )),
+        (stats.truncexpon, (-1, )),
+        (stats.truncnorm, (10, 5)),
+        # (stats.tukeylambda, (np.nan, )),
+        (stats.uniform, ()),
+        (stats.vonmises, (-1, )),
+        (stats.vonmises_line, (-1, )),
+        (stats.wald, ()),
+        (stats.weibull_min, (-1, )),
+        (stats.weibull_max, (-1, )),
+        (stats.wrapcauchy, (2, ))
+    ]
+)
+def test_support_gh13294_regression(dist, args):
+    # test support method with invalid arguents
+    if isinstance(dist, stats.rv_continuous):
+        # test with valid scale
+        if len(args) != 0:
+            a0, b0 = dist.support(*args)
+            assert_equal(a0, np.nan)
+            assert_equal(b0, np.nan)
+        # test with invalid scale
+        # For some distributions, that take no parameters,
+        # the case of only invalid scale occurs and hence,
+        # it is implicitly tested in this test case.
+        loc1, scale1 = 0, -1
+        a1, b1 = dist.support(*args, loc1, scale1)
+        assert_equal(a1, np.nan)
+        assert_equal(b1, np.nan)
+    else:
+        a, b = dist.support(*args)
+        assert_equal(a, np.nan)
+        assert_equal(b, np.nan)
+
+def test_support_broadcasting_gh13294_regression():
+    a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])
+    ex_a0 = np.array([-np.inf, -np.inf, -np.inf, np.nan])
+    ex_b0 = np.array([np.inf, np.inf, np.inf, np.nan])
+    assert_equal(a0, ex_a0)
+    assert_equal(b0, ex_b0)
+    assert a0.shape == ex_a0.shape
+    assert b0.shape == ex_b0.shape
+
+    a1, b1 = stats.norm.support([], [])
+    ex_a1, ex_b1 = np.array([]), np.array([])
+    assert_equal(a1, ex_a1)
+    assert_equal(b1, ex_b1)
+    assert a1.shape == ex_a1.shape
+    assert b1.shape == ex_b1.shape
+
+    a2, b2 = stats.norm.support([0, 0, 0, 1], [-1])
+    ex_a2 = np.array(4*[np.nan])
+    ex_b2 = np.array(4*[np.nan])
+    assert_equal(a2, ex_a2)
+    assert_equal(b2, ex_b2)
+    assert a2.shape == ex_a2.shape
+    assert b2.shape == ex_b2.shape
