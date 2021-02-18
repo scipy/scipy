@@ -356,16 +356,15 @@ class BenchSkewKurtosis(Benchmark):
 
 
 class BenchQMCDiscrepancy(Benchmark):
-    param_names = ['iterative', 'method']
+    param_names = ['method']
     params = [
-        [False, True],
         ["CD", "WD", "MD", "L2-star",]
     ]
 
-    def setup(self, iterative, method):
+    def setup(self, method):
         np.random.seed(1234)
-        sample = np.random.random_sample((100, 4))
+        sample = np.random.random_sample((1000, 10))
         self.sample = sample
 
-    def time_discrepancy(self, iterative, method):
-        disc = stats.qmc.discrepancy(self.sample, iterative, method)
+    def time_discrepancy(self, method):
+        disc = stats.qmc.discrepancy(self.sample, method=method)
