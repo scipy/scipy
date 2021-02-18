@@ -79,12 +79,11 @@ RUN apt-get update && \
     apt-get install -yq --no-install-recommends \
     build-essential \
     ca-certificates \
-    curl \
     git \
     libatlas-base-dev \
     software-properties-common \
     vim \
-    wget \
+    wget && \
     apt-get clean && \
     rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* && \
