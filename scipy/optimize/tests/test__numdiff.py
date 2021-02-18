@@ -571,7 +571,8 @@ class TestApproxDerivativeSparse(object):
             J_dense = approx_derivative(self.fun, self.x0, method=method)
             J_sparse = approx_derivative(
                 self.fun, self.x0, sparsity=(structure, groups), method=method)
-            assert_equal(J_dense, J_sparse.toarray())
+            assert_allclose(J_dense, J_sparse.toarray(),
+                            rtol=5e-16, atol=7e-15)
 
     def test_check_derivative(self):
         def jac(x):
