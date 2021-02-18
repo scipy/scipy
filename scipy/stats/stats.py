@@ -2044,18 +2044,25 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
-    The inputs can also be infinite:
+    Multidimensional score arrays are supported:
 
-    >>> # import numpy as np
-    >>> stats.percentileofscore([1, np.inf], [100, 10000])
-    array([50., 50.])
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], [2, 3])
+    array([40., 70.])
 
-    Multidimensional score arrays are also supported:
+    The inputs can be infinite:
 
-    >>> scores = [[-np.inf, 0, 3], [np.nan, 4, np.inf]]
-    >>> stats.percentileofscore([1, 2, 3, 3, 4], scores)
-    array([[  0.,   0.,  70.],
-           [ nan, 100., 100.]])
+    >>> stats.percentileofscore([-np.inf, 0, 1, np.inf], [1, 100])
+    array([75., 75.])
+
+    If `a` is empty, or containing only nan's (which are omitted),
+    the resulting percentiles are all nan:
+
+    >>> stats.percentileofscore([], 1)
+    nan
+    >>> stats.percentileofscore([np.nan, 1, 2], [1, 2], nan_policy='omit')
+    array([ 50., 100.])
+    >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
+    array([nan, nan])
 
     See also
     --------
@@ -2064,39 +2071,81 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
 
     a = np.asarray(a)
     n = len(a)
-    if n == 0:
-        return 100.0
+    score = np.asarray(score)
 
     # Nan treatment
-    contains_nan, nan_policy = _contains_nan(score, nan_policy)
-    if contains_nan and nan_policy == 'propagate':  # 'omit' would be meaningless
-        # ma.masked_invalid would mask +/- inf, which are actually valid inputs.
+    def _contains_nan2(a, nan_policy='propagate'):
+        """Cannot use standard _contains_nan because a list with both +/- inf
+        will count as containing nans. => modify the first check/try.
+        """
+        policies = ['propagate', 'raise', 'omit']
+        if nan_policy not in policies:
+            raise ValueError("nan_policy must be one of {%s}" %
+                             ', '.join("'%s'" % s for s in policies))
+        try:
+            contains_nan = np.isnan(a).any()
+        except TypeError:
+            try:
+                contains_nan = np.nan in set(a.ravel())
+            except TypeError:
+                contains_nan = False
+                nan_policy = 'omit'
+                warnings.warn("The input array could not be properly checked for nan "
+                              "values. nan values will be ignored.", RuntimeWarning)
+
+        if contains_nan and nan_policy == 'raise':
+            raise ValueError("The input contains nan values")
+
+        return contains_nan, nan_policy
+
+    cna, npa = _contains_nan2(a, nan_policy)
+    cns, nps = _contains_nan2(score, nan_policy)
+
+    if (cna or cns) and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    elif cns and nan_policy == "omit":
+        raise ValueError("The input scores contains nan values,"
+                         " which is incompatible with the 'omit' policy.")
+
+    # If a score is nan, then the output should be nan
+    if cns and nan_policy == "propagate":
         score = ma.masked_where(np.isnan(score), score)
-    elif contains_nan and nan_policy == 'raise':
-        raise ValueError("The input scores contains nan values")
-    else:
-        score = np.asarray(score)
 
-    # Prepare broadcasting
-    score = score[..., None]
-    count = lambda x: np.count_nonzero(x, -1)
+    # Don't count nans
+    if cna and nan_policy == "omit":
+        a = ma.masked_where(np.isnan(a), a)
+        n = a.count()
 
-    # Compute
-    if kind == 'rank':
-        left  = count(a < score)
-        right = count(a <= score)
-        plus1 = left < right
-        perct = (left + right + plus1) * (50.0 / n)
-    elif kind == 'strict':
-        perct = count(a < score) * (100.0 / n)
-    elif kind == 'weak':
-        perct = count(a <= score) * (100.0 / n)
-    elif kind == 'mean':
-        left  = count(a < score)
-        right = count(a <= score)
-        perct = (left + right) * (50.0 / n)
+    # With `propagate`, an `a` with nans should always yield nan
+    if cna and nan_policy == "propagate":
+        n = 0
+
+    # Cannot compare to empty list ==> nan
+    if n == 0:
+        perct = np.full_like(score, np.nan, dtype=float)
+
     else:
-        raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        # Prepare broadcasting
+        score = score[..., None]
+        count = lambda x: np.count_nonzero(x, -1)
+
+        # Compute
+        if kind == 'rank':
+            left  = count(a < score)
+            right = count(a <= score)
+            plus1 = left < right
+            perct = (left + right + plus1) * (50.0 / n)
+        elif kind == 'strict':
+            perct = count(a < score) * (100.0 / n)
+        elif kind == 'weak':
+            perct = count(a <= score) * (100.0 / n)
+        elif kind == 'mean':
+            left  = count(a < score)
+            right = count(a <= score)
+            perct = (left + right) * (50.0 / n)
+        else:
+            raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
     # Re-insert nan's
     perct = ma.filled(perct, np.nan)
