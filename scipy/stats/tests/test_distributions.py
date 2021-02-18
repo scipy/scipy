@@ -30,6 +30,7 @@ from scipy.special import xlogy
 from .test_continuous_basic import distcont
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root
+from itertools import repeat
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
