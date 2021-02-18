@@ -138,7 +138,7 @@ class TestUtils:
             qmc.discrepancy([1, 3])
 
         sample = [[0, 0], [1, 1], [0.5, 0.5]]
-        with pytest.raises(ValueError, match=r"toto is not a valid method."):
+        with pytest.raises(ValueError, match=r"'toto' is not a valid method."):
             qmc.discrepancy(sample, method='toto')
 
     def test_update_discrepancy(self):
@@ -166,6 +166,11 @@ class TestUtils:
 
         x_new = [[0.5, 0.5]]
         with pytest.raises(ValueError, match=r"x_new is not a 1D array"):
+            update_discrepancy(x_new, space_1[:-1], disc_init)
+
+        x_new = [0.3, 0.1, 0]
+        with pytest.raises(ValueError, match=r"x_new and Sample must be "
+                                             r"broadcastable"):
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
     def test_discrepancy_alternative_implementation(self):
