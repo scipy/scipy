@@ -14,17 +14,14 @@ tasks:
     prebuild: |
       conda activate scipydev
       python setup.py build_ext --inplace
-      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Scipy built \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
       conda develop .
-      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Scipy ready for development \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
       git submodule update --init
       cd doc 
       make html-scipyorg
-      echo -e '\xF0\x9F\x9A\xA7\x20\x20 \033[0;32m Documentation built \033[m \x20\x20\xF0\x9F\x9A\xA7\n'
-      conda activate scipydev
       pip install sphinx-autobuild
+    command: conda activate scipydev
   - name: Develop here
-    # init: mkdir -p /workspace/scipy/.theia &&  cp ./tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
+    init: mkdir -p /workspace/scipy/.theia &&  cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
     command: conda activate scipydev
 
 # --------------------------------------------------------
@@ -49,7 +46,7 @@ github:
     # enable for master branch
     master: true
     # enable for other branches (defaults to false) 
-    branches: true 
+    branches: false 
     # enable for pull requests coming from this repo (defaults to true) 
     pullRequests: false
     # enable for pull requests coming from forks (defaults to false)
