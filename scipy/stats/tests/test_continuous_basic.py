@@ -244,6 +244,7 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
+    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -251,20 +252,23 @@ def cases_test_moments():
 
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
+        cond3 = distname not in fail_loc_scale
 
-        yield distname, arg, cond1, cond2, False
+        yield distname, arg, cond1, cond2, cond3, False
 
-        if not cond1 or not cond2:
+        if not cond1 or not cond2 or not cond3:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,is_xfailing',
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
+                         'loc_scale_ok,is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
+                 is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -288,7 +292,9 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
 
-        check_loc_scale(distfn, arg, m, v, distname)
+        if loc_scale_ok:
+            check_loc_scale(distfn, arg, m, v, distname)
+
         check_moment(distfn, arg, m, v, distname)
 
 
