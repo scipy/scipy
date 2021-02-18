@@ -1,0 +1,18 @@
+#!/bin/bash
+# Basic configurations for the workspace
+
+set -e
+
+# Add git aliases
+
+git config --global alias.co checkout
+git config --global alias.ci commit
+git config --global alias.st status
+git config --global alias.br branch
+git config --global alias.hist "log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short"
+git config --global alias.type 'cat-file -t'
+git config --global alias.dump 'cat-file -p'
+
+# Vanity custom bash prompt - makes it more legible tbh
+echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '"  >> ~/.bashrc
+
