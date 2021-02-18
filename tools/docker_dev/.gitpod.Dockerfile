@@ -10,8 +10,6 @@ FROM ${BASE_CONTAINER}
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
     bash-completion \
-    build-essential \
-    git \
     htop \
     jq \
     less \
