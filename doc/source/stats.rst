@@ -7,3 +7,4 @@
    :hidden:
 
    stats.mstats
+   stats.qmc

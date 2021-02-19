@@ -14,11 +14,17 @@ from scipy.stats._distr_params import distdiscrete
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
+# For these distributions, test_discrete_basic only runs with test mode full
+distslow = {'zipfian', 'nhypergeom'}
+
 
 def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
-        yield distname, arg, distname not in seen
+        if distname in distslow:
+            yield pytest.param(distname, arg, distname, marks=pytest.mark.slow)
+        else:
+            yield distname, arg, distname not in seen
         seen.add(distname)
 
 
