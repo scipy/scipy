@@ -27,12 +27,18 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-from .test_continuous_basic import distcont
+from .test_continuous_basic import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
+
+# distributions to skip while testing the fix for the support method
+# introduced in gh-13294. These distributions are skipped as they
+# always return a non-nan support for every parametrization.
+skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -5362,127 +5368,12 @@ def test_rvs_no_size_warning():
         rvs_no_size.rvs()
 
 
-@pytest.mark.parametrize(
-    'dist, args',
-    [  # In each of the following, at least one shape parameter is invalid
-        (stats.hypergeom, (3, 3, 4)),
-        (stats.nhypergeom, (5, 2, 8)),
-        (stats.bernoulli, (1.5, )),
-        (stats.binom, (10, 1.5)),
-        (stats.betabinom, (10, -0.4, -0.5)),
-        (stats.boltzmann, (-1, 4)),
-        (stats.dlaplace, (-0.5, )),
-        (stats.geom, (1.5, )),
-        (stats.logser, (1.5, )),
-        (stats.nbinom, (10, 1.5)),
-        (stats.planck, (-0.5, )),
-        (stats.poisson, (-0.5, )),
-        (stats.randint, (5, 2)),
-        (stats.skellam, (-5, -2)),
-        (stats.zipf, (-2, )),
-        (stats.yulesimon, (-2, )),
-        (stats.alpha, (-1, )),
-        (stats.anglit, ()),
-        (stats.arcsine, ()),
-        (stats.argus, (-1, )),
-        (stats.beta, (-2, 2)),
-        (stats.betaprime, (-2, 2)),
-        (stats.bradford, (-1, )),
-        (stats.burr, (-1, 1)),
-        (stats.burr12, (-1, 1)),
-        (stats.cauchy, ()),
-        (stats.chi, (-1, )),
-        (stats.chi2, (-1, )),
-        (stats.cosine, ()),
-        (stats.crystalball, (-1, 2)),
-        (stats.dgamma, (-1, )),
-        (stats.dweibull, (-1, )),
-        (stats.erlang, (-1, )),
-        (stats.expon, ()),
-        (stats.exponnorm, (-1, )),
-        (stats.exponweib, (1, -1)),
-        (stats.exponpow, (-1, )),
-        (stats.f, (10, -10)),
-        (stats.fatiguelife, (-1, )),
-        (stats.fisk, (-1, )),
-        (stats.foldcauchy, (-1, )),
-        (stats.foldnorm, (-1, )),
-        (stats.genlogistic, (-1, )),
-        (stats.gennorm, (-1, )),
-        (stats.genpareto, (np.inf, )),
-        (stats.genexpon, (1, 2, -3)),
-        (stats.genextreme, (np.inf, )),
-        (stats.gausshyper, (1, 2, 3, -4)),
-        (stats.gamma, (-1, )),
-        (stats.gengamma, (-1, 0)),
-        (stats.genhalflogistic, (-1, )),
-        (stats.geninvgauss, (1, 0)),
-        (stats.gilbrat, ()),
-        (stats.gompertz, (-1, )),
-        (stats.gumbel_r, ()),
-        (stats.gumbel_l, ()),
-        (stats.halfcauchy, ()),
-        (stats.halflogistic, ()),
-        (stats.halfnorm, ()),
-        (stats.halfgennorm, (-1, )),
-        (stats.hypsecant, ()),
-        (stats.invgamma, (-1, )),
-        (stats.invgauss, (-1, )),
-        (stats.invweibull, (-1, )),
-        (stats.johnsonsb, (1, -2)),
-        (stats.johnsonsu, (1, -2)),
-        (stats.kappa4, (np.nan, 0)),
-        (stats.kappa3, (-1, )),
-        (stats.ksone, (-1, )),
-        (stats.kstwo, (-1, )),
-        (stats.kstwobign, ()),
-        (stats.laplace, ()),
-        (stats.laplace_asymmetric, (-1, )),
-        (stats.levy, ()),
-        (stats.levy_l, ()),
-        (stats.levy_stable, (-1, 1)),
-        (stats.logistic, ()),
-        (stats.loggamma, (-1, )),
-        (stats.loglaplace, (-1, )),
-        (stats.lognorm, (-1, )),
-        (stats.loguniform, (10, 5)),
-        (stats.lomax, (-1, )),
-        (stats.maxwell, ()),
-        (stats.mielke, (1, -2)),
-        (stats.moyal, ()),
-        (stats.nakagami, (-1, )),
-        (stats.ncx2, (-1, 2)),
-        (stats.ncf, (10, 20, -1)),
-        (stats.nct, (-1, 2)),
-        (stats.norm, ()),
-        (stats.norminvgauss, (5, -10)),
-        (stats.pareto, (-1, )),
-        # (stats.pearson3, (np.nan, )),
-        (stats.powerlaw, (-1, )),
-        (stats.powerlognorm, (1, -2)),
-        (stats.powernorm, (-1, )),
-        (stats.rdist, (-1, )),
-        (stats.rayleigh, ()),
-        (stats.rice, (-1, )),
-        (stats.recipinvgauss, (-1, )),
-        (stats.semicircular, ()),
-        (stats.skewnorm, (np.inf, )),
-        (stats.t, (-1, )),
-        (stats.trapezoid, (0, 2)),
-        (stats.triang, (2, )),
-        (stats.truncexpon, (-1, )),
-        (stats.truncnorm, (10, 5)),
-        # (stats.tukeylambda, (np.nan, )),
-        (stats.uniform, ()),
-        (stats.vonmises, (-1, )),
-        (stats.vonmises_line, (-1, )),
-        (stats.wald, ()),
-        (stats.weibull_min, (-1, )),
-        (stats.weibull_max, (-1, )),
-        (stats.wrapcauchy, (2, ))
-    ]
-)
-def test_support_gh13294_regression(dist, args):
+@pytest.mark.parametrize('distname, args', invdistdiscrete + invdistcont)
+def test_support_gh13294_regression(distname, args):
+    if distname in skip_test_support_gh13294_regression:
+        pytest.skip(f"skipping test for the support method for "
+                    f"distribution {distname}.")
+    dist = getattr(stats, distname)
     # test support method with invalid arguents
     if isinstance(dist, stats.rv_continuous):
         # test with valid scale
@@ -5526,3 +5417,17 @@ def test_support_broadcasting_gh13294_regression():
     assert_equal(b2, ex_b2)
     assert a2.shape == ex_a2.shape
     assert b2.shape == ex_b2.shape
+
+
+def test_distr_params_lists():
+    # distribution objects are extra distributions added in
+    # test_discrete_basic. All other distributions are strings (names)
+    # and so we only choose those to compare whether both lists match.
+    discrete_distnames = {name for name, _ in distdiscrete
+                          if isinstance(name, str)}
+    invdiscrete_distnames = {name for name, _ in invdistdiscrete}
+    assert discrete_distnames == invdiscrete_distnames
+
+    cont_distnames = {name for name, _ in distcont}
+    invcont_distnames = {name for name, _ in invdistcont}
+    assert cont_distnames == invcont_distnames
