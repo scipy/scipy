@@ -438,6 +438,7 @@ Classes returned by some functions
 ==================================
 
 .. autosummary::
+   :toctree: generated/
 
    scipy.stats._result_classes.RelativeRiskResult
 
