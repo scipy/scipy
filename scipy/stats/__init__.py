@@ -356,15 +356,6 @@ Contingency table functions
    contingency.association
    fisher_exact
 
-Objects returned by functions in the contingency submodule
-----------------------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   contingency.RelativeRiskResult
-
-
 Plot-tests
 ==========
 
@@ -409,7 +400,15 @@ Warnings used in :mod:`scipy.stats`
 For many more stat related functions install the software R and the
 interface package rpy.
 
+Classes returned by some functions
+==================================
+
+.. autosummary::
+
+   scipy.stats._result_classes.RelativeRiskResult
+
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *

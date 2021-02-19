@@ -150,7 +150,7 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
 
     Returns
     -------
-    result : instance of `RelativeRiskResult`
+    result : instance of `~scipy.stats._result_classes.RelativeRiskResult`
         The object has the float attribute ``relative_risk``, which is::
 
             rr = (exposed_cases/exposed_total) / (control_cases/control_total)
