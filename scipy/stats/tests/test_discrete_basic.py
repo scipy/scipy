@@ -282,10 +282,7 @@ def test_methods_with_lists(method, distname, args):
 @pytest.mark.parametrize('distname, args', invdistdiscrete)
 def test_cdf_gh13280_regression(distname, args):
     # Test for nan output when shape parameters are invalid
-    try:
-        dist = getattr(stats, distname)
-    except TypeError:
-        dist = distname
+    dist = getattr(stats, distname)
     x = np.arange(-2, 15)
     vals = dist.cdf(x, *args)
     expected = np.nan
