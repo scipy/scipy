@@ -5373,10 +5373,7 @@ def test_support_gh13294_regression(distname, args):
     if distname in skip_test_support_gh13294_regression:
         pytest.skip(f"skipping test for the support method for "
                     f"distribution {distname}.")
-    try:
-        dist = getattr(stats, distname)
-    except TypeError:
-        dist = distname
+    dist = getattr(stats, distname)
     # test support method with invalid arguents
     if isinstance(dist, stats.rv_continuous):
         # test with valid scale
@@ -5428,11 +5425,9 @@ def test_distr_params_lists():
     # and so we only choose those to compare whether both lists match.
     discrete_distnames = {name for name, _ in distdiscrete
                           if isinstance(name, str)}
-    invdiscrete_distnames = {name for name, _ in invdistdiscrete
-                             if isinstance(name, str)}
+    invdiscrete_distnames = {name for name, _ in invdistdiscrete}
     assert discrete_distnames == invdiscrete_distnames
 
-    cont_distnames = {name for name, _ in distcont if isinstance(name, str)}
-    invcont_distnames = {name for name, _ in invdistcont
-                         if isinstance(name, str)}
+    cont_distnames = {name for name, _ in distcont}
+    invcont_distnames = {name for name, _ in invdistcont}
     assert cont_distnames == invcont_distnames
