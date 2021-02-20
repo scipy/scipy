@@ -20,7 +20,7 @@ jobs:
       max-parallel: 3
       matrix:
         python-version: [3.7, 3.8, 3.9]
-        numpy-version: ['numpy==1.19.5']
+        numpy-version: ['--upgrade numpy']
 
     steps:
     - uses: actions/checkout@v2

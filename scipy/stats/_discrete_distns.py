@@ -265,6 +265,26 @@ class nbinom_gen(rv_discrete):
     number of successes, :math:`p` is the probability of a single success,
     and :math:`1-p` is the probability of a single failure.
 
+    Another common parameterization of the negative binomial distribution is
+    in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
+    successes. The mean :math:`\mu` is related to the probability of success
+    as
+
+    .. math::
+
+       p = \frac{n}{n + \mu}
+
+    The number of successes :math:`n` may also be specified in terms of a
+    "dispersion", "heterogeneity", or "aggregation" parameter :math:`\alpha`,
+    which relates the mean :math:`\mu` to the variance :math:`\sigma^2`,
+    e.g. :math:`\sigma^2 = \mu + \alpha \mu^2`. Regardless of the convention
+    used for :math:`\alpha`,
+
+    .. math::
+
+       p &= \frac{\mu}{\sigma^2} \\
+       n &= \frac{\mu^2}{\sigma^2 - \mu}
+
     %(after_notes)s
 
     %(example)s

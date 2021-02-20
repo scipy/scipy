@@ -65,7 +65,7 @@ docstring: ``print(stats.norm.__doc__)``.
 To find the support, i.e., upper and lower bounds of the distribution,
 call:
 
-    >>> print('bounds of distribution lower: %s, upper: %s' % (norm.a, norm.b))
+    >>> print('bounds of distribution lower: %s, upper: %s' % norm.support())
     bounds of distribution lower: -inf, upper: inf
 
 We can list all methods and properties of the distribution with

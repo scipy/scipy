@@ -19,10 +19,10 @@ import numpy as np
 
 from .optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
+from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
-from ._linprog_highs import _linprog_highs
 from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
                            _linprog_rs_doc, _linprog_simplex_doc,
                            _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
@@ -580,6 +580,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     meth = method.lower()
     methods = {"simplex", "revised simplex", "interior-point",
                "highs", "highs-ds", "highs-ipm"}
+
     if meth not in methods:
         raise ValueError(f"Unknown solver '{method}'")
 
@@ -588,7 +589,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warn(warning_message, OptimizeWarning)
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
-    lp, solver_options = _parse_linprog(lp, options)
+    lp, solver_options = _parse_linprog(lp, options, meth)
     tol = solver_options.get('tol', 1e-9)
 
     # Give unmodified problem to HiGHS
