@@ -6,7 +6,7 @@ from itertools import combinations_with_replacement
 import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
-from scipy.special import xlogy
+from scipy.special import xlogy, binom
 
 
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
@@ -551,6 +551,17 @@ class KNearestRBFInterpolator:
                 )
 
         degree = int(degree)
+
+        # if there are not enough observations, fail now rather than waiting
+        # for the interpolant to be called
+        nmonos = int(binom(degree + y.shape[1], y.shape[1]))
+        if nmonos > k:
+            raise ValueError(
+                'At least %d neighbors are required when the polynomial '
+                'degree is %d and the number of dimensions is %d' %
+                (nmonos, degree, y.shape[1])
+                )
+
         tree = cKDTree(y)
 
         self.y = y
@@ -631,15 +642,8 @@ class KNearestRBFInterpolator:
 
         yhat = (y - centers[:, None])/scales[:, None, None]
         Py = _vandermonde(yhat, self.degree)
-        nmonos = Py.shape[2]
-        if nmonos > self.k:
-            raise ValueError(
-                'At least %d neighbors are required when the polynomial '
-                'degree is %d and the number of dimensions is %d' %
-                (nmonos, self.degree, self.y.shape[1])
-                )
-
         PyT = np.transpose(Py, (0, 2, 1))
+        nmonos = Py.shape[2]
         Z = np.zeros((nnbr, nmonos, nmonos), dtype=float)
         LHS = np.block([[Kyy, Py], [PyT, Z]])
         # build the right-hand-side data vector consisting of the observations

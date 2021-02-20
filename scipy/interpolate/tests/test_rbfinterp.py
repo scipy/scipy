@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 from numpy.testing import (
-    assert_, assert_allclose, assert_raises, assert_array_equal
+    assert_, assert_allclose, assert_raises, assert_array_equal, assert_warns
     )
 from scipy.spatial import cKDTree
 from scipy.interpolate.rbfinterp import (
@@ -269,15 +269,92 @@ class _TestRBFInterpolator:
         # should be able to reproduce the uncorrupted data almost exactly
         assert_allclose(yitp, y, atol=1e-5)
 
-    def test_inconsistent_dimensions_error(self):
+    def test_inconsistent_x_dimensions_error(self):
         # ValueError should be raised if the observations points and
         # interpolation points have a different number of dimensions
         np.random.seed(0)
-        x = np.random.uniform(0.0, 1.0, (100, 2))
-        y = _2d_test_function(x)
-        xitp = np.random.uniform(0.0, 1.0, (100, 1))
+        y = np.random.uniform(0.0, 1.0, (10, 2))
+        d = _2d_test_function(y)
+        x = np.random.uniform(0.0, 1.0, (10, 1))
         with assert_raises(ValueError):
-            self.build(x, y)(xitp)
+            self.build(y, d)(x)
+
+    def test_inconsistent_d_length_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(1)
+        with assert_raises(ValueError):
+            self.build(y, d)
+
+    def test_y_not_2d_error(self):
+        y = np.linspace(0, 1, 5)
+        d = np.zeros(5)
+        with assert_raises(ValueError):
+            self.build(y, d)
+
+    def test_d_not_1d_or_2d_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros((5, 1, 1))
+        with assert_raises(ValueError):
+            self.build(y, d)
+
+    def test_inconsistent_smoothing_length_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        smoothing = np.ones(1)
+        with assert_raises(ValueError):
+            self.build(y, d, smoothing=smoothing)
+
+    def test_epsilon_not_scalar_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        epsilon = np.ones(1)
+        with assert_raises(ValueError):
+            self.build(y, d, epsilon=epsilon)
+
+    def test_invalid_kernel_name_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        with assert_raises(ValueError):
+            self.build(y, d, kernel='test')
+
+    def test_epsilon_not_specified_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        for kernel in _NAME_TO_FUNC.keys():
+            if kernel in _SCALE_INVARIANT:
+                continue
+
+            with assert_raises(ValueError):
+                self.build(y, d, kernel=kernel)
+
+    def test_x_not_2d_error(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        x = np.linspace(0, 1, 5)
+        d = np.zeros(5)
+        with assert_raises(ValueError):
+            self.build(y, d)(x)
+
+    def test_not_enough_observations_error(self):
+        y = np.linspace(0, 1, 1)[:, None]
+        d = np.zeros(1)
+        with assert_raises(ValueError):
+            self.build(y, d, kernel='tps')
+
+    def test_degree_warning(self):
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        for kernel, deg in _NAME_TO_MIN_DEGREE.items():
+            with assert_warns(Warning):
+                self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
+
+    def test_single_point(self):
+        # make sure interpolation still works with only one point (in 1, 2, and
+        # 3 dimensions)
+        for dim in [1, 2, 3]:
+            y = np.zeros((1, dim))
+            d = np.ones((1,))
+            f = self.build(y, d, kernel='linear')(y)
+            assert_allclose(d, f)
 
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
