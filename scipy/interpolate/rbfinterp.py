@@ -181,11 +181,7 @@ class RBFInterpolator:
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
         the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'. Smaller values for
-        the shape parameter result in wider RBFs. Smaller values for the shape
-        parameter may also result in a poorly conditioned system of equations
-        to be solved, which can be improved by increasing the smoothing
-        parameter.
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
@@ -209,9 +205,9 @@ class RBFInterpolator:
     is the center of the RBF.
 
     An RBF interpolant for the vector of observations :math:`d`, which are made
-    at the distinct locations :math:`y`, is a linear combination of RBFs
-    centered at :math:`y` plus a polynomial with a specified degree. The RBF
-    interpolant is written as
+    at the locations :math:`y`, is a linear combination of RBFs centered at
+    :math:`y` plus a polynomial with a specified degree. The RBF interpolant is
+    written as
 
     .. math::
         f(x) = K(x, y) a + P(x) b
@@ -242,6 +238,13 @@ class RBFInterpolator:
     solution for  :math:`a` and :math:`b` is unique if :math:`P(y)` has full
     column rank and the degree of the added polynomial is not lower than the
     minimum value listed above (see Chapter 7 of [1]_ or [2]_).
+
+    When using an RBF that is not scale invariant ('ga', 'mq', imq', and 'iq'),
+    an appropriate shape parameter must be chosen (e.g., through cross
+    validation). Smaller values for the shape parameter correspond to wider
+    RBFs. The problem can become ill-conditioned when the shape parameter is
+    too small, which results in an interpolant that is corrupted with noise
+    from numerical rounding error.
 
     References
     ----------
@@ -454,11 +457,7 @@ class KNearestRBFInterpolator:
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
         the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'. Smaller values for
-        the shape parameter result in wider RBFs. Smaller values for the shape
-        parameter may also result in a poorly conditioned system of equations
-        to be solved, which can be improved by increasing the smoothing
-        parameter.
+        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
 
     degree : int, optional
         Degree of the added polynomial. Some RBFs have a minimum polynomial
