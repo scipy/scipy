@@ -698,9 +698,9 @@ def _bin_edges(sample, bins=None, range=None):
     for i in builtins.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
-            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
+            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1, dtype=sample.dtype)
         else:
-            edges[i] = np.asarray(bins[i], float)
+            edges[i] = np.asarray(bins[i], sample.dtype)
             nbin[i] = len(edges[i]) + 1  # +1 for outlier bins
         dedges[i] = np.diff(edges[i])
 
