@@ -99,7 +99,7 @@ class _TestRBFInterpolator:
         # large/small domains
         np.random.seed(0)
         scale = 1e50
-        shift = 1e56
+        shift = 1e55
 
         x = np.random.uniform(0.0, 1.0, (100, 2))
         y = _2d_test_function(x)

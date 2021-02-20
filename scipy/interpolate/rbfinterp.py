@@ -324,15 +324,21 @@ class RBFInterpolator:
 
         degree = int(degree)
 
-        # Shift the center of the observations to zero for improved numerical
-        # stability
-        center = y.mean(axis=0)
-        y = (y - center)*epsilon
         # Build the system of equations and solve for the RBF and monomial
         # coefficients
-        Kyy = kernel_func(_distance(y, y))
+        yeps = y*epsilon
+        Kyy = kernel_func(_distance(yeps, yeps))
         Kyy[range(ny), range(ny)] += smoothing
-        Py = _vandermonde(y, degree)
+
+        # Normalize the domain for the monomials to be within [-1, 1]
+        center = y.mean(axis=0)
+        if ny > 1:
+            scale = y.ptp(axis=0).max()
+        else:
+            scale = 1.0
+
+        yhat = (y - center)/scale
+        Py = _vandermonde(yhat, degree)
         nmonos = Py.shape[1]
         # In general, the interpolant cannot be solved if Py does not have full
         # column rank. Py cannot have full column rank if there are fewer
@@ -356,6 +362,7 @@ class RBFInterpolator:
         self.epsilon = epsilon
         self.degree = degree
         self.center = center
+        self.scale = scale
         self.kernel_coeff = kernel_coeff
         self.poly_coeff = poly_coeff
         self.data_shape = data_shape
@@ -401,9 +408,11 @@ class RBFInterpolator:
 
             return out
 
-        x = (x - self.center)*self.epsilon
-        Kxy = self.kernel_func(_distance(x, self.y))
-        Px = _vandermonde(x, self.degree)
+        xeps, yeps = x*self.epsilon, self.y*self.epsilon
+        Kxy = self.kernel_func(_distance(xeps, yeps))
+
+        xhat = (x - self.center)/self.scale
+        Px = _vandermonde(xhat, self.degree)
         out = Kxy.dot(self.kernel_coeff) + Px.dot(self.poly_coeff)
         return out
 
@@ -607,15 +616,21 @@ class KNearestRBFInterpolator:
         nnbr = nbr.shape[0]
         # Get the observation data for each neighborhood
         y, d, smoothing = self.y[nbr], self.d[nbr], self.smoothing[nbr]
-        # Shift the centers of the neighborhoods to zero for improved numerical
-        # stability
-        centers = y.mean(axis=1)
-        y = (y - centers[:, None])*self.epsilon
         # build the left-hand-side interpolation matrix consisting of the RBF
         # and monomials evaluated at each neighborhood
-        Kyy = self.kernel_func(_distance(y, y))
+        yeps = y*self.epsilon
+        Kyy = self.kernel_func(_distance(yeps, yeps))
         Kyy[:, range(self.k), range(self.k)] += smoothing
-        Py = _vandermonde(y, self.degree)
+
+        # Normalize each neighborhood to be within [-1, 1] for the monomials
+        centers = y.mean(axis=1)
+        if self.k > 1:
+            scales = y.ptp(axis=1).max(axis=1)
+        else:
+            scales = np.ones((nnbr,), dtype=float)
+
+        yhat = (y - centers[:, None])/scales[:, None, None]
+        Py = _vandermonde(yhat, self.degree)
         nmonos = Py.shape[2]
         if nmonos > self.k:
             raise ValueError(
@@ -636,14 +651,19 @@ class KNearestRBFInterpolator:
         # expand the arrays from having one entry per neighborhood to one entry
         # per interpolation point
         coeff = coeff[inv]
-        y = y[inv]
+        yeps = yeps[inv]
         centers = centers[inv]
+        scales = scales[inv]
         # evaluate at the interpolation points
-        x = (x - centers)*self.epsilon
+        xeps = x*self.epsilon
+        Kxy = self.kernel_func(_distance(xeps[:, None], yeps))[:, 0]
+
+        xhat = (x - centers)/scales[:, None]
+        Px = _vandermonde(xhat, self.degree)
+
         kernel_coeff = coeff[:, :self.k]
         poly_coeff = coeff[:, self.k:]
-        Kxy = self.kernel_func(_distance(x[:, None], y))[:, 0]
-        Px = _vandermonde(x, self.degree)
+
         if self.data_shape:
             # if the data are vector valued, add an extra axis to Kxy and Px to
             # allow for broadcasting
