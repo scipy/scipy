@@ -5831,6 +5831,15 @@ class nakagami_gen(rv_continuous):
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
 
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,) * self.numargs
+        # Analytical justified estimates
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
+        loc = np.min(data)
+        scale = np.sqrt(np.sum((data - loc)**2) / len(data))
+        return args + (loc, scale)
+
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 

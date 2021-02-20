@@ -1,7 +1,6 @@
 """
 Test functions for stats module
 """
-
 import warnings
 import re
 import sys
@@ -26,7 +25,7 @@ import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy
+from scipy.special import xlogy, polygamma
 from .test_continuous_basic import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
@@ -5355,6 +5354,56 @@ class TestNakagami:
         # Check round trip back to x0.
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
+
+    @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit(self, nu, loc, scale):
+        # Regression test for gh-13396 (21/27 cases failed previously)
+        # The first tuple of the parameters' values is discussed in gh-10908
+        N = 100
+        samples = stats.nakagami.rvs(size=N, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
+        assert_allclose(nu_est, nu, rtol=0.2)
+        assert_allclose(loc_est, loc, rtol=0.2)
+        assert_allclose(scale_est, scale, rtol=0.2)
+
+        def dlogl_dnu(nu, loc, scale):
+            return ((-2*nu + 1) * np.sum(1/(samples - loc))
+                   + 2*nu/scale**2 * np.sum(samples - loc))
+
+        def dlogl_dloc(nu, loc, scale):
+            return (N * (1 + np.log(nu) - polygamma(0, nu)) +
+                    2 * np.sum(np.log((samples - loc) / scale))
+                    - np.sum(((samples - loc) / scale)**2))
+
+        def dlogl_dscale(nu, loc, scale):
+            return (- 2 * N * nu / scale
+                    + 2 * nu / scale ** 3 * np.sum((samples - loc) ** 2))
+
+        assert_allclose(dlogl_dnu(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dloc(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dscale(nu_est, loc_est, scale_est), 0, atol=1e-3)
+
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit_nu(self, loc, scale):
+        # For nu = 0.5, we have analytical values for
+        # the MLE of the loc and the scale
+        nu = 0.5
+        n = 100
+        samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=nu)
+
+        # Analytical values
+        loc_theo = np.min(samples)
+        scale_theo = np.sqrt(np.mean((samples - loc_est) ** 2))
+
+        assert_allclose(nu_est, nu, rtol=1e-7)
+        assert_allclose(loc_est, loc_theo, rtol=1e-7)
+        assert_allclose(scale_est, scale_theo, rtol=1e-7)
 
 
 def test_rvs_no_size_warning():
