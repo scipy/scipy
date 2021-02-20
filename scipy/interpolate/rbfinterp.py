@@ -219,14 +219,14 @@ class RBFInterpolator:
     solution to the linear equations
 
     .. math::
-        (K(y, y) + \lambda I) a + P(y) b = d
+        (K(y, y) + \\lambda I) a + P(y) b = d
 
     and
 
     .. math::
         P(y)^T a = 0,
 
-    where :math:`\lambda` is a positive smoothing parameter that controls how
+    where :math:`\\lambda` is a positive smoothing parameter that controls how
     well we want to fit the observations. The observations are fit exactly when
     the smoothing parameter is zero.
 
@@ -245,6 +245,31 @@ class RBFInterpolator:
     RBFs. The problem can become ill-conditioned when the shape parameter is
     too small, which results in an interpolant that is corrupted with noise
     from numerical rounding error.
+
+    Examples
+    --------
+    Demonstrate interpolating scattered data to a grid in 2-D
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import RBFInterpolator
+    >>> np.random.seed(0)
+
+    >>> xobs = np.random.uniform(-1, 1, (100, 2))
+    >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
+
+    >>> xgrid = np.mgrid[-1:1:50j, -1:1:50j]
+    >>> xflat = xgrid.reshape(2, -1).T
+    >>> yflat = RBFInterpolator(xobs, yobs, kernel='tps')(xflat)
+    >>> ygrid = yflat.reshape(50, 50)
+
+    >>> plt.pcolormesh(*xgrid, ygrid, vmin=-0.25, vmax=0.25, shading='gouraud')
+    >>> plt.scatter(*xobs.T, c=yobs, s=50, ec='k', vmin=-0.25, vmax=0.25)
+    >>> plt.colorbar()
+    >>> plt.show()
+
+    See Also
+    --------
+    KNearestRBFInterpolator
 
     References
     ----------
@@ -473,6 +498,10 @@ class KNearestRBFInterpolator:
         The default value is the minimum degree required for `kernel` or 0 if
         there is no minimum required degree. Set this to -1 for no added
         polynomial.
+
+    See Also
+    --------
+    RBFInterpolator
 
     """
     def __init__(self, y, d,
