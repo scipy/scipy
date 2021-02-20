@@ -25,9 +25,14 @@ struct HighsScale;
 struct HighsBasis;
 struct HighsSolution;
 class HighsOptions;
-struct SimplexBasis;
 
 using std::vector;
+
+HighsStatus writeBasisFile(const HighsOptions& options, const HighsBasis& basis,
+                           const std::string filename);
+
+HighsStatus readBasisFile(const HighsOptions& options, HighsBasis& basis,
+                          const std::string filename);
 
 // Methods taking HighsLp as an argument
 HighsStatus assessLp(HighsLp& lp, const HighsOptions& options);
@@ -79,6 +84,12 @@ void applyRowScalingToMatrix(const vector<double>& rowScale, const int numCol,
 void colScaleMatrix(const int max_scale_factor_exponent, double* colScale,
                     const int numCol, const vector<int>& Astart,
                     const vector<int>& Aindex, vector<double>& Avalue);
+
+HighsStatus applyScalingToLpCol(const HighsOptions& options, HighsLp& lp,
+                                const int col, const double colScale);
+
+HighsStatus applyScalingToLpRow(const HighsOptions& options, HighsLp& lp,
+                                const int row, const double rowScale);
 
 HighsStatus appendColsToLpVectors(HighsLp& lp, const int num_new_col,
                                   const vector<double>& colCost,
@@ -216,11 +227,8 @@ HighsStatus getLpMatrixCoefficient(const HighsLp& lp, const int row,
 void analyseLp(const HighsLp& lp, const std::string message);
 #endif
 
-// void writeSolutionToFile(FILE* file, const HighsLp& lp, const HighsBasis&
-// basis,
-//                          const HighsSolution& solution, const bool pretty);
-
-HighsBasis getSimplexBasis(const HighsLp& lp, const SimplexBasis& basis);
+void writeSolutionToFile(FILE* file, const HighsLp& lp, const HighsBasis& basis,
+                         const HighsSolution& solution, const bool pretty);
 
 HighsStatus calculateRowValues(const HighsLp& lp, HighsSolution& solution);
 HighsStatus calculateColDuals(const HighsLp& lp, HighsSolution& solution);

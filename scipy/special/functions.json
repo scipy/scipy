@@ -1405,8 +1405,13 @@
         }
     },
     "_riemann_zeta": {
-	"cephes.h": {
-	    "riemann_zeta": "d->d"
-	}
+        "cephes.h": {
+            "riemann_zeta": "d->d"
+        }
+    },
+    "wright_bessel": {
+        "_wright_bessel.pxd": {
+            "wright_bessel_scalar": "ddd->d"
+        }
     }
 }

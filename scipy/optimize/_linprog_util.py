@@ -65,7 +65,7 @@ _LPProblem.__doc__ = \
     """
 
 
-def _check_sparse_inputs(options, A_ub, A_eq):
+def _check_sparse_inputs(options, meth, A_ub, A_eq):
     """
     Check the provided ``A_ub`` and ``A_eq`` matrices conform to the specified
     optional sparsity variables.
@@ -88,6 +88,8 @@ def _check_sparse_inputs(options, A_ub, A_eq):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+    method : str, optional
+        The algorithm used to solve the standard form problem.
 
     Returns
     -------
@@ -115,8 +117,17 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if _sparse_presolve and A_ub is not None:
         A_ub = sps.coo_matrix(A_ub)
 
+    sparse_constraint = sps.issparse(A_eq) or sps.issparse(A_ub)
+
+    preferred_methods = {"highs", "highs-ds", "highs-ipm"}
+    dense_methods = {"simplex", "revised simplex"}
+    if meth in dense_methods and sparse_constraint:
+        raise ValueError(f"Method '{meth}' does not support sparse "
+                         "constraint matrices. Please consider using one of "
+                         f"{preferred_methods}.")
+
     sparse = options.get('sparse', False)
-    if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
+    if not sparse and sparse_constraint and meth == 'interior-point':
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
              OptimizeWarning, stacklevel=4)
@@ -336,9 +347,9 @@ def _clean_inputs(lp):
         b_eq = _format_b_constraints(b_eq)
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: b_eq must be a 1-D array of "
-            "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_eq") from e
+            "Invalid input for linprog: b_eq must be a dense, 1-D array of "
+            "numerical values, each representing the right hand side of an "
+            "equality constraint (row) in A_eq") from e
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
@@ -882,7 +893,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             c0, x, revstack, complete, status, message)
 
 
-def _parse_linprog(lp, options):
+def _parse_linprog(lp, options, meth):
     """
     Parse the provided linear programming problem
 
@@ -986,7 +997,8 @@ def _parse_linprog(lp, options):
         options = {}
 
     solver_options = {k: v for k, v in options.items()}
-    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, lp.A_ub, lp.A_eq)
+    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, meth,
+                                                      lp.A_ub, lp.A_eq)
     # Convert lists to numpy arrays, etc...
     lp = _clean_inputs(lp._replace(A_ub=A_ub, A_eq=A_eq))
     return lp, solver_options

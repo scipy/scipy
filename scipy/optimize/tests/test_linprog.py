@@ -10,6 +10,7 @@ from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+import scipy.sparse
 import pytest
 
 has_umfpack = True
@@ -241,7 +242,7 @@ def test_unknown_solvers_and_options():
     assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
                   options={"rr_method": 'ekki-ekki-ekki'})
 
-    
+
 def test_choose_solver():
     # 'highs' chooses 'dual'
     c = np.array([-3, -2])
@@ -251,7 +252,7 @@ def test_choose_solver():
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-    
+
 A_ub = None
 b_ub = None
 A_eq = None
@@ -387,6 +388,39 @@ class LinprogCommonTests(object):
             # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_sparse_constraints(self):
+        # gh-13559: improve error message for sparse inputs when unsupported
+        def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
+            linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                    method=self.method, options=self.options)
+
+        np.random.seed(0)
+        m = 100
+        n = 150
+        A_eq = scipy.sparse.rand(m, n, 0.5)
+        x_valid = np.random.randn((n))
+        c = np.random.randn((n))
+        ub = x_valid + np.random.rand((n))
+        lb = x_valid - np.random.rand((n))
+        bounds = np.column_stack((lb, ub))
+        b_eq = A_eq * x_valid
+
+        if self.method in {'simplex', 'revised simplex'}:
+            # simplex and revised simplex should raise error
+            with assert_raises(ValueError, match=f"Method '{self.method}' "
+                               "does not support sparse constraint matrices."):
+                linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                        method=self.method, options=self.options)
+        else:
+            # other methods should succeed
+            options = {**self.options}
+            if self.method in {'interior-point'}:
+                options['sparse'] = True
+
+            res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                          method=self.method, options=options)
+            assert res.success
 
     def test_maxiter(self):
         # test iteration limit w/ Enzo example
