@@ -291,12 +291,6 @@ class _TestRBFInterpolator:
         with assert_raises(ValueError):
             self.build(y, d)
 
-    def test_d_not_1d_or_2d_error(self):
-        y = np.linspace(0, 1, 5)[:, None]
-        d = np.zeros((5, 1, 1))
-        with assert_raises(ValueError):
-            self.build(y, d)
-
     def test_inconsistent_smoothing_length_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)

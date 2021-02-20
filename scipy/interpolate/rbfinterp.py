@@ -153,10 +153,8 @@ class RBFInterpolator:
     y : (P, N) array_like
         Data point coordinates
 
-    d : (P,) or (P, M) array_like
-        Data values at `y`. The data can be scalar or vector valued. If the
-        data are vector valued, an RBF interpolant will be fit to each
-        component.
+    d : (P, ...) array_like
+        Data values at `y`
 
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
@@ -268,15 +266,13 @@ class RBFInterpolator:
 
         ny = y.shape[0]
         d = np.asarray(d)
-        if (d.ndim != 1) & (d.ndim != 2):
-            raise ValueError('Expected `d` to be a 1 or 2-dimensional array')
-
         if d.shape[0] != ny:
             raise ValueError(
                 'Expected the first axis of `d` to have length %d' % ny
                 )
 
         data_shape = d.shape[1:]
+        d = d.reshape((ny, -1))
 
         if np.isscalar(smoothing):
             smoothing = np.full(ny, smoothing, dtype=float)
@@ -352,7 +348,7 @@ class RBFInterpolator:
 
         Z = np.zeros((nmonos, nmonos), dtype=float)
         LHS = np.block([[Kyy, Py], [Py.T, Z]])
-        z = np.zeros((nmonos,) + data_shape, dtype=float)
+        z = np.zeros((nmonos, d.shape[1]), dtype=float)
         rhs = np.concatenate((d, z), axis=0)
         coeff = np.linalg.solve(LHS, rhs)
         kernel_coeff, poly_coeff = coeff[:ny], coeff[ny:]
@@ -382,7 +378,7 @@ class RBFInterpolator:
 
         Returns
         -------
-        (Q,) or (Q, M) ndarray
+        (Q, ...) ndarray
             Values of the interpolant at `x`
 
         """
@@ -413,7 +409,9 @@ class RBFInterpolator:
 
         xhat = (x - self.center)/self.scale
         Px = _vandermonde(xhat, self.degree)
+
         out = Kxy.dot(self.kernel_coeff) + Px.dot(self.poly_coeff)
+        out = out.reshape((nx,) + self.data_shape)
         return out
 
 
@@ -426,10 +424,8 @@ class KNearestRBFInterpolator:
     y : (P, N) array_like
         Data point coordinates
 
-    d : (P,) or (P, M) array_like
-        Data values at `y`. The data can be scalar or vector valued. If the
-        data are vector valued, an RBF interpolant will be fit to each
-        component.
+    d : (P, ...) array_like
+        Data values at `y`
 
     k : int, optional
         Number of nearest neighbors to use for each interpolation point
@@ -492,15 +488,13 @@ class KNearestRBFInterpolator:
 
         ny = y.shape[0]
         d = np.asarray(d)
-        if (d.ndim != 1) & (d.ndim != 2):
-            raise ValueError('Expected `d` to be a 1 or 2-dimensional array')
-
         if d.shape[0] != ny:
             raise ValueError(
                 'Expected the first axis of `d` to have length %d' % ny
                 )
 
         data_shape = d.shape[1:]
+        d = d.reshape((ny, -1))
 
         if np.isscalar(smoothing):
             smoothing = np.full(ny, smoothing, dtype=float)
@@ -589,7 +583,7 @@ class KNearestRBFInterpolator:
 
         Returns
         -------
-        (Q,) or (Q, M) ndarray
+        (Q, ...) ndarray
             Values of the interpolant at `x`
 
         """
@@ -648,7 +642,7 @@ class KNearestRBFInterpolator:
         LHS = np.block([[Kyy, Py], [PyT, Z]])
         # build the right-hand-side data vector consisting of the observations
         # for each neighborhood and extra zeros
-        z = np.zeros((nnbr, nmonos) + self.data_shape, dtype=float)
+        z = np.zeros((nnbr, nmonos, d.shape[2]), dtype=float)
         rhs = np.concatenate((d, z), axis=1)
         # solve for the RBF and polynomial coefficients for each neighborhood
         coeff = np.linalg.solve(LHS, rhs)
@@ -668,11 +662,8 @@ class KNearestRBFInterpolator:
         kernel_coeff = coeff[:, :self.k]
         poly_coeff = coeff[:, self.k:]
 
-        if self.data_shape:
-            # if the data are vector valued, add an extra axis to Kxy and Px to
-            # allow for broadcasting
-            Kxy = Kxy[:, :, None]
-            Px = Px[:, :, None]
-
+        Kxy = Kxy[:, :, None]
+        Px = Px[:, :, None]
         out = (Kxy*kernel_coeff).sum(axis=1) + (Px*poly_coeff).sum(axis=1)
+        out = out.reshape((nx,) + self.data_shape)
         return out
