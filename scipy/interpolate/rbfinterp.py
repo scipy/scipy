@@ -239,8 +239,8 @@ class RBFInterpolator:
     column rank and the degree of the added polynomial is not lower than the
     minimum value listed above (see Chapter 7 of [1]_ or [2]_).
 
-    When using an RBF that is not scale invariant ('ga', 'mq', imq', and 'iq'),
-    an appropriate shape parameter must be chosen (e.g., through cross
+    When using an RBF that is not scale invariant ('ga', 'mq', 'imq', and
+    'iq'), an appropriate shape parameter must be chosen (e.g., through cross
     validation). Smaller values for the shape parameter correspond to wider
     RBFs. The problem can become ill-conditioned when the shape parameter is
     too small, which results in an interpolant that is corrupted with noise
