@@ -144,6 +144,8 @@ invdistdiscrete = [
     # In each of the following, at least one shape parameter is invalid
     ['hypergeom', (3, 3, 4)],
     ['nhypergeom', (5, 2, 8)],
+    ['nchypergeom_fisher', (3, 3, 4, 1)],
+    ['nchypergeom_wallenius', (3, 3, 4, 1)],
     ['bernoulli', (1.5, )],
     ['binom', (10, 1.5)],
     ['betabinom', (10, -0.4, -0.5)],
