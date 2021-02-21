@@ -231,20 +231,20 @@ class RBFInterpolator:
     the smoothing parameter is zero.
 
     For the RBFs 'ga', 'imq', and 'iq', the solution for :math:`a` and
-    :math:`b` is unique if :math:`P(y)` has full column rank. As an example,
-    :math:`P(y)` would not have full column rank if the observations are
-    collinear in two-dimensional space and the degree of the added polynomial
-    is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and 'quintic', the
-    solution for  :math:`a` and :math:`b` is unique if :math:`P(y)` has full
-    column rank and the degree of the added polynomial is not lower than the
-    minimum value listed above (see Chapter 7 of [1]_ or [2]_).
+    :math:`b` is analytically unique if :math:`P(y)` has full column rank. As
+    an example, :math:`P(y)` would not have full column rank if the
+    observations are collinear in two-dimensional space and the degree of the
+    added polynomial is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and
+    'quintic', the solution for  :math:`a` and :math:`b` is analytically unique
+    if :math:`P(y)` has full column rank and the degree of the added polynomial
+    is not lower than the minimum value listed above (see Chapter 7 of [1]_ or
+    [2]_).
 
-    When using an RBF that is not scale invariant ('ga', 'mq', 'imq', and
-    'iq'), an appropriate shape parameter must be chosen (e.g., through cross
+    When using an RBF that is not scale invariant ('mq', 'imq', 'iq', and
+    'ga'), an appropriate shape parameter must be chosen (e.g., through cross
     validation). Smaller values for the shape parameter correspond to wider
-    RBFs. The problem can become ill-conditioned when the shape parameter is
-    too small, which results in an interpolant that is corrupted with noise
-    from numerical rounding error.
+    RBFs. The problem can become ill-conditioned or singular when the shape
+    parameter is too small.
 
     Examples
     --------
