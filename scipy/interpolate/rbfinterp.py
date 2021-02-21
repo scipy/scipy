@@ -259,7 +259,7 @@ class RBFInterpolator:
 
     >>> xgrid = np.mgrid[-1:1:50j, -1:1:50j]
     >>> xflat = xgrid.reshape(2, -1).T
-    >>> yflat = RBFInterpolator(xobs, yobs, kernel='tps')(xflat)
+    >>> yflat = RBFInterpolator(xobs, yobs)(xflat)
     >>> ygrid = yflat.reshape(50, 50)
 
     >>> plt.pcolormesh(*xgrid, ygrid, vmin=-0.25, vmax=0.25, shading='gouraud')
