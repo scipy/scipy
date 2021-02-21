@@ -172,6 +172,15 @@ class lti(LinearTimeInvariant):
     --------
     >>> from scipy import signal
 
+    Construct the state space system:
+    .. math:
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 2 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 3 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 4 \end{bmatrix} \textbf{u}(t)
+
     >>> signal.lti(1, 2, 3, 4)
     StateSpaceContinuous(
     array([[1]]),
@@ -345,6 +354,15 @@ class dlti(LinearTimeInvariant):
     --------
     >>> from scipy import signal
 
+    Construct the state space system:
+    .. math:
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 2 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 3 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 4 \end{bmatrix} \textbf{u}(t)
+
     >>> signal.dlti(1, 2, 3, 4)
     StateSpaceDiscrete(
     array([[1]]),
@@ -353,6 +371,16 @@ class dlti(LinearTimeInvariant):
     array([[4]]),
     dt: True
     )
+
+    Construct the discrete state space system with a sampling time of 0.1
+    seconds:
+    .. math:
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 2 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 3 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 4 \end{bmatrix} \textbf{u}(t)
 
     >>> signal.dlti(1, 2, 3, 4, dt=0.1)
     StateSpaceDiscrete(
@@ -1264,6 +1292,15 @@ class StateSpace(LinearTimeInvariant):
     --------
     >>> from scipy import signal
 
+    Construct the state space system:
+    .. math::
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \\ 1 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \end{bmatrix} \textbf{u}(t)
+
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1281,6 +1318,8 @@ class StateSpace(LinearTimeInvariant):
     dt: None
     )
 
+    Convert the system to discrete with a sampling time of 0.1 seconds:
+
     >>> sys.to_discrete(0.1)
     StateSpaceDiscrete(
     array([[1. , 0.1],
@@ -1291,6 +1330,16 @@ class StateSpace(LinearTimeInvariant):
     array([[0]]),
     dt: 0.1
     )
+
+    Construct the discrete state space system with a sampling time of 0.1
+    seconds:
+    .. math::
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 1 & 0.1 \\ 0 & 1 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0.005 \\ 0.1 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \end{bmatrix} \textbf{u}(t)
 
     >>> a = np.array([[1, 0.1], [0, 1]])
     >>> b = np.array([[0.005], [0.1]])
@@ -1665,6 +1714,15 @@ class StateSpaceContinuous(StateSpace, lti):
     --------
     >>> from scipy import signal
 
+    Construct the state space system:
+    .. math::
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \\ 1 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \end{bmatrix} \textbf{u}(t)
+
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1740,6 +1798,16 @@ class StateSpaceDiscrete(StateSpace, dlti):
     Examples
     --------
     >>> from scipy import signal
+
+    Construct the discrete state space system with a sampling time of 0.1
+    seconds:
+    .. math::
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} 1 & 0.1 \\ 0 & 1 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0.005 \\ 0.1 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 0 \end{bmatrix} \textbf{u}(t)
 
     >>> a = np.array([[1, 0.1], [0, 1]])
     >>> b = np.array([[0.005], [0.1]])
