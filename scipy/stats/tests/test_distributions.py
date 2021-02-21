@@ -5371,7 +5371,7 @@ class TestNakagami:
 
         def dlogl_dnu(nu, loc, scale):
             return ((-2*nu + 1) * np.sum(1/(samples - loc))
-                   + 2*nu/scale**2 * np.sum(samples - loc))
+                    + 2*nu/scale**2 * np.sum(samples - loc))
 
         def dlogl_dloc(nu, loc, scale):
             return (N * (1 + np.log(nu) - polygamma(0, nu)) +
