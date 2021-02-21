@@ -15,6 +15,21 @@ from .HighsIO cimport (
     ML_NONE,
 )
 from .HConst cimport (
+    HighsModelStatus,
+    HighsModelStatusNOTSET,
+    HighsModelStatusLOAD_ERROR,
+    HighsModelStatusMODEL_ERROR,
+    HighsModelStatusMODEL_EMPTY,
+    HighsModelStatusPRESOLVE_ERROR,
+    HighsModelStatusSOLVE_ERROR,
+    HighsModelStatusPOSTSOLVE_ERROR,
+    HighsModelStatusPRIMAL_INFEASIBLE,
+    HighsModelStatusPRIMAL_UNBOUNDED,
+    HighsModelStatusOPTIMAL,
+    HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
+    HighsModelStatusREACHED_TIME_LIMIT,
+    HighsModelStatusREACHED_ITERATION_LIMIT,
+
     PrimalDualStatusSTATUS_FEASIBLE_POINT,
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
@@ -31,20 +46,6 @@ from .HighsStatus cimport (
 from .HighsLp cimport (
     HighsLp,
     HighsSolution,
-    HighsModelStatus,
-    HighsModelStatusNOTSET,
-    HighsModelStatusLOAD_ERROR,
-    HighsModelStatusMODEL_ERROR,
-    HighsModelStatusMODEL_EMPTY,
-    HighsModelStatusPRESOLVE_ERROR,
-    HighsModelStatusSOLVE_ERROR,
-    HighsModelStatusPOSTSOLVE_ERROR,
-    HighsModelStatusPRIMAL_INFEASIBLE,
-    HighsModelStatusPRIMAL_UNBOUNDED,
-    HighsModelStatusOPTIMAL,
-    HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
-    HighsModelStatusREACHED_TIME_LIMIT,
-    HighsModelStatusREACHED_ITERATION_LIMIT,
 )
 from .HighsInfo cimport HighsInfo
 from .HighsOptions cimport (
@@ -168,6 +169,7 @@ cdef apply_options(dict options, Highs & highs):
             'primal_feasibility_tolerance',
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
+            'start_crossover_tolerance',
             'time_limit'
     ]):
         val = options.get(opt, None)
@@ -470,6 +472,10 @@ def _highs_wrapper(
             - solver : str {'simplex', 'ipm'}
                 Choose which solver to use.  If ``solver='simplex'``
                 and ``parallel=True`` then PAMI will be used.
+
+            - start_crossover_tolerance : double
+                Tolerance to be satisfied before IPM crossover will
+                start.
 
             - time_limit : double
                 Max number of seconds to run the solver for.

@@ -31,12 +31,6 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 
-# In numpy 1.12 and above, np.power refuses to raise integers to negative
-# powers, and `np.float_power` is a new replacement.
-try:
-    float_power = np.float_power
-except AttributeError:
-    float_power = np.power
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -5492,7 +5486,7 @@ class kappa4_gen(rv_continuous):
                     np.logical_and(h <= 0, k < 0)]
 
         def f0(h, k):
-            return (1.0 - float_power(h, -k))/k
+            return (1.0 - np.float_power(h, -k))/k
 
         def f1(h, k):
             return np.log(h)
@@ -5842,6 +5836,15 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,) * self.numargs
+        # Analytical justified estimates
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
+        loc = np.min(data)
+        scale = np.sqrt(np.sum((data - loc)**2) / len(data))
+        return args + (loc, scale)
 
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
