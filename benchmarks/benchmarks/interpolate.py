@@ -146,6 +146,52 @@ class Rbf(Benchmark):
         interpolate.Rbf(self.X, self.Y, self.z, function=function)
 
 
+class RBFInterpolator(Benchmark):
+    param_names = ['n_samples', 'kernel']
+    params = [
+        [10, 100, 1000],
+        ['linear', 'tps', 'cubic', 'quintic', 'mq', 'imq', 'iq', 'ga']
+    ]
+
+    def setup(self, n_samples, kernel):
+        rng = np.random.RandomState(0)
+        self.y = rng.uniform(-1, 1, (n_samples, 2))
+        self.x = rng.uniform(-1, 1, (n_samples, 2))
+        self.d = np.sum(self.y, axis=1)*np.exp(-6*np.sum(self.y**2, axis=1))
+
+    def time_rbf_interpolator(self, n_samples, kernel):
+        interp = interpolate.RBFInterpolator(
+            self.y,
+            self.d,
+            epsilon=5.0,
+            kernel=kernel
+            )
+        interp(self.x)
+
+
+class KNearestRBFInterpolator(Benchmark):
+    param_names = ['n_samples', 'kernel']
+    params = [
+        [10, 100, 1000],
+        ['linear', 'tps', 'cubic', 'quintic', 'mq', 'imq', 'iq', 'ga']
+    ]
+
+    def setup(self, n_samples, kernel):
+        rng = np.random.RandomState(0)
+        self.y = rng.uniform(-1, 1, (n_samples, 2))
+        self.x = rng.uniform(-1, 1, (n_samples, 2))
+        self.d = np.sum(self.y, axis=1)*np.exp(-6*np.sum(self.y**2, axis=1))
+
+    def time_k_nearest_rbf_interpolator(self, n_samples, kernel):
+        interp = interpolate.KNearestRBFInterpolator(
+            self.y,
+            self.d,
+            epsilon=5.0,
+            kernel=kernel
+            )
+        interp(self.x)
+
+
 class UnivariateSpline(Benchmark):
     param_names = ['n_samples', 'degree']
     params = [
