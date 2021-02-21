@@ -15,7 +15,7 @@ def _1d_test_function(x):
     # test function used in Wahba's "Spline Models for Observational Data
     # domain ~= (0, 3), range ~= (-1.0, 0.2)"
     x = x[:, 0]
-    y =  4.26*(np.exp(-x) - 4*np.exp(-2*x) + 3*np.exp(-3*x))
+    y = 4.26*(np.exp(-x) - 4*np.exp(-2*x) + 3*np.exp(-3*x))
     return y
 
 
@@ -45,7 +45,7 @@ def _is_conditionally_positive_definite(kernel, m):
             # c.p.d but it is not due to numerical precision.
             A = kernel(_distance(x, x)) + 1e-12*np.eye(nx)
             P = _vandermonde(x, m - 1)
-            Q, R  = np.linalg.qr(P, mode='complete')
+            Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
             # A onto this space, and then see if it is positive definite using
             # the Cholesky decomposition. If not, then the kernel is not c.p.d

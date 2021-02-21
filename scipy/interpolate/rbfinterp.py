@@ -46,12 +46,12 @@ def _tps(r):
 
 def _cubic(r):
     """cubic / 3rd order polyharmonic spline"""
-    return r*r*r # faster than r**3
+    return r*r*r  # faster than r**3
 
 
 def _quintic(r):
     """quintic / 5th order polyharmonic spline"""
-    return -r*r*r*r*r # faster than r**5
+    return -r*r*r*r*r  # faster than r**5
 
 
 def _mq(r):
