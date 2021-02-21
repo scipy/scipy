@@ -1,3 +1,12 @@
+# Note that in maintenance branches, all build dependencies should
+# have an upper bound equal to the most recent already-released version
+# of the dependency. This to prevent that a future backwards-incompatible
+# release will break the source build of a SciPy release.
+# Do accept micro (bug-fix) releases. So for example, if pybind11 2.4.3 is
+# the most recent version on PyPI:
+#
+#     "pybind11>=2.4.3,<2.5.0",
+
 [build-system]
 requires = [
     "wheel",
