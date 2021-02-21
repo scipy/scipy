@@ -254,6 +254,7 @@ Correlation functions
    :toctree: generated/
 
    f_oneway
+   alexandergovern
    pearsonr
    spearmanr
    pointbiserialr
