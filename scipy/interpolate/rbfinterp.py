@@ -364,14 +364,12 @@ class RBFInterpolator:
                  kernel='tps',
                  epsilon=None,
                  degree=None):
-
         y, d, smoothing, kernel, epsilon, degree, _ = _sanitize_init_args(
             y, d, smoothing, kernel, epsilon, degree, None
             )
 
         ny = y.shape[0]
         data_shape = d.shape[1:]
-
         d = d.reshape((ny, -1))
 
         # Create the matrix of RBFs centered and evaluated at y, plus smoothing
