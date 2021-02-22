@@ -74,7 +74,7 @@ Implementation
    `scipy/stats/_distr_params.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distr_params.py#L5>`_.
    These shape parameters are used both for testing and automatic documentation generation.
 #. Add the name and an _invalid_ set of example shape parameters to the
-   list in ``invdistcont, also in``
+   list in ``invdistcont``, also in
    `_distr_params.py <https://github.com/scipy/scipy/blob/master/scipy/stats/_distr_params.py>`_.
    These shape parameters are also used for testing.
 #. Add a ``TestSquirrel`` class and any specific tests to
