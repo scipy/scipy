@@ -42,13 +42,13 @@ def configuration(parent_package='',top_path=None):
         sources=['_sobol.c', ],
     )
     config.add_data_files('_sobol_direction_numbers.npz')
-    
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
     from _generate_pyx import isNPY_OLD
     NPY_OLD = isNPY_OLD()
     biasedurn_libs = [] if NPY_OLD else ['npyrandom']
-    biasedurn_libdirs = [] if NPY_OLD else [join(np.get_include(), '..', '..', 'random', 'lib')]
+    biasedurn_libdirs = [] if NPY_OLD else [join(np.get_include(),
+                                                 '..', '..', 'random', 'lib')]
     ext = config.add_extension(
         'biasedurn',
         sources=[
@@ -69,6 +69,7 @@ def configuration(parent_package='',top_path=None):
     ext._pre_build_hook = pre_build_hook
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
