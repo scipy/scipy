@@ -26,21 +26,23 @@ We'll use the fictitious "Squirrel" distribution in the instructions below.
 Before Implementation
 .....................
 
-1. See if ``Squirrel`` has already been implemented (that saves a lot of effort!)
+1. See if ``Squirrel`` has already been implemented--that saves a lot
+   of effort!
 
-  - It may have been implemented with a different name.
-  - It may have been implemented with a different parameterization (shape parameters).
-  - It may be a specialization of a more general family of distributions.
+   - It may have been implemented with a different name.
+   - It may have been implemented with a different parameterization
+     (shape parameters).
+   - It may be a specialization of a more general family of distributions.
 
-It is very common for multiple disciplines to discover/rediscover a
-distribution (or a specialization or different parameterization).
-There are a few existing SciPy distributions which are specializations
-of other distributions.  E.g. The :class:`scipy.stats.arcsine` distribution
-is a specialization of the :class:`scipy.stats.beta` distribution.
-These duplications exist for (very!) historical and widespread usage reasons.
-At this time, adding new specializations/reparametrizations of existing
-distributions to SciPy is not supported,  mainly due to the increase in user
-confusion resulting from such additions.
+   It is very common for multiple disciplines to discover/rediscover a
+   distribution (or a specialization or different parameterization).
+   There are a few existing SciPy distributions which are specializations
+   of other distributions.  E.g. The :class:`scipy.stats.arcsine` distribution
+   is a specialization of the :class:`scipy.stats.beta` distribution.
+   These duplications exist for (very!) historical and widespread usage reasons.
+   At this time, adding new specializations/reparametrizations of existing
+   distributions to SciPy is not supported,  mainly due to the increase in user
+   confusion resulting from such additions.
 
 2. Create a `SciPy Issue on github <https://github.com/scipy/scipy/issues>`_,
    listing the distribution, references and reasons for its inclusion.
