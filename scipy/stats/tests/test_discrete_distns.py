@@ -5,7 +5,7 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
-from scipy.special import binom
+from scipy.special import binom as special_binom
 import pytest
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
@@ -315,8 +315,8 @@ class TestNCH():
             xu = np.minimum(n, m1)
 
             def f(x):
-                t1 = binom(m1, x)
-                t2 = binom(m2, n - x)
+                t1 = special_binom(m1, x)
+                t2 = special_binom(m2, n - x)
                 return t1 * t2 * w**x
 
             def P(k):
@@ -393,8 +393,8 @@ class TestNCH():
                 return res
 
             def f(x):
-                t1 = binom(m1, x)
-                t2 = binom(m2, n - x)
+                t1 = special_binom(m1, x)
+                t2 = special_binom(m2, n - x)
                 the_integral = quad(integrand, 0, 1,
                                     epsrel=1e-16, epsabs=1e-16)
                 return t1 * t2 * the_integral[0]

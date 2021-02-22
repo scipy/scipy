@@ -37,9 +37,6 @@ def configuration(parent_package='',top_path=None):
         sources=['mvn.pyf', 'mvndst.f'],
     )
 
-    # add boost stats distributions
-    config.add_subpackage('_boost')
-
     # add _sobol module
     config.add_extension('_sobol',
         sources=['_sobol.c', ],
@@ -71,6 +68,9 @@ def configuration(parent_package='',top_path=None):
         depends=['biasedurn/stocR.h'],
     )
     ext._pre_build_hook = pre_build_hook
+
+    # add boost stats distributions
+    config.add_subpackage('_boost')
 
     return config
 

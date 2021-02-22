@@ -9,7 +9,7 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from scipy._lib._boost_utils import _boost_inc_dirs
-    from _generate_pyx import _klass_mapper
+    from _info import _klass_mapper
     from numpy.distutils.misc_util import Configuration
     import numpy as np
     config = Configuration('_boost', parent_package, top_path)
