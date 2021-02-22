@@ -421,14 +421,14 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     and cases is significant.
 
     >>> test.odds_ratio
-    3.783668770554967
+    3.7836687705553564
 
     The conditional odds ratio is larger than 1, which also suggests
     there is an association.  We can compute 95% confidence interval
     for the odds ratio:
 
     >>> test.odds_ratio_ci(confidence_level=0.95)
-    ConfidenceInterval(low=1.2514829132265854, high=10.363493716701255)
+    ConfidenceInterval(low=1.251482913226682, high=10.363493716701287)
 
     The 95% confidence interval for the conditional odds ratio is
     approximately (1.25, 10.4), which is strong evidence that the
