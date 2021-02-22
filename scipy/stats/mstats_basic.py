@@ -2183,6 +2183,10 @@ def moment(a, moment=1, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+    return _moment(a, moment, axis)
+
+# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
+def _moment(a, moment, axis, *, mean=None):
     if moment == 1:
         # By definition the first moment about the mean is 0.
         shape = list(a.shape)
@@ -2205,7 +2209,8 @@ def moment(a, moment=1, axis=0):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - a.mean(axis, keepdims=True)
+        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        a_zero_mean = a - mean
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -2219,10 +2224,18 @@ def moment(a, moment=1, axis=0):
         return s.mean(axis)
 
 
-def variation(a, axis=0):
+def variation(a, axis=0, ddof=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Compute the coefficient of variation.
+
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
+
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
@@ -2231,6 +2244,8 @@ def variation(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
@@ -2258,7 +2273,7 @@ def variation(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return a.std(axis)/a.mean(axis)
+    return a.std(axis, ddof=ddof)/a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
@@ -2287,14 +2302,16 @@ def skew(a, axis=0, bias=True):
 
     """
     a, axis = _chk_asarray(a,axis)
-    n = a.count(axis)
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m3 = _moment(a, 3, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+        vals = ma.where(zero, 0, m3 / m2**1.5)
 
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
+        n = a.count(axis)
+        can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -2341,14 +2358,16 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m4 = _moment(a, 4, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(zero, 0, m4 / m2**2.0)
 
-    if not bias:
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
         n = a.count(axis)
-        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
+        can_correct = ~zero & (n > 3)
         if can_correct.any():
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
@@ -3002,7 +3021,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     For more details on `brunnermunzel`, see `stats.brunnermunzel`.
 
     """

@@ -347,3 +347,13 @@ class TestSphericalVoronoi(object):
         assert sv.points.dtype is np.dtype(np.float64)
         assert sv.center.dtype is np.dtype(np.float64)
         assert isinstance(sv.radius, float)
+
+    def test_region_types(self):
+        # Tests that region integer type does not change
+        # See Issue #13412
+        sv = SphericalVoronoi(self.points)
+        dtype = type(sv.regions[0][0])
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype

@@ -1,6 +1,7 @@
 # distutils: language=c++
 # cython: language_level=3
 
+
 from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
@@ -10,26 +11,10 @@ from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
 
-from HighsIO cimport (
+from .HighsIO cimport (
     ML_NONE,
 )
-from HConst cimport (
-    PrimalDualStatusSTATUS_FEASIBLE_POINT,
-    HighsOptionTypeBOOL,
-    HighsOptionTypeINT,
-    HighsOptionTypeDOUBLE,
-    HighsOptionTypeSTRING,
-)
-from Highs cimport Highs
-from HighsStatus cimport (
-    HighsStatus,
-    HighsStatusError,
-    HighsStatusWarning,
-    HighsStatusOK,
-)
-from HighsLp cimport (
-    HighsLp,
-    HighsSolution,
+from .HConst cimport (
     HighsModelStatus,
     HighsModelStatusNOTSET,
     HighsModelStatusLOAD_ERROR,
@@ -44,9 +29,26 @@ from HighsLp cimport (
     HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
     HighsModelStatusREACHED_TIME_LIMIT,
     HighsModelStatusREACHED_ITERATION_LIMIT,
+
+    PrimalDualStatusSTATUS_FEASIBLE_POINT,
+    HighsOptionTypeBOOL,
+    HighsOptionTypeINT,
+    HighsOptionTypeDOUBLE,
+    HighsOptionTypeSTRING,
 )
-from HighsInfo cimport HighsInfo
-from HighsOptions cimport (
+from .Highs cimport Highs
+from .HighsStatus cimport (
+    HighsStatus,
+    HighsStatusError,
+    HighsStatusWarning,
+    HighsStatusOK,
+)
+from .HighsLp cimport (
+    HighsLp,
+    HighsSolution,
+)
+from .HighsInfo cimport HighsInfo
+from .HighsOptions cimport (
     HighsOptions,
     OptionRecord,
     OptionRecordBool,
@@ -167,6 +169,7 @@ cdef apply_options(dict options, Highs & highs):
             'primal_feasibility_tolerance',
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
+            'start_crossover_tolerance',
             'time_limit'
     ]):
         val = options.get(opt, None)
@@ -230,7 +233,7 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
-def highs_wrapper(
+def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
         int[::1] aindex,
@@ -469,6 +472,10 @@ def highs_wrapper(
             - solver : str {'simplex', 'ipm'}
                 Choose which solver to use.  If ``solver='simplex'``
                 and ``parallel=True`` then PAMI will be used.
+
+            - start_crossover_tolerance : double
+                Tolerance to be satisfied before IPM crossover will
+                start.
 
             - time_limit : double
                 Max number of seconds to run the solver for.

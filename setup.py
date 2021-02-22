@@ -57,6 +57,7 @@ MAJOR = 1
 MINOR = 7
 MICRO = 0
 ISRELEASED = False
+IS_RELEASE_BRANCH = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -142,22 +143,6 @@ if not release:
                        'isrelease': str(ISRELEASED)})
     finally:
         a.close()
-
-
-try:
-    from sphinx.setup_command import BuildDoc
-    HAVE_SPHINX = True
-except Exception:
-    HAVE_SPHINX = False
-
-if HAVE_SPHINX:
-    class ScipyBuildDoc(BuildDoc):
-        """Run in-place build before Sphinx doc build"""
-        def run(self):
-            ret = subprocess.call([sys.executable, sys.argv[0], 'build_ext', '-i'])
-            if ret != 0:
-                raise RuntimeError("Building Scipy failed!")
-            BuildDoc.run(self)
 
 
 def check_submodules():
@@ -249,7 +234,7 @@ def get_build_ext_override():
             # Disable distutils parallel build, due to race conditions
             # in numpy.distutils (Numpy issue gh-15957)
             if self.parallel:
-                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                print("NOTE: -j build option not supported. Set NPY_NUM_BUILD_JOBS=4 "
                       "for parallel build.")
             self.parallel = None
 
@@ -381,8 +366,7 @@ def parse_setuppy_commands():
     # below and not standalone.  Hence they're not added to good_commands.
     good_commands = ('develop', 'sdist', 'build', 'build_ext', 'build_py',
                      'build_clib', 'build_scripts', 'bdist_wheel', 'bdist_rpm',
-                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg',
-                     'build_sphinx')
+                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg')
 
     for command in good_commands:
         if command in args:
@@ -453,6 +437,7 @@ def parse_setuppy_commands():
         bdist_dumb="`setup.py bdist_dumb` is not supported",
         bdist="`setup.py bdist` is not supported",
         flake8="`setup.py flake8` is not supported, use flake8 standalone",
+        build_sphinx="`setup.py build_sphinx` is not supported, see doc/README.md",
         )
     bad_commands['nosetests'] = bad_commands['test']
     for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
@@ -530,12 +515,26 @@ def configuration(parent_package='', top_path=None):
 
 
 def setup_package():
+    # In maintenance branch, change np_maxversion to N+3 if numpy is at N
+    # Update here and in scipy/__init__.py
+    # Rationale: SciPy builds without deprecation warnings with N; deprecations
+    #            in N+1 will turn into errors in N+3
+    # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
+    np_minversion = '1.16.5'
+    np_maxversion = '9.9.99'
+    python_minversion = '3.7'
+    python_maxversion = '3.10'
+    if IS_RELEASE_BRANCH:
+        req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
+        req_py = '>={},<{}'.format(python_minversion, python_maxversion)
+    else:
+        req_np = 'numpy>={}'.format(np_minversion)
+        req_py = '>={}'.format(python_minversion)
+
     # Rewrite the version file every time
     write_version_py()
 
     cmdclass = {'sdist': sdist_checked}
-    if HAVE_SPHINX:
-        cmdclass['build_sphinx'] = ScipyBuildDoc
 
     metadata = dict(
         name='scipy',
@@ -555,10 +554,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        install_requires=[
-            'numpy>=1.16.5',
-        ],
-        python_requires='>=3.7',
+        install_requires=[req_np],
+        python_requires=req_py,
     )
 
     if "--force" in sys.argv:
