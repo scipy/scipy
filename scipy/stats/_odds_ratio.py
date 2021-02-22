@@ -1,12 +1,11 @@
 
-from functools import lru_cache
 from dataclasses import dataclass
 
 import numpy as np
 
 from scipy.special import ndtr, ndtri
 from scipy.optimize import brentq
-from .distributions import hypergeom
+from .distributions import nchypergeom_fisher, hypergeom
 from .stats import fisher_exact
 
 
@@ -27,112 +26,38 @@ def _sample_odds_ratio(table):
     return oddsratio
 
 
-def _hypergeom_support_bounds(total, ngood, nsample):
-    """
-    Returns the inclusive bounds of the support.
-    """
-    nbad = total - ngood
-    return max(0, nsample - nbad), min(nsample, ngood)
-
-
-@lru_cache()
-def _hypergeom_support_and_logpmf(total, ngood, nsample):
-    """
-    The support and the log of the PMF of the hypergeometric distribution.
-    """
-    lo, hi = _hypergeom_support_bounds(total, ngood, nsample)
-    support = np.arange(lo, hi + 1)
-    logpmf = hypergeom._logpmf(support, total, ngood, nsample)
-    return support, logpmf
-
-
-def _nc_hypergeom_support_and_pmf(lognc, total, ngood, nsample):
-    """
-    The support and the PMF of the noncentral hypergeometric distribution.
-
-    The first argument is the log of the noncentrality parameter.
-    """
-    # Get the support and log of the PMF for the corresponding
-    # hypergeometric distribution.
-    support, hg_logpmf = _hypergeom_support_and_logpmf(total, ngood, nsample)
-
-    # Calculate the PMF using the ideas from
-    #   Bruce Barret (2017), A note on exact calculation of the non central
-    #   hypergeometric distribution, Communications in Statistics - Theory
-    #   and Methods, 46:13, 6737-6741, DOI: 10.1080/03610926.2015.1134573
-    #
-    # Create the log of the PMF from the log of the PMF of the hypergeometric
-    # distribution.
-    nchg_logpmf = hg_logpmf + lognc * support
-
-    # Exponentiation after subtracting the max to get the "quasi" PMF (not
-    # correctly normalized yet).
-    nchg_qpmf = np.exp(nchg_logpmf - nchg_logpmf.max())
-
-    # Normalize to the actual PMF of the noncentral hypergeometric dist.
-    nchg_pmf = nchg_qpmf / nchg_qpmf.sum()
-
-    return support, nchg_pmf
-
-
-def _nc_hypergeom_mean(lognc, total, ngood, nsample):
-    """
-    Expected value of Fisher's noncentral hypergeometric distribution.
-
-    lognc is the logarithm of the noncentrality parameter.  The remaining
-    parameters are the same as those of the hypergeometric distribution.
-    """
-    # Explicit check for the edge cases.  (XXX These checks might not be
-    # necessary, but double-check that we never call this function with +/- inf
-    # before removing.  Maybe we'll get these values here inadvertently because
-    # of overflow or underflow.)
-    if lognc == -np.inf:
-        return _hypergeom_support_bounds(total, ngood, nsample)[0]
-    if lognc == np.inf:
-        return _hypergeom_support_bounds(total, ngood, nsample)[1]
-
-    support, nchg_pmf = _nc_hypergeom_support_and_pmf(lognc, total,
-                                                      ngood, nsample)
-
-    # Compute the expected value of the distribution.
-    mean = support.dot(nchg_pmf)
-    return mean
-
-
 def _solve(func):
     """
-    Solve func(lognc) = 0.  func must be an increasing function.
+    Solve func(nc) = 0.  func must be an increasing function.
     """
-    # We could just as well call the variable `x` instead of `lognc`, but we
-    # always call this function with functions for which lognc (the log of
-    # the noncentrality parameter) is the variable for which we are solving.
-    # It also helps to remind that the linear search for a bracketing interval
-    # is actually working with logarithms of the variable of interest, so
-    # changing lognc by 5 corresponds to changing nc by a multiplicative
-    # factor of exp(5) ~= 148.  While the strategy used here would be terrible
-    # as a general purpose solver, here it works well.
-    lognc = 0
-    value = func(lognc)
+    # We could just as well call the variable `x` instead of `nc`, but we
+    # always call this function with functions for which nc (the noncentrality
+    # parameter) is the variable for which we are solving.
+    nc = 1.0
+    value = func(nc)
     if value == 0:
-        return lognc
+        return nc
 
+    # Multiplicative factor by which to increase or decrease nc when
+    # searching for a bracketing interval.
+    factor = 25.0
     # Find a bracketing interval.
     if value > 0:
-        lognc -= 5
-        while func(lognc) > 0:
-            lognc -= 5
-        lo = lognc
-        hi = lognc + 5
+        nc /= factor
+        while func(nc) > 0:
+            nc /= factor
+        lo = nc
+        hi = factor*nc
     else:
-        lognc += 5
-        while func(lognc) < 0:
-            lognc += 5
-        lo = lognc - 5
-        hi = lognc
+        nc *= factor
+        while func(nc) < 0:
+            nc *= factor
+        lo = nc/factor
+        hi = nc
 
-    # lo and hi bracket the solution for lognc.
-    lognc = brentq(func, lo, hi, xtol=1e-13)
-    return lognc
+    # lo and hi bracket the solution for nc.
+    nc = brentq(func, lo, hi, xtol=1e-13)
+    return nc
 
 
 def _nc_hypergeom_mean_inverse(x, total, ngood, nsample):
@@ -141,39 +66,9 @@ def _nc_hypergeom_mean_inverse(x, total, ngood, nsample):
     parameter of Fisher's noncentral hypergeometric distribution whose
     mean is x.
     """
-    lognc = _solve(lambda lognc: _nc_hypergeom_mean(lognc, total, ngood,
-                                                    nsample) - x)
-    return np.exp(lognc)
-
-
-def _nc_hypergeom_cdf(x, lognc, total, ngood, nsample):
-    """
-    CDF of the noncentral hypergeometric distribution.
-    """
-    lo, hi = _hypergeom_support_bounds(total, ngood, nsample)
-    if lognc == -np.inf:
-        return 1.0*(x >= lo)
-    elif lognc == np.inf:
-        return 1.0*(x >= hi)
-
-    support, nchg_pmf = _nc_hypergeom_support_and_pmf(lognc, total,
-                                                      ngood, nsample)
-    return nchg_pmf[support <= x].sum()
-
-
-def _nc_hypergeom_sf(x, lognc, total, ngood, nsample):
-    """
-    Survival function of the noncentral hypergeometric distribution.
-    """
-    lo, hi = _hypergeom_support_bounds(total, ngood, nsample)
-    if lognc == -np.inf:
-        return 1.0*(x < lo)
-    elif lognc == np.inf:
-        return 1.0*(x < hi)
-
-    support, nchg_pmf = _nc_hypergeom_support_and_pmf(lognc, total,
-                                                      ngood, nsample)
-    return nchg_pmf[support > x].sum()
+    nc = _solve(lambda nc: nchypergeom_fisher.mean(total, ngood, nsample,
+                                                   nc) - x)
+    return nc
 
 
 def _hypergeom_params_from_table(table):
@@ -193,11 +88,11 @@ def _ci_upper(table, alpha):
 
     x, total, ngood, nsample = _hypergeom_params_from_table(table)
 
-    # _nc_hypergeom_cdf is a decreasing function of lognc, so we negate
+    # nchypergeom_fisher.cdf is a decreasing function of nc, so we negate
     # it in the lambda expression.
-    lognc = _solve(lambda lognc: -_nc_hypergeom_cdf(x, lognc, total,
-                                                    ngood, nsample) + alpha)
-    return np.exp(lognc)
+    nc = _solve(lambda nc: -nchypergeom_fisher.cdf(x, total, ngood, nsample,
+                                                   nc) + alpha)
+    return nc
 
 
 def _ci_lower(table, alpha):
@@ -209,9 +104,9 @@ def _ci_lower(table, alpha):
 
     x, total, ngood, nsample = _hypergeom_params_from_table(table)
 
-    lognc = _solve(lambda lognc: _nc_hypergeom_sf(x - 1, lognc, total,
-                                                  ngood, nsample) - alpha)
-    return np.exp(lognc)
+    nc = _solve(lambda nc: nchypergeom_fisher.sf(x - 1, total, ngood, nsample,
+                                                 nc) - alpha)
+    return nc
 
 
 def _conditional_oddsratio(table):
@@ -219,7 +114,7 @@ def _conditional_oddsratio(table):
     Conditional MLE of the odds ratio for the 2x2 contingency table.
     """
     x, total, ngood, nsample = _hypergeom_params_from_table(table)
-    lo, hi = _hypergeom_support_bounds(total, ngood, nsample)
+    lo, hi = hypergeom.support(total, ngood, nsample)
 
     # Check if x is at one of the extremes of the support.  If so, we know
     # the odds ratio is either 0 or inf.
@@ -313,8 +208,7 @@ class OddsRatioResult:
 
     Methods
     -------
-    odds_ratio_ci(confidence_level=0.95)
-        Compute the confidence interval for the odds ratio.
+    odds_ratio_ci
     """
 
     table: np.ndarray
@@ -325,7 +219,7 @@ class OddsRatioResult:
 
     def odds_ratio_ci(self, confidence_level=0.95):
         """
-        Confidence inteval for the odds ratio.
+        Confidence interval for the odds ratio.
 
         Parameters
         ----------
@@ -438,7 +332,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
 
     Returns
     -------
-    result : `OddsRatioResult` instance
+    result : `~scipy.stats._result_classes.OddsRatioResult` instance
         The returned object has two computed attributes:
 
         * ``odds_ratio``, float,

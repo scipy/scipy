@@ -4201,8 +4201,8 @@ def fisher_exact(table, alternative='two-sided'):
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
-    contingency.odds_ratio : Compute the odds ratio for a 2x2 contingency
-        table.
+    contingency.odds_ratio : Compute the odds ratio (sample or conditional
+        MLE) for a 2x2 contingency table.
 
     Notes
     -----

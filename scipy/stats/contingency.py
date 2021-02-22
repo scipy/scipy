@@ -16,7 +16,6 @@ Functions for creating and analyzing contingency tables.
    association
    odds_ratio
 
-   OddsRatioResult
 """
 
 
@@ -25,11 +24,11 @@ import numpy as np
 from .stats import power_divergence
 import math
 from ._crosstab import crosstab
-from ._odds_ratio import odds_ratio, OddsRatioResult
+from ._odds_ratio import odds_ratio
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association', 'odds_ratio', 'OddsRatioResult']
+           'association', 'odds_ratio']
 
 
 def margins(a):

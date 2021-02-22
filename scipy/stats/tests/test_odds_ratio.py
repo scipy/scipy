@@ -1,7 +1,8 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from scipy.stats._odds_ratio import odds_ratio, _nc_hypergeom_mean
+from scipy.stats import nchypergeom_fisher, hypergeom
+from scipy.stats._odds_ratio import odds_ratio
 from .fisher_exact_results_from_r import data
 
 
@@ -11,6 +12,7 @@ class TestOddsRatio:
     def test_results_from_r(self, parameters, rresult):
         alternative = parameters.alternative.replace('.', '-')
         result = odds_ratio(parameters.table, alternative=alternative)
+        # The results computed by R are not very precise.
         if result.odds_ratio < 400:
             or_rtol = 5e-4
             ci_rtol = 2e-2
@@ -35,9 +37,15 @@ class TestOddsRatio:
         total = table.sum()
         ngood = table[0].sum()
         nsample = table[:, 0].sum()
-        # Avoid the warning from log(cor) when cor == 0.
-        lognc = np.log(cor) if cor > 0 else -np.inf
-        nchg_mean = _nc_hypergeom_mean(lognc, total, ngood, nsample)
+        # nchypergeom_fisher does not allow the edge cases where the
+        # noncentrality parameter is 0 or inf, so handle those values
+        # separately here.
+        if cor == 0:
+            nchg_mean = hypergeom.support(total, ngood, nsample)[0]
+        elif cor == np.inf:
+            nchg_mean = hypergeom.support(total, ngood, nsample)[1]
+        else:
+            nchg_mean = nchypergeom_fisher.mean(total, ngood, nsample, cor)
         assert_allclose(nchg_mean, table[0, 0], rtol=1e-13)
 
     @pytest.mark.parametrize('table', [
