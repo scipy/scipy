@@ -54,7 +54,9 @@ def test_discrete_basic(distname, arg, first_case):
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
         # make sure arguments are within support
-        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
+        # for some distributions, this needs to be overridden
+        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0,
+                  'nchypergeom_wallenius': 6}
         k = spec_k.get(distname, 1)
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
@@ -104,7 +106,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace']
+    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
+                          'nchypergeom_fisher', 'nchypergeom_wallenius']
 
     try:
         distfunc = getattr(stats, dist)

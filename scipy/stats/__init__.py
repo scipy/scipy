@@ -174,23 +174,25 @@ Discrete distributions
 .. autosummary::
    :toctree: generated/
 
-   bernoulli         -- Bernoulli
-   betabinom         -- Beta-Binomial
-   binom             -- Binomial
-   boltzmann         -- Boltzmann (Truncated Discrete Exponential)
-   dlaplace          -- Discrete Laplacian
-   geom              -- Geometric
-   hypergeom         -- Hypergeometric
-   logser            -- Logarithmic (Log-Series, Series)
-   nbinom            -- Negative Binomial
-   nhypergeom        -- Negative Hypergeometric
-   planck            -- Planck (Discrete Exponential)
-   poisson           -- Poisson
-   randint           -- Discrete Uniform
-   skellam           -- Skellam
-   yulesimon         -- Yule-Simon
-   zipf              -- Zipf (Zeta)
-   zipfian           -- Zipfian
+   bernoulli                -- Bernoulli
+   betabinom                -- Beta-Binomial
+   binom                    -- Binomial
+   boltzmann                -- Boltzmann (Truncated Discrete Exponential)
+   dlaplace                 -- Discrete Laplacian
+   geom                     -- Geometric
+   hypergeom                -- Hypergeometric
+   logser                   -- Logarithmic (Log-Series, Series)
+   nbinom                   -- Negative Binomial
+   nchypergeom_fisher       -- Fisher's Noncentral Hypergeometric
+   nchypergeom_wallenius    -- Wallenius's Noncentral Hypergeometric
+   nhypergeom               -- Negative Hypergeometric
+   planck                   -- Planck (Discrete Exponential)
+   poisson                  -- Poisson
+   randint                  -- Discrete Uniform
+   skellam                  -- Skellam
+   yulesimon                -- Yule-Simon
+   zipf                     -- Zipf (Zeta)
+   zipfian                  -- Zipfian
 
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
