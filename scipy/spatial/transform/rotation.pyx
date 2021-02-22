@@ -216,9 +216,9 @@ cdef double[:, :] _compute_euler_from_matrix(
                           "all angles.")
 
     # Reverse role of extrinsic and intrinsic rotations, but let third angle be
-    # zero for gimbal locked cases
+    # zero for gimbal locked cases. Take a copy, to enforce contiguous memory layout.
     if extrinsic:
-        angles = angles[:, ::-1]
+        angles = angles[:, ::-1].copy()
     return angles
 
 @cython.boundscheck(False)
