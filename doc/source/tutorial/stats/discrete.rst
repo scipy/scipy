@@ -264,6 +264,8 @@ Discrete Distributions in `scipy.stats`
    discrete_geom
    discrete_nbinom
    discrete_hypergeom
+   discrete_nchypergeom_fisher
+   discrete_nchypergeom_wallenius
    discrete_nhypergeom
    discrete_zipf
    discrete_zipfian

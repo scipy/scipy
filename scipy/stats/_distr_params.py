@@ -123,6 +123,8 @@ distdiscrete = [
     ['hypergeom',(30, 12, 6)],
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
+    ['nchypergeom_fisher', (140, 80, 60, 0.5)],
+    ['nchypergeom_wallenius', (140, 80, 60, 0.5)],
     ['logser', (0.6,)],  # re-enabled, numpy ticket:921
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
     ['nbinom', (5, 0.5)],
@@ -142,6 +144,8 @@ invdistdiscrete = [
     # In each of the following, at least one shape parameter is invalid
     ['hypergeom', (3, 3, 4)],
     ['nhypergeom', (5, 2, 8)],
+    ['nchypergeom_fisher', (3, 3, 4, 1)],
+    ['nchypergeom_wallenius', (3, 3, 4, 1)],
     ['bernoulli', (1.5, )],
     ['binom', (10, 1.5)],
     ['betabinom', (10, -0.4, -0.5)],
