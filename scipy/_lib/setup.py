@@ -3,6 +3,7 @@ import os
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._lib._boost_utils import _boost_inc_dirs
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
@@ -50,6 +51,13 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[include_dir])
 
     config.add_subpackage('_uarray')
+
+    # ensure Boost was checked out and builds
+    config.add_library(
+        'test_boost_build',
+        sources=['tests/test_boost_build.cpp'],
+        include_dirs=_boost_inc_dirs(),
+        language='c++')
 
     return config
 

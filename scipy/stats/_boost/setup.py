@@ -8,7 +8,7 @@ def pre_build_hook(build_ext, ext):
         ext.extra_compile_args.append(std_flag)
 
 def configuration(parent_package='', top_path=None):
-    from scipy._build_utils.boostinator import get_include_dir
+    from scipy._lib._boost_utils import _boost_inc_dirs
     from _generate_pyx import _klass_mapper
     from numpy.distutils.misc_util import Configuration
     import numpy as np
@@ -25,9 +25,8 @@ def configuration(parent_package='', top_path=None):
     INCLUDES = [
         'include/',
         'src/',
-        str(get_include_dir()),
         np.get_include(),
-    ]
+    ] + _boost_inc_dirs()
 
     # generate the PXD and PYX wrappers
     src_dir = pathlib.Path(__file__).parent / 'src'
