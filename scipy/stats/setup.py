@@ -42,6 +42,7 @@ def configuration(parent_package='',top_path=None):
         sources=['_sobol.c', ],
     )
     config.add_data_files('_sobol_direction_numbers.npz')
+
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
     from _generate_pyx import isNPY_OLD
