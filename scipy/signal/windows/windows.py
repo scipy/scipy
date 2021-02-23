@@ -2030,6 +2030,7 @@ _win_equiv_raw = {
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
+    ('dpss'): (dpss, True),
 }
 
 # Fill dict with all valid window name strings
