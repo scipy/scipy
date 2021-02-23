@@ -335,31 +335,28 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     result : `~scipy.stats._result_classes.OddsRatioResult` instance
         The returned object has two computed attributes:
 
-        * ``odds_ratio``, float,
+        odds_ratio : float
+            * If `kind` is ``'sample'``, this is
+              ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
+              This is the prior odds ratio and not a posterior estimate.
+            * If `kind` is ``'conditional'``, this is the conditional
+              maximum likelihood estimate for the odds ratio. It is
+              the noncentrality parameter of Fisher's noncentral
+              hypergeometric distribution with the same hypergeometric
+              parameters as `table` and whose mean is ``table[0, 0]``.
+        pvalue : float
+            The p-value associated with the computed odds ratio.
 
-          * If ``kind`` is ``'sample'``, this is
-            ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
-            This is the prior odds ratio and not a posterior estimate.
-          * If ``kind`` is ``'conditional'``, this is the conditional
-            maximum likelihood estimate for the odds ratio. It is
-            the noncentrality parameter of Fisher's noncentral
-            hypergeometric distribution with the same hypergeometric
-            parameters as ``table`` and whose mean is ``table[0, 0]``.
+            * If `kind` is ``'sample'``, the p-value is based on the
+              normal approximation to the distribution of the log of
+              the sample odds ratio.
+            * If `kind` is ``'conditional'``, the p-value is computed
+              by `scipy.stats.fisher_exact`.
 
-        * ``pvalue``, float
+        The object also stores the input arguments `table`, `kind`
+        and `alternative` as attributes.
 
-          The p-value associated with the computed odds ratio.
-
-          * If ``kind`` is ``'sample'``, the p-value is based on the
-            normal approximation to the distribution of the log of
-            the sample odds ratio.
-          * If ``kind`` is ``'conditional'``, the p-value is computed
-            by `scipy.stats.fisher_exact`.
-
-        The object also stores the input arguments ``table``, ``kind``
-        and ``alternative`` as attributes.
-
-        The object has the method ``odds_ratio_ci`` that computes
+        The object has the method `odds_ratio_ci` that computes
         the confidence interval of the odds ratio.
 
     References
