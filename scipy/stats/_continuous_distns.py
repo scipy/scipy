@@ -8891,7 +8891,7 @@ class studentized_range_gen(rv_continuous):
 
     """
     _epsabs = 1e-9  # Allows setting of quad epsabs for class integration fns.
-    _force_fn = None  # "asymptopic", None, or "regular"
+    _force_fn = None  # "asymptotic", None, or "regular"
 
     def _argcheck(self, k, v):
         """Verify args"""
