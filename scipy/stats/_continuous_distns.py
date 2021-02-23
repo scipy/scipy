@@ -8870,6 +8870,15 @@ class studentized_range_gen(rv_continuous):
     to 2000, an asymptotic method is used in calculation of the cumulative
     distribution function. [4]_
 
+    Integrals for the PDF, CDF, and moment are evaluated using
+    `scipy.integrate.nquad` with LowLevelCallables written using Cython.
+    Most of the integrals are evaluated using logarithms to prevent overflows
+    from the multiple exponential terms within. Furthermore, all terms are
+    evaluated within the integral to correctly control error.
+
+    The distribution's accuracy has been verified against R, statsmodels,
+    tables, with an mpmath implementation acting as ground truth.
+
     References
     ----------
 
