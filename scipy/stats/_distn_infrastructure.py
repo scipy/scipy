@@ -551,7 +551,6 @@ def _oldargsreduce(cond, *args):
         newargs = [newargs, ]
     expand_arr = (cond == cond)
     retval = [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
-    print('Old reduce: ',  retval)
     return retval
 
 from pprint import pprint
@@ -2640,6 +2639,8 @@ class rv_continuous(rv_generic):
         return Lhat, Shat
 
     def _entropy(self, *args):
+        print('Beneric entropy args:')
+        pprint(args)
         def integ(x):
             val = self._pdf(x, *args)
             return entr(val)

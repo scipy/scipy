@@ -536,7 +536,7 @@ class hypergeom_gen(rv_discrete):
         # therefore unpack all inputs args, so we can do the manual
         # integration.
         res = []
-        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):          # There is probably a better way to do this
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             # Manual integration over probability mass function. More accurate
             # than integrate.quad.
             k2 = np.arange(quant + 1, draw + 1)
