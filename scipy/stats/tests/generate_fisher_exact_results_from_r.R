@@ -1,4 +1,6 @@
 # This R script generates the Python file fisher_exact_results_from_r.py.
+# To run this script, use
+# $ Rscript generate_fisher_exact_results_from_r.R
 
 sink("fisher_exact_results_from_r.py")
 

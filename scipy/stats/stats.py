@@ -4206,7 +4206,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     Notes
     -----
-    The calculated odds ratio is different from the one R uses. This
+    The calculated odds ratio is different from the one R uses.  This
     implementation returns the "unconditional maximum likelihood estimate",
     while R uses the "conditional maximum likelihood estimate".  To compute
     the conditional maximum likelihood estimate of the odds ratio, use
