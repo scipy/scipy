@@ -1262,3 +1262,14 @@ def test_deepcopy():
     r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
     r1 = copy.deepcopy(r)
     assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)
+
+
+def test_as_euler_contiguous():
+    r = Rotation.from_quat([0, 0, 0, 1])
+    e1 = r.as_euler('xyz')  # extrinsic euler rotation
+    e2 = r.as_euler('XYZ')  # intrinsic
+    assert e1.flags['C_CONTIGUOUS'] is True
+    assert e2.flags['C_CONTIGUOUS'] is True
+    assert all(i >= 0 for i in e1.strides)
+    assert all(i >= 0 for i in e2.strides)
+
