@@ -524,10 +524,12 @@ class rv_frozen(object):
         return self.dist.support(*self.args, **self.kwds)
 
 
-# This should be rewritten
-def _oldargsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
+def argsreduce(cond, *args):
+    """Clean arguments to:
+    1. Ensure all arguments are iterable (arrays of dimension at least one
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is True, in 1D.
+
+    Return list of processed arguments.
 
     Examples
     --------
@@ -538,53 +540,25 @@ def _oldargsreduce(cond, *args):
     >>> C = rand((1, 5))
     >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> >>> A1.shape
+    (4, 5)
     >>> B1.shape
-    (20,)
+    (1,)
+    >>> C1.shape
+    (1, 5)
     >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
-    (15,)
-
-    """
-    newargs = np.atleast_1d(*args)
-    if not isinstance(newargs, list):
-        newargs = [newargs, ]
-    expand_arr = (cond == cond)
-    retval = [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
-    return retval
-
-from pprint import pprint
-def _argsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> rand = np.random.random_sample
-    >>> A = rand((4, 5))
-    >>> B = 2
-    >>> C = rand((1, 5))
-    >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
-    >>> B1.shape
-    (2,)
-    >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
+    >>> A1.shape
     (15,)
-
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (15,)
     """
-#    print(f'New reduce (cond {cond.shape}): ')
-#    pprint(cond)
-#    print('New reduce (args): ')
-#    pprint(args)
     newargs = np.atleast_1d(*args) # some distributions assume arguments are iterable.
     if not isinstance(newargs, list):
         newargs = [newargs, ]           # np.atleast_1d returns an array if only one argument, or a list of arrays if more than one argument.
     if np.all(cond):
-#        print(f'New reduce return: ')
-#        pprint(newargs)
         return newargs         # Nothing to do
 
     s = cond.shape
@@ -596,12 +570,7 @@ def _argsreduce(cond, *args):
             ret.append(arg)
         else:
             ret.append(np.extract(cond, np.broadcast_to(arg, s)))
-#    print(f'New reduce return: ')
-#    pprint(ret)
     return ret
-
-argsreduce = _argsreduce
-
 
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
@@ -2639,8 +2608,6 @@ class rv_continuous(rv_generic):
         return Lhat, Shat
 
     def _entropy(self, *args):
-        print('Beneric entropy args:')
-        pprint(args)
         def integ(x):
             val = self._pdf(x, *args)
             return entr(val)
