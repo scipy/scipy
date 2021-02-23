@@ -8866,8 +8866,9 @@ class studentized_range_gen(rv_continuous):
 
     Notes
     -----
-    When `v` is arbitrarily large, equal to or greater than 2000, the method to
-    calculate the cdf changes to asymptotic.
+    When `v` is arbitrarily large, in this implementation greater than or equal
+    to 2000, an asymptotic method is used in calculation of the cumulative
+    distribution function. [4]_
 
     References
     ----------
@@ -8948,9 +8949,9 @@ class studentized_range_gen(rv_continuous):
         """The cdf"""
         def _single_cdf(q, k, v):
             # "When the degrees of freedom V are infinite the probability
-            # integral takes [a] simpler form," and a single asymptotic
+            # integral takes [on a] simpler form," and a single asymptotic
             # integral is evaluated rather than the standard double integral.
-            # (Lund, R. E., and J. R. Lund, 205)
+            # (Lund, Lund, page 205)
             if (v < 2000 and not self._force_fn) or self._force_fn == "regular":
                 user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
