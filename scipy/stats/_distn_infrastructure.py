@@ -525,7 +525,7 @@ class rv_frozen(object):
 
 
 # This should be rewritten
-def _oldargsreduce(cond, *args):
+def argsreduce(cond, *args):
     """Return the sequence of ravel(args[i]) where ravel(condition) is
     True in 1D.
 
@@ -550,57 +550,7 @@ def _oldargsreduce(cond, *args):
     if not isinstance(newargs, list):
         newargs = [newargs, ]
     expand_arr = (cond == cond)
-    retval = [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
-    return retval
-
-from pprint import pprint
-def _argsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> rand = np.random.random_sample
-    >>> A = rand((4, 5))
-    >>> B = 2
-    >>> C = rand((1, 5))
-    >>> cond = np.ones(A.shape)
-    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
-    >>> B1.shape
-    (2,)
-    >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
-    (15,)
-
-    """
-#    print(f'New reduce (cond {cond.shape}): ')
-#    pprint(cond)
-#    print('New reduce (args): ')
-#    pprint(args)
-    newargs = np.atleast_1d(*args) # some distributions assume arguments are iterable.
-    if not isinstance(newargs, list):
-        newargs = [newargs, ]           # np.atleast_1d returns an array if only one argument, or a list of arrays if more than one argument.
-    if np.all(cond):
-#        print(f'New reduce return: ')
-#        pprint(newargs)
-        return newargs         # Nothing to do
-
-    s = cond.shape
-    # np.extract returns flattened arrays, which are not broadcastable together unless they
-    # are either the same size or size == 1.
-    ret = []
-    for arg in newargs:
-        if np.size(arg) == 1:
-            ret.append(arg)
-        else:
-            ret.append(np.extract(cond, np.broadcast_to(arg, s)))
-#    print(f'New reduce return: ')
-#    pprint(ret)
-    return ret
-
-argsreduce = _argsreduce
+    return [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
 
 parse_arg_template = """
@@ -2639,8 +2589,6 @@ class rv_continuous(rv_generic):
         return Lhat, Shat
 
     def _entropy(self, *args):
-        print('Beneric entropy args:')
-        pprint(args)
         def integ(x):
             val = self._pdf(x, *args)
             return entr(val)
