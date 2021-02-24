@@ -536,7 +536,7 @@ class hypergeom_gen(rv_discrete):
         # therefore unpack all inputs args, so we can do the manual
         # integration.
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             # Manual integration over probability mass function. More accurate
             # than integrate.quad.
             k2 = np.arange(quant + 1, draw + 1)
@@ -545,7 +545,7 @@ class hypergeom_gen(rv_discrete):
 
     def _logsf(self, k, M, n, N):
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) < (good - 0.5) * (draw - 0.5):
                 # Less terms to sum if we calculate log(1-cdf)
                 res.append(log1p(-exp(self.logcdf(quant, tot, good, draw))))
@@ -557,7 +557,7 @@ class hypergeom_gen(rv_discrete):
 
     def _logcdf(self, k, M, n, N):
         res = []
-        for quant, tot, good, draw in zip(k, M, n, N):
+        for quant, tot, good, draw in zip(*np.broadcast_arrays(k, M, n, N)):
             if (quant + 0.5) * (tot + 0.5) > (good - 0.5) * (draw - 0.5):
                 # Less terms to sum if we calculate log(1-sf)
                 res.append(log1p(-exp(self.logsf(quant, tot, good, draw))))
