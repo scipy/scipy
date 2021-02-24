@@ -8884,8 +8884,8 @@ class studentized_range_gen(rv_continuous):
 
     .. [1] "Studentized range distribution",
            https://en.wikipedia.org/wiki/Studentized_range_distribution
-    .. [2] Batista, Ben Dêivide, et al. “Externally Studentized Normal Midrange
-           Distribution.” Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
+    .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
+           Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
            378–389., doi:10.1590/1413-70542017414047716.
     .. [3] Harter, H. Leon. “Tables of Range and Studentized Range.” The Annals
            of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122–1147.
