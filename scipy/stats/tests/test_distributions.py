@@ -20,7 +20,7 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad
+from scipy.integrate import IntegrationWarning, quad, trapezoid
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -5144,13 +5144,14 @@ def test_crystalball_function_moments():
 
 
 def test_crystalball_entropy():
+    # regression test for gh-13602
     cb = stats.crystalball(2, 3)
     res1 = cb.entropy()
-    res2 = quad(lambda x: entr(cb.pdf(x)), -np.inf, np.inf)[0]
-    N, lo, hi = 10000, -100, 20
-    res3 = entr(cb.pdf(np.linspace(lo, hi, N))).sum()*(hi-lo)/N
-    assert_allclose(res1, res2)
-    assert_allclose(res1, res3, rtol=1e-3)
+    # -20000 and 30 are negative and positive infinity, respectively
+    lo, hi, N = -20000, 30, 200000
+    x = np.linspace(lo, hi, N)
+    res2 = trapezoid(entr(cb.pdf(x)), x)
+    assert_allclose(res1, res2, rtol=1e-7)
 
 
 @pytest.mark.parametrize(
