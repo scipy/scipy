@@ -2017,6 +2017,7 @@ _win_equiv_raw = {
         'rect', 'rectangular'): (boxcar, False),
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
+    ('dpss',): (dpss, True),
     ('exponential', 'poisson'): (exponential, True),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
@@ -2030,7 +2031,6 @@ _win_equiv_raw = {
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
-    ('dpss'): (dpss, True),
 }
 
 # Fill dict with all valid window name strings
