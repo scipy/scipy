@@ -25,7 +25,7 @@ import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy, polygamma
+from scipy.special import xlogy, polygamma, entr
 from .test_continuous_basic import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
@@ -5141,6 +5141,16 @@ def test_crystalball_function_moments():
     expected_5th_moment = a / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
+
+
+def test_crystalball_entropy():
+    cb = stats.crystalball(2, 3)
+    res1 = cb.entropy()
+    res2 = quad(lambda x: entr(cb.pdf(x)), -np.inf, np.inf)[0]
+    N, lo, hi = 10000, -100, 20
+    res3 = entr(cb.pdf(np.linspace(lo, hi, N))).sum()*(hi-lo)/N
+    assert_allclose(res1, res2)
+    assert_allclose(res1, res3, rtol=1e-3)
 
 
 @pytest.mark.parametrize(
