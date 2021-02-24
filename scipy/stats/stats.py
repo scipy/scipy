@@ -2014,6 +2014,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     See Also
     --------
     numpy.percentile
+    scipy.stats.scoreatpercentile, scipy.stats.rankdata
 
     Examples
     --------
@@ -2064,9 +2065,6 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
     array([nan, nan])
 
-    See also
-    --------
-    scipy.stats.scoreatpercentile, scipy.stats.rankdata
     """
 
     a = np.asarray(a)
