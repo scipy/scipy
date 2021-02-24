@@ -1999,12 +1999,13 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
             strictly less than the given score are counted.
           * 'mean': The average of the "weak" and "strict" scores, often used
             in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
-    nan_policy : {'propagate', 'raise'}, optional
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
           * 'propagate': returns nan
           * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -2065,6 +2066,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
     array([nan, nan])
 
+    The 'omit' policy does not make sense for nan's among the scores,
+    and so will through an error in that case.
     """
 
     a = np.asarray(a)
