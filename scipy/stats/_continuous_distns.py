@@ -8945,6 +8945,7 @@ class studentized_range_gen(rv_continuous):
     inf
 
     To obtain a finite limit we can input a value that nears 1.
+
     >>> b = %(name)s.ppf(.999, k, v)
     >>> b
     7.41058083802274
