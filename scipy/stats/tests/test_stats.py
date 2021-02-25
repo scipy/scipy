@@ -3845,8 +3845,9 @@ class Test_ttest_ind_permutations():
 
     # data for bigger test
     np.random.seed(0)
-    rvs1 = stats.norm.rvs(loc=5, scale=10, size=500).reshape(100, 5)
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)
+    rvs1 = stats.norm.rvs(loc=5, scale=10, # type: ignore
+                          size=500).reshape(100, 5)
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100) # type: ignore
 
     p_d = [0, 0.676]  # desired pvalues
     p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
