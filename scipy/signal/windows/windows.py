@@ -2146,7 +2146,10 @@ def get_window(window, Nx, fftbins=True):
         except KeyError as e:
             raise ValueError("Unknown window type.") from e
 
-        params = (Nx,) + args + (sym,)
+        if winfunc is dpss:
+            params = (Nx,) + args + (None, sym)
+        else:
+            params = (Nx,) + args + (sym,)
     else:
         winfunc = kaiser
         params = (Nx, beta, sym)

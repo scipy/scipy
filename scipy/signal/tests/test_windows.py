@@ -618,7 +618,7 @@ class TestGetWindow(object):
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
     def test_dpss(self):
-        win1 = windows.get_window(('dpss', 3), 64)
+        win1 = windows.get_window(('dpss', 3), 64, fftbins=False)
         win2 = windows.dpss(64, 3)
         assert_array_almost_equal(win1, win2, decimal=4)
 
