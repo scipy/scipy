@@ -8896,8 +8896,71 @@ class studentized_range_gen(rv_continuous):
            1983, pp. 204–210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
            Feb. 2021.
 
+    Examples
+    --------
+    >>> from scipy.stats import %(name)s
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
 
-    %(example)s
+    Calculate a few first moments:
+
+    %(set_vals_stmt)s
+    >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+    Display the probability density function (``pdf``):
+
+    >>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
+    ...                 %(name)s.ppf(0.99, %(shapes)s), 100)
+    >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
+    ...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = %(name)s(%(shapes)s)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
+    >>> np.allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+    True
+
+    Rather than using (``%(name)s.rvs``) to generate random variates, which is
+    very slow for this distribution, we can use inverse transform sampling and
+    interpolation. Using the shape parameters, obtain the bounds data that
+    will be input to ``cdf`` for later use in interpolation.
+
+    >>> a, b = %(name)s.support(k, v)
+    >>> a, b
+    (0, inf)
+
+    Note that the upper limit for the range for the ``cdf`` input is
+    technically infinite. Inputting 1 to the ``ppf`` gives infinity:
+
+    >>> %(name)s.ppf(1, k, v)
+    inf
+
+    To obtain a finite limit we can input a value that nears 1.
+    >>> b = %(name)s.ppf(.999, k, v)
+    >>> b
+    7.41058083802274
+
+    >>> from scipy.interpolate import interp1d
+    >>> xs = np.linspace(a, b, 50)
+    >>> cdf = %(name)s.cdf(xs, k, v)
+    >>> ppf = interp1d(cdf, xs, kind='next', fill_value='extrapolate')
+    >>> random_state = np.random.default_rng(123)
+    >>> r = ppf(random_state.uniform(size=1000))
+
+    And compare the histogram:
+
+    >>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
 
     """
     _epsabs = 1e-9  # Allows setting of quad epsabs for class integration fns.
