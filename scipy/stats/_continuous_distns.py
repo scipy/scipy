@@ -3504,8 +3504,16 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         fac = np.sqrt(1.0/x)
         # Numerical accuracy for small `mu` is bad.  See #869.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="overflow encountered in exp",
+                category=RuntimeWarning
+            )
+            e = np.exp(1.0 / mu)
+            e[np.argwhere(~np.isfinite(e))] = np.finfo(np.double).max
+
         C1 = _norm_cdf(fac*(x-mu)/mu)
-        C1 += np.exp(1.0/mu) * _norm_cdf(-fac*(x+mu)/mu) * np.exp(1.0/mu)
+        C1 += e * _norm_cdf(-fac*(x+mu)/mu) * e
         return C1
 
     def _stats(self, mu):
