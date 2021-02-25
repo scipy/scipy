@@ -3513,7 +3513,7 @@ class invgauss_gen(rv_continuous):
             e[np.argwhere(~np.isfinite(e))] = np.finfo(np.double).max
 
         C1 = _norm_cdf(fac*(x-mu)/mu)
-        C1 += e * _norm_cdf(-fac*(x+mu)/mu) * e
+        C1 += np.exp(2.0/mu + _norm_logcdf(-fac*(x+mu)/mu))
         return C1
 
     def _stats(self, mu):
