@@ -191,7 +191,7 @@ def test_matrix_calculation_pipeline():
 
 def test_from_matrix_ortho_output():
     rnd = np.random.RandomState(0)
-    mat = rnd.random((100, 3, 3))
+    mat = rnd.random_sample((100, 3, 3))
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
