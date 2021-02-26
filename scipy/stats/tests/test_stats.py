@@ -30,7 +30,8 @@ from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import _broadcast_concatenate
+from scipy.stats.stats import (_broadcast_concatenate,
+                               AlexanderGovernConstantInputWarning)
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3991,6 +3992,7 @@ class Test_ttest_ind_permutations():
         assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
         assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
 
+    @pytest.mark.xfail_on_32bit("Uses too much memory")
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
         np.random.seed(0)
@@ -4127,6 +4129,7 @@ def test_ttest_ind_with_uneq_var():
     rvs2 = np.linspace(1,100,100)
     rvs1 = np.linspace(5,105,100)
     rvs1_2D = np.array([rvs1, rvs2])
+
     rvs2_2D = np.array([rvs2, rvs1])
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
@@ -5001,11 +5004,6 @@ class TestGeoMean(object):
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_weights_bad_input(self):
-        a = np.array([1, 2, 3, 4, 5])
-        weights = "scipy"
-        assert_raises(TypeError, stats.gmean, a, weights=weights)
-
 
 class TestGeometricStandardDeviation(object):
     # must add 1 as `gstd` is only defined for positive values
@@ -5351,6 +5349,243 @@ class TestSigmaClip(object):
         # regression test #8632
         x = np.ones(10)
         assert_equal(stats.sigmaclip(x)[0], x)
+
+
+class TestAlexanderGovern:
+    def test_compare_dtypes(self):
+        args = [[13, 13, 13, 13, 13, 13, 13, 12, 12],
+                [14, 13, 12, 12, 12, 12, 12, 11, 11],
+                [14, 14, 13, 13, 13, 13, 13, 12, 12],
+                [15, 14, 13, 13, 13, 12, 12, 12, 11]]
+        args_int16 = np.array(args, dtype=np.int16)
+        args_int32 = np.array(args, dtype=np.int32)
+        args_uint8 = np.array(args, dtype=np.uint8)
+        args_float64 = np.array(args, dtype=np.float64)
+
+        res_int16 = stats.alexandergovern(*args_int16)
+        res_int32 = stats.alexandergovern(*args_int32)
+        res_unit8 = stats.alexandergovern(*args_uint8)
+        res_float64 = stats.alexandergovern(*args_float64)
+
+        assert (res_int16.pvalue == res_int32.pvalue ==
+                res_unit8.pvalue == res_float64.pvalue)
+        assert (res_int16.statistic == res_int32.statistic ==
+                res_unit8.statistic == res_float64.statistic)
+
+    def test_bad_inputs(self):
+        # input array is of size zero
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
+            stats.alexandergovern([1, 2], [])
+        # input is a singular non list element
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
+            stats.alexandergovern([1, 2], 2)
+        # input list is of size 1
+        with assert_raises(ValueError, match="Input sample size must be"
+                                             " greater than one."):
+            stats.alexandergovern([1, 2], [2])
+        # inputs are not finite (infinity)
+        with assert_raises(ValueError, match="Input samples must be finite."):
+            stats.alexandergovern([1, 2], [np.inf, np.inf])
+        # inputs are multidimensional
+        with assert_raises(ValueError, match="Input samples must be one"
+                                             "-dimensional"):
+            stats.alexandergovern([1, 2], [[1, 2], [3, 4]])
+
+    def test_compare_r(self):
+        '''
+        Data generated in R with
+        > set.seed(1)
+        > library("onewaytests")
+        > library("tibble")
+        > y <- c(rnorm(40, sd=10),
+        +        rnorm(30, sd=15),
+        +        rnorm(20, sd=20))
+        > x <- c(rep("one", times=40),
+        +        rep("two", times=30),
+        +        rep("eight", times=20))
+        > x <- factor(x)
+        > ag.test(y ~ x, tibble(y,x))
+
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : y and x
+
+        statistic  : 1.359941
+        parameter  : 2
+        p.value    : 0.5066321
+
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
+        Example adapted from:
+        https://eval-serv2.metpsy.uni-jena.de/wiki-metheval-hp/index.php/R_FUN_Alexander-Govern
+
+        '''
+        one = [-6.264538107423324, 1.8364332422208225, -8.356286124100471,
+               15.952808021377916, 3.295077718153605, -8.204683841180152,
+               4.874290524284853, 7.383247051292173, 5.757813516534923,
+               -3.0538838715635603, 15.11781168450848, 3.898432364114311,
+               -6.2124058054180376, -22.146998871774997, 11.249309181431082,
+               -0.4493360901523085, -0.16190263098946087, 9.438362106852992,
+               8.212211950980885, 5.939013212175088, 9.189773716082183,
+               7.821363007310671, 0.745649833651906, -19.89351695863373,
+               6.198257478947102, -0.5612873952900078, -1.557955067053293,
+               -14.707523838992744, -4.781500551086204, 4.179415601997024,
+               13.58679551529044, -1.0278772734299553, 3.876716115593691,
+               -0.5380504058290512, -13.770595568286065, -4.149945632996798,
+               -3.942899537103493, -0.5931339671118566, 11.000253719838831,
+               7.631757484575442]
+
+        two = [-2.4678539438038034, -3.8004252020476135, 10.454450631071062,
+               8.34994798010486, -10.331335418242798, -10.612427354431794,
+               5.468729432052455, 11.527993867731237, -1.6851931822534207,
+               13.216615896813222, 5.971588205506021, -9.180395898761569,
+               5.116795371366372, -16.94044644121189, 21.495355525515556,
+               29.7059984775879, -5.508322146997636, -15.662019394747961,
+               8.545794411636193, -2.0258190582123654, 36.024266407571645,
+               -0.5886000409975387, 10.346090436761651, 0.4200323817099909,
+               -11.14909813323608, 2.8318844927151434, -27.074379433365568,
+               21.98332292344329, 2.2988000731784655, 32.58917505543229]
+
+        eight = [9.510190577993251, -14.198928618436291, 12.214527069781099,
+                 -18.68195263288503, -25.07266800478204, 5.828924710349257,
+                 -8.86583746436866, 0.02210703263248262, 1.4868264830332811,
+                 -11.79041892376144, -11.37337465637004, -2.7035723024766414,
+                 23.56173993146409, -30.47133600859524, 11.878923752568431,
+                 6.659007424270365, 21.261996745527256, -6.083678472686013,
+                 7.400376198325763, 5.341975815444621]
+        soln = stats.alexandergovern(one, two, eight)
+        assert_allclose(soln.statistic, 1.3599405447999450836)
+        assert_allclose(soln.pvalue, 0.50663205309676440091)
+
+    def test_compare_scholar(self):
+        '''
+        Data taken from 'The Modification and Evaluation of the
+        Alexander-Govern Test in Terms of Power' by Kingsley Ochuko, T.,
+        Abdullah, S., Binti Zain, Z., & Soaad Syed Yahaya, S. (2015).
+        '''
+        young = [482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
+                 518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1, 584.68,
+                 609.09, 609.53, 666.63, 676.4]
+        middle = [335.59, 338.43, 353.54, 404.27, 437.5, 469.01, 485.85,
+                  487.3, 493.08, 494.31, 499.1, 886.41]
+        old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
+               558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
+        soln = stats.alexandergovern(young, middle, old)
+        assert_allclose(soln.statistic, 5.3237, atol=1e-3)
+        assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
+
+        # verify with ag.test in r
+        '''
+        > library("onewaytests")
+        > library("tibble")
+        > young <- c(482.43, 484.36, 488.84, 495.15, 495.24, 502.69, 504.62,
+        +                  518.29, 519.1, 524.1, 524.12, 531.18, 548.42, 572.1,
+        +                  584.68, 609.09, 609.53, 666.63, 676.4)
+        > middle <- c(335.59, 338.43, 353.54, 404.27, 437.5, 469.01, 485.85,
+        +                   487.3, 493.08, 494.31, 499.1, 886.41)
+        > old <- c(519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24,
+        +                   558.61, 558.95, 565.43, 586.39, 594.69, 629.22,
+        +                   645.69, 691.84)
+        > young_fct <- c(rep("young", times=19))
+        > middle_fct <-c(rep("middle", times=12))
+        > old_fct <- c(rep("old", times=15))
+        > ag.test(a ~ b, tibble(a=c(young, middle, old), b=factor(c(young_fct,
+        +                                              middle_fct, old_fct))))
+
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : a and b
+
+        statistic  : 5.324629
+        parameter  : 2
+        p.value    : 0.06978651
+
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
+
+        '''
+        assert_allclose(soln.statistic, 5.324629)
+        assert_allclose(soln.pvalue, 0.06978651)
+
+    def test_compare_scholar3(self):
+        '''
+        Data taken from 'Robustness And Comparative Power Of WelchAspin,
+        Alexander-Govern And Yuen Tests Under Non-Normality And Variance
+        Heteroscedasticity', by Ayed A. Almoied. 2017. Page 34-37.
+        https://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=2775&context=oa_dissertations
+        '''
+        x1 = [-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152,
+              0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555,
+              0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442,
+              0.999554, 1.642958]
+        x2 = [-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253,
+              -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
+              0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
+              1.33964, 1.576766]
+        soln = stats.alexandergovern(x1, x2)
+        assert_allclose(soln.statistic, 0.713526, atol=1e-5)
+        assert_allclose(soln.pvalue, 0.398276, atol=1e-5)
+
+        '''
+        tested in ag.test in R:
+        > library("onewaytests")
+        > library("tibble")
+        > x1 <- c(-1.77559, -1.4113, -0.69457, -0.54148, -0.18808, -0.07152,
+        +          0.04696, 0.051183, 0.148695, 0.168052, 0.422561, 0.458555,
+        +          0.616123, 0.709968, 0.839956, 0.857226, 0.929159, 0.981442,
+        +          0.999554, 1.642958)
+        > x2 <- c(-1.47973, -1.2722, -0.91914, -0.80916, -0.75977, -0.72253,
+        +         -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
+        +         0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
+        +         1.33964, 1.576766)
+        > x1_fact <- c(rep("x1", times=20))
+        > x2_fact <- c(rep("x2", times=20))
+        > a <- c(x1, x2)
+        > b <- factor(c(x1_fact, x2_fact))
+        > ag.test(a ~ b, tibble(a, b))
+        Alexander-Govern Test (alpha = 0.05)
+        -------------------------------------------------------------
+        data : a and b
+
+        statistic  : 0.7135182
+        parameter  : 1
+        p.value    : 0.3982783
+
+        Result     : Difference is not statistically significant.
+        -------------------------------------------------------------
+        '''
+        assert_allclose(soln.statistic, 0.7135182)
+        assert_allclose(soln.pvalue, 0.3982783)
+
+    def test_nan_policy_propogate(self):
+        args = [[1, 2, 3, 4], [1, np.nan]]
+        # default nan_policy is 'propagate'
+        res = stats.alexandergovern(*args)
+        assert_equal(res.pvalue, np.nan)
+        assert_equal(res.statistic, np.nan)
+
+    def test_nan_policy_raise(self):
+        args = [[1, 2, 3, 4], [1, np.nan]]
+        with assert_raises(ValueError, match="The input contains nan values"):
+            stats.alexandergovern(*args, nan_policy='raise')
+
+    def test_nan_policy_omit(self):
+        args_nan = [[1, 2, 3, None, 4], [1, np.nan, 19, 25]]
+        args_no_nan = [[1, 2, 3, 4], [1, 19, 25]]
+        res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
+        res_no_nan = stats.alexandergovern(*args_no_nan)
+        assert_equal(res_nan.pvalue, res_no_nan.pvalue)
+        assert_equal(res_nan.statistic, res_no_nan.statistic)
+
+    def test_constant_input(self):
+        # Zero variance input, consistent with `stats.pearsonr`
+        with assert_warns(AlexanderGovernConstantInputWarning):
+            res = stats.alexandergovern([0.667, 0.667, 0.667],
+                                        [0.123, 0.456, 0.789])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
 
 class TestFOneWay(object):
@@ -6289,3 +6524,193 @@ class TestMGCStat(object):
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+
+class TestPageTrendTest:
+    # expected statistic and p-values generated using R at
+    # https://rdrr.io/cran/cultevo/, e.g.
+    # library(cultevo)
+    # data = rbind(c(72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81, 43,
+    #                   70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50),
+    #              c(68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31, 67,
+    #                69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43),
+    #              c(81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68, 17,
+    #                16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55))
+    # result = page.test(data, verbose=FALSE)
+    # Most test cases generated to achieve common critical p-values so that
+    # results could be checked (to limited precision) against tables in
+    # scipy.stats.page_trend_test reference [1]
+
+    np.random.seed(0)
+    data_3_25 = np.random.rand(3, 25)
+    data_10_26 = np.random.rand(10, 26)
+
+    ts = [
+          (12805, 0.3886487053947608, False, 'asymptotic', data_3_25),
+          (49140, 0.02888978556179862, False, 'asymptotic', data_10_26),
+          (12332, 0.7722477197436702, False, 'asymptotic',
+           [[72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81,
+             43, 70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50],
+            [68, 52, 60, 34, 44, 20, 65, 88, 21, 81, 48, 31, 31,
+             67, 69, 94, 30, 24, 40, 87, 70, 43, 50, 96, 43],
+            [81, 13, 85, 35, 79, 12, 92, 86, 21, 64, 16, 64, 68,
+             17, 16, 89, 71, 43, 43, 36, 54, 13, 66, 51, 55]]),
+          (266, 4.121656378600823e-05, False, 'exact',
+           [[1.5, 4., 8.3, 5, 19, 11],
+            [5, 4, 3.5, 10, 20, 21],
+            [8.4, 3.2, 10, 12, 14, 15]]),
+          (332, 0.9566400920502488, True, 'exact',
+           [[4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
+            [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1], [4, 3, 2, 1],
+            [3, 4, 1, 2], [1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4],
+            [1, 2, 3, 4], [1, 2, 3, 4]]),
+          (241, 0.9622210164861476, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3],
+            [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
+          (197, 0.9619432897162209, True, 'exact',
+           [[6, 5, 4, 3, 2, 1], [6, 5, 4, 3, 2, 1], [1, 3, 4, 5, 2, 6]]),
+          (423, 0.9590458306880073, True, 'exact',
+           [[5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1],
+            [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1],
+            [4, 1, 3, 2, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
+            [1, 2, 3, 4, 5]]),
+          (217, 0.9693058575034678, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [2, 1, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3],
+            [1, 2, 3]]),
+          (395, 0.991530289351305, True, 'exact',
+           [[7, 6, 5, 4, 3, 2, 1], [7, 6, 5, 4, 3, 2, 1],
+            [6, 5, 7, 4, 3, 2, 1], [1, 2, 3, 4, 5, 6, 7]]),
+          (117, 0.9997817843373017, True, 'exact',
+           [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
+            [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
+         ]
+
+    @pytest.mark.parametrize("L, p, ranked, method, data", ts)
+    def test_accuracy(self, L, p, ranked, method, data):
+        np.random.seed(42)
+        res = stats.page_trend_test(data, ranked=ranked, method=method)
+        assert_equal(L, res.statistic)
+        assert_allclose(p, res.pvalue)
+        assert_equal(method, res.method)
+
+    ts2 = [
+           (542, 0.9481266260876332, True, 'exact',
+            [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+             [1, 8, 4, 7, 6, 5, 9, 3, 2, 10]]),
+           (1322, 0.9993113928199309, True, 'exact',
+            [[10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+             [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [9, 2, 8, 7, 6, 5, 4, 3, 10, 1],
+             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]),
+           (2286, 0.9908688345484833, True, 'exact',
+            [[8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [8, 7, 6, 5, 4, 3, 2, 1],
+             [8, 7, 6, 5, 4, 3, 2, 1], [1, 3, 5, 6, 4, 7, 2, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
+             [1, 2, 3, 4, 5, 6, 7, 8]]),
+          ]
+
+    # only the first of these appears slow because intermediate data are
+    # cached and used on the rest
+    @pytest.mark.parametrize("L, p, ranked, method, data", ts)
+    @pytest.mark.slow()
+    def test_accuracy2(self, L, p, ranked, method, data):
+        np.random.seed(42)
+        res = stats.page_trend_test(data, ranked=ranked, method=method)
+        assert_equal(L, res.statistic)
+        assert_allclose(p, res.pvalue)
+        assert_equal(method, res.method)
+
+    def test_options(self):
+        np.random.seed(42)
+        m, n = 10, 20
+        predicted_ranks = np.arange(1, n+1)
+        perm = np.random.permutation(np.arange(n))
+        data = np.random.rand(m, n)
+        ranks = stats.rankdata(data, axis=1)
+        res1 = stats.page_trend_test(ranks)
+        res2 = stats.page_trend_test(ranks, ranked=True)
+        res3 = stats.page_trend_test(data, ranked=False)
+        res4 = stats.page_trend_test(ranks, predicted_ranks=predicted_ranks)
+        res5 = stats.page_trend_test(ranks[:, perm],
+                                     predicted_ranks=predicted_ranks[perm])
+        assert_equal(res1.statistic, res2.statistic)
+        assert_equal(res1.statistic, res3.statistic)
+        assert_equal(res1.statistic, res4.statistic)
+        assert_equal(res1.statistic, res5.statistic)
+
+    def test_Ames_assay(self):
+        # test from _page_trend_test.py [2] page 151; data on page 144
+        np.random.seed(42)
+
+        data = [[101, 117, 111], [91, 90, 107], [103, 133, 121],
+                [136, 140, 144], [190, 161, 201], [146, 120, 116]]
+        data = np.array(data).T
+        predicted_ranks = np.arange(1, 7)
+
+        res = stats.page_trend_test(data, ranked=False,
+                                    predicted_ranks=predicted_ranks,
+                                    method="asymptotic")
+        assert_equal(res.statistic, 257)
+        assert_almost_equal(res.pvalue, 0.0035, decimal=4)
+
+        res = stats.page_trend_test(data, ranked=False,
+                                    predicted_ranks=predicted_ranks,
+                                    method="exact")
+        assert_equal(res.statistic, 257)
+        assert_almost_equal(res.pvalue, 0.0023, decimal=4)
+
+    def test_input_validation(self):
+        # test data not a 2d array
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test(None)
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([])
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([1, 2])
+        with assert_raises(ValueError, match="`data` must be a 2d array."):
+            stats.page_trend_test([[[1]]])
+
+        # test invalid dimensions
+        with assert_raises(ValueError, match="Page's L is only appropriate"):
+            stats.page_trend_test(np.random.rand(1, 3))
+        with assert_raises(ValueError, match="Page's L is only appropriate"):
+            stats.page_trend_test(np.random.rand(2, 2))
+
+        # predicted ranks must include each integer [1, 2, 3] exactly once
+        message = "`predicted_ranks` must include each integer"
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[0, 1, 2])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[1.1, 2, 3])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks=[1, 2, 3, 3])
+        with assert_raises(ValueError, match=message):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  predicted_ranks="invalid")
+
+        # test improperly ranked data
+        with assert_raises(ValueError, match="`data` is not properly ranked"):
+            stats.page_trend_test([[0, 2, 3], [1, 2, 3]], True)
+        with assert_raises(ValueError, match="`data` is not properly ranked"):
+            stats.page_trend_test([[1, 2, 3], [1, 2, 4]], True)
+
+        # various
+        with assert_raises(ValueError, match="`data` contains NaNs"):
+            stats.page_trend_test([[1, 2, 3], [1, 2, np.nan]],
+                                  ranked=False)
+        with assert_raises(ValueError, match="`method` must be in"):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  method="ekki")
+        with assert_raises(TypeError, match="`ranked` must be boolean."):
+            stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
+                                  ranked="ekki")

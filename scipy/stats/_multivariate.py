@@ -538,11 +538,11 @@ class multivariate_normal_gen(multi_rv_generic):
             Mean of the distribution
         cov : array_like
             Covariance matrix of the distribution
-        maxpts: integer
+        maxpts : integer
             The maximum number of points to use for integration
-        abseps: float
+        abseps : float
             Absolute error tolerance
-        releps: float
+        releps : float
             Relative error tolerance
 
         Notes
@@ -570,12 +570,12 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration
             (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance (default 1e-5)
 
         Returns
@@ -609,12 +609,12 @@ class multivariate_normal_gen(multi_rv_generic):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
         %(_mvn_doc_default_callparams)s
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration
             (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance (default 1e-5)
 
         Returns
@@ -716,13 +716,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
             If `seed` is already a ``RandomState`` or ``Generator`` instance,
             then that object is used.
             Default is None.
-        maxpts: integer, optional
+        maxpts : integer, optional
             The maximum number of points to use for integration of the
             cumulative distribution function (default `1000000*dim`)
-        abseps: float, optional
+        abseps : float, optional
             Absolute error tolerance for the cumulative distribution function
             (default 1e-5)
-        releps: float, optional
+        releps : float, optional
             Relative error tolerance for the cumulative distribution function
             (default 1e-5)
 
@@ -1162,7 +1162,7 @@ class matrix_normal_frozen(multi_rv_frozen):
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-       seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
+        seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
             This parameter defines the object to use for drawing random
             variates.
             If `seed` is `None` the `~np.random.RandomState` singleton is used.
@@ -2108,8 +2108,6 @@ class wishart_gen(multi_rv_generic):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        scale : ndarray
-            Scale matrix
         C : ndarray
             Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
@@ -2344,7 +2342,7 @@ def _cho_inv_batch(a, check_finite=True):
     x : array
         Array of inverses of the matrices ``a_i``.
 
-    See also
+    See Also
     --------
     scipy.linalg.cholesky : Cholesky factorization of a matrix
 
@@ -2577,7 +2575,6 @@ class invwishart_gen(wishart_gen):
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
             Each quantile must be a symmetric positive definite matrix.
-
         %(_doc_default_callparams)s
 
         Returns
@@ -4696,13 +4693,15 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         ----------
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
-            Number of samples to draw (default 1).
+            Number of samples to draw. Default is ``None``, in which case a
+            single variate is returned as an array with shape ``m.shape``.
         %(_doc_random_state)s
 
         Returns
         -------
         rvs : array_like
-            Random variates of shape (`size`, `len(p)`)
+            Random variates of shape ``size`` or ``m.shape``
+            (if ``size=None``).
 
         Notes
         -----

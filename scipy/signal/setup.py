@@ -25,12 +25,14 @@ def configuration(parent_package='', top_path=None):
         import pythran
         ext = pythran.dist.PythranExtension(
             'scipy.signal._max_len_seq_inner',
-            sources=["scipy/signal/_max_len_seq_inner.py"])
+            sources=["scipy/signal/_max_len_seq_inner.py"],
+            config=['compiler.blas=none'])
         config.ext_modules.append(ext)
 
         ext = pythran.dist.PythranExtension(
             'scipy.signal._spectral',
-            sources=["scipy/signal/_spectral.py"])
+            sources=["scipy/signal/_spectral.py"],
+            config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     else:
         config.add_extension(

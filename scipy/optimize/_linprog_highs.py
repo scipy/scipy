@@ -17,8 +17,8 @@ import inspect
 import numpy as np
 from .optimize import _check_unknown_options, OptimizeWarning
 from warnings import warn
-from ._highs.highs_wrapper import highs_wrapper
-from ._highs.constants import (
+from ._highs._highs_wrapper import _highs_wrapper
+from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_MINIMAL,
@@ -26,10 +26,10 @@ from ._highs.constants import (
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
     MODEL_STATUS_MODEL_ERROR,
-    MODEL_STATUS_MODEL_EMPTY,
     MODEL_STATUS_PRESOLVE_ERROR,
     MODEL_STATUS_SOLVE_ERROR,
     MODEL_STATUS_POSTSOLVE_ERROR,
+    MODEL_STATUS_MODEL_EMPTY,
     MODEL_STATUS_PRIMAL_INFEASIBLE,
     MODEL_STATUS_PRIMAL_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
@@ -37,16 +37,17 @@ from ._highs.constants import (
     as MODEL_STATUS_RDOVUB,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
+    MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE,
+    MODEL_STATUS_DUAL_INFEASIBLE,
 
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
 
     HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
 
+    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
-    HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_TO_DEVEX_SWITCH
-    as HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
@@ -211,7 +212,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_dual_edge_weight_strategy',
         choices={'dantzig': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
                  'devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
-                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STEEP2DVX,
+                 'steepest-devex': HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE,
                  'steepest':
                  HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
                  None: None})
@@ -229,10 +230,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             2,
             'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR',
         ),
-        MODEL_STATUS_MODEL_EMPTY: (
-            4,
-            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
-        ),
         MODEL_STATUS_PRESOLVE_ERROR: (
             4,
             'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR',
@@ -244,6 +241,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         MODEL_STATUS_POSTSOLVE_ERROR: (
             4,
             'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR',
+        ),
+        MODEL_STATUS_MODEL_EMPTY: (
+            4,
+            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
         ),
         MODEL_STATUS_RDOVUB: (
             4,
@@ -269,6 +270,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         MODEL_STATUS_REACHED_ITERATION_LIMIT: (
             1,
             "Iteration limit reached.",
+        ),
+        MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE: (
+            2,
+            "The problem is primal/dual infeasible.",
+        ),
+        MODEL_STATUS_DUAL_INFEASIBLE: (
+            2,
+            "The problem is dual infeasible.",
         ),
     }
 
@@ -313,8 +322,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
-    res = highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                        lb, ub, options)
+    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
+                         lb, ub, options)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s

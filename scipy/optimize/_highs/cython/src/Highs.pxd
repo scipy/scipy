@@ -6,11 +6,16 @@ from libc.stdio cimport FILE
 from libcpp cimport bool
 from libcpp.string cimport string
 
-from HighsStatus cimport HighsStatus
-from HighsOptions cimport HighsOptions
-from HighsLp cimport HighsLp, HighsModelStatus
-from HighsInfo cimport HighsInfo
-from HighsLp cimport HighsSolution, HighsBasis, ObjSense
+from .HighsStatus cimport HighsStatus
+from .HighsOptions cimport HighsOptions
+from .HighsInfo cimport HighsInfo
+from .HighsLp cimport (
+    HighsLp,
+    HighsSolution,
+    HighsBasis,
+    ObjSense,
+)
+from .HConst cimport HighsModelStatus
 
 cdef extern from "Highs.h":
     # From HiGHS/src/Highs.h

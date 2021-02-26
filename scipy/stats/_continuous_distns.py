@@ -30,12 +30,6 @@ from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 
-# In numpy 1.12 and above, np.power refuses to raise integers to negative
-# powers, and `np.float_power` is a new replacement.
-try:
-    float_power = np.float_power
-except AttributeError:
-    float_power = np.power
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -51,9 +45,20 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('loc', None)
     kwds.pop('scale', None)
     kwds.pop('optimizer', None)
+    kwds.pop('method', None)
     if kwds:
         raise TypeError("Unknown arguments: %s." % kwds)
 
+def _call_super_mom(fun):
+    # if fit method is overridden only for MLE and doens't specify what to do
+    # if method == 'mm', this decorator calls generic implementation
+    def wrapper(self, *args, **kwds):
+        method = kwds.get('method', 'mle').lower()
+        if method == 'mm':
+            return super(type(self), self).fit(*args, **kwds)
+        else:
+            return fun(self, *args, **kwds)
+    return wrapper
 
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
@@ -327,11 +332,16 @@ class norm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*(np.log(2*np.pi)+1)
 
+    @_call_super_mom
     @replace_notes_in_docstring(rv_continuous, notes="""\
-        This function uses explicit formulas for the maximum likelihood
+        For the normal distribution, method of moments and maximum likelihood
+        estimation give identical fits, and explicit formulas for the estimates
+        are available.
+        This function uses these explicit formulas for the maximum likelihood
         estimation of the normal distribution parameters, so the
-        `optimizer` argument is ignored.\n\n""")
+        `optimizer` and `method` arguments are ignored.\n\n""")
     def fit(self, data, **kwds):
+
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
@@ -625,8 +635,10 @@ class beta_gen(rv_continuous):
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a, b))
 
+    @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        In the special case where both `floc` and `fscale` are given, a
+        In the special case where `method="MLE"` and
+        both `floc` and `fscale` are given, a
         `ValueError` is raised if any value `x` in `data` does not satisfy
         `floc < x < floc + fscale`.\n\n""")
     def fit(self, data, *args, **kwds):
@@ -1509,10 +1521,13 @@ class expon_gen(rv_continuous):
     def _entropy(self):
         return 1.0
 
+    @_call_super_mom
     @replace_notes_in_docstring(rv_continuous, notes="""\
-        This function uses explicit formulas for the maximum likelihood
+        When `method='MLE'`,
+        this function uses explicit formulas for the maximum likelihood
         estimation of the exponential distribution parameters, so the
-        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+        `optimizer`, `loc` and `scale` keyword arguments are
+        ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
@@ -1615,12 +1630,14 @@ class exponnorm_gen(rv_continuous):
     def _cdf(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
-        return _norm_cdf(x) - np.exp(expval) * _norm_cdf(x - invK)
+        logprod = expval + _norm_logcdf(x - invK)
+        return _norm_cdf(x) - np.exp(logprod)
 
     def _sf(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
-        return _norm_cdf(-x) + np.exp(expval) * _norm_cdf(x - invK)
+        logprod = expval + _norm_logcdf(x - invK)
+        return _norm_cdf(-x) + np.exp(logprod)
 
     def _stats(self, K):
         K2 = K * K
@@ -2643,14 +2660,17 @@ class gamma_gen(rv_continuous):
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        When the location is fixed by using the argument `floc`, this
+        When the location is fixed by using the argument `floc`
+        and `method='MLE'`, this
         function uses explicit formulas or solves a simpler numerical
         problem than the full ML optimization problem.  So in that case,
-        the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
+        the `optimizer`, `loc` and `scale` arguments are ignored.
+        \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
+        method = kwds.get('method', 'mle')
 
-        if floc is None:
+        if floc is None or method.lower() == 'mm':
             # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
 
@@ -3022,6 +3042,7 @@ class gumbel_r_gen(rv_continuous):
         # https://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
 
+    @_call_super_mom
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -3115,6 +3136,7 @@ class gumbel_l_gen(rv_continuous):
     def _entropy(self):
         return _EULER + 1.
 
+    @_call_super_mom
     def fit(self, data, *args, **kwds):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
@@ -3490,8 +3512,9 @@ class invgauss_gen(rv_continuous):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
     def fit(self, data, *args, **kwds):
+        method = kwds.get('method', 'mle')
 
-        if type(self) == wald_gen:
+        if type(self) == wald_gen or method.lower() == 'mm':
             return super(invgauss_gen, self).fit(data, *args, **kwds)
 
         data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
@@ -3975,8 +3998,9 @@ class johnsonsb_gen(rv_continuous):
 
         f(x, a, b) = \frac{b}{x(1-x)}  \phi(a + b \log \frac{x}{1-x} )
 
-    for :math:`0 <= x < =1` and :math:`a, b > 0`, and :math:`\phi` is the normal
-    pdf.
+    where :math:`x`, :math:`a`, and :math:`b` are real scalars; :math:`b > 0`
+    and :math:`x \in [0,1]`.  :math:`\phi` is the pdf of the normal
+    distribution.
 
     `johnsonsb` takes :math:`a` and :math:`b` as shape parameters.
 
@@ -4023,7 +4047,8 @@ class johnsonsu_gen(rv_continuous):
         f(x, a, b) = \frac{b}{\sqrt{x^2 + 1}}
                      \phi(a + b \log(x + \sqrt{x^2 + 1}))
 
-    for all :math:`x, a, b > 0`, and :math:`\phi` is the normal pdf.
+    where :math:`x`, :math:`a`, and :math:`b` are real scalars; :math:`b > 0`.
+    :math:`\phi` is the pdf of the normal distribution.
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
 
@@ -4091,6 +4116,7 @@ class laplace_gen(rv_continuous):
     def _entropy(self):
         return np.log(2)+1
 
+    @_call_super_mom
     @replace_notes_in_docstring(rv_continuous, notes="""\
         This function uses explicit formulas for the maximum likelihood
         estimation of the Laplace distribution parameters, so the keyword
@@ -4229,7 +4255,8 @@ def _check_fit_input_parameters(dist, data, args, kwds):
                 kwds[key] = val
 
     # determine if there are any unknown arguments in kwds
-    known_keys = {'loc', 'scale', 'optimizer', 'floc', 'fscale', *fshape_keys}
+    known_keys = {'loc', 'scale', 'optimizer', 'method',
+                  'floc', 'fscale', *fshape_keys}
     unknown_keys = set(kwds).difference(known_keys)
     if unknown_keys:
         raise TypeError(f"Unknown keyword arguments: {unknown_keys}.")
@@ -4889,6 +4916,7 @@ class logistic_gen(rv_continuous):
         # https://en.wikipedia.org/wiki/Logistic_distribution
         return 2.0
 
+    @_call_super_mom
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -5107,15 +5135,18 @@ class lognorm_gen(rv_continuous):
     def _entropy(self, s):
         return 0.5 * (1 + np.log(2*np.pi) + 2 * np.log(s))
 
+    @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
-        When the location parameter is fixed by using the `floc` argument,
+        When `method='MLE'` and
+        the location parameter is fixed by using the `floc` argument,
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
-        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.
+        \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
         if floc is None:
-            # loc is not fixed.  Use the default fit method.
+            # fall back on the default fit method.
             return super(lognorm_gen, self).fit(data, *args, **kwds)
 
         f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
@@ -5125,7 +5156,7 @@ class lognorm_gen(rv_continuous):
         if len(args) > 1:
             raise TypeError("Too many input arguments.")
         for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer']:
+                     'optimizer', 'method']:
             kwds.pop(name, None)
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
@@ -5449,7 +5480,7 @@ class kappa4_gen(rv_continuous):
                     np.logical_and(h <= 0, k < 0)]
 
         def f0(h, k):
-            return (1.0 - float_power(h, -k))/k
+            return (1.0 - np.float_power(h, -k))/k
 
         def f1(h, k):
             return np.log(h)
@@ -5799,6 +5830,15 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,) * self.numargs
+        # Analytical justified estimates
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
+        loc = np.min(data)
+        scale = np.sqrt(np.sum((data - loc)**2) / len(data))
+        return args + (loc, scale)
 
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
@@ -6209,6 +6249,7 @@ class pareto_gen(rv_continuous):
     def _entropy(self, c):
         return 1 + 1.0/c - np.log(c)
 
+    @_call_super_mom
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
@@ -6444,6 +6485,18 @@ class pearson3_gen(rv_continuous):
         ans[mask] = _norm_ppf(q[mask])
         ans[invmask] = sc.gammaincinv(alpha, q[invmask])/beta + zeta
         return ans
+
+    @_call_super_mom
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        Note that method of moments (`method='MM'`) is not
+        available for this distribution.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if kwds.get("method", None) == 'MM':
+            raise NotImplementedError("Fit `method='MM'` is not available for "
+                                      "the Pearson3 distribution. Please try "
+                                      "the default `method='MLE'`.")
+        else:
+            return super(type(self), self).fit(data, *args, **kwds)
 
 
 pearson3 = pearson3_gen(name="pearson3")
@@ -6708,6 +6761,7 @@ class rayleigh_gen(rv_continuous):
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
 
+    @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
         Notes specifically for ``rayleigh.fit``: If the location is fixed with
         the `floc` parameter, this method uses an analytical formula to find
@@ -7020,7 +7074,7 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
-class skew_cauchy_gen(rv_continuous):
+class skewcauchy_gen(rv_continuous):
     r"""A skewed Cauchy random variable.
 
     %(before_notes)s
@@ -7075,8 +7129,15 @@ class skew_cauchy_gen(rv_continuous):
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
 
+    def _fitstart(self, data):
+        # Use 0 as the initial guess of the skewness shape parameter.
+        # For the location and scale, estimate using the median and
+        # quartiles.
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return 0.0, p50, (p75 - p25)/2
 
-skewcauchy = skew_cauchy_gen(name='skewcauchy')
+
+skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
 class skew_norm_gen(rv_continuous):
@@ -8049,6 +8110,7 @@ class uniform_gen(rv_continuous):
     def _entropy(self):
         return 0.0
 
+    @_call_super_mom
     def fit(self, data, *args, **kwds):
         """
         Maximum likelihood estimate for the location and scale parameters.
@@ -8356,6 +8418,12 @@ class wrapcauchy_gen(rv_continuous):
 
     def _entropy(self, c):
         return np.log(2*np.pi*(1-c*c))
+
+    def _fitstart(self, data):
+        # Use 0.5 as the initial guess of the shape parameter.
+        # For the location and scale, use the minimum and
+        # peak-to-peak/(2*pi), respectively.
+        return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
