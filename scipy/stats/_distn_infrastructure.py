@@ -564,12 +564,9 @@ def argsreduce(cond, *args):
     s = cond.shape
     # np.extract returns flattened arrays, which are not broadcastable together unless they
     # are either the same size or size == 1.
-    ret = []
-    for arg in newargs:
-        if np.size(arg) == 1:
-            ret.append(arg)
-        else:
-            ret.append(np.extract(cond, np.broadcast_to(arg, s)))
+    ret = [(arg if np.size(arg) == 1
+            else np.extract(cond, np.broadcast_to(arg, s)))
+           for arg in newargs]
     return ret
 
 parse_arg_template = """
