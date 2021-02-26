@@ -671,6 +671,7 @@ class nhypergeom_gen(rv_discrete):
            http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Negativehypergeometric.pdf
 
     """
+
     def _get_support(self, M, n, r):
         return 0, n
 
@@ -680,7 +681,8 @@ class nhypergeom_gen(rv_discrete):
 
     def _rvs(self, M, n, r, size=None, random_state=None):
 
-        def rvs1(M, n, r, size, random_state):
+        @_vectorize_rvs_over_shapes
+        def _rvs1(M, n, r, size, random_state):
             # invert cdf by calculating all values in support, scalar M, n, r
             a, b = self.support(M, n, r)
             ks = np.arange(a, b+1)
@@ -691,22 +693,7 @@ class nhypergeom_gen(rv_discrete):
                 return rvs.item()
             return rvs
 
-        M, n, r = np.broadcast_arrays(M, n, r)
-
-        if M.ndim == 0:
-            return rvs1(M, n, r, size, random_state)
-
-        res = np.empty(size)
-
-        # move shape parameters axes to beginning for easier indexing
-        j0 = np.arange(res.ndim)
-        j1 = np.roll(j0, -M.ndim)
-        res = np.moveaxis(res, j0, j1)
-
-        for i, _ in np.ndenumerate(M):
-            res[i] = rvs1(M[i], n[i], r[i], size[:-M.ndim], random_state)
-
-        return np.moveaxis(res, j1, j0)  # move them back before returning
+        return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
         cond = ((r == 0) & (k == 0))
