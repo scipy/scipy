@@ -2831,12 +2831,13 @@ def test_percentileofscore():
     assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
 
-PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
-                                   'chi2',     # Pearson's
-                                   'log',      # G-test (log-likelihood)
-                                   'mod_log',  # Modified log-likelihood
-                                   'cr',       # Cressie-Read (lambda=2/3)
-                                   ])
+PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
+                          ['f_obs', 'f_exp', 'ddof', 'axis',
+                           'chi2',     # Pearson's
+                           'log',      # G-test (log-likelihood)
+                           'mod_log',  # Modified log-likelihood
+                           'cr',       # Cressie-Read (lambda=2/3)
+                          ])
 
 # The details of the first two elements in power_div_1d_cases are used
 # in a test in TestPowerDivergence.  Check that code before making
