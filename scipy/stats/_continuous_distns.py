@@ -3481,10 +3481,6 @@ class invgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    When :math:`\mu` is too small, evaluating the cumulative distribution
-    function will be inaccurate due to ``cdf(mu -> 0) = inf * 0``.
-    NaNs are returned for :math:`\mu \le 0.0028`.
-
     %(example)s
 
     """
@@ -3501,12 +3497,23 @@ class invgauss_gen(rv_continuous):
     def _logpdf(self, x, mu):
         return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
 
+    def _logcdf(self, x, mu):
+        fac = np.sqrt(1 / x)
+        a = _norm_logcdf(fac * (x - mu) / mu)
+        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        return a + np.log1p(np.exp(b - a))
+
+    def _logsf(self, x, mu):
+        fac = np.sqrt(1 / x)
+        a = _norm_logsf(fac * (x - mu) / mu)
+        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        return a + np.log1p(-np.exp(b - a))
+
+    def _sf(self, x, mu):
+        return np.exp(self._logsf(x, mu))
+
     def _cdf(self, x, mu):
-        fac = np.sqrt(1.0/x)
-        # Numerical accuracy for small `mu` is bad.  See #869.
-        C1 = _norm_cdf(fac*(x-mu)/mu)
-        C1 += np.exp(2.0/mu + _norm_logcdf(-fac*(x+mu)/mu))
-        return C1
+        return np.exp(self._logcdf(x, mu))
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
