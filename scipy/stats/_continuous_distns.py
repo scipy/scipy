@@ -8579,7 +8579,7 @@ class crystalball_gen(rv_continuous):
                             N A (B - x)^{-m}  &\text{for } x \le -\beta
                           \end{cases}
 
-    where :math:`A = (m / |\beta|)^n  \exp(-\beta^2 / 2)`,
+    where :math:`A = (m / |\beta|)^m  \exp(-\beta^2 / 2)`,
     :math:`B = m/|\beta| - |\beta|` and :math:`N` is a normalisation constant.
 
     `crystalball` takes :math:`\beta > 0` and :math:`m > 1` as shape

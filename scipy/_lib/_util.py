@@ -34,6 +34,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     broadcasted together.
 
     """
+    cond = np.asarray(cond)
     if fillvalue is None:
         if f2 is None:
             raise ValueError("One of (fillvalue, f2) must be given.")
