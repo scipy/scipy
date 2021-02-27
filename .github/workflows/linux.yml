@@ -75,38 +75,12 @@ jobs:
     - name: Install packages
       run: |
         python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
-
-    - name: Test SciPy
-      run: |
-        python3.9 -u runtests.py -m fast
-
-  test_mypy:
-    name: Type Checking
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9]
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Python 3.9
-      if: matrix.python-version == '3.9'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
-        python3.9 -m pip install --upgrade pip setuptools
-
-    - name: Install other build dependencies
-      run: |
-        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
-    - name: Install packages
-      run: |
-        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
         python3.9 -m pip install -r mypy_requirements.txt
 
     - name: Mypy
       run: |
         python3.9 -u runtests.py --mypy
+
+    - name: Test SciPy
+      run: |
+        python3.9 -u runtests.py -m fast
