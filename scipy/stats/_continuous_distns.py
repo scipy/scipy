@@ -8964,8 +8964,6 @@ class studentized_range_gen(rv_continuous):
     >>> plt.show()
 
     """
-    _epsabs = 1e-9  # Allows setting of quad epsabs for class integration fns.
-    _force_fn = None  # "asymptotic", None, or "regular"
 
     def _argcheck(self, k, v):
         """Verify args"""
@@ -8987,7 +8985,8 @@ class studentized_range_gen(rv_continuous):
 
             return integrate.nquad(
                 llc,
-                ranges=[(-np.inf, np.inf), (0, np.inf), (_a, _b)]
+                ranges=[(-np.inf, np.inf), (0, np.inf), (_a, _b)],
+                opts=dict(epsabs=1e-11, epsrel=1e-12)
             )[0]
 
         return _single_moment(K, k, v)
@@ -9009,7 +9008,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(
                 llc,
                 ranges=[(-np.inf, np.inf), (_a, _b)],
-                opts=dict(epsabs=self._epsabs)
+                opts=dict(epsabs=1e-11, epsrel=1e-12)
             )[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
@@ -9025,7 +9024,7 @@ class studentized_range_gen(rv_continuous):
             # integral takes [on a] simpler form," and a single asymptotic
             # integral is evaluated rather than the standard double integral.
             # (Lund, Lund, page 205)
-            if (v < 2000 and not self._force_fn) or self._force_fn == "regular":
+            if v < 100000:
                 user_data = np.array([q, k, v], float).ctypes.data_as(
                     ctypes.c_void_p)
 
@@ -9038,7 +9037,7 @@ class studentized_range_gen(rv_continuous):
                 return integrate.nquad(
                     llc,
                     ranges=[(-np.inf, np.inf), (_a, _b)],
-                    opts=dict(epsabs=self._epsabs)
+                    opts=dict(epsabs=1e-11, epsrel=1e-12)
                 )[0]
 
             else:
