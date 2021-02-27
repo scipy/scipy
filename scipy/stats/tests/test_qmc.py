@@ -130,16 +130,21 @@ class TestUtils:
     def test_discrepancy_errors(self):
         sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
 
-        with pytest.raises(ValueError, match=r"Sample is not in unit "
-                                             r"hypercube"):
+        with pytest.raises(
+            ValueError, match=r"Sample is not in unit hypercube"
+        ):
             qmc.discrepancy(sample)
 
         with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
             qmc.discrepancy([1, 3])
 
         sample = [[0, 0], [1, 1], [0.5, 0.5]]
-        with pytest.raises(ValueError, match=r"'toto' is not a valid method."):
-            qmc.discrepancy(sample, method='toto')
+        with pytest.raises(
+            ValueError,
+            match=r"'toto' is not a valid method. Options are "
+            r"CD, WD, MD, L2-star.",
+        ):
+            qmc.discrepancy(sample, method="toto")
 
     def test_update_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])

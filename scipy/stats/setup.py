@@ -36,7 +36,7 @@ def configuration(parent_package='',top_path=None):
 
     # add _discrepancy module
     config.add_extension('_discrepancy',
-        sources=['_discrepancy.c', ],
+        sources=['_discrepancy.cxx', ],
     )
 
     return config
