@@ -28,7 +28,6 @@ ax.set_xlabel(r'$x_1$')
 ax.set_ylabel(r'$x_2$')
 
 ax = fig.add_subplot(133, projection='3d')
-ax.set_box_aspect((1, 1, 1))
 ax.scatter(xx, yy, zz)
 ax.set_xlabel(r'$x_1$')
 ax.set_ylabel(r'$x_2$')

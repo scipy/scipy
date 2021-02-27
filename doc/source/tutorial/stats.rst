@@ -1211,36 +1211,36 @@ can produce radically different results.
    :align: center
    :include-source: 0
 
-In both cases, any points is taken randomly without any knowledge about the
-previous draws. And it is clear that some regions of the space are left
-unexplored. But as the number of sample increases, the space will fill.
+In both cases in the plot above, points are generated randomly without any
+knowledge about previously drawn numbers. It is clear that some regions of
+the space are left unexplored - which can cause problems in simulations.
 
-A great benefit of MC is that it has some convergence properties.
-Let's look at the mean of the square of sum in 5 dimensions:
+A great benefit of MC is that it has known convergence properties.
+Let's look at the mean of the squared sum in 5 dimensions:
 
 .. math::
 
     f(\mathbf{x}) = \left( \sum_{j=1}^{5}x_j \right)^2,
 
-which has a known mean :math:`\mu = 5/3+5(5-1)/4`. Using MC sampling, we can
-compute the mean and the error follows a theoretical rate
-of :math:`O(n^{-1/2})`.
+which has a known mean value, :math:`\mu = 5/3+5(5-1)/4`. Using MC sampling, we
+can compute that mean numerically, and the approximation error follows a
+theoretical rate of :math:`O(n^{-1/2})`.
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc.py
    :align: center
    :include-source: 0
 
-Although the convergence is ensured, practitioner tend to want to have an
+Although the convergence is ensured, practitioners tend to want to have an
 exploration process which is more deterministic.
-What is commonly done to walk through all the hypothesis is
-to use a grid, also called a saturated design. Let’s consider the
-unit-hypercube, all bounds range from 0 to 1.
-Now, having a distance of 0.1 between each point, the number of points
+What is commonly done to walk through all the hypotheses is to use a regular
+grid spanning all parameter dimensions, also called a saturated design. Let’s
+consider the unit-hypercube, with all bounds ranging from 0 to 1.
+Now, having a distance of 0.1 between points, the number of points
 required to fill the unit interval would be 10. In a 2-dimensional hypercube
-the same spacing would require 100 and in 3-dimensions 1 000 points. As the
-number of dimensions goes, the number of experiments which is required to fill
-the space evenly rises exponentially as the volume of the space increases.
-This exponential growth is called the curse-of-dimensionality.
+the same spacing would require 100, and in 3 dimensions 1,000 points. As the
+number of dimensions grows, the number of experiments which is required to fill
+the space rises exponentially as the dimensionality of the space increases.
+This exponential growth is called "the curse of dimensionality".
 
     >>> import numpy as np
     >>> disc = 10
@@ -1253,9 +1253,9 @@ This exponential growth is called the curse-of-dimensionality.
    :align: center
    :include-source: 0
 
-To mitigate this issue, QMC methods have been designed.
-They are deterministic, have a good coverage of the space and
-some of them can be continued and retain good properties.
+To mitigate this issue, QMC methods have been designed.  They are
+deterministic, have a good coverage of the space and some of them can be
+continued and retain good properties.
 The main difference with MC methods is that the points are not IID but they
 know about previous points. Hence, some methods are also referred to as
 sequences.
@@ -1265,30 +1265,30 @@ sequences.
    :include-source: 0
 
 This figure presents 2 sets of 256 points. The design of the left is a plain
-MC whereas the design of the right is a QMC design using the Sobol' method.
-We clearly see that the QMC version is more uniform. The points are spread over
-the boundaries and there are less clusters or gaps.
+MC whereas the design of the right is a QMC design using the Sobol method.
+We clearly see that the QMC version is more uniform. The points sample better
+near the boundaries and there are less clusters or gaps.
 
 One way to assess the uniformity is to use a measure called the discrepancy.
-Here the discrepancy of Sobol' points is better than crude MC.
+Here the discrepancy of Sobol points is better than crude MC.
 
-Coming back to the computation of the mean, QMC also advocate for better
-rate of convergence of the error. They can achieve :math:`O(n^{-1})` and even
-better rates on very smooth functions. Following, Sobol' method has a rate of
-:math:`O(n^{-1})`.
+Coming back to the computation of the mean, QMC methods also have better rates
+of convergence for the error. They can achieve :math:`O(n^{-1})` for this
+function, and even better rates on very smooth functions. This figure shows
+that the Sobol method has a rate of :math:`O(n^{-1})`:
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc_sobol.py
    :align: center
    :include-source: 0
 
-We refer to the documentation of the submodule :mod:`scipy.stats.qmc` for
+We refer to the documentation of :mod:`scipy.stats.qmc` for
 more mathematical details.
 
 Calculate the discrepancy
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's consider 2 sets of points. From the figure bellow, it is clear that
-the design on the left covers more the space than the design on the right.
+Let's consider two sets of points. From the figure below, it is clear that
+the design on the left covers more of the space than the design on the right.
 This can be quantified using a :func:`~stats.qmc.discrepancy` measure.
 The lower the discrepancy, the more uniform a sample is.
 
@@ -1326,9 +1326,9 @@ sequences.
    point selection can break the properties of the sequence and result in a
    set of points which would not be better than MC.
 
-QMC engines are state aware. Meaning that you can continue the sequence,
+QMC engines are state-aware. Meaning that you can continue the sequence,
 skip some points, or reset it. Let's take 5 points from
-:class:`~stats.qmc.Halton`. And ask again for 5 points.
+:class:`~stats.qmc.Halton`. And then ask for a second set of 5 points:
 
     >>> from scipy.stats import qmc
     >>> engine = qmc.Halton(d=2, seed=12345)
@@ -1345,8 +1345,8 @@ skip some points, or reset it. Let's take 5 points from
            [0.14353937, 0.63536078],
            [0.64353937, 0.01807683]])
 
-Then we reset the sequence. Asking for 5 points leads to the same first 5
-points.
+Now we reset the sequence. Asking for 5 points leads to the same first 5
+points:
 
     >>> engine.reset()
     >>> engine.random(5)
@@ -1356,7 +1356,7 @@ points.
            [0.97166437, 0.19091633],
            [0.01853937, 0.74647189]])
 
-And here we advance the sequence to get the same second set of 5 points.
+And here we advance the sequence to get the same second set of 5 points:
 
     >>> engine.reset()
     >>> engine.fast_forward(5)
@@ -1403,7 +1403,7 @@ defined. Following is an example wrapping `numpy.random.Generator`.
     ...         self.random(n)
     ...         return self
 
-Then we use it as any other QMC engine.
+Then we use it as any other QMC engine:
 
     >>> engine = RandomEngine(2, seed=12345)
     >>> engine.random(5)
@@ -1427,10 +1427,10 @@ Key takeaways
   benefit over MC.
 * Use :class:`~stats.qmc.Sobol` if you need **exactly** :math:`2^m` points.
   You can ask for more points, but you must follow some rules.
-* :class:`~stats.qmc.Halton` allows to sample, and skip an arbitrary number of
+* :class:`~stats.qmc.Halton` allows to sample, or skip, an arbitrary number of
   points.
 * Never remove the first points of the sequence. It will destroy the
   properties.
 * Scrambling is always better.
-* If you use LHS based methods, you cannot add points without loosing the LHS
+* If you use LHS based methods, you cannot add points without losing the LHS
   properties. (There are some methods to do so, but this is not implemented.)
