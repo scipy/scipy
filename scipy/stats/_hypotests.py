@@ -686,34 +686,35 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     ----------
     table : array_like of ints
         A 2x2 contingency table.  Elements should be non-negative integers.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
 
-        * 'two-sided'
-        * 'less': one-sided
-        * 'greater': one-sided
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the null and alternative hypotheses. Default is 'two-sided'.
+        Please see explanations in the Notes section below.
 
     pooled : bool, optional
-        Whether to compute score statistic with pooled variance (Student's
-        t-test) or unpooled variance (Welch's t-test). Default is ``True`` :
-        Statistic test is computed using pooled variance.
+        Whether to compute score statistic with pooled variance (as in
+        Student's t-test, for example) or unpooled variance (as in Welch's
+        t-test). Default is ``True``.
 
     n : int, optional
         Number of sampling points used in the construction of the sampling
         method. Note that this argument must be a power of two since we are
         using `scipy.stats.qmc.Sobol`.
-        Default is 32. Must be non-negative. In most cases, 32 points is
-        enaugh to reach good precision. More points comes at performance cost.
+        Default is 32. Must be positive. In most cases, 32 points is
+        enough to reach good precision. More points comes at performance cost.
 
     Returns
     -------
     ber : BarnardExactResult
-        The object has attributes `statistic` and `pvalue`. `statistic` is
-        the Wald's statistic with pooled or unpooled variance, depending on
-        the user choice of `pooled` param. `pvalue` is the probability of
-        obtaining a test statistic at least as extreme as the one that was
-        actually observed, assuming that the null hypothesis is true.
+        A result object with the following attributes.
+
+        statistic : float
+            The Wald statistic with pooled or unpooled variance, depending
+            on the user choice of `pooled`.
+
+        pvalue : float
+            The probability of obtaining a test statistic at least as extreme
+            as the one observed under the null hypothesis.
 
     See Also
     --------
@@ -724,11 +725,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     Notes
     -----
     Barnard's test is an exact test used in the analysis of contingency
-    tables. It examines the association of two categorical variables and
+    tables. It examines the association of two categorical variables, and
     is a more powerful alternative than Fisher's exact test
     for 2x2 contingency tables.
     When using Barnard exact test, we can assert three different null
-    hypothesis :
+    hypotheses :
 
     - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -740,10 +741,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
       with `alternative` = "two-sided" (default one)
 
     In order to compute Barnard's exact test, we are using the Wald
-    statistic [3]_ with pooled and unpooled variance.
-    Under the assumption that both variances are equals, use pooled variance
-    (``pooled = True``). Otherwise, use the unpooled variance (``pooled =
-    False``). With pooled variance, the statistic is computed as follow:
+    statistic [3]_ with pooled or unpooled variance.
+    Under the default assumption that both variances are equal
+    (``pooled = True``), the statistic is computed as:
 
     .. math::
 
@@ -757,7 +757,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             }
         }
 
-    and with unpooled variance :
+    If this assumption is invalid (``pooled = False``), the statistic is:
 
     .. math::
 
@@ -770,7 +770,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             }
         }
 
-    The p-value is then computed as follow :
+    The p-value is then computed as:
 
     .. math::
 
@@ -781,27 +781,26 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             \pi^{x_{11} + x_{12}}
             (1 - \pi)^{total - x_{11} - x_{12}}
 
-    Where :math:`T(X) \leq T(X_0)`, if `alternative` = "less"
+    where :math:`T(X) \leq T(X_0)`, if `alternative` = "less"
     :math:`T(X) \geq T(X_0)`, if `alternative` = "greater"
     :math:`T(X) \geq |T(X_0)|`, if `alternative` = "two-sided".
 
     The returned p-value is the maximum p-value taken over the nuisance
     parameter :math:`\pi`, where :math:`0 \leq \pi \leq 1`.
 
-    This function's complexity is O(n * total_c1 * total_c2), with `n` the
-    number of initial points.
+    This function's complexity is O(n * total_c1 * total_c2), where `n` is the
+    number of sample points.
 
     References
     ----------
-    .. [1] G. A. BARNARD, SIGNIFICANCE TESTS FOR 2x2 TABLES, Biometrika,
-           Volume 34, Issue 1-2, January 1947, Pages 123-138,
-           :doi:`dpgkg3`
+    .. [1] Barnard, G. A. "Significance Tests for 2x2 Tables". *Biometrika*.
+           34.1/2 (1947): 123-138. :doi:`dpgkg3`
 
-    .. [2] Mehta, Cyrus & Senchaudhuri, Pralay. (2003).
-           "Conditional versus Unconditional Exact Tests for Comparing Two
-           Binomials"
+    .. [2] Mehta, Cyrus R., and Pralay Senchaudhuri. "Conditional versus
+           unconditional exact tests for comparing two binomials."
+           *Cytel Software Corporation* 675 (2003): 1-5.
 
-    .. [3] https://en.wikipedia.org/wiki/Wald_test
+    .. [3] "Wald Test". *Wikipedia*. https://en.wikipedia.org/wiki/Wald_test
 
     Examples
     --------
@@ -820,17 +819,15 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             No      8        3
 
     When working with statistical hypothesis testing, we usually use a
-    threshold probability or a significance level upon which we decide
-    to reject or not the null hypothesis :math:`H_0`. A commonly used
-    significance level is 5%. In this example, we are using the
-    `alternative` parameter with the "less" option, because the vaccine has
-    either no effect (:math:`H_0` hypothesis) or a positive effect
-    (:math:`H_1` hypothesis). Therefore, under the null hypothesis
-    (:math:`H_0`), the probability :math:`p_2` of catching the virus
-    **without** any vaccine, is either equal or lower than :math:`p_1`,
-    the probability of catching the virus **with** the vaccine.
-    To compute the p-value with Banard test, let's call `barnard_exact` as
-    follow :
+    threshold probability or significance level upon which we decide
+    to reject the null hypothesis :math:`H_0`. Suppose we choose the common
+    significance level of 5%.
+
+    Our alternative hypothesis is that the vaccine will lower the chance of
+    becoming infected with the virus; that is, the probability :math:`p_1` of
+    catching the virus with the vaccine will be *less than* the probability
+    :math:`p_2` of catching the virus without the vaccine.  Therefore, we call
+    `barnard_exact` with the ``alternative="less"`` option:
 
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
@@ -839,24 +836,22 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     >>> res.pvalue
     0.03407...
 
-    Then, the probability of obtaining test results at least as extreme as the
-    data observed above is around 3.4%. Since our p-value is under our
-    significance level defined above, we reject :math:`H_0`. The vaccine has
-    a positive effect and we have :math:`p_1 \leq p_2`; the probability of
-    contracting the virus if we have been vaccinated is lower than if
-    we are not.
+    Under the null hypothesis that the vaccine will not lower the chance of
+    becoming infected, the probability of obtaining test results at least as
+    extreme as the observed data is approximately 3.4%. Since this p-value is
+    less than our chosen significance level, we have evidence to reject
+    :math:`H_0` in favor of the alternative.
 
-    We can compare with Fisher's exact test which produces an exact
-    p-value of 6.4% :
+    Suppose we had used Fisher's exact test instead:
 
     >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
     0.0640...
 
-    With the same threshold probability of 5%, `fisher_exact` is accepting
-    :math:`H_0` while `barnard_exact` is rejecting it. As stated in [2]_,
-    Barnard's test is uniformly more powerful than Fisher's exact test
-    because Barnard's test do not condition on any margin. Fisher's test
+    With the same threshold significance of 5%, we would not have been able
+    to reject the null hypothesis in favor of the alternative. As stated in
+    [2]_, Barnard's test is uniformly more powerful than Fisher's exact test
+    because Barnard's test does not condition on any margin. Fisher's test
     should only be used when both sets of marginals are fixed.
 
     """
