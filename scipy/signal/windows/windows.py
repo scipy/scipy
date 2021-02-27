@@ -2017,7 +2017,7 @@ _win_equiv_raw = {
         'rect', 'rectangular'): (boxcar, False),
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
-    ('dpss', 'slepian'): (dpss, True),
+    ('dpss',): (dpss, True),
     ('exponential', 'poisson'): (exponential, True),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
