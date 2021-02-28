@@ -5649,7 +5649,7 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              alternative="two-sided"):
+              alternative="two-sided", trim=0):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5753,6 +5753,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     (-0.94365973617132992, 0.34744170334794122)
 
     """
+    if equal_var and trim != 0:
+        raise ValueError("Trimming is only available for tests with unequal"
+                         " variances")
+
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
@@ -5774,18 +5778,42 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    v1 = np.var(a, axis, ddof=1)
-    v2 = np.var(b, axis, ddof=1)
     n1 = a.shape[axis]
     n2 = b.shape[axis]
+
+    if trim == 0:
+        v1 = np.var(a, axis, ddof=1)
+        v2 = np.var(b, axis, ddof=1)
+        mean_a = np.mean(a, axis)
+        mean_b = np.mean(b, axis)
+    else:
+        # further calculations in this test assume that the inputs are sorted.
+        a = sorted(a)
+        b = sorted(b)
+
+        # `g_*` is the number of elements to be replaced on each tail.
+        g_a = int((n1 * trim) // 100)
+        g_b = int((n2 * trim) // 100)
+
+        # Calculate the Winsorized variance of the input samples according to
+        # specified `g`
+        v1 = _calculate_winsorized_variance(a, g_a)
+        v2 = _calculate_winsorized_variance(b, g_b)
+
+        # the total number of elements in the trimmed samples
+        n1 = n1 - (2 * g_a)
+        n2 = n2 - (2 * g_b)
+
+        # calculate the g-times trimmed mean
+        mean_a = trim_mean(a, trim / 100)
+        mean_b = trim_mean(b, trim / 100)
 
     if equal_var:
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df,
-                                alternative)
+    res = _ttest_ind_from_stats(mean_a, mean_b, denom, df, alternative)
 
     return Ttest_indResult(*res)
 
@@ -6016,14 +6044,11 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
     var_w_a = _calculate_winsorized_variance(a, g_a)
     var_w_b = _calculate_winsorized_variance(b, g_b)
 
-    t = (x_tg_a - x_tg_b) / ((var_w_a / na_t) + (var_w_b / nb_t)) ** .5
+    df, denom = _unequal_var_ttest_denom(var_w_a, na_t, var_w_b, nb_t)
 
-    c = (var_w_a / na_t) / ((var_w_a / na_t) + (var_w_b / nb_t))
-    df_inv = (c ** 2) / (na_t - 1) + ((1 - c) ** 2) / (nb_t - 1)
-    df = 1 / df_inv
+    return Ttest_relResult(*_ttest_ind_from_stats(x_tg_a, x_tg_b, denom, df,
+                                                 alternative='two-sided'))
 
-    t, prob = _ttest_finish(df, t, alternative='two-sided')
-    return Ttest_relResult(t, prob)
 
 
 def _calculate_winsorized_variance(a, g):

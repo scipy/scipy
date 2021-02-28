@@ -3838,34 +3838,39 @@ def test_ttest_ind_with_uneq_var():
 
 
 class TestTtestTrimmed(object):
-    def test_ttest_trimmed1(self):
+    trim = lambda a, b, trim=20: stats.ttest_trimmed(a, b, trim=trim)
+    ind = lambda a, b, trim=20: stats.ttest_ind(a, b, trim=trim, equal_var=False)
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_ttest_trimmed1(self, t):
         a = (1, 2, 3)
         b = (1.1, 2.9, 4.2)
         pr = 0.53619490753126731
         tr = -0.68649512735572582
-        t, p = stats.ttest_trimmed(a, b)
+        t, p = t(a, b)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
-    def test_ttest_trimmed2(self):
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_ttest_trimmed2(self, t):
         a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
         b = (1.1, 2.9, 4.2)
         pr = 0.00998909252078421
         tr = 4.591598691181999
-        t, p = stats.ttest_trimmed(a, b)
+        t, p = t(a, b)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
-    def test_ttest_trimmed3(self):
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_ttest_trimmed3(self, t):
         a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
         b = (1.1, 2.9, 4.2)
         pr = 0.10512380092302633
         tr = 2.832256715395378
-        t, p = stats.ttest_trimmed(a, b, equal_var=False, trim=32)
+        t, p = t(a, b, trim=32)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
-
-    def test_compare_r_1(self):
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_compare_r_1(self, t):
         '''
         Using PairedData's yuen.t.test method. Something to note is that there
         are at least 3 R packages that come with a trimmed t-test method, and
@@ -3894,11 +3899,12 @@ class TestTtestTrimmed(object):
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-        res = stats.ttest_trimmed(a, b)
+        res = t(a, b)
         assert_allclose(res.pvalue, 0.00287891, atol=1e-7)
         assert_allclose(res.statistic, -4.246117, atol=1e-6)
 
-    def test_compare_r_2(self):
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_compare_r_2(self, t):
         '''
         see: https://rdrr.io/cran/PairedData/man/yuen.t.test.html
         library(PairedData)
@@ -3934,11 +3940,11 @@ class TestTtestTrimmed(object):
              -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
              1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
              0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023]
-        res = stats.ttest_trimmed(a, b)
+        res = t(a, b)
         assert_allclose(res.pvalue, 0.005293306, atol=1e-7)
         assert_allclose(res.statistic, -3.098332, atol=1e-6)
-
-    def test_compare_SAS(self):
+    @pytest.mark.parametrize('t', [trim, ind])
+    def test_compare_SAS(self, t):
         # Source of the data used in this test:
         # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
         a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
