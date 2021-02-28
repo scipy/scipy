@@ -437,8 +437,8 @@ class TestBarnardExact(object):
         ```
         """
         res = barnard_exact(input_sample)
-        TX_obs, pvalue = res.statistic, res.pvalue
-        assert_allclose([TX_obs, pvalue], expected)
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_allclose([statistic, pvalue], expected)
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -466,8 +466,8 @@ class TestBarnardExact(object):
         ```
         """
         res = barnard_exact(input_sample, pooled=False)
-        TX_obs, pvalue = res.statistic, res.pvalue
-        assert_allclose([TX_obs, pvalue], expected)
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_allclose([statistic, pvalue], expected)
 
     def test_raises(self):
         # test we raise an error for wrong input number of nuisances.
@@ -498,15 +498,27 @@ class TestBarnardExact(object):
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
+            ([[0, 0], [4, 3]], (1.0, 0)),
+        ],
+    )
+    def test_edge_cases(self, input_sample, expected):
+        res = barnard_exact(input_sample)
+        statistic, pvalue = res.statistic, res.pvalue
+        assert_equal(pvalue, expected[0])
+        assert_equal(statistic, expected[1])
+
+    @pytest.mark.parametrize(
+        "input_sample,expected",
+        [
             ([[0, 5], [0, 10]], (1.0, np.nan)),
             ([[5, 0], [10, 0]], (1.0, np.nan)),
         ],
     )
     def test_row_or_col_zero(self, input_sample, expected):
         res = barnard_exact(input_sample)
-        TX_obs, pvalue = res.statistic, res.pvalue
+        statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
-        assert_equal(TX_obs, expected[1])
+        assert_equal(statistic, expected[1])
 
     @pytest.mark.parametrize(
         "input_sample,expected",
@@ -530,14 +542,14 @@ class TestBarnardExact(object):
         In this test, we are using the "one-sided" return value `a$p.value[1]`
         to test our pvalue.
         """
-        TX_expect, less_pvalue_expect = expected
+        expected_stat, less_pvalue_expect = expected
 
         if alternative == "greater":
             input_sample = np.array(input_sample)[:, ::-1]
-            TX_expect = -TX_expect
+            expected_stat = -expected_stat
 
         res = barnard_exact(input_sample, alternative=alternative)
-        TX_obs, pvalue = res.statistic, res.pvalue
+        statistic, pvalue = res.statistic, res.pvalue
         assert_allclose(
-            [TX_obs, pvalue], [TX_expect, less_pvalue_expect], atol=1e-7
+            [statistic, pvalue], [expected_stat, less_pvalue_expect], atol=1e-7
         )
