@@ -8355,11 +8355,20 @@ class wald_gen(invgauss_gen):
         # wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
         return invgauss._pdf(x, 1.0)
 
+    def _cdf(self, x):
+        return invgauss._cdf(x, 1.0)
+
+    def _sf(self, x):
+        return invgauss._sf(x, 1.0)
+
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
 
-    def _cdf(self, x):
-        return invgauss._cdf(x, 1.0)
+    def _logcdf(self, x):
+        return invgauss._logcdf(x, 1.0)
+
+    def _logsf(self, x):
+        return invgauss._logsf(x, 1.0)
 
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
