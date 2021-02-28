@@ -1529,16 +1529,17 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         The following options are available (default is 'two-sided'):
 
           * 'two-sided':
-                p-value is calculated as :math:`2Pr(z \\ge |Z|)`
-                under the null hypothesis.
+                The alternative hypothesis says that the skewness of the
+                distribution of the sample is not equal to the skewness
+                of the normal distribution i.e. skewness is not equal to 0.
           * 'less':
-                p-value is calculated as :math:`Pr(z \\le Z)` under the
-                null hypothesis.
+                The alternative hypothesis says that the skewness of the
+                distribution of the sample is less than that of the normal
+                distribution i.e. skewness is less than 0.
           * 'greater':
-                p-value is calculated as :math:`Pr(z \\ge Z)` under
-                the null hypothesis.
-
-        where :math:`Z` is the calculated value of the statistic.
+                The alternative hypothesis says that the skewness of the
+                distribution of the sample is greater than that of the normal
+                distribution i.e. skewness is greater than 0.
 
         .. versionadded:: 1.7.0
 
@@ -1640,16 +1641,17 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         The following options are available (default is 'two-sided'):
 
           * 'two-sided':
-                p-value is calculated as :math:`2Pr(z \\ge |Z|)` under the
-                null hypothesis.
+                The alternative hypothesis says that the kurtosis of the
+                distribution of the sample is not equal to the kurtosis
+                of the normal distribution i.e. kurtosis is not equal to 0.
           * 'less':
-                p-value is calculated as :math:`Pr(z \\le Z)` under the null
-                hypothesis.
+                The alternative hypothesis says that the kurtosis of the
+                distribution of the sample is less than that of the normal
+                distribution i.e. kurtosis is less than 0.
           * 'greater':
-                p-value is calculated as :math:`Pr(z \\ge Z)` under the null
-                hypothesis.
-
-        where :math:`Z` is the calculated value of the statistic.
+                The alternative hypothesis says that the kurtosis of the
+                distribution of the sample is greater than that of the normal
+                distribution i.e. kurtosis is greater than 0.
 
         .. versionadded:: 1.7.0
 
@@ -7538,16 +7540,14 @@ def ranksums(x, y, alternative='two-sided'):
         The following options are available (default is 'two-sided'):
 
           * 'two-sided':
-                p-value is calculated as :math:`2Pr(z \\ge |Z|)` under the
-                null hypothesis.
+                The alternative hypothesis says that the location shift
+                between the two distributions is not equal to 0.
           * 'less':
-                p-value is calculated as :math:`Pr(z \\le Z)` under the null
-                hypothesis.
+                The alternative hypothesis says that the location shift
+                between the two distributions is less than 0.
           * 'greater':
-                p-value is calculated as :math:`Pr(z \\ge Z)` under the null
-                hypothesis.
-
-        where :math:`Z` is the calculated value of the statistic.
+                The alternative hypothesis says that the location shift
+                between the two distributions is greater than 0.
 
         .. versionadded:: 1.7.0
 
