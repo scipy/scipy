@@ -526,8 +526,10 @@ class rv_frozen(object):
 
 def argsreduce(cond, *args):
     """Clean arguments to:
+
     1. Ensure all arguments are iterable (arrays of dimension at least one
-    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is True, in 1D.
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is
+       True, in 1D.
 
     Return list of processed arguments.
 
@@ -555,20 +557,24 @@ def argsreduce(cond, *args):
     >>> C1.shape
     (15,)
     """
-    newargs = np.atleast_1d(*args) # some distributions assume arguments are iterable.
+    # some distributions assume arguments are iterable.
+    newargs = np.atleast_1d(*args)
 
-    # np.atleast_1d returns an array if only one argument, or a list of arrays if more than one argument.
+    # np.atleast_1d returns an array if only one argument, or a list of arrays
+    # if more than one argument.
     if not isinstance(newargs, list):
         newargs = [newargs, ]
+
     if np.all(cond):
-        return newargs         # Nothing to do
+        # Nothing to do
+        return newargs
 
     s = cond.shape
-    # np.extract returns flattened arrays, which are not broadcastable together unless they
-    # are either the same size or size == 1.
-    return  [(arg if np.size(arg) == 1
+    # np.extract returns flattened arrays, which are not broadcastable together
+    # unless they are either the same size or size == 1.
+    return [(arg if np.size(arg) == 1
             else np.extract(cond, np.broadcast_to(arg, s)))
-        for arg in newargs]
+            for arg in newargs]
 
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
