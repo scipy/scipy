@@ -263,7 +263,7 @@ def _cdf_cvm(x, n=None):
 
 def cramervonmises(rvs, cdf, args=()):
     """
-    Perform the Cramér-von Mises test for goodness of fit.
+    Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -294,7 +294,7 @@ def cramervonmises(rvs, cdf, args=()):
 
     See Also
     --------
-    kstest
+    kstest, cramervonmises_2samp
 
     Notes
     -----
@@ -321,7 +321,6 @@ def cramervonmises(rvs, cdf, args=()):
     were, in fact, drawn from the standard normal distribution. We choose a
     significance level of alpha=0.05.
 
-    >>> import numpy as np
     >>> from scipy import stats
     >>> np.random.seed(626)
     >>> x = stats.norm.rvs(size=500)
@@ -766,7 +765,6 @@ def cramervonmises_2samp(x, y, method='auto'):
     ``scipy.stats.norm.rvs`` have the same distribution. We choose a
     significance level of alpha=0.05.
 
-    >>> import numpy as np
     >>> from scipy import stats
     >>> np.random.seed(626)
     >>> x = stats.norm.rvs(size=100)

@@ -124,6 +124,8 @@ Inferential Stats
    kstest
    ks_1samp
    ks_2samp
+   cramervonmises
+   cramervonmises_2samp
    epps_singleton_2samp
    mannwhitneyu
    ranksums
@@ -190,7 +192,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
-from ._hypotests import (epps_singleton_2samp, cramervonmises,
+from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
                          cramervonmises_2samp)
 
 
