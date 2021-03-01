@@ -1196,24 +1196,28 @@ Quasi-Monte Carlo
 -----------------
 
 Before talking about Quasi-Monte Carlo (QMC), a quick introduction about Monte
-Carlo (MC). The MC method was called in statistics 'model sampling'. It is
-a method which aims at trying out hypothesis. Once all the hypothesis we
-have defined have been tested, we can compute some statistics such as the
-mean of a given quantity of interest. A scenarios is defined by some variables.
-So, in order to map all scenarios, we use a random number generator.
+Carlo (MC). MC methods, or MC experiments, are a broad class of
+computational algorithms that rely on repeated random sampling to obtain
+numerical results. The underlying concept is to use randomness to solve
+problems that might be deterministic in principle. They are often used in
+physical and mathematical problems and are most useful when it is difficult or
+impossible to use other approaches. MC methods are mainly used in
+three problem classes: optimization, numerical integration, and generating
+draws from a probability distribution.
 
-Generating random numbers is a more complex problem than it sounds. Simple
-Monte Carlo (MC) methods are designed to sample points to be independent and
-identically distributed (IID). But generating multiple sets of random points
-can produce radically different results.
+Generating random numbers with specific properties is a more complex problem
+than it sounds. Simple MC methods are designed to sample points to be
+independent and identically distributed (IID). But generating multiple sets
+of random points can produce radically different results.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc.py
    :align: center
    :include-source: 0
 
 In both cases in the plot above, points are generated randomly without any
-knowledge about previously drawn numbers. It is clear that some regions of
-the space are left unexplored - which can cause problems in simulations.
+knowledge about previously drawn points. It is clear that some regions of
+the space are left unexplored - which can cause problems in simulations as a
+particular set of points might trigger a totally different behaviour.
 
 A great benefit of MC is that it has known convergence properties.
 Let's look at the mean of the squared sum in 5 dimensions:
@@ -1222,7 +1226,8 @@ Let's look at the mean of the squared sum in 5 dimensions:
 
     f(\mathbf{x}) = \left( \sum_{j=1}^{5}x_j \right)^2,
 
-which has a known mean value, :math:`\mu = 5/3+5(5-1)/4`. Using MC sampling, we
+with :math:`x_j \sim \mathcal{U}(0,1)`. It has a known mean value,
+:math:`\mu = 5/3+5(5-1)/4`. Using MC sampling, we
 can compute that mean numerically, and the approximation error follows a
 theoretical rate of :math:`O(n^{-1/2})`.
 
@@ -1231,11 +1236,15 @@ theoretical rate of :math:`O(n^{-1/2})`.
    :include-source: 0
 
 Although the convergence is ensured, practitioners tend to want to have an
-exploration process which is more deterministic.
-What is commonly done to walk through all the hypotheses is to use a regular
-grid spanning all parameter dimensions, also called a saturated design. Let’s
-consider the unit-hypercube, with all bounds ranging from 0 to 1.
-Now, having a distance of 0.1 between points, the number of points
+exploration process which is more deterministic. With normal MC, a seed can be
+used to have a repeatable process. But fixing the seed would break the
+convergence property: a given seed could work for a given class of problem
+and break for another one.
+
+What is commonly done to walk through the space in a deterministic manner, is
+to use a regular grid spanning all parameter dimensions, also called a
+saturated design. Let’s consider the unit-hypercube, with all bounds ranging
+from 0 to 1. Now, having a distance of 0.1 between points, the number of points
 required to fill the unit interval would be 10. In a 2-dimensional hypercube
 the same spacing would require 100, and in 3 dimensions 1,000 points. As the
 number of dimensions grows, the number of experiments which is required to fill
@@ -1253,7 +1262,7 @@ This exponential growth is called "the curse of dimensionality".
    :align: center
    :include-source: 0
 
-To mitigate this issue, QMC methods have been designed.  They are
+To mitigate this issue, QMC methods have been designed. They are
 deterministic, have a good coverage of the space and some of them can be
 continued and retain good properties.
 The main difference with MC methods is that the points are not IID but they
@@ -1265,17 +1274,17 @@ sequences.
    :include-source: 0
 
 This figure presents 2 sets of 256 points. The design of the left is a plain
-MC whereas the design of the right is a QMC design using the Sobol method.
+MC whereas the design of the right is a QMC design using the *Sobol'* method.
 We clearly see that the QMC version is more uniform. The points sample better
 near the boundaries and there are less clusters or gaps.
 
 One way to assess the uniformity is to use a measure called the discrepancy.
-Here the discrepancy of Sobol points is better than crude MC.
+Here the discrepancy of *Sobol'* points is better than crude MC.
 
 Coming back to the computation of the mean, QMC methods also have better rates
 of convergence for the error. They can achieve :math:`O(n^{-1})` for this
 function, and even better rates on very smooth functions. This figure shows
-that the Sobol method has a rate of :math:`O(n^{-1})`:
+that the *Sobol'* method has a rate of :math:`O(n^{-1})`:
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc_sobol.py
    :align: center
@@ -1321,7 +1330,7 @@ sequences.
    :include-source: 1
 
 .. warning:: QMC methods require particular care and the user must read the
-   documentation to avoid common pitfalls. Sobol' for instance requires a
+   documentation to avoid common pitfalls. *Sobol'* for instance requires a
    number of points following a power of 2. Also, thinning, burning or other
    point selection can break the properties of the sequence and result in a
    set of points which would not be better than MC.
@@ -1379,13 +1388,12 @@ Making a QMC engine, i.e., subclassing ``QMCEngine``
 To make your own :class:`~stats.qmc.QMCEngine`, a few methods have to be
 defined. Following is an example wrapping `numpy.random.Generator`.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed=12345):
-    ...         self.d = d
-    ...         self.rng_seed = seed
-    ...         self.rng = np.random.default_rng(seed)
-    ...         self.num_generated = 0
+    ...     def __init__(self, d, seed=None):
+    ...         super().__init__(d=d, seed=seed)
+    ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...
     ...     def random(self, n=1):
@@ -1420,15 +1428,14 @@ Then we use it as any other QMC engine:
            [0.59830875, 0.18673419],
            [0.67275604, 0.94180287]])
 
-Key takeaways
-^^^^^^^^^^^^^
+Guidelines on using QMC
+^^^^^^^^^^^^^^^^^^^^^^^
 
 * QMC has rules! Be sure to read the documentation or you might have no
   benefit over MC.
 * Use :class:`~stats.qmc.Sobol` if you need **exactly** :math:`2^m` points.
-  You can ask for more points, but you must follow some rules.
 * :class:`~stats.qmc.Halton` allows to sample, or skip, an arbitrary number of
-  points.
+  points. This is at the cost of a slower rate of convergence than *Sobol'*.
 * Never remove the first points of the sequence. It will destroy the
   properties.
 * Scrambling is always better.
