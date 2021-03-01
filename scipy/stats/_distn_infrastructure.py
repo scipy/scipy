@@ -2866,11 +2866,11 @@ def differential_entropy(
     This routine uses de Vasicek estimator of the differential entropy. Given
     a random sample :math:`X_1, \ldots X_n` this is defined as:
     
-    ..math:
+    .. math::
         \frac{1}{n} \sum_1^n \log \left[ \frac{n}{2m} (X_{(i+m)} - X_{(i-m)}) \right]
 
-    where :math:`X_{(i)}` is the i-th value after sorting and m is the window
-    length parameter.
+    where :math:`X_{(i)}` is the i-th value after sorting and :math:`m`
+    is the window length parameter.
 
     Parameters
     ----------
@@ -2915,9 +2915,9 @@ def differential_entropy(
     
     References
     ----------
-    .. [1] : Vasicek, O. (1976). A test for normality based on sample entropy.
-             Journal of the Royal Statistical Society:
-             Series B (Methodological), 38(1), 54-59.
+    .. [1] Vasicek, O. (1976). A test for normality based on sample entropy.
+           Journal of the Royal Statistical Society:
+           Series B (Methodological), 38(1), 54-59.
 
     """
     values = asarray(values)
