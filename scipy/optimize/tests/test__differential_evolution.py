@@ -507,6 +507,15 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+        solver.init_population_qmc(qmc_engine='halton')
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, init='sobol')
+        solver.init_population_qmc(qmc_engine='sobol')
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
         # we should be able to initialize with our own array
         population = np.linspace(-1, 3, 10).reshape(5, 2)
         solver = DifferentialEvolutionSolver(rosen, self.bounds,
@@ -1029,9 +1038,7 @@ class TestDifferentialEvolutionSolver(object):
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.parametrize("random_generator",
-                             ['random', 'latinhypercube', 'sobol', 'halton'])
-    def test_L5(self, random_generator):
+    def test_L5(self):
         # Lampinen ([5]) test problem 5
 
         def f(x):
@@ -1050,7 +1057,6 @@ class TestDifferentialEvolutionSolver(object):
         constraints = (N)
 
         res = differential_evolution(f, bounds, strategy='rand1bin', seed=1234,
-                                     init=random_generator,
                                      constraints=constraints)
 
         x_opt = (1.22797135, 4.24537337)

@@ -138,7 +138,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will always use an initial population
         which is a power of 2. 'halton' has no requirements but is a bit less
-        efficient.
+        efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -373,7 +373,8 @@ class DifferentialEvolutionSolver(object):
     popsize : int, optional
         A multiplier for setting the total population size. The population has
         ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        supplied via the `init` keyword. Using ``init='sobol'`` the population
+        would be the closest upper rounding of a power of 2.).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -436,9 +437,9 @@ class DifferentialEvolutionSolver(object):
         maximize coverage of the available parameter space.
 
         'sobol' and 'halton' are superior alternatives and maximize even more
-        the parameter space. 'sobol' will always use an initial population
-        which is a power of 2. 'halton' has no requirements but is a bit less
-        efficient.
+        the parameter space. 'sobol' will enforce an initial population
+        which is an upper rounding of a power of 2. 'halton' has no
+        requirements but is a bit less efficient.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -595,6 +596,7 @@ class DifferentialEvolutionSolver(object):
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
 
+        # check first str otherwise will fail to compare str with array
         if isinstance(init, str) and (init == 'sobol'):
             # must be Ns=2**m for Sobol'
             n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
