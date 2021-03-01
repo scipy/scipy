@@ -756,6 +756,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
                 \frac{1}{c_2})
             }
         }
+
     with :math:`\hat{p_1}, \hat{p_2}` and :math:`\hat{p}` the estimator of
     :math:`p_1, p_2` and :math:`p`, the latter being the combined probability,
     given the assumption that :math:`p_1 = p_2`.
