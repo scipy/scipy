@@ -35,6 +35,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
+from typing import Optional
 
 
 # These are the docstring parts used for substitution in specific
@@ -2851,6 +2852,102 @@ def entropy(pk, qk=None, base=None, axis=0):
     if base is not None:
         S /= log(base)
     return S
+
+
+def differential_entropy(
+    values: np.ndarray,
+    *,
+    window_length: int = 1,
+    base: Optional[float] = None,
+    axis: int = 0,
+) -> np.ndarray:
+    r"""Calculate the differential entropy of a distribution given a sample.
+
+    This routine uses de Vasicek estimator of the differential entropy. Given
+    a random sample :math:`X_1, \ldots X_n` this is defined as:
+    
+    ..math:
+        \frac{1}{n} \sum_1^n \log \left[ \frac{n}{2m} (X_{(i+m)} - X_{(i-m)}) \right]
+
+    where :math:`X_{(i)}` is the i-th value after sorting and m is the window
+    length parameter.
+
+    Parameters
+    ----------
+    values : sequence
+        Samples of the (continuous) distribution.
+    window_length : int, optional
+        Window length for computing Vasicek estimate. Must be an integer
+        between 1 and half of the sample size.
+    base : float, optional
+        The logarithmic base to use, defaults to ``e`` (natural logarithm).
+    axis: int, optional
+        The axis along which the differential entropy is calculated.
+        Default is 0.
+
+    Returns
+    -------
+    entropy : float
+        The calculated differential entropy.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.stats import differential_entropy, norm
+
+    Entropy of a standard normal distribution:
+
+    >>> random_state = np.random.RandomState(0)
+    >>> values = random_state.standard_normal(100)
+    >>> differential_entropy(values)
+    1.1220441777259473
+
+    Compare with the true entropy:
+
+    >>> float(norm.entropy())
+    1.4189385332046727
+
+    Increasing the window length can improve the accuracy:
+
+    >>> differential_entropy(values, window_length=8)
+    1.3494014875503249
+    
+    References
+    ----------
+    .. [1] : Vasicek, O. (1976). A test for normality based on sample entropy.
+             Journal of the Royal Statistical Society:
+             Series B (Methodological), 38(1), 54-59.
+
+    """
+    values = asarray(values)
+    values = np.moveaxis(values, axis, 0)
+    sorted_data = np.sort(values, axis=0)
+
+    repeats = np.array(
+        (window_length + 1,)
+        + ((1,) * (len(sorted_data) - 2))
+        + (window_length + 1,),
+    )
+
+    padded_data = np.repeat(
+        sorted_data,
+        repeats=repeats,
+        axis=0,
+    )
+
+    differences = (
+        padded_data[2 * window_length:] -
+        padded_data[:-2 * window_length]
+    )
+
+    logs = np.log(
+        len(differences) * differences / (2 * window_length)
+    )
+    if base is not None:
+        logs /= np.log(base)
+
+    return np.mean(logs, axis=0)
 
 
 # Must over-ride one of _pmf or _cdf or pass in
