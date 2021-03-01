@@ -1809,6 +1809,43 @@ class TestInvgauss(object):
         with pytest.raises(FitDataError):
             stats.invgauss.fit([1, 2, 3], floc=2)
 
+    def test_cdf_sf(self):
+        # make sure a finite value is returned when mu is very small. see
+        # GH-13614
+        mu = [4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+              3.02332573e-03, 1.46755891e-03]
+        expected = [1, 1, 1, 1, 1]
+        actual = stats.invgauss.cdf(0.4, mu=mu)
+        assert_equal(expected, actual)
+        # test if the function can distinguish small left/right tail probabilities
+        # from zero.
+        cdf_actual = stats.invgauss.cdf(0.001, mu=1.05)
+        assert cdf_actual > 0
+        sf_actual = stats.invgauss.sf(110, mu=1.05)
+        assert sf_actual > 0
+        # test if x does not cause numrical issues when mu is very small and x
+        # is close to mu in value.
+        # slightly smaller than mu
+        actual = stats.invgauss.cdf(0.00009, 0.0001)
+        assert np.isfinite(actual)
+        assert actual > 0  # no underflow
+        # slightly bigger than mu
+        actual = stats.invgauss.cdf(0.000102, 0.0001)
+        assert np.isfinite(actual)
+        assert actual > 0.95 and actual < 1.0  # close to 1 but not quite 1.
+
+    def test_logcdf_logsf(self):
+        # test if logcdf and logsf can be compute reliably values too small to
+        # be represented on the unlogged scale. See: gh-13616
+        logcdf = stats.invgauss.logcdf(0.0001, mu=1.05)
+        assert np.isfinite(logcdf)
+        logcdf = stats.invgauss.logcdf(110, 1.05)
+        assert logcdf < 0
+        logsf = stats.invgauss.logsf(0.001, mu=1.05)
+        assert logsf < 0
+        logsf = stats.invgauss.logcdf(110, 1.05)
+        assert np.isfinite(logsf)
+
 
 class TestLaplace(object):
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
