@@ -12,7 +12,8 @@
 #
 # """
 
-__all__ = ['RelativeRiskResult']
+__all__ = ['BinomTestResult', 'RelativeRiskResult']
 
 
+from ._binomtest import BinomTestResult
 from ._relative_risk import RelativeRiskResult

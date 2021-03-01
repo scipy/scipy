@@ -312,14 +312,6 @@ Statistical tests
    kurtosistest
    normaltest
 
-Objects returned by some statistical tests
-------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   BinomTestResult
-
 
 Quasi-Monte Carlo
 =================
@@ -434,12 +426,11 @@ Warnings used in :mod:`scipy.stats`
    SpearmanRConstantInputWarning
 
 
-Classes returned by some functions
-==================================
-
 .. autosummary::
    :toctree: generated/
+   :hidden:
 
+   scipy.stats._result_classes.BinomTestResult
    scipy.stats._result_classes.RelativeRiskResult
 
 """
@@ -447,7 +438,7 @@ Classes returned by some functions
 from .stats import *
 from .distributions import *
 from .morestats import *
-from ._binomtest import binomtest, BinomTestResult
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats

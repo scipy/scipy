@@ -223,7 +223,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
     Returns
     -------
-    result : `BinomTestResult` instance
+    result : `~scipy.stats._result_classes.BinomTestResult` instance
         The return value is an object with the following attributes:
 
         k : int
