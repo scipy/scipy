@@ -3497,15 +3497,19 @@ class invgauss_gen(rv_continuous):
     def _logpdf(self, x, mu):
         return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
 
+    # approach adapted from equations in
+    # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
+    # not R code. see gh-13616
+
     def _logcdf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x  / mu) - 1))
+        a = _norm_logcdf(fac * ((x / mu) - 1))
         b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
         return a + np.log1p(np.exp(b - a))
 
     def _logsf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x  / mu) - 1))
+        a = _norm_logsf(fac * ((x / mu) - 1))
         b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
         return a + np.log1p(-np.exp(b - a))
 
