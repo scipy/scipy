@@ -2861,16 +2861,16 @@ def differential_entropy(
     base: Optional[float] = None,
     axis: int = 0,
 ) -> np.ndarray:
-    r"""Calculate the differential entropy of a distribution given a sample.
+    r"""Given a sample of a distribution, calculate the differential entropy.
 
     This routine uses the Vasicek estimator of the differential entropy. Given
-    a random sample :math:`X_1, \ldots X_n` this is defined as:
+    a sorted random sample :math:`X_1, \ldots X_n` this is defined as:
 
     .. math::
-        \frac{1}{n} \sum_1^n \log \left[ \frac{n}{2m} (X_{(i+m)} - X_{(i-m)}) \right]
+        \frac{1}{n}\sum_1^n \log\left[ \frac{n}{2m} (X_{i+m} - X_{i-m}) \right]
 
-    where :math:`X_{(i)}` is the i-th value after sorting and :math:`m`
-    is the window length parameter.
+    where :math:`m` is the window length parameter, :math:`X_{i} = X_1` if
+    :math:`i < 1` and :math:`X_{i} = X_n` if :math:`i > n`.
 
     Parameters
     ----------
