@@ -20,7 +20,7 @@ def _validate_int(n, bound, name):
 @dataclass
 class RelativeRiskResult:
     """
-    Result of `scipy.stats.relative_risk`.
+    Result of `scipy.stats.contingency.relative_risk`.
 
     Attributes
     ----------
