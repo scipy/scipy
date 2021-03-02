@@ -207,7 +207,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N dimensions.
+    Piecewise linear interpolant in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -874,9 +874,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
+        Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolation in N > 1 dimensions.
 
     References
     ----------

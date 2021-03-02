@@ -52,6 +52,9 @@ enum class HighsInfoType { INT = 1, DOUBLE };
 
 enum OptionOffChooseOn { OPTION_OFF = -1, OPTION_CHOOSE, OPTION_ON };
 
+/** SCIP/HiGHS Objective sense */
+enum class ObjSense { MINIMIZE = 1, MAXIMIZE = -1 };
+
 enum SolverOption {
   SOLVER_OPTION_SIMPLEX = -1,
   SOLVER_OPTION_CHOOSE,
@@ -70,6 +73,60 @@ enum PrimalDualStatus {
 
 const std::string FILENAME_DEFAULT = "";
 
+// Need to allow infinite costs to pass SCIP LPI unit tests
+const bool allow_infinite_costs = true;
+
+// Primal/dual statuses and corresponding HighsModelStatus
+// values. Note that if dual infeasibility is identified, then the
+// prototype primal code is used to distinguish PRIMAL_DUAL_INFEASIBLE
+// from PRIMAL_UNBOUNDED. If this fails, then HiGHS may just return
+// DUAL_INFEASIBLE
+//
+//           | Du Infeas    | Du Feas   | Du UnBd
+// Pr Infeas | PR_DU_INFEAS | PR_INFEAS | PR_INFEAS
+// Pr Feas   | PR_UNBD      | OPTIMAL   |   N/A
+// Pr Unbd   | PR_UNBD      |     N/A   |   N/A
+//
+// Dual infeasibility is recognised by infeasibility at dual phase 1 optimality
+// (and implied by primal unboundedness)
+//
+// Dual feasibility is recognised by feasibility at dual phase 1 optimality or
+// primal phase 2 optimality
+//
+// Dual unboundedness is recognised by unboundedness in dual phase 2
+//
+// Primal infeasibility is recognised by infeasibility at primal phase 1
+// optimality (and implied by dual unboundedness)
+//
+// Primal feasibility is recognised by feasibility at primal phase 1 optimality
+// or dual phase 2 optimality
+//
+// Primal unboundedness is recognised by unboundedness in primal phase 2
+//
+
+enum class HighsModelStatus {
+  // NB Add new status values to the end so that int cast of status
+  // values is unchanged, since enums are not preserved in some
+  // interfaces
+  NOTSET = 0,
+  HIGHS_MODEL_STATUS_MIN = NOTSET,
+  LOAD_ERROR,
+  MODEL_ERROR,
+  PRESOLVE_ERROR,
+  SOLVE_ERROR,
+  POSTSOLVE_ERROR,
+  MODEL_EMPTY,
+  PRIMAL_INFEASIBLE,
+  PRIMAL_UNBOUNDED,
+  OPTIMAL,
+  REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
+  REACHED_TIME_LIMIT,
+  REACHED_ITERATION_LIMIT,
+  PRIMAL_DUAL_INFEASIBLE,
+  DUAL_INFEASIBLE,
+  HIGHS_MODEL_STATUS_MAX = DUAL_INFEASIBLE
+};
+
 /** SCIP/CPLEX-like HiGHS basis status for columns and rows. */
 enum class HighsBasisStatus {
   LOWER =
@@ -83,87 +140,4 @@ enum class HighsBasisStatus {
              // nonzero or not at a bound. No SCIP equivalent
 };
 
-/** Simplex nonbasicFlag status for columns and rows. Don't use enum
-    class since they are used as int to replace conditional statements
-    by multiplication */
-const int NONBASIC_FLAG_TRUE = 1;   // Nonbasic
-const int NONBASIC_FLAG_FALSE = 0;  // Basic
-
-/** Simplex nonbasicMove status for columns and rows. Don't use enum
-    class since they are used in conditional statements */
-const int NONBASIC_MOVE_UP = 1;   // Free to move (only) up
-const int NONBASIC_MOVE_DN = -1;  // Free to move (only) down
-const int NONBASIC_MOVE_ZE = 0;   // Fixed or free to move up and down
-//
-// Relation between HiGHS basis and Simplex basis
-//
-// Data structures
-// ===============
-//
-// HiGHS basis consists of vectors
-//
-// * col_status[numCol]
-// * row_status[numRow]
-//
-// Simplex basis consists of vectors
-//
-// * nonbasicMove[numTot]
-// * basicIndex[numRow]
-// * nonbasicFlag[numTot]
-//
-// where nonbasicFlag is duplicate information but is used to identify
-// whether a particular variable is basic or nonbasic.
-//
-// Basic variables
-// ===============
-//
-// Highs: *_status value of BASIC
-//
-// <=>
-//
-// Simplex: nonbasicFlag value of NONBASIC_FLAG_FALSE
-//
-// Nonbasic variables
-// ==================
-//
-// Relations complicated by the fact that
-//
-// * HiGHS   rows have bounds [ l,  u]
-// * Simplex rows have bounds [-u, -l]
-//
-// Nonbasic columns
-// ================
-//
-// Highs: col_status value of LOWER - at lower bound
-// <=>
-// Simplex: nonbasicMove value of NONBASIC_MOVE_UP - [l, Inf] column free to
-// move up and negative dual
-//
-// Highs: col_status value of ZERO - at zero
-// =>
-// Simplex: nonbasicMove value of NONBASIC_MOVE_ZE - free variable treated
-// specially in simplex
-//
-// Highs: col_status value of UPPER - at upper bound
-// =>
-// Simplex: Either
-// * nonbasicMove value of NONBASIC_MOVE_DN - [-Inf, u] column free to move down
-// and positive dual
-// * nonbasicMove value of NONBASIC_MOVE_ZE - [   l, u] column ?? and free dual
-//
-// Simplex: nonbasicMove value of NONBASIC_MOVE_DN - [-Inf, u] column free to
-// move down and positive dual
-// =>
-// Highs: col_status value of UPPER - at upper bound
-//
-// Simplex: nonbasicMove value of NONBASIC_MOVE_ZE - [l, u] column ?? and free
-// dual
-// =>
-// Highs: Either
-// * col_status value of UPPER - at upper bound
-// * col_status value of ZERO - at zero
-//
-// Nonbasic rows
-// =============
-//
 #endif /* LP_DATA_HCONST_H_ */

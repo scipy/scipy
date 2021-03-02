@@ -22,6 +22,9 @@ SciPy
 .. image:: https://img.shields.io/conda/dn/conda-forge/scipy.svg?label=Conda%20downloads
   :target: https://anaconda.org/conda-forge/scipy
 
+.. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/scipy/scipy
+
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
 science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
