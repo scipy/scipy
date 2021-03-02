@@ -8870,15 +8870,6 @@ class studentized_range_gen(rv_continuous):
     to 2000, an asymptotic method is used in calculation of the cumulative
     distribution function. [4]_
 
-    Integrals for the PDF, CDF, and moment are evaluated using
-    `scipy.integrate.nquad` with LowLevelCallables written using Cython.
-    Most of the integrals are evaluated using logarithms to prevent overflows
-    from the multiple exponential terms within. Furthermore, all terms are
-    evaluated within the integral to correctly control error.
-
-    The distribution's accuracy has been verified against R, statsmodels,
-    tables, with an mpmath implementation acting as ground truth.
-
     References
     ----------
 
@@ -8930,9 +8921,12 @@ class studentized_range_gen(rv_continuous):
     True
 
     Rather than using (``%(name)s.rvs``) to generate random variates, which is
-    very slow for this distribution, we can use inverse transform sampling and
-    interpolation. Using the shape parameters, obtain the bounds data that
-    will be input to ``cdf`` for later use in interpolation.
+    very slow for this distribution, we can approximate the inverse CDF using
+    an interpolator, and then perform inverse transform sampling with this
+    approximate inverse CDF.
+
+    Using the shape parameters, obtain the bounds data that will be input to
+    ``cdf`` for later use in interpolation.
 
     >>> a, b = %(name)s.support(k, v)
     >>> a, b
