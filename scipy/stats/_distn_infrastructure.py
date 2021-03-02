@@ -2863,9 +2863,9 @@ def differential_entropy(
 ) -> np.ndarray:
     r"""Calculate the differential entropy of a distribution given a sample.
 
-    This routine uses de Vasicek estimator of the differential entropy. Given
+    This routine uses the Vasicek estimator of the differential entropy. Given
     a random sample :math:`X_1, \ldots X_n` this is defined as:
-    
+
     .. math::
         \frac{1}{n} \sum_1^n \log \left[ \frac{n}{2m} (X_{(i+m)} - X_{(i-m)}) \right]
 
@@ -2893,7 +2893,6 @@ def differential_entropy(
     Examples
     --------
 
-    >>> import numpy as np
     >>> from scipy.stats import differential_entropy, norm
 
     Entropy of a standard normal distribution:
@@ -2912,7 +2911,7 @@ def differential_entropy(
 
     >>> differential_entropy(values, window_length=8)
     1.3494014875503249
-    
+
     References
     ----------
     .. [1] Vasicek, O. (1976). A test for normality based on sample entropy.
@@ -2922,6 +2921,13 @@ def differential_entropy(
     """
     values = asarray(values)
     values = np.moveaxis(values, axis, 0)
+
+    if not 2 <= 2 * window_length < len(values):
+        raise ValueError(
+            f"Window length ({window_length}) must be positive and less "
+            f"than half the sample size ({len(values)})."
+        )
+
     sorted_data = np.sort(values, axis=0)
 
     repeats = np.array(

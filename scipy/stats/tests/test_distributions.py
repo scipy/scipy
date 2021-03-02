@@ -2972,48 +2972,69 @@ class TestEntropy(object):
 class TestDifferentialEntropy(object):
     """
     Results are compared with the R package vsgoftest.
-        
+
     """
 
     def test_differential_entropy_base(self):
-        
+
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal(100)
         entropy = stats.differential_entropy(values)
-        assert_(abs(entropy - 1.122044) < 1.e-5)
-        
+        assert abs(entropy - 1.122044) < 1.e-5
+
         entropy = stats.differential_entropy(values, window_length=8)
-        assert_(abs(entropy - 1.349401) < 1.e-5)
+        assert abs(entropy - 1.349401) < 1.e-5
 
     def test_differential_entropy_base_2d_nondefault_axis(self):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
-        
+
         entropy = stats.differential_entropy(values, axis=1)
-        assert_array_almost_equal(
+        assert_allclose(
             entropy,
             [1.122044, 1.102944, 1.129616],
+            rtol=1e-6,
         )
-        
+
         entropy = stats.differential_entropy(values, axis=1, window_length=8)
-        assert_array_almost_equal(
+        assert_allclose(
             entropy,
             [1.349401, 1.338514, 1.292332],
+            rtol=1e-6,
+        )
+
+    def test_differential_entropy_raises_value_error(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+        assert_raises(
+            ValueError,
+            stats.differential_entropy,
+            values,
+            window_length=0,
+            axis=1,
+        )
+
+        assert_raises(
+            ValueError,
+            stats.differential_entropy,
+            values,
+            window_length=50,
+            axis=1,
         )
 
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
-        
+
         entropy = stats.differential_entropy(values, axis=0)
         default_entropy = stats.differential_entropy(values)
-        assert_array_almost_equal(entropy, default_entropy)
+        assert_allclose(entropy, default_entropy)
 
     def test_base_differential_entropy_transposed(self):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
-        
-        assert_array_almost_equal(
+
+        assert_allclose(
             stats.differential_entropy(values.T).T,
             stats.differential_entropy(values, axis=1),
         )
