@@ -425,14 +425,6 @@ Warnings used in :mod:`scipy.stats`
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
 
-
-.. autosummary::
-   :toctree: generated/
-   :hidden:
-
-   scipy.stats._result_classes.BinomTestResult
-   scipy.stats._result_classes.RelativeRiskResult
-
 """
 
 from .stats import *
