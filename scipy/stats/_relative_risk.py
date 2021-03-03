@@ -42,7 +42,8 @@ class RelativeRiskResult:
 
     Methods
     -------
-    confidence_interval
+    confidence_interval :
+        Compute the confidence interval for the relative risk estimate.
     """
 
     relative_risk: float
