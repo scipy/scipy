@@ -6056,37 +6056,52 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         if trim == 0:
             v1 = np.var(a, axis, ddof=1)
             v2 = np.var(b, axis, ddof=1)
-            mean_a = np.mean(a, axis)
-            mean_b = np.mean(b, axis)
+            m1 = np.mean(a, axis)
+            m2 = np.mean(b, axis)
         else:
-            # further calculations in this test assume that the inputs are sorted.
-            a = sorted(a)
-            b = sorted(b)
-
-            # `g_*` is the number of elements to be replaced on each tail.
-            g_a = int((n1 * trim) // 100)
-            g_b = int((n2 * trim) // 100)
-
-            # Calculate the Winsorized variance of the input samples according to
-            # specified `g`
-            v1 = _calculate_winsorized_variance(a, g_a)
-            v2 = _calculate_winsorized_variance(b, g_b)
-
-            # the total number of elements in the trimmed samples
-            n1 = n1 - (2 * g_a)
-            n2 = n2 - (2 * g_b)
-
-            # calculate the g-times trimmed mean
-            mean_a = trim_mean(a, trim / 100)
-            mean_b = trim_mean(b, trim / 100)
+            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, n1, axis)
+            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, n2, axis)
 
         if equal_var:
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-        res = _ttest_ind_from_stats(mean_a, mean_b, denom, df, alternative)
+        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     return Ttest_indResult(*res)
+
+
+def _ttest_trim_var_mean_len(a, trim, n, axis):
+    # further calculations in this test assume that the inputs are sorted.
+    a = np.sort(a, axis=axis)
+
+    # `g_*` is the number of elements to be replaced on each tail.
+    g = int((n * trim) // 100)
+
+    # Calculate the Winsorized variance of the input samples according to
+    # specified `g`
+    v = _calculate_winsorized_variance(a, g, n, axis)
+
+    # the total number of elements in the trimmed samples
+    n -= 2 * g
+
+    # calculate the g-times trimmed mean
+    m = trim_mean(a, trim / 100, axis=axis)
+    return v, m, n
+
+
+def _calculate_winsorized_variance(a, g, n, axis):
+    # it is expected that the input `a` is sorted along the correct axis.
+    # move the intended axis to the end that way it is easier to manipulate
+    a = np.moveaxis(a, axis, -1)
+    # build a right and left tail to replace the trimmed values, fill new tails
+    # with the leftmost and rightmost value from the trimmed array.
+    left_tail = np.repeat(a[..., [g]], g, axis=-1)
+    right_tail = np.repeat(a[..., [n - g - 1]], g, axis=-1)
+    a_win = np.concatenate((left_tail, a[..., g: n - g], right_tail), axis=-1)
+    # determine the variance. In the paper, the degrees of freedom is
+    # expressed as (n - 2g - 1), and this is converted to numpy's N - `ddof`
+    return np.var(a_win, ddof=(2 * g + 1), axis=-1)
 
 
 def _broadcast_concatenate(xs, axis):
@@ -6445,18 +6460,6 @@ def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
                                                  alternative='two-sided'))
 
 
-
-def _calculate_winsorized_variance(a, g):
-    n = len(a)
-    a = sorted(a)
-    # build a right and left tail to replace the trimmed values, fill new tails
-    # with the leftmost and rightmost value from the trimmed array.
-    left_tail = g * [a[g]]
-    right_tail = g * [a[n - g - 1]]
-    a_win = np.asarray(left_tail + a[g: n - g] + right_tail)
-    # determine the variance. In the paper, the degrees of freedom is
-    # expressed as (n - 2g - 1), and this is converted to numpy's N - `ddof`
-    return np.var(a_win, ddof=(2 * g + 1))
 
 
 # Map from names to lambda_ values used in power_divergence().
