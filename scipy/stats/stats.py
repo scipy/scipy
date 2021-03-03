@@ -5917,6 +5917,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 1.6.0
 
+    trim : float, optional
+        Defines the percentage of trimming off of each end of the input
+        samples. If 0 (default), no elements will be trimmed from either
+        side. The number of trimmed elements from each tail is the floor
+        of the trim times the number of elements. Should be within [0, .5).
+
+        .. versionadded:: ?
+
     Returns
     -------
     statistic : float or array
@@ -5957,6 +5965,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     more accurate than the analytical test, but it does not make strong
     assumptions about the shape of the underlying distribution.
 
+    Use of trimming is commonly referred to as the trimmed t-test. At times
+    called Yuen's t-test, this is an extention of Welch t-test, with the
+    difference being the use of winsorized means in calculation of the variance
+    and the trimmed sample size in calculation of the statistic. Trimming is
+    reccomended if the underlying distribution is long-tailed or contaminated
+    with outliers. [4]_
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -5964,6 +5979,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
     .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+
+    .. [4] Karen K. Yuen (1974), The two-sample trimmed t for unequal population
+           variances, Biometrika Volume 61, Number 1, 165-170,
+           DOI: https://doi.org/10.1093/biomet/61.1.165
 
     Examples
     --------
@@ -6012,10 +6031,23 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     ...                 random_state=np.random.default_rng(12345))
     (-1.467966985449, 0.14)
 
+    Take these two two samples, one of which has an extreme tail.
+
+    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+    >>> b = (1.1, 2.9, 4.2)
+
+
+    Use the `trim` keyword to trim the input samples. Using 20% trimming,
+    `trim=.2`, the test will trim 1 element off of each tail for sample `a`,
+    which is of length 7, and no elements off of sample `b`, because it is
+    of length 3.
+
+    >>> stats.ttest_ind(a, b, trim=.2)
+    (4.591598691181999, 0.00998909252078421)
+
     """
-    if equal_var and trim != 0:
-        raise ValueError("Trimming is only available for tests with unequal"
-                         " variances")
+    if not 0 <= trim < .5:
+        raise ValueError("trim percentage should be within [0, .5).")
 
     a, b, axis = _chk2_asarray(a, b, axis)
 
@@ -6076,7 +6108,7 @@ def _ttest_trim_var_mean_len(a, trim, n, axis):
     a = np.sort(a, axis=axis)
 
     # `g_*` is the number of elements to be replaced on each tail.
-    g = int((n * trim) // 100)
+    g = int(n * trim)
 
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
@@ -6086,7 +6118,7 @@ def _ttest_trim_var_mean_len(a, trim, n, axis):
     n -= 2 * g
 
     # calculate the g-times trimmed mean
-    m = trim_mean(a, trim / 100, axis=axis)
+    m = trim_mean(a, trim, axis=axis)
     return v, m, n
 
 

@@ -4212,7 +4212,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.53619490753126731
         tr = -0.68649512735572582
-        t, p = stats.ttest_ind(a, b, trim=20, equal_var=False)
+        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -4221,7 +4221,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.00998909252078421
         tr = 4.591598691181999
-        t, p = stats.ttest_ind(a, b, trim=20, equal_var=False)
+        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -4230,7 +4230,7 @@ class TestTtestTrimmed(object):
         b = (1.1, 2.9, 4.2)
         pr = 0.10512380092302633
         tr = 2.832256715395378
-        t, p = stats.ttest_ind(a, b, trim=32, equal_var=False)
+        t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
@@ -4263,7 +4263,7 @@ class TestTtestTrimmed(object):
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-        res = stats.ttest_ind(a, b, trim=20, equal_var=False)
+        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
         assert_allclose(res.pvalue, 0.00287891, atol=1e-7)
         assert_allclose(res.statistic, -4.246117, atol=1e-6)
 
@@ -4303,7 +4303,7 @@ class TestTtestTrimmed(object):
              -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
              1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
              0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023]
-        res = stats.ttest_ind(a, b, trim=20, equal_var=False)
+        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
         assert_allclose(res.pvalue, 0.005293306, atol=1e-7)
         assert_allclose(res.statistic, -3.098332, atol=1e-6)
 
@@ -4318,7 +4318,7 @@ class TestTtestTrimmed(object):
         # `scipy.stats.trimmed_mean`, this test truncates to the lower
         # whole number. In this example, the paper notes that 1 value is
         # trimmed off of each side. 10% replicates this amount of trimming.
-        res = stats.ttest_ind(a, b, trim=9, equal_var=False)
+        res = stats.ttest_ind(a, b, trim=.09, equal_var=False)
         assert_allclose(res.pvalue, 0.514522, atol=1e-6)
         assert_allclose(res.statistic, 0.669169, atol=1e-6)
 
@@ -4331,7 +4331,7 @@ class TestTtestTrimmed(object):
         b = np.random.randint(10, size=(8, 3))
         # obtain vectorized result with axis indicating that samples are by
         # column
-        res_vec = stats.ttest_ind(a, b, trim=20, equal_var=False, axis=0)
+        res_vec = stats.ttest_ind(a, b, trim=.20, equal_var=False, axis=0)
         res_vec_list = [[s, p] for (s, p) in
                         zip(res_vec.statistic, res_vec.pvalue)]
 
@@ -4341,7 +4341,7 @@ class TestTtestTrimmed(object):
         b_split = np.moveaxis(b, 0, 1)
         # compute the results individually comparing sample 1 from `a` to
         # sample 1 in `b` and so on.
-        res_individual = [(stats.ttest_ind(a, b, trim=20, equal_var=False)) for
+        res_individual = [(stats.ttest_ind(a, b, trim=.20, equal_var=False)) for
                           (a, b) in zip(a_split, b_split)]
 
         for (i, v) in zip(res_individual, res_vec_list):
