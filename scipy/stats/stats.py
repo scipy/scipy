@@ -119,7 +119,6 @@ Inferential Stats
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   ttest_trimmed
    chisquare
    power_divergence
    kstest
@@ -216,7 +215,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'alexandergovern', 'page_trend_test', 'somersd', 'ttest_trimmed']
+           'alexandergovern', 'page_trend_test', 'somersd']
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -6382,116 +6381,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     t, prob = _ttest_finish(df, t, alternative)
 
     return Ttest_relResult(t, prob)
-
-
-def ttest_trimmed(a, b, axis=0, equal_var=False, nan_policy='propagate',
-                  trim=20.0):
-    """
-    Calculate the trimmed t-test on two samples, a and b.
-
-    At times called the Yuen t-test, this is an extention of Welch t-test,
-    with noted difference being the use of winsorized means in calculation of
-    the variance. This test is reccomended if the underlying distribution is
-    long-tailed or contaminated with outliers.
-
-    Parameters
-    ----------
-    a, b : array_like
-    axis : int or None, optional
-        Axis along which to compute test. If None, compute over the whole
-        arrays, `a`, and `b`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
-    trim : Defines the percentage of trimming off of each end of the input
-        samples.
-    equal_var : bool, optional
-        If True (default), perform a standard independent 2 sample test
-        that assumes equal population variances.
-        If False, perform Welch's t-test, which does not assume equal
-        population variance.
-
-    Returns
-    -------
-    statistic : float or array
-        t-statistic
-    pvalue : float or array
-        two-tailed p-value
-
-    Notes
-    -----
-    The number of values symmetrically trimmed from each sample are determined
-    by the floor of the length of the sample times the trimming percentage.
-
-    References
-    ----------
-    Karen K. Yuen (1974), The two-sample trimmed t for unequal population
-    variances, Biometrika Volume 61, Number 1, 165-170,
-    DOI: https://doi.org/10.1093/biomet/61.1.165
-
-    https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
-
-    Examples
-    --------
-
-    >>> from scipy import stats
-
-    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
-    >>> b = (1.1, 2.9, 4.2)
-
-    >>> t, p = stats.ttest_trimmed(a, b, equal_var=False)
-    (4.591598691181999, 0.00998909252078421)
-
-    """
-
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    # check both a and b
-    cna, npa = _contains_nan(a, nan_policy)
-    cnb, npb = _contains_nan(b, nan_policy)
-    contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var)
-
-    if a.size == 0 or b.size == 0:
-        return Ttest_indResult(np.nan, np.nan)
-
-    na = a.shape[axis]
-    nb = b.shape[axis]
-
-    # further calculations in this test assume that the inputs are sorted.
-    a = np.sort(a)
-    b = np.sort(b)
-
-    # `g_*` is the number of elements to be replaced on each tail.
-    g_a = int((na * trim) // 100)
-    g_b = int((nb * trim) // 100)
-
-    # the total number of elements in the trimmed samples
-    na_t = na - (2 * g_a)
-    nb_t = nb - (2 * g_b)
-
-    # calculate the g-times trimmed mean
-    x_tg_a = trim_mean(a, trim / 100.0)
-    x_tg_b = trim_mean(b, trim / 100.0)
-
-    # Calculate the Winsorized variance of the input samples according to
-    # specified `g`
-    var_w_a = _calculate_winsorized_variance(a, g_a)
-    var_w_b = _calculate_winsorized_variance(b, g_b)
-
-    df, denom = _unequal_var_ttest_denom(var_w_a, na_t, var_w_b, nb_t)
-
-    return Ttest_relResult(*_ttest_ind_from_stats(x_tg_a, x_tg_b, denom, df,
-                                                 alternative='two-sided'))
-
-
 
 
 # Map from names to lambda_ values used in power_divergence().
