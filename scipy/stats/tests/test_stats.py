@@ -3886,45 +3886,6 @@ class Test_ttest_ind_permutations():
         assert_array_almost_equal(stat_a, stat_p, 5)
         assert_array_almost_equal(pvalue, p_d)
 
-    @pytest.mark.slow()
-    def test_ttest_ind_permutations_many_dims(self):
-        # Test that permutation test works on many-dimensional arrays
-        np.random.seed(0)
-        a = np.random.rand(5, 4, 4, 7, 1, 6)
-        b = np.random.rand(4, 1, 8, 2, 6)
-        res = stats.ttest_ind(a, b, permutations=200, axis=-3,
-                              random_state=0)
-
-        # compare fully-vectorized t-test against t-test on smaller slice
-        i, j, k = 2, 3, 1
-        a2 = a[i, :, j, :, 0, :]
-        b2 = b[:, 0, :, k, :]
-        res2 = stats.ttest_ind(a2, b2, permutations=200, axis=-2,
-                               random_state=0)
-        assert_equal(res.statistic[i, :, j, k, :],
-                     res2.statistic)
-        assert_equal(res.pvalue[i, :, j, k, :],
-                     res2.pvalue)
-
-        # compare against t-test on one axis-slice at a time
-
-        # manually broadcast with tile; move axis to end to simplify
-        x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
-        y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
-        shape = x.shape[:-1]
-        statistics = np.zeros(shape)
-        pvalues = np.zeros(shape)
-        for indices in product(*(range(i) for i in shape)):
-            xi = x[indices]  # use tuple to index single axis slice
-            yi = y[indices]
-            res3 = stats.ttest_ind(xi, yi, axis=-1, permutations=200,
-                                  random_state=0)
-            statistics[indices] = res3.statistic
-            pvalues[indices] = res3.pvalue
-
-        assert_allclose(statistics, res.statistic)
-        assert_allclose(pvalues, res.pvalue)
-
     def test_ttest_ind_exact_alternative(self):
         np.random.seed(0)
         N = 3
@@ -4080,6 +4041,190 @@ class Test_ttest_ind_permutations():
                             random_state='hello')
 
 
+class Test_ttest_ind:
+    @pytest.mark.slow()
+    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
+                                      {'trim': .2},
+                                      {}])
+    def test_ttest_many_dims(self, kwds):
+        # Test that permutation test works on many-dimensional arrays
+        np.random.seed(0)
+        a = np.random.rand(5, 4, 4, 7, 1, 6)
+        b = np.random.rand(4, 1, 8, 2, 6)
+        res = stats.ttest_ind(a, b, axis=-3, **kwds)
+
+        # compare fully-vectorized t-test against t-test on smaller slice
+        i, j, k = 2, 3, 1
+        a2 = a[i, :, j, :, 0, :]
+        b2 = b[:, 0, :, k, :]
+        res2 = stats.ttest_ind(a2, b2, axis=-2, **kwds)
+        assert_equal(res.statistic[i, :, j, k, :],
+                     res2.statistic)
+        assert_equal(res.pvalue[i, :, j, k, :],
+                     res2.pvalue)
+
+        # compare against t-test on one axis-slice at a time
+
+        # manually broadcast with tile; move axis to end to simplify
+        x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
+        y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
+        shape = x.shape[:-1]
+        statistics = np.zeros(shape)
+        pvalues = np.zeros(shape)
+        for indices in product(*(range(i) for i in shape)):
+            xi = x[indices]  # use tuple to index single axis slice
+            yi = y[indices]
+            res3 = stats.ttest_ind(xi, yi, axis=-1, **kwds)
+            statistics[indices] = res3.statistic
+            pvalues[indices] = res3.pvalue
+
+        assert_allclose(statistics, res.statistic)
+        assert_allclose(pvalues, res.pvalue)
+
+
+class Test_ttest_trim:
+
+    def test_ttest_trimmed1(self):
+        a = (1, 2, 3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.53619490753126731
+        tr = -0.68649512735572582
+        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
+
+    def test_ttest_trimmed2(self):
+        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.00998909252078421
+        tr = 4.591598691181999
+        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
+
+    def test_ttest_trimmed3(self):
+        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        b = (1.1, 2.9, 4.2)
+        pr = 0.10512380092302633
+        tr = 2.832256715395378
+        t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
+
+    def test_compare_r_1(self):
+        '''
+        Using PairedData's yuen.t.test method. Something to note is that there
+        are at least 3 R packages that come with a trimmed t-test method, and
+        comparisons were made between them. It was found that PairedData's
+        method's results match this method, SAS, and one of the other R
+        methods. A notable discrepancy was the DescTools implementation of the
+        function, which only sometimes agreed with SAS, WRS2, PairedData and
+        this implementation. For this reason, all comparisons in R are made
+        against PairedData's method.
+
+        > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
+        > b <- c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1)
+        > yuen.t.test(a, b)
+
+            Two-sample Yuen test, trim=0.2
+
+        data:  x and y
+        t = -4.2461, df = 7.92, p-value = 0.002879
+        alternative hypothesis: true difference in trimmed means is not equal \
+        to 0
+        95 percent confidence interval:
+         -4.543893 -1.341821
+        sample estimates:
+        trimmed mean of x trimmed mean of y
+                 2.442857          5.385714
+        '''
+        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
+        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
+        assert_allclose(res.pvalue, 0.00287891, atol=1e-7)
+        assert_allclose(res.statistic, -4.246117, atol=1e-6)
+
+    def test_compare_r_2(self):
+        '''
+        see: https://rdrr.io/cran/PairedData/man/yuen.t.test.html
+        library(PairedData)
+
+        > a <-c(-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
+        +       -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
+        +       -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
+        +       -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376)
+        > b <-c(1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494,
+        +       -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
+        +       1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
+        +       0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023)
+        > yuen.t.test(a, b)
+
+            Two-sample Yuen test, trim=0.2
+
+        data:  a and b
+        t = -3.0983, df = 21.749, p-value = 0.005293
+        alternative hypothesis: true difference in trimmed means is not equal \
+        to 0
+        95 percent confidence interval:
+         -2.157551 -0.426652
+        sample estimates:
+        trimmed mean of x trimmed mean of y
+               -0.2908835         1.0012182
+
+        '''
+        a = [-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
+             -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
+             -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
+             -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376]
+        b = [1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494,
+             -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
+             1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
+             0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023]
+        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
+        assert_allclose(res.pvalue, 0.005293306, atol=1e-7)
+        assert_allclose(res.statistic, -3.098332, atol=1e-6)
+
+    def test_compare_SAS(self):
+        # Source of the data used in this test:
+        # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
+        a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
+        b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
+        # In this paper, a trimming percentage of 5% is used. However,
+        # in their implementation, the number of values trimmed is rounded to
+        # the nearest whole number. However, consistent with
+        # `scipy.stats.trimmed_mean`, this test truncates to the lower
+        # whole number. In this example, the paper notes that 1 value is
+        # trimmed off of each side. 10% replicates this amount of trimming.
+        res = stats.ttest_ind(a, b, trim=.09, equal_var=False)
+        assert_allclose(res.pvalue, 0.514522, atol=1e-6)
+        assert_allclose(res.statistic, 0.669169, atol=1e-6)
+
+    def test_axis_simple(self):
+        np.random.seed(123)
+        # these arrays are shaped such that the columns are the samples. The
+        # samples in group `a` are of length 5 and the samples in group `b`
+        # are of size 8.
+        a = np.random.randint(10, size=(5, 3))
+        b = np.random.randint(10, size=(8, 3))
+        # obtain vectorized result with axis indicating that samples are by
+        # column
+        res_vec = stats.ttest_ind(a, b, trim=.20, equal_var=False, axis=0)
+        res_vec_list = [[s, p] for (s, p) in
+                        zip(res_vec.statistic, res_vec.pvalue)]
+
+        # move axis so that samples are 1 per row for easy comparison
+        # individually
+        a_split = np.moveaxis(a, 0, 1)
+        b_split = np.moveaxis(b, 0, 1)
+        # compute the results individually comparing sample 1 from `a` to
+        # sample 1 in `b` and so on.
+        res_individual = [(stats.ttest_ind(a, b, trim=.20, equal_var=False))
+                          for (a, b) in zip(a_split, b_split)]
+
+        for (i, v) in zip(res_individual, res_vec_list):
+            assert_array_equal(i, v)
+
+
 def test__broadcast_concatenate():
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
@@ -4203,149 +4348,6 @@ def test_ttest_ind_with_uneq_var():
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2)), equal_var=False),
                      ([0, np.nan], [1, np.nan]))
-
-
-class TestTtestTrimmed(object):
-
-    def test_ttest_trimmed1(self):
-        a = (1, 2, 3)
-        b = (1.1, 2.9, 4.2)
-        pr = 0.53619490753126731
-        tr = -0.68649512735572582
-        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
-        assert_almost_equal(t, tr)
-        assert_almost_equal(p, pr)
-
-    def test_ttest_trimmed2(self):
-        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
-        b = (1.1, 2.9, 4.2)
-        pr = 0.00998909252078421
-        tr = 4.591598691181999
-        t, p = stats.ttest_ind(a, b, trim=.20, equal_var=False)
-        assert_almost_equal(t, tr)
-        assert_almost_equal(p, pr)
-
-    def test_ttest_trimmed3(self):
-        a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
-        b = (1.1, 2.9, 4.2)
-        pr = 0.10512380092302633
-        tr = 2.832256715395378
-        t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False)
-        assert_almost_equal(t, tr)
-        assert_almost_equal(p, pr)
-
-    def test_compare_r_1(self):
-        '''
-        Using PairedData's yuen.t.test method. Something to note is that there
-        are at least 3 R packages that come with a trimmed t-test method, and
-        comparisons were made between them. It was found that PairedData's
-        method's results match this method, SAS, and one of the other R
-        methods. A notable discrepancy was the DescTools implementation of the
-        function, which only sometimes agreed with SAS, WRS2, PairedData and
-        this implementation. For this reason, all comparisons in R are made
-        against PairedData's method.
-
-        > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
-        > b <- c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1)
-        > yuen.t.test(a, b)
-
-            Two-sample Yuen test, trim=0.2
-
-        data:  x and y
-        t = -4.2461, df = 7.92, p-value = 0.002879
-        alternative hypothesis: true difference in trimmed means is not equal \
-        to 0
-        95 percent confidence interval:
-         -4.543893 -1.341821
-        sample estimates:
-        trimmed mean of x trimmed mean of y
-                 2.442857          5.385714
-        '''
-        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
-        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
-        assert_allclose(res.pvalue, 0.00287891, atol=1e-7)
-        assert_allclose(res.statistic, -4.246117, atol=1e-6)
-
-    def test_compare_r_2(self):
-        '''
-        see: https://rdrr.io/cran/PairedData/man/yuen.t.test.html
-        library(PairedData)
-
-        > a <-c(-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
-        +       -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
-        +       -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
-        +       -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376)
-        > b <-c(1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494,
-        +       -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
-        +       1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
-        +       0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023)
-        > yuen.t.test(a, b)
-
-            Two-sample Yuen test, trim=0.2
-
-        data:  a and b
-        t = -3.0983, df = 21.749, p-value = 0.005293
-        alternative hypothesis: true difference in trimmed means is not equal \
-        to 0
-        95 percent confidence interval:
-         -2.157551 -0.426652
-        sample estimates:
-        trimmed mean of x trimmed mean of y
-               -0.2908835         1.0012182
-
-        '''
-        a = [-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
-             -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
-             -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
-             -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376]
-        b = [1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494,
-             -1.0752459, 1.1038576, 2.9912821, 3.5349111, 0.4171922,
-             1.0168959, -0.7625041, -0.4300008, 3.0431921, 1.6035947,
-             0.5285634, -0.7649405, 1.5575896, 1.3670797, 1.1726023]
-        res = stats.ttest_ind(a, b, trim=.20, equal_var=False)
-        assert_allclose(res.pvalue, 0.005293306, atol=1e-7)
-        assert_allclose(res.statistic, -3.098332, atol=1e-6)
-
-    def test_compare_SAS(self):
-        # Source of the data used in this test:
-        # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
-        a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
-        b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
-        # In this paper, a trimming percentage of 5% is used. However,
-        # in their implementation, the number of values trimmed is rounded to
-        # the nearest whole number. However, consistent with
-        # `scipy.stats.trimmed_mean`, this test truncates to the lower
-        # whole number. In this example, the paper notes that 1 value is
-        # trimmed off of each side. 10% replicates this amount of trimming.
-        res = stats.ttest_ind(a, b, trim=.09, equal_var=False)
-        assert_allclose(res.pvalue, 0.514522, atol=1e-6)
-        assert_allclose(res.statistic, 0.669169, atol=1e-6)
-
-    def test_axis(self):
-        np.random.seed(123)
-        # these arrays are shaped such that the columns are the samples. The
-        # samples in group `a` are of length 5 and the samples in group `b`
-        # are of size 8.
-        a = np.random.randint(10, size=(5, 3))
-        b = np.random.randint(10, size=(8, 3))
-        # obtain vectorized result with axis indicating that samples are by
-        # column
-        res_vec = stats.ttest_ind(a, b, trim=.20, equal_var=False, axis=0)
-        res_vec_list = [[s, p] for (s, p) in
-                        zip(res_vec.statistic, res_vec.pvalue)]
-
-        # move axis so that samples are 1 per row for easy comparison
-        # individually
-        a_split = np.moveaxis(a, 0, 1)
-        b_split = np.moveaxis(b, 0, 1)
-        # compute the results individually comparing sample 1 from `a` to
-        # sample 1 in `b` and so on.
-        res_individual = [(stats.ttest_ind(a, b, trim=.20, equal_var=False)) for
-                          (a, b) in zip(a_split, b_split)]
-
-        for (i, v) in zip(res_individual, res_vec_list):
-            assert_array_equal(i, v)
 
 
 def test_ttest_ind_nan_2nd_arg():
