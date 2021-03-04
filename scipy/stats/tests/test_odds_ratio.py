@@ -12,7 +12,7 @@ class TestOddsRatio:
     def test_results_from_r(self, parameters, rresult):
         alternative = parameters.alternative.replace('.', '-')
         result = odds_ratio(parameters.table, alternative=alternative)
-        # The results computed by R are not very precise.
+        # The results computed by R are not very accurate.
         if result.odds_ratio < 400:
             or_rtol = 5e-4
             ci_rtol = 2e-2
@@ -47,6 +47,29 @@ class TestOddsRatio:
         else:
             nchg_mean = nchypergeom_fisher.mean(total, ngood, nsample, cor)
         assert_allclose(nchg_mean, table[0, 0], rtol=1e-13)
+
+        # Check that the confidence interval is correct.
+        alpha = 1 - parameters.confidence_level
+        if alternative == 'two-sided':
+            if ci.low > 0:
+                sf = nchypergeom_fisher.sf(table[0, 0] - 1,
+                                           total, ngood, nsample, ci.low)
+                assert_allclose(sf, alpha/2, rtol=1e-11)
+            if np.isfinite(ci.high):
+                cdf = nchypergeom_fisher.cdf(table[0, 0],
+                                             total, ngood, nsample, ci.high)
+                assert_allclose(cdf, alpha/2, rtol=1e-11)
+        elif alternative == 'less':
+            if np.isfinite(ci.high):
+                cdf = nchypergeom_fisher.cdf(table[0, 0],
+                                             total, ngood, nsample, ci.high)
+                assert_allclose(cdf, alpha, rtol=1e-11)
+        else:
+            # alternative == 'greater'
+            if ci.low > 0:
+                sf = nchypergeom_fisher.sf(table[0, 0] - 1,
+                                           total, ngood, nsample, ci.low)
+                assert_allclose(sf, alpha, rtol=1e-11)
 
     @pytest.mark.parametrize('table', [
         [[0, 0], [5, 10]],
