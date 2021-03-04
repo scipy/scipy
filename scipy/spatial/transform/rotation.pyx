@@ -816,7 +816,7 @@ cdef class Rotation(object):
 
         Initialize a rotation in degrees, and view it in degrees:
 
-        >>> r = R.from_rotvec(45 * np.array([0, 1, 0], degrees=True)
+        >>> r = R.from_rotvec(45 * np.array([0, 1, 0]), degrees=True)
         >>> r.as_rotvec(degrees=True)
         array([ 0., 45.,  0.])
 
