@@ -4046,7 +4046,8 @@ class Test_ttest_ind:
     @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
                                       {'trim': .2},
                                       {}])
-    def test_ttest_many_dims(self, kwds):
+    @pytest.mark.parametrize('equal_var', [True, False])
+    def test_ttest_many_dims(self, kwds, equal_var):
         # Test that permutation test works on many-dimensional arrays
         np.random.seed(0)
         a = np.random.rand(5, 4, 4, 7, 1, 6)
@@ -4198,6 +4199,30 @@ class Test_ttest_trim:
         res = stats.ttest_ind(a, b, trim=.09, equal_var=False)
         assert_allclose(res.pvalue, 0.514522, atol=1e-6)
         assert_allclose(res.statistic, 0.669169, atol=1e-6)
+
+    def test_equal_var(self):
+        '''
+        > library(multicon)
+        > a <- c(2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9)
+        > b <- c(6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1)
+        > dv = c(a,b)
+        > iv = c(rep(a, length(a)), rep(b, length(b)))
+        > yuenContrast(dv~ iv, EQVAR = TRUE)
+        $Ms
+           N        M wgt
+        a 11 2.442857   1
+        b 11 5.385714  -1
+
+        $test
+                     stat df     crit           p
+        results -4.246117 12 2.178813 0.001135088
+        '''
+        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
+        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+        # equal_var=True is default
+        res = stats.ttest_ind(a, b, trim=.2)
+        assert_allclose(res.pvalue, 0.001135088, atol=1e-9)
+        assert_allclose(res.statistic, -4.246117, atol=1e-7)
 
     def test_axis_simple(self):
         np.random.seed(123)
