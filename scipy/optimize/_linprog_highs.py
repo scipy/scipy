@@ -342,9 +342,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # Catch that case here and provide a more useful message
     if ((res['status'] == MODEL_STATUS_OPTIMAL) and
             (res['unscaled_status'] != res['status'])):
+        _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
         status, message = 4, ('An optimal solution to the scaled model was '
-                              f'found but was {statuses[res["unscaled_status"]]}'
-                              ' in the unscaled model')
+                              f'found but was {unscaled_message} in the '
+                              'unscaled model. For more information run with '
+                              'the option `disp: True`.')
     else:
         status, message = statuses[res['status']]
 
