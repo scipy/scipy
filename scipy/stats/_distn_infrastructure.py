@@ -2872,6 +2872,12 @@ def differential_entropy(
     where :math:`m` is the window length parameter, :math:`X_{i} = X_1` if
     :math:`i < 1` and :math:`X_{i} = X_n` if :math:`i > n`.
 
+    This function will converge to the true differential entropy in the limit
+    when
+
+    .. math::
+        n \to \infty, \quad m \to \infty, \quad \frac{m}{n} \to 0
+
     Parameters
     ----------
     values : sequence
@@ -2907,7 +2913,9 @@ def differential_entropy(
     >>> float(norm.entropy())
     1.4189385332046727
 
-    Increasing the window length can improve the accuracy:
+    The optimal choice of `window_length` for a given sample size, depends on
+    the (unknown) distribution. In general, the smoother the density of the
+    distribution, the larger is such optimal value of `window_length` [1]_:
 
     >>> differential_entropy(values, window_length=8)
     1.3494014875503249
