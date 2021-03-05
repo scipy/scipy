@@ -794,7 +794,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     The returned p-value is the maximum p-value taken over the nuisance
     parameter :math:`\pi`, where :math:`0 \leq \pi \leq 1`.
 
-    This function's complexity is O(n * total_c1 * total_c2), where `n` is the
+    This function's complexity is :math:`O(n c_1 c_2)`, where `n` is the
     number of sample points.
 
     References
