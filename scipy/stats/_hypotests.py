@@ -748,7 +748,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     .. math::
 
         T(X) = \frac{
-            \hat{p_1} - \hat{p_2}
+            \hat{p}_1 - \hat{p}_2
         }{
             \sqrt{
                 \hat{p}(1 - \hat{p})
@@ -757,7 +757,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             }
         }
 
-    with :math:`\hat{p_1}, \hat{p_2}` and :math:`\hat{p}` the estimator of
+    with :math:`\hat{p}_1, \hat{p}_2` and :math:`\hat{p}` the estimator of
     :math:`p_1, p_2` and :math:`p`, the latter being the combined probability,
     given the assumption that :math:`p_1 = p_2`.
 
@@ -766,11 +766,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     .. math::
 
         T(X) = \frac{
-            \hat{p_1} - \hat{p_2}
+            \hat{p}_1 - \hat{p}_2
         }{
             \sqrt{
-                \frac{\hat{p_1}(1 - \hat{p_1})}{c_1} +
-                \frac{\hat{p_2}(1 - \hat{p_2})}{c_2}
+                \frac{\hat{p}_1 (1 - \hat{p}_1)}{c_1} +
+                \frac{\hat{p}_2 (1 - \hat{p}_2)}{c_2}
             }
         }
 
