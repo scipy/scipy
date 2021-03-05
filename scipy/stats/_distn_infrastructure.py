@@ -524,10 +524,14 @@ class rv_frozen(object):
         return self.dist.support(*self.args, **self.kwds)
 
 
-# This should be rewritten
 def argsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
+    """Clean arguments to:
+
+    1. Ensure all arguments are iterable (arrays of dimension at least one
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is
+       True, in 1D.
+
+    Return list of processed arguments.
 
     Examples
     --------
@@ -538,20 +542,39 @@ def argsreduce(cond, *args):
     >>> C = rand((1, 5))
     >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
+    (4, 5)
     >>> B1.shape
-    (20,)
+    (1,)
+    >>> C1.shape
+    (1, 5)
     >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
+    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
     (15,)
-
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (15,)
     """
+    # some distributions assume arguments are iterable.
     newargs = np.atleast_1d(*args)
+
+    # np.atleast_1d returns an array if only one argument, or a list of arrays
+    # if more than one argument.
     if not isinstance(newargs, list):
         newargs = [newargs, ]
-    expand_arr = (cond == cond)
-    return [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
+    if np.all(cond):
+        # Nothing to do
+        return newargs
+
+    s = cond.shape
+    # np.extract returns flattened arrays, which are not broadcastable together
+    # unless they are either the same size or size == 1.
+    return [(arg if np.size(arg) == 1
+            else np.extract(cond, np.broadcast_to(arg, s)))
+            for arg in newargs]
 
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
