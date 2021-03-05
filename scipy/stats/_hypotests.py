@@ -728,8 +728,12 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     tables. It examines the association of two categorical variables, and
     is a more powerful alternative than Fisher's exact test
     for 2x2 contingency tables.
-    When using Barnard exact test, we can assert three different null
-    hypotheses :
+
+    Let's define :math:`X` a 2x2 matrix representing the contingency table,
+    where each column stores the binomial experiment, as in the example
+    below. Let's also define :math:`p_1, p_2` the theoretical binomial
+    probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
+    Barnard exact test, we can assert three different null hypotheses :
 
     - :math:`H_0 : p_1 \geq p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
