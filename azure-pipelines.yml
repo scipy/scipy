@@ -165,6 +165,9 @@ jobs:
     vmImage: 'ubuntu-16.04'
   steps:
   - script: |
+      git submodule update --init
+    displayName: 'Fetch submodules'
+  - script: |
            docker pull i386/ubuntu:bionic
            docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
            apt-get -y update && \
@@ -180,7 +183,6 @@ jobs:
            cp -r \$target/lib/* /usr/lib && \
            cp \$target/include/* /usr/include && \
            cd ../scipy && \
-           git submodule update --init && \
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 setup.py install && \
            python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"

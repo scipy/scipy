@@ -76,6 +76,9 @@ install:
   # Install the scipy test dependencies.
   - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
 
+  # Fetch submodules
+  - cmd: git submodule update --init --recursive
+  
 build_script:
   - ps: |
       $PYTHON_ARCH = $env:PYTHON_ARCH
