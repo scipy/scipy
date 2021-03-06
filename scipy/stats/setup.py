@@ -45,7 +45,7 @@ def configuration(parent_package='',top_path=None):
 
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
-    from _generate_pyx import isNPY_OLD
+    from _generate_pyx import isNPY_OLD # type: ignore[import]
     NPY_OLD = isNPY_OLD()
     biasedurn_libs = [] if NPY_OLD else ['npyrandom']
     biasedurn_libdirs = [] if NPY_OLD else [join(np.get_include(),

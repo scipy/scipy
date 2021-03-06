@@ -370,9 +370,9 @@ def directed_hausdorff(u, v, seed=0):
 
     Parameters
     ----------
-    u : (M,N) ndarray
+    u : (M,N) array_like
         Input array.
-    v : (O,N) ndarray
+    v : (O,N) array_like
         Input array.
     seed : int or None
         Local `numpy.random.RandomState` seed. Default is 0, a random
@@ -482,7 +482,7 @@ def minkowski(u, v, p=2, w=None):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -547,7 +547,7 @@ def wminkowski(u, v, p, w):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like
         The weight vector.
@@ -1065,7 +1065,7 @@ def mahalanobis(u, v, VI):
         Input array.
     v : (N,) array_like
         Input array.
-    VI : ndarray
+    VI : array_like
         The inverse of the covariance matrix.
 
     Returns
@@ -1375,9 +1375,9 @@ def dice(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) ndarray, bool
+    u : (N,) array_like, bool
         Input 1-D array.
-    v : (N,) ndarray, bool
+    v : (N,) array_like, bool
         Input 1-D array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -1756,7 +1756,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     Parameters
     ----------
-    X : ndarray
+    X : array_like
         An m by n array of m original observations in an
         n-dimensional space.
     metric : str or function, optional
@@ -1801,7 +1801,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry 
+        is computed and stored in entry
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
@@ -2123,7 +2123,7 @@ def squareform(X, force="no", checks=True):
 
     Parameters
     ----------
-    X : ndarray
+    X : array_like
         Either a condensed or redundant distance matrix.
     force : str, optional
         As with MATLAB(TM), if force is equal to ``'tovector'`` or
@@ -2245,7 +2245,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     Parameters
     ----------
-    D : ndarray
+    D : array_like
         The candidate object to test for validity.
     tol : float, optional
         The distance matrix should be symmetric. `tol` is the maximum
@@ -2334,7 +2334,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 
     Parameters
     ----------
-    y : ndarray
+    y : array_like
         The condensed distance matrix.
     warning : bool, optional
         Invokes a warning if the variable passed is not a valid
@@ -2388,7 +2388,7 @@ def num_obs_dm(d):
 
     Parameters
     ----------
-    d : ndarray
+    d : array_like
         The target distance matrix.
 
     Returns
@@ -2409,7 +2409,7 @@ def num_obs_y(Y):
 
     Parameters
     ----------
-    Y : ndarray
+    Y : array_like
         Condensed distance matrix.
 
     Returns
@@ -2439,11 +2439,11 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     Parameters
     ----------
-    XA : ndarray
+    XA : array_like
         An :math:`m_A` by :math:`n` array of :math:`m_A`
         original observations in an :math:`n`-dimensional space.
         Inputs are converted to float type.
-    XB : ndarray
+    XB : array_like
         An :math:`m_B` by :math:`n` array of :math:`m_B`
         original observations in an :math:`n`-dimensional space.
         Inputs are converted to float type.
@@ -2466,14 +2466,14 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         The p-norm to apply for Minkowski, weighted and unweighted.
         Default: 2.
 
-        w : ndarray
+        w : array_like
         The weight vector for metrics that support weights (e.g., Minkowski).
 
-        V : ndarray
+        V : array_like
         The variance vector for standardized Euclidean.
         Default: var(vstack([XA, XB]), axis=0, ddof=1)
 
-        VI : ndarray
+        VI : array_like
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(vstack([XA, XB].T))).T
 

@@ -20,12 +20,12 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad
+from scipy.integrate import IntegrationWarning, quad, trapezoid
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy, polygamma
+from scipy.special import xlogy, polygamma, entr
 from .test_continuous_basic import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
@@ -1808,6 +1808,59 @@ class TestInvgauss(object):
         # FitDataError is raised when negative invalid data
         with pytest.raises(FitDataError):
             stats.invgauss.fit([1, 2, 3], floc=2)
+
+    def test_cdf_sf(self):
+        # Regression tests for gh-13614.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # mu = c(4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+        #        3.02332573e-03, 1.46755891e-03)
+        # print(pinvgauss(5, mu, 1))
+
+        # make sure a finite value is returned when mu is very small. see
+        # GH-13614
+        mu = [4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+              3.02332573e-03, 1.46755891e-03]
+        expected = [1, 1, 1, 1, 1]
+        actual = stats.invgauss.cdf(0.4, mu=mu)
+        assert_equal(expected, actual)
+
+        # test if the function can distinguish small left/right tail
+        # probabilities from zero.
+        cdf_actual = stats.invgauss.cdf(0.001, mu=1.05)
+        assert_allclose(cdf_actual, 4.65246506892667e-219)
+        sf_actual = stats.invgauss.sf(110, mu=1.05)
+        assert_allclose(sf_actual, 4.12851625944048e-25)
+
+        # test if x does not cause numerical issues when mu is very small
+        # and x is close to mu in value.
+
+        # slightly smaller than mu
+        actual = stats.invgauss.cdf(0.00009, 0.0001)
+        assert_allclose(actual, 2.9458022894924e-26)
+
+        # slightly bigger than mu
+        actual = stats.invgauss.cdf(0.000102, 0.0001)
+        assert_allclose(actual, 0.976445540507925)
+
+    def test_logcdf_logsf(self):
+        # Regression tests for improvements made in gh-13616.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # print(pinvgauss(0.001, 1.05, 1, log.p=TRUE, lower.tail=FALSE))
+
+        # test if logcdf and logsf can compute values too small to
+        # be represented on the unlogged scale. See: gh-13616
+        logcdf = stats.invgauss.logcdf(0.0001, mu=1.05)
+        assert_allclose(logcdf, -5003.87872590367)
+        logcdf = stats.invgauss.logcdf(110, 1.05)
+        assert_allclose(logcdf, -4.12851625944087e-25)
+        logsf = stats.invgauss.logsf(0.001, mu=1.05)
+        assert_allclose(logsf, -4.65246506892676e-219)
+        logsf = stats.invgauss.logsf(110, 1.05)
+        assert_allclose(logsf, -56.1467092416426)
 
 
 class TestLaplace(object):
@@ -5191,6 +5244,17 @@ def test_crystalball_function_moments():
     expected_5th_moment = a / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
+
+
+def test_crystalball_entropy():
+    # regression test for gh-13602
+    cb = stats.crystalball(2, 3)
+    res1 = cb.entropy()
+    # -20000 and 30 are negative and positive infinity, respectively
+    lo, hi, N = -20000, 30, 200000
+    x = np.linspace(lo, hi, N)
+    res2 = trapezoid(entr(cb.pdf(x)), x)
+    assert_allclose(res1, res2, rtol=1e-7)
 
 
 @pytest.mark.parametrize(
