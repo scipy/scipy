@@ -2,6 +2,8 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
+from itertools import combinations
+import scipy.stats
 from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
@@ -261,7 +263,7 @@ def _cdf_cvm(x, n=None):
 
 def cramervonmises(rvs, cdf, args=()):
     """
-    Perform the Cramér-von Mises test for goodness of fit.
+    Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -287,12 +289,12 @@ def cramervonmises(rvs, cdf, args=()):
     res : object with attributes
         statistic : float
             Cramér-von Mises statistic.
-        pvalue :  float
+        pvalue : float
             The p-value.
 
     See Also
     --------
-    kstest
+    kstest, cramervonmises_2samp
 
     Notes
     -----
@@ -319,7 +321,6 @@ def cramervonmises(rvs, cdf, args=()):
     were, in fact, drawn from the standard normal distribution. We choose a
     significance level of alpha=0.05.
 
-    >>> import numpy as np
     >>> from scipy import stats
     >>> np.random.seed(626)
     >>> x = stats.norm.rvs(size=500)
@@ -663,3 +664,189 @@ def somersd(x, y=None):
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table)
     return SomersDResult(d, p, table)
+def _pval_cvm_2samp_exact(s, nx, ny):
+    """
+    Compute the exact p-value of the Cramer-von Mises two-sample test
+    for a given value s (float) of the test statistic by enumerating
+    all possible combinations. nx and ny are the sizes of the samples.    
+    """
+    z = np.arange(1, nx+ny+1)
+    rangex = np.arange(1, nx+1)
+    rangey = np.arange(1, ny+1)
+
+    us = []
+    # for the first sample x, select all possible combinations of
+    # the ranks of the elements of x in the combined sample
+    # note that the acutal values of the samples are irrelevant
+    # once the ranks of the elements of x are fixed, the
+    # ranks of the elements in the second sample
+    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all 
+    for c in combinations(z, nx):
+        x = np.array(c)
+        # the ranks of the second sample y are given by the set z - x
+        # note than one needs to shift by -1 since the lowest rank is 1
+        mask = np.ones(nx+ny, bool)
+        mask[x-1] = False
+        y = z[mask]
+        # compute the statistic
+        u = nx * np.sum((x - rangex)**2)
+        u += ny * np.sum((y - rangey)**2)
+        us.append(u)
+    # compute the values of u and the frequencies
+    u, cnt = np.unique(us, return_counts=True)
+    return np.sum(cnt[u >= s]) / np.sum(cnt)
+
+
+def cramervonmises_2samp(x, y, method='auto'):
+    """
+    Perform the two-sample Cramér-von Mises test for goodness of fit.
+
+    This is the two-sample version of the Cramér-von Mises test ([1]_):
+    for two independent samples :math:`X_1, ..., X_n` and
+    :math:`Y_1, ..., Y_m`, the null hypothesis is that the samples
+    come from the same (unspecified) continuous distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        A 1-D array of observed values of the random variables :math:`X_i`.
+    y : array_like
+        A 1-D array of observed values of the random variables :math:`Y_i`.
+    method : {'auto', 'asymptotic', 'exact'}, optional
+        The method used to compute the p-value, see Notes for details.
+        The default is 'auto'.
+
+    Returns
+    -------
+    res : object with attributes
+        statistic : float
+            Cramér-von Mises statistic.
+        pvalue : float
+            The p-value.
+
+    See Also
+    --------
+    cramervonmises, anderson_ksamp, epps_singleton_2samp, ks_2samp
+
+    Notes
+    -----
+    .. versionadded:: 1.7.0
+
+    The statistic is computed according to equation 9 in [2]_. The
+    calculation of the p-value depends on the keyword `method`:
+
+    - ``asymptotic``: The p-value is approximated by using the limiting
+      distribution of the test statistic.
+    - ``exact``: The exact p-value is computed by enumerating all
+      possible combinations of the test statistic, see [2]_.
+
+    The exact calculation will be very slow even for moderate sample
+    sizes as the number of combinations increases rapidly with the
+    size of the samples. If ``method=='auto'``, the exact approach
+    is used if both samples contain less than 10 observations,
+    otherwise the asymptotic distribution is used.
+
+    If the underlying distribution is not continuous, the p-value is likely to
+    be conservative (Section 6.2 in [3]_). When ranking the data to compute
+    the test statistic, midranks are used if there are ties.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Cramer-von_Mises_criterion
+    .. [2] Anderson, T.W. (1962). On the distribution of the two-sample
+           Cramer-von-Mises criterion. The Annals of Mathematical
+           Statistics, pp. 1148-1159.
+    .. [3] Conover, W.J., Practical Nonparametric Statistics, 1971.
+
+    Examples
+    --------
+
+    Suppose we wish to test whether two samples generated by
+    ``scipy.stats.norm.rvs`` have the same distribution. We choose a
+    significance level of alpha=0.05.
+
+    >>> from scipy import stats
+    >>> np.random.seed(626)
+    >>> x = stats.norm.rvs(size=100)
+    >>> y = stats.norm.rvs(size=70)
+    >>> res = stats.cramervonmises_2samp(x, y)
+    >>> res.statistic, res.pvalue
+    (0.24331932773109344, 0.19815666195647663)
+
+    The p-value exceeds our chosen significance level, so we do not
+    reject the null hypothesis that the observed samples are drawn from the
+    same distribution.
+
+    For small sample sizes, one can compute the exact p-values:
+
+    >>> x = stats.norm.rvs(size=7)
+    >>> y = stats.t.rvs(df=2, size=6)
+    >>> res = stats.cramervonmises_2samp(x, y, method='exact')
+    >>> res.statistic, res.pvalue
+    (0.2655677655677655, 0.18706293706293706)
+
+    The p-value based on the asymptotic distribution is a good approximation
+    even though the sample size is small.
+    
+    >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
+    >>> res.statistic, res.pvalue
+    (0.2655677655677655, 0.17974247316290415)
+
+    Independent of the method, one would not reject the null hypothesis at the
+    chosen significance level in this example.
+    """
+
+    xa = np.sort(np.asarray(x))
+    ya = np.sort(np.asarray(y))
+
+    if xa.size <= 1 or ya.size <= 1:
+        raise ValueError('x and y must contain at least two observations.')
+    if xa.ndim > 1 or ya.ndim > 1:
+        raise ValueError('The samples must be one-dimensional.')
+    if method not in ['auto', 'exact', 'asymptotic']:
+        raise ValueError('method must be either auto, exact or asymptotic.')
+
+    nx = len(xa)
+    ny = len(ya)
+
+    if method == 'auto':
+        if max(nx, ny) > 10:
+            method = 'asymptotic'
+        else:
+            method = 'exact'
+
+    # get ranks of x and y in the pooled sample
+    z = np.concatenate([xa, ya])
+    # in case of ties, use midrank (see [1])
+    r = scipy.stats.rankdata(z, method='average')
+    rx = r[:nx]
+    ry = r[nx:]
+
+    # compute U (eq. 10 in [2])
+    u = nx * np.sum((rx - np.arange(1, nx+1))**2)
+    u += ny * np.sum((ry - np.arange(1, ny+1))**2)
+
+    # compute T (eq. 9 in [2])
+    k, N = nx*ny, nx + ny
+    t = u / (k*N) - (4*k - 1)/(6*N)
+
+    if method == 'exact':
+        p = _pval_cvm_2samp_exact(u, nx, ny)
+    else:
+        # compute expected value and variance of T (eq. 11 and 14 in [2])
+        et = (1 + 1/N)/6
+        vt = (N+1) * (4*k*N - 3*(nx**2 + ny**2) - 2*k)
+        vt = vt / (45 * N**2 * 4 * k)
+
+        # computed the normalized statistic (eq. 15 in [2])
+        tn = 1/6 + (t - et) / np.sqrt(45 * vt)
+
+        # approximate distribution of tn with limiting distribution
+        # of the one-sample test statistic
+        # if tn < 0.003, the _cdf_cvm_inf(tn) < 1.28*1e-18, return 1.0 directly
+        if tn < 0.003:
+            p = 1.0
+        else:
+            p = max(0, 1. - _cdf_cvm_inf(tn))
+
+    return CramerVonMisesResult(statistic=t, pvalue=p)
