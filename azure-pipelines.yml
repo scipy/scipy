@@ -180,6 +180,7 @@ jobs:
            cp -r \$target/lib/* /usr/lib && \
            cp \$target/include/* /usr/include && \
            cd ../scipy && \
+           git submodule update --init && \
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 setup.py install && \
            python3.7 tools/openblas_support.py --check_version $(openblas_version) && \
            CC=gcc-5 CXX=g++-5 F77=gfortran-5 F90=gfortran-5 python3.7 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
@@ -238,6 +239,9 @@ jobs:
       versionSpec: $(PYTHON_VERSION)
       addToPath: true
       architecture: $(PYTHON_ARCH)
+  - script: |
+      git submodule update --init
+    displayName: 'Fetch submodules'
   - script: |
       python -m pip install --upgrade pip "setuptools<50.0" wheel
     displayName: 'Install tools'

@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Lint Docker 
         uses: brpaz/hadolint-action@v1.2.1
         with: 

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
@@ -59,6 +61,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     - name: Install Python 3.9
       if: matrix.python-version == '3.9'
