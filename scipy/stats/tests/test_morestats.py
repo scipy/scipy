@@ -522,6 +522,156 @@ class TestAnsari(object):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_bad_alternative(self):
+        # invalid value for alternative must raise a ValueError
+        x1 = [1, 2, 3, 4]
+        x2 = [5, 6, 7, 8]
+        assert_raises(ValueError, stats.ansari, x1, x2, alternative='foo')
+
+    def test_bad_mode(self):
+        # invalid value for mode must raise a ValueError
+        x1 = [1, 2, 3, 4]
+        x2 = [5, 6, 7, 8]
+        assert_raises(ValueError, stats.ansari, x1, x2, mode='foo')
+
+    def test_alternative_exact(self):
+        x1 = [-5, 1, 5, 10, 15, 20, 25] # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5] # low scale, loc=10
+        # ratio of scales is greater than 1. So, the
+        # p-value must be high when `alternative='less'`
+        # and low when `alternative='greater'`.
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert pval_l > 0.95
+        assert pval_g < 0.05 # level of significance.
+        # sanity check. The result should flip if
+        # we exchange x and y.
+        pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
+        pval_g_reverse = stats.ansari(x2, x1, alternative='greater').pvalue
+        assert pval_l_reverse < 0.05
+        assert pval_g_reverse > 0.95
+
+    @pytest.mark.parametrize(
+        'x, y, alternative, expected',
+        # the tests are designed in such a way that the
+        # if else statement in ansari test for exact
+        # mode is covered.
+        [([1, 2, 3, 4], [5, 6, 7, 8], 'less', 0.6285714285714),
+         ([1, 2, 3, 4], [5, 6, 7, 8], 'greater', 0.6285714285714),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'less', 0.8928571428571),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'greater', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8928571428571)]
+    )
+    def test_alternative_exact_with_R(self, x, y, alternative, expected):
+        # testing with R on random data
+        pval = stats.ansari(x, y, alternative=alternative).pvalue
+        assert_almost_equal(pval, expected)
+
+    def test_alternative_approx(self):
+        # intuitive tests for approximation
+        x1 = stats.norm.rvs(0, 5, size=100, random_state=123)
+        x2 = stats.norm.rvs(0, 2, size=100, random_state=123)
+        # for m > 55 or n > 55, the test should automatically
+        # switch to approximation. So, no need to pass mode='approx'.
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_almost_equal(pval_l, 1.0)
+        assert_almost_equal(pval_g, 0.0)
+
+    @pytest.mark.parametrize(
+        'x, y, alternative, expected',
+        # the tests are designed in such a way that the
+        # if else statement in ansari test for approx
+        # mode is covered.
+        [([1, 2, 3, 4], [5, 6, 7, 8], 'less', 0.5),
+         ([1, 2, 3, 4], [5, 6, 7, 8], 'greater', 0.5),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'less', 0.8203016145897),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'greater', 0.1796983854103),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.1796983854103),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8203016145897)]
+    )
+    def test_alternative_approx_with_R(self, x, y, alternative, expected):
+        # testing with R on random data
+        pval = stats.ansari(x, y, alternative=alternative,
+                            mode='approx').pvalue
+        assert_almost_equal(pval, expected)
+
+    def test_mode(self):
+        # case 1: no ties, n < 55, m < 55, mode='auto'
+        # check if mode='auto' equals mode='exact'.
+        x = [1, 2, 3, 4]
+        y = [5, 6, 7, 8]
+        pval_auto = stats.ansari(x, y, mode='auto')
+        pval_exact = stats.ansari(x, y, mode='exact')
+        assert_equal(pval_auto, pval_exact)
+        # case 2: no ties, n > 55, m < 55, mode='auto'
+        # check if mode='auto' equals mode='approx'
+        x = stats.norm.rvs(0, 5, size=60, random_state=123)
+        y = [5, 6, 7, 8]
+        pval_auto = stats.ansari(x, y, mode='auto').pvalue
+        pval_approx = stats.ansari(x, y, mode='approx').pvalue
+        assert_equal(pval_auto, pval_approx)
+        # case 3: no ties, n < 55, m > 55, mode='auto'
+        # check if mode='auto' equals mode='approx'
+        pval_auto = stats.ansari(y, x, mode='auto').pvalue
+        pval_approx = stats.ansari(y, x, mode='approx').pvalue
+        assert_equal(pval_auto, pval_approx)
+        # case 4: no ties, n > 55, m > 55, mode='auto'
+        # check if mode='auto' equals mode='approx'
+        x = stats.norm.rvs(0, 5, size=60, random_state=123)
+        y = stats.norm.rvs(0, 2, size=60, random_state=123)
+        pval_auto = stats.ansari(x, y, mode='auto').pvalue
+        pval_approx = stats.ansari(x, y, mode='approx').pvalue
+        assert_equal(pval_auto, pval_approx)
+        # case 5: no ties, n < 55, m > 55, mode='exact'
+        # this should use the exact method.
+        x = [1, 2, 3, 4]
+        y = np.arange(5, 66)
+        # ground truth from R
+        pval_exact = stats.ansari(x, y, mode='exact').pvalue
+        pval_expected = 0.000177242112726
+        assert_almost_equal(pval_exact, pval_expected)
+        # case 6: no ties, n > 55, m < 55, mode='exact'
+        # this should use the exact method.
+        pval_exact = stats.ansari(y, x, mode='exact').pvalue
+        assert_almost_equal(pval_exact, pval_expected)
+        # case 7: no ties, n > 55, m > 55, mode='exact'
+        # this should use the exact method.
+        x = np.arange(0, 60)
+        y = np.arange(61, 121)
+        pval_exact = stats.ansari(x, y, mode='exact').pvalue
+        pval_expected = 1
+        # case 8: ties, n < 55, m < 55, mode='auto'
+        # should throw a warning and use the approximation
+        # method.
+        x = [1, 2, 3, 4, 6, 7, 8]
+        y = [3, 4, 5, 6]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+            pval_auto = stats.ansari(x, y, mode='auto').pvalue
+        pval_approx = stats.ansari(x, y, mode='approx').pvalue
+        assert_equal(pval_auto, pval_approx)
+        # case 9: ties, n > 55, m > 55, mode='auto'
+        # check if mode='auto' equals mode='approx'
+        # with a warning.
+        x = np.arange(0, 60)
+        y = np.arange(50, 111)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+            pval_auto = stats.ansari(x, y, mode='auto').pvalue
+        pval_approx = stats.ansari(x, y, mode='approx').pvalue
+        assert_equal(pval_auto, pval_approx)
+        # case 10: ties, mode='exact'
+        # mode='exact' with ties should always raise
+        # a ValueError
+        x = [1, 2, 3, 4]
+        y = [3, 4, 5, 6]
+        assert_raises(ValueError, stats.ansari, x, y, mode='exact')
+        x = np.arange(0, 60)
+        y = np.arange(50, 111)
+        assert_raises(ValueError, stats.ansari, x, y, mode='exact')
+
 
 class TestBartlett(object):
 

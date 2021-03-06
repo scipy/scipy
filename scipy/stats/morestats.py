@@ -2078,7 +2078,7 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
-def ansari(x, y):
+def ansari(x, y, alternative='two-sided', mode='auto'):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
 
@@ -2090,6 +2090,21 @@ def ansari(x, y):
     ----------
     x, y : array_like
         Arrays of sample data.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided': two-sided, see explanation in Notes
+          * 'less': one-sided, see explanation in Notes
+          * 'greater': one-sided, see explanation in Notes
+
+    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+        Defines the distribution used for calculating the p-value.
+        The following options are available (default is 'auto'):
+
+          * 'auto' : see explanation in Notes
+          * 'exact' : see explanation in Notes
+          * 'approx' : see explanation in Notes
 
     Returns
     -------
@@ -2105,9 +2120,34 @@ def ansari(x, y):
 
     Notes
     -----
-    The p-value given is exact when the sample sizes are both less than
-    55 and there are no ties, otherwise a normal approximation for the
-    p-value is used.
+    The ``mode`` parameter is used in the following manner:
+
+    - For ``mode='auto'``, the p-value given is exact the sample sizes
+      are both less than 55 and there are no ties, otherwise a normal
+      approximation for the p-value is used.
+    - For ``mode='exact'``, the p-value given is exact when there are
+      no ties, otherwise a normal approximation for the p-value is used.
+    - For ``mode='approx'``, a normal approximation for the p-value
+      is used.
+
+    The ``alternative`` parameter is used in the following manner:
+
+    - For ``alternative='two-sided'``, the null hypothesis states that
+      the ratio or the scales of both the distributions is 1. The
+      alternative hypothesis says that the ratio of scales is not equal
+      to 1.
+    - For `alternative='less'`, the null hypothesis states that the
+      ratio of the scales of both the distributions is greater than 1.
+      Stated another way, the null hypothesis says that the scale of
+      ``x`` is greater than that of ``y``. The alternative hypothesis
+      says that the ratio of scales of the given distributions is less
+      than 1.
+    - For `alternative='greater'`, the null hypothesis states that the
+      ratio of the scales of both the distributions is less than 1.
+      Stated another way, the null hypothesis says that the scale of
+      ``x`` is less than that of ``y``. The alternative hypothesis
+      says that the ratio of scales of the given distributions is greater
+      than 1.
 
     References
     ----------
@@ -2116,6 +2156,8 @@ def ansari(x, y):
     .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
            statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
            Section 5.8.2.
+    .. [3] Nathaniel E. Helwig "Nonparametric Dispersion and Equality
+           Tests" at http://users.stat.umn.edu/~helwig/notes/npde-Notes.pdf
 
     Examples
     --------
@@ -2150,7 +2192,27 @@ def ansari(x, y):
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
     are not equal.
+
+    We can use the ``alternative`` parameter to perform one-tailed test.
+    In the above example, the scale of `x1` is greater than `x3` and so
+    the ratio of scales of `x1` and `x3` is greater than 1. This means
+    that the p-value when ``alternative='greater'`` should be near 0 and
+    hence we should be able to reject the null hypothesis:
+
+    >>> ansari(x1, x3, alternative='greater')
+    AnsariResult(statistic=452.0, pvalue=0.0031401394)
+
+    As we can see, the p-value is indeed less than the level of significance.
+    Use of ``alternative='less'`` should thus yield a large p-value
+
+    >>> ansari(x1, x3, alternative='less')
+    AnsariResult(statistic=452.0, pvalue=0.9971491082105786)
     """
+    if alternative not in ('two-sided', 'greater', 'less'):
+        raise ValueError("'alternative' must be 'two-sided',"
+                         " 'greater', or 'less'.")
+    if mode not in ('auto', 'exact', 'approx'):
+        raise ValueError("'mode' must be 'auto', 'exact' or 'approx'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2167,24 +2229,37 @@ def ansari(x, y):
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
-    if repeats and (m < 55 or n < 55):
+    if mode == 'exact' and repeats:
+        raise ValueError("can't compute exact statistic with ties. "
+                         "Please use `mode='auto'` or `mode='approx'`.")
+    if mode == 'auto' and repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
-    if exact:
+    if (mode == 'exact' and not repeats) or (mode == 'auto' and exact):
         astart, a1, ifault = statlib.gscale(n, m)
         ind = AB - astart
         total = np.sum(a1, axis=0)
         if ind < len(a1)/2.0:
             cind = int(ceil(ind))
             if ind == cind:
-                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
-            else:
+                cind = cind + 1
+            if alternative == 'two-sided':
                 pval = 2.0 * np.sum(a1[:cind], axis=0) / total
+            elif alternative == 'greater':
+                # see [3]_
+                pval = np.sum(a1[:cind], axis=0) / total
+            else:
+                # see [3]_
+                pval = 1.0 - np.sum(a1[:cind-1], axis=0) / total
         else:
             find = int(floor(ind))
-            if ind == floor(ind):
+            if ind != find:
+                find = find + 1
+            if alternative == 'two-sided':
                 pval = 2.0 * np.sum(a1[find:], axis=0) / total
+            elif alternative == 'greater':
+                pval = 1.0 - np.sum(a1[find+1:], axis=0) / total
             else:
-                pval = 2.0 * np.sum(a1[find+1:], axis=0) / total
+                pval = np.sum(a1[find:], axis=0) / total
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2202,8 +2277,13 @@ def ansari(x, y):
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
-    z = (AB - mnAB) / sqrt(varAB)
-    pval = distributions.norm.sf(abs(z)) * 2.0
+    z = (mnAB - AB) / sqrt(varAB)
+    if alternative == 'two-sided':
+        pval = distributions.norm.sf(abs(z)) * 2.0
+    elif alternative == 'greater':
+        pval = distributions.norm.sf(z)
+    else:
+        pval = distributions.norm.cdf(z)
     return AnsariResult(AB, pval)
 
 
