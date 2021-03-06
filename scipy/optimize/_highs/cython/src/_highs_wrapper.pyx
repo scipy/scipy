@@ -39,6 +39,7 @@ from .HConst cimport (
 from .Highs cimport Highs
 from .HighsStatus cimport (
     HighsStatus,
+    HighsStatusToString,
     HighsStatusError,
     HighsStatusWarning,
     HighsStatusOK,
@@ -56,6 +57,7 @@ from .HighsOptions cimport (
     OptionRecordDouble,
     OptionRecordString,
 )
+from .HighsModelUtils cimport utilPrimalDualStatusToString
 
 # options to reference for default values and bounds;
 # make a map to quickly lookup
@@ -637,17 +639,23 @@ def _highs_wrapper(
             }
 
     # Solve the LP
+    highs.setBasis()
     cdef HighsStatus run_status = highs.run()
+    if run_status == HighsStatusError:
+        return {
+            'status': <int> highs.getModelStatus(),
+            'message': HighsStatusToString(run_status).decode(),
+        }
 
     # Extract what we need from the solution
     cdef HighsModelStatus model_status = highs.getModelStatus()
     cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
+    cdef HighsModelStatus unscaled_model_status = model_status
     if model_status != scaled_model_status:
         if scaled_model_status == HighsModelStatusOPTIMAL:
             # The scaled model has been solved to optimality, but not the
             # unscaled model, flag this up, but report the scaled model
             # status
-            warn('model_status is not optimal, using scaled_model_status instead.', OptimizeWarning)
             model_status = scaled_model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
@@ -655,13 +663,13 @@ def _highs_wrapper(
     cdef HighsSolution solution
 
     # If the status is bad, don't look up the solution
-    if info.primal_status != PrimalDualStatusSTATUS_FEASIBLE_POINT:
+    if model_status != HighsModelStatusOPTIMAL:
         return {
             'status': <int> model_status,
-            'message': highs.highsModelStatusToString(model_status).decode(),
+            'message': f'model_status is {highs.highsModelStatusToString(model_status).decode()}; '
+                       f'primal_status is {utilPrimalDualStatusToString(<int> info.primal_status)}',
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
-            #'fun': info.objective_function_value,
             'fun': None,
             'crossover_nit': info.crossover_iteration_count,
         }
@@ -672,6 +680,7 @@ def _highs_wrapper(
         return {
             'status': <int> model_status,
             'message': highs.highsModelStatusToString(model_status).decode(),
+            'unscaled_status': <int> unscaled_model_status,
 
             # Primal solution
             'x': [solution.col_value[ii] for ii in range(numcol)],
@@ -679,13 +688,6 @@ def _highs_wrapper(
             # Ax + s = b => Ax = b - s
             # Note: this is for all constraints (A_ub and A_eq)
             'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
-
-            # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
-            # lambda are the lagrange multipliers associated with Ax=b
-            'lambda': [-1*solution.row_dual[ii] for ii in range(numrow)],
-
-            # s are the lagrange multipliers associated with bound conditions
-            's': [solution.col_dual[ii] for ii in range(numcol) if solution.col_dual[ii]],
 
             'fun': info.objective_function_value,
             'simplex_nit': info.simplex_iteration_count,
