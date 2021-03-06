@@ -30,7 +30,7 @@ cdef extern from "<functional>" namespace "std" nogil:
 from libcpp.vector cimport vector
 
 
-cdef mutex THREADED_SUM_MUTEX
+cdef mutex threaded_sum_mutex
 
 
 def discrepancy(sample, bint iterative=False, method='CD', workers=1):
@@ -497,6 +497,6 @@ cdef void one_thread_loop(func_type loop_func, double& disc, double[:,
 
     cdef double tmp = loop_func(sample_view, istart, istop)
 
-    THREADED_SUM_MUTEX.lock()
-    (&disc)[0] += tmp # workaround to "result_sum += s", see cython issue #1863
-    THREADED_SUM_MUTEX.unlock()
+    threaded_sum_mutex.lock()
+    (&disc)[0] += tmp # workaround to "disc += tmp", see cython issue #1863
+    threaded_sum_mutex.unlock()
