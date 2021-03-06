@@ -315,14 +315,6 @@ Statistical tests
    kurtosistest
    normaltest
 
-Objects returned by some statistical tests
-------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   BinomTestResult
-
 
 Quasi-Monte Carlo
 =================
@@ -400,6 +392,7 @@ Contingency table functions
    contingency.crosstab
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
    contingency.association
    fisher_exact
 
@@ -436,10 +429,11 @@ Warnings used in :mod:`scipy.stats`
    SpearmanRConstantInputWarning
 
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *
-from ._binomtest import binomtest, BinomTestResult
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
