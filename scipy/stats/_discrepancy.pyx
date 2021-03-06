@@ -483,7 +483,7 @@ cdef double threaded_loops(func_type loop_func, double[:,
         istop = <Py_ssize_t> (
                 n / workers * (tid + 1)) if tid < workers - 1 else n
         threads.push_back(
-            thread(one_thread_loop, loop_func, ref((&disc2)[0]),
+            thread(one_thread_loop, loop_func, ref(disc2),
                    sample_view, istart, istop))
 
     for tid in range(workers):
