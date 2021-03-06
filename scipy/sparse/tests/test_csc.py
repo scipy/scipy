@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 import pytest
 
@@ -69,3 +69,15 @@ def test_csc_empty_slices(matrix_input, axis, expected_shape):
 
     assert actual_shape_1 == expected_shape
     assert actual_shape_1 == actual_shape_2
+
+
+def test_argmax_overflow():
+    '''
+    See gh-13646: Windows integer overflow for large sparse matrices.
+    '''
+    dim = (100000, 100000)
+    A = lil_matrix(dim)
+    A[-2, -2] = 42
+    A = csc_matrix(A)
+    idx = np.unravel_index(A.argmax(), dim)
+    assert A[idx] == A[-2, -2]
