@@ -271,9 +271,9 @@ class _minmax_mixin(object):
                 m = mat.data[am]
 
                 if compare(m, zero):
-                    # cast at least 1 to Python int to avoid overflow
+                    # cast to Python int to avoid overflow
                     # and RuntimeError
-                    return int(mat.row[am]) * mat.shape[1] + mat.col[am]
+                    return int(mat.row[am])*mat.shape[1] + int(mat.col[am])
                 else:
                     size = np.prod(mat.shape)
                     if size == mat.nnz:
