@@ -462,7 +462,7 @@ class TestBarnardExact(object):
         ```R
         library(Barnard)
         options(digits=10)
-        barnard.test(43, 40, 10, 39, dp=1e-6, pooled=False)
+        barnard.test(43, 40, 10, 39, dp=1e-6, pooled=FALSE)
         ```
         """
         res = barnard_exact(input_sample, pooled=False)
