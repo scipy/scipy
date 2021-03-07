@@ -536,7 +536,7 @@ class TestBarnardExact(object):
         ```R
         library(Barnard)
         options(digits=10)
-        a = barnard.test(2, 7, 8, 2, dp=1e-6, pooled=True)
+        a = barnard.test(2, 7, 8, 2, dp=1e-6, pooled=TRUE)
         a$p.value[1]
         ```
         In this test, we are using the "one-sided" return value `a$p.value[1]`
