@@ -841,10 +841,8 @@ class LatinHypercube(QMCEngine):
 
         # This can be removed once numpy 1.16 is dropped
         try:
-            self.rg_integers = self.rng.randint
             self.rg_sample = self.rng.random_sample
         except AttributeError:
-            self.rg_integers = self.rng.integers
             self.rg_sample = self.rng.random
 
     def random(self, n=1):
@@ -861,12 +859,16 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        samples = np.zeros(shape=(n, self.d))
-        for i in range(self.d):
-            perm = np.random.permutation(n)
-            u = np.random.uniform(low=0, high=1, size=n)
-            samples[:, i] = (perm + u) / n
+        if self.centered:
+            samples = np.full((n, self.d), 0.5)
+        else:
+            samples = self.rg_sample((n, self.d))
 
+        for i in range(self.d):
+            samples[:, i] += self.rng.permutation(n)
+
+        samples /= n
+        self.num_generated += n
         return samples
 
     def reset(self):

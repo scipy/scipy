@@ -408,14 +408,14 @@ class TestHalton(QMCEngineTests):
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.73412877, 0.50416027],
-                              [0.5924405, 0.51284543],
-                              [0.57790629, 0.70797228],
-                              [0.44357794, 0.64496811],
-                              [0.23461223, 0.55712172],
-                              [0.45337347, 0.4440004],
-                              [0.73381992, 0.01751516],
-                              [0.52245145, 0.33099331]])
+    unscramble_nd = np.array([[0.39087123, 0.12083973],
+                              [0.2825595 , 0.36215457],
+                              [0.17209371, 0.79202772],
+                              [0.05642206, 0.98003189],
+                              [0.89038777, 0.44287828],
+                              [0.79662653, 0.5559996 ],
+                              [0.51618008, 0.23248484],
+                              [0.72754855, 0.66900669]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
@@ -424,33 +424,14 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample_centered(self):
-        engine = self.engine(d=2, scramble=False, centered=True)
+        engine = self.engine(d=2, scramble=True, centered=True)
         sample = engine.random(n=5)
-        out = np.array([[0.3, 0.5],
-                        [0.5, 0.3],
-                        [0.1, 0.7],
-                        [0.7, 0.7],
-                        [0.7, 0.1]])
+        out = np.array([[0.1, 0.5],
+                        [0.9, 0.3],
+                        [0.7, 0.9],
+                        [0.5, 0.7],
+                        [0.3, 0.1]])
         assert_almost_equal(sample, out, decimal=1)
-
-
-class TestOLHS(QMCEngineTests):
-    qmce = qmc.OrthogonalLatinHypercube
-    can_scramble = False
-    unscramble_nd = np.array([[0.01587123, 0.01618008],
-                              [0.24583973, 0.35254855],
-                              [0.66702772, 0.82434795],
-                              [0.80642206, 0.89219419],
-                              [0.2825595, 0.41900669],
-                              [0.98003189, 0.52861091],
-                              [0.54709371, 0.23248484],
-                              [0.48715457, 0.72209797]])
-
-    def test_continuing(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
-
-    def test_fast_forward(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
 
     def test_iid(self):
         # Checking independency of the random numbers generated
