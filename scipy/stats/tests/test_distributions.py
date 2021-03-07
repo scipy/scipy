@@ -2973,13 +2973,22 @@ class TestDifferentialEntropy(object):
     """
     Results are compared with the R package vsgoftest.
 
+    # library(vsgoftest)
+    #
+    # samp <- c(<values>)
+    # entropy.estimate(x = samp, window = <window_length>)
+
     """
 
     def test_differential_entropy_base(self):
 
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal(100)
+
         entropy = stats.differential_entropy(values)
+        assert abs(entropy - 1.342551) < 1.e-5
+
+        entropy = stats.differential_entropy(values, window_length=1)
         assert abs(entropy - 1.122044) < 1.e-5
 
         entropy = stats.differential_entropy(values, window_length=8)
@@ -2990,6 +2999,13 @@ class TestDifferentialEntropy(object):
         values = random_state.standard_normal((3, 100))
 
         entropy = stats.differential_entropy(values, axis=1)
+        assert_allclose(
+            entropy,
+            [1.342551, 1.341826, 1.293775],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=1)
         assert_allclose(
             entropy,
             [1.122044, 1.102944, 1.129616],

@@ -36,6 +36,7 @@ import numpy as np
 
 from ._constants import _XMAX
 from typing import Optional
+import math
 
 
 # These are the docstring parts used for substitution in specific
@@ -2857,7 +2858,7 @@ def entropy(pk, qk=None, base=None, axis=0):
 def differential_entropy(
     values: np.ndarray,
     *,
-    window_length: int = 1,
+    window_length: Optional[int] = None,
     base: Optional[float] = None,
     axis: int = 0,
 ) -> np.ndarray:
@@ -2872,22 +2873,23 @@ def differential_entropy(
     where :math:`m` is the window length parameter, :math:`X_{i} = X_1` if
     :math:`i < 1` and :math:`X_{i} = X_n` if :math:`i > n`.
 
-    This function will converge to the true differential entropy in the limit
-    when
-
-    .. math::
-        n \to \infty, \quad m \to \infty, \quad \frac{m}{n} \to 0
-
     Parameters
     ----------
     values : sequence
         Samples of the (continuous) distribution.
     window_length : int, optional
         Window length for computing Vasicek estimate. Must be an integer
-        between 1 and half of the sample size.
+        between 1 and half of the sample size. If ``None`` (the default) it
+        uses the heuristic value
+
+        .. math::
+            \left \lfloor \sqrt{n} + 0.5 \right \rfloor
+
+        where :math:`n` is the sample size. This heuristic was originally
+        proposed in [2]_ and has become common in the literature.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
-    axis: int, optional
+    axis : int, optional
         The axis along which the differential entropy is calculated.
         Default is 0.
 
@@ -2895,6 +2897,27 @@ def differential_entropy(
     -------
     entropy : float
         The calculated differential entropy.
+
+    Notes
+    -----
+    This function will converge to the true differential entropy in the limit
+    when
+
+    .. math::
+        n \to \infty, \quad m \to \infty, \quad \frac{m}{n} \to 0
+
+    The optimal choice of ``window_length`` for a given sample size, depends on
+    the (unknown) distribution. In general, the smoother the density of the
+    distribution, the larger is such optimal value of ``window_length`` [1]_.
+
+    References
+    ----------
+    .. [1] Vasicek, O. (1976). A test for normality based on sample entropy.
+           Journal of the Royal Statistical Society:
+           Series B (Methodological), 38(1), 54-59.
+    .. [2] Crzcgorzewski, P., & Wirczorkowski, R. (1999). Entropy-based
+           goodness-of-fit test for exponentiality. Communications in
+           Statistics-Theory and Methods, 28(5), 1183-1202.
 
     Examples
     --------
@@ -2906,29 +2929,19 @@ def differential_entropy(
     >>> random_state = np.random.RandomState(0)
     >>> values = random_state.standard_normal(100)
     >>> differential_entropy(values)
-    1.1220441777259473
+    1.342551187000946
 
     Compare with the true entropy:
 
     >>> float(norm.entropy())
     1.4189385332046727
 
-    The optimal choice of `window_length` for a given sample size, depends on
-    the (unknown) distribution. In general, the smoother the density of the
-    distribution, the larger is such optimal value of `window_length` [1]_:
-
-    >>> differential_entropy(values, window_length=8)
-    1.3494014875503249
-
-    References
-    ----------
-    .. [1] Vasicek, O. (1976). A test for normality based on sample entropy.
-           Journal of the Royal Statistical Society:
-           Series B (Methodological), 38(1), 54-59.
-
     """
     values = asarray(values)
     values = np.moveaxis(values, axis, 0)
+
+    if window_length is None:
+        window_length = math.floor(math.sqrt(len(values)) + 0.5)
 
     if not 2 <= 2 * window_length < len(values):
         raise ValueError(
