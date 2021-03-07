@@ -505,7 +505,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
     average : { 'mean', 'median' }, optional
-        Method to use when averaging periodograms. Defaults to 'mean'.
+        Method to use when averaging periodograms. If the spectrum is
+        complex, the average is computed separately for the real and
+        imaginary parts. Defaults to 'mean'.
 
         .. versionadded:: 1.2.0
 
