@@ -787,13 +787,13 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             \binom{c_1}{x_{11}}
             \binom{c_2}{x_{12}}
             \pi^{x_{11} + x_{12}}
-            (1 - \pi)^{n - x_{11} - x_{12}}
+            (1 - \pi)^{t - x_{11} - x_{12}}
 
     where :math:`T(X) \leq T(X_0)`, if `alternative` = "less"
     :math:`T(X) \geq T(X_0)`, if `alternative` = "greater"
     :math:`T(X) \geq |T(X_0)|`, if `alternative` = "two-sided".
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
-    and :math:`n` the total (sum of the 4 sample's element).
+    and :math:`t` the total (sum of the 4 sample's element).
 
     The returned p-value is the maximum p-value taken over the nuisance
     parameter :math:`\pi`, where :math:`0 \leq \pi \leq 1`.
