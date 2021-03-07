@@ -915,18 +915,6 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     overwrite_b : bool, optional
         Whether to overwrite data in ``b`` (may improve performance). Default
         is False.
-    turbo : bool, optional
-        *Deprecated by ``driver=gvd`` option*. Has no significant effect for
-        eigenvalue computations since no eigenvectors are requested.
-
-        ..Deprecated in v1.5.0
-    eigvals : tuple (lo, hi), optional
-        *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
-        and largest (in ascending order) eigenvalues and corresponding
-        eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
-        eigenvalues and eigenvectors are returned.
-
-        .. Deprecated in v1.5.0
     type : int, optional
         For the generalized problems, this keyword specifies the problem type
         to be solved for ``w`` and ``v`` (only takes 1, 2, 3 as possible
@@ -958,6 +946,18 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section of
         `scipy.linalg.eigh`.
+    turbo : bool, optional
+        *Deprecated by ``driver=gvd`` option*. Has no significant effect for
+        eigenvalue computations since no eigenvectors are requested.
+
+        ..Deprecated in v1.5.0
+    eigvals : tuple (lo, hi), optional
+        *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
+        and largest (in ascending order) eigenvalues and corresponding
+        eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
+        eigenvalues and eigenvectors are returned.
+
+        .. Deprecated in v1.5.0
 
     Returns
     -------
