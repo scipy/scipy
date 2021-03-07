@@ -1373,9 +1373,9 @@ def median_filter(input, size=None, footprint=None, output=None,
 
     Notes
     -----
-    For 2-dimensional images with `np.ubyte`, `np.single` or `np.double`
-    datatypes the specialised function `scipy.signal.medfilt2d` may be faster
-    but is limited to constant mode with ``cval=0``.
+    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes
+    the specialised function `scipy.signal.medfilt2d` may be faster. It is
+    however limited to constant mode with ``cval=0``.
 
     Examples
     --------
