@@ -2091,20 +2091,11 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     x, y : array_like
         Arrays of sample data.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
-
-          * 'two-sided': two-sided, see explanation in Notes
-          * 'less': one-sided, see explanation in Notes
-          * 'greater': one-sided, see explanation in Notes
-
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        See explanation in Notes.
     mode : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
-        The following options are available (default is 'auto'):
-
-          * 'auto' : see explanation in Notes
-          * 'exact' : see explanation in Notes
-          * 'approx' : see explanation in Notes
+        Default is 'auto'. See explanation in Notes.
 
     Returns
     -------
@@ -2122,7 +2113,7 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     -----
     The ``mode`` parameter is used in the following manner:
 
-    - For ``mode='auto'``, the p-value given is exact the sample sizes
+    - For ``mode='auto'``, the p-value given is exact when the sample sizes
       are both less than 55 and there are no ties, otherwise a normal
       approximation for the p-value is used.
     - For ``mode='exact'``, the p-value given is exact when there are
@@ -2202,16 +2193,16 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     >>> ansari(x1, x3, alternative='greater')
     AnsariResult(statistic=452.0, pvalue=0.0031401394)
 
-    As we can see, the p-value is indeed less than the level of significance.
-    Use of ``alternative='less'`` should thus yield a large p-value
+    As we can see, the p-value is indeed quite low. Use of
+    ``alternative='less'`` should thus yield a large p-value:
 
     >>> ansari(x1, x3, alternative='less')
     AnsariResult(statistic=452.0, pvalue=0.9971491082105786)
     """
-    if alternative not in ('two-sided', 'greater', 'less'):
+    if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
-    if mode not in ('auto', 'exact', 'approx'):
+    if mode not in {'auto', 'exact', 'approx'}:
         raise ValueError("'mode' must be 'auto', 'exact' or 'approx'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
@@ -2236,30 +2227,24 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
         warnings.warn("Ties preclude use of exact statistic.")
     if (mode == 'exact' and not repeats) or (mode == 'auto' and exact):
         astart, a1, ifault = statlib.gscale(n, m)
-        ind = AB - astart
+        ind = int(AB - astart)
         total = np.sum(a1, axis=0)
         if ind < len(a1)/2.0:
-            cind = int(ceil(ind))
-            if ind == cind:
-                cind = cind + 1
             if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[:cind], axis=0) / total
+                pval = 2.0 * np.sum(a1[:ind+1], axis=0) / total
             elif alternative == 'greater':
                 # see [3]_
-                pval = np.sum(a1[:cind], axis=0) / total
+                pval = np.sum(a1[:ind+1], axis=0) / total
             else:
                 # see [3]_
-                pval = 1.0 - np.sum(a1[:cind-1], axis=0) / total
+                pval = 1.0 - np.sum(a1[:ind], axis=0) / total
         else:
-            find = int(floor(ind))
-            if ind != find:
-                find = find + 1
             if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[find:], axis=0) / total
+                pval = 2.0 * np.sum(a1[ind:], axis=0) / total
             elif alternative == 'greater':
-                pval = 1.0 - np.sum(a1[find+1:], axis=0) / total
+                pval = 1.0 - np.sum(a1[ind+1:], axis=0) / total
             else:
-                pval = np.sum(a1[find:], axis=0) / total
+                pval = np.sum(a1[ind:], axis=0) / total
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
