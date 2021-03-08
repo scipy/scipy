@@ -221,7 +221,7 @@ class PchipInterpolator(CubicHermiteSpline):
     .. [1] F. N. Fritsch and J. Butland,
            A method for constructing local
            monotone piecewise cubic interpolants,
-           SIAM J. Sci. Comput., 5(2), 300–304 (1984).
+           SIAM J. Sci. Comput., 5(2), 300-304 (1984).
            :doi:`10.1137/0905021`.
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
