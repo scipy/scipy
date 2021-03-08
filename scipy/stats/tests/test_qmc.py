@@ -461,7 +461,7 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample_centered(self):
-        engine = self.engine(d=2, scramble=True, centered=True)
+        engine = self.engine(d=2, scramble=False, centered=True)
         sample = engine.random(n=5)
         out = np.array([[0.1, 0.5],
                         [0.9, 0.3],
