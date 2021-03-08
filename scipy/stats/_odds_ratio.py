@@ -40,7 +40,7 @@ def _solve(func):
 
     # Multiplicative factor by which to increase or decrease nc when
     # searching for a bracketing interval.
-    factor = 25.0
+    factor = 2.0
     # Find a bracketing interval.
     if value > 0:
         nc /= factor
@@ -196,10 +196,10 @@ class OddsRatioResult:
     table : numpy.ndarray
         The table that was passed to `odds_ratio`.
     kind : str
-        The ``kind`` that was passed to `odds_ratio`. This will be
+        The `kind` that was passed to `odds_ratio`. This will be
         either ``'conditional'`` or ``'sample'``.
     alternative : str
-        The ``alternative`` that was passed to `odds_ratio`.  This will
+        The `alternative` that was passed to `odds_ratio`.  This will
         be ``'two-sided'``, ``'less'`` or ``'greater'``.
     odds_ratio : float
         The computed odds ratio.
@@ -236,35 +236,30 @@ class OddsRatioResult:
 
         Notes
         -----
-        When ``kind`` is `'conditional'`, the limits of the confidence
-        interval are the conditional "exact confidence limits" as defined in
-        section 2 of Cornfield [2]_, and originally described by Fisher [1]_.
-        The conditional odds ratio and confidence interval are also discussed
-        in Section 4.1.2 of the text by Sahai and Khurshid [3]_.
+        When `kind` is ``'conditional'``, the limits of the confidence
+        interval are the conditional "exact confidence limits" as described
+        by Fisher [1]_. The conditional odds ratio and confidence interval are
+        also discussed in Section 4.1.2 of the text by Sahai and Khurshid [2]_.
 
-        When ``kind`` is ``'sample'``, the confidence interval is computed
+        When `kind` is ``'sample'``, the confidence interval is computed
         under the assumption that the logarithm of the odds ratio is normally
         distributed with standard error given by::
 
             se = sqrt(1/a + 1/b + 1/c + 1/d)
 
         where ``a``, ``b``, ``c`` and ``d`` are the elements of the
-        contingency table.  (See, for example, [3]_, section 3.1.3.2,
-        or [4]_, section 2.3.3).
+        contingency table.  (See, for example, [2]_, section 3.1.3.2,
+        or [3]_, section 2.3.3).
 
         References
         ----------
         .. [1] R. A. Fisher (1935), The logic of inductive inference,
                Journal of the Royal Statistical Society, Vol. 98, No. 1,
                pp. 39-82.
-        .. [2] J. Cornfield (1956), A statistical problem arising from
-               retrospective studies. In Neyman, J. (ed.), Proceedings of
-               the Third Berkeley Symposium on Mathematical Statistics
-               and Probability 4, pp. 135-148.
-        .. [3] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
+        .. [2] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
                Methods, Techniques, and Applications, CRC Press LLC, Boca
                Raton, Florida.
-        .. [4] Alan Agresti, An Introduction to Categorical Data Analyis
+        .. [3] Alan Agresti, An Introduction to Categorical Data Analyis
                (second edition), Wiley, Hoboken, NJ, USA (2007).
         """
         if self.kind == 'conditional':
@@ -359,13 +354,20 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         The object has the method `odds_ratio_ci` that computes
         the confidence interval of the odds ratio.
 
+    Notes
+    -----
+    The conditional odds ratio was discussed by Fisher (see "Example 1"
+    of [1]_).  Texts that cover the odds ratio include [2]_ and [3]_.
+
     References
     ----------
-    .. [1] J. Cornfield (1956), A statistical problem arising from
-           retrospective studies. In Neyman, J. (ed.), Proceedings of
-           the Third Berkeley Symposium on Mathematical Statistics and
-           Probability 4, pp. 135-148.
-    .. [2] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
+    .. [1] R. A. Fisher (1935), The logic of inductive inference,
+           Journal of the Royal Statistical Society, Vol. 98, No. 1,
+           pp. 39-82.
+    .. [2] Breslow NE, Day NE (1980). Statistical methods in cancer research.
+           Volume I - The analysis of case-control studies. IARC Sci Publ.
+           (32):5-338. PMID: 7216345. (See section 4.2.)
+    .. [3] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
            Methods, Techniques, and Applications, CRC Press LLC, Boca
            Raton, Florida.
 
@@ -392,8 +394,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     Interchanging the rows or columns of the contingency table inverts
     the odds ratio, so it is import to understand the meaning of labels
     given to the rows and columns of the table when interpreting the
-    odds ratio.  This is in contrast to the p-value, which is invariant
-    under interchanging the rows or columns.
+    odds ratio.
 
     Consider a hypothetical example where it is hypothesized that
     exposure to a certain chemical is assocated with increased occurrence
@@ -407,34 +408,39 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     The question we ask is "Is exposure to the chemical associated with
     increased risk of the disease?"
 
-    Compute the test, and first check the p-value.
+    Compute the odds ratio:
 
     >>> from scipy.stats.contingency import odds_ratio
     >>> test = odds_ratio([[7, 15], [58, 472]])
-    >>> test.pvalue
-    0.009208708293019454
-
-    The p-value suggests that the apparent association of exposure
-    and cases is significant.
-
     >>> test.odds_ratio
     3.7836687705553564
 
-    The conditional odds ratio is larger than 1, which also suggests
-    there is an association.  We can compute 95% confidence interval
-    for the odds ratio:
+    For this sample, the odds of getting the disease for those who have
+    been exposed to the chemical are almost 3.8 times that of those who
+    have not been exposed.
+
+    Check the p-value:
+
+    >>> test.pvalue
+    0.009208708293019454
+
+    The null hypothesis for this test is that the odds ratio is 1.
+    The p-value tells us that the probability of getting such an
+    extreme odds ratio under the null hypothesis is 0.0092.
+
+    We can compute the 95% confidence interval for the odds ratio:
 
     >>> test.odds_ratio_ci(confidence_level=0.95)
     ConfidenceInterval(low=1.251482913226682, high=10.363493716701287)
 
     The 95% confidence interval for the conditional odds ratio is
-    approximately (1.25, 10.4), which is strong evidence that the
-    odds ratio is greater than 1.
+    approximately (1.25, 10.4), which is evidence that the odds ratio
+    is greater than 1.
     """
     if kind not in ['conditional', 'sample']:
-        raise ValueError("kind must be 'conditional' or 'sample'.")
+        raise ValueError("`kind` must be 'conditional' or 'sample'.")
     if alternative not in ['two-sided', 'less', 'greater']:
-        raise ValueError("alternative must be 'two-sided', 'less' or "
+        raise ValueError("`alternative` must be 'two-sided', 'less' or "
                          "'greater'.")
 
     c = np.asarray(table)
@@ -452,7 +458,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         raise ValueError("All values in `table` must be nonnegative.")
 
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
-        # If both values in a row or column are zero, the p-value is 1 and
+        # If both values in a row or column are zero, the p-value is NaN and
         # the odds ratio is NaN.
         result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
                                  odds_ratio=np.nan, pvalue=np.nan)
@@ -461,7 +467,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     if kind == 'sample':
         oddsratio = _sample_odds_ratio(c)
         log_or = np.log(oddsratio)
-        se = np.sqrt((1/table).sum())
+        se = np.sqrt((1/c).sum())
         if alternative == 'two-sided':
             pvalue = 2*ndtr(-abs(log_or)/se)
         elif alternative == 'less':

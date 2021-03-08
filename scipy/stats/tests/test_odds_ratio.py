@@ -82,3 +82,27 @@ class TestOddsRatio:
         assert_equal(result.odds_ratio, np.nan)
         ci = result.odds_ratio_ci()
         assert_equal((ci.low, ci.high), (0, np.inf))
+
+    @pytest.mark.parametrize('kind', ['sample', 'conditional'])
+    @pytest.mark.parametrize('bad_table', [123, "foo", [10, 11, 12]])
+    def test_input_validation(self, kind, bad_table):
+        with pytest.raises(ValueError, match="Invalid shape"):
+            odds_ratio(bad_table, kind=kind)
+
+    def test_sample_odds_ratio_ci(self):
+        # Compare the sample odds ratio confidence interval to the R function
+        # oddsratio.wald from the epitools package, e.g.
+        # > library(epitools)
+        # > table = matrix(c(10, 20, 41, 93), nrow=2, ncol=2, byrow=TRUE)
+        # > result = oddsratio.wald(table)
+        # > result$measure
+        #           odds ratio with 95% C.I.
+        # Predictor  estimate     lower    upper
+        #   Exposed1 1.000000        NA       NA
+        #   Exposed2 1.134146 0.4879913 2.635883
+
+        table = [[10, 20], [41, 93]]
+        result = odds_ratio(table, kind='sample')
+        assert_allclose(result.odds_ratio, 1.134146, rtol=1e-6)
+        ci = result.odds_ratio_ci()
+        assert_allclose([ci.low, ci.high], [0.4879913, 2.635883], rtol=1e-6)
