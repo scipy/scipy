@@ -2831,12 +2831,13 @@ def test_percentileofscore():
     assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
 
-PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
-                                   'chi2',     # Pearson's
-                                   'log',      # G-test (log-likelihood)
-                                   'mod_log',  # Modified log-likelihood
-                                   'cr',       # Cressie-Read (lambda=2/3)
-                                   ])
+PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
+                          ['f_obs', 'f_exp', 'ddof', 'axis',
+                           'chi2',     # Pearson's
+                           'log',      # G-test (log-likelihood)
+                           'mod_log',  # Modified log-likelihood
+                           'cr',       # Cressie-Read (lambda=2/3)
+                          ])
 
 # The details of the first two elements in power_div_1d_cases are used
 # in a test in TestPowerDivergence.  Check that code before making
@@ -3845,8 +3846,9 @@ class Test_ttest_ind_permutations():
 
     # data for bigger test
     np.random.seed(0)
-    rvs1 = stats.norm.rvs(loc=5, scale=10, size=500).reshape(100, 5)
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)
+    rvs1 = stats.norm.rvs(loc=5, scale=10, # type: ignore
+                          size=500).reshape(100, 5)
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100) # type: ignore
 
     p_d = [0, 0.676]  # desired pvalues
     p_d_gen = [0, 0.672]  # desired pvalues for Generator seed

@@ -4145,6 +4145,11 @@ class TestCOO(sparse_test_class(getset=False,
         with pytest.raises(ValueError, match=r'inconsistent shapes'):
             coo_matrix([0, 11, 22, 33], shape=(4, 4))
 
+    def test_constructor_data_ij_dtypeNone(self):
+        data = [1]
+        coo = coo_matrix((data, ([0], [0])), dtype=None)
+        assert coo.dtype == np.array(data).dtype
+
     @pytest.mark.xfail(run=False, reason='COO does not have a __getitem__')
     def test_iterator(self):
         pass
@@ -4338,6 +4343,14 @@ class TestBSR(sparse_test_class(getset=False,
         with assert_raises(ValueError):
             # mismatching blocksize
             bsr_matrix((data, indices, indptr), blocksize=(1, 1))
+
+    def test_default_dtype(self):
+        # As a numpy array, `values` has shape (2, 2, 1).
+        values = [[[1], [1]], [[1], [1]]]
+        indptr = np.array([0, 2], dtype=np.int32)
+        indices = np.array([0, 1], dtype=np.int32)
+        b = bsr_matrix((values, indices, indptr), blocksize=(2, 1))
+        assert b.dtype == np.array(values).dtype
 
     def test_bsr_tocsr(self):
         # check native conversion from BSR to CSR
