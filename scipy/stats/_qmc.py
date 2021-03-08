@@ -866,8 +866,9 @@ class LatinHypercube(QMCEngine):
         else:
             samples = self.rg_sample((n, self.d))
 
+        perms = np.tile(np.arange(1, n + 1), (self.d, 1)).T
         for i in range(self.d):
-            samples[:, i] += self.rng.permutation(n)
+            np.random.shuffle(perms[:, i])
 
         samples = (perms - samples) / n
         self.num_generated += n
