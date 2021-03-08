@@ -1,3 +1,2 @@
 mypy
 typing_extensions
-git+git://github.com/numpy/numpy-stubs.git@master
