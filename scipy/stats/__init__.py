@@ -430,15 +430,6 @@ Warnings used in :mod:`scipy.stats`
    PearsonRNearConstantInputWarning
    SpearmanRConstantInputWarning
 
-
-Classes returned by some functions
-==================================
-
-.. autosummary::
-   :toctree: generated/
-
-   scipy.stats._result_classes.OddsRatioResult
-
 """
 
 from .stats import *

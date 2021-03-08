@@ -208,7 +208,8 @@ class OddsRatioResult:
 
     Methods
     -------
-    odds_ratio_ci
+    odds_ratio_ci :
+        Confidence interval for the odds ratio.
     """
 
     table: np.ndarray
