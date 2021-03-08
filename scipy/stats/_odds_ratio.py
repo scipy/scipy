@@ -434,8 +434,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     ConfidenceInterval(low=1.251482913226682, high=10.363493716701287)
 
     The 95% confidence interval for the conditional odds ratio is
-    approximately (1.25, 10.4), which is evidence that the odds ratio
-    is greater than 1.
+    approximately (1.25, 10.4).
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")
