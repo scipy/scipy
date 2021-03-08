@@ -862,7 +862,7 @@ class LatinHypercube(QMCEngine):
 
         """
         if self.centered:
-            samples = np.full((n, self.d), 0.5)
+            samples = 0.5
         else:
             samples = self.rg_sample((n, self.d))
 
