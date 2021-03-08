@@ -124,6 +124,8 @@ Inferential Stats
    kstest
    ks_1samp
    ks_2samp
+   cramervonmises
+   cramervonmises_2samp
    epps_singleton_2samp
    mannwhitneyu
    ranksums
@@ -188,9 +190,11 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
-from ._hypotests import epps_singleton_2samp, cramervonmises, somersd
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
+from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
+                         cramervonmises_2samp)
+
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -215,7 +219,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'alexandergovern', 'page_trend_test', 'somersd']
+           'cramervonmises_2samp', 'alexandergovern', 'page_trend_test',
+           'somersd']
 
 
 def _contains_nan(a, nan_policy='propagate'):

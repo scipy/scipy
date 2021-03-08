@@ -3481,10 +3481,6 @@ class invgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    When :math:`\mu` is too small, evaluating the cumulative distribution
-    function will be inaccurate due to ``cdf(mu -> 0) = inf * 0``.
-    NaNs are returned for :math:`\mu \le 0.0028`.
-
     %(example)s
 
     """
@@ -3501,12 +3497,27 @@ class invgauss_gen(rv_continuous):
     def _logpdf(self, x, mu):
         return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
 
+    # approach adapted from equations in
+    # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
+    # not R code. see gh-13616
+
+    def _logcdf(self, x, mu):
+        fac = 1 / np.sqrt(x)
+        a = _norm_logcdf(fac * ((x / mu) - 1))
+        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        return a + np.log1p(np.exp(b - a))
+
+    def _logsf(self, x, mu):
+        fac = 1 / np.sqrt(x)
+        a = _norm_logsf(fac * ((x / mu) - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        return a + np.log1p(-np.exp(b - a))
+
+    def _sf(self, x, mu):
+        return np.exp(self._logsf(x, mu))
+
     def _cdf(self, x, mu):
-        fac = np.sqrt(1.0/x)
-        # Numerical accuracy for small `mu` is bad.  See #869.
-        C1 = _norm_cdf(fac*(x-mu)/mu)
-        C1 += np.exp(1.0/mu) * _norm_cdf(-fac*(x+mu)/mu) * np.exp(1.0/mu)
-        return C1
+        return np.exp(self._logcdf(x, mu))
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
@@ -8350,11 +8361,20 @@ class wald_gen(invgauss_gen):
         # wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
         return invgauss._pdf(x, 1.0)
 
+    def _cdf(self, x):
+        return invgauss._cdf(x, 1.0)
+
+    def _sf(self, x):
+        return invgauss._sf(x, 1.0)
+
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
 
-    def _cdf(self, x):
-        return invgauss._cdf(x, 1.0)
+    def _logcdf(self, x):
+        return invgauss._logcdf(x, 1.0)
+
+    def _logsf(self, x):
+        return invgauss._logsf(x, 1.0)
 
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0

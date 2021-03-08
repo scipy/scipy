@@ -5,15 +5,7 @@ from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
 from ._discrete_distns import binom
-
-
-@dataclass
-class ConfidenceInterval:
-    """
-    Class for confidence intervals.
-    """
-    low: float
-    high: float
+from ._common import ConfidenceInterval
 
 
 class BinomTestResult:
@@ -34,6 +26,11 @@ class BinomTestResult:
         The p-value of the hypothesis test.
     proportion_estimate : float
         The estimate of the proportion of successes.
+
+    Methods
+    -------
+    proportion_ci :
+        Compute the confidence interval for the estimate of the proportion.
 
     """
     def __init__(self, k, n, alternative, pvalue, proportion_estimate):
@@ -231,7 +228,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
 
     Returns
     -------
-    result : `BinomTestResult` instance
+    result : `~scipy.stats._result_classes.BinomTestResult` instance
         The return value is an object with the following attributes:
 
         k : int

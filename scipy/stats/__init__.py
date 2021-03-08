@@ -280,6 +280,7 @@ Statistical tests
    ttest_rel
    chisquare
    cramervonmises
+   cramervonmises_2samp
    power_divergence
    kstest
    ks_1samp
@@ -314,14 +315,6 @@ Statistical tests
    skewtest
    kurtosistest
    normaltest
-
-Objects returned by some statistical tests
-------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   BinomTestResult
 
 
 Quasi-Monte Carlo
@@ -400,6 +393,7 @@ Contingency table functions
    contingency.crosstab
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
    contingency.association
    contingency.odds_ratio
    fisher_exact
@@ -446,10 +440,11 @@ Classes returned by some functions
    scipy.stats._result_classes.OddsRatioResult
 
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *
-from ._binomtest import binomtest, BinomTestResult
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
