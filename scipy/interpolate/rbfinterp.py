@@ -4,73 +4,14 @@ from functools import lru_cache
 from itertools import combinations_with_replacement
 
 import numpy as np
-from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
-from scipy.special import xlogy, binom
+from scipy.special import binom
+
+from ._rbfinterp_pythran import _build_system, _evaluate
+
 
 
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
-
-
-def _distance(x, y):
-    """
-    Returns a distance matrix between `x` and `y`
-
-    Parameters
-    ----------
-    x : (..., n, d) ndarray
-    y : (..., m, d) ndarray
-
-    Returns
-    -------
-    (..., n, m) ndarray
-
-    """
-    if (x.ndim == 2) & (y.ndim == 2):
-        # if possible, use the faster function
-        return cdist(x, y)
-    else:
-        return np.linalg.norm(x[..., None, :] - y[..., None, :, :], axis=-1)
-
-
-def _linear(r):
-    """linear / 1st order polyharmonic spline"""
-    return -r
-
-
-def _tps(r):
-    """thin plate spline / 2nd order polyharmonic spline"""
-    return xlogy(r**2, r)
-
-
-def _cubic(r):
-    """cubic / 3rd order polyharmonic spline"""
-    return r*r*r  # faster than r**3
-
-
-def _quintic(r):
-    """quintic / 5th order polyharmonic spline"""
-    return -r*r*r*r*r  # faster than r**5
-
-
-def _mq(r):
-    """multiquadratic"""
-    return -np.sqrt(r**2 + 1)
-
-
-def _imq(r):
-    """inverse multiquadratic"""
-    return 1/np.sqrt(r**2 + 1)
-
-
-def _iq(r):
-    """inverse quadratic"""
-    return 1/(r**2 + 1)
-
-
-def _ga(r):
-    """gaussian"""
-    return np.exp(-r**2)
 
 
 @lru_cache()
@@ -92,24 +33,12 @@ def _monomial_powers(ndim, degree):
     return out
 
 
-def _vandermonde(x, degree):
-    """
-    Returns monomials evaluated at `x`. The monomials span the space of
-    polynomials with the specified degree
+# The RBFs that are implemented
+_AVAILABLE = {'linear', 'tps', 'cubic', 'quintic', 'mq', 'imq', 'iq', 'ga'}
 
-    Parameters
-    ----------
-    x : (..., d) float array
-    degree : int
 
-    Returns
-    -------
-    (..., p) float array
-
-    """
-    pwr = _monomial_powers(x.shape[-1], degree)
-    out = np.product(x[..., None, :]**pwr, axis=-1)
-    return out
+# The shape parameter does not need to be specified when using these RBFs
+_SCALE_INVARIANT = {'linear', 'tps', 'cubic', 'quintic'}
 
 
 # For RBFs that are conditionally positive definite of order m, the interpolant
@@ -126,33 +55,18 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-_NAME_TO_FUNC = {
-    'linear': _linear,
-    'tps': _tps,
-    'cubic': _cubic,
-    'quintic': _quintic,
-    'mq': _mq,
-    'imq': _imq,
-    'iq': _iq,
-    'ga': _ga
-    }
-
-
-# The shape parameter does not need to be specified when using these kernels
-_SCALE_INVARIANT = {'linear', 'tps', 'cubic', 'quintic'}
-
-
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     """
     Sanitize __init__ arguments for RBFInterpolator and KNearestRBFInterpolator
     """
-    y = np.asarray(y, dtype=float)
+    y = np.asarray(y, dtype=float, order='C')
     if y.ndim != 2:
         raise ValueError('Expected `y` to be a 2-dimensional array')
 
     ny, ndim = y.shape
 
-    d = np.asarray(d)
+    dtype = complex if np.iscomplexobj(d) else float
+    d = np.asarray(d, dtype=dtype, order='C')
     if d.shape[0] != ny:
         raise ValueError(
             'Expected the first axis of `d` to have length %d' % ny
@@ -161,29 +75,24 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     if np.isscalar(smoothing):
         smoothing = np.full(ny, smoothing, dtype=float)
     else:
-        smoothing = np.asarray(smoothing, dtype=float)
+        smoothing = np.asarray(smoothing, dtype=float, order='C')
         if smoothing.shape != (ny,):
             raise ValueError(
                 'Expected `smoothing` to be a scalar or have shape (%d,)' % ny
                 )
 
-    if callable(kernel):
-        kernel_func = kernel
-    elif kernel in _NAME_TO_FUNC:
-        kernel_func = _NAME_TO_FUNC[kernel]
-    else:
+    if kernel not in _AVAILABLE:
         raise ValueError(
-            'Expected `kernel` to be callable or one of {%s}' %
-            ', '.join('"%s"' % kn for kn in _NAME_TO_FUNC.keys())
+            'Expected `kernel` to be one of {%s}' %
+            ', '.join('"%s"' % kn for kn in _AVAILABLE)
             )
 
     if epsilon is None:
-        if callable(kernel) | (kernel in _SCALE_INVARIANT):
+        if kernel in _SCALE_INVARIANT:
             epsilon = 1.0
         else:
             raise ValueError(
-                '`epsilon` must be specified if `kernel` is not callable or '
-                'one of {%s}.' %
+                '`epsilon` must be specified if `kernel` is not one of {%s}.' %
                 ', '.join('"%s"' % kn for kn in _SCALE_INVARIANT)
                 )
 
@@ -222,7 +131,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
             'is %d and the number of dimensions is %d' % (nmonos, degree, ndim)
             )
 
-    return y, d, smoothing, kernel_func, epsilon, degree, k
+    return y, d, smoothing, kernel, epsilon, degree, k
 
 
 class RBFInterpolator:
@@ -368,49 +277,28 @@ class RBFInterpolator:
             y, d, smoothing, kernel, epsilon, degree, None
             )
 
-        ny = y.shape[0]
+        ny, ndim = y.shape
         data_shape = d.shape[1:]
         d = d.reshape((ny, -1))
+        powers = _monomial_powers(ndim, degree)
+        shift = y.mean(axis=0)
+        scale = y.ptp(axis=0).max() if (ny > 1) else 1.0
+        lhs, rhs = _build_system(
+            y, d, smoothing, kernel, epsilon, powers, shift, scale
+            )
 
-        # Create the matrix of RBFs centered and evaluated at y, plus smoothing
-        # on the diagonals
-        yeps = y*epsilon
-        Kyy = kernel(_distance(yeps, yeps))
-        Kyy[range(ny), range(ny)] += smoothing
-
-        # Create the matrix of monomials evaluated at y. Normalize the domain
-        # to be within [-1, 1]
-        center = y.mean(axis=0)
-        if ny > 1:
-            scale = y.ptp(axis=0).max()
-        else:
-            scale = 1.0
-
-        yhat = (y - center)/scale
-        Py = _vandermonde(yhat, degree)
-
-        nmonos = Py.shape[1]
-        Z = np.zeros((nmonos, nmonos), dtype=float)
-
-        LHS = np.block([[Kyy, Py], [Py.T, Z]])
-
-        z = np.zeros((nmonos, d.shape[1]), dtype=float)
-        rhs = np.concatenate((d, z), axis=0)
-
-        coeff = np.linalg.solve(LHS, rhs)
-        kernel_coeff, poly_coeff = coeff[:ny], coeff[ny:]
+        coeffs = np.linalg.solve(lhs, rhs)
 
         self.y = y
         self.kernel = kernel
         self.epsilon = epsilon
-        self.degree = degree
-        self.center = center
+        self.powers = powers
+        self.shift = shift
         self.scale = scale
-        self.kernel_coeff = kernel_coeff
-        self.poly_coeff = poly_coeff
+        self.coeffs = coeffs
         self.data_shape = data_shape
 
-    def __call__(self, x, chunk_size=1000):
+    def __call__(self, x):
         """
         Evaluates the interpolant at `x`
 
@@ -418,9 +306,6 @@ class RBFInterpolator:
         ----------
         x : (Q, N) array_like
             Interpolation point coordinates
-        chunk_size : int, optional
-            Break `x` into chunks with this size and evaluate the interpolant
-            for each chunk
 
         Returns
         -------
@@ -428,35 +313,21 @@ class RBFInterpolator:
             Values of the interpolant at `x`
 
         """
-        x = np.asarray(x, dtype=float)
+        x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
             raise ValueError('Expected `x` to be a 2-dimensional array')
 
-        if x.shape[1] != self.y.shape[1]:
+        nx, ndim = x.shape
+        if ndim != self.y.shape[1]:
             raise ValueError(
                 'Expected the second axis of `x` to have length %d' %
                 self.y.shape[1]
                 )
 
-        nx = x.shape[0]
-        if chunk_size is not None:
-            # kernel_coeff is complex if d was complex, otherwise it should be
-            # a float
-            dtype = self.kernel_coeff.dtype
-            out = np.zeros((nx,) + self.data_shape, dtype=dtype)
-            for start in range(0, nx, chunk_size):
-                stop = start + chunk_size
-                out[start:stop] = self(x[start:stop], chunk_size=None)
-
-            return out
-
-        xeps, yeps = x*self.epsilon, self.y*self.epsilon
-        Kxy = self.kernel(_distance(xeps, yeps))
-
-        xhat = (x - self.center)/self.scale
-        Px = _vandermonde(xhat, self.degree)
-
-        out = Kxy.dot(self.kernel_coeff) + Px.dot(self.poly_coeff)
+        out = _evaluate(
+            x, self.y, self.kernel, self.epsilon, self.powers, self.shift,
+            self.scale, self.coeffs
+            )
         out = out.reshape((nx,) + self.data_shape)
         return out
 
@@ -517,8 +388,8 @@ class KNearestRBFInterpolator:
 
     """
     def __init__(self, y, d,
-                 smoothing=0.0,
                  k=50,
+                 smoothing=0.0,
                  kernel='tps',
                  epsilon=None,
                  degree=None):
@@ -526,21 +397,27 @@ class KNearestRBFInterpolator:
             y, d, smoothing, kernel, epsilon, degree, k
             )
 
+        ny, ndim = y.shape
         data_shape = d.shape[1:]
-        d = d.reshape((y.shape[0], -1))
+        d = d.reshape((ny, -1))
+        powers = _monomial_powers(ndim, degree)
+        shift = y.mean(axis=0)
+        scale = y.ptp(axis=0).max() if (ny > 1) else 1.0
         tree = cKDTree(y)
 
         self.y = y
         self.d = d
-        self.smoothing = smoothing
         self.k = k
+        self.smoothing = smoothing
         self.kernel = kernel
         self.epsilon = epsilon
-        self.degree = degree
+        self.powers = powers
+        self.shift = shift
+        self.scale = scale
         self.tree = tree
         self.data_shape = data_shape
 
-    def __call__(self, x, chunk_size=1000):
+    def __call__(self, x):
         """
         Evaluates the interpolant at `x`
 
@@ -548,9 +425,6 @@ class KNearestRBFInterpolator:
         ----------
         x : (Q, N) array_like
             Interpolation point coordinates
-        chunk_size : int, optional
-            Break `x` into chunks with this size and evaluate the interpolant
-            for each chunk
 
         Returns
         -------
@@ -558,25 +432,19 @@ class KNearestRBFInterpolator:
             Values of the interpolant at `x`
 
         """
-        x = np.asarray(x, dtype=float)
+        x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
             raise ValueError('Expected `x` to be a 2-dimensional array')
 
-        if x.shape[1] != self.y.shape[1]:
+        nx, ndim = x.shape
+        if ndim != self.y.shape[1]:
             raise ValueError(
                 'Expected the second axis of `x` to have length %d' %
                 self.y.shape[1]
                 )
 
-        nx = x.shape[0]
-        if chunk_size is not None:
-            dtype = complex if np.iscomplexobj(self.d) else float
-            out = np.zeros((nx,) + self.data_shape, dtype=dtype)
-            for start in range(0, nx, chunk_size):
-                stop = start + chunk_size
-                out[start:stop] = self(x[start:stop], chunk_size=None)
-
-            return out
+        dtype = complex if np.iscomplexobj(self.d) else float
+        out = np.zeros((nx,) + self.data_shape, dtype=dtype)
 
         # get the indices of the k nearest observations for each interpolation
         # point
@@ -589,57 +457,24 @@ class KNearestRBFInterpolator:
         # the neighborhoods unique so that we only compute the interpolation
         # coefficients once for each neighborhood
         nbr, inv = np.unique(np.sort(nbr, axis=1), return_inverse=True, axis=0)
-        nnbr = nbr.shape[0]
+        for i, yidx in enumerate(nbr):
+            xidx, = (inv == i).nonzero()
+            # `yidx` are the indices of the observations in this neighborhood.
+            # `xidx` are the indices of the interpolation points that are using
+            # this neighbood
+            ynbr = self.y[yidx]
+            dnbr = self.d[yidx]
+            snbr = self.smoothing[yidx]
+            lhs, rhs = _build_system(
+                ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
+                self.shift, self.scale
+                )
 
-        # Get the observation data for each neighborhood
-        y, d, smoothing = self.y[nbr], self.d[nbr], self.smoothing[nbr]
+            coeffs = np.linalg.solve(lhs, rhs)
 
-        # build the left-hand-side interpolation matrix consisting of the RBF
-        # and monomials evaluated at each neighborhood
-        yeps = y*self.epsilon
-        Kyy = self.kernel(_distance(yeps, yeps))
-        Kyy[:, range(self.k), range(self.k)] += smoothing
-        # Normalize each neighborhood to be within [-1, 1] for the monomials
-        centers = y.mean(axis=1)
-        if self.k > 1:
-            scales = y.ptp(axis=1).max(axis=1)
-        else:
-            scales = np.ones((nnbr,), dtype=float)
+            out[xidx] = _evaluate(
+                x[xidx], ynbr, self.kernel, self.epsilon, self.powers,
+                self.shift, self.scale, coeffs
+                ).reshape((-1,) + self.data_shape)
 
-        yhat = (y - centers[:, None])/scales[:, None, None]
-        Py = _vandermonde(yhat, self.degree)
-        PyT = np.transpose(Py, (0, 2, 1))
-        nmonos = Py.shape[2]
-        Z = np.zeros((nnbr, nmonos, nmonos), dtype=float)
-        LHS = np.block([[Kyy, Py], [PyT, Z]])
-
-        # build the right-hand-side data vector consisting of the observations
-        # for each neighborhood and extra zeros
-        z = np.zeros((nnbr, nmonos, d.shape[2]), dtype=float)
-        rhs = np.concatenate((d, z), axis=1)
-
-        # solve for the RBF and polynomial coefficients for each neighborhood
-        coeff = np.linalg.solve(LHS, rhs)
-
-        # expand the arrays from having one entry per neighborhood to one entry
-        # per interpolation point
-        coeff = coeff[inv]
-        yeps = yeps[inv]
-        centers = centers[inv]
-        scales = scales[inv]
-
-        # evaluate at the interpolation points
-        xeps = x*self.epsilon
-        Kxy = self.kernel(_distance(xeps[:, None], yeps))[:, 0]
-
-        xhat = (x - centers)/scales[:, None]
-        Px = _vandermonde(xhat, self.degree)
-
-        kernel_coeff = coeff[:, :self.k]
-        poly_coeff = coeff[:, self.k:]
-
-        Kxy = Kxy[:, :, None]
-        Px = Px[:, :, None]
-        out = (Kxy*kernel_coeff).sum(axis=1) + (Px*poly_coeff).sum(axis=1)
-        out = out.reshape((nx,) + self.data_shape)
         return out
