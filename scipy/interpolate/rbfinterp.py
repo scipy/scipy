@@ -160,9 +160,6 @@ class RBFInterpolator:
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
-        Alternatively, this can be a callable that takes an array of distances
-        as input and returns an array with the same shape. The callable should
-        be a positive definite or conditionally positive definite RBF.
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
@@ -359,9 +356,6 @@ class KNearestRBFInterpolator:
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
-        Alternatively, this can be a callable that takes an array of distances
-        as input and returns an array with the same shape. The callable should
-        be a positive definite or conditionally positive definite RBF.
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
