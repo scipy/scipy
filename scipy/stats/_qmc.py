@@ -869,7 +869,7 @@ class LatinHypercube(QMCEngine):
         for i in range(self.d):
             samples[:, i] += self.rng.permutation(n)
 
-        samples /= n
+        samples = (perms - samples) / n
         self.num_generated += n
         return samples
 
