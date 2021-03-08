@@ -445,14 +445,13 @@ class TestHalton(QMCEngineTests):
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.39087123, 0.12083973],
-                              [0.2825595 , 0.36215457],
-                              [0.17209371, 0.79202772],
-                              [0.05642206, 0.98003189],
-                              [0.89038777, 0.44287828],
-                              [0.79662653, 0.5559996 ],
-                              [0.51618008, 0.23248484],
-                              [0.72754855, 0.66900669]])
+    unscramble_nd = np.array([[0.3424405 , 0.26284543],
+                              [0.20290629, 0.83297228],
+                              [0.06857794, 0.89496811],
+                              [0.98461223, 0.43212172],
+                              [0.82837347, 0.5690004 ],
+                              [0.60881992, 0.14251516],
+                              [0.64745145, 0.70599331]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")

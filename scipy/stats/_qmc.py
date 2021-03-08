@@ -813,27 +813,27 @@ class LatinHypercube(QMCEngine):
     >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.0454672 , 0.46335167],
-           [0.95947309, 0.13525093],
-           [0.47822191, 0.86656279],
-           [0.71966175, 0.23734684],
-           [0.33455121, 0.78836057]])
+    array([[0.1545328 , 0.53664833],
+           [0.84052691, 0.06474907],
+           [0.52177809, 0.93343721],
+           [0.68033825, 0.36265316],
+           [0.26544879, 0.61163943]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.022157345617398905
+    0.019558034794794565
 
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[0.45467204, 3.390055  ],
-           [9.59473091, 2.4057528 ],
-           [4.7822191 , 4.59968836],
-           [7.19661751, 2.71204051],
-           [3.34551209, 4.36508172]])
+    array([[1.54532796, 3.609945  ],
+           [8.40526909, 2.1942472 ],
+           [5.2177809 , 4.80031164],
+           [6.80338249, 3.08795949],
+           [2.65448791, 3.83491828]])
 
     """
 
@@ -866,9 +866,10 @@ class LatinHypercube(QMCEngine):
         else:
             samples = self.rg_sample((n, self.d))
 
-        perms = np.tile(np.arange(1, n + 1), (self.d, 1)).T
+        perms = np.tile(np.arange(1, n + 1), (self.d, 1))
         for i in range(self.d):
-            np.random.shuffle(perms[:, i])
+            self.rng.shuffle(perms[i, :])
+        perms = perms.T
 
         samples = (perms - samples) / n
         self.num_generated += n
