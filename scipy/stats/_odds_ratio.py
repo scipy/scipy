@@ -414,7 +414,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     >>> from scipy.stats.contingency import odds_ratio
     >>> test = odds_ratio([[7, 15], [58, 472]])
     >>> test.odds_ratio
-    3.7836687705553564
+    3.7836687705553493
 
     For this sample, the odds of getting the disease for those who have
     been exposed to the chemical are almost 3.8 times that of those who
@@ -432,7 +432,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     We can compute the 95% confidence interval for the odds ratio:
 
     >>> test.odds_ratio_ci(confidence_level=0.95)
-    ConfidenceInterval(low=1.251482913226682, high=10.363493716701287)
+    ConfidenceInterval(low=1.2514829132266785, high=10.363493716701269)
 
     The 95% confidence interval for the conditional odds ratio is
     approximately (1.25, 10.4).

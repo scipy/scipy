@@ -11,16 +11,12 @@ Functions for creating and analyzing contingency tables.
 
    chi2_contingency
    relative_risk
+   odds_ratio
    crosstab
    association
 
    expected_freq
    margins
-<<<<<<< HEAD
-   association
-   odds_ratio
-=======
->>>>>>> master
 
 """
 
