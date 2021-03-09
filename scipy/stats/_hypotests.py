@@ -791,9 +791,12 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             \pi^{x_{11} + x_{12}}
             (1 - \pi)^{t - x_{11} - x_{12}}
 
-    where :math:`T(X) \leq T(X_0)`, if `alternative` = "less"
-    :math:`T(X) \geq T(X_0)`, if `alternative` = "greater"
-    :math:`T(X) \geq |T(X_0)|`, if `alternative` = "two-sided".
+    where the sum is over all  2x2 contingency tables :math:`X` such that: 
+    
+    * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
+    * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
+    * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
+    
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
     and :math:`t` the total (sum of the 4 sample's element).
 
