@@ -131,6 +131,118 @@ subroutine <prefix2c>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,info)
 
 end subroutine <prefix2c>tgexc
 
+subroutine <prefix2>trsen(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
+
+    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,wr,wi,&m,&s,&sep,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+    logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
+    logical intent(in),dimension(n),depend(n) :: select
+    integer intent(hide),depend(t) :: n=shape(t,0)
+    <ftype2> intent(in,out,copy,out=ts),dimension(n,n) :: t
+    integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
+    <ftype2> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+    <ftype2> intent(out),dimension(n),depend(n) :: wr
+    <ftype2> intent(out),dimension(n),depend(n) :: wi
+    integer intent(out) :: m
+    <ftype2> intent(out) :: s
+    <ftype2> intent(out) :: sep
+    <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
+    ! These lwork and liwork values are bare minimum estiamates only for the case job == "N".
+    ! A separate lwork query is a prerequisite due to m dependence.
+    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
+    ! possible to give a minimal value without a potential excessive memory waste.
+    integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
+    integer intent(hide),dimension(MAX(1,liwork)) :: iwork
+    integer optional,intent(in),check(liwork == -1 || liwork >= 1) :: liwork=1
+    integer intent(out) :: info
+
+end subroutine <prefix2>trsen
+
+subroutine <prefix2>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
+
+    fortranname <prefix2>trsen
+    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&wr,&wi,&m,&s,&sep,&work,&lwork,&iwork,&liwork,&info)
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+    logical intent(in),dimension(n),depend(n) :: select
+    <ftype2> intent(in),dimension(n,n) :: t
+
+    logical intent(hide) :: wantq = 0
+    integer intent(hide),depend(t) :: n = shape(t,0)
+    integer intent(hide),depend(n) :: ldt = MAX(1, n)
+    <ftype2> intent(hide) :: q
+    integer intent(hide),depend(n) :: ldq = MAX(1, n)
+    <ftype2> intent(hide) :: wr
+    <ftype2> intent(hide) :: wi
+    integer intent(hide) :: m
+    <ftype2> intent(hide) :: s
+    <ftype2> intent(hide) :: sep
+    integer intent(hide):: lwork=-1
+    integer intent(hide) :: liwork=-1
+
+    <ftype2> intent(out) :: work
+    integer intent(out) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>trsen_lwork
+
+subroutine <prefix2c>trsen(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
+
+    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,w,&m,&s,&sep,work,&lwork,&info)
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
+
+    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+    logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
+    logical intent(in),dimension(n),depend(n) :: select
+    integer intent(hide),depend(t) :: n=shape(t,0)
+    <ftype2c> intent(in,out,copy,out=ts),dimension(n,n) :: t
+    integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
+    <ftype2c> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+    <ftype2c> intent(out),dimension(n),depend(n) :: w
+    integer intent(out) :: m
+    <ftype2> intent(out) :: s
+    <ftype2> intent(out) :: sep
+    <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
+    ! This lwork values is a bare minimum estiamate only for the case job == "N".
+    ! A separate lwork query is a prerequisite due to m dependence.
+    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
+    ! possible to give a minimal value without a potential excessive memory waste.
+    integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
+    integer intent(out) :: info
+
+end subroutine <prefix2c>trsen
+
+subroutine <prefix2c>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
+
+    fortranname <prefix2c>trsen
+    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&w,&m,&s,&sep,&work,&lwork,&info)
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
+
+    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+    logical intent(in),dimension(n),depend(n) :: select
+    <ftype2c> intent(in),dimension(n,n) :: t
+
+    logical intent(hide) :: wantq = 0
+    integer intent(hide),depend(t) :: n = shape(t,0)
+    integer intent(hide),depend(n) :: ldt = MAX(1, n)
+    <ftype2c> intent(hide) :: q
+    integer intent(hide),depend(n) :: ldq = MAX(1, n)
+    <ftype2c> intent(hide) :: w
+    integer intent(hide) :: m
+    <ftype2> intent(hide) :: s
+    <ftype2> intent(hide) :: sep
+    integer intent(hide):: lwork=-1
+
+    <ftype2c> intent(out) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2c>trsen_lwork
+
 subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
 
     callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alphar,alphai,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
@@ -159,7 +271,7 @@ subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,be
     <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
     ! these lwork and liwork values are bare minimum estiamates only for cases ijob == 1,2,4
     ! a separate lwork query is a prerequisite due to m dependence.
-    ! Depending on the m value lwork can go upto n**2 / 4 for n = 2m hence it is not
+    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste
     integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=4*n+16
     integer intent(hide),dimension(MAX(1,liwork)) :: iwork
@@ -230,7 +342,7 @@ subroutine <prefix2c>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,beta,q,ld
     <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
     ! these lwork and liwork values are bare minimum estiamates only for cases ijob ==0,1,2,4
     ! a separate lwork query is a prerequisite due to m dependence.
-    ! Depending on the m value lwork can go upto n**2 / 4 for n = 2m hence it is not
+    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste
     integer optional,intent(in),depend(n,ijob),check(lwork == -1 || lwork >= 1) :: lwork=(ijob==0?1:n+2)
     integer intent(hide),dimension(liwork):: iwork

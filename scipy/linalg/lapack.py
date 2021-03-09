@@ -710,6 +710,16 @@ All functions
    ctrexc
    ztrexc
 
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
+
    strsyl
    dtrsyl
    ctrsyl

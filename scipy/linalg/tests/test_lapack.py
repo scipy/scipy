@@ -3107,6 +3107,127 @@ def test_gges_tgexc(dtype):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trsen(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trsen, trsen_lwork = get_lapack_funcs(
+        ('gees', 'trsen', 'trsen_lwork'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    select = np.zeros(n)
+    select[6] = 1
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, z, lwork=lwork)
+    else:
+        result = trsen(select, t, z, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[1]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, q, expect, select, expect_s, expect_sep",
+    [(np.array([[0.7995, -0.1144, 0.0060, 0.0336],
+                [0.0000, -0.0994, 0.2478, 0.3474],
+                [0.0000, -0.6483, -0.0994, 0.2026],
+                [0.0000, 0.0000, 0.0000, -0.1007]]),
+      np.array([[0.6551, 0.1037, 0.3450, 0.6641],
+                [0.5236, -0.5807, -0.6141, -0.1068],
+                [-0.5362, -0.3073, -0.2935, 0.7293],
+                [0.0956, 0.7467, -0.6463, 0.1249]]),
+      np.array([[0.3500, 0.4500, -0.1400, -0.1700],
+                [0.0900, 0.0700, -0.5399, 0.3500],
+                [-0.4400, -0.3300, -0.0300, 0.1700],
+                [0.2500, -0.3200, -0.1300, 0.1100]]),
+      np.array([1, 0, 0, 1]),
+      1.75e+00, 3.22e+00),
+     (np.array([[-6.0004 - 6.9999j, 0.3637 - 0.3656j,
+                 -0.1880 + 0.4787j, 0.8785 - 0.2539j],
+                [0.0000 + 0.0000j, -5.0000 + 2.0060j,
+                 -0.0307 - 0.7217j, -0.2290 + 0.1313j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 7.9982 - 0.9964j, 0.9357 + 0.5359j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, 3.0023 - 3.9998j]]),
+      np.array([[-0.8347 - 0.1364j, -0.0628 + 0.3806j,
+                 0.2765 - 0.0846j, 0.0633 - 0.2199j],
+                [0.0664 - 0.2968j, 0.2365 + 0.5240j,
+                 -0.5877 - 0.4208j, 0.0835 + 0.2183j],
+                [-0.0362 - 0.3215j, 0.3143 - 0.5473j,
+                 0.0576 - 0.5736j, 0.0057 - 0.4058j],
+                [0.0086 + 0.2958j, -0.3416 - 0.0757j,
+                 -0.1900 - 0.1600j, 0.8327 - 0.1868j]]),
+      np.array([[-3.9702 - 5.0406j, -4.1108 + 3.7002j,
+                 -0.3403 + 1.0098j, 1.2899 - 0.8590j],
+                [0.3397 - 1.5006j, 1.5201 - 0.4301j,
+                 1.8797 - 5.3804j, 3.3606 + 0.6498j],
+                [3.3101 - 3.8506j, 2.4996 + 3.4504j,
+                 0.8802 - 1.0802j, 0.6401 - 1.4800j],
+                [-1.0999 + 0.8199j, 1.8103 - 1.5905j,
+                 3.2502 + 1.3297j, 1.5701 - 3.4397j]]),
+      np.array([1, 0, 0, 1]),
+      1.02e+00, 1.82e-01)])
+def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
+    """
+    This test implements the example found in the NAG manual,
+    f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 and 2 decimals
+    atol = 1e-4
+    atol2 = 1e-2
+    trsen, trsen_lwork = get_lapack_funcs(
+        ('trsen', 'trsen_lwork'), dtype=t.dtype)
+
+    lwork = _compute_lwork(trsen_lwork, select, t)
+
+    if t.dtype in COMPLEX_DTYPES:
+        result = trsen(select, t, q, lwork=lwork)
+    else:
+        result = trsen(select, t, q, lwork=lwork, liwork=lwork[1])
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    q = result[1]
+    if t.dtype in COMPLEX_DTYPES:
+        s = result[4]
+        sep = result[5]
+    else:
+        s = result[5]
+        sep = result[6]
+
+    assert_allclose(expect, q @ t @ q.conj().T, atol=atol)
+    assert_allclose(expect_s, 1 / s, atol=atol2)
+    assert_allclose(expect_sep, 1 / sep, atol=atol2)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
     seed(1234)
     atol = np.finfo(dtype).eps*100
