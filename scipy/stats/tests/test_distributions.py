@@ -2238,6 +2238,50 @@ class TestInvgauss:
         logsf = stats.invgauss.logsf(110, 1.05)
         assert_allclose(logsf, -56.1467092416426)
 
+    def test_pdf(self):
+        # regression tests for improvements introduces in gh-13665
+        # these tests are bases on Gyner & Smyth (2016)
+
+        # infinite mean corresponds to an inverse-chisquare pdf.
+        assert_allclose(
+            stats.invgauss.pdf([-1, 0, 1, 2, np.inf, np.nan], mu=np.inf),
+            [0., 0., 0.24197072, 0.10984782, 0., np.nan]
+        )
+        # extreme values have zero density for any finite mean value
+        assert_allclose(stats.invgauss.pdf([-1, 0, np.inf], mu=1), [0, 0, 0])
+
+    def test_ppf_sf(self):
+        p = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 0.5, 0.9, 0.99,
+             0.999, 0.9999, 0.99999, 0.999999]
+        p1 = stats.invgauss.cdf(stats.invgauss.ppf(p, mu=1), mu=1)
+        abs_error = np.abs(p - p1)
+        # five-number summary of the absolute error
+        fns = np.percentile(abs_error, [0, 25, 50, np.mean(abs_error), 75, 100])
+        assert_allclose(fns, [0., 0., 8.13151629e-20, 0.,
+                        5.55111512e-17, 2.22044605e-16])
+
+        q = stats.invgauss.ppf(p, mu=1)
+        q1 = stats.invgauss.ppf(stats.invgauss.cdf(q, mu=1), mu=1)
+        rel_error = np.abs(q1 - q) / q
+        fns2 = np.percentile(rel_error, [0, 25, 50, np.mean(rel_error), 75, 100])
+        assert_allclose(fns, [0., 0., 8.131516e-20, 0.,
+                        5.551115e-17, 2.220446e-16])
+
+        # tests if algorithm does not diverge for small probabilities.
+        assert_equal(stats.invgauss.ppf(0.00013, mu=1 / 3) * 3, 0.15039762631802803)
+        # test if it returns right tail values accurately
+        assert_equal(stats.invgauss.isf(1e-16, mu=1.05) / 0.7, 98.47905825943425)
+        # test if it overflows for input 1e-17 or less
+        with pytest.warns(RuntimeWarning,
+            match="invalid value encountered in multiply"):
+             assert_equal(stats.invgauss.isf(1e-17, mu=1.05) / 0.7, np.nan)
+        # test if correct  out is returned for boundary values
+        assert_allclose(stats.invgauss.ppf([0, 0.5, 1, 2, np.nan], mu=1),
+                        [0, 0.67584131, np.inf, np.nan, np.nan])
+        # test if invalid values for the mean are detected
+        assert_allclose(stats.invgauss.ppf(0.5, mu=[0, 1, 2]),
+                        [np.nan, 0.67584131, 1.02845978])
+
 
 class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])

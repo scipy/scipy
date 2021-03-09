@@ -4158,7 +4158,11 @@ class invgauss_gen(rv_continuous):
 
     def _ppf_isf(self, q, mu, upper):
         """ calculate ppf or isf depending on the value of `upper`.
-        If upper is True, then compute isf, else ppf"""
+        If upper is True, then compute isf, else ppf. This implementation is
+        based on Gyner & Smyth (2016) and uses newton's method with carefully
+        selected starting points that guarantee convergence regardless of the
+        probability."""
+
         def f(a, b, c, d, e):
             """approximates (x0 - norm_cdf) / pdf when abs(x0 - norm_cdf) < 1e-5"""
             return a * np.exp(c + np.log1p(-0.5 * a) - d)
@@ -4167,12 +4171,19 @@ class invgauss_gen(rv_continuous):
             """computes (x0 - norm_cdf) / pdf"""
             return b * np.exp(-d) - np.exp(e - d)
 
+        def f_small_q(q, mu, k):
+            """select the start values for the newton using the quantiles of
+            the gamma (if right tail is required) or normal distribution"""
+            if upper:
+                return gamma.isf(q, 1 / mu, scale=mu * mu)
+            return mu / (_norm_ppf(q) ** 2),
+
         k = 1.5 * mu
         # get starting points
         x0 = _lazywhere(
             q < 1e-5,
             (q, mu, k),
-            lambda q, mu, k: gamma.ppf(q, 1 / mu, scale=mu * mu) if upper else mu / (_norm_ppf(q) ** 2),
+            f_small_q,
             f2=lambda q, mu, k: _lazywhere(
                 mu > 100,
                 (mu, k),
@@ -4180,6 +4191,7 @@ class invgauss_gen(rv_continuous):
                 f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
             )
         )
+
         lq = np.log(q)
         iterations = 0
         lx_func = self._logsf if upper else self._logcdf
