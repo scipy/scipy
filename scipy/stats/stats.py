@@ -6199,7 +6199,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    tol = 0
+    tol = 1e-14
     compare = {"less": lambda x, y: x <= y+tol, # np.less_equal,
                "greater": lambda x, y: x >= y-tol, # np.greater_equal,
                "two-sided": lambda x, y: (x <= -np.abs(y)+tol) | (x >= np.abs(y)-tol)}
