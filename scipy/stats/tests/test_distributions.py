@@ -2258,14 +2258,14 @@ class TestInvgauss:
         # five-number summary of the absolute error
         fns = np.percentile(abs_error, [0, 25, 50, np.mean(abs_error), 75, 100])
         assert_allclose(fns, [0., 0., 8.13151629e-20, 0.,
-                        5.55111512e-17, 2.22044605e-16])
+                        5.55111512e-17, 2.22044605e-16], atol=1e-15)
 
         q = stats.invgauss.ppf(p, mu=1)
         q1 = stats.invgauss.ppf(stats.invgauss.cdf(q, mu=1), mu=1)
         rel_error = np.abs(q1 - q) / q
         fns2 = np.percentile(rel_error, [0, 25, 50, np.mean(rel_error), 75, 100])
         assert_allclose(fns2, [0., 0., 1.17819649e-16, 0.,
-                        3.50412747e-16, 1.68867330e-11])
+                        3.50412747e-16, 1.68867330e-11], atol=1e-15)
 
         # tests if algorithm does not diverge for small probabilities.
         assert_equal(stats.invgauss.ppf(0.00013, mu=1 / 3) * 3, 0.15039762631802803)
