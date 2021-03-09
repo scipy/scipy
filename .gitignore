@@ -17,6 +17,7 @@
 *.tmp
 *.vim
 tags
+.theia/
 
 # Compiled source #
 ###################
