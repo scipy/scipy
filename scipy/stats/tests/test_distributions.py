@@ -2264,8 +2264,8 @@ class TestInvgauss:
         q1 = stats.invgauss.ppf(stats.invgauss.cdf(q, mu=1), mu=1)
         rel_error = np.abs(q1 - q) / q
         fns2 = np.percentile(rel_error, [0, 25, 50, np.mean(rel_error), 75, 100])
-        assert_allclose(fns, [0., 0., 8.131516e-20, 0.,
-                        5.551115e-17, 2.220446e-16])
+        assert_allclose(fns2, [0., 0., 1.17819649e-16, 0.,
+                        3.50412747e-16, 1.68867330e-11])
 
         # tests if algorithm does not diverge for small probabilities.
         assert_equal(stats.invgauss.ppf(0.00013, mu=1 / 3) * 3, 0.15039762631802803)
