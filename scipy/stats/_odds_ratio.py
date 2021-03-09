@@ -60,23 +60,25 @@ def _solve(func):
     return nc
 
 
-def _nc_hypergeom_mean_inverse(x, total, ngood, nsample):
+def _nc_hypergeom_mean_inverse(x, M, n, N):
     """
-    For the given total, ngood, and nsample, find the noncentrality
-    parameter of Fisher's noncentral hypergeometric distribution whose
-    mean is x.
+    For the given noncentral hypergeometric parameters x, M, n,and N
+    (table[0,0], total, row 0 sum and column 0 sum, resp., of a 2x2
+    contingency table), find the noncentrality parameter of Fisher's
+    noncentral hypergeometric distribution whose mean is x.
     """
-    nc = _solve(lambda nc: nchypergeom_fisher.mean(total, ngood, nsample,
-                                                   nc) - x)
+    nc = _solve(lambda nc: nchypergeom_fisher.mean(M, n, N, nc) - x)
     return nc
 
 
 def _hypergeom_params_from_table(table):
+    # The notation M, n and N is consistent with stats.hypergeom and
+    # stats.nchypergeom_fisher.
     x = table[0, 0]
-    total = table.sum()
-    ngood = table[0].sum()
-    nsample = table[:, 0].sum()
-    return x, total, ngood, nsample
+    M = table.sum()
+    n = table[0].sum()
+    N = table[:, 0].sum()
+    return x, M, n, N
 
 
 def _ci_upper(table, alpha):
@@ -86,12 +88,11 @@ def _ci_upper(table, alpha):
     if _sample_odds_ratio(table) == np.inf:
         return np.inf
 
-    x, total, ngood, nsample = _hypergeom_params_from_table(table)
+    x, M, n, N = _hypergeom_params_from_table(table)
 
     # nchypergeom_fisher.cdf is a decreasing function of nc, so we negate
     # it in the lambda expression.
-    nc = _solve(lambda nc: -nchypergeom_fisher.cdf(x, total, ngood, nsample,
-                                                   nc) + alpha)
+    nc = _solve(lambda nc: -nchypergeom_fisher.cdf(x, M, n, N, nc) + alpha)
     return nc
 
 
@@ -102,10 +103,9 @@ def _ci_lower(table, alpha):
     if _sample_odds_ratio(table) == 0:
         return 0
 
-    x, total, ngood, nsample = _hypergeom_params_from_table(table)
+    x, M, n, N = _hypergeom_params_from_table(table)
 
-    nc = _solve(lambda nc: nchypergeom_fisher.sf(x - 1, total, ngood, nsample,
-                                                 nc) - alpha)
+    nc = _solve(lambda nc: nchypergeom_fisher.sf(x - 1, M, n, N, nc) - alpha)
     return nc
 
 
@@ -113,8 +113,8 @@ def _conditional_oddsratio(table):
     """
     Conditional MLE of the odds ratio for the 2x2 contingency table.
     """
-    x, total, ngood, nsample = _hypergeom_params_from_table(table)
-    lo, hi = hypergeom.support(total, ngood, nsample)
+    x, M, n, N = _hypergeom_params_from_table(table)
+    lo, hi = hypergeom.support(M, n, N)
 
     # Check if x is at one of the extremes of the support.  If so, we know
     # the odds ratio is either 0 or inf.
@@ -125,7 +125,7 @@ def _conditional_oddsratio(table):
         # x is at the high end of the support.
         return np.inf
 
-    nc = _nc_hypergeom_mean_inverse(x, total, ngood, nsample)
+    nc = _nc_hypergeom_mean_inverse(x, M, n, N)
     return nc
 
 
@@ -133,15 +133,6 @@ def _conditional_oddsratio_ci(table, confidence_level=0.95,
                               alternative='two-sided'):
     """
     Conditional exact confidence interval for the odds ratio.
-
-    This function implements Cornfield's "exact confidence limits",
-    as explained in section 2 of the paper:
-
-        J. Cornfield (1956), A statistical problem arising from
-        retrospective studies. In Neyman, J. (ed.), Proceedings of
-        the Third Berkeley Symposium on Mathematical Statistics and
-        Probability 4, pp. 135-148.
-
     """
     if alternative == 'two-sided':
         alpha = 0.5*(1 - confidence_level)
