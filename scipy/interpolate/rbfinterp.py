@@ -278,10 +278,8 @@ class RBFInterpolator:
         data_shape = d.shape[1:]
         d = d.reshape((ny, -1))
         powers = _monomial_powers(ndim, degree)
-        shift = y.mean(axis=0)
-        scale = y.ptp(axis=0).max() if (ny > 1) else 1.0
-        lhs, rhs = _build_system(
-            y, d, smoothing, kernel, epsilon, powers, shift, scale
+        lhs, rhs, shift, scale = _build_system(
+            y, d, smoothing, kernel, epsilon, powers
             )
 
         coeffs = np.linalg.solve(lhs, rhs)
@@ -395,8 +393,6 @@ class KNearestRBFInterpolator:
         data_shape = d.shape[1:]
         d = d.reshape((ny, -1))
         powers = _monomial_powers(ndim, degree)
-        shift = y.mean(axis=0)
-        scale = y.ptp(axis=0).max() if (ny > 1) else 1.0
         tree = cKDTree(y)
 
         self.y = y
@@ -406,8 +402,6 @@ class KNearestRBFInterpolator:
         self.kernel = kernel
         self.epsilon = epsilon
         self.powers = powers
-        self.shift = shift
-        self.scale = scale
         self.tree = tree
         self.data_shape = data_shape
 
@@ -459,16 +453,15 @@ class KNearestRBFInterpolator:
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
             snbr = self.smoothing[yidx]
-            lhs, rhs = _build_system(
+            lhs, rhs, shift, scale = _build_system(
                 ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
-                self.shift, self.scale
                 )
 
             coeffs = np.linalg.solve(lhs, rhs)
 
             out[xidx] = _evaluate(
-                x[xidx], ynbr, self.kernel, self.epsilon, self.powers,
-                self.shift, self.scale, coeffs
+                x[xidx], ynbr, self.kernel, self.epsilon, self.powers, shift,
+                scale, coeffs
                 ).reshape((-1,) + self.data_shape)
 
         return out

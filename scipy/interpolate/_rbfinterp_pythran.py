@@ -125,10 +125,8 @@ _NAME_TO_FUNC = {
 #                              float[:],
 #                              str,
 #                              float,
-#                              int[:, :],
-#                              float[:],
-#                              float)
-def _build_system(y, d, smoothing, kernel, epsilon, powers, shift, scale):
+#                              int[:, :])
+def _build_system(y, d, smoothing, kernel, epsilon, powers):
     """
     Create the left-hand-side and right-hand-side of the system used for
     solving the RBF interpolant coefficients
@@ -147,15 +145,15 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, shift, scale):
         Shape parameter
     powers : (R, N) int ndarray
         The exponents for each monomial in the polynomial
-    shift : (N,) float ndarray
-        Shift the polynomial domain for numerical stability
-    scale : float
-        Scale the polynomial domain for numerical stability
 
     Returns
     -------
     lhs : (P + R, P + R) float ndarray
     rhs : (P + R, S) float or complex ndarray
+    shift : (N,) float ndarray
+        Domain shift used to create the polynomial matrix
+    scale : float
+        Domain scaling used to create the polynomial matrix
 
     """
     p, r = len(y), len(powers)
@@ -163,6 +161,13 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, shift, scale):
     yeps = y*epsilon
     kernel_func = _NAME_TO_FUNC[kernel]
     kmat = kernel_func(_distance_matrix(yeps))
+
+    # shift and scale the polynomial domain for numerical stability
+    shift = np.mean(y, axis=0)
+    if p > 1:
+        scale = np.ptp(y, axis=0).max()
+    else:
+        scale = 1.0
 
     yhat = (y - shift)/scale
     pmat = _polynomial_matrix(yhat, powers)
@@ -177,7 +182,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, shift, scale):
     rhs = np.zeros((p + r, d.shape[1]), dtype=d.dtype)
     rhs[:p] = d
 
-    return lhs, rhs
+    return lhs, rhs, shift, scale
 
 
 # pythran export _evaluate(float[:, :],

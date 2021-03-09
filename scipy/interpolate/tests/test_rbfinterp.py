@@ -17,6 +17,8 @@ def _get_kernel(name):
 
 
 def _vandermonde(x, degree):
+    # Returns a matrix of monomials that span polynomials with the specified
+    # degree evaluated at x
     powers = _monomial_powers(x.shape[1], degree)
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
