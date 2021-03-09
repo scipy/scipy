@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
-                          TransferFunction, StateSpace, ZerosPolesGain, tfest)
+                          TransferFunction, StateSpace, ZerosPolesGain, tf_estimate)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 from scipy.sparse.sputils import matrix
@@ -1269,7 +1269,7 @@ class Test_freqresp(object):
 
 class TestIdentification(object):
     # test estimation and identification methods for lti systems
-    def test_tfest(self):
+    def test_tf_estimate(self):
         num = [1]
         den = [1, 2]
         lenght = 200
@@ -1278,7 +1278,7 @@ class TestIdentification(object):
         U = np.array([0 if val<1 else 1 for val in T])
         _,y_sim,_ = lsim(TransferFunction(num, den),U,T)
 
-        tf = tfest(T,U,y_sim,1,2)
-        assert_almost_equal(num[0],tf.num[0])
-        assert_almost_equal(den[0],tf.den[0])
-        assert_almost_equal(den[1],tf.den[1])
+        tf = tf_estimate(T[1],U,y_sim,1,2)
+        assert_almost_equal(num[0],tf.num[0], decimal = 3)
+        assert_almost_equal(den[0],tf.den[0], decimal = 3)
+        assert_almost_equal(den[1],tf.den[1], decimal = 3)

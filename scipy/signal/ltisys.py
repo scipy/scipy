@@ -25,6 +25,7 @@ import warnings
 # use scipy's qr until this is solved
 
 from scipy.linalg import qr as s_qr
+from scipy.linalg import pinv
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
@@ -42,7 +43,7 @@ import copy
 __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
-           'dfreqresp', 'dbode', 'tfest']
+           'dfreqresp', 'dbode', 'tf_estimate']
 
 
 class LinearTimeInvariant(object):
@@ -3843,14 +3844,35 @@ def dbode(system, w=None, n=100):
     return w / dt, mag, phase
 
 
-def tfest(T,U,y,nzeros,npoles):
+def _integrate_continuous(vec,dt):
+    """
+    Continuously integrates a vector of data.
+
+    Parameters
+    ----------
+    vec : array, list
+        Input vector to be integrated.
+    dt : float
+        Input time interval between vector.
+
+    Returns
+    -------
+    result : list
+        List of integrated values.
+
+    """
+    result = [np.trapz(vec[:(i+1)],dx=dt) for i in range(len(vec))]
+    return result
+
+
+def tf_estimate(dt,U,y,nzeros,npoles):
     """
     Estimate transfer function based on input data.
 
     Parameters
     ----------
-    T : 1D ndarray, list
-        Input time points.
+    dt : float
+        Input time interval between values.
     U : 1D ndarray, list
         Data for the transfer function input signal.
     y : 1D ndarray, list
@@ -3874,7 +3896,7 @@ def tfest(T,U,y,nzeros,npoles):
     Estimating a trasnfer function using a simulated step response with added noise.
 
     >>> from scipy.optimize import curve_fit
-    >>> from scipy.signal import lsim, TransferFunction, tfest
+    >>> from scipy.signal import lsim, TransferFunction, tf_estimate
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
@@ -3888,7 +3910,7 @@ def tfest(T,U,y,nzeros,npoles):
 
     >>> y_noise = y_sim + 0.1*np.random.rand(lenght) - 0.05
 
-    >>> tf = tfest(T,U,y_noise,1,2)
+    >>> tf = tf_estimate(T,U,y_noise,1,2)
     >>> _,y_sim2,_ = lsim(tf,U,T)
 
     >>> fig = plt.figure(figsize = (14,10))
@@ -3899,10 +3921,24 @@ def tfest(T,U,y,nzeros,npoles):
     >>> print(tf)
 
     """    
-    size_args = nzeros + npoles
-    def func(U,*args):
-        _,y_sim,_ = lsim(TransferFunction(args[:nzeros], args[nzeros:]),U,T)
-        return y_sim
-    arguments,_ = curve_fit(func,U,y,p0=np.ones(size_args))
-    tf = TransferFunction(arguments[:nzeros],arguments[nzeros:])
+    U_integrated_steps = []
+    y_integrated_steps = []
+    for i in range(nzeros):
+        if i is 0:
+            U_integrated_steps.append(_integrate_continuous(U,dt))
+        else:
+            U_integrated_steps.append(_integrate_continuous(U_integrated_steps[i-1],dt))
+
+    for i in range(npoles-1):
+        if i is 0:
+            y_integrated_steps.append(_integrate_continuous(y,dt))
+        else:
+            y_integrated_steps.append(_integrate_continuous(y_integrated_steps[i-1],dt))
+
+    X = np.array(y_integrated_steps+U_integrated_steps).transpose()
+    results = pinv(X)@y
+    poles = [1]+list(results[:(npoles-1)]*-1)
+    zeros = list(results[(npoles-1):])
+
+    tf = TransferFunction(zeros, poles)
     return tf
