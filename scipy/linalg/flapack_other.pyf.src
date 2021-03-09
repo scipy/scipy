@@ -42,6 +42,45 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
 
 end subroutine <prefix2>gejsv
 
+subroutine <prefix2>trexc(wantq,n,a,lda,q,ldq,ifst,ilst,work,info)
+    ! Reorder the Schur decomposition of a real matrix
+    ! using an orthogonal or unitary equivalence transformation.
+
+    callstatement (*f2py_func)((wantq?"V":"N"),&n,a,&lda,q,&ldq,&ifst,&ilst,work,&info)
+    callprotoargument char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*
+
+    integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=MAX(1,shape(a,0))
+    <ftype2> intent(in,out,copy),dimension(ldq,n) :: q
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+    integer intent(in) :: ifst
+    integer intent(in) :: ilst
+    <ftype2> intent(hide),depend(n),dimension(n) :: work
+    integer intent(out) :: info
+
+end subroutine <prefix2>trexc
+
+subroutine <prefix2c>trexc(wantq,n,a,lda,q,ldq,ifst,ilst,info)
+    ! Reorder the Schur decomposition of a complex matrix
+    ! using an orthogonal or unitary equivalence transformation.
+
+    callstatement (*f2py_func)((wantq?"V":"N"),&n,a,&lda,q,&ldq,&ifst,&ilst,&info)
+    callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
+    integer intent(hide),depend(a) :: n=shape(a,1)
+    <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
+    integer intent(hide),depend(a) :: lda=MAX(1,shape(a,0))
+    <ftype2c> intent(in,out,copy),dimension(ldq,n) :: q
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+    integer intent(in) :: ifst
+    integer intent(in) :: ilst
+    integer intent(out) :: info
+
+end subroutine <prefix2c>trexc
+
 subroutine <prefix2>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,work,lwork,info)
     ! Reorder the generalized Schur decomposition of a real matrix
     ! pair using an orthogonal or unitary equivalence transformation.

@@ -2982,6 +2982,83 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
 
 
 @pytest.mark.parametrize('dtype', DTYPES)
+def test_gees_trexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gees, trexc = get_lapack_funcs(('gees', 'trexc'), dtype=dtype)
+
+    result = gees(lambda x: None, a, overwrite_a=False)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-3]
+
+    d2 = t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    result = trexc(t, z, 7, 1)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    z = result[-2]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(z @ t @ z.conj().T, a, rtol=0, atol=atol)
+
+    assert_allclose(t[0, 0], d2, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "t, expect, ifst, ilst",
+    [(np.array([[0.80, -0.11, 0.01, 0.03],
+                [0.00, -0.10, 0.25, 0.35],
+                [0.00, -0.65, -0.10, 0.20],
+                [0.00, 0.00, 0.00, -0.10]]),
+      np.array([[-0.1000, -0.6463, 0.0874, 0.2010],
+                [0.2514, -0.1000, 0.0927, 0.3505],
+                [0.0000, 0.0000, 0.8000, -0.0117],
+                [0.0000, 0.0000, 0.0000, -0.1000]]),
+      2, 1),
+     (np.array([[-6.00 - 7.00j, 0.36 - 0.36j, -0.19 + 0.48j, 0.88 - 0.25j],
+                [0.00 + 0.00j, -5.00 + 2.00j, -0.03 - 0.72j, -0.23 + 0.13j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 8.00 - 1.00j, 0.94 + 0.53j],
+                [0.00 + 0.00j, 0.00 + 0.00j, 0.00 + 0.00j, 3.00 - 4.00j]]),
+      np.array([[-5.0000 + 2.0000j, -0.1574 + 0.7143j,
+                 0.1781 - 0.1913j, 0.3950 + 0.3861j],
+                [0.0000 + 0.0000j, 8.0000 - 1.0000j,
+                 1.0742 + 0.1447j, 0.2515 - 0.3397j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 3.0000 - 4.0000j, 0.2264 + 0.8962j],
+                [0.0000 + 0.0000j, 0.0000 + 0.0000j,
+                 0.0000 + 0.0000j, -6.0000 - 7.0000j]]),
+      1, 4)])
+def test_trexc_NAG(t, ifst, ilst, expect):
+    """
+    This test implements the example found in the NAG manual,
+    f08qfc, f08qtc, f08qgc, f08quc.
+    """
+    # NAG manual provides accuracy up to 4 decimals
+    atol = 1e-4
+    trexc = get_lapack_funcs('trexc', dtype=t.dtype)
+
+    result = trexc(t, t, ifst, ilst, wantq=0)
+    assert_equal(result[-1], 0)
+
+    t = result[0]
+    assert_allclose(expect, t, atol=atol)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
     seed(1234)
     atol = np.finfo(dtype).eps*100

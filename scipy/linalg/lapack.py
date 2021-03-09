@@ -705,6 +705,11 @@ All functions
    ctpttr
    ztpttr
 
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
    strsyl
    dtrsyl
    ctrsyl
