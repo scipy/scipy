@@ -189,7 +189,8 @@ class ConfidenceInterval:
 @dataclass
 class OddsRatioResult:
     """
-    Result of `scipy.stats.contingency.odds_ratio`.
+    Result of `scipy.stats.contingency.odds_ratio`.  See the
+    docstring for `odds_ratio` for more details.
 
     Attributes
     ----------
@@ -203,8 +204,24 @@ class OddsRatioResult:
         be ``'two-sided'``, ``'less'`` or ``'greater'``.
     odds_ratio : float
         The computed odds ratio.
+
+        * If `kind` is ``'sample'``, this is sample (or unconditional)
+          estimate, given by
+          ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
+        * If `kind` is ``'conditional'``, this is the conditional
+          maximum likelihood estimate for the odds ratio. It is
+          the noncentrality parameter of Fisher's noncentral
+          hypergeometric distribution with the same hypergeometric
+          parameters as `table` and whose mean is ``table[0, 0]``.
+
     pvalue : float
         The p-value of the estimate of the odds ratio.
+
+        * If `kind` is ``'sample'``, the p-value is based on the
+          normal approximation to the distribution of the log of
+          the sample odds ratio.
+        * If `kind` is ``'conditional'``, the p-value is computed
+          by `scipy.stats.fisher_exact`.
 
     Methods
     -------
@@ -332,9 +349,9 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         The returned object has two computed attributes:
 
         odds_ratio : float
-            * If `kind` is ``'sample'``, this is
+            * If `kind` is ``'sample'``, this is sample (or unconditional)
+              estimate, given by
               ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
-              This is the prior odds ratio and not a posterior estimate.
             * If `kind` is ``'conditional'``, this is the conditional
               maximum likelihood estimate for the odds ratio. It is
               the noncentrality parameter of Fisher's noncentral
