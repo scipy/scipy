@@ -4086,12 +4086,17 @@ class invgauss_gen(rv_continuous):
         return random_state.wald(mu, 1.0, size=size)
 
     def _pdf(self, x, mu):
-        # invgauss.pdf(x, mu) =
-        #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        return np.exp(self._logpdf(x, mu))
 
     def _logpdf(self, x, mu):
-        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
+        a = -0.5 * np.log(2 * np.pi) - 1.5 * np.log(x)
+        out = _lazywhere(
+            mu == np.inf,
+            (x, mu, a),
+            lambda x, mu, a: invgamma.logpdf(x, 0.5, scale=0.5),
+            f2=lambda x, mu, a: a - 0.5 * x / mu ** 2 + 1.0 / mu - 0.5 / x,
+        )
+        return out
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
@@ -4150,6 +4155,53 @@ class invgauss_gen(rv_continuous):
                 fscale = len(data) / (np.sum(data ** -1 - fshape_n ** -1))
             fshape_s = fshape_n / fscale
         return fshape_s, floc, fscale
+
+    def _ppf_isf(self, q, mu, upper):
+        """ calculate ppf or isf depending on the value of `upper`.
+        If upper is True, then compute isf, else ppf"""
+        def f(a, b, c, d, e):
+            """approximates (x0 - norm_cdf) / pdf when abs(x0 - norm_cdf) < 1e-5"""
+            return a * np.exp(c + np.log1p(-0.5 * a) - d)
+
+        def f2(a, b, c, d, e):
+            """computes (x0 - norm_cdf) / pdf"""
+            return b * np.exp(-d) - np.exp(e - d)
+
+        k = 1.5 * mu
+        # get starting points
+        x0 = _lazywhere(
+            q < 1e-5,
+            (q, mu, k),
+            lambda q, mu, k: gamma.ppf(q, 1 / mu, scale=mu * mu) if upper else mu / (_norm_ppf(q) ** 2),
+            f2=lambda q, mu, k: _lazywhere(
+                mu > 100,
+                (mu, k),
+                lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6)),
+                f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
+            )
+        )
+        lq = np.log(q)
+        iterations = 0
+        lx_func = self._logsf if upper else self._logcdf
+        sign = -1 if upper else 1
+        while iterations < 100:
+            lx = lx_func(x0, mu)
+            d = lq - lx
+            lp = self._logpdf(x0, mu)
+            delta = _lazywhere(np.abs(d) < 1e-5, (d, q, lq, lp, lx), f, f2=f2)
+            x = x0 + sign * delta
+            if np.all(np.isclose(x, x0)):
+                break
+            x0 = x
+            iterations += 1
+
+        return x
+
+    def _isf(self, q, mu):
+        return self._ppf_isf(q, mu, True)
+
+    def _ppf(self, q, mu):
+        return self._ppf_isf(q, mu, False)
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
@@ -8959,6 +9011,12 @@ class wald_gen(invgauss_gen):
 
     def _logsf(self, x):
         return invgauss._logsf(x, 1.0)
+
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
 
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
