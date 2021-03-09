@@ -26,12 +26,15 @@ import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
+from scipy.special import binom
 from .common_tests import check_named_results
 from scipy.sparse.sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats.stats import (_broadcast_concatenate,
                                AlexanderGovernConstantInputWarning)
+from scipy.stats.stats import (_calc_t_stat, _data_partitions,
+                               _data_permutations)
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -3975,6 +3978,29 @@ class Test_ttest_ind_permutations():
         res1 = stats.ttest_ind(a, b, **options_p, _comb=True)
         res2 = stats.ttest_ind(a, b, **options_p, _comb=False)
         assert_equal(res1.pvalue, res2.pvalue)
+
+    @pytest.mark.parametrize("_data_divide",
+                             [lambda data, n: _data_partitions(data, n, 3),
+                              _data_permutations])
+    def test_ttest_ind_exact_distribution(self, _data_divide):
+        # the exact distribution of the test statistic should have
+        # binom(na + nb, na) elements, all unique. This was not always true
+        # in gh-4824; fixed by gh-13661.
+        np.random.seed(0)
+        a = np.random.rand(3)
+        b = np.random.rand(4)
+
+        data = np.concatenate((a, b))
+        ma, mb = len(a), len(b)
+
+        n = 100000
+        mat_perm, permutations = _data_divide(data, n)
+
+        a = mat_perm[..., :ma]
+        b = mat_perm[..., ma:]
+        t_stat = _calc_t_stat(a, b, True)
+        assert len(set(t_stat)) == binom(ma + mb, ma)
+        assert len(t_stat) == len(set(t_stat))
 
     def test_ttest_ind_randperm_alternative(self):
         np.random.seed(0)
