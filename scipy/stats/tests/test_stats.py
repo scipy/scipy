@@ -3967,12 +3967,21 @@ class Test_ttest_ind_permutations():
         assert_equal(res_l_ab.pvalue[~mask] + res_g_ba.pvalue[~mask],
                      res_2_ab.pvalue[~mask])
 
+    def test_ttest_ind_exact_comparison(self):
+        np.random.seed(0)
+        a = np.random.rand(5, 3, 7)
+        b = np.random.rand(5, 4, 7)
+        options_p = {'axis': 1, 'permutations': 10000000}
+        res1 = stats.ttest_ind(a, b, **options_p, _comb=True)
+        res2 = stats.ttest_ind(a, b, **options_p, _comb=False)
+        assert_equal(res1.pvalue, res2.pvalue)
+
     def test_ttest_ind_randperm_alternative(self):
         np.random.seed(0)
         N = 50
         a = np.random.rand(2, 3, N)
         b = np.random.rand(3, N)
-        options_p = {'axis': -1, 'permutations': 1000, "random_state":0}
+        options_p = {'axis': -1, 'permutations': 1000, "random_state": 0}
 
         options_p.update(alternative="greater")
         res_g_ab = stats.ttest_ind(a, b, **options_p)

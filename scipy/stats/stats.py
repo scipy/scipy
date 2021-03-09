@@ -193,7 +193,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
 from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp)
+                         cramervonmises_2samp, _all_partitions)
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -5860,7 +5860,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided"):
+              permutations=None, random_state=None, alternative="two-sided",
+              _comb=False):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6046,7 +6047,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                  axis=axis, equal_var=equal_var,
                                  nan_policy=nan_policy,
                                  random_state=random_state,
-                                 alternative=alternative)
+                                 alternative=alternative,
+                                 _comb=_comb)
 
     else:
         v1 = np.var(a, axis, ddof=1)
@@ -6079,7 +6081,7 @@ def _broadcast_concatenate(xs, axis):
 
 
 def _data_permutations(data, n, axis=-1, random_state=None):
-    """Vectorized permutation of data, assumes `random_state` is already checked"""
+    """Vectorized permutation of data"""
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
@@ -6093,6 +6095,31 @@ def _data_permutations(data, n, axis=-1, random_state=None):
     else:
         n = n_max
         indices = np.array(list(permutations(range(m)))).T
+
+    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
+    data = data[..., indices]        # generate permutations
+    data = data.swapaxes(-2, axis)   # restore original axis order
+    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
+    return data, n
+
+
+def _data_partitions(data, n, ma, axis=-1, random_state=None):
+    """All partitions of data into sets of given lengths, ignoring order"""
+    random_state = check_random_state(random_state)
+    if axis < 0:  # we'll be adding a new dimension at the end
+        axis = data.ndim + axis
+
+    # prepare permutation indices
+    m = data.shape[axis]
+    # number of distinct combinations
+    n_max = special.comb(m, ma)
+
+    if n < n_max:
+        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    else:
+        n = n_max
+        indices = np.array([np.concatenate(z)
+                            for z in _all_partitions(ma, m-ma)]).T
 
     data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
@@ -6120,7 +6147,7 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
 
 def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
                        nan_policy='propagate', random_state=None,
-                       alternative="two-sided"):
+                       alternative="two-sided", _comb=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -6162,15 +6189,20 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_permutations(mat, n=permutations,
-                                                random_state=random_state)
+    if _comb:
+        mat_perm, permutations = _data_partitions(mat, n=permutations, ma=na,
+                                                  random_state=random_state)
+    else:
+        mat_perm, permutations = _data_permutations(mat, n=permutations,
+                                                    random_state=random_state)
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
+    tol = 0
+    compare = {"less": lambda x, y: x <= y+tol, # np.less_equal,
+               "greater": lambda x, y: x >= y-tol, # np.greater_equal,
+               "two-sided": lambda x, y: (x <= -np.abs(y)+tol) | (x >= np.abs(y)-tol)}
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
