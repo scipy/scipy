@@ -5,7 +5,7 @@ import numpy as np
 
 from scipy.special import ndtr, ndtri
 from scipy.optimize import brentq
-from .distributions import nchypergeom_fisher, hypergeom
+from ._discrete_distns import nchypergeom_fisher, hypergeom
 from .stats import fisher_exact
 
 
