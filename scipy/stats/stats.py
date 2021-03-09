@@ -172,7 +172,6 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
-from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -5860,8 +5859,7 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided",
-              _comb=False):
+              permutations=None, random_state=None, alternative="two-sided"):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5948,14 +5946,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     By default, the p-value is determined by comparing the t-statistic of the
     observed data against a theoretical t-distribution, which assumes that the
     populations are normally distributed.
-    When ``1 < permutations < factorial(n)``, where ``n`` is the total
-    number of data, the data are randomly assigned to either group `a`
+    When ``1 < permutations < binom(n, k)``, where
+
+    * ``k`` is the number of observations in `a`,
+    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations >= factorial(n)``, an exact test is performed: the data are
-    permuted within and between the groups in each distinct way exactly once.
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6047,8 +6050,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                  axis=axis, equal_var=equal_var,
                                  nan_policy=nan_policy,
                                  random_state=random_state,
-                                 alternative=alternative,
-                                 _comb=_comb)
+                                 alternative=alternative)
 
     else:
         v1 = np.var(a, axis, ddof=1)
@@ -6074,33 +6076,10 @@ def _broadcast_concatenate(xs, axis):
     # broadcast along all but the last axis
     xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
     # concatenate along last axis
-    res = np.concatenate(xs, axis = -1)
+    res = np.concatenate(xs, axis=-1)
     # move the last axis back to where it was
     res = np.swapaxes(res, axis, -1)
     return res
-
-
-def _data_permutations(data, n, axis=-1, random_state=None):
-    """Vectorized permutation of data"""
-    random_state = check_random_state(random_state)
-    if axis < 0:  # we'll be adding a new dimension at the end
-        axis = data.ndim + axis
-
-    # prepare permutation indices
-    m = data.shape[axis]
-    n_max = float_factorial(m)  # number of distinct permutations
-
-    if n < n_max:
-        indices = np.array([random_state.permutation(m) for i in range(n)]).T
-    else:
-        n = n_max
-        indices = np.array(list(permutations(range(m)))).T
-
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
-    data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, n
 
 
 def _data_partitions(data, n, ma, axis=-1, random_state=None):
@@ -6147,7 +6126,7 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
 
 def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
                        nan_policy='propagate', random_state=None,
-                       alternative="two-sided", _comb=True):
+                       alternative="two-sided"):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -6189,25 +6168,16 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    if _comb:
-        mat_perm, permutations = _data_partitions(mat, n=permutations, ma=na,
-                                                  random_state=random_state)
-    else:
-        mat_perm, permutations = _data_permutations(mat, n=permutations,
-                                                    random_state=random_state)
+    mat_perm, permutations = _data_partitions(mat, n=permutations, ma=na,
+                                              random_state=random_state)
+
     a = mat_perm[..., :na]
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    if _comb:
-        compare = {"less": np.less_equal,
-                   "greater": np.greater_equal,
-                   "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
-    else:
-        tol = 1e-14
-        compare = {"less": lambda x, y: x <= y+tol, # np.less_equal,
-                   "greater": lambda x, y: x >= y-tol, # np.greater_equal,
-                   "two-sided": lambda x, y: (x <= -np.abs(y)+tol) | (x >= np.abs(y)-tol)}
+    compare = {"less": np.less_equal,
+               "greater": np.greater_equal,
+               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
