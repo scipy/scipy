@@ -74,6 +74,17 @@ def test_nhypergeom_rvs_shape():
     assert x.shape == (5, 1, 2, 3)
 
 
+def test_nhypergeom_accuracy():
+    # Check that nhypergeom.rvs post-gh-13431 gives the same values as
+    # inverse transform sampling
+    np.random.seed(0)
+    x = nhypergeom.rvs(22, 7, 11, size=100)
+    np.random.seed(0)
+    p = np.random.uniform(size=100)
+    y = nhypergeom.ppf(p, 22, 7, 11)
+    assert_equal(x, y)
+
+
 def test_boltzmann_upper_bound():
     k = np.arange(-3, 5)
 
