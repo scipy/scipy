@@ -6068,7 +6068,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                              "asymptotic tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var, trim)
 
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)

@@ -77,7 +77,7 @@ class TestTrimmedStats(object):
         y = stats.tvar(X, limits=None)
         assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
 
-        x_2d = arange(63, dtype=np.float64).reshape((9, 7))
+        x_2d = arange(63, dtype=float64).reshape((9, 7))
         y = stats.tvar(x_2d, axis=None)
         assert_approx_equal(y, x_2d.var(ddof=1), significant=self.dprec)
 
@@ -4109,6 +4109,15 @@ class Test_ttest_trim:
         pr = 0.10512380092302633
         tr = 2.832256715395378
         t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False)
+        assert_almost_equal(t, tr)
+        assert_almost_equal(p, pr)
+        
+    def test_ttest_trimmed3_nan(self):
+        a = (56, 128.6, 12, 123.8, 64.34, np.nan, 78, 763.3)
+        b = (1.1, 2.9, np.nan, 4.2)
+        pr = 0.10512380092302633
+        tr = 2.832256715395378
+        t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False, nan_policy='omit')
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
