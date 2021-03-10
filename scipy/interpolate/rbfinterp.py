@@ -10,7 +10,6 @@ from scipy.special import binom
 from ._rbfinterp_pythran import _build_system, _evaluate
 
 
-
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
 
 
@@ -434,22 +433,30 @@ class KNearestRBFInterpolator:
         dtype = complex if np.iscomplexobj(self.d) else float
         out = np.zeros((nx,) + self.data_shape, dtype=dtype)
 
-        # get the indices of the k nearest observations for each interpolation
-        # point
-        _, nbr = self.tree.query(x, self.k)
+        # get the indices of the k nearest observation points to each
+        # interpolation point
+        _, yindices = self.tree.query(x, self.k)
         if self.k == 1:
             # cKDTree squeezes the output when k=1
-            nbr = nbr[:, None]
+            yindices = yindices[:, None]
 
-        # multiple interpolation points may have the same neighborhood. Make
-        # the neighborhoods unique so that we only compute the interpolation
-        # coefficients once for each neighborhood
-        nbr, inv = np.unique(np.sort(nbr, axis=1), return_inverse=True, axis=0)
-        for i, yidx in enumerate(nbr):
-            xidx, = (inv == i).nonzero()
+        # multiple interpolation points may have the same neighborhood of
+        # observation points. Make the neighborhoods unique so that we only
+        # compute the interpolation coefficients once for each neighborhood
+        yindices = np.sort(yindices, axis=1)
+        yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+        # `inv` tells us which neighborhood will be used by each interpolation
+        # point. Now we find which interpolation points will be using each
+        # neighborhood
+        xindices = [[] for _ in range(len(yindices))]
+        for i, j in enumerate(inv):
+            xindices[j].append(i)
+
+        for xidx, yidx in zip(xindices, yindices):
             # `yidx` are the indices of the observations in this neighborhood.
             # `xidx` are the indices of the interpolation points that are using
-            # this neighbood
+            # this neighborood
+            xnbr = x[xidx]
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
             snbr = self.smoothing[yidx]
@@ -460,7 +467,7 @@ class KNearestRBFInterpolator:
             coeffs = np.linalg.solve(lhs, rhs)
 
             out[xidx] = _evaluate(
-                x[xidx], ynbr, self.kernel, self.epsilon, self.powers, shift,
+                xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
                 scale, coeffs
                 ).reshape((-1,) + self.data_shape)
 
