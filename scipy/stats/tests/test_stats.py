@@ -4085,7 +4085,13 @@ class Test_ttest_ind:
 
 class Test_ttest_trim:
 
-    def test_ttest_trimmed1(self):
+    def test_ttest_compare_r1(self):
+        '''
+        > library(PairedData)
+        > a <- c(1, 2, 3)
+        > b <- c(1.1, 2.9, 4.2)
+        > yuen.t.test(a, b, tr=.2)
+        '''
         a = (1, 2, 3)
         b = (1.1, 2.9, 4.2)
         pr = 0.53619490753126731
@@ -4094,7 +4100,13 @@ class Test_ttest_trim:
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
-    def test_ttest_trimmed2(self):
+    def test_ttest_compare_r2(self):
+        '''
+        > library(PairedData)
+        > a <- c(56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        > b <- c(1.1, 2.9, 4.2)
+        > yuen.t.test(a, b, tr=.2)
+        '''
         a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
         b = (1.1, 2.9, 4.2)
         pr = 0.00998909252078421
@@ -4103,7 +4115,13 @@ class Test_ttest_trim:
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
 
-    def test_ttest_trimmed3(self):
+    def test_ttest_compare_r3(self):
+        '''
+        > library(PairedData)
+        > a <- c(56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+        > b <- c(1.1, 2.9, 4.2)
+        >  yuen.t.test(a, b, tr=.32)
+        '''
         a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
         b = (1.1, 2.9, 4.2)
         pr = 0.10512380092302633
@@ -4112,7 +4130,8 @@ class Test_ttest_trim:
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
         
-    def test_ttest_trimmed3_nan(self):
+    def test_ttest_compare_r3_nan(self):
+        # the result of this test should match `test_ttest_compare_r3`
         a = (56, 128.6, 12, 123.8, 64.34, np.nan, 78, 763.3)
         b = (1.1, 2.9, np.nan, 4.2)
         pr = 0.10512380092302633
