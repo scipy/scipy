@@ -1061,8 +1061,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, trim=0):
         (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
         (n1, n2) = (a.count(axis), b.count(axis))
     else:
-        x1, v1, n1 = _mttest_trim_var_mean_len(a, trim, axis)
-        x2, v2, n2 = _mttest_trim_var_mean_len(b, trim, axis)
+        v1, x1, n1 = _mttest_trim_var_mean_len(a, trim, axis)
+        v2, x2, n2 = _mttest_trim_var_mean_len(b, trim, axis)
 
     if equal_var:
         # force df to be an array for masked division not to throw a warning
