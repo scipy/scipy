@@ -4202,7 +4202,7 @@ class invgauss_gen(rv_continuous):
             lp = self._logpdf(x0, mu)
             delta = _lazywhere(np.abs(d) < 1e-5, (d, q, lq, lp, lx), f, f2=f2)
             x = x0 + sign * delta
-            if np.all(np.isclose(x, x0)):
+            if np.allclose(x, x0, atol=1e-08):
                 break
             x0 = x
             iterations += 1
