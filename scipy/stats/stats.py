@@ -4211,10 +4211,11 @@ def fisher_exact(table, alternative='two-sided'):
 
     Notes
     -----
-    The calculated odds ratio is different from the one R uses.  This
-    implementation returns the "unconditional maximum likelihood estimate",
-    while R uses the "conditional maximum likelihood estimate".  To compute
-    the conditional maximum likelihood estimate of the odds ratio, use
+    The calculated odds ratio is different from the value computed by the
+    R function ``fisher.test``.  This implementation returns the "sample"
+    or "unconditional" maximum likelihood estimate, while ``fisher.test``
+    in R uses the conditional maximum likelihood estimate.  To compute the
+    conditional maximum likelihood estimate of the odds ratio, use
     `scipy.stats.contingency.odds_ratio`.
 
     For tables with large numbers, the (inexact) chi-square test implemented
