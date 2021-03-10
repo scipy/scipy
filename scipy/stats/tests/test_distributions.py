@@ -2279,12 +2279,11 @@ class TestInvgauss:
             match="invalid value encountered in multiply"):
              assert_equal(stats.invgauss.isf(1e-17, mu=1.05) / 0.7, np.nan)
         # test if correct  out is returned for boundary values
-        with warnings.catch_warnings():
+        with np.errstate(invalid='ignore'):
             # because probabilities must be in the interval [0, 1] a
             # RuntimeError warning is raised when passing NaN to the ppf
             # function. So its necessary to silence these warnings to avoid
             # CI build failure.
-            warnings.simplefilter('ignore', RuntimeWarning)
             assert_allclose(stats.invgauss.ppf([0, 0.5, 1, 2, np.nan], mu=1),
                             [0, 0.67584131, np.inf, np.nan, np.nan], atol=1e-08)
         # test if invalid values for the mean are detected
