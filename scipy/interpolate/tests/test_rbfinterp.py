@@ -2,7 +2,7 @@ import pickle
 import pytest
 import numpy as np
 from numpy.testing import (
-    assert_, assert_allclose, assert_raises, assert_array_equal, assert_warns
+    assert_allclose, assert_raises, assert_array_equal, assert_warns
     )
 from scipy.spatial import cKDTree
 from scipy.interpolate.rbfinterp import (
@@ -73,42 +73,43 @@ def _is_conditionally_positive_definite(kernel, m):
     return True
 
 
-def test_conditionally_positive_definite():
+@pytest.mark.parametrize('kernel', _AVAILABLE)
+def test_conditionally_positive_definite(kernel):
     # Test if each kernel in _NAME_TO_FUNC is conditionally positive definite
     # of order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
     # condition for the smoothed RBF interpolant to be well-posed in general
-    for kernel_name in _AVAILABLE:
-        kernel_func = _get_kernel(kernel_name)
-        m = _NAME_TO_MIN_DEGREE.get(kernel_name, -1) + 1
-        assert_(_is_conditionally_positive_definite(kernel_func, m))
+    kernel_func = _get_kernel(kernel)
+    m = _NAME_TO_MIN_DEGREE.get(kernel, -1) + 1
+    assert _is_conditionally_positive_definite(kernel_func, m)
 
 
 class _TestRBFInterpolator:
-    def test_scale_invariance_1d(self):
+    @pytest.mark.parametrize('kernel', _SCALE_INVARIANT)
+    def test_scale_invariance_1d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 1-D
         np.random.seed(0)
         x = np.random.uniform(0.0, 3.0, (50, 1))
         y = _1d_test_function(x)
         xitp = np.random.uniform(0.0, 3.0, (50, 1))
-        for kernel in _SCALE_INVARIANT:
-            yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
-            yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
-            assert_allclose(yitp1, yitp2, atol=1e-8)
+        yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
+        yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
+        assert_allclose(yitp1, yitp2, atol=1e-8)
 
-    def test_scale_invariance_2d(self):
+    @pytest.mark.parametrize('kernel', _SCALE_INVARIANT)
+    def test_scale_invariance_2d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 2-D
         np.random.seed(0)
         x = np.random.uniform(0.0, 1.0, (100, 2))
         y = _2d_test_function(x)
         xitp = np.random.uniform(0.0, 1.0, (100, 2))
-        for kernel in _SCALE_INVARIANT:
-            yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
-            yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
-            assert_allclose(yitp1, yitp2, atol=1e-8)
+        yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
+        yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
+        assert_allclose(yitp1, yitp2, atol=1e-8)
 
-    def test_extreme_domains(self):
+    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    def test_extreme_domains(self, kernel):
         # Make sure the interpolant remains numerically stable for very
         # large/small domains
         np.random.seed(0)
@@ -119,22 +120,21 @@ class _TestRBFInterpolator:
         y = _2d_test_function(x)
         xitp = np.random.uniform(0.0, 1.0, (100, 2))
 
-        for kernel in _AVAILABLE:
-            if kernel in _SCALE_INVARIANT:
-                yitp1 = self.build(x, y, kernel=kernel)(xitp)
-                yitp2 = self.build(
-                    x*scale + shift, y,
-                    kernel=kernel
-                    )(xitp*scale + shift)
-            else:
-                yitp1 = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
-                yitp2 = self.build(
-                    x*scale + shift, y,
-                    epsilon=5.0/scale,
-                    kernel=kernel
-                    )(xitp*scale + shift)
+        if kernel in _SCALE_INVARIANT:
+            yitp1 = self.build(x, y, kernel=kernel)(xitp)
+            yitp2 = self.build(
+                x*scale + shift, y,
+                kernel=kernel
+                )(xitp*scale + shift)
+        else:
+            yitp1 = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+            yitp2 = self.build(
+                x*scale + shift, y,
+                epsilon=5.0/scale,
+                kernel=kernel
+                )(xitp*scale + shift)
 
-            assert_allclose(yitp1, yitp2, atol=1e-8)
+        assert_allclose(yitp1, yitp2, atol=1e-8)
 
     def test_polynomial_reproduction(self):
         # If the observed data comes from a polynomial, then the interpolant
@@ -187,7 +187,8 @@ class _TestRBFInterpolator:
         assert_allclose(yitp1.real, yitp2)
         assert_allclose(yitp1.imag, yitp3)
 
-    def test_interpolation_misfit_1d(self):
+    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    def test_interpolation_misfit_1d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 1d
         np.random.seed(0)
@@ -199,12 +200,12 @@ class _TestRBFInterpolator:
         xitp = np.random.uniform(np.min(x), np.max(x), (50, 1))
         ytrue = _1d_test_function(xitp)
 
-        for kernel in _AVAILABLE:
-            yitp = self.build(x, y, epsilon=0.6, kernel=kernel)(xitp)
-            mse = np.mean((yitp - ytrue)**2)
-            assert_(mse < 1.0e-4)
+        yitp = self.build(x, y, epsilon=0.6, kernel=kernel)(xitp)
+        mse = np.mean((yitp - ytrue)**2)
+        assert mse < 1.0e-4
 
-    def test_interpolation_misfit_2d(self):
+    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    def test_interpolation_misfit_2d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 2d
         np.random.seed(0)
@@ -215,12 +216,12 @@ class _TestRBFInterpolator:
         xitp = np.random.uniform(0.0, 1.0, (100, 2))
         ytrue = _2d_test_function(xitp)
 
-        for kernel in _AVAILABLE:
-            yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
-            mse = np.mean((yitp - ytrue)**2)
-            assert_(mse < 2.0e-4)
+        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+        mse = np.mean((yitp - ytrue)**2)
+        assert mse < 2.0e-4
 
-    def test_smoothing_misfit(self):
+    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    def test_smoothing_misfit(self, kernel):
         # Make sure we can find a smoothing parameter for each kernel that
         # removes a sufficient amount of noise
         np.random.seed(0)
@@ -232,24 +233,23 @@ class _TestRBFInterpolator:
         x = np.random.uniform(0.0, 3.0, (100, 1))
         y = _1d_test_function(x) + np.random.normal(0.0, noise, (100,))
         ytrue = _1d_test_function(x)
-        for kernel in _AVAILABLE:
-            rmse_within_tol = False
-            for smoothing in smoothing_range:
-                ysmooth = self.build(
-                    x, y,
-                    epsilon=1.0,
-                    smoothing=smoothing,
-                    kernel=kernel)(x)
-                rmse = np.sqrt(np.mean((ysmooth - ytrue)**2))
-                if rmse < rmse_tol:
-                    rmse_within_tol = True
-                    break
+        rmse_within_tol = False
+        for smoothing in smoothing_range:
+            ysmooth = self.build(
+                x, y,
+                epsilon=1.0,
+                smoothing=smoothing,
+                kernel=kernel)(x)
+            rmse = np.sqrt(np.mean((ysmooth - ytrue)**2))
+            if rmse < rmse_tol:
+                rmse_within_tol = True
+                break
 
-            assert_(rmse_within_tol)
+        assert rmse_within_tol
 
     def test_array_smoothing(self):
-        # test using an array for the smoothing parameter to give less weight
-        # to a known outlier
+        # test using an array for `smoothing` to give less weight to a known
+        # outlier
         np.random.seed(0)
         ndim = 1
         degree = 2
