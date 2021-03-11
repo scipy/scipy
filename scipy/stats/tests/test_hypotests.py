@@ -10,7 +10,7 @@ from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact)
-from scipy.stats._mannwhitneyu import mannwhitneyu2, _mwu_state
+from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
@@ -173,19 +173,19 @@ class TestMannWhitneyU():
         x = np.array([1, 2])  # generic, valid inputs
         y = np.array([3, 4])
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu2([], y)
+            mannwhitneyu([], y)
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu2(x, [])
+            mannwhitneyu(x, [])
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2([np.nan, 2], y)
+            mannwhitneyu([np.nan, 2], y)
         with assert_raises(ValueError, match="`use_continuity` must be one"):
-            mannwhitneyu2(x, y, use_continuity='ekki')
+            mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
-            mannwhitneyu2(x, y, alternative='ekki')
+            mannwhitneyu(x, y, alternative='ekki')
         with assert_raises(ValueError, match="`axis` must be an integer"):
-            mannwhitneyu2(x, y, axis=1.5)
+            mannwhitneyu(x, y, axis=1.5)
         with assert_raises(ValueError, match="`method` must be one of"):
-            mannwhitneyu2(x, y, method='ekki')
+            mannwhitneyu(x, y, method='ekki')
 
     # --- Test Basic Functionality ---
 
@@ -220,7 +220,7 @@ class TestMannWhitneyU():
              128.7769351470246, 265.92721427951852, 275.6617533155341,
              592.34083395416258, 448.73177590617018, 300.61495185038905,
              187.97508449019588]
-        res = mannwhitneyu2(x, y, **kwds)
+        res = mannwhitneyu(x, y, **kwds)
         assert_allclose(res, expected)
 
     # --- Test Exact Distribution of U ---
@@ -283,16 +283,16 @@ class TestMannWhitneyU():
         # for small samples, the asyptotic test is not very accurate
         x = np.random.rand(5)
         y = np.random.rand(5)
-        res1 = mannwhitneyu2(x, y, method="exact")
-        res2 = mannwhitneyu2(x, y, method="asymptotic")
+        res1 = mannwhitneyu(x, y, method="exact")
+        res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
 
         # for large samples, they agree reasonably well
         x = np.random.rand(40)
         y = np.random.rand(40)
-        res1 = mannwhitneyu2(x, y, method="exact")
-        res2 = mannwhitneyu2(x, y, method="asymptotic")
+        res1 = mannwhitneyu(x, y, method="exact")
+        res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) < 1e-3
 
@@ -302,15 +302,15 @@ class TestMannWhitneyU():
         # Test U == m*n/2 with exact method
         # Without special treatment, two-sided p-value > 1 because both
         # one-sided p-values are > 0.5
-        res_l = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="less",
-                              method="exact")
-        res_g = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="greater",
-                              method="exact")
+        res_l = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="less",
+                             method="exact")
+        res_g = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="greater",
+                             method="exact")
         assert_equal(res_l.pvalue, res_g.pvalue)
         assert res_l.pvalue > 0.5
 
-        res = mannwhitneyu2([1, 2, 3], [1.5, 2.5], alternative="two-sided",
-                            method="exact")
+        res = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="two-sided",
+                           method="exact")
         assert_equal(res, (3, 1))
         # U == m*n/2 for asymptotic case tested in test_gh_2118
         # The reason it's tricky for the asmptotic test has to do with
@@ -326,15 +326,15 @@ class TestMannWhitneyU():
     @pytest.mark.parametrize(("kwds", "result"), cases_scalar)
     def test_scalar_data(self, kwds, result):
         # just making sure scalars work
-        assert_allclose(mannwhitneyu2(1, 2, **kwds), result)
+        assert_allclose(mannwhitneyu(1, 2, **kwds), result)
 
     def test_equal_scalar_data(self):
         # when two scalars are equal, there is a NaN in the asymptotic
         # approximation. This is the same behavior as R's wilcox.test.
-        assert_equal(mannwhitneyu2(1, 1, method="exact"), (0.5, 1))
+        assert_equal(mannwhitneyu(1, 1, method="exact"), (0.5, 1))
         with np.testing.suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value")
-            res = mannwhitneyu2(1, 1, method="asymptotic")
+            res = mannwhitneyu(1, 1, method="asymptotic")
             assert res.statistic == 0.5
             assert np.isnan(res.pvalue)
 
@@ -354,7 +354,7 @@ class TestMannWhitneyU():
         m, n = 7, 10  # sample sizes
         x = np.random.rand(m, 3, 8)
         y = np.random.rand(6, n, 1, 8) + 0.1
-        res = mannwhitneyu2(x, y, method=method, axis=axis)
+        res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
         assert(res.pvalue.shape == shape)
@@ -377,7 +377,7 @@ class TestMannWhitneyU():
         for indices in product(*[range(i) for i in shape]):
             xi = x[indices]
             yi = y[indices]
-            temp = mannwhitneyu2(xi, yi, method=method)
+            temp = mannwhitneyu(xi, yi, method=method)
             statistics[indices] = temp.statistic
             pvalues[indices] = temp.pvalue
 
@@ -388,12 +388,12 @@ class TestMannWhitneyU():
         # Test for correct behavior with NaN/Inf in input
         x = [1, 2, 3, 4]
         y = [3, 6, 7, 8, 9, 3, 2, 1, 4, 4, 5]
-        res1 = mannwhitneyu2(x, y)
+        res1 = mannwhitneyu(x, y)
 
         # Inf is not a problem. This is a rank test, and it's the largest value
         y[4] = np.inf
-        res2 = mannwhitneyu2([1, 2, 3, 4],
-                             [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
+        res2 = mannwhitneyu([1, 2, 3, 4],
+                            [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
 
         assert_equal(res1.statistic, res2.statistic)
         assert_equal(res1.pvalue, res1.pvalue)
@@ -401,7 +401,7 @@ class TestMannWhitneyU():
         # NaNs should raise an error. No nan_policy for now.
         y[4] = np.nan
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2(x, y)
+            mannwhitneyu(x, y)
 
     cases_9184 = [[True, "less", "asymptotic", 0.900775348204],
                   [True, "greater", "asymptotic", 0.1223118025635],
@@ -417,7 +417,7 @@ class TestMannWhitneyU():
                               "method", "pvalue_exp"), cases_9184)
     def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp):
         # gh-9184 might be considered a doc-only bug. Please see the
-        # documentation to confirm that mannwhitneyu2 correctly notes
+        # documentation to confirm that mannwhitneyu correctly notes
         # that the output statistic is that of the first sample (x). In any
         # case, check the case provided there against output from R.
         # R code:
@@ -439,22 +439,22 @@ class TestMannWhitneyU():
         statistic_exp = 35
         x = (0.80, 0.83, 1.89, 1.04, 1.45, 1.38, 1.91, 1.64, 0.73, 1.46)
         y = (1.15, 0.88, 0.90, 0.74, 1.21)
-        res = mannwhitneyu2(x, y, use_continuity=use_continuity,
-                            alternative=alternative, method=method)
+        res = mannwhitneyu(x, y, use_continuity=use_continuity,
+                           alternative=alternative, method=method)
         assert_equal(res.statistic, statistic_exp)
         assert_allclose(res.pvalue, pvalue_exp)
 
     def test_gh_6897(self):
         # Test for correct behavior with empty input
         with assert_raises(ValueError, match="`x` and `y` must be of nonzero"):
-            mannwhitneyu2([], [])
+            mannwhitneyu([], [])
 
     def test_gh_4067(self):
         # Test for correct behavior with all NaN input
         a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
-            mannwhitneyu2(a, b)
+            mannwhitneyu(a, b)
 
     cases_2118 = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
                   [[1, 2, 3], [2], "less", (1.5, 0.5)],
@@ -464,8 +464,8 @@ class TestMannWhitneyU():
     def test_gh_2118(self, x, y, alternative, expected):
         # test cases in which U == m*n/2 when method is asymptotic
         # applying continuity correction could result in p-value > 1
-        res = mannwhitneyu2(x, y, use_continuity=True, alternative=alternative,
-                            method="asymptotic")
+        res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
+                           method="asymptotic")
         assert_equal(res, expected)
 
 
@@ -780,7 +780,6 @@ class TestCvm_2samp(object):
         assert_equal(r1.statistic, r2.statistic)
         assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
 
-    #@pytest.mark.slow
     def test_method_auto(self):
         x = np.arange(10)
         y = [0.5, 4.7, 13.1]
