@@ -172,7 +172,7 @@ from .fitpack2 import *
 
 from .rbf import Rbf
 
-from .rbfinterp import *
+from ._rbfinterp import *
 
 from .polyint import *
 
