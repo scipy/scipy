@@ -259,8 +259,6 @@ Statistical tests
    ks_2samp
    epps_singleton_2samp
    mannwhitneyu
-   mann_whitney_u
-   mannwhitneyu2
    tiecorrect
    rankdata
    ranksums
@@ -398,6 +396,7 @@ from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

@@ -4140,18 +4140,7 @@ def test_normalitytests():
     assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
-def _suppress_warning_factory(*dargs, **dkwds):
-    def _suppress_warning_decorator(f):
-        def _suppress_warning_wrapper(*args, **kwds):
-            with suppress_warnings() as sup:
-                sup.filter(*dargs, **dkwds)
-                f(*args, **kwds)
-        return _suppress_warning_wrapper
-    return _suppress_warning_decorator
-
-
 class TestRankSums(object):
-    @_suppress_warning_factory(DeprecationWarning)
     def test_ranksums_result_attributes(self):
         res = stats.ranksums(np.arange(5), np.arange(25))
         attributes = ('statistic', 'pvalue')
@@ -4212,103 +4201,103 @@ def test_kurtosistest_too_few_samples():
     assert_raises(ValueError, stats.kurtosistest, x)
 
 
-class TestMann_Whitney_U():
+# class TestMann_Whitney_U():
 
-    x = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1.,
-         2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 1.]
+#     x = [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1.,
+#          2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 1.]
 
-    y = [1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1.,
-         1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
-         1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 1., 1., 2., 1., 1., 2.,
-         1., 2., 1., 1., 1., 1., 2., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1.,
-         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-         1., 2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-         1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-         1.]
+#     y = [1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1.,
+#          1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
+#          1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 1., 1., 2., 1., 1., 2.,
+#          1., 2., 1., 1., 1., 1., 2., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1.,
+#          1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+#          1., 2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+#          1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+#          1.]
 
-    x = np.array(x)
-    y = np.array(y)
+#     x = np.array(x)
+#     y = np.array(y)
 
-    a = np.array([210.052110, 110.190630, 307.918612])
-    b = np.array([436.08811482466416, 416.37397329768191, 179.96975939463582,
-                  197.8118754228619, 34.038757281225756, 138.54220550921517,
-                  128.7769351470246, 265.92721427951852, 275.6617533155341,
-                  592.34083395416258, 448.73177590617018, 300.61495185038905,
-                  187.97508449019588])
+#     a = np.array([210.052110, 110.190630, 307.918612])
+#     b = np.array([436.08811482466416, 416.37397329768191, 179.96975939463582,
+#                   197.8118754228619, 34.038757281225756, 138.54220550921517,
+#                   128.7769351470246, 265.92721427951852, 275.6617533155341,
+#                   592.34083395416258, 448.73177590617018, 300.61495185038905,
+#                   187.97508449019588])
 
-    alt_two = 'x and y are sampled from different populations'
-    alt_less = 'x is sampled from a population of smaller values than y'
-    alt_greater = 'x is sampled from a population of larger values than y'
+#     alt_two = 'x and y are sampled from different populations'
+#     alt_less = 'x is sampled from a population of smaller values than y'
+#     alt_greater = 'x is sampled from a population of larger values than y'
 
-    # p-values and statistic compared against wilcox.test from R stats
-    def test_two_tailed_exact(self):
-        res = stats.stats.mann_whitney_u(self.a, self.b)
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
-        assert_string_equal(res.alternative, self.alt_two)
+#     # p-values and statistic compared against wilcox.test from R stats
+#     def test_two_tailed_exact(self):
+#         res = stats.stats.mann_whitney_u(self.a, self.b)
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
+#         assert_string_equal(res.alternative, self.alt_two)
 
-    def test_less_exact(self):
-        res = stats.stats.mann_whitney_u(self.a, self.b, alternative='less')
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (23, 0.694642857142857117), decimal=12)
-        assert_string_equal(res.alternative, self.alt_less)
+#     def test_less_exact(self):
+#         res = stats.stats.mann_whitney_u(self.a, self.b, alternative='less')
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (23, 0.694642857142857117), decimal=12)
+#         assert_string_equal(res.alternative, self.alt_less)
 
-    def test_greater_exact(self):
-        res = stats.stats.mann_whitney_u(self.a, self.b, alternative='greater')
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16, 0.351785714285714313), decimal=12)
-        assert_string_equal(res.alternative, self.alt_greater)
+#     def test_greater_exact(self):
+#         res = stats.stats.mann_whitney_u(self.a, self.b, alternative='greater')
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16, 0.351785714285714313), decimal=12)
+#         assert_string_equal(res.alternative, self.alt_greater)
 
-    def test_two_tailed_inverse_exact(self):
-        res = stats.stats.mann_whitney_u(self.b, self.a)
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
-        assert_string_equal(res.alternative, self.alt_two)
+#     def test_two_tailed_inverse_exact(self):
+#         res = stats.stats.mann_whitney_u(self.b, self.a)
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
+#         assert_string_equal(res.alternative, self.alt_two)
 
-    def test_two_tailed_approx(self):
-        res = stats.stats.mann_whitney_u(self.x, self.y)
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
-                                  decimal=12)
-        assert_string_equal(res.alternative, self.alt_two)
+#     def test_two_tailed_approx(self):
+#         res = stats.stats.mann_whitney_u(self.x, self.y)
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
+#                                   decimal=12)
+#         assert_string_equal(res.alternative, self.alt_two)
 
-    def test_less_approx(self):
-        res = stats.stats.mann_whitney_u(self.x, self.y, alternative='less')
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16980.5, 2.8214327656332243e-05),
-                                  decimal=12)
-        assert_string_equal(res.alternative, self.alt_less)
+#     def test_less_approx(self):
+#         res = stats.stats.mann_whitney_u(self.x, self.y, alternative='less')
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16980.5, 2.8214327656332243e-05),
+#                                   decimal=12)
+#         assert_string_equal(res.alternative, self.alt_less)
 
-    def test_greater_approx(self):
-        res = stats.stats.mann_whitney_u(self.x, self.y, alternative='greater')
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (21571.5, 0.9999719954296038),
-                                  decimal=12)
-        assert_string_equal(res.alternative, self.alt_greater)
+#     def test_greater_approx(self):
+#         res = stats.stats.mann_whitney_u(self.x, self.y, alternative='greater')
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (21571.5, 0.9999719954296038),
+#                                   decimal=12)
+#         assert_string_equal(res.alternative, self.alt_greater)
 
-    def test_two_tailed_inverse_approx(self):
-        res = stats.stats.mann_whitney_u(self.y, self.x)
-        ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
-                                  decimal=12)
-        assert_string_equal(res.alternative, self.alt_two)
+#     def test_two_tailed_inverse_approx(self):
+#         res = stats.stats.mann_whitney_u(self.y, self.x)
+#         ra = [res.statistic, res.pvalue]
+#         assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
+#                                   decimal=12)
+#         assert_string_equal(res.alternative, self.alt_two)
 
 
 class TestMannWhitneyU(object):
@@ -4328,15 +4317,12 @@ class TestMannWhitneyU(object):
          19.00596360572, 19.201561539032, 19.0487501090183, 19.0847908674356]
 
     significant = 14
-    def mwu_fun(self, *args, **kwds):
-        return stats.mannwhitneyu(*args, **kwds)
 
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_one_sided(self):
-        u1, p1 = self.mwu_fun(self.X, self.Y, alternative='less')
-        u2, p2 = self.mwu_fun(self.Y, self.X, alternative='greater')
-        u3, p3 = self.mwu_fun(self.X, self.Y, alternative='greater')
-        u4, p4 = self.mwu_fun(self.Y, self.X, alternative='less')
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
 
         assert_equal(p1, p2)
         assert_equal(p3, p4)
@@ -4348,10 +4334,9 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
         assert_approx_equal(p3, 4.5941632666275e-05, significant=self.significant)
 
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_two_sided(self):
-        u1, p1 = self.mwu_fun(self.X, self.Y, alternative='two-sided')
-        u2, p2 = self.mwu_fun(self.Y, self.X, alternative='two-sided')
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -4359,35 +4344,15 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
-    # This behavior has been deprecated; remove the test?
-    # @_suppress_warning_factory(DeprecationWarning)
-    # def test_mannwhitneyu_default(self):
-    #     # The default value for alternative is None
-    #     with suppress_warnings() as sup:
-    #         sup.filter(DeprecationWarning,
-    #                    "Calling `mannwhitneyu` without .*`alternative`")
-    #         u1, p1 = self.mwu_fun(self.X, self.Y)
-    #         u2, p2 = self.mwu_fun(self.Y, self.X)
-    #         u3, p3 = self.mwu_fun(self.X, self.Y, alternative=None)
-
-    #     assert_equal(p1, p2)
-    #     assert_equal(p1, p3)
-    #     assert_equal(u1, 102)
-    #     assert_equal(u2, 102)
-    #     assert_equal(u3, 102)
-    #     assert_approx_equal(p1, 4.5941632666275e-05,
-    #                         significant=self.significant)
-
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_one_sided(self):
-        u1, p1 = self.mwu_fun(self.X, self.Y, False,
-                              alternative='less')
-        u2, p2 = self.mwu_fun(self.Y, self.X, False,
-                              alternative='greater')
-        u3, p3 = self.mwu_fun(self.X, self.Y, False,
-                              alternative='greater')
-        u4, p4 = self.mwu_fun(self.Y, self.X, False,
-                              alternative='less')
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='less')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='greater')
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='greater')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='less')
 
         assert_equal(p1, p2)
         assert_equal(p3, p4)
@@ -4399,12 +4364,11 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
         assert_approx_equal(p3, 4.40940099958089e-05, significant=self.significant)
 
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_no_correct_two_sided(self):
-        u1, p1 = self.mwu_fun(self.X, self.Y, False,
-                              alternative='two-sided')
-        u2, p2 = self.mwu_fun(self.Y, self.X, False,
-                              alternative='two-sided')
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -4412,27 +4376,6 @@ class TestMannWhitneyU(object):
         assert_approx_equal(p1, 8.81880199916178e-05,
                             significant=self.significant)
 
-    # This behavior has been deprecated; remove the test?
-    # @_suppress_warning_factory(DeprecationWarning)
-    # def test_mannwhitneyu_no_correct_default(self):
-    #     # The default value for alternative is None
-    #     with suppress_warnings() as sup:
-    #         sup.filter(DeprecationWarning,
-    #                    "Calling `mannwhitneyu` without .*`alternative`")
-    #         u1, p1 = self.mwu_fun(self.X, self.Y, False)
-    #         u2, p2 = self.mwu_fun(self.Y, self.X, False)
-    #         u3, p3 = self.mwu_fun(self.X, self.Y, False,
-    #                               alternative=None)
-
-    #     assert_equal(p1, p2)
-    #     assert_equal(p1, p3)
-    #     assert_equal(u1, 102)
-    #     assert_equal(u2, 102)
-    #     assert_equal(u3, 102)
-    #     assert_approx_equal(p1, 4.40940099958089e-05,
-    #                         significant=self.significant)
-
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_ones(self):
         # test for gh-1428
         x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -4468,25 +4411,19 @@ class TestMannWhitneyU(object):
                       1., 1., 1., 1.])
 
         # p-value verified with matlab and R to 5 significant digits
-        assert_allclose(self.mwu_fun(x, y, alternative='less'),
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='less'),
                         (16980.5, 2.8214327656317373e-005))
         # p-value from R, e.g. wilcox.test(x, y, alternative="g")
-        assert_allclose(self.mwu_fun(x, y, alternative='greater'),
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='greater'),
                         (16980.5, 0.9999719954296))
-        assert_allclose(self.mwu_fun(x, y, alternative='two-sided'),
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='two-sided'),
                         (16980.5, 5.642865531266e-05))
 
-    @_suppress_warning_factory(DeprecationWarning)
     def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = self.mwu_fun(self.X, self.Y, alternative="less")
+        res = stats.mannwhitneyu(self.X, self.Y, alternative="less")
         check_named_results(res, attributes)
-
-
-class TestMannWhitneyU2(TestMannWhitneyU):
-    def mwu_fun(self, *args, **kwds):
-        return stats.mannwhitneyu2(*args, **kwds)
 
 
 def test_pointbiserial():

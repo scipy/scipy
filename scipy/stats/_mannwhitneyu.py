@@ -87,13 +87,13 @@ class _MWU:
         return fmnk
 
 
-# Maintain state for faster repeat calls to mannwhitneyu2 w/ method='exact'
+# Maintain state for faster repeat calls to mannwhitneyu w/ method='exact'
 _mwu_state = _MWU()
 
 
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
     '''Standardized MWU statistic'''
-    # Follows mannwhitneyu2 [2]
+    # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
@@ -112,7 +112,7 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
 
 
 def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
-    ''' Input validation and standardization for mannwhitneyu2 '''
+    ''' Input validation and standardization for mannwhitneyu '''
     # Would use np.asarray_chkfinite, but infs are OK
     x, y = np.atleast_1d(x), np.atleast_1d(y)
     if np.isnan(x).any() or np.isnan(y).any():
@@ -147,8 +147,8 @@ mwu_result = make_dataclass("MannWhitneyUResult", ("statistic", "pvalue"))
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
-def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
-                  axis=0, method="asymptotic"):
+def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
+                 axis=0, method="asymptotic"):
     r'''Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
@@ -202,14 +202,14 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     statistic corresponding with sample `y` is
     `U2 = `x.shape[axis] * y.shape[axis] - U1``.
 
-    `mannwhitneyu2` is for independent samples. For related samples,
+    `mannwhitneyu` is for independent samples. For related samples,
     consider `scipy.stats.wilcoxon`.
 
     `method` ``'exact'`` is recommended when there are no ties and when either
     sample size is less than 8 [1]_. The implementation follows the recurrence
     relation originally proposed in [1]_ as it is described in [3]_.
     Note that the exact method is *not* corrected for ties, but
-    `mannwhitneyu2` will not raise errors or warnings if there are ties in the
+    `mannwhitneyu` will not raise errors or warnings if there are ties in the
     data.
 
     See Also
@@ -250,12 +250,12 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     data, we can compare the test statistic against the *exact* distribution
     of the test statistic under the null hypothesis.
 
-    >>> from scipy.stats import mannwhitneyu2
-    >>> U1, p = mannwhitneyu2(males, females, method="exact")
+    >>> from scipy.stats import mannwhitneyu
+    >>> U1, p = mannwhitneyu(males, females, method="exact")
     >>> print(U1)
     17.0
 
-    `mannwhitneyu2` always reports the statistic associated with the first
+    `mannwhitneyu` always reports the statistic associated with the first
     sample, which, in this case, is males. This agrees with :math:`U_M = 17`
     reported in [4]_. The statistic associated with the second statistic
     can be calculated:
@@ -267,7 +267,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
 
     This agrees with :math:`U_F = 3` reported in [4]_. The two-sided
     *p*-value can be calculated from either statistic, and the value produced
-    by `mannwhitneyu2` agrees with :math:`p = 0.11` reported in [4]_.
+    by `mannwhitneyu` agrees with :math:`p = 0.11` reported in [4]_.
 
     >>> print(p)
     0.1111111111111111
@@ -276,14 +276,14 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     the example continues by comparing the exact *p*-value against the
     *p*-value produced using the normal approximation.
 
-    >>> _, pnorm = mannwhitneyu2(males, females, method="asymptotic")
+    >>> _, pnorm = mannwhitneyu(males, females, method="asymptotic")
     >>> print(pnorm)
     0.11134688653314041
 
-    Here `mannwhitneyu2`'s reported *p*-value appears to conflict with the
+    Here `mannwhitneyu`'s reported *p*-value appears to conflict with the
     value :math:`p = 0.09` given in [4]_. The reason is that [4]_
-    does not apply the continuity correction performed by `mannwhitneyu2`;
-    `mannwhitneyu2` reduces the distance between the test statistic and the
+    does not apply the continuity correction performed by `mannwhitneyu`;
+    `mannwhitneyu` reduces the distance between the test statistic and the
     mean :math:`\mu = n_x n_y / 2` by 0.5 to correct for the fact that the
     discrete statistic is being compared against a continuous distribution.
     Here, the :math:`U` statistic used is less than the mean, so we reduce
@@ -301,7 +301,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     If desired, we can disable the continuity correction to get a result
     that agrees with that reported in [4]_.
 
-    >>> _, pnorm = mannwhitneyu2(males, females, use_continuity=False,
+    >>> _, pnorm = mannwhitneyu(males, females, use_continuity=False,
     ...                          method="asymptotic")
     >>> print(pnorm)
     0.0864107329737
@@ -318,7 +318,7 @@ def mannwhitneyu2(x, y, use_continuity=True, alternative="two-sided",
     ``alternative = 'less'``: females are diagnosed at an age that is
     stochastically less than that of males.
 
-    >>> res = mannwhitneyu2(females, males, alternative="less", method="exact")
+    >>> res = mannwhitneyu(females, males, alternative="less", method="exact")
     >>> print(res)
     MannwhitneyuResult(statistic=3.0, pvalue=0.05555555555555555)
 
