@@ -2757,7 +2757,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     direc : ndarray, optional
         Initial fitting step and parameter order set as an (N, N) array, where N
         is the number of fitting parameters in `x0`. Defaults to step size 1.0
-        fitting all parameters simultaneously (``np.ones((N, N))``). To
+        fitting all parameters simultaneously (``np.eye((N, N))``). To
         prevent initial consideration of values in a step or to change initial
         step size, set to 0 or desired step size in the Jth position in the Mth
         block, where J is the position in `x0` and M is the desired evaluation

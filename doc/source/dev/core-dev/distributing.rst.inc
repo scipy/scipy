@@ -22,7 +22,7 @@ are:
 
 *Conditional run-time dependencies:*
 
-- nose_ (to run the test suite)
+- pytest (to run the test suite)
 - asv_ (to run the benchmarks)
 - matplotlib_ (for some functions that can produce plots)
 - Pillow_ (for image loading/saving)
@@ -34,12 +34,13 @@ are:
 
 - Numpy_
 - A BLAS and LAPACK implementation (reference BLAS/LAPACK, ATLAS, OpenBLAS,
-  MKL, Accelerate are all known to work)
-- (for development versions) Cython_
+  MKL are all known to work)
+- Cython_
+- setuptools_
+- pybind11_
 
 *Conditional build-time dependencies:*
 
-- setuptools_
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
 - matplotlib_ (docs)
@@ -52,35 +53,53 @@ here.  For details, see https://scipy.github.io/devdocs/building/.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
-scipy) the package instead.  For example, six_ and decorator_ are vendored in
+scipy) the package instead.  For example, decorator_ is vendored in
 ``scipy._lib``.
 
 The only dependency that is reported to pip_  is Numpy_, see
 ``install_requires`` in SciPy's main ``setup.py``.  The other dependencies
-aren't needed for SciPy to function correctly, and the one unconditional build
-dependency that pip_ knows how to install (Cython_) we prefer to treat like a
-compiler rather than a Python package that pip_ is allowed to upgrade.
+aren't needed for SciPy to function correctly
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There are some serious issues with how Python packaging tools handle
+There are some issues with how Python packaging tools handle
 dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.
 
 SciPy only reports its dependency on NumPy via ``install_requires`` if NumPy
-isn't installed at all on a system.  This will only change when there are
-either 32-bit and 64-bit Windows wheels for NumPy on PyPI or when
-``pip upgrade`` becomes available (with sane behavior, unlike ``pip install
--U``, see `this PR
-<https://github.com/pypa/pip/pull/3194>`_).  For more details, see
-`this summary <https://mail.python.org/pipermail/distutils-sig/2015-October/027161.html>`_.
+isn't installed at all on a system, or when building wheels with
+``bdist_wheel``. SciPy no longer uses ``setup_requires`` (which in the past
+invoked ``easy_install``); build dependencies are now handled only via
+``pyproject.toml``. ``pyproject.toml`` relies on PEP 517; ``pip`` has
+``--no-use-pep517`` and ``--no-build-isolation`` flags that may ignore
+``pyproject.toml`` or treat it differently - if users use those flags, they
+are responsible for installing the correct build dependencies themselves.
 
-The situation with ``setup_requires`` is even worse; pip_ doesn't handle that
-keyword at all, while ``setuptools`` has issues (here's a `current one
-<https://bitbucket.org/pypa/setuptools/issues/391>`_) and invokes
-``easy_install`` which comes with its own set of problems (note that SciPy doesn't
-support ``easy_install`` at all anymore; issues specific to it will be closed
-as "wontfix").
+
+.. _numpy-version-ranges:
+
+Version ranges for NumPy and other dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For dependencies it's important to set lower and upper bounds on their
+versions. For *build-time* dependencies, they are specified in
+``pyproject.toml`` and the versions will _only_ apply to the SciPy build
+itself. It's fine to specify either a range or a specific version for a
+dependency like ``wheel`` or ``setuptools``. For NumPy we have to worry
+about ABI compatibility too, hence we specify the version with ``==``
+to the lowest supported version (because NumPy's ABI is backward but not
+forward compatible).
+
+For *run-time dependencies* (currently only ``numpy``), we specify the range
+of versions in ``install_requires`` in ``setup.py``. Getting the upper bound
+right is slightly tricky.  If we don't set any bound, a too-new version
+will be pulled in a few years down the line, and NumPy may have deprecated and
+removed some API that SciPy depended on by then. On the other hand if we set
+the upper bound to the newest already-released version, then as soon as a new
+NumPy version is released there will be no matching SciPy version that works
+with it. Given that NumPy and SciPy both release in a 6-monthly cadence and
+that features that get deprecated in NumPy should stay around for another two
+releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx`` is the
+minor version of the latest already-released NumPy.
 
 
 .. _supported-py-numpy-versions:
@@ -90,25 +109,20 @@ Supported Python and NumPy versions
 The Python_ versions that SciPy supports are listed in the list of PyPI
 classifiers in ``setup.py``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
-possible.  The general policy on dropping support for a Python version is that
-(a) usage of that version has to be quite low (say <5% of users) and (b) the
-version isn't included in an active long-term support release of one of the
-main Linux distributions anymore.  SciPy typically follows NumPy, which has a
-similar policy.  The final decision on dropping support is always taken on the
-scipy-dev mailing list.
+possible.  For the general policy on dropping support for a Python or NumPy
+version, see :ref:`NEP 29 <NEP29>`.  The final decision on dropping support is
+always taken on the scipy-dev mailing list.
 
 The lowest supported Numpy_ version for a SciPy version is mentioned in the
-release notes and is encoded in ``scipy/__init__.py`` and the
+release notes and is encoded in ``pyproject.toml``, ``scipy/__init__.py`` and the
 ``install_requires`` field of ``setup.py``.  Typically the latest SciPy release
-supports 3 or 4 minor versions of NumPy.  That may become more if the frequency
-of NumPy releases increases (it's about 1x/year at the time of writing).
-Support for a particular NumPy version is typically dropped if (a) that NumPy
-version is several years old, and (b) the maintenance cost of keeping support
-is starting to outweigh the benefits.  The final decision on dropping support
-is always taken on the scipy-dev mailing list.
+supports ~5-7 minor versions of NumPy: up to 2.5 years' old NumPy versions,
+(given that the frequency of NumPy releases is about 2x/year at the time of
+writing) plus two versions into the future.
 
-Supported versions of optional dependencies and compilers is less clearly
-documented, and also isn't tested well or at all by SciPy's Continuous
+Supported versions of optional dependencies and compilers is documented in
+:ref:`toolchain-roadmap`. Note that not all versions of optional dependencies
+that are supported are tested well or at all by SciPy's Continuous
 Integration setup.  Issues regarding this are dealt with as they come up in the
 issue tracker or mailing list.
 
@@ -192,6 +206,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _scikits.umfpack: https://pypi.org/project/scikit-umfpack
 .. _mpmath: http://mpmath.org
 .. _Cython: https://cython.org
+.. _pybind11: https://github.com/pybind/pybind11
 .. _setuptools: https://bitbucket.org/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/

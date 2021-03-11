@@ -12,7 +12,7 @@ __all__ = ['clarkson_woodruff_transform']
 
 
 def cwt_matrix(n_rows, n_columns, seed=None):
-    r""""
+    r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
     Given the desired size of matrix, the method returns a matrix S of size
@@ -53,7 +53,7 @@ def cwt_matrix(n_rows, n_columns, seed=None):
 
 
 def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
-    r""""
+    r"""
     Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
     Given an input_matrix ``A`` of size ``(n, d)``, compute a matrix ``A'`` of

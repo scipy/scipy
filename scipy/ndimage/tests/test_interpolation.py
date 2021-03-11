@@ -941,6 +941,26 @@ class TestNdimageInterpolation:
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('order', range(0, 6))
+    @pytest.mark.parametrize('mode', ['constant', 'grid-constant'])
+    @pytest.mark.parametrize('dtype', [numpy.float64, numpy.complex128])
+    def test_shift_with_nonzero_cval(self, order, mode, dtype):
+        data = numpy.array([[1, 1, 1, 1],
+                            [1, 1, 1, 1],
+                            [1, 1, 1, 1]], dtype=dtype)
+
+        expected = numpy.array([[0, 1, 1, 1],
+                                [0, 1, 1, 1],
+                                [0, 1, 1, 1]], dtype=dtype)
+
+        if data.dtype.kind == 'c':
+            data -= 1j * data
+            expected -= 1j * expected
+        cval = 5.0
+        expected[:, 0] = cval  # specific to shift of [0, 1] used below
+        out = ndimage.shift(data, [0, 1], order=order, mode=mode, cval=cval)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('order', range(0, 6))
     def test_shift06(self, order):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
