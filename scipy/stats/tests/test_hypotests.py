@@ -187,6 +187,42 @@ class TestMannWhitneyU():
         with assert_raises(ValueError, match="`method` must be one of"):
             mannwhitneyu(x, y, method='ekki')
 
+    def test_auto(self):
+        # Test that default method ('auto') chooses intended method
+
+        np.random.seed(1)
+        n = 8  # threshold to switch from exact to asymptotic
+
+        x = np.random.rand(n-1)
+        y = np.random.rand(n-1)
+        auto = mannwhitneyu(x, y)
+        asymptotic = mannwhitneyu(x, y, method='asymptotic')
+        exact = mannwhitneyu(x, y, method='exact')
+        assert auto.pvalue == exact.pvalue
+        assert auto.pvalue != asymptotic.pvalue
+
+        x = np.random.rand(n-1)
+        y = np.random.rand(n+1)
+        auto = mannwhitneyu(x, y)
+        asymptotic = mannwhitneyu(x, y, method='asymptotic')
+        exact = mannwhitneyu(x, y, method='exact')
+        assert auto.pvalue == exact.pvalue
+        assert auto.pvalue != asymptotic.pvalue
+
+        auto = mannwhitneyu(y, x)
+        asymptotic = mannwhitneyu(x, y, method='asymptotic')
+        exact = mannwhitneyu(x, y, method='exact')
+        assert auto.pvalue == exact.pvalue
+        assert auto.pvalue != asymptotic.pvalue
+
+        x = np.random.rand(n+1)
+        y = np.random.rand(n+1)
+        auto = mannwhitneyu(x, y)
+        asymptotic = mannwhitneyu(x, y, method='asymptotic')
+        exact = mannwhitneyu(x, y, method='exact')
+        assert auto.pvalue != exact.pvalue
+        assert auto.pvalue == asymptotic.pvalue
+
     # --- Test Basic Functionality ---
 
     # This test was written for mann_whitney_u in gh-4933.
@@ -202,9 +238,12 @@ class TestMannWhitneyU():
     #       592.34083395416258, 448.73177590617018, 300.61495185038905,
     #       187.97508449019588)
     # wilcox.test(x, y, alternative="g", exact=TRUE)
-    cases_basic = [[{"alternative": 'two-sided'}, (16, 0.6865041817876)],
-                   [{"alternative": 'less'}, (16, 0.3432520908938)],
-                   [{"alternative": 'greater'}, (16, 0.7047591913255)],
+    cases_basic = [[{"alternative": 'two-sided', "method": "asymptotic"},
+                    (16, 0.6865041817876)],
+                   [{"alternative": 'less', "method": "asymptotic"},
+                    (16, 0.3432520908938)],
+                   [{"alternative": 'greater', "method": "asymptotic"},
+                    (16, 0.7047591913255)],
                    [{"alternative": 'two-sided', "method": "exact"},
                     (16, 0.7035714285714)],
                    [{"alternative": 'less', "method": "exact"},
@@ -316,9 +355,12 @@ class TestMannWhitneyU():
         # The reason it's tricky for the asmptotic test has to do with
         # continuity correction.
 
-    cases_scalar = [[{"alternative": 'two-sided'}, (0, 1)],
-                    [{"alternative": 'less'}, (0, 0.5)],
-                    [{"alternative": 'greater'}, (0, 0.977249868052)],
+    cases_scalar = [[{"alternative": 'two-sided', "method": "asymptotic"},
+                     (0, 1)],
+                    [{"alternative": 'less', "method": "asymptotic"},
+                     (0, 0.5)],
+                    [{"alternative": 'greater', "method": "asymptotic"},
+                     (0, 0.977249868052)],
                     [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
                     [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
                     [{"alternative": 'greater', "method": "exact"}, (0, 1)]]

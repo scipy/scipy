@@ -133,22 +133,28 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    methods = {"asymptotic", "exact"}
+    methods = {"asymptotic", "exact", "auto"}
     method = method.lower()
     if method not in methods:
         raise ValueError(f'`method` must be one of {methods}.')
 
+    if method == "auto":
+        nx = x.shape[axis]
+        ny = y.shape[axis]
+        if nx > 8 and ny > 8:
+            method = "asymptotic"
+        else:
+            # need to check for ties and switch to asymptotic
+            method = "exact"
+
     return x, y, use_continuity, alternative, axis_int, method
 
 
-mwu_result = make_dataclass("MannWhitneyUResult", ("statistic", "pvalue"))
-# Using `nametuple` for now to pass existing mannwhitneyu tests without
-# modification
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
-                 axis=0, method="asymptotic"):
+                 axis=0, method="auto"):
     r'''Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
@@ -166,24 +172,30 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             Default is True when `method` is ``'asymptotic'``; has no effect
             otherwise.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
+        Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
 
-        * 'two-sided' (default)
-        * 'less': one-sided
-        * 'greater': one-sided
+        * 'two-sided': one of the distributions (underlying `x` or `y`) is
+          stochastically greater than the other.
+        * 'less': the distribution underlying `x` is stochastically less
+          than the distribution underlying `y`.
+        * 'greater': the distribution underlying `x` is stochastically greater
+          than the distribution underlying `y`.
 
     axis : int, optional
         Axis along which to perform the test. Default is 0.
-    method : {'asymptotic', 'exact'}, optional
-        Selects the method used to calculate the *p*-value. The following
-        options are available.
+    method : {'auto', 'asymptotic', 'exact'}, optional
+        Selects the method used to calculate the *p*-value.
+        Default is 'auto'. The following options are available.
 
-        * ``'asymptotic'``: (default) compares the standardized test statistic
+        * ``'asymptotic'``: compares the standardized test statistic
           against the normal distribution, correcting for ties.
         * ``'exact'``: computes the exact *p*-value by comparing the observed
           :math:`U` statistic against the exact distribution of the :math:`U`
           statistic under the null hypothesis. No correction is made for ties.
+        * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
+          is less than 8 and there are no ties; chooses ``'asymptotic'``
+          otherwise.
 
     Returns
     -------
@@ -202,7 +214,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     statistic corresponding with sample `y` is
     `U2 = `x.shape[axis] * y.shape[axis] - U1``.
 
-    `mannwhitneyu` is for independent samples. For related samples,
+    `mannwhitneyu` is for independent samples. For related / paired samples,
     consider `scipy.stats.wilcoxon`.
 
     `method` ``'exact'`` is recommended when there are no ties and when either
@@ -212,9 +224,13 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
     data.
 
+    The Mann-Whitney U test is a non-parametric version of the t-test for
+    independent samples. When the the means of samples from the populations
+    are normally distributed, consider `scipy.stats.ttest_ind`.
+
     See Also
     --------
-    scipy.stats.wilcoxon
+    scipy.stats.wilcoxon, scipy.stats.ranksums, scipy.stats.ttest_ind
 
     References
     ----------
@@ -326,6 +342,18 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     test statistic by chance under the null hypothesis is greater than 5%,
     so we do not reject the null hypothesis in favor of our alternative.
 
+    If it is reasonable to assume that the means of samples from the
+    populations are normally distributed, we could have used a t-test to
+    perform the analysis.
+
+    >>> from scipy.stats import ttest_ind
+    >>> res = ttest_ind(females, males, alternative="less")
+    >>> print(res)
+    Ttest_indResult(statistic=-2.239334696520584, pvalue=0.030068441095757924)
+
+    Under this assumption, the *p*-value would be low enough to reject the
+    null hypothesis in favor of the alternative.
+
     '''
 
     x, y, use_continuity, alternative, axis_int, method = (
@@ -363,5 +391,4 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     p *= np.logical_not(pgt1)  # zero entries > 1, preserve the rest
     p += pgt1                  # add 1 to entries > 1, preserve the rest
 
-    # return mwu_result(U, p)
     return MannwhitneyuResult(U1, p)  # temporary to integrate with tests
