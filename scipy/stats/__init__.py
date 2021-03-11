@@ -443,7 +443,6 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 
-
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from scipy._lib._testutils import PytestTester
