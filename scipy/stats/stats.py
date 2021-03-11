@@ -253,13 +253,6 @@ def _contains_nan(a, nan_policy='propagate'):
     return contains_nan, nan_policy
 
 
-# see http://code.activestate.com/recipes/52308/
-
-class Bunch:
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-
-
 def _chk_asarray(a, axis):
     if axis is None:
         a = np.ravel(a)
