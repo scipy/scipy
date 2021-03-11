@@ -4784,7 +4784,7 @@ class TestMannWhitneyU(object):
                       1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
                       1., 1., 1., 1.])
 
-        # p-value verified with matlab and R to 5 significant digits
+        # checked against R wilcox.test
         assert_allclose(stats.mannwhitneyu(x, y, alternative='less'),
                         (16980.5, 2.8214327656317373e-005))
         # p-value from R, e.g. wilcox.test(x, y, alternative="g")

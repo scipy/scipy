@@ -193,6 +193,7 @@ class TestMannWhitneyU():
         np.random.seed(1)
         n = 8  # threshold to switch from exact to asymptotic
 
+        # both inputs are smaller than threshold; should use exact
         x = np.random.rand(n-1)
         y = np.random.rand(n-1)
         auto = mannwhitneyu(x, y)
@@ -201,6 +202,7 @@ class TestMannWhitneyU():
         assert auto.pvalue == exact.pvalue
         assert auto.pvalue != asymptotic.pvalue
 
+        # one input is smaller than threshold; should use exact
         x = np.random.rand(n-1)
         y = np.random.rand(n+1)
         auto = mannwhitneyu(x, y)
@@ -209,14 +211,27 @@ class TestMannWhitneyU():
         assert auto.pvalue == exact.pvalue
         assert auto.pvalue != asymptotic.pvalue
 
+        # other input is smaller than threshold; should use exact
         auto = mannwhitneyu(y, x)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
         assert auto.pvalue == exact.pvalue
         assert auto.pvalue != asymptotic.pvalue
 
+        # both inputs are larger than threshold; should use asymptotic
         x = np.random.rand(n+1)
         y = np.random.rand(n+1)
+        auto = mannwhitneyu(x, y)
+        asymptotic = mannwhitneyu(x, y, method='asymptotic')
+        exact = mannwhitneyu(x, y, method='exact')
+        assert auto.pvalue != exact.pvalue
+        assert auto.pvalue == asymptotic.pvalue
+
+        # both inputs are smaller than threshold, but there is a tie
+        # should use asymptotic
+        x = np.random.rand(n-1)
+        y = np.random.rand(n-1)
+        y[3] = x[3]
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -261,6 +276,24 @@ class TestMannWhitneyU():
              187.97508449019588]
         res = mannwhitneyu(x, y, **kwds)
         assert_allclose(res, expected)
+
+    def test_tie_correct(self):
+        # Test tie correction against R's wilcox.test
+        # options(digits = 16)
+        # x = c(1, 2, 3, 4)
+        # y = c(1, 2, 3, 4, 5)
+        # wilcox.test(x, y, exact=FALSE)
+        x = [1, 2, 3, 4]
+        y0 = np.array([1, 2, 3, 4, 5])
+        dy = np.array([0, 1, 0, 1, 0])*0.01
+        dy2 = np.array([0, 0, 1, 0, 0])*0.01
+        y = [y0-0.01, y0-dy, y0-dy2, y0, y0+dy2, y0+dy, y0+0.01]
+        res = mannwhitneyu(x, y, axis=-1, method="asymptotic")
+        U_expected = [10, 9, 8.5, 8, 7.5, 7, 6]
+        p_expected = [1, 0.9017048037317, 0.804080657472, 0.7086240584439,
+                      0.6197963884941, 0.5368784563079, 0.3912672792826]
+        assert_equal(res.statistic, U_expected)
+        assert_allclose(res.pvalue, p_expected)
 
     # --- Test Exact Distribution of U ---
 

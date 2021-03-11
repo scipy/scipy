@@ -91,16 +91,27 @@ class _MWU:
 _mwu_state = _MWU()
 
 
+def _tie_term(ranks):
+    """Tie correction term"""
+    # element i of t is the number of elements sharing rank i
+    _, t = np.unique(ranks, return_counts=True, axis=-1)
+    return (t**3 - t).sum(axis=-1)
+
+
 def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
     n = n1 + n2
 
-    # Tie correction. scipy.stats.tiecorrect is not vectorized; this is.
-    # element i of t is the number of subjects sharing rank i
-    _, t = np.unique(ranks, return_counts=True, axis=-1)
-    s = np.sqrt(n1*n2/12 * ((n + 1) - (t**3 - t).sum(axis=-1)/(n*(n-1))))
+    # Tie correction according to [2]
+    tie_term = np.apply_along_axis(_tie_term, -1, ranks)
+    s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
+
+    # equivalent to using scipy.stats.tiecorrect
+    # T = np.apply_along_axis(stats.tiecorrect, -1, ranks)
+    # s = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
+
     numerator = U - mu
 
     # Continuity correction. I still need to find a reference for this.
@@ -138,16 +149,27 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if method not in methods:
         raise ValueError(f'`method` must be one of {methods}.')
 
-    if method == "auto":
-        nx = x.shape[axis]
-        ny = y.shape[axis]
-        if nx > 8 and ny > 8:
-            method = "asymptotic"
-        else:
-            # need to check for ties and switch to asymptotic
-            method = "exact"
-
     return x, y, use_continuity, alternative, axis_int, method
+
+
+def _tie_check(xy):
+    """Find any ties in data"""
+    _, t = np.unique(xy, return_counts=True, axis=-1)
+    return np.any(t != 1)
+
+
+def _mwu_choose_method(n1, n2, xy, method):
+    """Choose method 'asymptotic' or 'exact' depending on input size, ties"""
+
+    # if both inputs are large, asymptotic is OK
+    if n1 > 8 and n2 > 8:
+        return "asymptotic"
+
+    # if there are any ties, asymptotic is preferred
+    if np.apply_along_axis(_tie_check, -1, xy).any():
+        return "asymptotic"
+
+    return "exact"
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
@@ -361,8 +383,12 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     x, y, xy = _broadcast_concatenate(x, y, axis)
 
-    # Follows [2]
     n1, n2 = x.shape[-1], y.shape[-1]
+
+    if method == "auto":
+        method = _mwu_choose_method(n1, n2, xy, method)
+
+    # Follows [2]
     ranks = stats.rankdata(xy, axis=-1)  # method 2, step 1
     R1 = ranks[..., :n1].sum(axis=-1)    # method 2, step 2
     U1 = R1 - n1*(n1+1)/2                # method 2, step 3
