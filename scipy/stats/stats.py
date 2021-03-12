@@ -5894,12 +5894,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         The 'omit' option is not currently available for permutation tests or
         one-sided asympyotic tests.
 
-    permutations : int or None (default), optional
-        The number of random permutations that will be used to estimate
-        p-values using a permutation test. If `permutations` equals or exceeds
-        the number of distinct permutations, an exact test is performed
-        instead (i.e. each distinct permutation is used exactly once).
+    permutations : non-negative int, np.inf, or None (default), optional
         If None (default), use the t-distribution to calculate p-values.
+        Otherwise, `permutations` is  the number of random permutations that
+        will be used to estimate p-values using a permutation test. If
+        `permutations` equals or exceeds the number of distinct partitions of
+        the pooled data, an exact test is performed instead (i.e. each
+        distinct partition is used exactly once). See Notes for details.
 
         .. versionadded:: 1.7.0
 
@@ -5944,21 +5945,22 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     against the null hypothesis of equal population means.
 
     By default, the p-value is determined by comparing the t-statistic of the
-    observed data against a theoretical t-distribution, which assumes that the
-    populations are normally distributed.
+    observed data against a theoretical t-distribution, which assumes that
+    means of samples from the underlying populations are normally distributed.
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
     * ``n`` is the total number of observations in `a` and `b`, and
     * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
 
-    the data are randomly assigned to either group `a`
+    the data are pooled (concatenated), randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations >= binom(n, k)``, an exact test is performed: the data are
-    partitioned between the groups in each distinct way exactly once.
+    ``permutations == 0`` or ``permutations >= binom(n, k)``, an exact test is
+    performed: the data are partitioned between the groups in each distinct
+    way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6042,9 +6044,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    if permutations:
-        if int(permutations) != permutations or permutations < 0:
-            raise ValueError("Permutations must be a positive integer.")
+    if permutations is not None:
+        if permutations < 0 or (np.isfinite(permutations) and
+                                int(permutations) != permutations) :
+            raise ValueError("Permutations must be a non-negative integer.")
+
+        if permutations == 0:
+            permutations = np.inf
 
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,

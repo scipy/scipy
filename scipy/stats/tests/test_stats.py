@@ -3969,6 +3969,20 @@ class Test_ttest_ind_permutations():
         assert_equal(res_l_ab.pvalue[~mask] + res_g_ba.pvalue[~mask],
                      res_2_ab.pvalue[~mask])
 
+    def test_ttest_ind_exact_selection(self):
+        # test the various ways of activating the exact test
+        np.random.seed(0)
+        N = 3
+        a = np.random.rand(N)
+        b = np.random.rand(N)
+        res0 = stats.ttest_ind(a, b)
+        res1 = stats.ttest_ind(a, b, permutations=1000)
+        res2 = stats.ttest_ind(a, b, permutations=0)
+        res3 = stats.ttest_ind(a, b, permutations=np.inf)
+        assert(res0.pvalue != res1.pvalue)
+        assert(res2.pvalue == res1.pvalue)
+        assert(res3.pvalue == res1.pvalue)
+
     def test_ttest_ind_exact_distribution(self):
         # the exact distribution of the test statistic should have
         # binom(na + nb, na) elements, all unique. This was not always true
