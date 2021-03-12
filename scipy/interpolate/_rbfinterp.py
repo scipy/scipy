@@ -337,7 +337,7 @@ class KNearestRBFInterpolator:
     d : (P, ...) array_like
         Data values at `y`
     k : int, optional
-        Number of nearest neighbors to use for each interpolation point
+        Number of nearest data points to use for each interpolation point
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0.
