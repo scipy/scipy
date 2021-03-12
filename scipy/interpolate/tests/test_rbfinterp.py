@@ -5,7 +5,7 @@ from numpy.testing import (
     assert_allclose, assert_raises, assert_array_equal, assert_warns
     )
 from scipy.spatial import cKDTree
-from scipy.interpolate.rbfinterp import (
+from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE,
     _monomial_powers, RBFInterpolator, KNearestRBFInterpolator
     )
