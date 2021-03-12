@@ -68,7 +68,7 @@ def _tps(r):
     """Thin plate spline / 2nd order polyharmonic spline"""
     # this is equivalent to xlogy(r**2, r)
     out = r**2*np.log(r)
-    out[r==0.0] = 0.0
+    out[r == 0.0] = 0.0
     return out
 
 
