@@ -22,7 +22,7 @@ def _vandermonde(x, degree):
     powers = _monomial_powers(x.shape[1], degree)
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
-    
+
 def _1d_test_function(x):
     # test function used in Wahba's "Spline Models for Observational Data
     # domain ~= (0, 3), range ~= (-1.0, 0.2)"

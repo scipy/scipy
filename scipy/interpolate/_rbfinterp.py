@@ -227,6 +227,21 @@ class RBFInterpolator:
     RBFs. The problem can become ill-conditioned or singular when the shape
     parameter is too small.
 
+    See Also
+    --------
+    KNearestRBFInterpolator
+
+    References
+    ----------
+    .. [1] Fasshauer, G., 2007. Meshfree Approximation Methods with Matlab.
+        World Scientific Publishing Co.
+
+    .. [2] http://amadeus.math.iit.edu/~fass/603_ch3.pdf
+
+    .. [3] Wahba, G., 1990. Spline Models for Observational Data. SIAM.
+
+    .. [4] http://pages.stat.wisc.edu/~wahba/stat860public/lect/lect8/lect8.pdf
+
     Examples
     --------
     Demonstrate interpolating scattered data to a grid in 2-D
@@ -247,21 +262,6 @@ class RBFInterpolator:
     >>> plt.scatter(*xobs.T, c=yobs, s=50, ec='k', vmin=-0.25, vmax=0.25)
     >>> plt.colorbar()
     >>> plt.show()
-
-    See Also
-    --------
-    KNearestRBFInterpolator
-
-    References
-    ----------
-    .. [1] Fasshauer, G., 2007. Meshfree Approximation Methods with Matlab.
-        World Scientific Publishing Co.
-
-    .. [2] http://amadeus.math.iit.edu/~fass/603_ch3.pdf
-
-    .. [3] Wahba, G., 1990. Spline Models for Observational Data. SIAM.
-
-    .. [4] http://pages.stat.wisc.edu/~wahba/stat860public/lect/lect8/lect8.pdf
 
     """
     def __init__(self, y, d,
