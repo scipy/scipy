@@ -101,7 +101,8 @@ def configuration(parent_package='', top_path=None):
         import pythran
         ext = pythran.dist.PythranExtension(
             'scipy.optimize._group_columns',
-            sources=["scipy/optimize/_group_columns.py"])
+            sources=["scipy/optimize/_group_columns.py"],
+            config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     else:
         config.add_extension('_group_columns', sources=['_group_columns.c'],)
@@ -127,7 +128,6 @@ def configuration(parent_package='', top_path=None):
 
     # HiGHS linear programming libraries and extensions
     config.add_subpackage('_highs')
-    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
 
     config.add_data_dir('tests')
 

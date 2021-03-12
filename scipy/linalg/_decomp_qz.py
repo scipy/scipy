@@ -2,7 +2,6 @@ import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite
-
 from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
@@ -147,10 +146,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     """
     QZ decomposition for generalized eigenvalues of a pair of matrices.
 
-    The QZ, or generalized Schur, decomposition for a pair of N x N
-    nonsymmetric matrices (A,B) is::
+    The QZ, or generalized Schur, decomposition for a pair of n-by-n
+    matrices (A,B) is::
 
-        (A,B) = (Q*AA*Z', Q*BB*Z')
+        (A,B) = (Q @ AA @ Z*, Q @ BB @ Z*)
 
     where AA, BB is in generalized Schur form if BB is upper-triangular
     with non-negative diagonal and AA is upper-triangular, or for real QZ
@@ -266,8 +265,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """QZ decomposition for a pair of matrices with reordering.
 
-    .. versionadded:: 0.17.0
-
     Parameters
     ----------
     A : (N, N) array_like
@@ -334,6 +331,8 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     real; if positive, then the ``j``th and ``(j+1)``st eigenvalues are a
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
+    .. versionadded:: 0.17.0
+
     See also
     --------
     qz
@@ -351,52 +350,43 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     array([ True,  True, False, False], dtype=bool)
 
     """
-    # NOTE: should users be able to set these?
-    lwork = None
-    result, typ = _qz(A, B, output=output, lwork=lwork, sort=None,
-                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                      check_finite=check_finite)
-    AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
-    if typ not in 'cz':
-        alpha, beta = result[3] + result[4]*1.j, result[5]
+    (AA, BB, _, *ab, Q, Z, _, _), typ = _qz(A, B, output=output, sort=None,
+                                            overwrite_a=overwrite_a,
+                                            overwrite_b=overwrite_b,
+                                            check_finite=check_finite)
+
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
     else:
-        alpha, beta = result[3], result[4]
+        alpha, beta = ab
 
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
-    tgsen, = get_lapack_funcs(('tgsen',), (AA, BB))
+    tgsen = get_lapack_funcs('tgsen', (AA, BB))
+    # the real case needs 4n + 16 lwork
+    lwork = 4*AA.shape[0] + 16 if typ in 'sd' else 1
+    AAA, BBB, *ab, QQ, ZZ, _, _, _, _, info = tgsen(select, AA, BB, Q, Z,
+                                                    ijob=0,
+                                                    lwork=lwork, liwork=1)
 
-    if lwork is None or lwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0].real.astype(np.int_)
-        # looks like wrong value passed to ZTGSYL if not
-        lwork += 1
+    # Once more for tgsen output
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
+    else:
+        alpha, beta = ab
 
-    liwork = None
-    if liwork is None or liwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, liwork=-1)
-        liwork = result[-2][0]
-
-    result = tgsen(select, AA, BB, Q, Z, lwork=lwork, liwork=liwork)
-
-    info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument %d of tgsen" % -info)
+        raise ValueError(f"Illegal value in argument {-info} of tgsen")
     elif info == 1:
         raise ValueError("Reordering of (A, B) failed because the transformed"
                          " matrix pair (A, B) would be too far from "
                          "generalized Schur form; the problem is very "
                          "ill-conditioned. (A, B) may have been partially "
-                         "reorded. If requested, 0 is returned in DIF(*), "
-                         "PL, and PR.")
+                         "reordered.")
 
-    # for real results has a, b, alphar, alphai, beta, q, z, m, pl, pr, dif,
-    # work, iwork, info
-    if typ in ['f', 'd']:
-        alpha = result[2] + result[3] * 1.j
-        return (result[0], result[1], alpha, result[4], result[5], result[6])
-    # for complex results has a, b, alpha, beta, q, z, m, pl, pr, dif, work,
-    # iwork, info
-    else:
-        return result[0], result[1], result[2], result[3], result[4], result[5]
+    return AAA, BBB, alpha, beta, QQ, ZZ

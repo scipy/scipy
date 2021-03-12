@@ -1779,8 +1779,6 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
-    with assert_raises(ValueError, match='common type'):
-        lfilter([1.], [1., 1.], ['a', 'b', 'c'])
 
 
 def test_lfilter_notimplemented_input():
@@ -3147,9 +3145,7 @@ def test_nonnumeric_dtypes(func):
         args = [1., 1.]
     else:
         args = [tf2sos(1., 1.)]
-    with pytest.raises(NotImplementedError,
-                       match='input type .* not supported'):
-        func(*args, x=['foo'])
+
     with pytest.raises(ValueError, match='must be at least 1-D'):
         func(*args, x=1.)
 
