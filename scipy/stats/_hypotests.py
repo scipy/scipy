@@ -1,7 +1,5 @@
-import warnings
 from collections import namedtuple
 from dataclasses import make_dataclass
-
 import numpy as np
 import warnings
 from itertools import combinations
@@ -11,8 +9,6 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
-from . import distributions
-from ._continuous_distns import chi2, norm
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -793,11 +789,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     where the sum is over all  2x2 contingency tables :math:`X`,
     and :math:`X_0` the observed sample, such that:
-    
     * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
     * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
     * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
-    
     Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
     and :math:`t` the total (sum of the 4 sample's element).
 
