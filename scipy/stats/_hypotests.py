@@ -727,7 +727,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     is a more powerful alternative than Fisher's exact test
     for 2x2 contingency tables.
 
-    Let's define :math:`X` a 2x2 matrix representing the contingency table,
+    Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
@@ -786,8 +786,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
             \pi^{x_{11} + x_{12}}
             (1 - \pi)^{t - x_{11} - x_{12}}
 
-    where the sum is over all  2x2 contingency tables :math:`X`,
-    and :math:`X_0` the observed sample, such that:
+    where the sum is over all  2x2 contingency tables :math:`X` such that:
     * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
     * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
     * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
