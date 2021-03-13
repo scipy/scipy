@@ -1,9 +1,9 @@
+import os
 from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from pythran.dist import PythranExtension
     from scipy._build_utils import (get_f2py_int64_options,
                                     ilp64_pre_build_hook,
                                     uses_blas64)
@@ -54,10 +54,13 @@ def configuration(parent_package='',top_path=None):
                          f2py_options=f2py_options
                          )
 
-    ext = PythranExtension('scipy.interpolate._rbfinterp_pythran',
-                           sources=['scipy/interpolate/_rbfinterp_pythran.py']
-                           )
-    config.ext_modules.append(ext)
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
+        from pythran.dist import PythranExtension
+        ext = PythranExtension(
+            'scipy.interpolate._rbfinterp_pythran',
+            sources=['scipy/interpolate/_rbfinterp_pythran.py']
+            )
+        config.ext_modules.append(ext)
 
     config.add_data_dir('tests')
 
