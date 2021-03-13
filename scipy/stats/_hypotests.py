@@ -8,89 +8,57 @@ from . import distributions
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
-import scipy.stats
 import scipy.stats.stats
 from functools import wraps
 
 
-# although _vectorize_2s_hypotest_factorycan be generalized to n-d,
-# it might make some sense to have a separate decorator for the 1d case
-# because it can be quite a bit simpler - we can use np.apply_along_axis,
-# for instance
-def _vectorize_1s_hypotest_factory(result_creator, default_axis=0):
+def _vectorize_hypotest_factory(result_creator, default_axis=0,
+                                n_samples=1):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
-        def vectorize_hypotest_wrapper(x, *args, axis=default_axis,
+        def vectorize_hypotest_wrapper(*args, axis=default_axis,
                                        nan_policy='propagate', **kwds):
 
-            x = np.atleast_1d(x)
+            # if n_samples is None, all args are samples
+            n_samp = len(args) if n_samples is None else n_samples
 
-            # Addresses nan_policy="raise"
-            _, nan_policy = scipy.stats.stats._contains_nan(x, nan_policy)
-
-            # Addresses nan_policy="omit"
-            # Assumes nan_policy="propagate" is handled hypotest_fun_in
-            def hypotest_fun(x):
-                if nan_policy == 'omit':
-                    x = x[~np.isnan(x)]
-                return hypotest_fun_in(x, *args, **kwds)
+            # split samples from other arguments
+            samples = [np.atleast_1d(sample) for sample in args[:n_samp]]
+            args = args[n_samp:]
 
             if axis is None:
-                x = x.ravel()
-                return hypotest_fun(x)
-            else:
-                x = np.moveaxis(x, axis, -1)
-                res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-                return result_creator(res)
+                samples = [sample.ravel() for sample in samples]
+                axis = 0
 
-        return vectorize_hypotest_wrapper
-    return vectorize_hypotest_decorator
+            # just execute the original function if axis/nan_policy not needed
+            ndims = np.array([sample.ndim for sample in samples])
+            if np.all(ndims == 1) and nan_policy == 'propagate':
+                return hypotest_fun_in(*samples, *args, **kwds)
 
-
-# this can be generalized to n-d, and it should use the
-# approach for the "omit" nan_policy used above
-def _vectorize_2s_hypotest_factory(result_creator):
-    def vectorize_hypotest_decorator(hypotest_fun):
-        @wraps(hypotest_fun)
-        def vectorize_hypotest_wrapper(x, y, *args, axis=0,
-                                       nan_policy='propagate', **kwds):
-
-            x, y = np.atleast_1d(x), np.atleast_1d(y)
+            # otherwise, concatenate all samples along axis, remembering where
+            # each separate sample begins
+            lengths = np.array([sample.shape[axis] for sample in samples])
+            split_indices = np.cumsum(lengths)
+            x = scipy.stats.stats._broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy="raise"
-            _, nan_policy = scipy.stats.stats._contains_nan(x, nan_policy)
-            _, nan_policy = scipy.stats.stats._contains_nan(y, nan_policy)
+            contains_nan, nan_policy = (
+                scipy.stats.stats._contains_nan(x, nan_policy))
 
-            if x.size == 0 or y.size == 0:
-                if nan_policy == "omit":
-                    x, y = x[~np.isnan(x)], y[~np.isnan(y)]
-                statistic, pvalue = hypotest_fun(x, y, *args, **kwds)
-                return result_creator(statistic, pvalue)
+            # Addresses nan_policy="omit"
+            # Assumes nan_policy="propagate" is handled by hypotest_fun_in
+            def hypotest_fun(x):
+                samples = np.split(x, split_indices)[:n_samp]
+                if nan_policy == 'omit' and contains_nan:
+                    samples = [x[~np.isnan(x)] for x in samples]
+                return hypotest_fun_in(*samples, *args, **kwds)
 
-            x = np.moveaxis(x, axis, -1)
-            y = np.moveaxis(y, axis, -1)
-            z = np.broadcast(x[..., 0], y[..., 0])
-            x = np.broadcast_to(x, z.shape + (x.shape[-1],))
-            y = np.broadcast_to(y, z.shape + (y.shape[-1],))
-
-            shape = x.shape[:-1]
-            statistics = np.zeros(shape)
-            pvalues = np.zeros(shape)
-
-            for indices in np.ndindex(shape):
-                xi = x[indices]
-                yi = y[indices]
-                if nan_policy == "omit":
-                    xi, yi = xi[~np.isnan(xi)], yi[~np.isnan(yi)]
-                statistic, pvalue = hypotest_fun(xi, yi, *args, **kwds)
-                statistics[indices] = statistic
-                pvalues[indices] = pvalue
-
-            if not shape:
-                statistics = statistics.item()
-                pvalues = pvalues.item()
-
-            return result_creator(statistics, pvalues)
+            if np.all(ndims == 1) is None:
+                return hypotest_fun(x)
+            else:
+                x = np.moveaxis(x, axis, -1)  # needed by result_creator
+                res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
+                return result_creator(res)
 
         return vectorize_hypotest_wrapper
     return vectorize_hypotest_decorator
@@ -100,7 +68,10 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@_vectorize_2s_hypotest_factory(result_creator=Epps_Singleton_2sampResult)
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: Epps_Singleton_2sampResult(res[..., 0],
+                                                          res[..., 1]),
+    n_samples=2)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """
     Compute the Epps-Singleton (ES) test statistic.
@@ -756,7 +727,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
     for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.    
+    all possible combinations. nx and ny are the sizes of the samples.
     """
     z = np.arange(1, nx+ny+1)
     rangex = np.arange(1, nx+1)
@@ -768,7 +739,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     # note that the acutal values of the samples are irrelevant
     # once the ranks of the elements of x are fixed, the
     # ranks of the elements in the second sample
-    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all 
+    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all
     for c in combinations(z, nx):
         x = np.array(c)
         # the ranks of the second sample y are given by the set z - x
@@ -875,7 +846,7 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     The p-value based on the asymptotic distribution is a good approximation
     even though the sample size is small.
-    
+
     >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
     >>> res.statistic, res.pvalue
     (0.2655677655677655, 0.17974247316290415)

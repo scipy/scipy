@@ -193,9 +193,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
 from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp, _vectorize_2s_hypotest_factory,
-                         _vectorize_1s_hypotest_factory)
-
+                         cramervonmises_2samp, _vectorize_hypotest_factory)
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -1755,7 +1753,8 @@ def _jarque_bera_result_creator(res):
     return Jarque_beraResult(res[..., 0], res[..., 1])
 
 
-@_vectorize_1s_hypotest_factory(_jarque_bera_result_creator, default_axis=None)
+@_vectorize_hypotest_factory(result_creator=_jarque_bera_result_creator,
+                             default_axis=None, n_samples=1)
 def jarque_bera(x):
     """
     Perform the Jarque-Bera goodness of fit test on sample data.
@@ -4000,7 +3999,8 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
         self.args = (msg,)
 
 
-@_vectorize_2s_hypotest_factory(result_creator=lambda r, p: (r, p))
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: (res[..., 0], res[..., 1]), n_samples=2)
 def pearsonr(x, y):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -6738,6 +6738,9 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: KstestResult(res[..., 0], res[..., 1]),
+    n_samples=1)
 def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     """
     Performs the Kolmogorov-Smirnov test for goodness of fit.
@@ -7151,6 +7154,9 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: KstestResult(res[..., 0], res[..., 1]),
+    n_samples=2)
 def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
@@ -7633,7 +7639,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_2s_hypotest_factory(result_creator=RanksumsResult)
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: RanksumsResult(res[..., 0], res[..., 1]),
+    n_samples=2)
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
@@ -7890,7 +7898,9 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@_vectorize_2s_hypotest_factory(result_creator=BrunnerMunzelResult)
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: BrunnerMunzelResult(res[..., 0], res[..., 1]),
+    n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """

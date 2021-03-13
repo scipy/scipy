@@ -408,7 +408,10 @@ class TestSomersD(object):
 
 
 vectorization_nanpolicy_cases = [
+    (stats.bartlett, tuple(), dict(), 3),
     (stats.pearsonr, tuple(), dict(), 2),
+    (stats.ks_2samp, ("less",),
+     {"mode": 'asymp'}, 2),
     (stats.ranksums, tuple(), dict(), 2),
     (stats.ansari, tuple(), dict(), 2),
     (stats.brunnermunzel, ("less",),
@@ -416,7 +419,11 @@ vectorization_nanpolicy_cases = [
     (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
     (stats.shapiro, tuple(), dict(), 1),
     (stats.jarque_bera, tuple(), dict(), 1),
+    (stats.ks_1samp, (stats.norm.cdf,),
+     {"alternative": "less", "mode": 'asymp'}, 1),
     ]
+
+
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
                          vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit"))

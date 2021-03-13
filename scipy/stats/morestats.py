@@ -17,8 +17,7 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 
-from ._hypotests import (_get_wilcoxon_distr, _vectorize_2s_hypotest_factory,
-                         _vectorize_1s_hypotest_factory)
+from ._hypotests import _get_wilcoxon_distr, _vectorize_hypotest_factory
 
 
 __all__ = ['mvsdist',
@@ -1613,7 +1612,8 @@ def _shapiro_result_creator(res):
     return ShapiroResult(res[..., 0], res[..., 1])
 
 
-@_vectorize_1s_hypotest_factory(_shapiro_result_creator, default_axis=None)
+@_vectorize_hypotest_factory(result_creator=_shapiro_result_creator,
+                             default_axis=None, n_samples=1)
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
@@ -2086,7 +2086,9 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
-@_vectorize_2s_hypotest_factory(result_creator=AnsariResult)
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: AnsariResult(res[..., 0], res[..., 1]),
+    n_samples=2)
 def ansari(x, y):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
@@ -2219,6 +2221,9 @@ def ansari(x, y):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: BartlettResult(res[..., 0], res[..., 1]),
+    n_samples=None)
 def bartlett(*args):
     """
     Perform Bartlett's test for equal variances.
