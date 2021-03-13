@@ -780,7 +780,6 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     .. math::
 
-        pvalue =
         \sum
             \binom{c_1}{x_{11}}
             \binom{c_2}{x_{12}}
