@@ -132,6 +132,14 @@ class TestMMIOArray(object):
         with pytest.raises(ValueError, match='not of length 2'):
             scipy.io.mmread(io.BytesIO(text))
 
+    @pytest.mark.parametrize("dtype, typeval", [
+        (np.int32, 'integer'),
+        (np.float32, 'real'),
+    ])
+    def test_gh13634_non_skew_symmetric(self, dtype, typeval):
+        self.check_exact(array([[1, 2], [-2, 99]], dtype=dtype),
+                         (2, 2, 4, 'array', typeval, 'general'))
+
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
@@ -218,12 +226,12 @@ class TestMMIOSparseCSR(TestMMIOArray):
                          (2, 2, 3, 'coordinate', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
-                         (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
+        self.check_exact(scipy.sparse.csr_matrix([[0, 2], [-2, 0]]),
+                         (2, 2, 1, 'coordinate', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
-        self.check(scipy.sparse.csr_matrix(array([[1, 2], [-2.0, 4]], 'f')),
-                   (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
+        self.check(scipy.sparse.csr_matrix(array([[0, 2], [-2.0, 0]], 'f')),
+                   (2, 2, 1, 'coordinate', 'real', 'skew-symmetric'))
 
     def test_simple_hermitian_complex(self):
         self.check(scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]),
@@ -251,6 +259,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
         assert_array_almost_equal(p, b.todense())
+
+    @pytest.mark.parametrize("dtype, typeval", [
+        (np.int32, 'integer'),
+        (np.float32, 'real'),
+    ])
+    def test_gh13634_non_skew_symmetric(self, dtype, typeval):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=dtype)
+        self.check_exact(a, (2, 2, 4, 'coordinate', typeval, 'general'))
 
 
 _32bit_integer_dense_example = '''\
