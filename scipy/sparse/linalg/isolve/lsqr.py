@@ -415,7 +415,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
         if beta > 0:
             u = (1/beta) * u
-            anorm = sqrt(anorm**2 + alfa**2 + beta**2 + damp**2)
+            anorm = sqrt(anorm**2 + alfa**2 + beta**2 + dampsq)
             v = A.rmatvec(u) - beta * v
             alfa = np.linalg.norm(v)
             if alfa > 0:
@@ -423,7 +423,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
         # Use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
-        rhobar1 = sqrt(rhobar**2 + damp**2)
+        rhobar1 = sqrt(rhobar**2 + dampsq)
         cs1 = rhobar / rhobar1
         sn1 = damp / rhobar1
         psi = sn1 * phibar
