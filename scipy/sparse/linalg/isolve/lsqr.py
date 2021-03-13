@@ -317,13 +317,13 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     var = np.zeros(n)
 
     msg = ('The exact solution is  x = 0                              ',
-         'Ax - b is small enough, given atol, btol                  ',
-         'The least-squares solution is good enough, given atol     ',
-         'The estimate of cond(Abar) has exceeded conlim            ',
-         'Ax - b is small enough for this machine                   ',
-         'The least-squares solution is good enough for this machine',
-         'Cond(Abar) seems to be too large for this machine         ',
-         'The iteration limit has been reached                      ')
+           'Ax - b is small enough, given atol, btol                  ',
+           'The least-squares solution is good enough, given atol     ',
+           'The estimate of cond(Abar) has exceeded conlim            ',
+           'Ax - b is small enough for this machine                   ',
+           'The least-squares solution is good enough for this machine',
+           'Cond(Abar) seems to be too large for this machine         ',
+           'The iteration limit has been reached                      ')
 
     if show:
         print(' ')
@@ -353,10 +353,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     cs2 = -1
     sn2 = 0
 
-    """
-    Set up the first vectors u and v for the bidiagonalization.
-    These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
-    """
+    # Set up the first vectors u and v for the bidiagonalization.
+    # These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
     u = b
     bnorm = np.linalg.norm(b)
     if x0 is None:
@@ -408,12 +406,10 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     # Main iteration loop.
     while itn < iter_lim:
         itn = itn + 1
-        """
-        %     Perform the next step of the bidiagonalization to obtain the
-        %     next  beta, u, alfa, v.  These satisfy the relations
-        %                beta*u  =  a*v   -  alfa*u,
-        %                alfa*v  =  A'*u  -  beta*v.
-        """
+        # Perform the next step of the bidiagonalization to obtain the
+        # next  beta, u, alfa, v. These satisfy the relations
+        #     beta*u  =  a*v   -  alfa*u,
+        #     alfa*v  =  A'*u  -  beta*v.
         u = A.matvec(v) - alfa * u
         beta = np.linalg.norm(u)
 
