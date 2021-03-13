@@ -423,11 +423,16 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
         # Use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
-        rhobar1 = sqrt(rhobar**2 + dampsq)
-        cs1 = rhobar / rhobar1
-        sn1 = damp / rhobar1
-        psi = sn1 * phibar
-        phibar = cs1 * phibar
+        if damp > 0:
+            rhobar1 = sqrt(rhobar**2 + dampsq)
+            cs1 = rhobar / rhobar1
+            sn1 = damp / rhobar1
+            psi = sn1 * phibar
+            phibar = cs1 * phibar
+        else:
+            # cs1 = 1 and sn1 = 0
+            rhobar1 = rhobar
+            psi = 0.
 
         # Use a plane rotation to eliminate the subdiagonal element (beta)
         # of the lower-bidiagonal matrix, giving an upper-bidiagonal matrix.
@@ -481,10 +486,13 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         #    Estimate r1norm from
         #    r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
         # Although there is cancellation, it might be accurate enough.
-        r1sq = rnorm**2 - dampsq * xxnorm
-        r1norm = sqrt(abs(r1sq))
-        if r1sq < 0:
-            r1norm = -r1norm
+        if damp > 0:
+            r1sq = rnorm**2 - dampsq * xxnorm
+            r1norm = sqrt(abs(r1sq))
+            if r1sq < 0:
+                r1norm = -r1norm
+        else:
+            r1norm = rnorm
         r2norm = rnorm
 
         # Now use these norms to estimate certain other quantities,
