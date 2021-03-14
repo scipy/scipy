@@ -2649,6 +2649,13 @@ class TestGamma(object):
         x = [0.1, 0.5, 0.6]
         assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
 
+    def test_isf(self):
+        # test cases for when the probability is very small. se gh-13664
+        assert np.isclose(stats.gamma.isf(1e-17, 1),
+                          39.14394658089878, atol=1e-14)
+        assert np.isclose(stats.gamma.isf(1e-50, 100),
+                          330.6557590436547, atol=1e-13)
+
 
 class TestChi2(object):
     # regression tests after precision improvements, ticket:1041, not verified

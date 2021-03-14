@@ -2644,6 +2644,9 @@ class gamma_gen(rv_continuous):
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
 
+    def _isf(self, q, a):
+        return sc.gammainccinv(a, q)
+
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
