@@ -140,6 +140,7 @@ class TestMMIOArray(object):
         self.check(array([[1, 2], [-2, 99.]], dtype=np.float32),
                    (2, 2, 4, 'array', 'real', 'general'))
 
+
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
         self.tmpdir = mkdtemp()
