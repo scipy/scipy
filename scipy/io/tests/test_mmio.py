@@ -265,7 +265,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
     def test_gh13634_non_skew_symmetric_float(self):
-        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.float32)
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99.]], dtype=np.float32)
         self.check(a, (2, 2, 4, 'coordinate', 'real', 'general'))
 
 
