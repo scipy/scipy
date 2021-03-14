@@ -15,6 +15,7 @@ from pytest import raises as assert_raises
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
+from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -704,7 +705,7 @@ class TestBinomTest:
         res = stats.binomtest(10080017, 21000000, 0.48)
         assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-15)
 
-    def tst_two_sided_pvalues2(self):
+    def test_two_sided_pvalues2(self):
         res = stats.binomtest(9, n=21, p=0.48)
         assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-15)
         res = stats.binomtest(4, 21, 0.48)
@@ -720,7 +721,7 @@ class TestBinomTest:
         res = stats.binomtest(2, 4, .3)
         assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-15)
 
-    def tst_edge_cases(self):
+    def test_edge_cases(self):
         res = stats.binomtest(484, 967, 0.5)
         assert_allclose(res.pvalue, 0.999999999998212, rtol=1e-15)
         res = stats.binomtest(3, 47, 3/47)
@@ -734,7 +735,7 @@ class TestBinomTest:
         res = stats.binomtest(6, 11, 0.5)
         assert_allclose(res.pvalue, 0.9999999999999997, rtol=1e-15)
 
-    def tst_binary_srch_for_binom_tst(self):
+    def test_binary_srch_for_binom_tst(self):
         # Test that old behavior of binomtest is maintained
         # by the new binary search method in cases where d
         # exactly equals the input on one side.
@@ -747,7 +748,7 @@ class TestBinomTest:
         # Old way of calculating y, probably consistent with R.
         y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
         # New way with binary search.
-        ix = stats._binary_search_for_binom_tst(lambda x1:
+        ix = _binary_search_for_binom_tst(lambda x1:
                                                 -stats.binom.pmf(x1, n, p),
                                                 -d, np.ceil(p * n), n)
         y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
@@ -759,7 +760,7 @@ class TestBinomTest:
         # Old way of calculating y.
         y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
         # New way with binary search.
-        ix = stats._binary_search_for_binom_tst(lambda x1:
+        ix = _binary_search_for_binom_tst(lambda x1:
                                                 stats.binom.pmf(x1, n, p),
                                                 d, 0, np.floor(p * n))
         y2 = ix + 1
