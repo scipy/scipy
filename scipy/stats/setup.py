@@ -34,9 +34,9 @@ def configuration(parent_package='',top_path=None):
     )
     config.add_data_files('_sobol_direction_numbers.npz')
 
-    # add _discrepancy module
-    config.add_extension('_discrepancy',
-        sources=['_discrepancy.cxx', ],
+    # add _qmc_cy module
+    config.add_extension('_qmc_cy',
+        sources=['_qmc_cy.cxx', ],
     )
 
     return config

@@ -271,7 +271,7 @@ scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
 scipy/stats/_sobol.c
-scipy/stats/_discrepancy.cxx
+scipy/stats/_qmc_cy.cxx
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
