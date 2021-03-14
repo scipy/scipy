@@ -617,6 +617,11 @@ class TestGetWindow(object):
             w = windows.get_window(('chebwin', 40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
+    def test_dpss(self):
+        win1 = windows.get_window(('dpss', 3), 64, fftbins=False)
+        win2 = windows.dpss(64, 3)
+        assert_array_almost_equal(win1, win2, decimal=4)
+
     def test_kaiser_float(self):
         win1 = windows.get_window(7.2, 64)
         win2 = windows.kaiser(64, 7.2, False)

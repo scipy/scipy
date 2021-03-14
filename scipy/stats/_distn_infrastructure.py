@@ -524,10 +524,14 @@ class rv_frozen(object):
         return self.dist.support(*self.args, **self.kwds)
 
 
-# This should be rewritten
 def argsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
+    """Clean arguments to:
+
+    1. Ensure all arguments are iterable (arrays of dimension at least one
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is
+       True, in 1D.
+
+    Return list of processed arguments.
 
     Examples
     --------
@@ -538,20 +542,39 @@ def argsreduce(cond, *args):
     >>> C = rand((1, 5))
     >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
+    (4, 5)
     >>> B1.shape
-    (20,)
+    (1,)
+    >>> C1.shape
+    (1, 5)
     >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
+    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
     (15,)
-
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (15,)
     """
+    # some distributions assume arguments are iterable.
     newargs = np.atleast_1d(*args)
+
+    # np.atleast_1d returns an array if only one argument, or a list of arrays
+    # if more than one argument.
     if not isinstance(newargs, list):
         newargs = [newargs, ]
-    expand_arr = (cond == cond)
-    return [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
+    if np.all(cond):
+        # Nothing to do
+        return newargs
+
+    s = cond.shape
+    # np.extract returns flattened arrays, which are not broadcastable together
+    # unless they are either the same size or size == 1.
+    return [(arg if np.size(arg) == 1
+            else np.extract(cond, np.broadcast_to(arg, s)))
+            for arg in newargs]
 
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
@@ -1421,13 +1444,25 @@ class rv_generic(object):
             scale parameter, Default is 1.
         Returns
         -------
-        a, b : float
+        a, b : array_like
             end-points of the distribution's support.
 
         """
         args, loc, scale = self._parse_args(*args, **kwargs)
+        arrs = np.broadcast_arrays(*args, loc, scale)
+        args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
+        cond = self._argcheck(*args) & (scale > 0)
         _a, _b = self._get_support(*args)
-        return _a * scale + loc, _b * scale + loc
+        if cond.all():
+            return _a * scale + loc, _b * scale + loc
+        elif cond.ndim == 0:
+            return self.badvalue, self.badvalue
+        # promote bounds to at least float to fill in the badvalue
+        _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
+        out_a, out_b = _a * scale + loc, _b * scale + loc
+        place(out_a, 1-cond, self.badvalue)
+        place(out_b, 1-cond, self.badvalue)
+        return out_a, out_b
 
 
 def _get_fixed_fit_value(kwds, names):
@@ -1445,7 +1480,6 @@ def _get_fixed_fit_value(kwds, names):
                          "specify the same fixed parameter: " +
                          ', '.join(repeated))
     return vals[0][1] if vals else None
-
 
 ##  continuous random variables: implement maybe later
 ##
@@ -2215,7 +2249,7 @@ class rv_continuous(rv_generic):
         loc, scale = self._fit_loc_scale_support(data, *args)
         return args + (loc, scale)
 
-    def _reduce_func(self, args, kwds):
+    def _reduce_func(self, args, kwds, data=None):
         """
         Return the (possibly reduced) function to optimize in order to find MLE
         estimates for the .fit method.
@@ -2224,6 +2258,7 @@ class rv_continuous(rv_generic):
         # stats.beta, shapes='a, b'. To fix `a`, the caller can give a value
         # for `f0`, `fa` or 'fix_a'.  The following converts the latter two
         # into the first (numeric) form.
+        shapes = []
         if self.shapes:
             shapes = self.shapes.replace(',', ' ').split()
             for j, s in enumerate(shapes):
@@ -2245,8 +2280,22 @@ class rv_continuous(rv_generic):
             else:
                 x0.append(args[n])
 
+        methods = {"mle", "mm"}
+        method = kwds.pop('method', "mle").lower()
+        if method == "mm":
+            n_params = len(shapes) + 2 - len(fixedn)
+            exponents = (np.arange(1, n_params+1))[:, np.newaxis]
+            data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+            def objective(theta, x):
+                return self._moment_error(theta, x, data_moments)
+        elif method == "mle":
+            objective = self._penalized_nnlf
+        else:
+            raise ValueError("Method '{0}' not available; must be one of {1}"
+                             .format(method, methods))
+
         if len(fixedn) == 0:
-            func = self._penalized_nnlf
+            func = objective
             restore = None
         else:
             if len(fixedn) == Nargs:
@@ -2266,16 +2315,33 @@ class rv_continuous(rv_generic):
 
             def func(theta, x):
                 newtheta = restore(args[:], theta)
-                return self._penalized_nnlf(newtheta, x)
+                return objective(newtheta, x)
 
         return x0, func, restore, args
 
+    def _moment_error(self, theta, x, data_moments):
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+
+        dist_moments = np.array([self.moment(i+1, *args, loc=loc, scale=scale)
+                                 for i in range(len(data_moments))])
+        if np.any(np.isnan(dist_moments)):
+            raise ValueError("Method of moments encountered a non-finite "
+                              "distribution moment and cannot continue. "
+                              "Consider trying method='MLE'.")
+
+        return (((data_moments - dist_moments) /
+                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+
     def fit(self, data, *args, **kwds):
         """
-        Return MLEs for shape (if applicable), location, and scale
-        parameters from data.
+        Return estimates of shape (if applicable), location, and scale
+        parameters from data. The default estimation method is Maximum
+        Likelihood Estimation (MLE), but Method of Moments (MM)
+        is also available.
 
-        MLE stands for Maximum Likelihood Estimate.  Starting estimates for
+        Starting estimates for
         the fit are given by input arguments; for any arguments not provided
         with starting estimates, ``self._fitstart(data)`` is called to generate
         such.
@@ -2288,7 +2354,7 @@ class rv_continuous(rv_generic):
         Parameters
         ----------
         data : array_like
-            Data to use in calculating the MLEs.
+            Data to use in estimating the distribution parameters.
         arg1, arg2, arg3,... : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
@@ -2316,21 +2382,46 @@ class rv_continuous(rv_generic):
               function to be optimized) and ``disp=0`` to suppress
               output as keyword arguments.
 
+            - method : The method to use. The default is "MLE" (Maximum
+              Likelihood Estimate); "MM" (Method of Moments)
+              is also available.
+
+
         Returns
         -------
-        mle_tuple : tuple of floats
-            MLEs for any shape parameters (if applicable), followed by those
+        parameter_tuple : tuple of floats
+            Estimates for any shape parameters (if applicable), followed by those
             for location and scale. For most random variables, shape statistics
             will be returned, but there are exceptions (e.g. ``norm``).
 
         Notes
         -----
-        This fit is computed by maximizing a log-likelihood function, with
-        penalty applied for samples outside of range of the distribution. The
-        returned answer is not guaranteed to be the globally optimal MLE, it
+        With ``method="MLE"`` (default), the fit is computed by minimizing
+        the negative log-likelihood function. A large, finite penalty
+        (rather than infinite negative log-likelihood) is applied for
+        observations beyond the support of the distribution.
+
+        With ``method="MM"``, the fit is computed by minimizing the L2 norm
+        of the relative errors between the first *k* raw (about zero) data
+        moments and the corresponding distribution moments, where *k* is the
+        number of non-fixed parameters.
+        More precisely, the objective function is::
+
+            (((data_moments - dist_moments)
+              / np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+
+        where the constant ``1e-8`` avoids division by zero in case of
+        vanishing data moments. Typically, this error norm can be reduced to
+        zero.
+        Note that the standard method of moments can produce parameters for
+        which some data are outside the support of the fitted distribution;
+        this implementation does nothing to prevent this.
+
+        For either method,
+        the returned answer is not guaranteed to be globally optimal; it
         may only be locally optimal, or the optimization may fail altogether.
-        If the data contain any of np.nan, np.inf, or -np.inf, the fit routine
-        will throw a RuntimeError.
+        If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
+        the `fit` method will raise a ``RuntimeError``.
 
         Examples
         --------
@@ -2370,6 +2461,10 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
         """
+        data = np.asarray(data)
+        method = kwds.get('method', "mle").lower()
+
+        # memory for method of moments
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
@@ -2386,7 +2481,7 @@ class rv_continuous(rv_generic):
         loc = kwds.pop('loc', start[-2])
         scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
-        x0, func, restore, args = self._reduce_func(args, kwds)
+        x0, func, restore, args = self._reduce_func(args, kwds, data=data)
         optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
         optimizer = _fit_determine_optimizer(optimizer)
@@ -2394,10 +2489,28 @@ class rv_continuous(rv_generic):
         if kwds:
             raise TypeError("Unknown arguments: %s." % kwds)
 
+        # In some cases, method of moments can be done with fsolve/root
+        # instead of an optimizer, but sometimes no solution exists,
+        # especially when the user fixes parameters. Minimizing the sum
+        # of squares of the error generalizes to these cases.
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        obj = func(vals, data)
+
         if restore is not None:
             vals = restore(args, vals)
         vals = tuple(vals)
+
+        loc, scale, shapes = self._unpack_loc_scale(vals)
+        if not (np.all(self._argcheck(*shapes)) and scale > 0):
+            raise Exception("Optimization converged to parameters that are "
+                            "outside the range allowed by the distribution.")
+
+        if method == 'mm':
+            if not np.isfinite(obj):
+                raise Exception("Optimization failed: either a data moment "
+                                "or fitted distribution moment is "
+                                "non-finite.")
+
         return vals
 
     def _fit_loc_scale_support(self, data, *args):
