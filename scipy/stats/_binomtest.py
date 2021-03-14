@@ -345,7 +345,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
     Meant to be used on the binomial PMF for the case of two-sided tests
     to obtain the value on the other side of the mode where the tail
     probability should be computed. The values on either side of
-    the mode are always in order making binary search is applicable.
+    the mode are always in order, meaning binary search is applicable.
 
     Parameters
     ----------
