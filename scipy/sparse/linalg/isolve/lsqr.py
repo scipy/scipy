@@ -525,26 +525,26 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         if test1 <= rtol:
             istop = 1
 
-        # See if it is time to print something.
-        prnt = False
-        if n <= 40:
-            prnt = True
-        if itn <= 10:
-            prnt = True
-        if itn >= iter_lim-10:
-            prnt = True
-        # if itn%10 == 0: prnt = True
-        if test3 <= 2*ctol:
-            prnt = True
-        if test2 <= 10*atol:
-            prnt = True
-        if test1 <= 10*rtol:
-            prnt = True
-        if istop != 0:
-            prnt = True
+        if show:
+            # See if it is time to print something.
+            prnt = False
+            if n <= 40:
+                prnt = True
+            if itn <= 10:
+                prnt = True
+            if itn >= iter_lim-10:
+                prnt = True
+            # if itn%10 == 0: prnt = True
+            if test3 <= 2*ctol:
+                prnt = True
+            if test2 <= 10*atol:
+                prnt = True
+            if test1 <= 10*rtol:
+                prnt = True
+            if istop != 0:
+                prnt = True
 
-        if prnt:
-            if show:
+            if prnt:
                 str1 = '%6g %12.5e' % (itn, x[0])
                 str2 = ' %10.3e %10.3e' % (r1norm, r2norm)
                 str3 = '  %8.1e %8.1e' % (test1, test2)
