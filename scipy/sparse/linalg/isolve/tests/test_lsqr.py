@@ -35,6 +35,20 @@ def test_basic():
     xo = X[0]
     assert_(norm(svx - xo) < 1e-5)
 
+    # Now the same but with damp > 0.
+    # This is equivalent to solving extented system:
+    # ( G      ) * x = ( b )
+    # ( damp*I )       ( 0 )
+    damp = 1.5
+    X = lsqr(G, b, damp=damp, show=show, atol=tol, btol=tol, iter_lim=maxit)
+
+    Gext = np.r_[G, damp * np.eye(G.shape[1])]
+    bext = np.r_[b, np.zeros(G.shape[1])]
+    svx, _, _, _ = np.linalg.lstsq(Gext, bext, rcond=None)
+    xo = X[0]
+    assert_(norm(svx - xo) < 1e-5)
+
+
 def test_gh_2466():
     row = np.array([0, 0])
     col = np.array([0, 1])
@@ -127,8 +141,8 @@ if __name__ == "__main__":
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % (chio, phio, psio))
     print("Residual norms computed directly:")
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
-                                                          norm(G*xo - b),
-                                                          norm(G.T*(G*xo-b))))
+                                                         norm(G*xo - b),
+                                                         norm(G.T*(G*xo-b))))
     print("Direct solution norms:")
     print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx - b)))
     print("")
