@@ -272,31 +272,21 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
         workers = os.cpu_count()
         if workers is None:
             raise NotImplementedError(
-                'Cannot determine the number of cpus using os.cpu_count(), '
-                'cannot use -1 for the number of workers')
+                "Cannot determine the number of cpus using os.cpu_count(), "
+                "cannot use -1 for the number of workers")
     elif workers <= 0:
-        raise ValueError(f'Invalid number of workers: {workers}, must be -1 '
-                         'or > 0')
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
+                         "or > 0")
 
-    if method == "CD":
-        return _cy_wrapper_centered_discrepancy(
-            sample, iterative, workers=workers
-        )
+    methods = {
+        "CD": _cy_wrapper_centered_discrepancy,
+        "WD": _cy_wrapper_wrap_around_discrepancy,
+        "MD": _cy_wrapper_mixture_discrepancy,
+        "L2-star": _cy_wrapper_l2_star_discrepancy,
+    }
 
-    elif method == "WD":
-        return _cy_wrapper_wrap_around_discrepancy(
-            sample, iterative, workers=workers
-        )
-
-    elif method == "MD":
-        return _cy_wrapper_mixture_discrepancy(
-            sample, iterative, workers=workers
-        )
-
-    elif method == "L2-star":
-        return _cy_wrapper_l2_star_discrepancy(
-            sample, iterative, workers=workers
-        )
+    if method in methods:
+        return methods[method](sample, iterative, workers=workers)
     else:
         raise ValueError(
             "{!r} is not a valid method. Options are "
