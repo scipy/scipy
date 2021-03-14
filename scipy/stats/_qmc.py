@@ -1,4 +1,5 @@
 """Quasi-Monte Carlo engines and helpers."""
+import os
 import copy
 import numbers
 from abc import ABC, abstractmethod
@@ -159,6 +160,9 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
     method : str, optional
         Type of discrepancy, can be ``CD``, ``WD``, ``MD`` or ``L2-star``.
         Refer to the notes for more details. Default is ``CD``.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default: 1.
 
     Returns
     -------
@@ -264,6 +268,16 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
             f"workers param needs to be an int. Found " f"{type(workers)!r}"
         )
 
+    if workers == -1:
+        workers = os.cpu_count()
+        if workers is None:
+            raise NotImplementedError(
+                'Cannot determine the number of cpus using os.cpu_count(), '
+                'cannot use -1 for the number of workers')
+    elif workers <= 0:
+        raise ValueError(f'Invalid number of workers: {workers}, must be -1 '
+                         'or > 0')
+
     if method == "CD":
         return _cy_wrapper_centered_discrepancy(
             sample, iterative, workers=workers
@@ -342,7 +356,7 @@ def update_discrepancy(x_new, sample, initial_disc):
         raise ValueError('x_new is not in unit hypercube')
 
     if x_new.shape[0] != sample.shape[1]:
-        raise ValueError('x_new and Sample must be broadcastable')
+        raise ValueError('x_new and sample must be broadcastable')
 
     return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 
