@@ -60,7 +60,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     """
     y = np.asarray(y, dtype=float, order='C')
     if y.ndim != 2:
-        raise ValueError('Expected `y` to be a 2-dimensional array')
+        raise ValueError('`y` must be a 2-dimensional array')
 
     ny, ndim = y.shape
 
@@ -81,36 +81,34 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
                 )
 
     if kernel not in _AVAILABLE:
-        raise ValueError(
-            'Expected `kernel` to be one of {%s}' %
-            ', '.join('"%s"' % kn for kn in _AVAILABLE)
-            )
+        raise ValueError('`kernel` must be one of %s' % _AVAILABLE)
 
     if epsilon is None:
         if kernel in _SCALE_INVARIANT:
             epsilon = 1.0
         else:
             raise ValueError(
-                '`epsilon` must be specified if `kernel` is not one of {%s}.' %
-                ', '.join('"%s"' % kn for kn in _SCALE_INVARIANT)
+                '`epsilon` must be specified if `kernel` is not one of %s' %
+                _SCALE_INVARIANT
                 )
-
-    elif not np.isscalar(epsilon):
-        raise ValueError('Expected `epsilon` to be a scalar')
+    else:
+        epsilon = float(epsilon)
 
     min_degree = _NAME_TO_MIN_DEGREE.get(kernel, -1)
     if degree is None:
         degree = max(min_degree, 0)
-    elif max(degree, -1) < min_degree:
-        warnings.warn(
-            'The polynomial degree should not be below %d for "%s". The '
-            'interpolant may not be uniquely solvable, and the smoothing '
-            'parameter may have an unintuitive effect.' %
-            (min_degree, kernel),
-            UserWarning
-            )
-
-    degree = int(degree)
+    else:
+        degree = int(degree)
+        if degree < -1:
+            raise ValueError('`degree` must be at least -1')
+        elif degree < min_degree:
+            warnings.warn(
+                '`degree` should not be below %d when `kernel` is "%s". The '
+                'interpolant may not be uniquely solvable, and the smoothing '
+                'parameter may have an unintuitive effect.' %
+                (min_degree, kernel),
+                UserWarning
+                )
 
     if k is None:
         nobs = ny
@@ -126,8 +124,8 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     nmonos = int(binom(degree + ndim, ndim))
     if nmonos > nobs:
         raise ValueError(
-            'At least %d data points are required when the polynomial degree '
-            'is %d and the number of dimensions is %d' % (nmonos, degree, ndim)
+            'At least %d data points are required when `degree` is %d and the '
+            'number of dimensions is %d' % (nmonos, degree, ndim)
             )
 
     return y, d, smoothing, kernel, epsilon, degree, k

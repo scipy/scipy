@@ -24,8 +24,8 @@ def _vandermonde(x, degree):
 
 
 def _1d_test_function(x):
-    # test function used in Wahba's "Spline Models for Observational Data
-    # domain ~= (0, 3), range ~= (-1.0, 0.2)"
+    # test function used in Wahba's "Spline Models for Observational Data"
+    # domain ~= (0, 3), range ~= (-1.0, 0.2)
     x = x[:, 0]
     y = 4.26*(np.exp(-x) - 4*np.exp(-2*x) + 3*np.exp(-3*x))
     return y
@@ -33,7 +33,7 @@ def _1d_test_function(x):
 
 def _2d_test_function(x):
     # Franke's test function
-    # domain ~= (0, 1) X (0, 1), range ~= (0.0, 1.2)"
+    # domain ~= (0, 1) X (0, 1), range ~= (0.0, 1.2)
     x1, x2 = x[:, 0], x[:, 1]
     term1 = 0.75 * np.exp(-(9*x1-2)**2/4 - (9*x2-2)**2/4)
     term2 = 0.75 * np.exp(-(9*x1+1)**2/49 - (9*x2+1)/10)
@@ -53,9 +53,9 @@ def _is_conditionally_positive_definite(kernel, m):
     for ndim in [1, 2, 3, 4, 5]:
         for _ in range(ntests):
             x = np.random.normal(0.0, 1.0, (nx, ndim))
+            dist = _rbfinterp_pythran._distance_matrix(x)
             # add a small value to the diagonals in case the kernel _should_ be
             # c.p.d but it is not due to numerical precision.
-            dist = _rbfinterp_pythran._distance_matrix(x)
             A = kernel(dist) + 1e-12*np.eye(nx)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
@@ -75,8 +75,8 @@ def _is_conditionally_positive_definite(kernel, m):
 
 @pytest.mark.parametrize('kernel', _AVAILABLE)
 def test_conditionally_positive_definite(kernel):
-    # Test if each kernel in _NAME_TO_FUNC is conditionally positive definite
-    # of order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
+    # Test if each kernel in _AVAILABLE is conditionally positive definite of
+    # order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
     # condition for the smoothed RBF interpolant to be well-posed in general
     kernel_func = _get_kernel(kernel)
     m = _NAME_TO_MIN_DEGREE.get(kernel, -1) + 1
@@ -295,13 +295,6 @@ class _TestRBFInterpolator:
         with assert_raises(ValueError):
             self.build(y, d, smoothing=smoothing)
 
-    def test_epsilon_not_scalar_error(self):
-        y = np.linspace(0, 1, 5)[:, None]
-        d = np.zeros(5)
-        epsilon = np.ones(1)
-        with assert_raises(ValueError):
-            self.build(y, d, epsilon=epsilon)
-
     def test_invalid_kernel_name_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
@@ -357,16 +350,6 @@ class _TestRBFInterpolator:
         yitp1 = interp(xitp)
         yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
         assert_array_equal(yitp1, yitp2)
-
-    @pytest.mark.xfail
-    def test_callable_kernel(self):
-        # Make sure we can specify kernel as a callable
-        x = np.random.uniform(0.0, 3.0, (50, 1))
-        y = _1d_test_function(x)
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
-        yitp1 = self.build(x, y, kernel=lambda r: -r, degree=0)(xitp)
-        yitp2 = self.build(x, y, kernel='linear')(xitp)
-        assert_allclose(yitp1, yitp2)
 
 
 class TestRBFInterpolator(_TestRBFInterpolator):
