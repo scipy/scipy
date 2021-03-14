@@ -2270,14 +2270,12 @@ class TestInvgauss:
 
         # tests if algorithm does not diverge for small probabilities.
         assert np.isclose(stats.invgauss.ppf(0.00013, mu=1 / 3) * 3,
-                          0.15039762631802803, atol=1e-08)
+                          0.15039762631802803, atol=1e-17)
         # test if it returns right tail values accurately
-        assert np.isclose(stats.invgauss.isf(1e-16, mu=1.05) / 0.7,
-                          98.47905825943425, atol=1e-08)
-        # test if it overflows for input 1e-17 or less
-        with pytest.warns(RuntimeWarning,
-            match="invalid value encountered in multiply"):
-             assert_equal(stats.invgauss.isf(1e-17, mu=1.05) / 0.7, np.nan)
+        assert np.isclose(stats.invgauss.isf(1e-17, mu=1.05) / 0.7,
+                          105.42079072389444, atol=1e-14)
+        assert np.isclose(stats.invgauss.isf(1e-50, mu=1.05) / 0.7,
+                          339.3560284841935, atol=1e-13)
         # test if correct  out is returned for boundary values
         with np.errstate(invalid='ignore'):
             # because probabilities must be in the interval [0, 1] a

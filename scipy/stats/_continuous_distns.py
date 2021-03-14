@@ -4175,7 +4175,8 @@ class invgauss_gen(rv_continuous):
             """select the start values for the newton using the quantiles of
             the gamma (if right tail is required) or normal distribution"""
             if upper:
-                return gamma.isf(q, 1 / mu, scale=mu * mu)
+                mu3 = mu ** 3
+                return sc.gammainccinv(1 / mu3, q) / mu3
             return mu / (_norm_ppf(q) ** 2),
 
         k = 1.5 * mu
