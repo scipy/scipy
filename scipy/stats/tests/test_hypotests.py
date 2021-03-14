@@ -13,8 +13,6 @@ import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
 
-from scipy import stats
-
 
 class TestEppsSingleton(object):
     def test_statistic_1(self):
@@ -409,6 +407,7 @@ class TestSomersD(object):
 
 vectorization_nanpolicy_cases = [
     (stats.bartlett, tuple(), dict(), 3),
+    (stats.levene, tuple(), {'center':'mean', 'proportiontocut':0.025}, 3),
     (stats.pearsonr, tuple(), dict(), 2),
     (stats.ks_2samp, ("less",),
      {"mode": 'asymp'}, 2),
@@ -419,7 +418,7 @@ vectorization_nanpolicy_cases = [
     (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
     (stats.shapiro, tuple(), dict(), 1),
     (stats.jarque_bera, tuple(), dict(), 1),
-    (stats.ks_1samp, (stats.norm.cdf,),
+    (stats.ks_1samp, (distributions.norm.cdf,),
      {"alternative": "less", "mode": 'asymp'}, 1),
     ]
 

@@ -172,7 +172,7 @@ import warnings
 import math
 from math import gcd
 from collections import namedtuple
-from itertools import permutations, product
+from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -4360,6 +4360,10 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
+# @_vectorize_hypotest_factory(
+#     result_creator=lambda res: SpearmanrResult(res[..., 0],
+#                                                res[..., 1]),
+#     n_samples=2)
 def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     Calculate a Spearman correlation coefficient with associated p-value.
@@ -7640,7 +7644,8 @@ RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
 @_vectorize_hypotest_factory(
-    result_creator=lambda res: RanksumsResult(res[..., 0], res[..., 1]),
+    result_creator=lambda res: RanksumsResult(res[..., 0],
+                                              res[..., 1]),
     n_samples=2)
 def ranksums(x, y):
     """
@@ -7899,7 +7904,8 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
 
 
 @_vectorize_hypotest_factory(
-    result_creator=lambda res: BrunnerMunzelResult(res[..., 0], res[..., 1]),
+    result_creator=lambda res: BrunnerMunzelResult(res[..., 0],
+                                                   res[..., 1]),
     n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):

@@ -16,7 +16,6 @@ from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-
 from ._hypotests import _get_wilcoxon_distr, _vectorize_hypotest_factory
 
 
@@ -2222,7 +2221,8 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 @_vectorize_hypotest_factory(
-    result_creator=lambda res: BartlettResult(res[..., 0], res[..., 1]),
+    result_creator=lambda res: BartlettResult(res[..., 0],
+                                              res[..., 1]),
     n_samples=None)
 def bartlett(*args):
     """
@@ -2326,6 +2326,10 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: LeveneResult(res[..., 0],
+                                            res[..., 1]),
+    n_samples=None)
 def levene(*args, center='median', proportiontocut=0.05):
     """
     Perform Levene test for equal variances.

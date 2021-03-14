@@ -610,11 +610,6 @@ class TestLevene(object):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.levene, g1, x)
-
 
 class TestBinomP:
     """Tests for stats.binom_test."""

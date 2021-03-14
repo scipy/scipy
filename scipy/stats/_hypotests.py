@@ -30,10 +30,22 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
                 samples = [sample.ravel() for sample in samples]
                 axis = 0
 
-            # just execute the original function if axis/nan_policy not needed
+            # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
-            if np.all(ndims == 1) and nan_policy == 'propagate':
-                return hypotest_fun_in(*samples, *args, **kwds)
+            if np.all(ndims <= 1):
+                if nan_policy == 'propagate':
+                    return hypotest_fun_in(*samples, *args, **kwds)
+
+                samples_no_nans = []
+                for sample in samples:
+                    contains_nan, _ = (
+                        scipy.stats.stats._contains_nan(sample, nan_policy))
+                    if contains_nan:
+                        # We only get here if nan_policy == 'omit'
+                        sample = sample[~np.isnan(sample)]
+                    samples_no_nans.append(sample)
+
+                return hypotest_fun_in(*samples_no_nans, *args, **kwds)
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
@@ -42,7 +54,7 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
             x = scipy.stats.stats._broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy="raise"
-            contains_nan, nan_policy = (
+            contains_nan, _ = (
                 scipy.stats.stats._contains_nan(x, nan_policy))
 
             # Addresses nan_policy="omit"
