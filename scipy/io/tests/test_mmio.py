@@ -132,14 +132,13 @@ class TestMMIOArray(object):
         with pytest.raises(ValueError, match='not of length 2'):
             scipy.io.mmread(io.BytesIO(text))
 
-    @pytest.mark.parametrize("dtype, typeval", [
-        (np.int32, 'integer'),
-        (np.float32, 'real'),
-    ])
-    def test_gh13634_non_skew_symmetric(self, dtype, typeval):
-        self.check_exact(array([[1, 2], [-2, 99]], dtype=dtype),
-                         (2, 2, 4, 'array', typeval, 'general'))
+    def test_gh13634_non_skew_symmetric_int(self):
+        self.check_exact(array([[1, 2], [-2, 99]], dtype=np.int32),
+                         (2, 2, 4, 'array', 'integer', 'general'))
 
+    def test_gh13634_non_skew_symmetric_float(self):
+        self.check(array([[1, 2], [-2, 99.]], dtype=np.float32),
+                   (2, 2, 4, 'array', 'real', 'general'))
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
@@ -260,13 +259,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
         b = mmread(self.fn)
         assert_array_almost_equal(p, b.todense())
 
-    @pytest.mark.parametrize("dtype, typeval", [
-        (np.int32, 'integer'),
-        (np.float32, 'real'),
-    ])
-    def test_gh13634_non_skew_symmetric(self, dtype, typeval):
-        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=dtype)
-        self.check_exact(a, (2, 2, 4, 'coordinate', typeval, 'general'))
+    def test_gh13634_non_skew_symmetric_int(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
+        self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
+
+    def test_gh13634_non_skew_symmetric_float(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.float32)
+        self.check(a, (2, 2, 4, 'coordinate', 'real', 'general'))
 
 
 _32bit_integer_dense_example = '''\
