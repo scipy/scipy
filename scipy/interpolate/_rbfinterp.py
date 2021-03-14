@@ -145,7 +145,7 @@ class RBFInterpolator:
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree.
-    kernel : str or callable, optional
+    kernel : str, optional
         Type of RBF. This should be one of:
 
             - 'linear'                       : ``-r``
@@ -339,7 +339,7 @@ class KNearestRBFInterpolator:
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0.
-    kernel : str or callable, optional
+    kernel : str, optional
         Type of RBF. This should be one of:
 
             - 'linear'                       : ``-r``
