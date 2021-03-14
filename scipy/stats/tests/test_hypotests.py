@@ -432,25 +432,29 @@ def test_hypotest_vectorization(hypotest, args, kwds, nsamp, nan_policy, axis):
     # vectorize as expected
     m, n = 8, 9
 
-    np.random.seed(0)
+    np.random.seed(1)
     x = np.random.rand(nsamp, m, n)
 
     if nan_policy == 'omit':
-        nan_mask = np.random.rand(m, n) > 0.85
-        x[:, nan_mask] = np.nan  # e.g. pearson requires x and y same mask
+        nan_mask = np.random.rand(nsamp, m, n) > 0.85
+        x[nan_mask] = np.nan
 
     # perform test along last axis for each element of second to last axis
     # consider rewriting for arbitrary number of dimensions, though
     x2 = np.moveaxis(x.copy(), axis+1, -1)
     output_size = x2.shape[-2]
-    stats, ps = np.zeros(output_size), np.zeros(output_size)
+    statz, ps = np.zeros(output_size), np.zeros(output_size)
     for i in range(output_size):
         xi = x2[:, i, :]
         if nan_policy == 'omit':
-            xi = [xji[~np.isnan(xji)] for xji in xi]
-        stats[i], ps[i] = hypotest(*xi, *args, **kwds)
+            if hypotest == stats.pearsonr:
+                mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]))
+                xi = [xji[mask] for xji in xi]
+            else:
+                xi = [xji[~np.isnan(xji)] for xji in xi]
+        statz[i], ps[i] = hypotest(*xi, *args, **kwds)
     res = hypotest(*x, axis=axis, nan_policy=nan_policy, *args, **kwds)
-    assert_equal(res[0], stats)
+    assert_equal(res[0], statz)
     assert_equal(res[1], ps)
 
 

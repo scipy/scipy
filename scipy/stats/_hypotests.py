@@ -12,8 +12,22 @@ import scipy.stats.stats
 from functools import wraps
 
 
+def _remove_nans(samples, paired):
+    "Remove nans from pair or unpaired samples"
+    # consider usnot copying arrays that don't contain nans
+    if not paired:
+        return [sample[~np.isnan(sample)] for sample in samples]
+        # return [sample[~np.isnan(sample)] if contains_nan else sample
+        #         for sample, contains_nan in zip(samples, contains_nans)]
+    # else
+    nans = np.isnan(samples[0])
+    for sample in samples[1:]:
+        nans = nans | np.isnan(sample)
+    not_nans = ~nans
+    return [sample[not_nans] for sample in samples]
+
 def _vectorize_hypotest_factory(result_creator, default_axis=0,
-                                n_samples=1):
+                                n_samples=1, paired=False):
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
@@ -33,19 +47,23 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
             if np.all(ndims <= 1):
+                # Addresses nan_policy="propagate"
                 if nan_policy == 'propagate':
                     return hypotest_fun_in(*samples, *args, **kwds)
 
-                samples_no_nans = []
+                # Addresses nan_policy="raise"
+                contains_nans = []
                 for sample in samples:
                     contains_nan, _ = (
                         scipy.stats.stats._contains_nan(sample, nan_policy))
-                    if contains_nan:
-                        # We only get here if nan_policy == 'omit'
-                        sample = sample[~np.isnan(sample)]
-                    samples_no_nans.append(sample)
+                    contains_nans.append(contains_nan)
 
-                return hypotest_fun_in(*samples_no_nans, *args, **kwds)
+                # Addresses nan_policy="omit" (doesn't get here otherwise)
+                if any(contains_nans):
+                    # consider passing in contains_nans
+                    samples = _remove_nans(samples, paired)
+
+                return hypotest_fun_in(*samples, *args, **kwds)
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
@@ -62,7 +80,7 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
             def hypotest_fun(x):
                 samples = np.split(x, split_indices)[:n_samp]
                 if nan_policy == 'omit' and contains_nan:
-                    samples = [x[~np.isnan(x)] for x in samples]
+                    samples = _remove_nans(samples, paired)
                 return hypotest_fun_in(*samples, *args, **kwds)
 
             if np.all(ndims == 1) is None:

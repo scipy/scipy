@@ -4000,7 +4000,8 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
 
 
 @_vectorize_hypotest_factory(
-    result_creator=lambda res: (res[..., 0], res[..., 1]), n_samples=2)
+    result_creator=lambda res: (res[..., 0], res[..., 1]),
+    n_samples=2, paired=True)
 def pearsonr(x, y):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -4360,10 +4361,6 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-# @_vectorize_hypotest_factory(
-#     result_creator=lambda res: SpearmanrResult(res[..., 0],
-#                                                res[..., 1]),
-#     n_samples=2)
 def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     Calculate a Spearman correlation coefficient with associated p-value.
