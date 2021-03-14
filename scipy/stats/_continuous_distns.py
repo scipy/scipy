@@ -1924,8 +1924,8 @@ class f_gen(rv_continuous):
     def _logpdf(self, x, dfn, dfd):
         n = 1.0 * dfn
         m = 1.0 * dfd
-        lPx = m/2 * np.log(m) + n/2 * np.log(n) + sc.xlogy(n/2 - 1, x)
-        lPx -= ((n+m)/2) * np.log(m + n*x) + sc.betaln(n/2, m/2)
+        lPx = (m/2 * np.log(m) + n/2 * np.log(n) + sc.xlogy(n/2 - 1, x)
+                   - (((n+m)/2) * np.log(m + n*x) + sc.betaln(n/2, m/2)))
         return lPx
 
     def _cdf(self, x, dfn, dfd):
@@ -3481,10 +3481,6 @@ class invgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    When :math:`\mu` is too small, evaluating the cumulative distribution
-    function will be inaccurate due to ``cdf(mu -> 0) = inf * 0``.
-    NaNs are returned for :math:`\mu \le 0.0028`.
-
     %(example)s
 
     """
@@ -3501,12 +3497,27 @@ class invgauss_gen(rv_continuous):
     def _logpdf(self, x, mu):
         return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
 
+    # approach adapted from equations in
+    # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
+    # not R code. see gh-13616
+
+    def _logcdf(self, x, mu):
+        fac = 1 / np.sqrt(x)
+        a = _norm_logcdf(fac * ((x / mu) - 1))
+        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        return a + np.log1p(np.exp(b - a))
+
+    def _logsf(self, x, mu):
+        fac = 1 / np.sqrt(x)
+        a = _norm_logsf(fac * ((x / mu) - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        return a + np.log1p(-np.exp(b - a))
+
+    def _sf(self, x, mu):
+        return np.exp(self._logsf(x, mu))
+
     def _cdf(self, x, mu):
-        fac = np.sqrt(1.0/x)
-        # Numerical accuracy for small `mu` is bad.  See #869.
-        C1 = _norm_cdf(fac*(x-mu)/mu)
-        C1 += np.exp(1.0/mu) * _norm_cdf(-fac*(x+mu)/mu) * np.exp(1.0/mu)
-        return C1
+        return np.exp(self._logcdf(x, mu))
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
@@ -5831,6 +5842,15 @@ class nakagami_gen(rv_continuous):
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
 
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,) * self.numargs
+        # Analytical justified estimates
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
+        loc = np.min(data)
+        scale = np.sqrt(np.sum((data - loc)**2) / len(data))
+        return args + (loc, scale)
+
 
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 
@@ -6037,14 +6057,15 @@ class t_gen(rv_continuous):
         # t.pdf(x, df) = ---------------------------------------------------
         #                sqrt(pi*df) * gamma(df/2) * (1+x**2/df)**((df+1)/2)
         r = np.asarray(df*1.0)
-        Px = np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
-        Px /= np.sqrt(r*np.pi)*(1+(x**2)/r)**((r+1)/2)
+        Px = (np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
+                  / (np.sqrt(r*np.pi)*(1+(x**2)/r)**((r+1)/2)))
+
         return Px
 
     def _logpdf(self, x, df):
         r = df*1.0
-        lPx = sc.gammaln((r+1)/2)-sc.gammaln(r/2)
-        lPx -= 0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x**2)/r)
+        lPx = (sc.gammaln((r+1)/2)-sc.gammaln(r/2)
+                   - (0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x**2)/r)))
         return lPx
 
     def _cdf(self, x, df):
@@ -6121,14 +6142,14 @@ class nct_gen(rv_continuous):
         x2 = x*x
         ncx2 = nc*nc*x2
         fac1 = n + x2
-        trm1 = n/2.*np.log(n) + sc.gammaln(n+1)
-        trm1 -= n*np.log(2)+nc*nc/2.+(n/2.)*np.log(fac1)+sc.gammaln(n/2.)
+        trm1 = (n/2.*np.log(n) + sc.gammaln(n+1)
+                    - (n*np.log(2)+nc*nc/2.+(n/2.)*np.log(fac1)+sc.gammaln(n/2.)))
         Px = np.exp(trm1)
         valF = ncx2 / (2*fac1)
-        trm1 = np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
-        trm1 /= np.asarray(fac1*sc.gamma((n+1)/2))
-        trm2 = sc.hyp1f1((n+1)/2, 0.5, valF)
-        trm2 /= np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1))
+        trm1 =  (np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
+                         / np.asarray(fac1*sc.gamma((n+1)/2)))
+        trm2 = (sc.hyp1f1((n+1)/2, 0.5, valF)
+                        / np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1)))
         Px *= trm1+trm2
         return Px
 
@@ -6439,6 +6460,7 @@ class pearson3_gen(rv_continuous):
 
         ans[mask] = _norm_cdf(x[mask])
 
+        skew = np.broadcast_to(skew, invmask.shape)
         invmask1a = np.logical_and(invmask, skew > 0)
         invmask1b = skew[invmask] > 0
         # use cdf instead of _cdf to fix issue mentioned in gh-12640
@@ -8339,11 +8361,20 @@ class wald_gen(invgauss_gen):
         # wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
         return invgauss._pdf(x, 1.0)
 
+    def _cdf(self, x):
+        return invgauss._cdf(x, 1.0)
+
+    def _sf(self, x):
+        return invgauss._sf(x, 1.0)
+
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)
 
-    def _cdf(self, x):
-        return invgauss._cdf(x, 1.0)
+    def _logcdf(self, x):
+        return invgauss._logcdf(x, 1.0)
+
+    def _logsf(self, x):
+        return invgauss._logsf(x, 1.0)
 
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
@@ -8570,7 +8601,7 @@ class crystalball_gen(rv_continuous):
                             N A (B - x)^{-m}  &\text{for } x \le -\beta
                           \end{cases}
 
-    where :math:`A = (m / |\beta|)^n  \exp(-\beta^2 / 2)`,
+    where :math:`A = (m / |\beta|)^m  \exp(-\beta^2 / 2)`,
     :math:`B = m/|\beta| - |\beta|` and :math:`N` is a normalisation constant.
 
     `crystalball` takes :math:`\beta > 0` and :math:`m > 1` as shape

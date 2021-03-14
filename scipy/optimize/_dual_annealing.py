@@ -36,7 +36,7 @@ class VisitingDistribution(object):
         Parameter for visiting distribution. Default value is 2.62.
         Higher values give the visiting distribution a heavier tail, this
         makes the algorithm jump to a more distant region.
-        The value range is (0, 3]. It's value is fixed for the life of the
+        The value range is (1, 3]. It's value is fixed for the life of the
         object.
     rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
         A `~numpy.random.RandomState`, `~numpy.random.Generator` object
@@ -464,7 +464,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
-        the algorithm jump to a more distant region. The value range is (0, 3].
+        the algorithm jump to a more distant region. The value range is (1, 3].
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the

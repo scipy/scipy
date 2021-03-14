@@ -4,9 +4,11 @@ import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
 
+import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
-                                    _cdf_cvm)
+                                    _cdf_cvm, cramervonmises_2samp,
+                                    _pval_cvm_2samp_exact)
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
@@ -405,3 +407,94 @@ class TestSomersD(object):
         y = np.arange(10)
         res = stats.somersd(x, y)
         assert_equal(res.table, np.eye(10))
+
+
+class TestCvm_2samp(object):
+    def test_invalid_input(self):
+        x = np.arange(10).reshape((2, 5))
+        y = np.arange(5)
+        msg = 'The samples must be one-dimensional'
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(x, y)
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(y, x)
+        msg = 'x and y must contain at least two observations.'
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp([], y)
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(y, [1])
+        msg = 'method must be either auto, exact or asymptotic'
+        with pytest.raises(ValueError, match=msg):
+            cramervonmises_2samp(y, y, 'xyz')
+
+    def test_list_input(self):
+        x = [2, 3, 4, 7, 6]
+        y = [0.2, 0.7, 12, 18]
+        r1 = cramervonmises_2samp(x, y)
+        r2 = cramervonmises_2samp(np.array(x), np.array(y))
+        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+
+    def test_example_conover(self):
+        # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
+        # Statistics, 1971.
+        x = [7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2]
+        y = [5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8, 10.8, 11.3, 11.5, 12.3,
+             12.5, 13.4, 14.6]
+        r = cramervonmises_2samp(x, y)
+        assert_allclose(r.statistic, 0.262, atol=1e-3)
+        assert_allclose(r.pvalue, 0.18, atol=1e-2)
+
+    @pytest.mark.parametrize('statistic, m, n, pval',
+                             [(710, 5, 6, 48./462),
+                              (1897, 7, 7, 117./1716),
+                              (576, 4, 6, 2./210),
+                              (1764, 6, 7, 2./1716)])
+    def test_exact_pvalue(self, statistic, m, n, pval):
+        # the exact values are taken from Anderson: On the distribution of the
+        # two-sample Cramer-von-Mises criterion, 1962.
+        # The values are taken from Table 2, 3, 4 and 5
+        assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
+
+    def test_large_sample(self):
+        # for large samples, the statistic U gets very large
+        # do a sanity check that p-value is not 0, 1 or nan
+        np.random.seed(4367)
+        x = distributions.norm.rvs(size=1000000)
+        y = distributions.norm.rvs(size=900000)
+        r = cramervonmises_2samp(x, y)
+        assert_(0 < r.pvalue < 1)
+        r = cramervonmises_2samp(x, y+0.1)
+        assert_(0 < r.pvalue < 1)
+
+    def test_exact_vs_asymptotic(self):
+        np.random.seed(0)
+        x = np.random.rand(7)
+        y = np.random.rand(8)
+        r1 = cramervonmises_2samp(x, y, method='exact')
+        r2 = cramervonmises_2samp(x, y, method='asymptotic')
+        assert_equal(r1.statistic, r2.statistic)
+        assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
+
+    #@pytest.mark.slow
+    def test_method_auto(self):
+        x = np.arange(10)
+        y = [0.5, 4.7, 13.1]
+        r1 = cramervonmises_2samp(x, y, method='exact')
+        r2 = cramervonmises_2samp(x, y, method='auto')
+        assert_equal(r1.pvalue, r2.pvalue)
+        # switch to asymptotic if one sample has more than 10 observations
+        x = np.arange(11)
+        r1 = cramervonmises_2samp(x, y, method='asymptotic')
+        r2 = cramervonmises_2samp(x, y, method='auto')
+        assert_equal(r1.pvalue, r2.pvalue)
+
+    def test_same_input(self):
+        # make sure trivial edge case can be handled
+        # note that _cdf_cvm_inf(0) = nan. implementation avoids nan by
+        # returning pvalue=1 for very small values of the statistic
+        x = np.arange(15)
+        res = cramervonmises_2samp(x, x)
+        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        # check exact p-value
+        res = cramervonmises_2samp(x[:4], x[:4])
+        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
