@@ -13,7 +13,7 @@ from ._rbfinterp_pythran import _build_system, _evaluate
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
 
 
-@lru_cache()
+@lru_cache(maxsize=8)
 def _monomial_powers(ndim, degree):
     """
     Returns the powers for each monomial in a polynomial with the specified
