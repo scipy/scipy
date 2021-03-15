@@ -2968,6 +2968,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
+                      "zeros. Switching to normal approximation.")
+
+    if np.unique(abs(d)).size < d.size and mode == "exact":
+        mode = "approx"
+        warnings.warn("Exact p-value calculation does not work if there are "
                       "ties. Switching to normal approximation.")
 
     if mode == "approx":
