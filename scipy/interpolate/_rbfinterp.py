@@ -326,7 +326,7 @@ class RBFInterpolator:
 
 class KNearestRBFInterpolator:
     """
-    RBF interpolation using the k nearest neighbors
+    RBF interpolation using the k nearest data points
 
     Parameters
     ----------
