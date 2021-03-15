@@ -1709,6 +1709,10 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
                                                'significance_level'))
 
 
+def _anderson_result_creator(res):
+    return AndersonResult(res[..., 0], res[..., 1])
+
+
 def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution.
@@ -2569,6 +2573,10 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: FlignerResult(res[..., 0],
+                                             res[..., 1]),
+    n_samples=None)
 def fligner(*args, center='median', proportiontocut=0.05):
     """
     Perform Fligner-Killeen test for equality of variance.

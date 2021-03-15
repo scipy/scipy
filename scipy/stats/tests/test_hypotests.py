@@ -12,6 +12,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
+from scipy.special import ndtr
 
 
 class TestEppsSingleton(object):
@@ -126,8 +127,6 @@ class TestCvm(object):
         assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
-        assert_raises(ValueError, cramervonmises, x, "norm")
         assert_raises(ValueError, cramervonmises, [1.5], "norm")
         assert_raises(ValueError, cramervonmises, (), "norm")
 
@@ -406,30 +405,46 @@ class TestSomersD(object):
 
 
 vectorization_nanpolicy_cases = [
-    (stats.bartlett, tuple(), dict(), 3),
-    (stats.levene, tuple(), {'center':'mean', 'proportiontocut':0.025}, 3),
-    (stats.pearsonr, tuple(), dict(), 2),
+    # function, args, kwds, number of samples, unpacker function
+    # args, kwds typically aren't needed; just showing that they work
+    (stats.fligner, tuple(), dict(), 4, None),
+    (stats.kruskal, tuple(), dict(), 4, None),
+    (stats.friedmanchisquare, tuple(), dict(), 3, None),
+    (stats.bartlett, tuple(), dict(), 3, None),
+    (stats.levene, tuple(),
+     {'center': 'mean', 'proportiontocut': 0.025}, 3, None),
+    (stats.pearsonr, tuple(), dict(), 2, None),
     (stats.ks_2samp, ("less",),
-     {"mode": 'asymp'}, 2),
-    (stats.ranksums, tuple(), dict(), 2),
-    (stats.ansari, tuple(), dict(), 2),
+     {"mode": 'asymp'}, 2, None),
+    (stats.ranksums, tuple(), dict(), 2, None),
+    (stats.ansari, tuple(), dict(), 2, None),
     (stats.brunnermunzel, ("less",),
-     {"distribution": 'normal'}, 2),
-    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2),
-    (stats.shapiro, tuple(), dict(), 1),
-    (stats.jarque_bera, tuple(), dict(), 1),
-    (stats.ks_1samp, (distributions.norm.cdf,),
-     {"alternative": "less", "mode": 'asymp'}, 1),
+     {"distribution": 'normal'}, 2, None),
+    (stats.epps_singleton_2samp, ((.35, 0.75),), {}, 2, None),
+    (stats.shapiro, tuple(), dict(), 1, None),
+    (stats.jarque_bera, tuple(), dict(), 1, None),
+    (stats.ks_1samp, (ndtr,),
+     {"alternative": "less", "mode": 'asymp'}, 1, None),
+    (stats.cramervonmises, (distributions.norm.cdf,), dict(), 1,
+     lambda res: (res.pvalue, res.statistic)),
+    (stats.cramervonmises_2samp, ('asymptotic',), dict(), 2,
+     lambda res: (res.pvalue, res.statistic)),
     ]
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp", "unpacker"),
                          vectorization_nanpolicy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit"))
 @pytest.mark.parametrize(("axis"), (0, 1))
-def test_hypotest_vectorization(hypotest, args, kwds, nsamp, nan_policy, axis):
+def test_hypotest_vectorization(hypotest, args, kwds, nsamp, unpacker,
+                                nan_policy, axis):
     # test that hypothesis tests using _vectorize_2s_hypotest_factory decorator
     # vectorize as expected
+
+    if not unpacker:
+        def unpacker(res):
+            return res
+
     m, n = 8, 9
 
     np.random.seed(1)
@@ -450,17 +465,23 @@ def test_hypotest_vectorization(hypotest, args, kwds, nsamp, nan_policy, axis):
             if hypotest == stats.pearsonr:
                 mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]))
                 xi = [xji[mask] for xji in xi]
+            elif hypotest == stats.friedmanchisquare:
+                mask = ~(np.isnan(xi[0]) | np.isnan(xi[1]) | np.isnan(xi[2]))
+                xi = [xji[mask] for xji in xi]
             else:
                 xi = [xji[~np.isnan(xji)] for xji in xi]
-        statz[i], ps[i] = hypotest(*xi, *args, **kwds)
-    res = hypotest(*x, axis=axis, nan_policy=nan_policy, *args, **kwds)
+        statz[i], ps[i] = unpacker(hypotest(*xi, *args, **kwds))
+    res = unpacker(hypotest(*x, axis=axis, nan_policy=nan_policy,
+                            *args, **kwds))
     assert_equal(res[0], statz)
     assert_equal(res[1], ps)
+    assert_equal(res[0].dtype, ps.dtype)
+    assert_equal(res[1].dtype, ps.dtype)
 
 
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp"),
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "nsamp", "unpacker"),
                          vectorization_nanpolicy_cases)
-def test_hypotest_nan_raise(hypotest, args, kwds, nsamp):
+def test_hypotest_nan_raise(hypotest, args, kwds, nsamp, unpacker):
     m, n = 8, 9
     np.random.seed(0)
     x = np.random.rand(nsamp, m, n)
@@ -491,13 +512,7 @@ def test_hypotest_back_compat_no_axis(hypotest, nsamp):
 
 class TestCvm_2samp(object):
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
         y = np.arange(5)
-        msg = 'The samples must be one-dimensional'
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(x, y)
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(y, x)
         msg = 'x and y must contain at least two observations.'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp([], y)

@@ -7708,6 +7708,10 @@ def ranksums(x, y):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: KruskalResult(res[..., 0],
+                                             res[..., 1]),
+    n_samples=None)
 def kruskal(*args, nan_policy='propagate'):
     """
     Compute the Kruskal-Wallis H-test for independent samples.
@@ -7831,6 +7835,10 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@_vectorize_hypotest_factory(
+    result_creator=lambda res: FriedmanchisquareResult(res[..., 0],
+                                                       res[..., 1]),
+    n_samples=None, paired=True)
 def friedmanchisquare(*args):
     """
     Compute the Friedman test for repeated measurements.

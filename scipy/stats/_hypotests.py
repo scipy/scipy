@@ -26,6 +26,7 @@ def _remove_nans(samples, paired):
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
 
+
 def _vectorize_hypotest_factory(result_creator, default_axis=0,
                                 n_samples=1, paired=False):
     def vectorize_hypotest_decorator(hypotest_fun_in):
@@ -350,6 +351,16 @@ def _cdf_cvm(x, n=None):
     return y
 
 
+def _cvm_result_creator(res):
+    try:
+        stat = np.vectorize(lambda res_i: res_i.statistic)(res)
+        p = np.vectorize(lambda res_i: res_i.pvalue)(res)
+        return CramerVonMisesResult(stat, p)
+    except TypeError:
+        return res
+
+
+@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=1)
 def cramervonmises(rvs, cdf, args=()):
     """
     Perform the one-sample Cramér-von Mises test for goodness of fit.
@@ -753,6 +764,8 @@ def somersd(x, y=None):
         raise ValueError("x must be either a 1D or 2D array")
     d, p = _somers_d(table)
     return SomersDResult(d, p, table)
+
+
 def _pval_cvm_2samp_exact(s, nx, ny):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
@@ -786,6 +799,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     return np.sum(cnt[u >= s]) / np.sum(cnt)
 
 
+@_vectorize_hypotest_factory(result_creator=_cvm_result_creator, n_samples=2)
 def cramervonmises_2samp(x, y, method='auto'):
     """
     Perform the two-sample Cramér-von Mises test for goodness of fit.
