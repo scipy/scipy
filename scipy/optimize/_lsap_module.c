@@ -56,11 +56,11 @@ calculate_assignment(PyObject* self, PyObject* args)
         goto cleanup;
     }
 
-    int num_rows = PyArray_DIM(obj_cont, 0);
-    int num_cols = PyArray_DIM(obj_cont, 1);
+    npy_intp num_rows = PyArray_DIM(obj_cont, 0);
+    npy_intp num_cols = PyArray_DIM(obj_cont, 1);
 
     // test for NaN and -inf entries
-    for (size_t i=0;i<(size_t)num_rows*num_cols;i++) {
+    for (npy_intp i = 0; i < num_rows*num_cols; i++) {
         if (cost_matrix[i] != cost_matrix[i] || cost_matrix[i] == -INFINITY) {
             PyErr_SetString(PyExc_ValueError,
                             "matrix contains invalid numeric entries");
@@ -78,7 +78,7 @@ calculate_assignment(PyObject* self, PyObject* args)
         goto cleanup;
 
     int64_t* adata = PyArray_DATA((PyArrayObject*)a);
-    for (int i=0;i<num_rows;i++)
+    for (npy_intp i = 0; i < num_rows; i++)
         adata[i] = i;
 
     int ret = solve_rectangular_linear_sum_assignment(

@@ -51,7 +51,7 @@ def set_global_backend(backend):
 
     Parameters
     ----------
-    backend: {object, 'scipy'}
+    backend : {object, 'scipy'}
         The backend to use.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
@@ -87,7 +87,7 @@ def register_backend(backend):
 
     Parameters
     ----------
-    backend: {object, 'scipy'}
+    backend : {object, 'scipy'}
         The backend to use.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
@@ -125,17 +125,17 @@ def set_backend(backend, coerce=False, only=False):
 
     Parameters
     ----------
-    backend: {object, 'scipy'}
+    backend : {object, 'scipy'}
         The backend to use.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
-    coerce: bool, optional
+    coerce : bool, optional
         Whether to allow expensive conversions for the ``x`` parameter. e.g.,
         copying a NumPy array to the GPU for a CuPy backend. Implies ``only``.
-    only: bool, optional
-       If only is ``True`` and this backend returns ``NotImplemented``, then a
-       BackendNotImplemented error will be raised immediately. Ignoring any
-       lower priority backends.
+    only : bool, optional
+        If only is ``True`` and this backend returns ``NotImplemented``, then a
+        BackendNotImplemented error will be raised immediately. Ignoring any
+        lower priority backends.
 
     Examples
     --------
@@ -157,7 +157,7 @@ def skip_backend(backend):
 
     Parameters
     ----------
-    backend: {object, 'scipy'}
+    backend : {object, 'scipy'}
         The backend to skip.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.

@@ -21,7 +21,7 @@ def spline_filter(Iin, lmbda=5.0):
 
     Parameters
     ----------
-    Iin : array like
+    Iin : array_like
         input data set
     lmbda : float, optional
         spline smooghing fall-off value, default is `5.0`.
@@ -144,7 +144,7 @@ def bspline(x, n):
 
     Parameters
     ----------
-    x : array like
+    x : array_like
         a knot vector
     n : int
         The order of the spline. Must be non-negative, i.e., n >= 0
@@ -194,7 +194,7 @@ def gauss_spline(x, n):
 
     Parameters
     ----------
-    x : array
+    x : array_like
         a knot vector
     n : int
         The order of the spline. Must be non-negative, i.e., n >= 0
@@ -248,7 +248,7 @@ def cubic(x):
 
     Parameters
     ----------
-    x : array like
+    x : array_like
         a knot vector
 
     Returns
@@ -300,7 +300,7 @@ def quadratic(x):
 
     Parameters
     ----------
-    x : array like
+    x : array_like
         a knot vector
 
     Returns

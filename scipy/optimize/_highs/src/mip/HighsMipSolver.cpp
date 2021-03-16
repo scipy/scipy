@@ -186,6 +186,7 @@ HighsMipStatus HighsMipSolver::solveNode(Node& node, bool hotstart) {
     call_status = run();
     return_status = interpretCallStatus(call_status, return_status, "run()");
     if (return_status == HighsStatus::Error) return HighsMipStatus::kNodeError;
+    total_simplex_iterations += info_.simplex_iteration_count;
 
     call_status = getUseModelStatus(use_model_status,
                                     unscaled_primal_feasibility_tolerance,
@@ -325,6 +326,7 @@ HighsMipStatus HighsMipSolver::solveRootNode() {
     options_.message_level = 0;
   }
   lp_solve_status = run();
+  total_simplex_iterations += info_.simplex_iteration_count;
   if (no_highs_log) {
     options_.logfile = save_logfile;
     options_.message_level = save_message_level;
@@ -513,7 +515,7 @@ void HighsMipSolver::reportMipSolverProgress(const HighsMipStatus mip_status) {
     }
   } else if (options_.mip_report_level > 1) {
     printf("Nodes solved = %d; Simplex iterations = %d\n", num_nodes_solved,
-           info_.simplex_iteration_count);
+           total_simplex_iterations);
   }
 }
 
@@ -524,8 +526,8 @@ void HighsMipSolver::reportMipSolverProgressLine(std::string message,
         "  Time |      Node |      Left |   LP iter | LP it/n |    dualbound | "
         " primalbound |    gap \n");
   } else {
-    double average_simplex_iterations = info_.simplex_iteration_count;
-    average_simplex_iterations /= num_nodes_solved;
+    double average_simplex_iterations =
+        total_simplex_iterations / num_nodes_solved;
     double time = timer_.readRunHighsClock();
     int num_nodes_left = tree_.getNumNodesLeft();
     double best_bound;
@@ -543,7 +545,7 @@ void HighsMipSolver::reportMipSolverProgressLine(std::string message,
       num_nodes_left = 0;
     }
     printf("%6.1f | %9d | %9d | %9d | %7.2f ", time, num_nodes_solved,
-           num_nodes_left, info_.simplex_iteration_count,
+           num_nodes_left, total_simplex_iterations,
            average_simplex_iterations);
     if (best_bound < HIGHS_CONST_INF) {
       printf("| %12.5e ", best_bound);

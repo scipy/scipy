@@ -94,11 +94,14 @@ class interp2d(object):
     Interpolate over a 2-D grid.
 
     `x`, `y` and `z` are arrays of values used to approximate some function
-    f: ``z = f(x, y)``. This class returns a function whose call method uses
-    spline interpolation to find the value of new points.
+    f: ``z = f(x, y)`` which returns a scalar value `z`. This class returns a
+    function whose call method uses spline interpolation to find the value
+    of new points.
 
     If `x` and `y` represent a regular grid, consider using
-    RectBivariateSpline.
+    `RectBivariateSpline`.
+
+    If `z` is a vector value, consider using `interpn`.
 
     Note that calling `interp2d` with NaNs present in input values results in
     undefined behaviour.
@@ -2613,17 +2616,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z
-    >>> x = np.linspace(0, 5)
-    >>> y = np.linspace(0, 5)
-    >>> z = np.linspace(0, 5)
+    >>> x = np.linspace(0, 4, 5)
+    >>> y = np.linspace(0, 5, 6)
+    >>> z = np.linspace(0, 6, 7)
     >>> points = (x, y, z)
-    >>> values = value_func_3d(*np.meshgrid(*points))
+    >>> values = value_func_3d(*np.meshgrid(*points, indexing='ij'))
 
     Evaluate the interpolating function at a point
 
     >>> point = np.array([2.21, 3.12, 1.15])
     >>> print(interpn(points, values, point))
-    [11.72]
+    [12.63]
 
     See also
     --------

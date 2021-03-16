@@ -1,10 +1,12 @@
 """Progress report printers."""
 
+from __future__ import annotations
+from typing import List
 
 class ReportBase(object):
-    COLUMN_NAMES = NotImplemented
-    COLUMN_WIDTHS = NotImplemented
-    ITERATION_FORMATS = NotImplemented
+    COLUMN_NAMES: List[str] = NotImplemented
+    COLUMN_WIDTHS: List[int] = NotImplemented
+    ITERATION_FORMATS: List[str] = NotImplemented
 
     @classmethod
     def print_header(cls):
