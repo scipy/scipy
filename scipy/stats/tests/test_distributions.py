@@ -7,6 +7,7 @@ import re
 import sys
 import pickle
 import os
+import json
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -4012,6 +4013,23 @@ class TestStudentizedRange(object):
     p99 = [.99] * 16
     sig_k_v_q = (list(zip(p95, ks_d, vs_d, alpha05))
                  + list(zip(p99, ks_d, vs_d, alpha01)))
+
+    pregenerated_data = json.load(open(os.path.join(os.path.dirname(__file__), "data/studentized_range_mpmath_ref.json"), "r"))
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
+    def test_cdf_against_mp(self, case_result):
+        print(case_result)
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        print(src_case)
+
+        res = stats.studentized_range.cdf(src_case["q"],
+                                          src_case["k"],
+                                          src_case["v"])
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
 
     @pytest.mark.parametrize("significance, k, v,q", sig_k_v_q)
     def test_cdf_against_tables(self, significance, k, v, q):

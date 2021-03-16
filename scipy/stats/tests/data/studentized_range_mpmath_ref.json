@@ -1,0 +1,144 @@
+{
+  "cdf_data": [
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.0027520560662338336
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.23510918942128056
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.999908236635449
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 2.8544145010066327e-12
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.001300816146573152
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.9991738325963548
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.0027527430186246545
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.2401356460422021
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.9999999993640496
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 9.39089126131273e-13
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.0005841098057517027
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.9999999905199205
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 1000,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.2406547688726472
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 1000,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.999999999991348
+    }
+  ]
+}
