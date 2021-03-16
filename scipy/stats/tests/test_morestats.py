@@ -11,7 +11,7 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-
+from scipy import optimize
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
@@ -1565,9 +1565,21 @@ class TestBoxcox(object):
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
-    def test_bounds(self, bounds):
-        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, bounds=bounds)
+    def test_bounded_optimizer(self, bounds):
+
+        # Define custom optimizer with bounds.
+        def optimizer(fun, args):
+            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+                                            method="bounded")
+
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
         assert bounds[0] < lmbda < bounds[1]
+
+    @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
+    def test_boxcox_bad_optimizer_arg(self, optimizer):
+        # Check if error is raised if string, tuple or float is passed
+        with pytest.raises(ValueError):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
 
 class TestBoxcoxNormmax(object):
@@ -1592,9 +1604,13 @@ class TestBoxcoxNormmax(object):
 
     @pytest.mark.parametrize("method", ["mle", "pearsonr"])
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
-    def test_bounds(self, method, bounds):
-        maxlog = stats.boxcox_normmax(self.x, bounds=bounds, method=method,
-                                      optimize_method="bounded")
+    def test_bounded_optimizer(self, method, bounds):
+
+        def optimizer(fun, args):
+            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+                                            method="bounded")
+
+        maxlog = stats.boxcox_normmax(self.x, method=method, optimizer=optimizer)
         assert bounds[0] < maxlog < bounds[1]
 
 
