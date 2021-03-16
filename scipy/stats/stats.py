@@ -1520,26 +1520,20 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
 
-          * 'two-sided':
-                The alternative hypothesis says that the skewness of the
-                distribution of the sample is not equal to the skewness
-                of the normal distribution i.e. skewness is not equal to 0.
-          * 'less':
-                The alternative hypothesis says that the skewness of the
-                distribution of the sample is less than that of the normal
-                distribution i.e. skewness is less than 0.
-          * 'greater':
-                The alternative hypothesis says that the skewness of the
-                distribution of the sample is greater than that of the normal
-                distribution i.e. skewness is greater than 0.
+        * 'two-sided': the skewness of the distribution underlying the sample
+          is different from that of the normal distribution (i.e. 0)
+        * 'less': the skewness of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the skewness of the distribution underlying the sample
+          is greater than that of the normal distribution
 
         .. versionadded:: 1.7.0
 
@@ -1632,26 +1626,20 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided':
-                The alternative hypothesis says that the kurtosis of the
-                distribution of the sample is not equal to the kurtosis
-                of the normal distribution i.e. kurtosis is not equal to 0.
-          * 'less':
-                The alternative hypothesis says that the kurtosis of the
-                distribution of the sample is less than that of the normal
-                distribution i.e. kurtosis is less than 0.
-          * 'greater':
-                The alternative hypothesis says that the kurtosis of the
-                distribution of the sample is greater than that of the normal
-                distribution i.e. kurtosis is greater than 0.
+        * 'two-sided': the kurtosis of the distribution underlying the sample
+          is different from that of the normal distribution (i.e. 0)
+        * 'less': the kurtosis of the distribution underlying the sample
+          is less than that of the normal distribution
+        * 'greater': the kurtosis of the distribution underlying the sample
+          is greater than that of the normal distribution
 
         .. versionadded:: 1.7.0
 
@@ -7536,18 +7524,15 @@ def ranksums(x, y, alternative='two-sided'):
     x,y : array_like
         The data from the two samples.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
 
-          * 'two-sided':
-                The alternative hypothesis says that the location shift
-                between the two distributions is not equal to 0.
-          * 'less':
-                The alternative hypothesis says that the location shift
-                between the two distributions is less than 0.
-          * 'greater':
-                The alternative hypothesis says that the location shift
-                between the two distributions is greater than 0.
+        * 'two-sided': one of the distributions (underlying `x` or `y`) is
+          stochastically greater than the other.
+        * 'less': the distribution underlying `x` is stochastically less
+          than the distribution underlying `y`.
+        * 'greater': the distribution underlying `x` is stochastically greater
+          than the distribution underlying `y`.
 
         .. versionadded:: 1.7.0
 
