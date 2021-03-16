@@ -1620,7 +1620,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
-    of the normal distribution: ``kurtosis = 3(n-1)/(n+1)``.
+    of the normal distribution.
 
     Parameters
     ----------
@@ -1642,7 +1642,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the kurtosis of the distribution underlying the sample
-          is different from that of the normal distribution (i.e. 0)
+          is different from that of the normal distribution
         * 'less': the kurtosis of the distribution underlying the sample
           is less than that of the normal distribution
         * 'greater': the kurtosis of the distribution underlying the sample
