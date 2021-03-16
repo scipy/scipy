@@ -77,18 +77,18 @@ ENV DEBIAN_FRONTEND noninteractive
 # hadolint ignore=DL3008
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
-    software-properties-common \
     build-essential \
+    ca-certificates \
+    git \
     libatlas-base-dev \
+    software-properties-common \
     vim \
-    curl \
-    wget \
-    ca-certificates && \
+    wget && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* &&\
-    rm -rf /var/cache/apt/* && \
+    rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/*
+    rm -rf /var/cache/apt/* && \
+    rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
 
@@ -97,6 +97,14 @@ RUN apt-get update && \
 RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
     # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
     echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc 
+
+# -----------------------------------------------------------------------------
+
+# Enable basic vim defaults in ~/.vimrc
+RUN echo "filetype plugin indent on" >> ~/.vimrc && \
+    echo "set colorcolumn=80" >> ~/.vimrc && \
+    echo "set number" >> ~/.vimrc && \
+    echo "syntax enable" >> ~/.vimrc
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----

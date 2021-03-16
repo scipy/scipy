@@ -105,6 +105,9 @@ def configuration(parent_package='', top_path=None):
     # highs_wrapper:
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
+    # filter out MIP sources until MIP is officially supported
+    highs_sources = [s for s in highs_sources
+                     if pathlib.Path(s).parent.name != 'mip']
     ext = config.add_extension(
         '_highs_wrapper',
         sources=['cython/src/_highs_wrapper.cxx'] + highs_sources + ipx_sources,
@@ -130,32 +133,6 @@ def configuration(parent_package='', top_path=None):
         undef_macros=UNDEF_MACROS,
     )
     # Add c++11/14 support:
-    ext._pre_build_hook = pre_build_hook
-
-    # wrapper around HiGHS writeMPS:
-    ext = config.add_extension(
-        '_mpswriter',
-        sources=[
-            # we should be using using highs shared library;
-            # next best thing is compiling minimal set of sources
-            'cython/src/_mpswriter.cxx',
-            'src/util/HighsUtils.cpp',
-            'src/io/HighsIO.cpp',
-            'src/io/HMPSIO.cpp',
-            'src/lp_data/HighsModelUtils.cpp',
-            'src/util/stringutil.cpp',
-        ],
-        include_dirs=[
-            'cython/src/',
-            'src/',
-            'src/io/',
-            'src/lp_data/',
-        ],
-        language='c++',
-        libraries=['basiclu'],
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS,
-    )
     ext._pre_build_hook = pre_build_hook
 
     # Export constants and enums from HiGHS:

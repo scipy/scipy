@@ -8,9 +8,14 @@ from libcpp.string cimport string
 
 from .HighsStatus cimport HighsStatus
 from .HighsOptions cimport HighsOptions
-from .HighsLp cimport HighsLp, HighsModelStatus
 from .HighsInfo cimport HighsInfo
-from .HighsLp cimport HighsSolution, HighsBasis, ObjSense
+from .HighsLp cimport (
+    HighsLp,
+    HighsSolution,
+    HighsBasis,
+    ObjSense,
+)
+from .HConst cimport HighsModelStatus
 
 cdef extern from "Highs.h":
     # From HiGHS/src/Highs.h
@@ -35,6 +40,7 @@ cdef extern from "Highs.h":
 
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
+        HighsStatus setBasis()
         const HighsSolution& getSolution() const
         const HighsBasis& getBasis() const
 
