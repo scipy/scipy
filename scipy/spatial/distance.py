@@ -772,7 +772,8 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    return correlation(u, v, w=w, centered=False)
+    # clamp the result to 0-2
+    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
 
 
 def hamming(u, v, w=None):
