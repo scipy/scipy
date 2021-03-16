@@ -8928,25 +8928,25 @@ class studentized_range_gen(rv_continuous):
     Using the shape parameters, obtain the bounds data that will be input to
     ``cdf`` for later use in interpolation.
 
-    >>> a, b = %(name)s.support(k, v)
+    >>> a, b = %(name)s.support(k, df)
     >>> a, b
     (0, inf)
 
     Note that the upper limit for the range for the ``cdf`` input is
     technically infinite. Inputting 1 to the ``ppf`` gives infinity:
 
-    >>> %(name)s.ppf(1, k, v)
+    >>> %(name)s.ppf(1, k, df)
     inf
 
     To obtain a finite limit we can input a value that nears 1.
 
-    >>> b = %(name)s.ppf(.999, k, v)
+    >>> b = %(name)s.ppf(.999, k, df)
     >>> b
     7.41058083802274
 
     >>> from scipy.interpolate import interp1d
     >>> xs = np.linspace(a, b, 50)
-    >>> cdf = %(name)s.cdf(xs, k, v)
+    >>> cdf = %(name)s.cdf(xs, k, df)
     >>> ppf = interp1d(cdf, xs, kind='next', fill_value='extrapolate')
     >>> random_state = np.random.default_rng(123)
     >>> r = ppf(random_state.uniform(size=1000))
@@ -8959,95 +8959,86 @@ class studentized_range_gen(rv_continuous):
 
     """
 
-    def _argcheck(self, k, v):
-        """Verify args"""
-        return np.all(k > 1) and np.all(v > 0)
+    def _argcheck(self, k, df):
+        return np.all(k > 1) and np.all(df > 0)
 
-    def _munp(self, K, k, v):
+    def _munp(self, K, k, df):
+        cython_symbol = '_genstudentized_range_moment'
         _a, _b = self._get_support()
         K = np.atleast_1d(K)
 
-        def _single_moment(K, k, v):
-            user_data = np.array([K, k, v], float).ctypes.data_as(
-                ctypes.c_void_p)
+        def _single_moment(K, k, df):
+            arg = [K, k, df]
+            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
-            llc = LowLevelCallable.from_cython(
-                _stats,
-                '_genstudentized_range_moment',
-                user_data
-            )
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
 
-            return integrate.nquad(
-                llc,
-                ranges=[(-np.inf, np.inf), (0, np.inf), (_a, _b)],
-                opts=dict(epsabs=1e-11, epsrel=1e-12)
-            )[0]
+            ranges = [(-np.inf, np.inf), (0, np.inf), (_a, _b)]
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
 
-        return _single_moment(K, k, v)
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
-    def _pdf(self, x, k, v):
+        return _single_moment(K, k, df)
+
+    def _pdf(self, x, k, df):
+        cython_symbol = '_genstudentized_range_pdf'
         _a, _b = self._get_support()
         x = np.atleast_1d(x)
 
-        def _single_pdf(q, k, v):
-            user_data = np.array([q, k, v], float).ctypes.data_as(
-                ctypes.c_void_p)
 
-            llc = LowLevelCallable.from_cython(
-                _stats,
-                '_genstudentized_range_pdf',
-                user_data
-            )
+        def _single_pdf(q, k, df):
+            arg = [q, k, df]
+            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
-            return integrate.nquad(
-                llc,
-                ranges=[(-np.inf, np.inf), (_a, _b)],
-                opts=dict(epsabs=1e-11, epsrel=1e-12)
-            )[0]
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
+
+            ranges = [(-np.inf, np.inf), (_a, _b)]
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
+
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
-        return ufunc(x, k, v).astype("float64")
+        return ufunc(x, k, df).astype("float64")
 
-    def _cdf(self, x, k, v):
+    def _cdf(self, x, k, df):
         _a, _b = self._get_support()
         x = np.atleast_1d(x)
 
-        """The cdf"""
-        def _single_cdf(q, k, v):
+        def _single_cdf(q, k, df):
             # "When the degrees of freedom V are infinite the probability
             # integral takes [on a] simpler form," and a single asymptotic
             # integral is evaluated rather than the standard double integral.
             # (Lund, Lund, page 205)
-            if v < 100000:
-                user_data = np.array([q, k, v], float).ctypes.data_as(
-                    ctypes.c_void_p)
+            if df < 100000:
+                cython_symbol = '_genstudentized_range_cdf'
+
+                arg = [q, k, df]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
                 llc = LowLevelCallable.from_cython(
-                    _stats,
-                    '_genstudentized_range_cdf',
-                    user_data
-                )
+                    _stats, cython_symbol, usr_data)
 
-                return integrate.nquad(
-                    llc,
-                    ranges=[(-np.inf, np.inf), (_a, _b)],
-                    opts=dict(epsabs=1e-11, epsrel=1e-12)
-                )[0]
+                ranges = [(-np.inf, np.inf), (_a, _b)]
+                opts = dict(epsabs=1e-11, epsrel=1e-12)
+
+                return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
             else:
-                user_data = np.array([q, k], float).ctypes.data_as(
-                    ctypes.c_void_p)
+                cython_symbol = '_genstudentized_range_cdf_asymptopic'
+
+                arg = [q, k]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
                 llc = LowLevelCallable.from_cython(
-                    _stats,
-                    '_genstudentized_range_cdf_asymptopic',
-                    user_data
-                )
-                
-                return integrate.quad(llc, -np.inf, np.inf)[0]
+                    _stats, cython_symbol, usr_data)
+
+                ranges = [(_a, _b)]
+                opts = dict(epsabs=1e-11, epsrel=1e-12)
+
+                return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
-        return ufunc(x, k, v).astype("float64")
+        return ufunc(x, k, df).astype("float64")
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
