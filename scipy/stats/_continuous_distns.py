@@ -3099,7 +3099,7 @@ class genhyperbolic_gen(rv_continuous):
         t1 = np.float_power(a, 2) - np.float_power(b, 2)
         t1 = np.float_power(t1, 0.5)
         t2 = np.float_power(1, 2) * np.float_power(t1, - 1)
-        b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5), t1)
+        b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5)[:, None], t1)
         r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
 
         m = b * t2 * r1
