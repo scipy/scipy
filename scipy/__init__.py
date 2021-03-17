@@ -137,8 +137,9 @@ else:
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
         import warnings
-        warnings.warn("A NumPy version >=%s and <=%s is required for this "
-                      "version of SciPy (detected version %s)" % __numpy_version__,
+        warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+                      f" is required for this version of SciPy (detected "
+                      f"version {__numpy_version__}",
                       UserWarning)
 
     del _pep440
