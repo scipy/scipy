@@ -198,6 +198,7 @@ invdistcont = [
     ['genpareto', (np.inf, )],
     ['genexpon', (1, 2, -3)],
     ['genextreme', (np.inf, )],
+    ['genhyperbolic', (0.5, -0.5, -1.5,)],
     ['gausshyper', (1, 2, 3, -4)],
     ['gamma', (-1, )],
     ['gengamma', (-1, 0)],
