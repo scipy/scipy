@@ -175,6 +175,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     fisher_exact
     chisquare
     power_divergence
+    barnard_exact
 
     Notes
     -----

@@ -101,6 +101,7 @@ Correlation Functions
 
    pearsonr
    fisher_exact
+   barnard_exact
    spearmanr
    pointbiserialr
    kendalltau
@@ -193,7 +194,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
 from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp)
+                         cramervonmises_2samp, barnard_exact)
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -208,8 +209,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact', 'SpearmanRConstantInputWarning',
-           'spearmanr', 'pointbiserialr',
+           'pearsonr', 'fisher_exact', 'barnard_exact',
+           'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
@@ -4264,6 +4265,8 @@ def fisher_exact(table, alternative='two-sided'):
     --------
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.
+    barnard_exact : Barnard's exact test, which is a more powerful alternative
+        than Fisher's exact test for 2x2 contingency tables.
 
     Notes
     -----
