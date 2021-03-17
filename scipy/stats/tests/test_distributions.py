@@ -433,10 +433,10 @@ class TestGenHyperbolic(object):
         #        momType = 'raw')
         # )
 
-        vals_R = np.array([
-            2.36848366948115, 8.4739346779246,
-            37.8870502710066, 205.76608511485
-            ])
+        vals_R = [
+            np.array([2.36848366948115]), np.array([8.4739346779246]),
+            np.array([37.8870502710066]), np.array([205.76608511485])
+            ]
 
         lmbda, alpha, beta = 2, 2, 1
         mu, delta = 0.5, 1.5
