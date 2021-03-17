@@ -1578,7 +1578,7 @@ class TestBoxcox(object):
     @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
     def test_boxcox_bad_optimizer_arg(self, optimizer):
         # Check if error is raised if string, tuple or float is passed
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="`optimizer` must be a callable"):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
 
