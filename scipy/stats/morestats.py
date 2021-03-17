@@ -1032,6 +1032,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     >>> plt.show()
 
+    Alternatively, we can define our own `optimizer` function.
+
+    >>> from scipy import optimize
+
+    >>> def optimizer(fun, args):
+    >>>     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
+    >>>                                     method="bounded")
+    >>> xt, _ = stats.boxcox(x, optimizer=optimizer)
+
     """
     x = np.asarray(x)
     if x.ndim != 1:
@@ -1061,14 +1070,14 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         return y, lmax, interval
 
 
-def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr', optimizer=None):
+def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
     ----------
     x : array_like
         Input array.
-    brack : 2-tuple, optional
+    brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver.  Note that this is in most cases not critical; the
          final result is allowed to be outside this bracket. This will be ignored if
@@ -1111,7 +1120,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr', optimizer=None):
     >>> import matplotlib.pyplot as plt
     >>> np.random.seed(1234)  # make this example reproducible
 
-    Generate some data and determine optimal ``lmbda`` in various ways:
+    We can generate some data and determine the optimal ``lmbda`` in various ways:
 
     >>> x = stats.loggamma.rvs(5, size=30) + 5
     >>> y, lmax_mle = stats.boxcox(x)
@@ -1132,9 +1141,22 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr', optimizer=None):
 
     >>> plt.show()
 
+    Alternatively, we can define own own `optimizer` function.
+
+    >>> from scipy import optimize
+    >>> def optimizer(fun, args):
+    >>>     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
+    >>>                                     method="bounded")
+    >>> stats.boxcox_normmax(x, optimizer=optimizer)
+    0.999...
     """
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
+
+        # Set default value for `brack`.
+        if brack is None:
+            brack = (-2.0, 2.0)
+
         def _optimizer(func, args):
             return optimize.brent(func, args=args, brack=brack)
 
@@ -1142,6 +1164,9 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr', optimizer=None):
     else:
         if not callable(optimizer):
             raise ValueError("`optimizer` must be a callable")
+
+        if brack is not None:
+            raise ValueError("`brack` must be None if `optimizer` is given")
 
         # `optimizer` is expected to return a `OptimizeResult` object, we here get the
         # solution to the optimization problem.
@@ -1184,7 +1209,13 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    return optimfunc(x)
+    try:
+        return optimfunc(x)
+    except AttributeError as e:
+        if "has no attribute 'x'" in str(e):
+            raise ValueError("`optimizer` must return an `OptimizeResult` object")
+        else:
+            raise
 
 
 def _normplot(method, x, la, lb, plot=None, N=80):

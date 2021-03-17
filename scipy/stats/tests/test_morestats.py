@@ -1565,8 +1565,7 @@ class TestBoxcox(object):
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
-    def test_bounded_optimizer(self, bounds):
-
+    def test_bounded_optimizer_within_bounds(self, bounds):
         # Define custom optimizer with bounds.
         def optimizer(fun, args):
             return optimize.minimize_scalar(fun, bounds=bounds, args=args,
@@ -1575,10 +1574,41 @@ class TestBoxcox(object):
         _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
         assert bounds[0] < lmbda < bounds[1]
 
+    def test_bounded_optimizer_against_unbounded_optimizer(self):
+        # Test whether setting bounds on optimizer excludes solution from unbounded
+        # optimizer.
+
+        # Get unbounded solution.
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None)
+
+        # Set bounds around solution.
+        bounds = (lmbda - 1, lmbda + 1)
+
+        def optimizer(fun, args):
+            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+                                            method="bounded")
+
+        # Check bounded solution.
+        _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+        assert lmbda_bounded != lmbda
+        assert bounds[0] < lmbda_bounded < bounds[1]
+
     @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
-    def test_boxcox_bad_optimizer_arg(self, optimizer):
+    def test_bad_optimizer_type_raises_error(self, optimizer):
         # Check if error is raised if string, tuple or float is passed
         with pytest.raises(ValueError, match="`optimizer` must be a callable"):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    def test_bad_optimizer_value_raises_error(self):
+        # Check if error is raised if `optimizer` function does not return
+        # `OptimizeResult` object
+
+        # Define test function that always returns 1
+        def optimizer(fun, args):
+            return 1
+
+        with pytest.raises(ValueError,
+                           match="`optimizer` must return an `OptimizeResult` object"):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
 
@@ -1604,7 +1634,7 @@ class TestBoxcoxNormmax(object):
 
     @pytest.mark.parametrize("method", ["mle", "pearsonr"])
     @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
-    def test_bounded_optimizer(self, method, bounds):
+    def test_bounded_optimizer_within_bounds(self, method, bounds):
 
         def optimizer(fun, args):
             return optimize.minimize_scalar(fun, bounds=bounds, args=args,
