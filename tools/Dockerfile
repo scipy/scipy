@@ -40,7 +40,7 @@ RUN apt-get update && \
 RUN apt-get update && apt-get install -y \
 	python3.7 \
 	python3.7-dev \
-	python3-pip git \
+	python3-pip \
 	build-essential \
 	vim \
 	libatlas-base-dev \
@@ -51,7 +51,9 @@ RUN apt-get update && apt-get install -y \
 	libgmp-dev \
 	libmpfr-dev \
 	libsuitesparse-dev \
-	libmpc-dev
+	libmpc-dev \
+	git
+
 
 # setup pips, pip3.7 and pip3.8
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.7 get-pip.py && python3.8 get-pip.py && rm get-pip.py
