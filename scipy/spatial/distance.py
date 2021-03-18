@@ -2087,22 +2087,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                                "pdist_%s_%s_wrap" % (metric_name, typ))
             pdist_fn(X, dm, **kwargs)
             return dm
-
-        elif mstr in ['old_cosine', 'old_cos']:
-            warnings.warn('"old_cosine" is deprecated and will be removed in '
-                          'a future version. Use "cosine" instead.',
-                          DeprecationWarning)
-            X = _convert_to_double(X)
-            norms = np.einsum('ij,ij->i', X, X, dtype=np.double)
-            np.sqrt(norms, out=norms)
-            nV = norms.reshape(m, 1)
-            # The numerator u * v
-            nm = np.dot(X, X.T)
-            # The denom. ||u||*||v||
-            de = np.dot(nV, nV.T)
-            dm = 1.0 - (nm / de)
-            dm[range(0, m), range(0, m)] = 0.0
-            dm = squareform(dm)
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
                 dm = pdist(X, _TEST_METRICS[mstr], **kwargs)
