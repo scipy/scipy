@@ -481,6 +481,24 @@ class TestLHS(QMCEngineTests):
                         [0.3, 0.1]])
         assert_almost_equal(sample, out, decimal=1)
 
+    def test_sample_stratified(self):
+        d, n = 4, 20
+        expected1d = (np.arange(n) + 0.5) / n
+        expected = np.broadcast_to(expected1d, (d, n)).T
+
+        engine = self.engine(d=d, scramble=False, centered=True)
+        sample = engine.random(n=n)
+        sorted_sample = np.sort(sample, axis=0)
+
+        assert_almost_equal(sorted_sample, expected)
+        assert np.any(sample != expected)
+
+        engine = self.engine(d=d, scramble=False, centered=False)
+        sample = engine.random(n=n)
+        sorted_sample = np.sort(sample, axis=0)
+        assert_allclose(sorted_sample, expected, atol=0.5/n)
+        assert np.any(sample - expected > 0.5/n)
+
     def test_iid(self):
         # Checking independency of the random numbers generated
         engine = self.engine(d=2, scramble=False)
