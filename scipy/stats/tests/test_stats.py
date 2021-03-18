@@ -4328,6 +4328,26 @@ class Test_ttest_trim:
                                              "tests."):
             stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
+    def test_nans_on_axis(self):
+        # confirm that with `nan_policy='propagate'`, NaN results are returned
+        # on the correct location
+        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        # set some indices in `a` and `b` to be `np.nan`.
+        a[0][2][3] = np.nan
+        b[2][0][6] = np.nan
+
+        res = stats.ttest_ind(a, b, trim=.2, axis=-1)
+        expected = np.asarray([[False, False, True],
+                               [False, False, False],
+                               [True, False, False],
+                               [False, False, False],
+                               [False, False, False]])
+        assert_array_equal(np.isnan(res.pvalue), expected)
+        assert_array_equal(np.isnan(res.statistic), expected)
+
+
+
 def test__broadcast_concatenate():
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
