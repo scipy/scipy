@@ -4041,14 +4041,16 @@ class Test_ttest_ind_permutations():
                             random_state='hello')
 
 
-class Test_ttest_ind:
+class Test_ttest_ind_common:
+    # for tests that are performed on variations of the t-test such as
+    # permutations and trimming
     @pytest.mark.slow()
     @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
                                       {'trim': .2},
                                       {}])
     @pytest.mark.parametrize('equal_var', [True, False])
     def test_ttest_many_dims(self, kwds, equal_var):
-        # Test that permutation test works on many-dimensional arrays
+        # Test that test works on many-dimensional arrays
         np.random.seed(0)
         a = np.random.rand(5, 4, 4, 7, 1, 6)
         b = np.random.rand(4, 1, 8, 2, 6)
@@ -4081,7 +4083,6 @@ class Test_ttest_ind:
 
         assert_allclose(statistics, res.statistic)
         assert_allclose(pvalues, res.pvalue)
-
 
 class Test_ttest_trim:
 
@@ -4267,6 +4268,65 @@ class Test_ttest_trim:
         for (i, v) in zip(res_individual, res_vec_list):
             assert_array_equal(i, v)
 
+    def test_alternatives(self):
+        '''
+        > library(PairedData)
+        > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
+        > b <- c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1)
+        > yuen.t.test(a, b, alternative = 'greater')
+
+            Two-sample Yuen test, trim=0.2
+
+        data:  x and y
+        t = -4.2461, df = 7.92, p-value = 0.9986
+        alternative hypothesis: true difference
+        in trimmed means is greater than 0
+        95 percent confidence interval:
+         -4.233343       Inf
+        sample estimates:
+        trimmed mean of x trimmed mean of y
+                 2.442857          5.385714
+         > yuen.t.test(a, b, alternative = 'less')
+
+            Two-sample Yuen test, trim=0.2
+
+        data:  x and y
+        t = -4.2461, df = 7.92, p-value = 0.001439
+        alternative hypothesis: true difference
+        in trimmed means is less than 0
+        95 percent confidence interval:
+              -Inf -1.652371
+        sample estimates:
+        trimmed mean of x trimmed mean of y
+                 2.442857          5.385714
+        '''
+        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
+        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+
+        res_greater = stats.ttest_ind(a, b, trim=.2, equal_var=False,
+                                      alternative='greater')
+        assert_allclose(res_greater.pvalue, 0.9986, atol=1e-4)
+        assert_allclose(res_greater.statistic, -4.2461, atol=1e-4)
+
+        res_less = stats.ttest_ind(a, b, trim=.2, equal_var=False,
+                                   alternative='less')
+        assert_allclose(res_less.pvalue, 0.001439, atol=1e-6)
+        assert_allclose(res_less.statistic, -4.2461, atol=1e-4)
+        
+    def test_errors_unsupported(self):
+        # confirm that attempting to trim with NaNs or permutations raises an
+        # error
+        with assert_raises(ValueError, match="Permutations are currently not "
+                                             "supported with trimming."):
+            stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+
+        with assert_raises(ValueError, match="nan-containing/masked inputs "
+                                             "with nan_policy='omit' are "
+                                             "currently not supported by "
+                                             "permutation tests, one-sided "
+                                             "asymptotic tests, or trimmed "
+                                             "tests."):
+            stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
 def test__broadcast_concatenate():
     # test that _broadcast_concatenate properly broadcasts arrays along all
