@@ -57,6 +57,7 @@ MAJOR = 1
 MINOR = 6
 MICRO = 2
 ISRELEASED = False
+IS_RELEASE_BRANCH = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -513,6 +514,17 @@ def configuration(parent_package='', top_path=None):
 
 
 def setup_package():
+    np_minversion = '1.16.5'
+    np_maxversion = '1.23.0'
+    python_minversion = '3.7'
+    python_maxversion = '3.10'
+    if IS_RELEASE_BRANCH:
+        req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
+        req_py = '>={},<{}'.format(python_minversion, python_maxversion)
+    else:
+        req_np = 'numpy>={}'.format(np_minversion)
+        req_py = '>={}'.format(python_minversion)
+
     # Rewrite the version file every time
     write_version_py()
 
@@ -538,10 +550,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        install_requires=[
-            'numpy>=1.16.5',
-        ],
-        python_requires='>=3.7',
+        install_requires=[req_np],
+        python_requires=req_py,
     )
 
     if "--force" in sys.argv:
