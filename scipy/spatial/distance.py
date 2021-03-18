@@ -122,46 +122,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 
-def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
-    """
-    Convert legacy positional arguments to keyword arguments for pdist/cdist.
-    """
-    if not args:
-        return kwargs
-
-    if (callable(metric) and metric not in [
-            braycurtis, canberra, chebyshev, cityblock, correlation, cosine,
-            dice, euclidean, hamming, jaccard, jensenshannon, kulsinski,
-            mahalanobis, matching, minkowski, rogerstanimoto, russellrao,
-            seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule,
-            wminkowski]):
-        raise TypeError('When using a custom metric arguments must be passed'
-                        'as keyword (i.e., ARGNAME=ARGVALUE)')
-
-    if func_name == 'pdist':
-        old_arg_names = ['p', 'w', 'V', 'VI']
-    else:
-        old_arg_names = ['p', 'V', 'VI', 'w']
-
-    num_args = len(args)
-    warnings.warn('%d metric parameters have been passed as positional.'
-                  'This will raise an error in a future version.'
-                  'Please pass arguments as keywords(i.e., ARGNAME=ARGVALUE)'
-                  % num_args, DeprecationWarning)
-
-    if num_args > 4:
-        raise ValueError('Deprecated %s signature accepts only 4'
-                         'positional arguments (%s), %d given.'
-                         % (func_name, ', '.join(old_arg_names), num_args))
-
-    for old_arg, arg in zip(old_arg_names, args):
-        if old_arg in kwargs:
-            raise TypeError('%s() got multiple values for argument %s'
-                            % (func_name, old_arg))
-        kwargs[old_arg] = arg
-    return kwargs
-
-
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
     if a.base is not None:
@@ -1748,7 +1708,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     return mstr, kwargs
 
 
-def pdist(X, metric='euclidean', *args, **kwargs):
+def pdist(X, metric='euclidean', **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
 
@@ -1766,8 +1726,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2009,8 +1967,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
-
     X = np.asarray(X, order='c')
 
     s = X.shape
@@ -2415,7 +2371,7 @@ def num_obs_y(Y):
     return d
 
 
-def cdist(XA, XB, metric='euclidean', *args, **kwargs):
+def cdist(XA, XB, metric='euclidean', **kwargs):
     """
     Compute distance between each pair of the two collections of inputs.
 
@@ -2438,8 +2394,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2713,8 +2667,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     # where 'abc' is the metric being tested.  This computes the distance
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
-
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "cdist")
 
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
