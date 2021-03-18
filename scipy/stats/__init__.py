@@ -194,6 +194,22 @@ Discrete distributions
    zipf                     -- Zipf (Zeta)
    zipfian                  -- Zipfian
 
+Censored data class
+-------------------
+
+The univariate continuous distributions can be fit to censored data
+by maximum likelihood estimation.  Censored data is represented with
+instances of the `CensoredData` class.
+
+.. autosummary::
+   :toctree: generated/
+
+   CensoredData
+
+
+Statistical functions
+=====================
+
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
 

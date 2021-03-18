@@ -78,6 +78,9 @@ class CensoredData:
         return f'CensoredData({n} values: ' + ', '.join(parts) + ')'
 
     def __len__(self):
+        """
+        The number of values (censored and not censored).
+        """
         return len(self._lower)
 
     @classmethod

@@ -48,35 +48,6 @@ def test_beta():
     assert scale == 1
 
 
-def test_cauchy():
-    """
-    Test fitting the Cauchy distribution to uncensored data.
-
-    Calculation in R:
-
-        library(MASS)
-
-        x <- c(8.42, 22.99, 8.09, 3.55, 2.85, 10.69, 3.23, 16.35, 7.35,
-               2.04, 3.48, 3.55)
-        fit <- fitdistr(x, "cauchy", control=list(reltol=1e-13))
-        cat("\nFit parameters (and standard errors)\n")
-        fit
-
-    R output:
-
-        Fit parameters (and standard errors)
-           location     scale
-          4.083967    2.297582
-         (1.406482)  (1.496630)
-
-    """
-    x = np.array([8.42, 22.99, 8.09, 3.55, 2.85, 10.69, 3.23, 16.35, 7.35,
-                  2.04, 3.48, 3.55])
-    loc, scale = cauchy.fit(x, optimizer=optimizer)
-    assert_allclose(loc, 4.083967, rtol=1e-6)
-    assert_allclose(scale, 2.297582, rtol=1e-6)
-
-
 def test_expon_right_censored():
     """
     For the exponential distribution with loc=0, the exact solution for
