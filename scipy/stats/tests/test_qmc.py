@@ -465,21 +465,17 @@ class TestLHS(QMCEngineTests):
                               [0.66099825, 0.79314331],
                               [0.4100799 , 0.5914459 ]])
 
+    scramble = [True, False]
+    ids = ["Scrambled", "Unscrambled"]
+
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_fast_forward(self, *args):
         pytest.skip("Not applicable: not a sequence.")
 
-    def test_sample_centered(self):
-        engine = self.engine(d=2, scramble=False, centered=True)
-        sample = engine.random(n=5)
-        out = np.array([[0.1, 0.5],
-                        [0.9, 0.3],
-                        [0.7, 0.9],
-                        [0.5, 0.7],
-                        [0.3, 0.1]])
-        assert_almost_equal(sample, out, decimal=1)
+    def test_samples(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
 
     def test_sample_stratified(self):
         d, n = 4, 20
@@ -499,19 +495,16 @@ class TestLHS(QMCEngineTests):
         assert_allclose(sorted_sample, expected, atol=0.5/n)
         assert np.any(sample - expected > 0.5/n)
 
-    def test_iid(self):
-        # Checking independency of the random numbers generated
-        engine = self.engine(d=2, scramble=False)
-        n_samples = 500
-        sample = engine.random(n=n_samples)
-        min_b = 50  # number of bins
-        bins = np.linspace(0, 1, min(min_b, n_samples) + 1)
-        hist = np.histogram(sample[:, 0], bins=bins)
-        out = np.array([n_samples / min_b] * min_b)
-        assert_equal(hist[0], out)
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
+    def test_reset(self, scramble):
+        engine = self.engine(d=2, scramble=scramble)
+        ref_sample = engine.random(n=10)
 
-        hist = np.histogram(sample[:, 1], bins=bins)
-        assert_equal(hist[0], out)
+        engine.reset()
+        assert engine.num_generated == 0
+
+        sample = engine.random(n=10)
+        assert_almost_equal(sample, ref_sample)
 
 
 class TestSobol(QMCEngineTests):
