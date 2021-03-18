@@ -350,6 +350,12 @@ class QMCEngineTests:
         assert_array_equal(np.empty((0, 2)), sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
+    def test_1sample(self, scramble):
+        engine = self.engine(d=2, scramble=scramble)
+        sample = engine.random(1)
+        assert (1, 2) == sample.shape
+
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_bounds(self, scramble):
         engine = self.engine(d=100, scramble=scramble)
         sample = engine.random(512)
