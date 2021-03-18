@@ -2053,7 +2053,6 @@ def test_Xdist_deprecated_args():
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
     weights = np.arange(3)
-    warn_msg_kwargs = "Got unexpected kwarg"
     for metric in _METRICS_NAMES:
         kwargs = {"w": weights} if metric == "wminkowski" else dict()
         with suppress_warnings() as w:
@@ -2081,10 +2080,10 @@ def test_Xdist_deprecated_args():
             with suppress_warnings() as w:
                 w.filter(DeprecationWarning,
                         message="'wminkowski' metric is deprecated")
-                with pytest.warns(DeprecationWarning, match=warn_msg_kwargs):
+                with pytest.raises(TypeError):
                     cdist(X1, X1, metric, **kwargs)
 
-                with pytest.warns(DeprecationWarning, match=warn_msg_kwargs):
+                with pytest.raises(TypeError):
                     pdist(X1, metric, **kwargs)
 
 

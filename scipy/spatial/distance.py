@@ -144,15 +144,6 @@ def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
 
 
-def _filter_deprecated_kwargs(kwargs, args_blocklist):
-    # Filtering out old default keywords
-    for k in args_blocklist:
-        if k in kwargs:
-            del kwargs[k]
-            warnings.warn('Got unexpected kwarg %s. This will raise an error'
-                          ' in a future version.' % k, DeprecationWarning)
-
-
 def _nbool_correspond_all(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
@@ -1698,7 +1689,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     elif "w" in kwargs:
         if (mstr in _METRICS['seuclidean'].aka or
                 mstr in _METRICS['mahalanobis'].aka):
-            raise ValueError("metric %s incompatible with weights" % mstr)
+            raise TypeError(f"metric {mstr} incompatible with weights")
 
         # XXX: C-versions do not support weights
         # need to use python version for weighting
@@ -1985,30 +1976,6 @@ def pdist(X, metric='euclidean', **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['jensenshannon'].aka
-       or metric == 'test_jensenshannon' or metric == jensenshannon):
-        kwargs_blocklist = ["p", "w", "V", "VI"]
-
-    elif(metric in _METRICS['minkowski'].aka
-         or metric in _METRICS['wminkowski'].aka
-         or metric in ['test_minkowski', 'test_wminkowski']
-         or metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-
-    elif(metric in _METRICS['mahalanobis'].aka
-         or metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2696,23 +2663,6 @@ def cdist(XA, XB, metric='euclidean', **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['minkowski'].aka or
-       metric in _METRICS['wminkowski'].aka or
-       metric in ['test_minkowski', 'test_wminkowski'] or
-       metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-    elif(metric in _METRICS['mahalanobis'].aka or
-         metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
 
