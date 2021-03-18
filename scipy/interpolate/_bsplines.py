@@ -3,7 +3,8 @@ import operator
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
-                          cholesky_banded, cho_solve_banded)
+                          cholesky_banded, cho_solve_banded,
+                          solve, solve_banded)
 from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
@@ -736,15 +737,18 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     axis = normalize_axis_index(axis, y.ndim)
 
+    x = _as_float_array(x, check_finite)
+    y = _as_float_array(y, check_finite)
+
+    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
             raise ValueError("Too much info for k=0: t and bc_type can only "
                              "be None.")
-        x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
-        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -752,15 +756,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if k == 1 and t is None:
         if not (deriv_l is None and deriv_r is None):
             raise ValueError("Too much info for k=1: bc_type can only be None.")
-        x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
-        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
-    x = _as_float_array(x, check_finite)
-    y = _as_float_array(y, check_finite)
     k = operator.index(k)
 
     # come up with a sensible knot vector, if needed
@@ -779,8 +779,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
             t = _augknt(x, k)
 
     t = _as_float_array(t, check_finite)
-
-    y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] < x[:-1]):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
