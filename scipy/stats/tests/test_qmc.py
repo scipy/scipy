@@ -488,8 +488,8 @@ class TestLHS(QMCEngineTests):
         engine = self.engine(d=d, scramble=False, centered=False)
         sample = engine.random(n=n)
         sorted_sample = np.sort(sample, axis=0)
-        assert_allclose(sorted_sample, expected, atol=0.5/n)
-        assert np.any(sample - expected > 0.5/n)
+        assert_allclose(sorted_sample, expected, atol=0.5 / n)
+        assert np.any(sample - expected > 0.5 / n)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
