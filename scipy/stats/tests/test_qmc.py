@@ -457,13 +457,6 @@ class TestHalton(QMCEngineTests):
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.26757574, 0.00475459],
-                              [0.96278914, 0.30039478],
-                              [0.08903575, 0.95196832],
-                              [0.50694622, 0.16567785],
-                              [0.83955684, 0.4938534 ],
-                              [0.66099825, 0.79314331],
-                              [0.4100799 , 0.5914459 ]])
 
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]
@@ -474,7 +467,10 @@ class TestLHS(QMCEngineTests):
     def test_fast_forward(self, *args):
         pytest.skip("Not applicable: not a sequence.")
 
-    def test_samples(self, *args):
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
+
+    def test_continuing(self, *args):
         pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
 
     def test_sample_stratified(self):
