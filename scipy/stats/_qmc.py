@@ -841,12 +841,6 @@ class LatinHypercube(QMCEngine):
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        # This can be removed once numpy 1.16 is dropped
-        try:
-            self.rg_sample = self.rng.random_sample
-        except AttributeError:
-            self.rg_sample = self.rng.random
-
     def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
 
@@ -864,7 +858,7 @@ class LatinHypercube(QMCEngine):
         if self.centered:
             samples = 0.5
         else:
-            samples = self.rg_sample((n, self.d))
+            samples = self.uniform((n, self.d))
 
         perms = np.tile(np.arange(1, n + 1), (self.d, 1))
         for i in range(self.d):
