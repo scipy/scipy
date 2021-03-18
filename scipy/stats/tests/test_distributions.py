@@ -239,6 +239,15 @@ class TestBinom(object):
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
 
+class TestArcsine:
+
+    def test_endpoints(self):
+        # Regression test for gh-13697.  The following calculation
+        # should not generate a warning.
+        p = stats.arcsine.pdf([0, 1])
+        assert_equal(p, [np.inf, np.inf])
+
+
 class TestBernoulli(object):
     def setup_method(self):
         np.random.seed(1234)
