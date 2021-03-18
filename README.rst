@@ -4,9 +4,6 @@ SciPy
 .. image:: https://img.shields.io/travis/scipy/scipy/master.svg?label=Travis%20CI
    :target: https://travis-ci.org/scipy/scipy/
 
-.. image:: https://img.shields.io/appveyor/ci/scipy/scipy/master.svg?label=AppVeyor
-   :target: https://ci.appveyor.com/project/scipy/scipy
-
 .. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
   :target: https://circleci.com/gh/scipy/scipy
 

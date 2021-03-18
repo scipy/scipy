@@ -645,7 +645,7 @@ def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
             # if the stat_func is np.std, calc std only when binned data is 2
             # or more for speed up.
             if is_callable or not (stat_func is np.std and len(bin_map[i]) < 2):
-                result[vv, i] = stat_func(bin_map[i])
+                result[vv, i] = stat_func(np.array(bin_map[i]))
 
 
 def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
