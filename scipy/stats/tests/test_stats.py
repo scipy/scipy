@@ -18,7 +18,7 @@ from numpy.testing import (assert_, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
-from numpy import array, arange, float32, power
+from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
@@ -4129,16 +4129,6 @@ class Test_ttest_trim:
         t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False)
         assert_almost_equal(t, tr)
         assert_almost_equal(p, pr)
-        
-    def test_ttest_compare_r3_nan(self):
-        # the result of this test should match `test_ttest_compare_r3`
-        a = (56, 128.6, 12, 123.8, 64.34, np.nan, 78, 763.3)
-        b = (1.1, 2.9, np.nan, 4.2)
-        pr = 0.10512380092302633
-        tr = 2.832256715395378
-        t, p = stats.ttest_ind(a, b, trim=.32, equal_var=False, nan_policy='omit')
-        assert_almost_equal(t, tr)
-        assert_almost_equal(p, pr)
 
     def test_compare_r_1(self):
         '''
@@ -4247,7 +4237,7 @@ class Test_ttest_trim:
         '''
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
-        # equal_var=True is default
+        # `equal_var=True` is default
         res = stats.ttest_ind(a, b, trim=.2)
         assert_allclose(res.pvalue, 0.001135088, atol=1e-9)
         assert_allclose(res.statistic, -4.246117, atol=1e-7)

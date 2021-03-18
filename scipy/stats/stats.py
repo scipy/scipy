@@ -6061,19 +6061,22 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if permutations or alternative != 'two-sided':
+        if permutations or alternative != 'two-sided' or trim != 0:
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by permutation tests or one-sided"
-                             "asymptotic tests.")
+                             "supported by permutation tests, one-sided "
+                             "asymptotic tests, or trimmed tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var, trim)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations:
+        if trim != 0:
+            raise ValueError("Permutations are currently not supported "
+                             "with trimming.")
         if int(permutations) != permutations or permutations < 0:
             raise ValueError("Permutations must be a positive integer.")
 

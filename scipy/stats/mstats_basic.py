@@ -1019,7 +1019,7 @@ ttest_onesamp = ttest_1samp
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-def ttest_ind(a, b, axis=0, equal_var=True, trim=0):
+def ttest_ind(a, b, axis=0, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -1056,13 +1056,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, trim=0):
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
-    if trim == 0:
-        (x1, x2) = (a.mean(axis), b.mean(axis))
-        (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
-        (n1, n2) = (a.count(axis), b.count(axis))
-    else:
-        v1, x1, n1 = _mttest_trim_var_mean_len(a, trim, axis)
-        v2, x2, n2 = _mttest_trim_var_mean_len(b, trim, axis)
+    (x1, x2) = (a.mean(axis), b.mean(axis))
+    (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
+    (n1, n2) = (a.count(axis), b.count(axis))
 
     if equal_var:
         # force df to be an array for masked division not to throw a warning
@@ -1089,29 +1085,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, trim=0):
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
-
-def _mttest_trim_var_mean_len(a, trim, axis):
-    # further calculations in this test assume that the inputs are sorted.
-    a = np.sort(a, axis=axis)
-
-    n_total = a.count(axis=axis)
-    nan_count = np.count_nonzero(np.isnan(a))
-    n = n_total - nan_count
-    # `g_*` is the number of elements to be replaced on each tail.
-    g = (n * trim).astype('int')
-
-    # the total number of elements in the trimmed samples
-    n -= 2 * g
-
-    # Calculate the Winsorized variance of the input samples according to
-    # specified `g`
-    a_cut_nans = a[:-nan_count] if nan_count != 0 else a
-    a_win = winsorize(a_cut_nans, limits=(trim, trim), axis=axis, nan_policy='omit')
-    v = a_win.var(ddof=(2 * g + 1))
-
-    # calculate the g-times trimmed mean
-    m = trimmed_mean(a_cut_nans, limits=(trim, trim), axis=axis)
-    return v, m, n
 
 def ttest_rel(a, b, axis=0):
     """
