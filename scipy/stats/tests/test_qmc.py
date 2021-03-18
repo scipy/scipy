@@ -384,16 +384,14 @@ class QMCEngineTests:
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
-        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
-
-        _ = engine.random(n=len(ref_sample) // 2)
+        ref_sample = engine.random(n=8)
 
         engine.reset()
         assert engine.num_generated == 0
 
-        sample = engine.random(n=len(ref_sample))
-        assert_almost_equal(sample, ref_sample, decimal=1)
+        sample = engine.random(n=8)
+        assert_almost_equal(sample, ref_sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_fast_forward(self, scramble):
@@ -458,9 +456,6 @@ class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
 
-    scramble = [True, False]
-    ids = ["Scrambled", "Unscrambled"]
-
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
 
@@ -468,9 +463,6 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
-
-    def test_continuing(self, *args):
         pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
 
     def test_sample_stratified(self):
@@ -490,18 +482,6 @@ class TestLHS(QMCEngineTests):
         sorted_sample = np.sort(sample, axis=0)
         assert_allclose(sorted_sample, expected, atol=0.5 / n)
         assert np.any(sample - expected > 0.5 / n)
-
-    @pytest.mark.parametrize("scramble", QMCEngineTests.scramble,
-                             ids=QMCEngineTests.ids)
-    def test_reset(self, scramble):
-        engine = self.engine(d=2, scramble=scramble)
-        ref_sample = engine.random(n=10)
-
-        engine.reset()
-        assert engine.num_generated == 0
-
-        sample = engine.random(n=10)
-        assert_almost_equal(sample, ref_sample)
 
 
 class TestSobol(QMCEngineTests):
