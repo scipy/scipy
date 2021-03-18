@@ -6138,7 +6138,13 @@ def _calculate_winsorized_variance(a, g, n, axis):
     a_win = np.concatenate((left_tail, a[..., g: n - g], right_tail), axis=-1)
     # determine the variance. In the paper, the degrees of freedom is
     # expressed as (n - 2g - 1), and this is converted to numpy's N - `ddof`
-    return np.var(a_win, ddof=(2 * g + 1), axis=-1)
+    vars = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+    # with `nan_policy='propagate'`, NaNs are sorted to the end of the array,
+    # and may be completely trimmed out. In these cases, replace computed
+    # variances with `np.nan` if the original sample contained NaNs.
+    contains_nans = np.any(np.isnan(a), axis=-1)
+    vars[contains_nans] = np.nan
+    return vars
 
 
 def _broadcast_concatenate(xs, axis):
