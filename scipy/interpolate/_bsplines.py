@@ -607,6 +607,174 @@ def _process_deriv_spec(deriv):
         ords, vals = [], []
     return np.atleast_1d(ords, vals)
 
+def _woodbury_algorithm(A, ur, ll, b, k):
+    '''
+    Implementation of Woodbury algorithm applied to banded
+    matrices with two blocks in upper right and lower left
+    corners.
+    
+    Parameters
+    ----------
+    A : 2-D array, shape(k, n)
+        Matrix of diagonals of original matrix(see 
+        ``solve_banded`` documentation).
+    ur : 2-D array, shape(bs,bs)
+        Upper right block matrix.
+    ll : 2-D array, shape(bs,bs)
+        Lower left block matrix.
+    b : 1-D array, shape(n,)
+        Vector of constant terms of the SLE.
+    k : int
+        B-spline degree.
+        
+    Returns
+    -------
+    c : 1-D array, shape(n,)
+        Solution of the original SLE.
+        
+    Notes
+    -----
+    SLE - system of linear equations.
+    
+    'n' should be greater than 'k', otherwise corner block
+    elements will intersect with diagonals.
+
+    Almost diagonal matrix with upper right and lower left
+    blocks is solved with the following steps: blocks are
+    represented as vectors and new systems of linear equations
+    are constructed. Left parts of systems are the same - the
+    diagonal elements of the original matrix which makes it
+    possible to use a solution for banded matrices 
+    (``solve_banded``). Then the solution for the original SLE
+    is finally computed.
+
+    References
+    ----------
+    .. [1] William H. Press, Saul A. Teukolsky, William T. Vetterling
+           and Brian P. Flannery, Numerical Recipes, 2007, 2.7.3
+
+    '''
+    bs = int((k-1)/2)
+    n = A.shape[1] + 1
+
+    U = np.zeros((n - 1, k - 1))
+    V = np.zeros((k - 1, n - 1))  # V transpose 
+
+    # upper right
+
+    U[:bs, :bs] = ur
+    for j in range(bs): 
+        V[j, -bs + j] = 1
+
+    # lower left
+
+    U[-bs:, -bs:] = ll
+    for j in range(bs): 
+        V[-bs + j, j] = 1
+    
+    Z = solve_banded((bs, bs), A, U[:, 0])  # z0
+    Z = np.expand_dims(Z, axis=0)
+    
+    for i in range(1, k - 1):
+        zi = solve_banded((bs, bs), A, U[:, i])
+        zi = np.expand_dims(zi, axis=0)
+        Z = np.concatenate((Z, zi), axis=0)
+
+    H = solve(np.identity(k - 1) + V @ Z.T, np.identity(k - 1))
+
+    y = solve_banded((bs, bs), A, b)
+    c = y - Z.T @ (H @ (V @ y))
+
+    return c
+
+def _periodic_nodes(x,l=1,r=1):
+    '''
+    returns vector of nodes on a circle
+    ``max(r, l)`` assumed to be greater than ``len(x)``
+    '''
+    dx = np.diff(x)
+    t = np.zeros(len(x) + l + r)
+    t[:l] = [x[0] - sum(dx[-i:]) for i in range(l,0,-1)]
+    t[l:-r] = x
+    t[-r:] = [x[-1] + sum(dx[:i]) for i in range(1,r+1)]
+    return t
+
+def _make_periodic_spline(x, y, t, k, axis):
+    '''
+    Compute the (coefficients of) interpolating B-spline with periodic
+    boundary conditions.
+
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        Abscissas.
+    y : array_like, shape (n,)
+        Ordinates.
+    k : int
+        B-spline degree.
+    t : array_like, shape (n + 2 * k,).
+        Nodes taken on a circle, ``k`` on the left and ``k`` on the right
+        of the vector ``x``.
+
+    Returns
+    -------
+    b : a BSpline object of the degree ``k`` and with knots ``t``.
+
+    Notes
+    -----
+    The original system is formed by ``n + k - 1`` equations where the first
+    ``k - 1`` of them stand for the ``k - 1`` derivatives continuity on the
+    edges while the other equations correspond to an interpolating case
+    (matching all the input points). Due to a special form of knot vector, it
+    can be proved that in the original system the first and last ``k``
+    coefficients of a spline function are the same, respectively. It follows
+    from the fact that all ``k-1`` derivatives are equal term by term at ends
+    and that the matrix of the original system of linear equations is
+    non-degenerate. So, we can reduce the number of equations to ``n - 1`` (first
+    ``k-1`` equations could be reduced). Another trick of this implementation is
+    cyclic shift of values of B-splines due to equality of ``k`` unknown
+    coefficients. With this we can receive matrix of the system with upper right
+    and lower left ‘blocks’, and ``k`` diagonals.  It allows to use Woodbury
+    formula to optimize the computations.
+
+    For now, this function works only for odd ``k``.
+
+    '''
+    if k % 2 == 0:
+        raise NotImplementedError("Even k periodic case is not implemented yet.")    
+    n = y.shape[0]
+
+    if n <= k:
+        raise ValueError("n should be greater than k to form system.")
+    
+    # solving periodic case using Woodbury formula
+    # set up RHS
+    A = np.zeros((k, n - 1)) # matrix of diagonals suitable for 'solve_banded'
+    for i in range(n-1):
+        A[:,i] = _bspl.evaluate_all_bspl(t, k, x[i], i + k)[:-1][::-1]
+    offset = int((k-1)/2)
+    # upper right and lower left blocks of the original matrix
+    ur = np.zeros((offset,offset))
+    ll = np.zeros((offset,offset))
+    for i in range(1,offset + 1):
+        A[offset - i] = np.roll(A[offset - i],i)
+        if k % 2 == 1 or i < offset:
+            A[offset + i] = np.roll(A[offset + i], -i)
+            ur[-i:, i - 1] = np.copy(A[offset + i, -i:])
+        ll[-i, :i] = np.copy(A[offset - i, :i])
+    ur = ur.T
+    for i in range(1,offset):
+        ll[:, i] = np.roll(ll[:, i], i)
+        ur[:, -i-1] = np.roll(ur[:, -i - 1], -i)
+
+    extradim = prod(y.shape[1:])
+    y_new = y.reshape(n, extradim)
+    c = np.zeros((n + k - 1,extradim))
+    for i in range(extradim):
+        cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
+        c[:, i] = np.concatenate((cc[-offset:], cc, cc[:offset + 1]))
+    c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
+    return BSpline.construct_fast(t, c, k, axis=axis)
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
@@ -642,6 +810,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
         * ``"not-a-knot"`` (default): The first and second segments are the same
           polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"periodic"``: The values and the first ``k-1`` derivatives at the ends
+          are equivalent (for odd ``k`` only).
 
     axis : int, optional
         Interpolation axis. Default is 0.
@@ -713,6 +883,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()
 
+    Build a B-spline curve with 2 dimensional y
+    
+    >>> x = np.linspace(0,2*np.pi,10)
+    >>> y = np.array([np.sin(x),np.cos(x)])
+
+    Periodic condition is satisfied because y coordinates of points on the ends
+    are equivalent
+
+    >>> ax = plt.axes(projection='3d')
+    >>> xx = np.linspace(0,2*np.pi,100)
+    >>> bspl = make_interp_spline(x,y,k=5,bc_type='periodic',axis=1)
+    >>> ax.plot3D(xx,*bspl(xx))
+    >>> ax.scatter3D(x,*y,color='red')
+    >>> plt.show()
+
     See Also
     --------
     BSpline : base class representing the B-spline objects
@@ -723,7 +908,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     """
     # convert string aliases for the boundary conditions
-    if bc_type is None or bc_type == 'not-a-knot':
+    if bc_type is None or bc_type == 'not-a-knot' or bc_type == 'periodic':
         deriv_l, deriv_r = None, None
     elif isinstance(bc_type, str):
         deriv_l, deriv_r = bc_type, bc_type
@@ -741,6 +926,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y = _as_float_array(y, check_finite)
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
+
+    if bc_type == 'periodic' and not np.allclose(y[0],y[-1],atol=1e-15):
+        raise ValueError("First and last points does not match while periodic case"
+                        " expected")
 
     # special-case k=0 right away
     if k == 0:
@@ -763,6 +952,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     k = operator.index(k)
 
+    if bc_type == 'periodic' and not t is None:
+        raise ValueError("For periodic case t is constructed automatically and "
+                        "can not be passed manually")
+
     # come up with a sensible knot vector, if needed
     if t is None:
         if deriv_l is None and deriv_r is None:
@@ -773,6 +966,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                 t = np.r_[(x[0],)*(k+1),
                            t[1:-1],
                            (x[-1],)*(k+1)]
+            elif bc_type == 'periodic':
+                t = _periodic_nodes(x, k, k)
             else:
                 t = _not_a_knot(x, k)
         else:
@@ -796,6 +991,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
         raise ValueError('Out of bounds w/ x = %s.' % x)
+
+    if bc_type == 'periodic':
+        return _make_periodic_spline(x, y, t, k, axis)
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
