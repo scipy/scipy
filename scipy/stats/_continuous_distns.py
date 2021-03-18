@@ -18,17 +18,18 @@ from scipy import interpolate
 import scipy.special as sc
 import scipy.special._ufuncs as scu
 from scipy._lib._util import _lazyselect, _lazywhere
+
 from . import _stats
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape,
-    _fit_determine_optimizer)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+from ._censored_data import CensoredData, _uncensor
 
 
 def _remove_optimizer_parameters(kwds):
@@ -49,6 +50,7 @@ def _remove_optimizer_parameters(kwds):
     if kwds:
         raise TypeError("Unknown arguments: %s." % kwds)
 
+
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doens't specify what to do
     # if method == 'mm', this decorator calls generic implementation
@@ -59,6 +61,7 @@ def _call_super_mom(fun):
         else:
             return fun(self, *args, **kwds)
     return wrapper
+
 
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
@@ -341,6 +344,8 @@ class norm_gen(rv_continuous):
         estimation of the normal distribution parameters, so the
         `optimizer` and `method` arguments are ignored.\n\n""")
     def fit(self, data, **kwds):
+        if isinstance(data, CensoredData):
+            return super(norm_gen, self).fit(data, **kwds)
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -623,6 +628,9 @@ class beta_gen(rv_continuous):
         return mn, var, g1, g2
 
     def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            return super(beta_gen, self)._fitstart(data)
+
         g1 = _skew(data)
         g2 = _kurtosis(data)
 
@@ -649,7 +657,7 @@ class beta_gen(rv_continuous):
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
-        if floc is None or fscale is None:
+        if isinstance(data, CensoredData) or floc is None or fscale is None:
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
 
@@ -1532,6 +1540,9 @@ class expon_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
+
+        if isinstance(data, CensoredData):
+            return super(expon_gen, self).fit(data, *args, **kwds)
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -2657,7 +2668,11 @@ class gamma_gen(rv_continuous):
         # of the data.  The formula is regularized with 1e-8 in the
         # denominator to allow for degenerate data where the skewness
         # is close to 0.
-        a = 4 / (1e-8 + _skew(data)**2)
+        if isinstance(data, CensoredData):
+            sk = _skew(_uncensor(data))
+        else:
+            sk = _skew(data)
+        a = 4 / (1e-8 + sk**2)
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
@@ -2671,8 +2686,10 @@ class gamma_gen(rv_continuous):
         floc = kwds.get('floc', None)
         method = kwds.get('method', 'mle')
 
-        if floc is None or method.lower() == 'mm':
-            # loc is not fixed.  Use the default fit method.
+        if (isinstance(data, CensoredData) or floc is None
+                or method.lower() == 'mm'):
+            # loc is not fixed or we're not doing standard MLE.
+            # Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
 
         # We already have this value, so just pop it from kwds.
@@ -2723,11 +2740,11 @@ class gamma_gen(rv_continuous):
                 # np.log(a) - sc.digamma(a) - np.log(xbar) +
                 #                             np.log(data).mean() = 0
                 s = np.log(xbar) - np.log(data).mean()
-                func = lambda a: np.log(a) - sc.digamma(a) - s
                 aest = (3-s + np.sqrt((s-3)**2 + 24*s)) / (12*s)
                 xa = aest*(1-0.4)
                 xb = aest*(1+0.4)
-                a = optimize.brentq(func, xa, xb, disp=0)
+                a = optimize.brentq(lambda a: np.log(a) - sc.digamma(a) - s,
+                                    xa, xb, disp=0)
 
             # The MLE for the scale parameter is just the data mean
             # divided by the shape parameter.
@@ -3045,6 +3062,9 @@ class gumbel_r_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(gumbel_r, self).fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -3526,7 +3546,8 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if type(self) == wald_gen or method.lower() == 'mm':
+        if (isinstance(data, CensoredData) or type(self) == wald_gen
+                or method.lower() == 'mm'):
             return super(invgauss_gen, self).fit(data, *args, **kwds)
 
         data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
@@ -4134,6 +4155,9 @@ class laplace_gen(rv_continuous):
         estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(laplace_gen, self).fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -4930,6 +4954,9 @@ class logistic_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(logistic_gen, self).fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -5157,8 +5184,10 @@ class lognorm_gen(rv_continuous):
         \n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
-        if floc is None:
-            # fall back on the default fit method.
+
+        if isinstance(data, CensoredData) or floc is None:
+            # loc is not fixed or we're fitting censored data.
+            # Use the default fit method.
             return super(lognorm_gen, self).fit(data, *args, **kwds)
 
         f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
@@ -6264,6 +6293,9 @@ class pareto_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(pareto_gen, self).fit(data, *args, **kwds)
+
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
@@ -6785,6 +6817,9 @@ class rayleigh_gen(rv_continuous):
         for the root finder; the `scale` parameter and any other parameters
         for the optimizer are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(rayleigh_gen, set).fit(data, *args, **kwds)
+
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -7154,7 +7189,7 @@ class skewcauchy_gen(rv_continuous):
 skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
-class skew_norm_gen(rv_continuous):
+class skewnorm_gen(rv_continuous):
     r"""A skew-normal random variable.
 
     %(before_notes)s
@@ -7225,7 +7260,7 @@ class skew_norm_gen(rv_continuous):
         return output
 
 
-skewnorm = skew_norm_gen(name='skewnorm')
+skewnorm = skewnorm_gen(name='skewnorm')
 
 
 class trapezoid_gen(rv_continuous):
@@ -8201,6 +8236,9 @@ class uniform_gen(rv_continuous):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
 
+        if isinstance(data, CensoredData):
+            return super(uniform_gen, self).fit(data, *args, **kwds)
+
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
@@ -8929,7 +8967,8 @@ class rv_histogram(rv_continuous):
 
     >>> import scipy.stats
     >>> import numpy as np
-    >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
+    >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5,
+    ...                             random_state=123)
     >>> hist = np.histogram(data, bins=100)
     >>> hist_dist = scipy.stats.rv_histogram(hist)
 

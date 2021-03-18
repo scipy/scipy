@@ -19,7 +19,8 @@ from scipy._lib._util import check_random_state
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
-# for root finding for continuous distribution ppf, and max likelihood estimation
+# for root finding for continuous distribution ppf, and maximum likelihood
+# estimation
 from scipy import optimize
 
 # for functions of continuous distributions (e.g. moments, entropy, cdf)
@@ -28,13 +29,14 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
 
-from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
+from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
                    nan, inf, isinf, NINF, empty)
 
 import numpy as np
 
 from ._constants import _XMAX
+from ._censored_data import CensoredData, _uncensor
 
 
 # These are the docstring parts used for substitution in specific
@@ -576,6 +578,7 @@ def argsreduce(cond, *args):
             else np.extract(cond, np.broadcast_to(arg, s)))
             for arg in newargs]
 
+
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
     return (%(shape_arg_str)s), %(locscale_out)s
@@ -937,7 +940,8 @@ class rv_generic(object):
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. %s, %s, %s" % (size, size_, bcast_shape))
+                             "the parameters. %s, %s, %s" % (size, size_,
+                                                             bcast_shape))
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -984,12 +988,56 @@ class rv_generic(object):
     def _support_mask(self, x, *args):
         a, b = self._get_support(*args)
         with np.errstate(invalid='ignore'):
-            return (a <= x) & (x <= b)
+            if isinstance(x, CensoredData):
+                mask = np.empty(x._lower.shape, dtype=bool)
+
+                cmask = x._not_censored
+                vals = x._lower[cmask]
+                mask[cmask] = (a <= vals) & (vals <= b)
+
+                cmask = x._left_censored
+                vals = x._upper[cmask]
+                mask[cmask] = (a <= vals) # & (vals <= b)
+
+                cmask = x._right_censored
+                vals = x._lower[cmask]
+                # mask[cmask] = (a <= vals) & (vals <= b)
+                mask[cmask] = (vals <= b)
+
+                cmask = x._interval_censored
+                # mask[cmask] = (a <= x._lower[cmask]) & (x._upper[cmask] <= b)
+                mask[cmask] = (a <= x._upper[cmask]) & (x._lower[cmask] <= b)
+
+                return mask
+            else:
+                return (a <= x) & (x <= b)
 
     def _open_support_mask(self, x, *args):
         a, b = self._get_support(*args)
         with np.errstate(invalid='ignore'):
-            return (a < x) & (x < b)
+            if isinstance(x, CensoredData):
+                mask = np.empty(x._lower.shape, dtype=bool)
+
+                cmask = x._not_censored
+                vals = x._lower[cmask]
+                mask[cmask] = (a < vals) & (vals < b)
+
+                cmask = x._left_censored
+                vals = x._upper[cmask]
+                mask[cmask] = (a < vals) # & (vals < b)
+
+                cmask = x._right_censored
+                vals = x._lower[cmask]
+                # mask[cmask] = (a < vals) & (vals < b)
+                mask[cmask] = (vals < b)
+
+                cmask = x._interval_censored
+                # mask[cmask] = (a < x._lower[cmask]) & (x._upper[cmask] < b)
+                mask[cmask] = (a < x._upper[cmask]) & (x._lower[cmask] < b)
+
+                return mask
+            else:
+                return (a < x) & (x < b)
 
     def _rvs(self, *args, size=None, random_state=None):
         # This method must handle size being a tuple, and it must
@@ -1488,6 +1536,7 @@ def _get_fixed_fit_value(kwds, names):
 ##  psf --- Probability sparsity function (reciprocal of the pdf) in
 ##                units of percent-point-function (as a function of q).
 ##                Also, the derivative of the percent-point function.
+
 
 class rv_continuous(rv_generic):
     """
@@ -2230,6 +2279,33 @@ class rv_continuous(rv_generic):
             return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
         return -np.sum(logpdf, axis=0)
 
+    def _censored_nnlf_and_penalty(self, x, args):
+        # Modified version of _nnlf_and_penalty.
+        cond0 = ~self._support_mask(x, *args)
+        n_bad = np.count_nonzero(cond0)
+        if n_bad > 0:
+            x = CensoredData(x._lower[~cond0], x._upper[~cond0])
+
+        # logpdf of the noncensored data.
+        logpdf_nc = self._logpdf(x._lower[x._not_censored], *args)
+        # logcdf of the left-censored data.
+        logcdf_lc = self._logcdf(x._upper[x._left_censored], *args)
+        # logsf of the right-censored data.
+        logsf_rc = self._logsf(x._lower[x._right_censored], *args)
+        # Probability of the interval-censored data.
+        # TO DO: Use a smarter "delta CDF" function for this.
+        ic = x._interval_censored
+        prob_ic = (self._cdf(x._upper[ic], *args)
+                   - self._cdf(x._lower[ic], *args))
+        logprob_ic = np.log(prob_ic)
+        s = (np.sum(logpdf_nc) + np.sum(logcdf_lc) + np.sum(logsf_rc)
+             + np.sum(logprob_ic))
+        if n_bad > 0:
+            penalty = n_bad * log(_XMAX) * 100
+        else:
+            penalty = 0.0
+        return -s + penalty
+
     def _penalized_nnlf(self, theta, x):
         ''' Return penalized negative loglikelihood function,
         i.e., - sum (log pdf(x, theta), axis=0) + penalty
@@ -2238,9 +2314,14 @@ class rv_continuous(rv_generic):
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+        if isinstance(x, CensoredData):
+            x = CensoredData((x._lower - loc)/scale, (x._upper - loc)/scale)
+            n = np.count_nonzero(x._not_censored)
+            return self._censored_nnlf_and_penalty(x, args) + n * log(scale)
+        else:
+            x = asarray((x-loc) / scale)
+            n_log_scale = len(x) * log(scale)
+            return self._nnlf_and_penalty(x, args) + n_log_scale
 
     # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
@@ -2286,8 +2367,10 @@ class rv_continuous(rv_generic):
             n_params = len(shapes) + 2 - len(fixedn)
             exponents = (np.arange(1, n_params+1))[:, np.newaxis]
             data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+
             def objective(theta, x):
                 return self._moment_error(theta, x, data_moments)
+
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
@@ -2328,11 +2411,11 @@ class rv_continuous(rv_generic):
                                  for i in range(len(data_moments))])
         if np.any(np.isnan(dist_moments)):
             raise ValueError("Method of moments encountered a non-finite "
-                              "distribution moment and cannot continue. "
-                              "Consider trying method='MLE'.")
+                             "distribution moment and cannot continue. "
+                             "Consider trying method='MLE'.")
 
         return (((data_moments - dist_moments) /
-                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+                 np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
         """
@@ -2353,7 +2436,7 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        data : array_like
+        data : array_like or `CensoredData` instance
             Data to use in estimating the distribution parameters.
         arg1, arg2, arg3,... : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
@@ -2376,8 +2459,8 @@ class rv_continuous(rv_generic):
 
             - fscale : hold scale parameter fixed to specified value.
 
-            - optimizer : The optimizer to use.  The optimizer must take ``func``,
-              and starting position as the first two arguments,
+            - optimizer : The optimizer to use.  The optimizer must take
+              ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
               function to be optimized) and ``disp=0`` to suppress
               output as keyword arguments.
@@ -2390,9 +2473,10 @@ class rv_continuous(rv_generic):
         Returns
         -------
         parameter_tuple : tuple of floats
-            Estimates for any shape parameters (if applicable), followed by those
-            for location and scale. For most random variables, shape statistics
-            will be returned, but there are exceptions (e.g. ``norm``).
+            Estimates for any shape parameters (if applicable), followed by
+            those for location and scale. For most random variables, shape
+            statistics will be returned, but there are exceptions (e.g.
+            ``norm``).
 
         Notes
         -----
@@ -2433,7 +2517,8 @@ class rv_continuous(rv_generic):
         >>> a, b = 1., 2.
         >>> x = beta.rvs(a, b, size=1000)
 
-        Now we can fit all four parameters (``a``, ``b``, ``loc`` and ``scale``):
+        Now we can fit all four parameters (``a``, ``b``, ``loc`` and
+        ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
 
@@ -2461,16 +2546,23 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
         """
-        data = np.asarray(data)
         method = kwds.get('method', "mle").lower()
 
-        # memory for method of moments
+        censored = isinstance(data, CensoredData)
+        if censored and method != 'mle':
+            raise ValueError('For censored data, the method must be "MLE".')
+
         Narg = len(args)
         if Narg > self.numargs:
             raise TypeError("Too many input arguments.")
 
-        if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+        # Check the finiteness of data only if data is not an instance of
+        # CensoredData.  The arrays in a CensoredData instance have already
+        # been validated.
+        if not censored:
+            data = np.asarray(data)
+            if not np.isfinite(data).all():
+                raise RuntimeError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2493,7 +2585,7 @@ class rv_continuous(rv_generic):
         # instead of an optimizer, but sometimes no solution exists,
         # especially when the user fixes parameters. Minimizing the sum
         # of squares of the error generalizes to these cases.
-        vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        vals = optimizer(func, x0, args=(data,), disp=0)
         obj = func(vals, data)
 
         if restore is not None:
@@ -2533,7 +2625,13 @@ class rv_continuous(rv_generic):
             Estimated scale parameter for the data.
 
         """
-        data = np.asarray(data)
+        if isinstance(data, CensoredData):
+            # For this estimate, "uncensor" the data by taking the
+            # given endpoints as the data for the left- or right-censored
+            # data, and the mean for the interval-censored data.
+            data = _uncensor(data)
+        else:
+            data = np.asarray(data)
 
         # Estimate location and scale according to the method of moments.
         loc_hat, scale_hat = self.fit_loc_scale(data, *args)

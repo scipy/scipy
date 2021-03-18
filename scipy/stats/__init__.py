@@ -443,6 +443,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._censored_data import CensoredData
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

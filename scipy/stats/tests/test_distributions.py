@@ -1918,9 +1918,9 @@ class TestLaplace(object):
         assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
         assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
 
-    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
-                                                   (5, 10),
-                                                   (.2, .5)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [(-5, 10),
+                                                   (10, 5),
+                                                   (0.5, 0.2)])
     def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
