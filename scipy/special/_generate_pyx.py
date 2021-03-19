@@ -852,8 +852,7 @@ class FusedFunc(Func):
             if len(typcode) == 1:
                 continue
             if typ not in seen:
-                clauses.append("{} is {}".format(typ,
-                                                 underscore(CY_TYPES[code])))
+                clauses.append(f"{typ} is {underscore(CY_TYPES[code])}")
                 seen.add(typ)
         if clauses and adverb != "else":
             line = "{} {}:".format(adverb, " and ".join(clauses))
@@ -942,7 +941,7 @@ class FusedFunc(Func):
                 adverb = "elif"
             cond = self._get_conditional(fused_types, codes, adverb)
             lines.append(2*tab + cond)
-            lines.extend([3*tab+x for x in decs])
+            lines.extend([3*tab + x for x in decs])
         return lines
 
     def _get_tmp_decs(self, all_tmpvars):
@@ -971,7 +970,7 @@ class FusedFunc(Func):
         for (outtype, _), outvar in zip(self.outtypes, self.outvars):
             line = "cdef {} {}".format(outtype, outvar)
             body.append(tab + line)
-        addr_outvars = ["&{}".format(x) for x in self.outvars]
+        addr_outvars = [f"&{x}" for x in self.outvars]
         line = "{}({}, {})".format(self.name, ", ".join(self.invars),
                                    ", ".join(addr_outvars))
         body.append(tab + line)
@@ -1097,7 +1096,7 @@ class FusedFunc(Func):
 
             call = "{}({})".format(func_name, ", ".join(callvars))
             body.append(sp + call)
-            body.extend([sp+x for x in casts])
+            body.extend([sp + x for x in casts])
             if len(outcodes) == 1:
                 sig = "{}->{}".format(incodes, outcodes)
                 specs.append(sig)
@@ -1156,7 +1155,7 @@ class FusedFunc(Func):
                 call = double_complex_from_npy_cdouble(call)
             call = "{}[0] = {}".format(self.outvars[0], call)
             body.append(sp + call)
-            body.extend([sp+x for x in casts])
+            body.extend([sp + x for x in casts])
             sig = "{}*{}->v".format(incodes, outcodes + retcode)
             specs.append(sig)
 
