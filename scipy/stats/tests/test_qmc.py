@@ -391,7 +391,7 @@ class QMCEngineTests:
         assert engine.num_generated == 0
 
         sample = engine.random(n=8)
-        assert_almost_equal(sample, ref_sample)
+        assert_allclose(sample, ref_sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_fast_forward(self, scramble):
@@ -474,7 +474,7 @@ class TestLHS(QMCEngineTests):
         sample = engine.random(n=n)
         sorted_sample = np.sort(sample, axis=0)
 
-        assert_almost_equal(sorted_sample, expected)
+        assert_equal(sorted_sample, expected)
         assert np.any(sample != expected)
 
         engine = self.engine(d=d, scramble=False, centered=False)
