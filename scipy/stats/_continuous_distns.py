@@ -29,7 +29,7 @@ from ._distn_infrastructure import (
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
-from ._censored_data import CensoredData, _uncensor
+from ._censored_data import CensoredData
 
 
 def _remove_optimizer_parameters(kwds):
@@ -2669,7 +2669,7 @@ class gamma_gen(rv_continuous):
         # denominator to allow for degenerate data where the skewness
         # is close to 0.
         if isinstance(data, CensoredData):
-            sk = _skew(_uncensor(data))
+            sk = _skew(data._uncensor())
         else:
             sk = _skew(data)
         a = 4 / (1e-8 + sk**2)

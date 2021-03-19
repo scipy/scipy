@@ -36,7 +36,7 @@ from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-from ._censored_data import CensoredData, _uncensor
+from ._censored_data import CensoredData
 
 
 # These are the docstring parts used for substitution in specific
@@ -2629,7 +2629,7 @@ class rv_continuous(rv_generic):
             # For this estimate, "uncensor" the data by taking the
             # given endpoints as the data for the left- or right-censored
             # data, and the mean for the interval-censored data.
-            data = _uncensor(data)
+            data = data._uncensor()
         else:
             data = np.asarray(data)
 

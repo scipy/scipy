@@ -2,10 +2,10 @@
 # computing standard errors for the fitted parameters.
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
-from scipy.stats import (CensoredData, beta, cauchy, expon, gamma, invgauss,
+from scipy.stats import (CensoredData, beta, expon, gamma, invgauss,
                          laplace, loggamma, logistic, lognorm, norm,
                          weibull_min)
 from scipy.stats._continuous_distns import _digammainv
@@ -139,38 +139,6 @@ def test_gamma_right_censored():
     assert_allclose(a, 1.447623, rtol=5e-6)
     assert loc == 0
     assert_allclose(scale, 8.360197, rtol=5e-6)
-
-
-def test_gamma_floc0():
-    """
-    Fit the gamma distribution to uncensored data.  Check the parameters
-    and the standard errors.
-
-    Calculation in R:
-
-        library(MASS)
-
-        x <- c(8.42, 22.99, 8.09, 3.55, 2.85, 10.69, 3.23, 16.35, 7.35,
-               2.04, 3.48, 3.55)
-        fit <- fitdistr(x, "gamma", control=list(reltol=1e-13),
-                        start=list(shape=1, scale=1))
-        cat("\nFit parameters (and standard errors)\n")
-        fit
-
-    R output:
-
-        Fit parameters (and standard errors)
-             shape       scale
-          1.9735119   3.9096969
-         (0.7475927) (1.6849177)
-
-    """
-    x = np.array([8.42, 22.99, 8.09, 3.55, 2.85, 10.69, 3.23, 16.35, 7.35,
-                  2.04, 3.48, 3.55])
-    a, loc, scale = gamma.fit(x, floc=0, optimizer=optimizer)
-    assert_allclose(a, 1.9735119, rtol=1e-6)
-    assert_allclose(scale, 3.9096969, rtol=1e-6)
-    assert loc == 0
 
 
 def test_invgauss():
@@ -461,3 +429,42 @@ def test_weibull_min_sas2():
     assert_allclose(c, 2.7112, rtol=5e-4)
     assert_allclose(loc, 122.03, rtol=5e-4)
     assert_allclose(scale, 108.37, rtol=5e-4)
+
+
+class TestCensoredData:
+
+    def test_basic(self):
+        left = [-np.inf, 1, 2, 5]
+        right = [0, 1, 3, np.inf]
+        data = CensoredData(left, right)
+        assert_equal(data._lower, left)
+        assert_equal(data._upper, right)
+        assert_equal(data._not_censored, [False, True, False, False])
+        assert_equal(data._left_censored, [True, False, False, False])
+        assert_equal(data._right_censored, [False, False, False, True])
+        assert_equal(data._interval_censored, [False, False, True, False])
+
+        udata = data._uncensor()
+        assert_equal(udata, [0.0, 1.0, 2.5, 5.0])
+
+    def test_right_censored(self):
+        x = np.array([0, 3, 2.5])
+        is_censored = np.array([0, 1, 0])
+        data = CensoredData.right_censored(x, is_censored)
+        assert_equal(data._lower, x)
+        assert_equal(data._upper, [0, np.inf, 2.5])
+        assert_equal(data._left_censored, [False, False, False])
+        assert_equal(data._right_censored, [False, True, False])
+        assert_equal(data._interval_censored, [False, False, False])
+        assert_equal(data._not_censored, [True, False, True])
+
+    def test_left_censored(self):
+        x = np.array([0, 3, 2.5])
+        is_censored = np.array([0, 1, 0])
+        data = CensoredData.left_censored(x, is_censored)
+        assert_equal(data._upper, x)
+        assert_equal(data._lower, [0, -np.inf, 2.5])
+        assert_equal(data._right_censored, [False, False, False])
+        assert_equal(data._left_censored, [False, True, False])
+        assert_equal(data._interval_censored, [False, False, False])
+        assert_equal(data._not_censored, [True, False, True])

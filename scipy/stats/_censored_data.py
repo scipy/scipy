@@ -7,7 +7,7 @@ def _validate_lower_upper(lower, upper):
     if np.isnan(lower).any() or np.isnan(upper).any():
         raise ValueError('lower and upper must not contain nan.')
     if (np.isinf(lower) & np.isinf(upper)).any():
-        raise ValueError('lower and upper must not both be infinity.')
+        raise ValueError('lower and upper must not both be infinite.')
     if (lower > upper).any():
         raise ValueError('Elements of lower must not be greater than the '
                          'corresponding elements of upper.')
@@ -46,6 +46,45 @@ class CensoredData:
     instance from a single one-dimensional array of observations
     and a corresponding boolean array to indicate which observations
     are censored.
+
+    Examples
+    --------
+    In the most general case, a censored data set may contain values that
+    are left-censored, right-censored, interval-censored and not censored.
+    For example, here we create a data set with length five:
+
+    >>> from scipy.stats import CensoredData
+    >>> data = CensoredData([-np.inf, 1, 1.5, 2, 10],
+    ...                     [0,       1, 1.5, 3, np.inf])
+    >>> print(data)
+    CensoredData(5 values: 2 not censored, 1 left-censored,
+    1 right-censored, 1 interval-censored)
+
+    The first value is left-censored; the true (but unknown) value is
+    less than or equal to 0.  The second and third values, 1 and 1.5,
+    are not censored.  The fourth value is interval-censored; the true
+    value is in the interval [2, 3].  The last value is right-censored;
+    the true value is greater than or equal to 10.
+
+    A common case is to have data that is a mix of uncensored values and
+    censored values that are all right-censored (or all left-censored)
+    with the same bound on the censored values.  For example, a measuring
+    device might have an upper limit of 100, so a reading of 100 means
+    the true value is unknown, but the value is not less than 100.
+    Suppose we have nine readings from such a device, with six being
+    [65, 51, 88, 93, 96, 89] and three being 100.  To create an instance
+    of `CensoredData` to represent this data, we can use the class method
+    `CensoredData.right_censored` as follows:
+
+    >>> values = [65, 51, 88, 93, 96, 89, 100, 100, 100]
+    >>> censored = [0, 0, 0, 0, 0, 0, 1, 1, 1]
+
+    A 1 (or any True value) in the sequence ``censored`` indicates
+    that the corresponding value in ``values`` is right-censored.
+
+    >>> data = CensoredData.right_censored(values, censored)
+    >>> print(data)
+    CensoredData(9 values: 6 not censored, 3 right-censored)
     """
 
     def __init__(self, lower, upper):
@@ -97,13 +136,11 @@ class CensoredData:
             `censored` must be a one-dimensional sequence of boolean
             values.  If ``censored[k]`` is True, the corresponding value
             in `x` is right-censored.  That is, the value ``x[k]``
-            is the lower bound of the measurement.
+            is the lower bound of the true (but unknown) value.
         """
         x, censored = _validate_x_censored(x, censored)
         lower = 1.0*x  # Copy x while ensuring lower is floating point.
-        upper = np.empty_like(lower)
-        not_censored = ~censored
-        upper[not_censored] = lower[not_censored]
+        upper = lower.copy()
         upper[censored] = np.inf
         return cls(lower=lower, upper=upper)
 
@@ -121,28 +158,25 @@ class CensoredData:
             `censored` must be a one-dimensional sequence of boolean
             values.  If ``censored[k]`` is True, the corresponding value
             in `x` is left-censored.  That is, the value ``x[k]``
-            is the upper bound of the measurement.
+            is the upper bound of the true (but unknown) value.
         """
         x, censored = _validate_x_censored(x, censored)
         upper = 1.0*x  # Copy x while ensuring upper is floating point.
-        lower = np.empty_like(upper)
-        not_censored = ~censored
-        lower[not_censored] = upper[not_censored]
+        lower = upper.copy()
         lower[censored] = -np.inf
         return cls(lower=lower, upper=upper)
 
-
-def _uncensor(cdata):
-    # This function is used when a non-censored version of the data
-    # is needed to create a rough estimate of the parameters of a
-    # distribution via the method of moments or some similar method.
-    # The data is "uncensored" by taking the
-    # given endpoints as the data for the left- or right-censored
-    # data, and the mean for the interval-censored data.
-    data = np.empty_like(cdata._lower)
-    data[cdata._not_censored] = cdata._lower[cdata._not_censored]
-    data[cdata._left_censored] = cdata._upper[cdata._left_censored]
-    data[cdata._right_censored] = cdata._lower[cdata._right_censored]
-    ic = cdata._interval_censored
-    data[ic] = 0.5*(cdata._lower[ic] + cdata._upper[ic])
-    return data
+    def _uncensor(self):
+        """
+        This function is used when a non-censored version of the data
+        is needed to create a rough estimate of the parameters of a
+        distribution via the method of moments or some similar method.
+        The data is "uncensored" by taking the given endpoints as the
+        data for the left- or right-censored data, and the mean for the
+        interval-censored data.
+        """
+        data = self._lower.copy()
+        data[self._left_censored] = self._upper[self._left_censored]
+        ic = self._interval_censored
+        data[ic] = 0.5*(self._lower[ic] + self._upper[ic])
+        return data
