@@ -214,7 +214,7 @@ An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
 
 Summary statistics
-==================
+------------------
 
 .. autosummary::
    :toctree: generated/
@@ -247,7 +247,7 @@ Summary statistics
    median_abs_deviation
 
 Frequency statistics
-====================
+--------------------
 
 .. autosummary::
    :toctree: generated/
@@ -266,7 +266,7 @@ Frequency statistics
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
 Correlation functions
-=====================
+---------------------
 
 .. autosummary::
    :toctree: generated/
@@ -285,7 +285,7 @@ Correlation functions
    multiscale_graphcorr
 
 Statistical tests
-=================
+-----------------
 
 .. autosummary::
    :toctree: generated/
@@ -334,7 +334,7 @@ Statistical tests
 
 
 Quasi-Monte Carlo
-=================
+-----------------
 
 .. toctree::
    :maxdepth: 4
@@ -343,15 +343,12 @@ Quasi-Monte Carlo
 
 
 Masked statistics functions
-===========================
+---------------------------
 
 .. toctree::
 
    stats.mstats
 
-
-Other statistical functionality
-===============================
 
 Transformations
 ---------------
