@@ -1086,7 +1086,7 @@ class ODR(object):
                  'ndigit', 'taufac', 'sstol', 'partol', 'maxit', 'stpb',
                  'stpd', 'sclb', 'scld', 'work', 'iwork']
 
-        if self.delta0 is not None and self.job % 1000 // 10 == 1:
+        if self.delta0 is not None and (self.job // 10000) % 10 == 0:
             # delta0 provided and fit is not a restart
             self._gen_work()
 

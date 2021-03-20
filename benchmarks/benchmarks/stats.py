@@ -37,6 +37,9 @@ class CorrelationFunctions(Benchmark):
     def time_fisher_exact(self, alternative):
         oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
 
+    def time_barnard_exact(self, alternative):
+        resBarnard = stats.barnard_exact(self.a, alternative=alternative)
+
 
 class InferentialStats(Benchmark):
     def setup(self):

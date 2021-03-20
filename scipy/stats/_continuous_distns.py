@@ -502,7 +502,8 @@ class arcsine_gen(rv_continuous):
     """
     def _pdf(self, x):
         # arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
-        return 1.0/np.pi/np.sqrt(x*(1-x))
+        with np.errstate(divide='ignore'):
+            return 1.0/np.pi/np.sqrt(x*(1-x))
 
     def _cdf(self, x):
         return 2.0/np.pi*np.arcsin(np.sqrt(x))
@@ -2643,6 +2644,9 @@ class gamma_gen(rv_continuous):
 
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
+
+    def _isf(self, q, a):
+        return sc.gammainccinv(a, q)
 
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
