@@ -2708,7 +2708,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         * 'less': the scale of the distribution underlying `x` is less than
           the scale of the distribution underlying `y`.
         * 'greater': the scale of the distribution underlying `x` is greater
-          than the scale of the distribution underlying `x`.
+          than the scale of the distribution underlying `y`.
 
         .. versionadded:: 1.7.0
 
