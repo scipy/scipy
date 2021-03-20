@@ -82,8 +82,36 @@ The table shows the NumPy versions suitable for each major Python version
 =================  ========================    ===========================
 
 
+Compilers
+^^^^^^^^^
+
+Building SciPy requires compilers for C, C++, Fortran, as well as the
+python transpilers Cython and Pythran (the latter is an optional dependency
+since version 1.7.0).
+
+To maintain compatibility with a large number of platforms & setups, SciPy
+keeps compatibility with old compilers, where using the official wheels
+(or other distribution channels like Anaconda or conda-forge) is not possible.
+
+Official Builds
+~~~~~~~~~~~~~~~
+
+Currently, SciPy wheels are being built as follows:
+
+================  ========================  ===========================  ==============================
+ Platform          Azure Base Image [14]_    Compilers                    Comment
+================  ========================  ===========================  ==============================
+Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``azure-pipelines.yml``
+Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
+OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [15]_
+Windows            ``VS2017-Win2016``        Visual Studio 2017 (15.9)    See ``azure-pipelines.yml``
+================   =======================  ===========================  ==============================
+
+Note that the OSX wheels additionally vendor gfortran 4.8, see [15]_.
+
+
 C Compilers
-^^^^^^^^^^^
+~~~~~~~~~~~
 
 SciPy is compatible with most modern C compilers (in particular ``clang``).
 However, CPython on Windows is built with specific versions of the Microsoft
@@ -103,9 +131,8 @@ CPython               MS Visual C++    C Standard
 ===================   ==============   ===================
 
 
-
 C and C++ Language Standards
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 C and C++ language standards for SciPy are generally guidelines
 rather than official decisions. This is particularly true of
@@ -164,7 +191,7 @@ Compiler support for C++20 is still under heavy development.
 
 
 Fortran Compilers
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
 
 Generally, any well-maintained compiler is likely suitable and can be
 used to build SciPy.
@@ -179,7 +206,7 @@ flang     A recent version
 
 
 Cython Compiler
-^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~
 
 SciPy always requires a recent Cython compiler.
 
@@ -304,3 +331,5 @@ References
 .. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
 .. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
 .. [13] https://github.com/scipy/scipy/issues/10239
+.. [14] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
+.. [15] https://github.com/MacPython/scipy-wheels
