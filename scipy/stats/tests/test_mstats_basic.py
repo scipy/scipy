@@ -229,7 +229,17 @@ class TestCorr(object):
         y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
               0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
-        assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
+        # check against R
+        # options(digits=16)
+        # cor.test(c(2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1, 
+        #            1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7), 
+        #          c(22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6, 
+        #            0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4), 
+        #          alternative='two.sided', method='spearman')
+        p_exp, r_exp = 0.004519192910756, 0.6887298747763864 
+        r, p = mstats.spearmanr(x, y)
+        assert_allclose(r, r_exp)
+        assert_allclose(p, p_exp)
 
         # test alternative parameter
         n = 100
