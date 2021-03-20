@@ -124,8 +124,8 @@ class TestUtils:
         # of a single point in the unit hypercube. JCAM, 2005
         # Table 1 on Page 283
         for dim in [2, 4, 8, 16, 32, 64]:
-            ref = np.sqrt(3**(-dim))
-            assert_allclose(qmc.discrepancy(np.array([[1]*dim]),
+            ref = np.sqrt(3 ** (-dim))
+            assert_allclose(qmc.discrepancy(np.array([[1] * dim]),
                                             method='L2-star'), ref)
 
     def test_discrepancy_errors(self):
@@ -188,46 +188,47 @@ class TestUtils:
 
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
+
         def disc_c2(x):
             n, s = x.shape
             xij = x
             disc1 = np.sum(np.prod((1
-                                    + 1/2*np.abs(xij-0.5)
-                                    - 1/2*np.abs(xij-0.5)**2), axis=1))
+                                    + 1 / 2 * np.abs(xij - 0.5)
+                                    - 1 / 2 * np.abs(xij - 0.5) ** 2), axis=1))
             xij = x[None, :, :]
             xkj = x[:, None, :]
             disc2 = np.sum(np.sum(np.prod(1
-                                          + 1/2*np.abs(xij - 0.5)
-                                          + 1/2*np.abs(xkj - 0.5)
-                                          - 1/2*np.abs(xij - xkj), axis = 2),
+                                          + 1 / 2 * np.abs(xij - 0.5)
+                                          + 1 / 2 * np.abs(xkj - 0.5)
+                                          - 1 / 2 * np.abs(xij - xkj), axis=2),
                                   axis=0))
-            return (13/12)**s - 2/n * disc1 + 1/n**2*disc2
+            return (13 / 12) ** s - 2 / n * disc1 + 1 / n ** 2 * disc2
 
         def disc_wd(x):
             n, s = x.shape
             xij = x[None, :, :]
             xkj = x[:, None, :]
-            disc = np.sum(np.sum(np.prod(3/2
+            disc = np.sum(np.sum(np.prod(3 / 2
                                          - np.abs(xij - xkj)
-                                         + np.abs(xij - xkj)**2, axis = 2),
+                                         + np.abs(xij - xkj) ** 2, axis=2),
                                  axis=0))
-            return -(4/3)**s + 1/n**2 * disc
+            return -(4 / 3) ** s + 1 / n ** 2 * disc
 
         def disc_md(x):
             n, s = x.shape
             xij = x
-            disc1 = np.sum(np.prod((5/3
-                                    - 1/4*np.abs(xij-0.5)
-                                    - 1/4*np.abs(xij-0.5)**2), axis=1))
+            disc1 = np.sum(np.prod((5 / 3
+                                    - 1 / 4 * np.abs(xij - 0.5)
+                                    - 1 / 4 * np.abs(xij - 0.5) ** 2), axis=1))
             xij = x[None, :, :]
             xkj = x[:, None, :]
-            disc2 = np.sum(np.sum(np.prod(15/8
-                                          - 1/4*np.abs(xij - 0.5)
-                                          - 1/4*np.abs(xkj - 0.5)
-                                          - 3/4*np.abs(xij - xkj)
-                                          + 1/2*np.abs(xij - xkj)**2,
-                                          axis = 2), axis=0))
-            return (19/12)**s - 2/n * disc1 + 1/n**2*disc2
+            disc2 = np.sum(np.sum(np.prod(15 / 8
+                                          - 1 / 4 * np.abs(xij - 0.5)
+                                          - 1 / 4 * np.abs(xkj - 0.5)
+                                          - 3 / 4 * np.abs(xij - xkj)
+                                          + 1 / 2 * np.abs(xij - xkj) ** 2,
+                                          axis=2), axis=0))
+            return (19 / 12) ** s - 2 / n * disc1 + 1 / n ** 2 * disc2
 
         def disc_star_l2(x):
             n, s = x.shape
@@ -481,7 +482,8 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
+        pytest.skip(
+            "Not applicable: the value of reference sample is implementation dependent.")
 
     def test_sample_stratified(self):
         d, n = 4, 20
@@ -505,14 +507,14 @@ class TestLHS(QMCEngineTests):
 class TestOptimalDesign(QMCEngineTests):
     qmce = qmc.OptimalDesign
     can_scramble = False
-    unscramble_nd = np.array([[0.24583973, 0.01618008],
-                              [0.01587123, 0.82434795],
-                              [0.66702772, 0.35254855],
-                              [0.80642206, 0.89219419],
-                              [0.2825595, 0.41900669],
-                              [0.98003189, 0.52861091],
-                              [0.54709371, 0.23248484],
-                              [0.48715457, 0.72209797]])
+    unscramble_nd = np.array([[0.48412877, 0.89496811],
+                              [0.3424405, 0.00416027],
+                              [0.20290629, 0.26284543],
+                              [0.06857794, 0.83297228],
+                              [0.98461223, 0.43212172],
+                              [0.82837347, 0.5690004],
+                              [0.60881992, 0.14251516],
+                              [0.64745145, 0.70599331]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
@@ -523,8 +525,8 @@ class TestOptimalDesign(QMCEngineTests):
     def test_discrepancy_hierarchy(self):
         # base discrepancy as a reference for testing OptimalDesign is better
         seed = np.random.RandomState(123456)
-        olhs = qmc.OrthogonalLatinHypercube(d=2, seed=seed)
-        sample_ref = olhs.random(n=20)
+        lhs = qmc.LatinHypercube(d=2, seed=seed)
+        sample_ref = lhs.random(n=20)
         disc_ref = qmc.discrepancy(sample_ref)
 
         # all defaults

@@ -7,7 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Optional,
     Union,
-    type_check_only,
+    type_check_only, List, Callable,
 )
 
 import numpy as np
@@ -19,7 +19,8 @@ _IntegerType = Union[int, np.integer]
 _FloatingType = Union[float, np.floating]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'LatinHypercube', 'MultinomialQMC', 'MultivariateNormalQMC']
+           'LatinHypercube', 'OptimalDesign',
+           'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 def check_random_state(

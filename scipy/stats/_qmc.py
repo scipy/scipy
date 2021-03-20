@@ -1026,16 +1026,16 @@ class OptimalDesign(QMCEngine):
     >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.0454672 , 0.58836057],
-           [0.55947309, 0.98977623],
-           [0.26335167, 0.03734684],
-           [0.87822191, 0.33455121],
-           [0.73525093, 0.64964914]])
+    array([[0.84052691, 0.53664833],
+           [0.1545328 , 0.36265316],
+           [0.52177809, 0.93343721],
+           [0.68033825, 0.06474907],
+           [0.26544879, 0.61163943]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.018581537720176344
+    0.01602810655510689
 
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
@@ -1043,18 +1043,18 @@ class OptimalDesign(QMCEngine):
     >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
-    0.018378401228740238
+    0.01600398742881648
 
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[0.45467204, 3.76508172],
-           [5.59473091, 4.96932869],
-           [2.63351668, 2.11204051],
-           [8.7822191 , 3.00365363],
-           [7.35250934, 3.94894743]])
+    array([[8.40526909, 3.609945  ],
+           [1.54532796, 3.08795949],
+           [5.2177809 , 4.80031164],
+           [6.80338249, 2.1942472 ],
+           [2.65448791, 3.83491828]])
 
     """
 
@@ -1078,7 +1078,7 @@ class OptimalDesign(QMCEngine):
         else:
             self.best_disc = np.inf
 
-        self.olhs = OrthogonalLatinHypercube(self.d, seed=self.rng)
+        self.lhs = LatinHypercube(self.d, seed=self.rng)
 
     def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -1098,7 +1098,7 @@ class OptimalDesign(QMCEngine):
             return np.empty((n, 0))
 
         if self.best_doe is None:
-            self.best_doe = self.olhs.random(n)
+            self.best_doe = self.lhs.random(n)
             self.best_disc = discrepancy(self.best_doe)
 
         def _perturb_best_doe(x: np.ndarray) -> float:
