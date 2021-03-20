@@ -4012,6 +4012,18 @@ class invweibull_gen(rv_continuous):
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - np.log(c)
 
+    def _fitstart(self, data, args=None):
+        # The default implementation of _fitstart uses
+        #     args = (1.0,)*self.numargs
+        # These args are passed to _fit_loc_scale_support, which ultimately
+        # calls fit_loc_scale.  fit_loc_scale uses the moments to estimate
+        # parameters, but the invweibull requires c > 1 for the first moment
+        # to exist.  So we use 2.0 instead.
+        if args is None:
+            args = (2.0,)*self.numargs
+        loc, scale = self._fit_loc_scale_support(data, *args)
+        return args + (loc, scale)
+
 
 invweibull = invweibull_gen(a=0, name='invweibull')
 

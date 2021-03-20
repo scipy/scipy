@@ -6,8 +6,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, gumbel_l, gumbel_r,
-                         invgauss, laplace, logistic, lognorm, nct, norm,
-                         weibull_max, weibull_min)
+                         invgauss, invweibull, laplace, logistic, lognorm, nct,
+                         norm, weibull_max, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -151,9 +151,9 @@ def test_gumbel():
     > libary(fitdistrplus)
     > data = data.frame(left=c(0, 2, 3, 9, 10, 10),
     +                   right=c(1, 2, 3, 9, NA, NA))
-    > result = result = fitdistcens(data, 'gumbel',
-    +                               control=list(reltol=1e-14),
-    +                               start=list(loc=4, scale=5))
+    > result = fitdistcens(data, 'gumbel',
+    +                      control=list(reltol=1e-14),
+    +                      start=list(loc=4, scale=5))
     > result
     Fitting of the distribution ' gumbel ' on censored data by maximum
     likelihood
@@ -259,6 +259,40 @@ def test_invgauss():
     assert_allclose(mu, 1.066716, rtol=5e-5)
     assert loc == 0
     assert_allclose(scale, 0.8155701, rtol=5e-5)
+
+
+def test_invweibull():
+    """
+    Fit invweibull to censored data.
+
+    Here is the calculation in R.  The 'frechet' distribution from the evd
+    package matches SciPy's invweibull distribution.  The `loc` parameter
+    is fixed at 0.
+
+    > library(evd)
+    > libary(fitdistrplus)
+    > data = data.frame(left=c(0, 2, 3, 9, 10, 10),
+    +                   right=c(1, 2, 3, 9, NA, NA))
+    > result = fitdistcens(data, 'frechet',
+    +                      control=list(reltol=1e-14),
+    +                      start=list(loc=4, scale=5))
+    > result
+    Fitting of the distribution ' frechet ' on censored data by maximum
+    likelihood
+    Parameters:
+           estimate
+    scale 2.7902200
+    shape 0.6379845
+    Fixed parameters:
+        value
+    loc     0
+    """
+    # First value is interval-censored. Last two are right-censored.
+    data = CensoredData([0, 2, 3, 9, 10, 10], [1, 2, 3, 9, np.inf, np.inf])
+    c, loc, scale = invweibull.fit(data, floc=0, optimizer=optimizer)
+    assert_allclose(c, 0.6379845, rtol=5e-6)
+    assert loc == 0
+    assert_allclose(scale, 2.7902200, rtol=5e-6)
 
 
 def test_laplace():
