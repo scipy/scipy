@@ -6006,8 +6006,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     against the null hypothesis of equal population means.
 
     By default, the p-value is determined by comparing the t-statistic of the
-    observed data against a theoretical t-distribution, which assumes that
-    means of samples from the underlying populations are normally distributed.
+    observed data against a theoretical t-distribution.
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
