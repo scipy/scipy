@@ -5,8 +5,8 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
-from scipy.stats import (CensoredData, beta, expon, gamma, invgauss,
-                         laplace, logistic, lognorm, nct, norm,
+from scipy.stats import (CensoredData, beta, expon, gamma, gumbel_l, gumbel_r,
+                         invgauss, laplace, logistic, lognorm, nct, norm,
                          weibull_max, weibull_min)
 
 
@@ -139,6 +139,42 @@ def test_gamma_right_censored():
     assert_allclose(a, 1.447623, rtol=5e-6)
     assert loc == 0
     assert_allclose(scale, 8.360197, rtol=5e-6)
+
+
+def test_gumbel():
+    """
+    Fit gumbel_l and gumbel_r to censored data.
+
+    This R calculation should match gumbel_r.
+
+    > library(evd)
+    > libary(fitdistrplus)
+    > data = data.frame(left=c(0, 2, 3, 9, 10, 10),
+    +                   right=c(1, 2, 3, 9, NA, NA))
+    > result = result = fitdistcens(data, 'gumbel',
+    +                               control=list(reltol=1e-14),
+    +                               start=list(loc=4, scale=5))
+    > result
+    Fitting of the distribution ' gumbel ' on censored data by maximum
+    likelihood
+    Parameters:
+          estimate
+    loc   4.487853
+    scale 4.843640
+    """
+    # First value is interval-censored. Last two are right-censored.
+    data = CensoredData([0, 2, 3, 9, 10, 10], [1, 2, 3, 9, np.inf, np.inf])
+    loc, scale = gumbel_r.fit(data, optimizer=optimizer)
+    assert_allclose(loc, 4.487853, rtol=5e-6)
+    assert_allclose(scale, 4.843640, rtol=5e-6)
+
+    # Swap and negate the lower and upper arrays in data.
+    data2 = CensoredData(-data._upper, -data._lower)
+    # Fitting gumbel_l to data2 should give the same result as above, but
+    # with loc negated.
+    loc2, scale2 = gumbel_l.fit(data2, optimizer=optimizer)
+    assert_allclose(loc2, -4.487853, rtol=5e-6)
+    assert_allclose(scale2, 4.843640, rtol=5e-6)
 
 
 def test_invgauss():

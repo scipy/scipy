@@ -3063,7 +3063,7 @@ class gumbel_r_gen(rv_continuous):
     @_call_super_mom
     def fit(self, data, *args, **kwds):
         if isinstance(data, CensoredData):
-            return super(gumbel_r, self).fit(data, *args, **kwds)
+            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
 
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -3159,6 +3159,8 @@ class gumbel_l_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
+        if isinstance(data, CensoredData):
+            return super(gumbel_l_gen, self).fit(data, *args, **kwds)
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
