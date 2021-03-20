@@ -79,7 +79,8 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
         Number of sampling points used in the construction of the simplicial
         complex. Note that this argument is only used for ``sobol`` and other
         arbitrary `sampling_methods`. In case of ``sobol``, it must be a
-        power of 2: ``n=2**m``. Default is 100 for
+        power of 2: ``n=2**m``, and the argument will automatically be
+        converted to the next higher power of 2. Default is 100 for
         ``sampling_method='simplicial'`` and 128 for
         ``sampling_method='sobol'``.
     iters : int, optional
@@ -623,6 +624,8 @@ class SHGO(object):
             # Sampling method used
             if sampling_method in ['halton', 'sobol']:
                 if sampling_method == 'sobol':
+                    self.n = int(2 ** np.ceil(np.log2(self.n)))
+                    self.nc = self.n
                     self.sampling_method = 'sobol'
                     self.qmc_engine = qmc.Sobol(d=self.dim, scramble=False,
                                                 seed=np.random.RandomState())
