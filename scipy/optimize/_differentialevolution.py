@@ -12,7 +12,6 @@ from scipy._lib._util import check_random_state, MapWrapper
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.sparse import issparse
-from scipy.stats import qmc
 
 __all__ = ['differential_evolution']
 
@@ -700,6 +699,8 @@ class DifferentialEvolutionSolver(object):
             ``latinhypercube``, ``sobol`` or ``halton``.
 
         """
+        from scipy.stats import qmc
+
         rng = self.random_number_generator
 
         # Create an array for population of candidate solutions.

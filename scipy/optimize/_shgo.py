@@ -9,7 +9,6 @@ import warnings
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._shgo_lib.triangulation import Complex
-from scipy.stats import qmc
 
 
 __all__ = ['shgo']
@@ -448,6 +447,8 @@ class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
+
+        from scipy.stats import qmc
 
         # Input checks
         methods = ['halton', 'sobol', 'simplicial']
