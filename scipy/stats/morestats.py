@@ -17,7 +17,7 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
-import scipy.stats.stats
+from .stats import _normtest_finish
 
 
 __all__ = ['mvsdist',
@@ -2801,7 +2801,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     z = (M - mnM) / sqrt(varM)
-    z, pval = scipy.stats.stats._normtest_finish(z, alternative)
+    z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
