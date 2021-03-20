@@ -123,7 +123,7 @@ attempting to predict adoption timelines for newer standards.
 ================  =======================================================================
 
 The use of MS Visual Studio 9.0 (which doesn't have support C99)
-to build Python2.7 has meant that C code in SciPy has had to conform
+to build Python 2.7 has meant that C code in SciPy has had to conform
 to the earlier C90 standard for the language and standard library.
 With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
 longer imposed by compilers. For GCC version < 5, an explicit ``-std=c99``
@@ -136,13 +136,12 @@ Microsoft has taken very long to achieve conformance to C99/C11/C17, but as soon
 is built with Visual Studio 16.8 or newer (see above), it will be possible to use C17
 (though optional C11 features like atomics & threading are so far not supported in MSVC).
 
-
 In practice, the C++ feature set that can be used is limited by the
 availability in the MS VisualStudio versions that SciPy needs to support.
 Since dropping support for Python 2.7, C++11 can be used universally, and
 since dropping support for Python 3.6, the same is true also for C++14 & C++17.
 This is because the oldest still required version of MS Visual Studio
-(Visual Studio 15.7 <-> MSVC 19.14, see [8]_) has effectively full support, see [4]_.
+(Visual Studio 15.7 <-> MSVC++ 14.14, see [8]_) has effectively full support, see [4]_.
 Compiler support for C++20 is still under heavy development.
 
 .. note::
