@@ -1,7 +1,6 @@
 """
 Test functions for stats module
 """
-
 import warnings
 import re
 import sys
@@ -21,18 +20,24 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad
+from scipy.integrate import IntegrationWarning, quad, trapezoid
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy
-from .test_continuous_basic import distcont
+from scipy.special import xlogy, polygamma, entr
+from .test_continuous_basic import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
+
+# distributions to skip while testing the fix for the support method
+# introduced in gh-13294. These distributions are skipped as they
+# always return a non-nan support for every parametrization.
+skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -232,6 +237,15 @@ class TestBinom(object):
             warnings.simplefilter("error", RuntimeWarning)
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
             assert_equal(stats.binom(n=2, p=0).std(), 0)
+
+
+class TestArcsine:
+
+    def test_endpoints(self):
+        # Regression test for gh-13697.  The following calculation
+        # should not generate a warning.
+        p = stats.arcsine.pdf([0, 1])
+        assert_equal(p, [np.inf, np.inf])
 
 
 class TestBernoulli(object):
@@ -1803,6 +1817,59 @@ class TestInvgauss(object):
         # FitDataError is raised when negative invalid data
         with pytest.raises(FitDataError):
             stats.invgauss.fit([1, 2, 3], floc=2)
+
+    def test_cdf_sf(self):
+        # Regression tests for gh-13614.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # mu = c(4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+        #        3.02332573e-03, 1.46755891e-03)
+        # print(pinvgauss(5, mu, 1))
+
+        # make sure a finite value is returned when mu is very small. see
+        # GH-13614
+        mu = [4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+              3.02332573e-03, 1.46755891e-03]
+        expected = [1, 1, 1, 1, 1]
+        actual = stats.invgauss.cdf(0.4, mu=mu)
+        assert_equal(expected, actual)
+
+        # test if the function can distinguish small left/right tail
+        # probabilities from zero.
+        cdf_actual = stats.invgauss.cdf(0.001, mu=1.05)
+        assert_allclose(cdf_actual, 4.65246506892667e-219)
+        sf_actual = stats.invgauss.sf(110, mu=1.05)
+        assert_allclose(sf_actual, 4.12851625944048e-25)
+
+        # test if x does not cause numerical issues when mu is very small
+        # and x is close to mu in value.
+
+        # slightly smaller than mu
+        actual = stats.invgauss.cdf(0.00009, 0.0001)
+        assert_allclose(actual, 2.9458022894924e-26)
+
+        # slightly bigger than mu
+        actual = stats.invgauss.cdf(0.000102, 0.0001)
+        assert_allclose(actual, 0.976445540507925)
+
+    def test_logcdf_logsf(self):
+        # Regression tests for improvements made in gh-13616.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # print(pinvgauss(0.001, 1.05, 1, log.p=TRUE, lower.tail=FALSE))
+
+        # test if logcdf and logsf can compute values too small to
+        # be represented on the unlogged scale. See: gh-13616
+        logcdf = stats.invgauss.logcdf(0.0001, mu=1.05)
+        assert_allclose(logcdf, -5003.87872590367)
+        logcdf = stats.invgauss.logcdf(110, 1.05)
+        assert_allclose(logcdf, -4.12851625944087e-25)
+        logsf = stats.invgauss.logsf(0.001, mu=1.05)
+        assert_allclose(logsf, -4.65246506892676e-219)
+        logsf = stats.invgauss.logsf(110, 1.05)
+        assert_allclose(logsf, -56.1467092416426)
 
 
 class TestLaplace(object):
@@ -5138,6 +5205,17 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
+def test_crystalball_entropy():
+    # regression test for gh-13602
+    cb = stats.crystalball(2, 3)
+    res1 = cb.entropy()
+    # -20000 and 30 are negative and positive infinity, respectively
+    lo, hi, N = -20000, 30, 200000
+    x = np.linspace(lo, hi, N)
+    res2 = trapezoid(entr(cb.pdf(x)), x)
+    assert_allclose(res1, res2, rtol=1e-7)
+
+
 @pytest.mark.parametrize(
     'df1,df2,x',
     [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
@@ -5350,6 +5428,56 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
+    @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit(self, nu, loc, scale):
+        # Regression test for gh-13396 (21/27 cases failed previously)
+        # The first tuple of the parameters' values is discussed in gh-10908
+        N = 100
+        samples = stats.nakagami.rvs(size=N, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
+        assert_allclose(nu_est, nu, rtol=0.2)
+        assert_allclose(loc_est, loc, rtol=0.2)
+        assert_allclose(scale_est, scale, rtol=0.2)
+
+        def dlogl_dnu(nu, loc, scale):
+            return ((-2*nu + 1) * np.sum(1/(samples - loc))
+                    + 2*nu/scale**2 * np.sum(samples - loc))
+
+        def dlogl_dloc(nu, loc, scale):
+            return (N * (1 + np.log(nu) - polygamma(0, nu)) +
+                    2 * np.sum(np.log((samples - loc) / scale))
+                    - np.sum(((samples - loc) / scale)**2))
+
+        def dlogl_dscale(nu, loc, scale):
+            return (- 2 * N * nu / scale
+                    + 2 * nu / scale ** 3 * np.sum((samples - loc) ** 2))
+
+        assert_allclose(dlogl_dnu(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dloc(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dscale(nu_est, loc_est, scale_est), 0, atol=1e-3)
+
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit_nu(self, loc, scale):
+        # For nu = 0.5, we have analytical values for
+        # the MLE of the loc and the scale
+        nu = 0.5
+        n = 100
+        samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=nu)
+
+        # Analytical values
+        loc_theo = np.min(samples)
+        scale_theo = np.sqrt(np.mean((samples - loc_est) ** 2))
+
+        assert_allclose(nu_est, nu, rtol=1e-7)
+        assert_allclose(loc_est, loc_theo, rtol=1e-7)
+        assert_allclose(scale_est, scale_theo, rtol=1e-7)
+
 
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):
@@ -5362,127 +5490,12 @@ def test_rvs_no_size_warning():
         rvs_no_size.rvs()
 
 
-@pytest.mark.parametrize(
-    'dist, args',
-    [  # In each of the following, at least one shape parameter is invalid
-        (stats.hypergeom, (3, 3, 4)),
-        (stats.nhypergeom, (5, 2, 8)),
-        (stats.bernoulli, (1.5, )),
-        (stats.binom, (10, 1.5)),
-        (stats.betabinom, (10, -0.4, -0.5)),
-        (stats.boltzmann, (-1, 4)),
-        (stats.dlaplace, (-0.5, )),
-        (stats.geom, (1.5, )),
-        (stats.logser, (1.5, )),
-        (stats.nbinom, (10, 1.5)),
-        (stats.planck, (-0.5, )),
-        (stats.poisson, (-0.5, )),
-        (stats.randint, (5, 2)),
-        (stats.skellam, (-5, -2)),
-        (stats.zipf, (-2, )),
-        (stats.yulesimon, (-2, )),
-        (stats.alpha, (-1, )),
-        (stats.anglit, ()),
-        (stats.arcsine, ()),
-        (stats.argus, (-1, )),
-        (stats.beta, (-2, 2)),
-        (stats.betaprime, (-2, 2)),
-        (stats.bradford, (-1, )),
-        (stats.burr, (-1, 1)),
-        (stats.burr12, (-1, 1)),
-        (stats.cauchy, ()),
-        (stats.chi, (-1, )),
-        (stats.chi2, (-1, )),
-        (stats.cosine, ()),
-        (stats.crystalball, (-1, 2)),
-        (stats.dgamma, (-1, )),
-        (stats.dweibull, (-1, )),
-        (stats.erlang, (-1, )),
-        (stats.expon, ()),
-        (stats.exponnorm, (-1, )),
-        (stats.exponweib, (1, -1)),
-        (stats.exponpow, (-1, )),
-        (stats.f, (10, -10)),
-        (stats.fatiguelife, (-1, )),
-        (stats.fisk, (-1, )),
-        (stats.foldcauchy, (-1, )),
-        (stats.foldnorm, (-1, )),
-        (stats.genlogistic, (-1, )),
-        (stats.gennorm, (-1, )),
-        (stats.genpareto, (np.inf, )),
-        (stats.genexpon, (1, 2, -3)),
-        (stats.genextreme, (np.inf, )),
-        (stats.gausshyper, (1, 2, 3, -4)),
-        (stats.gamma, (-1, )),
-        (stats.gengamma, (-1, 0)),
-        (stats.genhalflogistic, (-1, )),
-        (stats.geninvgauss, (1, 0)),
-        (stats.gilbrat, ()),
-        (stats.gompertz, (-1, )),
-        (stats.gumbel_r, ()),
-        (stats.gumbel_l, ()),
-        (stats.halfcauchy, ()),
-        (stats.halflogistic, ()),
-        (stats.halfnorm, ()),
-        (stats.halfgennorm, (-1, )),
-        (stats.hypsecant, ()),
-        (stats.invgamma, (-1, )),
-        (stats.invgauss, (-1, )),
-        (stats.invweibull, (-1, )),
-        (stats.johnsonsb, (1, -2)),
-        (stats.johnsonsu, (1, -2)),
-        (stats.kappa4, (np.nan, 0)),
-        (stats.kappa3, (-1, )),
-        (stats.ksone, (-1, )),
-        (stats.kstwo, (-1, )),
-        (stats.kstwobign, ()),
-        (stats.laplace, ()),
-        (stats.laplace_asymmetric, (-1, )),
-        (stats.levy, ()),
-        (stats.levy_l, ()),
-        (stats.levy_stable, (-1, 1)),
-        (stats.logistic, ()),
-        (stats.loggamma, (-1, )),
-        (stats.loglaplace, (-1, )),
-        (stats.lognorm, (-1, )),
-        (stats.loguniform, (10, 5)),
-        (stats.lomax, (-1, )),
-        (stats.maxwell, ()),
-        (stats.mielke, (1, -2)),
-        (stats.moyal, ()),
-        (stats.nakagami, (-1, )),
-        (stats.ncx2, (-1, 2)),
-        (stats.ncf, (10, 20, -1)),
-        (stats.nct, (-1, 2)),
-        (stats.norm, ()),
-        (stats.norminvgauss, (5, -10)),
-        (stats.pareto, (-1, )),
-        # (stats.pearson3, (np.nan, )),
-        (stats.powerlaw, (-1, )),
-        (stats.powerlognorm, (1, -2)),
-        (stats.powernorm, (-1, )),
-        (stats.rdist, (-1, )),
-        (stats.rayleigh, ()),
-        (stats.rice, (-1, )),
-        (stats.recipinvgauss, (-1, )),
-        (stats.semicircular, ()),
-        (stats.skewnorm, (np.inf, )),
-        (stats.t, (-1, )),
-        (stats.trapezoid, (0, 2)),
-        (stats.triang, (2, )),
-        (stats.truncexpon, (-1, )),
-        (stats.truncnorm, (10, 5)),
-        # (stats.tukeylambda, (np.nan, )),
-        (stats.uniform, ()),
-        (stats.vonmises, (-1, )),
-        (stats.vonmises_line, (-1, )),
-        (stats.wald, ()),
-        (stats.weibull_min, (-1, )),
-        (stats.weibull_max, (-1, )),
-        (stats.wrapcauchy, (2, ))
-    ]
-)
-def test_support_gh13294_regression(dist, args):
+@pytest.mark.parametrize('distname, args', invdistdiscrete + invdistcont)
+def test_support_gh13294_regression(distname, args):
+    if distname in skip_test_support_gh13294_regression:
+        pytest.skip(f"skipping test for the support method for "
+                    f"distribution {distname}.")
+    dist = getattr(stats, distname)
     # test support method with invalid arguents
     if isinstance(dist, stats.rv_continuous):
         # test with valid scale
@@ -5502,6 +5515,7 @@ def test_support_gh13294_regression(dist, args):
         a, b = dist.support(*args)
         assert_equal(a, np.nan)
         assert_equal(b, np.nan)
+
 
 def test_support_broadcasting_gh13294_regression():
     a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])
@@ -5526,3 +5540,17 @@ def test_support_broadcasting_gh13294_regression():
     assert_equal(b2, ex_b2)
     assert a2.shape == ex_a2.shape
     assert b2.shape == ex_b2.shape
+
+
+def test_distr_params_lists():
+    # distribution objects are extra distributions added in
+    # test_discrete_basic. All other distributions are strings (names)
+    # and so we only choose those to compare whether both lists match.
+    discrete_distnames = {name for name, _ in distdiscrete
+                          if isinstance(name, str)}
+    invdiscrete_distnames = {name for name, _ in invdistdiscrete}
+    assert discrete_distnames == invdiscrete_distnames
+
+    cont_distnames = {name for name, _ in distcont}
+    invcont_distnames = {name for name, _ in invdistcont}
+    assert cont_distnames == invcont_distnames

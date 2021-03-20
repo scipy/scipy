@@ -130,10 +130,16 @@ else:
     from . import _distributor_init
 
     from scipy._lib import _pep440
-    if _pep440.parse(__numpy_version__) < _pep440.Version('1.16.5'):
+    # In maintenance branch, change to np_maxversion N+3 if numpy is at N
+    # See setup.py for more details
+    np_minversion = '1.16.5'
+    np_maxversion = '9.9.99'
+    if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
+            _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
         import warnings
-        warnings.warn("NumPy 1.16.5 or above is required for this version of "
-                      "SciPy (detected version %s)" % __numpy_version__,
+        warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+                      f" is required for this version of SciPy (detected "
+                      f"version {__numpy_version__}",
                       UserWarning)
 
     del _pep440

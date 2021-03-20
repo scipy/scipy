@@ -845,3 +845,15 @@ class TestFindPeaksCwt(object):
         found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
                                     min_length=None, window_size=20)
         assert found_locs.size == act_locs.size
+
+    def test_find_peaks_with_one_width(self):
+        """
+        Verify that the `width` argument
+        in `find_peaks_cwt` can be a float
+        """
+        xs = np.arange(0, np.pi, 0.05)
+        test_data = np.sin(xs)
+        widths = 1
+        found_locs = find_peaks_cwt(test_data, widths)
+
+        np.testing.assert_equal(found_locs, 32)

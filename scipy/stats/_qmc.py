@@ -14,8 +14,7 @@ from scipy.stats._sobol import (
 )
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -543,7 +542,8 @@ class QMCEngine(ABC):
     * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
-    * ``random(n)``: draw ``n`` from the engine.
+    * ``random(n)``: draw ``n`` from the engine and increase the counter
+      ``num_generated`` by ``n``.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -560,10 +560,10 @@ class QMCEngine(ABC):
     >>> class RandomEngine(qmc.QMCEngine):
     ...     def __init__(self, d, seed):
     ...         super().__init__(d=d, seed=seed)
-    ...         self.rng_seed = seed
     ...
     ...
     ...     def random(self, n=1):
+    ...         self.num_generated += n
     ...         return self.rng.random((n, self.d))
     ...
     ...
@@ -573,7 +573,7 @@ class QMCEngine(ABC):
     ...
     ...
     ...     def fast_forward(self, n):
-    ...         self.rng.random((n, self.d))
+    ...         self.random(n)
     ...         return self
 
     After subclassing `QMCEngine` to define the sampling strategy we want to
@@ -633,7 +633,8 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.rng = check_random_state(self.rng_seed)
+        seed = copy.deepcopy(self.rng_seed)
+        self.rng = check_random_state(seed)
         self.num_generated = 0
         return self
 
@@ -651,7 +652,7 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.num_generated += n
+        self.random(n=n)
         return self
 
 
@@ -767,92 +768,6 @@ class Halton(QMCEngine):
         return np.array(sample).T.reshape(n, self.d)
 
 
-class OrthogonalLatinHypercube(QMCEngine):
-    """Orthogonal array-based Latin hypercube sampling (OA-LHS).
-
-    In addition to the constraints from the Latin Hypercube, an orthogonal
-    array of size `n` is defined and only one point is allowed per subspace.
-
-    Parameters
-    ----------
-    d : int
-        Dimension of the parameter space.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-
-    References
-    ----------
-    .. [1] Art B. Owen, "Orthogonal arrays for computer experiments,
-       integration and visualization", Statistica Sinica, 1992.
-
-    Examples
-    --------
-    Generate samples from an orthogonal latin hypercube generator.
-
-    >>> from scipy.stats import qmc
-    >>> sampler = qmc.OrthogonalLatinHypercube(d=2, seed=12345)
-    >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.0454672 , 0.58836057],
-           [0.55947309, 0.03734684],
-           [0.26335167, 0.98977623],
-           [0.87822191, 0.33455121],
-           [0.73525093, 0.64964914]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
-    >>> qmc.discrepancy(sample)
-    0.02050567122966518
-
-    Finally, samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[0.45467204, 3.76508172],
-           [5.59473091, 2.11204051],
-           [2.63351668, 4.96932869],
-           [8.7822191 , 3.00365363],
-           [7.35250934, 3.94894743]])
-
-    """
-
-    def __init__(self, d, seed=None):
-        super().__init__(d=d, seed=seed)
-
-    def random(self, n=1):
-        """Draw `n` in the half-open interval ``[0, 1)``.
-
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
-
-        Returns
-        -------
-        sample : array_like (n, d)
-            OLHS sample.
-
-        """
-        sample = []
-        step = 1.0 / n
-
-        for _ in range(self.d):
-            # Enforce a unique point per grid
-            j = np.arange(n) * step
-            temp = j + self.rng.uniform(low=0, high=step, size=n)
-            self.rng.shuffle(temp)
-
-            sample.append(temp)
-
-        self.num_generated += n
-        return np.array(sample).T.reshape(n, self.d)
-
-
 class LatinHypercube(QMCEngine):
     """Latin hypercube sampling (LHS).
 
@@ -898,41 +813,33 @@ class LatinHypercube(QMCEngine):
     >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.5545328 , 0.13664833],
-           [0.64052691, 0.66474907],
-           [0.52177809, 0.53343721],
-           [0.08033825, 0.16265316],
-           [0.26544879, 0.21163943]])
+    array([[0.1545328 , 0.53664833],
+           [0.84052691, 0.06474907],
+           [0.52177809, 0.93343721],
+           [0.68033825, 0.36265316],
+           [0.26544879, 0.61163943]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.07254149611314986
+    0.019558034794794565
 
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[5.54532796, 2.409945  ],
-           [6.40526909, 3.9942472 ],
-           [5.2177809 , 3.60031164],
-           [0.80338249, 2.48795949],
-           [2.65448791, 2.63491828]])
+    array([[1.54532796, 3.609945  ],
+           [8.40526909, 2.1942472 ],
+           [5.2177809 , 4.80031164],
+           [6.80338249, 3.08795949],
+           [2.65448791, 3.83491828]])
 
     """
 
     def __init__(self, d, centered=False, seed=None):
         super().__init__(d=d, seed=seed)
         self.centered = centered
-
-        # This can be removed once numpy 1.16 is dropped
-        try:
-            self.rg_integers = self.rng.randint
-            self.rg_sample = self.rng.random_sample
-        except AttributeError:
-            self.rg_integers = self.rng.integers
-            self.rg_sample = self.rng.random
 
     def random(self, n=1):
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -949,14 +856,18 @@ class LatinHypercube(QMCEngine):
 
         """
         if self.centered:
-            r = 0.5
+            samples = 0.5
         else:
-            r = self.rg_sample((n, self.d))
+            samples = self.rng.uniform(size=(n, self.d))
 
-        q = self.rg_integers(low=1, high=n, size=(n, self.d))
+        perms = np.tile(np.arange(1, n + 1), (self.d, 1))
+        for i in range(self.d):
+            self.rng.shuffle(perms[i, :])
+        perms = perms.T
 
+        samples = (perms - samples) / n
         self.num_generated += n
-        return 1. / n * (q - r)
+        return samples
 
     def reset(self):
         """Reset the engine to base state.

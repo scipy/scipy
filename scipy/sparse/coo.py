@@ -13,8 +13,8 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                      get_index_dtype, downcast_intp_index, check_shape,
-                      check_reshape_kwargs, matrix)
+                      getdata, get_index_dtype, downcast_intp_index,
+                      check_shape, check_reshape_kwargs, matrix)
 
 import operator
 
@@ -155,10 +155,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self._shape = check_shape((M, N))
 
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
-                data_dtype = getdtype(dtype, obj, default=float)
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
-                self.data = np.array(obj, copy=copy, dtype=data_dtype)
+                self.data = getdata(obj, copy=copy, dtype=dtype)
                 self.has_canonical_format = False
         else:
             if isspmatrix(arg1):
