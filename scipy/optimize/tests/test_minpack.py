@@ -39,11 +39,8 @@ def dummy_func(x, shape):
 
 
 def sequence_parallel(fs):
-    pool = ThreadPool(len(fs))
-    try:
+    with ThreadPool(len(fs)) as pool:
         return pool.map(lambda f: f(), fs)
-    finally:
-        pool.terminate()
 
 
 # Function and Jacobian for tests of solvers for systems of nonlinear

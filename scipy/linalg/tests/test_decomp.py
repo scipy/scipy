@@ -843,11 +843,14 @@ class TestEigh:
         assert_raises(ValueError, eigh, a)
         assert_raises(ValueError, eigh, b)
 
+    @pytest.mark.parametrize('dtype_', DTYPES)
     @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
-    def test_various_drivers_standard(self, driver):
-        a = _random_hermitian_matrix(20)
+    def test_various_drivers_standard(self, driver, dtype_):
+        a = _random_hermitian_matrix(n=20, dtype=dtype_)
         w, v = eigh(a, driver=driver)
-        assert_allclose(a @ v - (v * w), 0., atol=1000*np.spacing(1.), rtol=0.)
+        assert_allclose(a @ v - (v * w), 0.,
+                        atol=1000*np.finfo(dtype_).eps,
+                        rtol=0.)
 
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))

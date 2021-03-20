@@ -75,4 +75,4 @@ def sort_vertices_of_regions(int[:,::1] simplices, regions):
             remaining_count += 1
             remaining_filter(remaining, current_simplex)
         regions_arr = np.asarray(sorted_vertices)
-        regions[n] = regions_arr[regions_arr > ARRAY_FILLER].tolist()
+        regions[n] = list(regions_arr[regions_arr > ARRAY_FILLER])

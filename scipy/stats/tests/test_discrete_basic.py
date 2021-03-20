@@ -9,16 +9,22 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
                            check_pickling, check_rvs_broadcast, check_freezing)
-from scipy.stats._distr_params import distdiscrete
+from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+
+# For these distributions, test_discrete_basic only runs with test mode full
+distslow = {'zipfian', 'nhypergeom'}
 
 
 def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
-        yield distname, arg, distname not in seen
+        if distname in distslow:
+            yield pytest.param(distname, arg, distname, marks=pytest.mark.slow)
+        else:
+            yield distname, arg, distname not in seen
         seen.add(distname)
 
 
@@ -48,7 +54,9 @@ def test_discrete_basic(distname, arg, first_case):
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
         # make sure arguments are within support
-        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
+        # for some distributions, this needs to be overridden
+        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0,
+                  'nchypergeom_wallenius': 6}
         k = spec_k.get(distname, 1)
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
@@ -98,7 +106,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace']
+    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
+                          'nchypergeom_fisher', 'nchypergeom_wallenius']
 
     try:
         distfunc = getattr(stats, dist)
@@ -271,3 +280,13 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [dist.pmf(*v) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
+
+
+@pytest.mark.parametrize('distname, args', invdistdiscrete)
+def test_cdf_gh13280_regression(distname, args):
+    # Test for nan output when shape parameters are invalid
+    dist = getattr(stats, distname)
+    x = np.arange(-2, 15)
+    vals = dist.cdf(x, *args)
+    expected = np.nan
+    npt.assert_equal(vals, expected)

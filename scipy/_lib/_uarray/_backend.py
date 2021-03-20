@@ -80,8 +80,7 @@ def create_multimethod(*args, **kwargs):
 
     See Also
     --------
-    generate_multimethod
-        Generates a multimethod.
+    generate_multimethod : Generates a multimethod.
     """
 
     def wrapper(a):
@@ -94,7 +93,7 @@ def generate_multimethod(
     argument_extractor: ArgumentExtractorType,
     argument_replacer: ArgumentReplacerType,
     domain: str,
-    default: typing.Optional[typing.Callable] = None,
+    default: typing.Optional[typing.Callable] = None
 ):
     """
     Generates a multimethod.
@@ -110,7 +109,7 @@ def generate_multimethod(
         return an (args, kwargs) pair with the dispatchables replaced inside the args/kwargs.
     domain : str
         A string value indicating the domain of this multimethod.
-    default: Optional[Callable], optional
+    default : Optional[Callable], optional
         The default implementation of this multimethod, where ``None`` (the default) specifies
         there is no default implementation.
 
@@ -148,7 +147,7 @@ def generate_multimethod(
 
     See Also
     --------
-    uarray
+    uarray :
         See the module documentation for how to override the method by creating backends.
     """
     kw_defaults, arg_defaults, opts = get_defaults(argument_extractor)
@@ -179,8 +178,8 @@ def set_backend(backend, coerce=False, only=False):
 
     See Also
     --------
-    skip_backend: A context manager that allows skipping of backends.
-    set_global_backend: Set a single, global backend for a domain.
+    skip_backend : A context manager that allows skipping of backends.
+    set_global_backend : Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["set", coerce, only]
@@ -207,8 +206,8 @@ def skip_backend(backend):
 
     See Also
     --------
-    set_backend: A context manager that allows setting of backends.
-    set_global_backend: Set a single, global backend for a domain.
+    set_backend : A context manager that allows setting of backends.
+    set_global_backend : Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["skip"]
@@ -262,8 +261,8 @@ def set_global_backend(backend, coerce=False, only=False):
 
     See Also
     --------
-    set_backend: A context manager that allows setting of backends.
-    skip_backend: A context manager that allows skipping of backends.
+    set_backend : A context manager that allows setting of backends.
+    skip_backend : A context manager that allows skipping of backends.
     """
     _uarray.set_global_backend(backend, coerce, only)
 

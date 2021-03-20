@@ -176,7 +176,7 @@ cdef double[:, :] _compute_euler_from_matrix(
                 _angles[2] = -atan2(matrix_trans[1, 0] + matrix_trans[0, 1],
                                     matrix_trans[0, 0] - matrix_trans[1, 1])
         else:
-            # For instrinsic, set third angle to zero
+            # For intrinsic, set third angle to zero
             # 6a
             if not safe:
                 _angles[2] = 0
@@ -209,16 +209,16 @@ cdef double[:, :] _compute_euler_from_matrix(
             elif _angles[i] > pi:
                 _angles[i] -= 2 * pi
 
+        if extrinsic:
+            # reversal
+            _angles[0], _angles[2] = _angles[2], _angles[0]
+
         # Step 8
         if not safe:
             warnings.warn("Gimbal lock detected. Setting third angle to zero "
                           "since it is not possible to uniquely determine "
                           "all angles.")
 
-    # Reverse role of extrinsic and intrinsic rotations, but let third angle be
-    # zero for gimbal locked cases
-    if extrinsic:
-        angles = angles[:, ::-1]
     return angles
 
 @cython.boundscheck(False)
@@ -528,6 +528,14 @@ cdef class Rotation(object):
                     raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
+
+    def __getstate__(self):
+        return np.asarray(self._quat, dtype=float), self._single
+
+    def __setstate__(self, state):
+        quat, single = state
+        self._quat = quat.copy()
+        self._single = single
 
     @property
     def single(self):

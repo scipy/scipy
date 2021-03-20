@@ -7,7 +7,7 @@ import collections
 class DisjointSet:
     """ Disjoint set data structure for incremental connectivity queries.
 
-    .. versionadded: 1.6.0
+    .. versionadded:: 1.6.0
 
     Attributes
     ----------

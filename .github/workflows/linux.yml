@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Configuring Test Environment
         run: |
+          sudo apt-get update
           sudo apt install python3.7-dbg python3.7-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
           free -m
           python3.7-dbg --version # just to check
@@ -33,7 +34,7 @@ jobs:
         run: |      
           python3.7-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.7-dbg -m pip install --upgrade pip setuptools wheel cython pytest pytest-xdist argparse pybind11
-          python3.7-dbg -m pip install --upgrade mpmath gmpy2
+          python3.7-dbg -m pip install --upgrade mpmath gmpy2 pythran
           python3.7-dbg -m pip install --upgrade --no-cache-dir numpy
           python3.7-dbg -m pip uninstall -y nose
           cd ..
@@ -73,7 +74,12 @@ jobs:
 
     - name: Install packages
       run: |
-        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist
+        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
+        python3.9 -m pip install -r mypy_requirements.txt
+
+    - name: Mypy
+      run: |
+        python3.9 -u runtests.py --mypy
 
     - name: Test SciPy
       run: |
