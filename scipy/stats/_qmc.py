@@ -1094,12 +1094,15 @@ class OptimalDesign(QMCEngine):
             Optimal sample.
 
         """
-        if self.d == 0:
-            return np.empty((n, 0))
+        if self.d == 0 or n == 0:
+            return np.empty((n, self.d))
 
         if self.best_doe is None:
             self.best_doe = self.lhs.random(n)
             self.best_disc = discrepancy(self.best_doe)
+
+        if n == 1:
+            return self.best_doe
 
         def _perturb_best_doe(x: np.ndarray) -> float:
             """Perturb the DoE and keep track of the best DoE.
