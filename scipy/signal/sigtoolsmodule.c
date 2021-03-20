@@ -824,8 +824,13 @@ COMPARE(ULONGLONG_compare, npy_ulonglong)
 
 
 int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
-        /*return PyObject_Compare(*ip1, *ip2); */
-        return PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) != 1;
+        /* PyObject_RichCompareBool returns -1 on error; not handled here */
+        if(PyObject_RichCompareBool(*ip1, *ip2, Py_LT) == 1)
+          return -1;
+        else if(PyObject_RichCompareBool(*ip1, *ip2, Py_EQ) == 1)
+          return 0;
+        else
+          return 1;
 }
 
 typedef int (*CompareFunction)(const void *, const void *);
@@ -843,7 +848,8 @@ CompareFunction compare_functions[] = \
 PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyArrayObject *ap1=NULL, *ap2=NULL, *ret=NULL;
 	npy_intp *a_ind=NULL, *b_ind=NULL, *temp_ind=NULL, *mode_dep=NULL, *check_ind=NULL;
-	npy_uintp *offsets=NULL, *offsets2=NULL;
+	npy_uintp *offsets=NULL;
+	npy_intp *offsets2=NULL;
 	npy_uintp offset1;
 	int i, n2, n2_nonzero, k, check, incr = 1;
 	int typenum, bytes_in_array;

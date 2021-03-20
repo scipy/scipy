@@ -57,6 +57,10 @@ class TestData(object):
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
+        
+    def test4(self):
+        # Parsing trivial file with trailing spaces in attribute declaration.
+        self._test(test11)
 
     def _test(self, test_file):
         data, meta = loadarff(test_file)

@@ -6,6 +6,7 @@ from .optimize import _check_unknown_options
 from scipy._lib._util import check_random_state
 import itertools
 
+QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
 
 def quadratic_assignment(A, B, method="faq", options=None):
     r"""

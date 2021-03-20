@@ -68,7 +68,7 @@ class SphericalVoronoi:
         of the vertices belonging to the n-th point in points
 
     Methods
-    ----------
+    -------
     calculate_areas
         Calculates the areas of the Voronoi regions. For 2D point sets, the
         regions are circular arcs. The sum of the areas is `2 * pi * radius`.

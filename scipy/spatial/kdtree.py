@@ -183,17 +183,39 @@ class KDTree(cKDTree):
     """
     kd-tree for quick nearest-neighbor lookup
 
-    This class provides an index into a set of k-D points which
-    can be used to rapidly look up the nearest neighbors of any point.
+    This class provides an index into a set of k-dimensional points
+    which can be used to rapidly look up the nearest neighbors of any
+    point.
 
     Parameters
     ----------
-    data : (N,K) array_like
-        The data points to be indexed. This array is not copied, and
-        so modifying this data will result in bogus results.
-    leafsize : int, optional
+    data : array_like, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles, and so modifying this data will result in
+        bogus results. The data are also copied if the kd-tree is built
+        with copy_data=True.
+    leafsize : positive int, optional
         The number of points at which the algorithm switches over to
-        brute-force.  Has to be positive.
+        brute-force.  Default: 10.
+    compact_nodes : bool, optional
+        If True, the kd-tree is built to shrink the hyperrectangles to
+        the actual data range. This usually gives a more compact tree that
+        is robust against degenerated input data and gives faster queries
+        at the expense of longer build time. Default: True.
+    copy_data : bool, optional
+        If True the data is always copied to protect the kd-tree against
+        data corruption. Default: False.
+    balanced_tree : bool, optional
+        If True, the median is used to split the hyperrectangles instead of
+        the midpoint. This usually gives a more compact tree and
+        faster queries at the expense of longer build time. Default: True.
+    boxsize : array_like or scalar, optional
+        Apply a m-d toroidal topology to the KDTree.. The topology is generated
+        by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
+        is the boxsize along i-th dimension. The input data shall be wrapped
+        into :math:`[0, L_i)`. A ValueError is raised if any of the data is
+        outside of this bound.
 
     Notes
     -----
@@ -216,10 +238,26 @@ class KDTree(cKDTree):
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
 
-    The tree also supports all-neighbors queries, both with arrays of points
-    and with other kd-trees. These do use a reasonably efficient algorithm,
-    but the kd-tree is not necessarily the best data structure for this
-    sort of calculation.
+    Attributes
+    ----------
+    data : ndarray, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles. The data are also copied if the kd-tree is built
+        with `copy_data=True`.
+    leafsize : positive int
+        The number of points at which the algorithm switches over to
+        brute-force.
+    m : int
+        The dimension of a single data-point.
+    n : int
+        The number of data points.
+    maxes : ndarray, shape (m,)
+        The maximum value in each dimension of the n data points.
+    mins : ndarray, shape (m,)
+        The minimum value in each dimension of the n data points.
+    size : int
+        The number of nodes in the tree.
 
     """
 
@@ -289,24 +327,27 @@ class KDTree(cKDTree):
 
         return self._tree
 
-    def __init__(self, data, leafsize=10):
+    def __init__(self, data, leafsize=10, compact_nodes=True, copy_data=False,
+                 balanced_tree=True, boxsize=None):
         data = np.asarray(data)
         if data.dtype.kind == 'c':
             raise TypeError("KDTree does not work with complex data")
 
         # Note KDTree has different default leafsize from cKDTree
-        super().__init__(data, leafsize)
+        super().__init__(data, leafsize, compact_nodes, copy_data,
+                         balanced_tree, boxsize)
 
-    def query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
-        """
-        Query the kd-tree for nearest neighbors
+    def query(
+            self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
+        """Query the kd-tree for nearest neighbors
 
         Parameters
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : int, optional
-            The number of nearest neighbors to return.
+        k : int or Sequence[int], optional
+            Either the number of nearest neighbors to return, or a list of the
+            k-th nearest neighbors to return, starting from 1.
         eps : nonnegative float, optional
             Return approximate nearest neighbors; the kth returned value
             is guaranteed to be no further than (1+eps) times the
@@ -316,68 +357,85 @@ class KDTree(cKDTree):
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
+            A large, finite p may cause a ValueError if overflow can occur.
         distance_upper_bound : nonnegative float, optional
             Return only neighbors within this distance. This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is given
+            all CPU threads are used. Default: 1.
+
+            .. versionadded:: 1.6.0
 
         Returns
         -------
         d : float or array of floats
             The distances to the nearest neighbors.
-            If x has shape tuple+(self.m,), then d has shape tuple if
-            k is one, or tuple+(k,) if k is larger than one. Missing
-            neighbors (e.g. when k > n or distance_upper_bound is
-            given) are indicated with infinite distances.  If k is None,
-            then d is an object array of shape tuple, containing lists
-            of distances. In either case the hits are sorted by distance
-            (nearest first).
+            If ``x`` has shape ``tuple+(self.m,)``, then ``d`` has shape
+            ``tuple+(k,)``.
+            When k == 1, the last dimension of the output is squeezed.
+            Missing neighbors are indicated with infinite distances.
+            Hits are sorted by distance (nearest first).
+
+            .. deprecated:: 1.6.0
+               If ``k=None``, then ``d`` is an object array of shape ``tuple``,
+               containing lists of distances. This behavior is deprecated and
+               will be removed in SciPy 1.8.0, use ``query_ball_point``
+               instead.
+
         i : integer or array of integers
-            The locations of the neighbors in self.data. i is the same
-            shape as d.
+            The index of each neighbor in ``self.data``.
+            ``i`` is the same shape as d.
+            Missing neighbors are indicated with ``self.n``.
 
         Examples
         --------
-        >>> from scipy import spatial
+
+        >>> import numpy as np
+        >>> from scipy.spatial import KDTree
         >>> x, y = np.mgrid[0:5, 2:8]
-        >>> tree = spatial.KDTree(list(zip(x.ravel(), y.ravel())))
-        >>> tree.data
-        array([[0, 2],
-               [0, 3],
-               [0, 4],
-               [0, 5],
-               [0, 6],
-               [0, 7],
-               [1, 2],
-               [1, 3],
-               [1, 4],
-               [1, 5],
-               [1, 6],
-               [1, 7],
-               [2, 2],
-               [2, 3],
-               [2, 4],
-               [2, 5],
-               [2, 6],
-               [2, 7],
-               [3, 2],
-               [3, 3],
-               [3, 4],
-               [3, 5],
-               [3, 6],
-               [3, 7],
-               [4, 2],
-               [4, 3],
-               [4, 4],
-               [4, 5],
-               [4, 6],
-               [4, 7]])
-        >>> pts = np.array([[0, 0], [2.1, 2.9]])
-        >>> tree.query(pts)
-        (array([ 2.        ,  0.14142136]), array([ 0, 13]))
-        >>> tree.query(pts[0])
-        (2.0, 0)
+        >>> tree = KDTree(np.c_[x.ravel(), y.ravel()])
+
+        To query the nearest neighbours and return squeezed result, use
+
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
+        >>> print(dd, ii)
+        [2.         0.14142136] [ 0 13]
+
+        To query the nearest neighbours and return unsqueezed result, use
+
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
+        >>> print(dd, ii)
+        [[2.        ]
+         [0.14142136]] [[ 0]
+         [13]]
+
+        To query the second nearest neighbours and return unsqueezed result,
+        use
+
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
+        >>> print(dd, ii)
+        [[2.23606798]
+         [0.90553851]] [[ 6]
+         [12]]
+
+        To query the first and second nearest neighbours, use
+
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
+        >>> print(dd, ii)
+        [[2.         2.23606798]
+         [0.14142136 0.90553851]] [[ 0  6]
+         [13 12]]
+
+        or, be more specific
+
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
+        >>> print(dd, ii)
+        [[2.         2.23606798]
+         [0.14142136 0.90553851]] [[ 0  6]
+         [13 12]]
 
         """
         x = np.asarray(x)
@@ -399,7 +457,8 @@ class KDTree(cKDTree):
                 return [d for d, i in hits], [i for d, i in hits]
 
             x = np.asarray(x, dtype=np.float64)
-            inds = super().query_ball_point(x, distance_upper_bound, p, eps)
+            inds = super().query_ball_point(
+                x, distance_upper_bound, p, eps, workers)
 
             if isinstance(inds, list):
                 return inds_to_hits(x, inds)
@@ -410,27 +469,46 @@ class KDTree(cKDTree):
 
             return dists, inds
 
-        d, i = super().query(x, k, eps, p, distance_upper_bound)
+        d, i = super().query(x, k, eps, p, distance_upper_bound, workers)
         if isinstance(i, int):
             i = np.intp(i)
         return d, i
 
-    def query_ball_point(self, x, r, p=2., eps=0):
+    def query_ball_point(self, x, r, p=2., eps=0, workers=1,
+                         return_sorted=None, return_length=False):
         """Find all points within distance r of point(s) x.
 
         Parameters
         ----------
         x : array_like, shape tuple + (self.m,)
             The point or points to search for neighbors of.
-        r : positive float
-            The radius of points to return.
+        r : array_like, float
+            The radius of points to return, must broadcast to the length of x.
         p : float, optional
             Which Minkowski p-norm to use.  Should be in the range [1, inf].
+            A finite large p may cause a ValueError if overflow can occur.
         eps : nonnegative float, optional
             Approximate search. Branches of the tree are not explored if their
             nearest points are further than ``r / (1 + eps)``, and branches are
             added in bulk if their furthest points are nearer than
             ``r * (1 + eps)``.
+        workers : int, optional
+            Number of jobs to schedule for parallel processing. If -1 is given
+            all processors are used. Default: 1.
+
+            .. versionadded:: 1.6.0
+        return_sorted : bool, optional
+            Sorts returned indicies if True and does not sort them if False. If
+            None, does not sort single point queries, but does sort
+            multi-point queries which was the behavior before this option
+            was added.
+
+            .. versionadded:: 1.6.0
+        return_length: bool, optional
+            Return the number of points inside the radius instead of a list
+            of the indices.
+
+            .. versionadded:: 1.6.0
 
         Returns
         -------
@@ -469,7 +547,8 @@ class KDTree(cKDTree):
         x = np.asarray(x)
         if x.dtype.kind == 'c':
             raise TypeError("KDTree does not work with complex data")
-        return super().query_ball_point(x, r, p, eps)
+        return super().query_ball_point(
+            x, r, p, eps, workers, return_sorted, return_length)
 
     def query_ball_tree(self, other, r, p=2., eps=0):
         """
@@ -521,7 +600,7 @@ class KDTree(cKDTree):
         """
         return super().query_ball_tree(other, r, p, eps)
 
-    def query_pairs(self, r, p=2., eps=0):
+    def query_pairs(self, r, p=2., eps=0, output_type='set'):
         """
         Find all pairs of points in `self` whose distance is at most r.
 
@@ -537,12 +616,17 @@ class KDTree(cKDTree):
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
+        output_type : string, optional
+            Choose the output container, 'set' or 'ndarray'. Default: 'set'
+
+            .. versionadded:: 1.6.0
 
         Returns
         -------
-        results : set
+        results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close.
+            positions are close. If output_type is 'ndarray', an ndarry is
+            returned instead of a set.
 
         Examples
         --------
@@ -563,33 +647,131 @@ class KDTree(cKDTree):
         >>> plt.show()
 
         """
-        return super().query_pairs(r, p, eps)
+        return super().query_pairs(r, p, eps, output_type)
 
-    def count_neighbors(self, other, r, p=2.):
-        """
-        Count how many nearby pairs can be formed.
+    def count_neighbors(self, other, r, p=2., weights=None, cumulative=True):
+        """Count how many nearby pairs can be formed.
 
-        Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from ``other``, and where
+        Count the number of pairs ``(x1,x2)`` can be formed, with ``x1`` drawn
+        from ``self`` and ``x2`` drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
-        This is the "two-point correlation" described in Gray and Moore 2000,
-        "N-body problems in statistical learning", and the code here is based
-        on their algorithm.
+
+        Data points on ``self`` and ``other`` are optionally weighted by the
+        ``weights`` argument. (See below)
+
+        This is adapted from the "two-point correlation" algorithm described by
+        Gray and Moore [1]_.  See notes for further discussion.
 
         Parameters
         ----------
-        other : KDTree instance
-            The other tree to draw points from.
+        other : KDTree
+            The other tree to draw points from, can be the same tree as self.
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-        p : float, 1<=p<=infinity, optional
-            Which Minkowski p-norm to use
+            If the count is non-cumulative(``cumulative=False``), ``r`` defines
+            the edges of the bins, and must be non-decreasing.
+        p : float, optional
+            1<=p<=infinity.
+            Which Minkowski p-norm to use.
+            Default 2.0.
+            A finite large p may cause a ValueError if overflow can occur.
+        weights : tuple, array_like, or None, optional
+            If None, the pair-counting is unweighted.
+            If given as a tuple, weights[0] is the weights of points in
+            ``self``, and weights[1] is the weights of points in ``other``;
+            either can be None to indicate the points are unweighted.
+            If given as an array_like, weights is the weights of points in
+            ``self`` and ``other``. For this to make sense, ``self`` and
+            ``other`` must be the same tree. If ``self`` and ``other`` are two
+            different trees, a ``ValueError`` is raised.
+            Default: None
+
+            .. versionadded:: 1.6.0
+        cumulative : bool, optional
+            Whether the returned counts are cumulative. When cumulative is set
+            to ``False`` the algorithm is optimized to work with a large number
+            of bins (>10) specified by ``r``. When ``cumulative`` is set to
+            True, the algorithm is optimized to work with a small number of
+            ``r``. Default: True
+
+            .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : int or 1-D array of ints
-            The number of pairs.
+        result : scalar or 1-D array
+            The number of pairs. For unweighted counts, the result is integer.
+            For weighted counts, the result is float.
+            If cumulative is False, ``result[i]`` contains the counts with
+            ``(-inf if i == 0 else r[i-1]) < R <= r[i]``
+
+        Notes
+        -----
+        Pair-counting is the basic operation used to calculate the two point
+        correlation functions from a data set composed of position of objects.
+
+        Two point correlation function measures the clustering of objects and
+        is widely used in cosmology to quantify the large scale structure
+        in our Universe, but it may be useful for data analysis in other fields
+        where self-similar assembly of objects also occur.
+
+        The Landy-Szalay estimator for the two point correlation function of
+        ``D`` measures the clustering signal in ``D``. [2]_
+
+        For example, given the position of two sets of objects,
+
+        - objects ``D`` (data) contains the clustering signal, and
+
+        - objects ``R`` (random) that contains no signal,
+
+        .. math::
+
+             \\xi(r) = \\frac{<D, D> - 2 f <D, R> + f^2<R, R>}{f^2<R, R>},
+
+        where the brackets represents counting pairs between two data sets
+        in a finite bin around ``r`` (distance), corresponding to setting
+        `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
+        ratio between number of objects from data and random.
+
+        The algorithm implemented here is loosely based on the dual-tree
+        algorithm described in [1]_. We switch between two different
+        pair-cumulation scheme depending on the setting of ``cumulative``.
+        The computing time of the method we use when for
+        ``cumulative == False`` does not scale with the total number of bins.
+        The algorithm for ``cumulative == True`` scales linearly with the
+        number of bins, though it is slightly faster when only
+        1 or 2 bins are used. [5]_.
+
+        As an extension to the naive pair-counting,
+        weighted pair-counting counts the product of weights instead
+        of number of pairs.
+        Weighted pair-counting is used to estimate marked correlation functions
+        ([3]_, section 2.2),
+        or to properly calculate the average of data per distance bin
+        (e.g. [4]_, section 2.1 on redshift).
+
+        .. [1] Gray and Moore,
+               "N-body problems in statistical learning",
+               Mining the sky, 2000,
+               https://arxiv.org/abs/astro-ph/0012333
+
+        .. [2] Landy and Szalay,
+               "Bias and variance of angular correlation functions",
+               The Astrophysical Journal, 1993,
+               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+
+        .. [3] Sheth, Connolly and Skibba,
+               "Marked correlations in galaxy formation models",
+               Arxiv e-print, 2005,
+               https://arxiv.org/abs/astro-ph/0511773
+
+        .. [4] Hawkins, et al.,
+               "The 2dF Galaxy Redshift Survey: correlation functions,
+               peculiar velocities and the matter density of the Universe",
+               Monthly Notices of the Royal Astronomical Society, 2002,
+               http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
+
+        .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
 
         Examples
         --------
@@ -613,9 +795,10 @@ class KDTree(cKDTree):
         9
 
         """
-        return super().count_neighbors(other, r, p)
+        return super().count_neighbors(other, r, p, weights, cumulative)
 
-    def sparse_distance_matrix(self, other, max_distance, p=2.):
+    def sparse_distance_matrix(
+            self, other, max_distance, p=2., output_type='dok_matrix'):
         """
         Compute a sparse distance matrix
 
@@ -628,12 +811,23 @@ class KDTree(cKDTree):
 
         max_distance : positive float
 
-        p : float, optional
+        p : float, 1<=p<=infinity
+            Which Minkowski p-norm to use.
+            A finite large p may cause a ValueError if overflow can occur.
+
+        output_type : string, optional
+            Which container to use for output data. Options: 'dok_matrix',
+            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
+
+            .. versionadded:: 1.6.0
 
         Returns
         -------
-        result : dok_matrix
-            Sparse matrix representing the results in "dictionary of keys" format.
+        result : dok_matrix, coo_matrix, dict or ndarray
+            Sparse matrix representing the results in "dictionary of keys"
+            format. If a dict is returned the keys are (i,j) tuples of indices.
+            If output_type is 'ndarray' a record array with fields 'i', 'j',
+            and 'v' is returned,
 
         Examples
         --------
@@ -665,7 +859,8 @@ class KDTree(cKDTree):
             [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
 
         """
-        return super().sparse_distance_matrix(other, max_distance, p)
+        return super().sparse_distance_matrix(
+            other, max_distance, p, output_type)
 
 
 def distance_matrix(x, y, p=2, threshold=1000000):

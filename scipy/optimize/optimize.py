@@ -264,6 +264,29 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     return sf
 
 
+def _clip_x_for_func(func, bounds):
+    # ensures that x values sent to func are clipped to bounds
+
+    # this is used as a mitigation for gh11403, slsqp/tnc sometimes
+    # suggest a move that is outside the limits by 1 or 2 ULP. This
+    # unclean fix makes sure x is strictly within bounds.
+    def eval(x):
+        x = _check_clip_x(x, bounds)
+        return func(x)
+
+    return eval
+
+
+def _check_clip_x(x, bounds):
+    if (x < bounds[0]).any() or (x > bounds[1]).any():
+        warnings.warn("Values in x were outside bounds during a "
+                      "minimize step, clipping to bounds", RuntimeWarning)
+        x = np.clip(x, bounds[0], bounds[1])
+        return x
+
+    return x
+
+
 def rosen(x):
     """
     The Rosenbrock function.
@@ -2734,7 +2757,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     direc : ndarray, optional
         Initial fitting step and parameter order set as an (N, N) array, where N
         is the number of fitting parameters in `x0`. Defaults to step size 1.0
-        fitting all parameters simultaneously (``np.ones((N, N))``). To
+        fitting all parameters simultaneously (``np.eye((N, N))``). To
         prevent initial consideration of values in a step or to change initial
         step size, set to 0 or desired step size in the Jth position in the Mth
         block, where J is the position in `x0` and M is the desired evaluation
@@ -3322,7 +3345,7 @@ def show_options(solver=None, method=None, disp=True):
     ----------
     solver : str
         Type of optimization solver. One of 'minimize', 'minimize_scalar',
-        'root', or 'linprog'.
+        'root', 'root_scalar', 'linprog', or 'quadratic_assignment'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
@@ -3373,11 +3396,25 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`golden      <optimize.minimize_scalar-golden>`
     - :ref:`bounded     <optimize.minimize_scalar-bounded>`
 
+    `scipy.optimize.root_scalar`
+
+    - :ref:`bisect  <optimize.root_scalar-bisect>`
+    - :ref:`brentq  <optimize.root_scalar-brentq>`
+    - :ref:`brenth  <optimize.root_scalar-brenth>`
+    - :ref:`ridder  <optimize.root_scalar-ridder>`
+    - :ref:`toms748 <optimize.root_scalar-toms748>`
+    - :ref:`newton  <optimize.root_scalar-newton>`
+    - :ref:`secant  <optimize.root_scalar-secant>`
+    - :ref:`halley  <optimize.root_scalar-halley>`
+
     `scipy.optimize.linprog`
 
-    - :ref:`simplex         <optimize.linprog-simplex>`
-    - :ref:`interior-point  <optimize.linprog-interior-point>`
-    - :ref:`revised-simplex <optimize.linprog-revised_simplex>`
+    - :ref:`simplex           <optimize.linprog-simplex>`
+    - :ref:`interior-point    <optimize.linprog-interior-point>`
+    - :ref:`revised simplex   <optimize.linprog-revised_simplex>`
+    - :ref:`highs             <optimize.linprog-highs>`
+    - :ref:`highs-ds          <optimize.linprog-highs-ds>`
+    - :ref:`highs-ipm         <optimize.linprog-highs-ipm>`
 
     `scipy.optimize.quadratic_assignment`
 
@@ -3417,7 +3454,15 @@ def show_options(solver=None, method=None, disp=True):
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
-            ('trust-ncg', 'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('trust-ncg',
+             'scipy.optimize._trustregion_ncg._minimize_trust_ncg'),
+            ('trust-constr',
+             'scipy.optimize._trustregion_constr.'
+             '_minimize_trustregion_constr'),
+            ('trust-exact',
+             'scipy.optimize._trustregion_exact._minimize_trustregion_exact'),
+            ('trust-krylov',
+             'scipy.optimize._trustregion_krylov._minimize_trust_krylov'),
         ),
         'root': (
             ('hybr', 'scipy.optimize.minpack._root_hybr'),
@@ -3442,9 +3487,12 @@ def show_options(solver=None, method=None, disp=True):
             ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
-            ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
-            ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
-            ('revised simplex', 'scipy.optimize._linprog._linprog_rs'),
+            ('simplex', 'scipy.optimize._linprog._linprog_simplex_doc'),
+            ('interior-point', 'scipy.optimize._linprog._linprog_ip_doc'),
+            ('revised simplex', 'scipy.optimize._linprog._linprog_rs_doc'),
+            ('highs-ipm', 'scipy.optimize._linprog._linprog_highs_ipm_doc'),
+            ('highs-ds', 'scipy.optimize._linprog._linprog_highs_ds_doc'),
+            ('highs', 'scipy.optimize._linprog._linprog_highs_doc'),
         ),
         'quadratic_assignment': (
             ('faq', 'scipy.optimize._qap._quadratic_assignment_faq'),

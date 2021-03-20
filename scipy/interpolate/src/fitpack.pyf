@@ -497,7 +497,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
      subroutine surfit_lsq(iopt,m,x,y,z,w,xb,xe,yb,ye,kx,ky,s,nxest,nyest,&
           nmax,eps,nx,tx,ny,ty,c,fp,wrk1,lwrk1,wrk2,lwrk2,&
           iwrk,kwrk,ier)
-       ! tx,ty,c,fp,ier = surfit_lsq(x,y,z,tx,ty,[w,xb,xe,yb,ye,kx,ky,eps,lwrk2])
+       ! tx,ty,c,fp,ier = surfit_lsq(x,y,z,nx,tx,ny,ty,[w,xb,xe,yb,ye,kx,ky,eps,lwrk2])
 
        fortranname surfit
        threadsafe
@@ -520,10 +520,10 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(hide),depend(ny) :: nyest = ny
        integer intent(hide),depend(nx,ny) :: nmax=MAX(nx,ny)
        real*8 optional,check(0.0<eps && eps<1.0) :: eps = 1e-16
-       integer intent(hide),depend(tx,kx),check(2*kx+2<=nx) :: nx = len(tx)
-       real*8 dimension(nx),intent(in,out,overwrite) :: tx
-       integer intent(hide),depend(ty,ky),check(2*ky+2<=ny) :: ny = len(ty)
-       real*8 dimension(ny),intent(in,out,overwrite) :: ty
+       integer intent(in),depend(kx),check(2*kx+2<=nx) :: nx
+       real*8 dimension(nmax),depend(nmax),intent(in,out,overwrite) :: tx
+       integer intent(in),depend(ky),check(2*ky+2<=ny) :: ny
+       real*8 dimension(nmax),depend(nmax),intent(in,out,overwrite) :: ty
        real*8 dimension((nx-kx-1)*(ny-ky-1)),depend(kx,ky,nx,ny),intent(out) :: c
        real*8 intent(out) :: fp
        real*8 dimension(lwrk1),intent(cache,hide),depend(lwrk1) :: wrk1

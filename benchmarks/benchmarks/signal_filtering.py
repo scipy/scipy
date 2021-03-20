@@ -2,12 +2,11 @@ import numpy as np
 import timeit
 from concurrent.futures import ThreadPoolExecutor, wait
 
-try:
-    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
+
 
 class Decimate(Benchmark):
     param_names = ['q', 'ftype', 'zero_phase']

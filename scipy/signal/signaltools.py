@@ -622,7 +622,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
     >>> from scipy import misc
     >>> face = misc.face(gray=True)
-    >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
+    >>> kernel = np.outer(signal.windows.gaussian(70, 8),
+    ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
     >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(3, 1,
@@ -1354,7 +1355,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
-    >>> win = signal.hann(50)
+    >>> win = signal.windows.hann(50)
     >>> filtered = signal.convolve(sig, win, mode='same') / sum(win)
 
     >>> import matplotlib.pyplot as plt
@@ -1498,11 +1499,16 @@ def medfilt(volume, kernel_size=None):
     See Also
     --------
     scipy.ndimage.median_filter
+    scipy.signal.medfilt2d
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
+
+    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
+    the specialised function `scipy.signal.medfilt2d` may be faster.
+
     """
     volume = np.atleast_1d(volume)
     if kernel_size is None:
@@ -1518,7 +1524,7 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1820,11 +1826,21 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
+    -----
+    This is faster than `medfilt` when the input dtype is ``uint8``,
+    ``float32``, or ``float64``; for other types, this falls back to
+    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
+    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    faster than this function.
+
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
@@ -2200,7 +2216,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
@@ -3427,7 +3443,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape

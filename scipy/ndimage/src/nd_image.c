@@ -724,7 +724,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     PyArrayObject *input = NULL, *output = NULL;
     PyArrayObject *coordinates = NULL, *matrix = NULL, *shift = NULL;
     PyObject *fnc = NULL, *extra_arguments = NULL, *extra_keywords = NULL;
-    int mode, order;
+    int mode, order, nprepad;
     double cval;
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
@@ -750,14 +750,14 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     callback.py_function = NULL;
     callback.c_function = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidOO",
+    if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidiOO",
                           NI_ObjectToInputArray, &input,
                           &fnc,
                           NI_ObjectToOptionalInputArray, &coordinates,
                           NI_ObjectToOptionalInputArray, &matrix,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval,
+                          &order, &mode, &cval, &nprepad,
                           &extra_arguments, &extra_keywords))
         goto exit;
 
@@ -798,7 +798,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     }
 
     NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
-                          output, order, (NI_ExtendMode)mode, cval);
+                          output, order, (NI_ExtendMode)mode, cval, nprepad);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif
@@ -819,18 +819,19 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *shift = NULL;
     PyArrayObject *zoom = NULL;
-    int mode, order;
+    int mode, order, nprepad, grid_mode;
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&O&O&O&iid",
+    if (!PyArg_ParseTuple(args, "O&O&O&O&iidii",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToOptionalInputArray, &zoom,
                           NI_ObjectToOptionalInputArray, &shift,
                           NI_ObjectToOutputArray, &output,
-                          &order, &mode, &cval))
+                          &order, &mode, &cval, &nprepad, &grid_mode))
         goto exit;
 
-    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
+    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval,
+                 nprepad, grid_mode);
     #ifdef HAVE_WRITEBACKIFCOPY
         PyArray_ResolveWritebackIfCopy(output);
     #endif

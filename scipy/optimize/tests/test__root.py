@@ -38,6 +38,22 @@ class TestRoot(object):
             assert_(abs(func(sol1.x)).max() < abs(func(sol2.x)).max(),
                     msg)
 
+    def test_tol_norm(self):
+
+        def norm(x):
+            return abs(x[0])
+
+        for method in ['excitingmixing',
+                       'diagbroyden',
+                       'linearmixing',
+                       'anderson',
+                       'broyden1',
+                       'broyden2',
+                       'krylov']:
+
+            root(np.zeros_like, np.zeros(2), method=method,
+                options={"tol_norm": norm})
+
     def test_minimize_scalar_coerce_args_param(self):
         # github issue #3503
         def func(z, f=1):
