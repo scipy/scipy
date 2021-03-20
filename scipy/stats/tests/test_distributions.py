@@ -2666,7 +2666,6 @@ class TestGamma(object):
         #                           regularized=True))
         # 1.000000000000028e-50
         #
-.```
         assert np.isclose(stats.gamma.isf(1e-17, 1),
                           39.14394658089878, atol=1e-14)
         assert np.isclose(stats.gamma.isf(1e-50, 100),
