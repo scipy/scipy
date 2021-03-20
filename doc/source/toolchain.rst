@@ -27,6 +27,7 @@ section for an example.)
 - First and foremost, SciPy is a Python project, hence it requires a Python environment.
 - BLAS and LAPACK numerical libraries need to be installed.
 - Compilers for C, C++, Cython, and Fortran code are needed.
+- Since version 1.7.0, ``Pythran`` is an optional dependency (which can be enabled via ``export SCIPY_USE_PYTHRAN=1``).
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
 - Building the documentation requires the ``matplotlib``, Sphinx packages, as well as a LaTeX installation.
