@@ -2650,7 +2650,23 @@ class TestGamma(object):
         assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
 
     def test_isf(self):
-        # test cases for when the probability is very small. se gh-13664
+        # Test cases for when the probability is very small. See gh-13664.
+        # The expected values can be checked with mpmath.  With mpmath,
+        # the survival function sf(x, k) can be computed as
+        #
+        #     mpmath.gammainc(k, x, mpmath.inf, regularized=True)
+        #
+        # Here we have:
+        #
+        # >>> mpmath.mp.dps = 60
+        # >>> float(mpmath.gammainc(1, 39.14394658089878, mpmath.inf,
+        # ...                       regularized=True))
+        # 9.99999999999999e-18
+        # >>> float(mpmath.gammainc(100, 330.6557590436547, mpmath.inf,
+        #                           regularized=True))
+        # 1.000000000000028e-50
+        #
+.```
         assert np.isclose(stats.gamma.isf(1e-17, 1),
                           39.14394658089878, atol=1e-14)
         assert np.isclose(stats.gamma.isf(1e-50, 100),
