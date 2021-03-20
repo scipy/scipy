@@ -4546,40 +4546,6 @@ def test_normalitytests():
     assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
-def test_skewtest_alternative():
-    # Based on test_normalitytests
-    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
-    res_expected = stats.skewtest(x)
-
-    assert_raises(ValueError, stats.skewtest, x,
-                  alternative='error')
-
-    res = stats.skewtest(x, alternative="greater")
-    assert_allclose(res.statistic, res_expected.statistic)
-    assert_allclose(res.pvalue, res_expected.pvalue / 2)
-
-    res = stats.skewtest(x, alternative="less")
-    assert_allclose(res.statistic, res_expected.statistic)
-    assert_allclose(res.pvalue, 1 - res_expected.pvalue / 2)
-
-
-def test_kurtosistest_alternative():
-    # Based on test_normalitytests
-    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
-    res_expected = stats.kurtosistest(x)
-
-    assert_raises(ValueError, stats.kurtosistest, x,
-                  alternative='error')
-
-    res = stats.kurtosistest(x, alternative="greater")
-    assert_allclose(res.statistic, res_expected.statistic)
-    assert_allclose(res.pvalue, 1 - res_expected.pvalue / 2)
-
-    res = stats.kurtosistest(x, alternative="less")
-    assert_allclose(res.statistic, res_expected.statistic)
-    assert_allclose(res.pvalue, res_expected.pvalue / 2)
-
-
 class TestRankSums(object):
 
     np.random.seed(0)
@@ -4601,23 +4567,6 @@ class TestRankSums(object):
     def test_input_validation(self):
         with assert_raises(ValueError, match="alternative must be 'less'"):
             stats.ranksums(self.x, self.y, alternative='foobar')
-
-    def test_ranksums_alternative(self):
-        # No exisiting ranksums value test exists (...?)
-        # Based on test_ranksums_result_attributes
-        x, y = np.arange(5), np.arange(25)
-        res_expected = stats.ranksums(x, y)
-
-        assert_raises(ValueError, stats.ranksums, x, y,
-                      alternative='error')
-
-        res = stats.ranksums(x, y, alternative="less")
-        assert_approx_equal(res.statistic, res_expected.statistic)
-        assert_approx_equal(res.pvalue, res_expected.pvalue / 2)
-
-        res = stats.ranksums(x, y, alternative="greater")
-        assert_approx_equal(res.statistic, res_expected.statistic)
-        assert_approx_equal(res.pvalue, 1 - (res_expected.pvalue / 2))
 
 
 class TestJarqueBera(object):
