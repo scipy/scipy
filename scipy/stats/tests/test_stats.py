@@ -931,8 +931,6 @@ class TestCorrSpearmanr2(object):
 
     def test_alternative(self):
         # Test alternative parameter
-        assert_raises(ValueError, stats.spearmanr, X, X,
-                      alternative='error')
 
         # Simple test - Based on the above ``test_spearmanr_vs_r``
         x1 = [1, 2, 3, 4, 5]
@@ -946,6 +944,9 @@ class TestCorrSpearmanr2(object):
         res = stats.spearmanr(x1, x2, alternative="greater")
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1] / 2)
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.spearmanr(x1, x2, alternative="ekki-ekki")
 
         # Test nan policies
         x1nan = x1 + [np.nan]
@@ -969,15 +970,21 @@ class TestCorrSpearmanr2(object):
         assert_allclose(res_actual, res_expected)
 
         # Test value raises
-        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-                      nan_policy='raise', alternative="less")
-        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-                      nan_policy='raise', alternative="greater")
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='raise',
+                            alternative="less")
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='raise',
+                            alternative="greater")
 
-        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-                      nan_policy='foobar', alternative="less")
-        assert_raises(ValueError, stats.spearmanr, x1nan, x2nan,
-                      nan_policy='foobar', alternative="greater")
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='ekki-ekki',
+                            alternative="less")
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='ekki-ekki',
+                            alternative="greater")
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
@@ -1449,15 +1456,18 @@ class TestRegression(object):
         y = 0.2 * np.linspace(0, 100, 100) + 10
         y += np.sin(np.linspace(0, 20, 100))
 
-        assert_raises(ValueError, stats.linregress, x, y, alternative="error")
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.linregress(x, y, alternative="ekki-ekki")
 
-        res = stats.linregress(x, y, alternative="two-sided")
+        res1 = stats.linregress(x, y, alternative="two-sided")
 
-        rest = stats.linregress(x, y, alternative="less")
-        assert_allclose(rest.pvalue, 1 - (res.pvalue / 2))
+        res2 = stats.linregress(x, y, alternative="less")
+        assert_allclose(res2.pvalue, 1 - (res1.pvalue / 2))
 
-        rest = stats.linregress(x, y, alternative="greater")
-        assert_allclose(rest.pvalue, res.pvalue / 2)
+        res3 = stats.linregress(x, y, alternative="greater")
+        assert_allclose(res3.pvalue, res1.pvalue / 2)
+
+        assert res1.rvalue == res2.rvalue == res3.rvalue
 
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise,

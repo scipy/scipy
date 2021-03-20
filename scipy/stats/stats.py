@@ -4383,18 +4383,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
 
-        .. versionadded:: 1.6.0
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -4404,10 +4405,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         length equal to total number of variables (columns or rows) in ``a``
         and ``b`` combined.
     pvalue : float
-        The p-value for a hypothesis test whose alternative hypothesis is
-        defined by the ``alternative`` parameter and whose null hypotheisis
-        is that two sets of data are uncorrelated. ``pvalue`` has the same
-        shape as ``correlation``.
+        The p-value for a hypothesis test whose null hypotheisis
+        is that two sets of data are uncorrelated. See `alternative` above
+        for alternative hypotheses. `pvalue` has the same
+        shape as `correlation`.
 
     References
     ----------

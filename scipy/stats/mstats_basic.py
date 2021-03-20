@@ -449,14 +449,14 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
 
-        .. versionadded:: 1.6.0
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -516,15 +516,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        if alternative == 'less':
-            prob = distributions.t.cdf(t, dof)
-        elif alternative == 'greater':
-            prob = distributions.t.sf(t, dof)
-        elif alternative == 'two-sided':
-            prob = 2 * distributions.t.sf(np.abs(t), dof)
-        else:
-            raise ValueError("alternative should be "
-                             "'less', 'greater' or 'two-sided'")
+        t, prob = scipy.stats.stats._ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):

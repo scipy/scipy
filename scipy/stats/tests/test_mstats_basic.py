@@ -231,14 +231,20 @@ class TestCorr(object):
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
 
-        # test alternative parameter (based on above)
-        pr = mstats.spearmanr(x, y).pvalue
+        # test alternative parameter
+        n = 100
+        x = np.linspace(0, 5, n)
+        y = 0.1*x + np.random.rand(n)  # y is positively correlated w/ x
 
-        p = mstats.spearmanr(x, y, alternative="greater").pvalue
-        assert_almost_equal(p, pr / 2)
+        stat1, p1 = mstats.spearmanr(x, y)
+        stat2, p2 = mstats.spearmanr(x, y, alternative="greater")
+        stat3, p3 = mstats.spearmanr(x, y, alternative="less")
 
-        p = mstats.spearmanr(x, y, alternative="less").pvalue
-        assert_almost_equal(p, 1 - pr / 2)
+        assert stat1 == stat2 == stat3
+        assert_allclose(p2, p1 / 2)
+        assert_allclose(p3, 1 - p1 / 2)
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            mstats.spearmanr(x, y, alternative="ekki-ekki")
 
         # Next test is to make sure calculation uses sufficient precision.
         # The denominator's value is ~n^3 and used to be represented as an
