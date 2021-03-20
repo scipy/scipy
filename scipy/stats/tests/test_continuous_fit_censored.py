@@ -5,7 +5,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, invgauss,
-                         laplace, logistic, lognorm, nct, norm, weibull_min)
+                         laplace, logistic, lognorm, nct, norm,
+                         weibull_max, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -408,7 +409,7 @@ def test_norm():
     assert_allclose(scale, 0.2868042, rtol=5e-6)
 
 
-def test_weibull_min_right_censored1():
+def test_weibull_censored1():
     # Ref: http://www.ams.sunysb.edu/~zhu/ams588/Lecture_3_likelihood.pdf
 
     # Survival times; '*' indicates right-censored.
@@ -424,6 +425,17 @@ def test_weibull_min_right_censored1():
     assert_allclose(c, 2.149, rtol=1e-3)
     assert loc == 0
     assert_allclose(scale, 28.99, rtol=1e-3)
+
+    # Flip the sign of the data, and make the censored values
+    # left-censored. We should get the same parameters when we fit
+    # weibull_max to the flipped data.
+    data2 = CensoredData.left_censored(-np.array(times), cens)
+
+    c2, loc2, scale2 = weibull_max.fit(data2, floc=0)
+
+    assert_allclose(c2, 2.149, rtol=1e-3)
+    assert loc2 == 0
+    assert_allclose(scale2, 28.99, rtol=1e-3)
 
 
 def test_weibull_min_sas1():
