@@ -33,7 +33,7 @@ def linregress(x, y=None, alternative='two-sided'):
           * 'less': one-sided
           * 'greater': one-sided
 
-        .. versionadded:: 1.6.0
+        .. versionadded:: 1.7.0
 
     Returns
     -------

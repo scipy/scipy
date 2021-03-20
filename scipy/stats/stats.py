@@ -4184,7 +4184,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
           * 'less': one-sided
           * 'greater': one-sided
 
-        .. versionadded:: 1.6.0
+        .. versionadded:: 1.7.0
 
     Returns
     -------
