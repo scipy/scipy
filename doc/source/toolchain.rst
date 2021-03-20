@@ -191,6 +191,12 @@ Cython     >= 0.29.18  1.5.0
 ======== ============ ===============
 
 
+OpenMP support
+^^^^^^^^^^^^^^
+
+For various reasons [13]_, SciPy cannot be distributed with built-in OpenMP support.
+When using the optional Pythran support, OpenMP-enabled parallel code can be
+generated when building from source.
 
 Other Libraries
 ^^^^^^^^^^^^^^^
@@ -297,3 +303,4 @@ References
 .. [10] https://numpy.org/neps/nep-0029-deprecation_policy.html
 .. [11] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
 .. [12] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
+.. [13] https://github.com/scipy/scipy/issues/10239
