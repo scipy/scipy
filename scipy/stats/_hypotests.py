@@ -32,7 +32,11 @@ def _vectorize_hypotest_factory(result_creator, default_axis=0,
     def vectorize_hypotest_decorator(hypotest_fun_in):
         @wraps(hypotest_fun_in)
         def vectorize_hypotest_wrapper(*args, axis=default_axis,
-                                       nan_policy='propagate', **kwds):
+                                       nan_policy='propagate', _no_deco=False,
+                                       **kwds):
+
+            if _no_deco: # for testing, decorator does nothing
+                return hypotest_fun_in(*args, **kwds)
 
             # if n_samples is None, all args are samples
             n_samp = len(args) if n_samples is None else n_samples
