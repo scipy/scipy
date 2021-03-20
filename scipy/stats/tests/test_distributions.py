@@ -1948,6 +1948,46 @@ class TestLaplace(object):
         loc, scale = stats.laplace.fit(data, fscale=6)
         assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
 
+    def test_sf_cdf_extremes(self):
+        # These calculations should not generate warnings.
+        x = 1000
+        p0 = stats.laplace.cdf(-x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point representation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.cdf(x)
+        assert p1 == 1.0
+
+        p0 = stats.laplace.sf(x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point represenation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.sf(-x)
+        assert p1 == 1.0
+
+    def test_sf_cdf(self):
+        # Expected value is computed with mpmath:
+        #
+        # >>> import mpmath
+        # >>> mpmath.mp.dps = 60
+        # >>> (mpmath.exp(-200)/2)   # cdf(-200) and sf(200)
+        # 6.919482633683688e-88
+        #
+        expected = 6.919482633683688e-88
+        pneg = stats.laplace.cdf(-200)
+        assert_allclose(pneg, expected, 1e-13)
+        ppos = stats.laplace.sf(200)
+        assert_allclose(ppos, expected, 1e-13)
+
+    def test_isf(self):
+        p = 1e-25
+        x = stats.laplace.isf(p)
+        assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
 
 class TestInvGamma(object):
     def test_invgamma_inf_gh_1866(self):

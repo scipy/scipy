@@ -4117,10 +4117,19 @@ class laplace_gen(rv_continuous):
         return 0.5*np.exp(-abs(x))
 
     def _cdf(self, x):
-        return np.where(x > 0, 1.0-0.5*np.exp(-x), 0.5*np.exp(x))
+        with np.errstate(over='ignore'):
+            return np.where(x > 0, 1.0 - 0.5*np.exp(-x), 0.5*np.exp(x))
+
+    def _sf(self, x):
+        # By symmetry...
+        return self._cdf(-x)
 
     def _ppf(self, q):
         return np.where(q > 0.5, -np.log(2*(1-q)), np.log(2*q))
+
+    def _isf(self, q):
+        # By symmetry...
+        return -self._ppf(q)
 
     def _stats(self):
         return 0, 2, 0, 3
