@@ -190,8 +190,8 @@ def test_matrix_calculation_pipeline():
 
 
 def test_from_matrix_ortho_output():
-    np.random.seed(0)
-    mat = np.random.random((100, 3, 3))
+    rnd = np.random.RandomState(0)
+    mat = rnd.random_sample((100, 3, 3))
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
@@ -424,8 +424,8 @@ def test_single_intrinsic_extrinsic_rotation():
 
 def test_from_euler_rotation_order():
     # Intrinsic rotation is same as extrinsic with order reversed
-    np.random.seed(0)
-    a = np.random.randint(low=0, high=180, size=(6, 3))
+    rnd = np.random.RandomState(0)
+    a = rnd.randint(low=0, high=180, size=(6, 3))
     b = a[:, ::-1]
     x = Rotation.from_euler('xyz', a, degrees=True).as_quat()
     y = Rotation.from_euler('ZYX', b, degrees=True).as_quat()
@@ -552,12 +552,12 @@ def test_from_euler_extrinsic_rotation_313():
 
 
 def test_as_euler_asymmetric_axes():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n = 10
     angles = np.empty((n, 3))
-    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = np.random.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
-    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
     for seq_tuple in permutations('xyz'):
         # Extrinsic rotations
@@ -569,12 +569,12 @@ def test_as_euler_asymmetric_axes():
 
 
 def test_as_euler_symmetric_axes():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n = 10
     angles = np.empty((n, 3))
-    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = np.random.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
 
     for axis1 in ['x', 'y', 'z']:
         for axis2 in ['x', 'y', 'z']:
@@ -669,9 +669,9 @@ def test_as_euler_degenerate_symmetric_axes():
 
 
 def test_inv():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n = 10
-    p = Rotation.from_quat(np.random.normal(size=(n, 4)))
+    p = Rotation.from_quat(rnd.normal(size=(n, 4)))
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -687,8 +687,8 @@ def test_inv():
 
 
 def test_inv_single_rotation():
-    np.random.seed(0)
-    p = Rotation.from_quat(np.random.normal(size=(4,)))
+    rnd = np.random.RandomState(0)
+    p = Rotation.from_quat(rnd.normal(size=(4,)))
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -982,8 +982,8 @@ def test_align_vectors_no_rotation():
 
 
 def test_align_vectors_no_noise():
-    np.random.seed(0)
-    c = Rotation.from_quat(np.random.normal(size=4))
+    rnd = np.random.RandomState(0)
+    c = Rotation.from_quat(rnd.normal(size=4))
     b = np.random.normal(size=(5, 3))
     a = c.apply(b)
 
@@ -1019,13 +1019,13 @@ def test_align_vectors_scaled_weights():
 
 
 def test_align_vectors_noise():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
     n_vectors = 100
-    rot = Rotation.from_euler('xyz', np.random.normal(size=3))
+    rot = Rotation.from_euler('xyz', rnd.normal(size=3))
     vectors = np.random.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
-    # The paper adds noise as indepedently distributed angular errors
+    # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
@@ -1092,9 +1092,9 @@ def test_random_rotation_shape():
 
 
 def test_slerp():
-    np.random.seed(0)
+    rnd = np.random.RandomState(0)
 
-    key_rots = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    key_rots = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     key_quats = key_rots.as_quat()
 
     key_times = [0, 1, 2, 3, 4]
@@ -1144,8 +1144,8 @@ def test_slerp_single_rot():
 def test_slerp_time_dim_mismatch():
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(2, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(2, 4)))
         t = np.array([[1],
                       [2]])
         Slerp(t, r)
@@ -1154,31 +1154,31 @@ def test_slerp_time_dim_mismatch():
 def test_slerp_num_rotations_mismatch():
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = np.arange(7)
         Slerp(t, r)
 
 
 def test_slerp_equal_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = [0, 1, 2, 2, 4]
         Slerp(t, r)
 
 
 def test_slerp_decreasing_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
-        np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        rnd = np.random.RandomState(0)
+        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
         t = [0, 1, 3, 2, 4]
         Slerp(t, r)
 
 
 def test_slerp_call_time_dim_mismatch():
-    np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     t = np.arange(5)
     s = Slerp(t, r)
 
@@ -1190,8 +1190,8 @@ def test_slerp_call_time_dim_mismatch():
 
 
 def test_slerp_call_time_out_of_range():
-    np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
     t = np.arange(5) + 1
     s = Slerp(t, r)
 
@@ -1262,3 +1262,14 @@ def test_deepcopy():
     r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
     r1 = copy.deepcopy(r)
     assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)
+
+
+def test_as_euler_contiguous():
+    r = Rotation.from_quat([0, 0, 0, 1])
+    e1 = r.as_euler('xyz')  # extrinsic euler rotation
+    e2 = r.as_euler('XYZ')  # intrinsic
+    assert e1.flags['C_CONTIGUOUS'] is True
+    assert e2.flags['C_CONTIGUOUS'] is True
+    assert all(i >= 0 for i in e1.strides)
+    assert all(i >= 0 for i in e2.strides)
+
