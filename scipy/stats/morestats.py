@@ -17,6 +17,7 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
+import scipy.stats.stats
 
 
 __all__ = ['mvsdist',
@@ -2699,12 +2700,17 @@ def mood(x, y, axis=0, alternative="two-sided"):
         If `axis` is None, `x` and `y` are flattened and the test is done on
         all values in the flattened arrays.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
-        .. versionadded:: 1.6.0
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the scales of the distributions underlying `x` and `y`
+          are different.
+        * 'less': the scale of the distribution underlying `x` is less than
+          the scale of the distribution underlying `y`.
+        * 'greater': the scale of the distribution underlying `x` is greater
+          than the scale of the distribution underlying `x`.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -2795,17 +2801,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     z = (M - mnM) / sqrt(varM)
-
-    # Calculate p-values with alternative
-    if alternative == 'less':
-        pval = distributions.norm.cdf(z)
-    elif alternative == 'greater':
-        pval = distributions.norm.sf(z)
-    elif alternative == 'two-sided':
-        pval = 2 * distributions.norm.sf(abs(z))
-    else:
-        raise ValueError("alternative should be "
-                         "'less', 'greater' or 'two-sided'")
+    z, pval = scipy.stats.stats._normtest_finish(z, alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
