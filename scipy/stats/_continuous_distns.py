@@ -3992,6 +3992,11 @@ class invweibull_gen(rv_continuous):
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - np.log(c)
 
+    def _fitstart(self, data, args=None):
+        # invweibull requires c > 1 for the first moment to exist, so use 2.0
+        args = (2.0,) if args is None else args
+        return super(invweibull_gen, self)._fitstart(data, args=args)
+
 
 invweibull = invweibull_gen(a=0, name='invweibull')
 
