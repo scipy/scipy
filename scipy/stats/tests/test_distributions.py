@@ -1964,7 +1964,7 @@ class TestLaplace(object):
         # The exact value is smaller than can be represented with
         # 64 bit floating point, so the exected result is 0.
         assert p0 == 0.0
-        # The closest 64 bit floating point represenation of the
+        # The closest 64 bit floating point representation of the
         # exact value is 1.0.
         p1 = stats.laplace.sf(-x)
         assert p1 == 1.0
