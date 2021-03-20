@@ -1969,19 +1969,10 @@ class TestLaplace(object):
         p1 = stats.laplace.sf(-x)
         assert p1 == 1.0
 
-    def test_sf_cdf(self):
-        # Expected value is computed with mpmath:
-        #
-        # >>> import mpmath
-        # >>> mpmath.mp.dps = 60
-        # >>> (mpmath.exp(-200)/2)   # cdf(-200) and sf(200)
-        # 6.919482633683688e-88
-        #
-        expected = 6.919482633683688e-88
-        pneg = stats.laplace.cdf(-200)
-        assert_allclose(pneg, expected, 1e-13)
-        ppos = stats.laplace.sf(200)
-        assert_allclose(ppos, expected, 1e-13)
+    def test_sf(self):
+        x = 200
+        p = stats.laplace.sf(x)
+        assert_allclose(p, np.exp(-x)/2, rtol=1e-13)
 
     def test_isf(self):
         p = 1e-25
