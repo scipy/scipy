@@ -2,8 +2,10 @@ import numpy as np
 
 
 def _validate_lower_upper(lower, upper):
+    if lower.ndim != 1 or upper.ndim != 1:
+        raise ValueError('The input arrays must be one-dimensional.')
     if np.shape(lower) != np.shape(upper):
-        raise ValueError('lower and upper must have the same shape.')
+        raise ValueError('lower and upper must have the same length.')
     if np.isnan(lower).any() or np.isnan(upper).any():
         raise ValueError('lower and upper must not contain nan.')
     if (np.isinf(lower) & np.isinf(upper)).any():
@@ -16,7 +18,7 @@ def _validate_lower_upper(lower, upper):
 def _validate_x_censored(x, censored):
     x = np.asarray(x)
     if x.ndim != 1:
-        raise ValueError('x must be one-dimensinal.')
+        raise ValueError('x must be one-dimensional.')
     censored = np.asarray(censored)
     if censored.ndim != 1:
         raise ValueError('censored must be one-dimensional')

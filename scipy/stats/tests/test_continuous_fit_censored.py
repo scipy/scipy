@@ -1,5 +1,6 @@
 # Tests for specific distributions of fitting censored data.
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
@@ -526,3 +527,28 @@ class TestCensoredData:
         assert_equal(data._left_censored, [False, True, False])
         assert_equal(data._interval_censored, [False, False, False])
         assert_equal(data._not_censored, [True, False, True])
+
+    def test_invalid_constructor_args(self):
+        with pytest.raises(ValueError, match='must be one-dimensional'):
+            CensoredData([[1, 2, 3]], [1, 2, 3])
+        with pytest.raises(ValueError, match='must have the same length'):
+            CensoredData([1, 2, 3], [1, 2])
+        with pytest.raises(ValueError, match='must not contain nan'):
+            CensoredData([1, np.nan, 2], [3, 9, 10])
+        with pytest.raises(ValueError, match='must not both be infinite'):
+            CensoredData([1, 2, np.inf], [3, 9, np.inf])
+        with pytest.raises(ValueError, match='must not be greater than'):
+            CensoredData([1, 2, 2], [0, 2, 2])
+
+    @pytest.mark.parametrize('func', [CensoredData.left_censored,
+                                      CensoredData.right_censored])
+    def test_invalid_left_censored_args(self, func):
+        with pytest.raises(ValueError, match='x must be one-dimensional'):
+            func([[1, 2, 3]], [0, 1, 1])
+        with pytest.raises(ValueError,
+                           match='censored must be one-dimensional'):
+            func([1, 2, 3], [[0, 1, 1]])
+        with pytest.raises(ValueError, match='x must not contain'):
+            func([1, 2, np.nan], [0, 1, 1])
+        with pytest.raises(ValueError, match='must have the same length'):
+            func([1, 2, 3], [0, 0, 1, 1])
