@@ -2293,10 +2293,8 @@ class rv_continuous(rv_generic):
         # logsf of the right-censored data.
         logsf_rc = self._logsf(x._lower[x._right_censored], *args)
         # Probability of the interval-censored data.
-        # TO DO: Use a smarter "delta CDF" function for this.
         ic = x._interval_censored
-        prob_ic = (self._cdf(x._upper[ic], *args)
-                   - self._cdf(x._lower[ic], *args))
+        prob_ic = self._delta_cdf(x._lower[ic], x._upper[ic], *args)
         logprob_ic = np.log(prob_ic)
         s = (np.sum(logpdf_nc) + np.sum(logcdf_lc) + np.sum(logsf_rc)
              + np.sum(logprob_ic))
