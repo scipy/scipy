@@ -1,14 +1,11 @@
-# Tests for specific distributions of fitting censored data and
-# computing standard errors for the fitted parameters.
+# Tests for specific distributions of fitting censored data.
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, invgauss,
-                         laplace, loggamma, logistic, lognorm, norm,
-                         weibull_min)
-from scipy.stats._continuous_distns import _digammainv
+                         laplace, logistic, lognorm, norm, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -279,26 +276,6 @@ def test_laplace():
     loc, scale = laplace.fit(data, loc=10, scale=10, optimizer=optimizer)
     assert_allclose(loc, 14.79870, rtol=5e-6)
     assert_allclose(scale, 30.93601, rtol=5e-6)
-
-
-def test_loggamma():
-    """
-    Fit the loggamma distribution with floc=0 and fscale=1 to uncensored
-    data.  The exact solution is
-
-        c = digammainv(mean(x))
-
-    The second derivative of the neg. log-likelihood is n*digamma'(c),
-    from which we can compute the estimate of the standard error.
-    """
-    x = np.array([2.7215, 2.0855, 1.6194, 2.0417, 2.5305, 2.2017, 2.6310,
-                  2.6184, 2.5126, 2.0114, 2.1668, 2.7990, 2.1412, 2.4250,
-                  2.3342, 2.5136, 2.0876, 2.0035, 1.6484, 2.6061])
-    c, loc, scale = loggamma.fit(x, floc=0, fscale=1, optimizer=optimizer)
-    exact = _digammainv(x.mean())
-    assert_allclose(c, exact, rtol=1e-8)
-    assert loc == 0
-    assert scale == 1
 
 
 def test_logistic():
