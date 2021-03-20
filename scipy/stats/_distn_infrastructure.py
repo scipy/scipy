@@ -2560,7 +2560,8 @@ class rv_continuous(rv_generic):
         # CensoredData.  The arrays in a CensoredData instance have already
         # been validated.
         if not censored:
-            data = np.asarray(data)
+            # Note: `ravel()` is called for backwards compatibility.
+            data = np.asarray(data).ravel()
             if not np.isfinite(data).all():
                 raise RuntimeError("The data contains non-finite values.")
 
