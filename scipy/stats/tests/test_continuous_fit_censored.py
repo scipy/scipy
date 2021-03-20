@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, invgauss,
-                         laplace, logistic, lognorm, norm, weibull_min)
+                         laplace, logistic, lognorm, nct, norm, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -340,6 +340,7 @@ def test_lognorm():
                                        [0]*len(miles_to_fail) + [1]*59)
     sigma, loc, scale = lognorm.fit(data, floc=0)
 
+    assert loc == 0
     # Convert the lognorm parameters to the mu and sigma of the underlying
     # normal distribution.
     mu = np.log(scale)
@@ -347,6 +348,35 @@ def test_lognorm():
     # (labeled page 279), in the SAS output on the right side of the page.
     assert_allclose(mu, 5.1169, rtol=5e-4)
     assert_allclose(sigma, 0.7055, rtol=5e-3)
+
+
+def test_nct():
+    """
+    Test fitting the noncentral t distribution to censored data.
+
+    Calculation in R:
+
+    > library(fitdistrplus)
+    > data <- data.frame(left=c(1, 2, 3, 5, 8, 10, 25, 25),
+    +                    right=c(1, 2, 3, 5, 8, 10, NA, NA))
+    > result = fitdistcens(data, 't', control=list(reltol=1e-14),
+    +                      start=list(df=1, ncp=2))
+    > result
+    Fitting of the distribution ' t ' on censored data by maximum likelihood
+    Parameters:
+         estimate
+    df  0.5432336
+    ncp 2.8893565
+
+    """
+    data = CensoredData.right_censored([1, 2, 3, 5, 8, 10, 25, 25],
+                                       [0, 0, 0, 0, 0, 0, 1, 1])
+    # Fit just the shape parameter df and nc; loc and scale are fixed.
+    df, nc, loc, scale = nct.fit(data, floc=0, fscale=1, optimizer=optimizer)
+    assert_allclose(df, 0.5432336, rtol=5e-6)
+    assert_allclose(nc, 2.8893565, rtol=5e-6)
+    assert loc == 0
+    assert scale == 1
 
 
 def test_norm():
