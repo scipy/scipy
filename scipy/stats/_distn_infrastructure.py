@@ -2838,6 +2838,29 @@ class rv_continuous(rv_generic):
             vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
+    # For now, _delta_cdf is a private method.
+
+    def _delta_cdf(self, x1, x2, *args, loc=0, scale=1):
+        """
+        Compute CDF(x2) - CDF(x1).
+
+        Where x1 is greater than the median, compute SF(x1) - SF(x2),
+        otherwise compute CDF(x2) - CDF(x1).
+
+        This function is only useful if `dist.sf(x, ...)` has an implementation
+        that is numerically more accurate than `1 - dist.cdf(x, ...)`.
+        """
+        cdf1 = self.cdf(x1, *args, loc=loc, scale=scale)
+        # Possible optimizations (needs investigation-these might not be better):
+        # * Use _lazywhere instead of np.where
+        # * Instead of cdf1 > 0.5, compare x1 to the median.
+        result = np.where(cdf1 > 0.5,
+                          (self.sf(x1, *args, loc=loc, scale=scale)
+                           - self.sf(x2, *args, loc=loc, scale=scale)),
+                          self.cdf(x2, *args, loc=loc, scale=scale) - cdf1)
+        if result.ndim == 0:
+            result = result[()]
+        return result
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
