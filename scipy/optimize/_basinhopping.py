@@ -10,7 +10,7 @@ from scipy._lib._util import check_random_state
 __all__ = ['basinhopping']
 
 
-class Storage(object):
+class Storage:
     """
     Class used to store the lowest energy structure
     """
@@ -32,7 +32,7 @@ class Storage(object):
         return self.minres
 
 
-class BasinHoppingRunner(object):
+class BasinHoppingRunner:
     """This class implements the core of the basinhopping algorithm.
 
     x0 : ndarray
@@ -178,7 +178,7 @@ class BasinHoppingRunner(object):
                                 accept, minres.fun))
 
 
-class AdaptiveStepsize(object):
+class AdaptiveStepsize:
     """
     Class to implement adaptive stepsize.
 
@@ -245,7 +245,7 @@ class AdaptiveStepsize(object):
             self.naccept += 1
 
 
-class RandomDisplacement(object):
+class RandomDisplacement:
     """
     Add a random displacement of maximum size `stepsize` to each coordinate
 
@@ -268,7 +268,7 @@ class RandomDisplacement(object):
         return x
 
 
-class MinimizerWrapper(object):
+class MinimizerWrapper:
     """
     wrap a minimizer function as a minimizer class
     """
@@ -284,7 +284,7 @@ class MinimizerWrapper(object):
             return self.minimizer(self.func, x0, **self.kwargs)
 
 
-class Metropolis(object):
+class Metropolis:
     """
     Metropolis acceptance criterion
 
@@ -569,7 +569,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     the first coordinate to take larger steps than the rest of the coordinates.
     This can be implemented like so:
 
-    >>> class MyTakeStep(object):
+    >>> class MyTakeStep:
     ...    def __init__(self, stepsize=0.5):
     ...        self.stepsize = stepsize
     ...    def __call__(self, x):
@@ -620,7 +620,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Now let's implement bounds on the problem using a custom ``accept_test``:
 
-    >>> class MyBounds(object):
+    >>> class MyBounds:
     ...     def __init__(self, xmax=[1.1,1.1], xmin=[-1.1,-1.1] ):
     ...         self.xmax = np.array(xmax)
     ...         self.xmin = np.array(xmin)

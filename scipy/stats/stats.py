@@ -5055,7 +5055,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
-class _ParallelP(object):
+class _ParallelP:
     """
     Helper function to calculate parallel p-value.
     """

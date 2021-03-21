@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state
 from .common_tests import check_named_results
 
 
-class TestBinnedStatistic(object):
+class TestBinnedStatistic:
 
     @classmethod
     def setup_class(cls):

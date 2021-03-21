@@ -154,7 +154,7 @@ def float_factorial(n: int) -> float:
     return float(math.factorial(n)) if n < 171 else np.inf
 
 
-class DeprecatedImport(object):
+class DeprecatedImport:
     """
     Deprecated import with redirection and warning.
 
@@ -372,7 +372,7 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
-class MapWrapper(object):
+class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
     `multiprocessing.Pool.map`.

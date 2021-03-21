@@ -60,7 +60,7 @@ def f_lrucached(x):
     return x
 
 
-class TestBasic(object):
+class TestBasic:
 
     def run_check_by_name(self, name, smoothness=0, **kwargs):
         a = .5

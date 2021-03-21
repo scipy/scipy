@@ -444,7 +444,7 @@ def varmats_from_mat(file_obj):
     return named_mats
 
 
-class EmptyStructMarker(object):
+class EmptyStructMarker:
     """ Class to indicate presence of empty matlab struct on output """
 
 
@@ -506,7 +506,7 @@ NDT_TAG_SMALL = MDTYPES[native_code]['dtypes']['tag_smalldata']
 NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 
-class VarWriter5(object):
+class VarWriter5:
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), NDT_TAG_FULL)
     mat_tag['mdtype'] = miMATRIX
@@ -809,7 +809,7 @@ class VarWriter5(object):
         self._write_items(arr)
 
 
-class MatFile5Writer(object):
+class MatFile5Writer:
     ''' Class for writing mat5 files '''
 
     @docfiller

@@ -11,7 +11,7 @@ import scipy.signal.bsplines as bsp
 from scipy import signal
 
 
-class TestBSplines(object):
+class TestBSplines:
     """Test behaviors of B-splines. The values tested against were returned as of
     SciPy 1.1.0 and are included for regression testing purposes"""
 

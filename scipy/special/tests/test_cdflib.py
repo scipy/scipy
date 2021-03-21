@@ -37,7 +37,7 @@ except ImportError:
     mpmath = MissingModule('mpmath')
 
 
-class ProbArg(object):
+class ProbArg:
     """Generate a set of probabilities on [0, 1]."""
     def __init__(self):
         # Include the endpoints for compatibility with Arg et. al.
@@ -54,7 +54,7 @@ class ProbArg(object):
         return np.unique(v)
 
 
-class EndpointFilter(object):
+class EndpointFilter:
     def __init__(self, a, b, rtol, atol):
         self.a = a
         self.b = b
@@ -67,7 +67,7 @@ class EndpointFilter(object):
         return np.where(mask1 | mask2, False, True)
 
 
-class _CDFData(object):
+class _CDFData:
     def __init__(self, spfunc, mpfunc, index, argspec, spfunc_first=True,
                  dps=20, n=5000, rtol=None, atol=None,
                  endpt_rtol=None, endpt_atol=None):
@@ -205,7 +205,7 @@ def _tukey_lmbda_quantile(p, lmbda):
 
 @pytest.mark.slow
 @check_version(mpmath, '0.19')
-class TestCDFlib(object):
+class TestCDFlib:
 
     @pytest.mark.xfail(run=False)
     def test_bdtrik(self):

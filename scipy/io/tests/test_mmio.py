@@ -18,7 +18,7 @@ parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
 
-class TestMMIOArray(object):
+class TestMMIOArray:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -335,7 +335,7 @@ _over64bit_integer_sparse_example = '''\
 '''
 
 
-class TestMMIOReadLargeIntegers(object):
+class TestMMIOReadLargeIntegers:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -533,7 +533,7 @@ _empty_lines_example = '''\
 '''
 
 
-class TestMMIOCoordinate(object):
+class TestMMIOCoordinate:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')

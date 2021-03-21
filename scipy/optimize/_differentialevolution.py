@@ -318,7 +318,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     return ret
 
 
-class DifferentialEvolutionSolver(object):
+class DifferentialEvolutionSolver:
 
     """This class implements the differential evolution solver
 
@@ -1265,7 +1265,7 @@ class DifferentialEvolutionSolver(object):
         return idxs
 
 
-class _FunctionWrapper(object):
+class _FunctionWrapper:
     """
     Object to wrap user cost function, allowing picklability
     """
@@ -1277,7 +1277,7 @@ class _FunctionWrapper(object):
         return self.f(x, *self.args)
 
 
-class _ConstraintWrapper(object):
+class _ConstraintWrapper:
     """Object to wrap/evaluate user defined constraints.
 
     Very similar in practice to `PreparedConstraint`, except that no evaluation
