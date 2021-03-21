@@ -584,7 +584,7 @@ def iter_variants(inputs, outputs):
         yield new_inputs, new_outputs
 
 
-class Func(object):
+class Func:
     """
     Base class for Ufunc and FusedFunc.
 

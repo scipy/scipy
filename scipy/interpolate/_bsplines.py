@@ -33,7 +33,7 @@ def _as_float_array(x, check_finite=False):
     return x
 
 
-class BSpline(object):
+class BSpline:
     r"""Univariate spline in the B-spline basis.
 
     .. math::

@@ -4,7 +4,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 from scipy.special import logit, expit
 
 
-class TestLogit(object):
+class TestLogit:
     def check_logit_out(self, dtype, expected):
         a = np.linspace(0,1,10)
         a = np.array(a, dtype=dtype)
@@ -39,7 +39,7 @@ class TestLogit(object):
         assert_equal(expected, actual)
 
 
-class TestExpit(object):
+class TestExpit:
     def check_expit_out(self, dtype, expected):
         a = np.linspace(-4,4,10)
         a = np.array(a, dtype=dtype)

@@ -35,7 +35,7 @@ from .common_tests import check_random_state_property
 from unittest.mock import patch
 
 
-class TestMultivariateNormal(object):
+class TestMultivariateNormal:
     def test_input_shape(self):
         mu = np.arange(3)
         cov = np.identity(2)
@@ -454,7 +454,7 @@ class TestMultivariateNormal(object):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
-class TestMatrixNormal(object):
+class TestMatrixNormal:
 
     def test_bad_input(self):
         # Check that bad inputs raise errors
@@ -630,7 +630,7 @@ class TestMatrixNormal(object):
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
-class TestDirichlet(object):
+class TestDirichlet:
 
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
@@ -842,7 +842,7 @@ def test_multivariate_normal_dimensions_mismatch():
         assert_equal(str(e)[:len(msg)], msg)
 
 
-class TestWishart(object):
+class TestWishart:
     def test_scale_dimensions(self):
         # Test that we can call the Wishart with various scale dimensions
 
@@ -1033,7 +1033,7 @@ class TestWishart(object):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
-class TestMultinomial(object):
+class TestMultinomial:
     def test_logpmf(self):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
@@ -1178,7 +1178,7 @@ class TestMultinomial(object):
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
-class TestInvwishart(object):
+class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
         # answers
@@ -1342,7 +1342,7 @@ class TestInvwishart(object):
         assert_allclose(prob, expected)
 
 
-class TestSpecialOrthoGroup(object):
+class TestSpecialOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
@@ -1411,7 +1411,7 @@ class TestSpecialOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
-class TestOrthoGroup(object):
+class TestOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(515)
         x = ortho_group.rvs(3)
@@ -1504,7 +1504,7 @@ class TestOrthoGroup(object):
 
             assert_array_less(.05, p)
 
-class TestRandomCorrelation(object):
+class TestRandomCorrelation:
     def test_reproducibility(self):
         np.random.seed(514)
         eigs = (.5, .8, 1.2, 1.5)
@@ -1595,7 +1595,7 @@ class TestRandomCorrelation(object):
         assert_allclose(m[0,0], 1)
 
 
-class TestUnitaryGroup(object):
+class TestUnitaryGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = unitary_group.rvs(3)

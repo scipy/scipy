@@ -15,7 +15,7 @@ def _arr_to_scalar(x):
     return x.item() if isinstance(x, np.ndarray) else x
 
 
-class NonlinearConstraint(object):
+class NonlinearConstraint:
     """Nonlinear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -116,7 +116,7 @@ class NonlinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class LinearConstraint(object):
+class LinearConstraint:
     """Linear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -154,7 +154,7 @@ class LinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class Bounds(object):
+class Bounds:
     """Bounds constraint on the variables.
 
     The constraint has the general inequality form::
@@ -191,7 +191,7 @@ class Bounds(object):
             return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
 
 
-class PreparedConstraint(object):
+class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and
