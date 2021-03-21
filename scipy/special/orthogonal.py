@@ -1143,6 +1143,23 @@ def hermite(n, monic=False):
     The polynomials :math:`H_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2}`.
 
+    Examples
+    --------
+    The first 10 Hermite numbers:
+
+    >>> from scipy.special import hermite
+    >>> hermite_numbers = [hermite(n)(0) for n in range(10)]
+    >>> hermite_numbers
+    [1.0, 0.0, -2.0, -0.0, 12.0, 0.0, -120.0, -0.0, 1680.0, 0.0]
+
+    The 4th-order Hermite polynomial:
+
+    >>> from scipy.special import hermite
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-2., 2., 0.1)
+    >>> plt.plot(x, hermite(4)(x))
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
