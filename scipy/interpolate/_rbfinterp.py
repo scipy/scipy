@@ -4,8 +4,9 @@ from functools import lru_cache
 from itertools import combinations_with_replacement
 
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 from scipy.special import binom
+from scipy.linalg.lapack import get_lapack_funcs
 
 from ._rbfinterp_pythran import _build_system, _evaluate
 
@@ -279,7 +280,8 @@ class RBFInterpolator:
             y, d, smoothing, kernel, epsilon, powers
             )
 
-        coeffs = np.linalg.solve(lhs, rhs)
+        solve_func = get_lapack_funcs('gesv', dtype=d.dtype)
+        coeffs = solve_func(lhs, rhs)[2]
 
         self.y = y
         self.kernel = kernel
@@ -390,7 +392,7 @@ class KNearestRBFInterpolator:
         data_shape = d.shape[1:]
         d = d.reshape((ny, -1))
         powers = _monomial_powers(ndim, degree)
-        tree = cKDTree(y)
+        tree = KDTree(y)
 
         self.y = y
         self.d = d
@@ -428,14 +430,13 @@ class KNearestRBFInterpolator:
                 self.y.shape[1]
                 )
 
-        dtype = complex if np.iscomplexobj(self.d) else float
-        out = np.zeros((nx,) + self.data_shape, dtype=dtype)
+        out = np.zeros((nx,) + self.data_shape, dtype=self.d.dtype)
 
         # get the indices of the k nearest observation points to each
         # interpolation point
         _, yindices = self.tree.query(x, self.k)
         if self.k == 1:
-            # cKDTree squeezes the output when k=1
+            # KDTree squeezes the output when k=1
             yindices = yindices[:, None]
 
         # multiple interpolation points may have the same neighborhood of
@@ -450,10 +451,11 @@ class KNearestRBFInterpolator:
         for i, j in enumerate(inv):
             xindices[j].append(i)
 
+        solve_func = get_lapack_funcs('gesv', dtype=self.d.dtype)
         for xidx, yidx in zip(xindices, yindices):
             # `yidx` are the indices of the observations in this neighborhood.
             # `xidx` are the indices of the interpolation points that are using
-            # this neighborood
+            # this neighborhood
             xnbr = x[xidx]
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
@@ -462,7 +464,7 @@ class KNearestRBFInterpolator:
                 ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
                 )
 
-            coeffs = np.linalg.solve(lhs, rhs)
+            coeffs = solve_func(lhs, rhs)[2]
 
             out[xidx] = _evaluate(
                 xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
