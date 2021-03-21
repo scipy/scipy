@@ -173,11 +173,18 @@ attempting to predict adoption timelines for newer standards.
  ?                 C11, C17, C++17, C++20
 ================  =======================================================================
 
-Using C++14 requires bumping the GCC minimal requirement to 5.x, which is under
-discussion. C++17 will require GCC >= 7. C11/C17 support will be available as soon
-as the ``vmImage`` for building SciPy is upgraded to the ``windows-2019`` (which is
-compatible with currently supported CPython versions and "just" needs to be done).
-Compiler support for C++20 is still under heavy development [4]_.
+For C, C11/C17 support will be available as soon as the ``vmImage`` for
+building SciPy is upgraded to ``windows-2019`` (which is compatible with
+currently supported CPython versions and "just" needs to be executed). This is
+because GCC & LLVM support all relevant C11 features with the oldest currently
+used versions, and C17 is just a bugfix for C11, as mentioned above.
+
+On the C++ side, since dropping support for Python 2.7, C++11 can be used
+universally. For C++14, Windows is not a restriction anymore since Visual
+Studio 15.9 (<-> _MSC_VER 19.16, see [8]_), has full support (same for C++17),
+see [4]_. However, using C++14 still requires bumping the GCC minimal
+requirement to 5.x and C++17 will require GCC >= 7 [4]_.
+Compiler support for C++20 is still under heavy development.
 
 .. note::
 
