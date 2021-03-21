@@ -287,7 +287,7 @@ class BFGS(FullHessianUpdateStrategy):
             raise ValueError("`exception_strategy` must be 'skip_update' "
                              "or 'damp_update'.")
 
-        super(BFGS, self).__init__(init_scale)
+        super().__init__(init_scale)
         self.exception_strategy = exception_strategy
 
     def _update_inverse_hessian(self, ys, Hy, yHy, s):
@@ -404,7 +404,7 @@ class SR1(FullHessianUpdateStrategy):
 
     def __init__(self, min_denominator=1e-8, init_scale='auto'):
         self.min_denominator = min_denominator
-        super(SR1, self).__init__(init_scale)
+        super().__init__(init_scale)
 
     def _update_implementation(self, delta_x, delta_grad):
         # Auxiliary variables w and z

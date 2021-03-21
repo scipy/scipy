@@ -1212,10 +1212,8 @@ class dop853(dopri5):
                  method=None,
                  verbosity=-1,  # no messages if negative
                  ):
-        super(self.__class__, self).__init__(rtol, atol, nsteps, max_step,
-                                             first_step, safety, ifactor,
-                                             dfactor, beta, method,
-                                             verbosity)
+        super().__init__(rtol, atol, nsteps, max_step, first_step, safety,
+                         ifactor, dfactor, beta, method, verbosity)
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)

@@ -588,4 +588,4 @@ class IdentityVectorFunction(LinearVectorFunction):
         else:
             A = np.eye(n)
             sparse_jacobian = False
-        super(IdentityVectorFunction, self).__init__(A, x0, sparse_jacobian)
+        super().__init__(A, x0, sparse_jacobian)

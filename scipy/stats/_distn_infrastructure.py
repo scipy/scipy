@@ -626,7 +626,7 @@ class rv_generic(object):
 
     """
     def __init__(self, seed=None):
-        super(rv_generic, self).__init__()
+        super().__init__()
 
         # figure out if _stats signature has 'moments' keyword
         sig = _getfullargspec(self._stats)
@@ -1688,7 +1688,7 @@ class rv_continuous(rv_generic):
                  badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None, seed=None):
 
-        super(rv_continuous, self).__init__(seed)
+        super().__init__(seed)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -3021,16 +3021,16 @@ class rv_discrete(rv_generic):
 
         if values is not None:
             # dispatch to a subclass
-            return super(rv_discrete, cls).__new__(rv_sample)
+            return super().__new__(rv_sample)
         else:
             # business as usual
-            return super(rv_discrete, cls).__new__(cls)
+            return super().__new__(cls)
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
                  shapes=None, extradoc=None, seed=None):
 
-        super(rv_discrete, self).__init__(seed)
+        super().__init__(seed)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3188,7 +3188,7 @@ class rv_discrete(rv_generic):
 
         """
         kwargs['discrete'] = True
-        return super(rv_discrete, self).rvs(*args, **kwargs)
+        return super().rvs(*args, **kwargs)
 
     def pmf(self, k, *args, **kwds):
         """
