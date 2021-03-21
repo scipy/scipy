@@ -19,8 +19,7 @@ _IntegerType = Union[int, np.integer]
 _FloatingType = Union[float, np.floating]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube',
-           'MultinomialQMC', 'MultivariateNormalQMC']
+           'LatinHypercube', 'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 def check_random_state(
@@ -79,15 +78,6 @@ class QMCEngine(ABC):
 class Halton(QMCEngine):
     def __init__(
             self, d: _IntegerType, scramble: bool = ...,
-            seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
-    ) -> None: ...
-
-    def random(self, n: _IntegerType = ...) -> np.ndarray: ...
-
-
-class OrthogonalLatinHypercube(QMCEngine):
-    def __init__(
-            self, d: _IntegerType,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 

@@ -29,7 +29,7 @@ from scipy.special import xlogy, polygamma, entr
 from .test_continuous_basic import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
-from scipy.optimize import root
+from scipy.optimize import root, fmin
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -1948,6 +1948,37 @@ class TestLaplace(object):
         loc, scale = stats.laplace.fit(data, fscale=6)
         assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
 
+    def test_sf_cdf_extremes(self):
+        # These calculations should not generate warnings.
+        x = 1000
+        p0 = stats.laplace.cdf(-x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point representation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.cdf(x)
+        assert p1 == 1.0
+
+        p0 = stats.laplace.sf(x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point representation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.sf(-x)
+        assert p1 == 1.0
+
+    def test_sf(self):
+        x = 200
+        p = stats.laplace.sf(x)
+        assert_allclose(p, np.exp(-x)/2, rtol=1e-13)
+
+    def test_isf(self):
+        p = 1e-25
+        x = stats.laplace.isf(p)
+        assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
 
 class TestInvGamma(object):
     def test_invgamma_inf_gh_1866(self):
@@ -2670,6 +2701,28 @@ class TestGamma(object):
     def test_fit_bad_keyword_args(self):
         x = [0.1, 0.5, 0.6]
         assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
+
+    def test_isf(self):
+        # Test cases for when the probability is very small. See gh-13664.
+        # The expected values can be checked with mpmath.  With mpmath,
+        # the survival function sf(x, k) can be computed as
+        #
+        #     mpmath.gammainc(k, x, mpmath.inf, regularized=True)
+        #
+        # Here we have:
+        #
+        # >>> mpmath.mp.dps = 60
+        # >>> float(mpmath.gammainc(1, 39.14394658089878, mpmath.inf,
+        # ...                       regularized=True))
+        # 9.99999999999999e-18
+        # >>> float(mpmath.gammainc(100, 330.6557590436547, mpmath.inf,
+        #                           regularized=True))
+        # 1.000000000000028e-50
+        #
+        assert np.isclose(stats.gamma.isf(1e-17, 1),
+                          39.14394658089878, atol=1e-14)
+        assert np.isclose(stats.gamma.isf(1e-50, 100),
+                          330.6557590436547, atol=1e-13)
 
     @pytest.mark.parametrize('scale', [1.0, 5.0])
     def test_delta_cdf(self, scale):
@@ -5288,6 +5341,39 @@ def test_crystalball_entropy():
     x = np.linspace(lo, hi, N)
     res2 = trapezoid(entr(cb.pdf(x)), x)
     assert_allclose(res1, res2, rtol=1e-7)
+
+
+def test_invweibull():
+    """
+    Test fitting invweibull to data.
+
+    Here is a the same calculation in R:
+
+    > library(evd)
+    > library(fitdistrplus)
+    > x = c(1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99)
+    > result = fitdist(x, 'frechet', control=list(reltol=1e-13),
+    +                  fix.arg=list(loc=0), start=list(shape=2, scale=3))
+    > result
+    Fitting of the distribution ' frechet ' by maximum likelihood
+    Parameters:
+          estimate Std. Error
+    shape 1.048482  0.2261815
+    scale 3.099456  0.8292887
+    Fixed parameters:
+        value
+    loc     0
+
+    """
+
+    def optimizer(func, x0, args=(), disp=0):
+        return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
+
+    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
+    assert_allclose(c, 1.048482, rtol=5e-6)
+    assert loc == 0
+    assert_allclose(scale, 3.099456, rtol=5e-6)
 
 
 @pytest.mark.parametrize(

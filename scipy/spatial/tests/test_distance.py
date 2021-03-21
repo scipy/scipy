@@ -2053,39 +2053,38 @@ def test_Xdist_deprecated_args():
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
     weights = np.arange(3)
-    warn_msg_kwargs = "Got unexpected kwarg"
-    warn_msg_args = "[0-9]* metric parameters have been passed as positional"
     for metric in _METRICS_NAMES:
         kwargs = {"w": weights} if metric == "wminkowski" else dict()
         with suppress_warnings() as w:
-            log = w.record(message=warn_msg_args)
-            w.filter(message=warn_msg_kwargs)
             w.filter(DeprecationWarning,
-                     message="'wminkowski' metric is deprecated")
-            cdist(X1, X1, metric, 2., **kwargs)
-            pdist(X1, metric, 2., **kwargs)
-            assert_(len(log) == 2)
+                    message="'wminkowski' metric is deprecated")
+            with pytest.raises(TypeError):
+                cdist(X1, X1, metric, 2., **kwargs)
+
+            with pytest.raises(TypeError):
+                pdist(X1, metric, 2., **kwargs)
 
         for arg in ["p", "V", "VI"]:
             kwargs = {arg:"foo"}
 
-        if metric == "wminkowski":
-            if "p" in kwargs or "w" in kwargs:
+            if metric == "wminkowski":
+                if "p" in kwargs or "w" in kwargs:
+                    continue
+                kwargs["w"] = weights
+
+            if((arg == "V" and metric == "seuclidean") or
+            (arg == "VI" and metric == "mahalanobis") or
+            (arg == "p" and metric == "minkowski")):
                 continue
-            kwargs["w"] = weights
 
-        if((arg == "V" and metric == "seuclidean") or
-           (arg == "VI" and metric == "mahalanobis") or
-           (arg == "p" and metric == "minkowski")):
-            continue
+            with suppress_warnings() as w:
+                w.filter(DeprecationWarning,
+                        message="'wminkowski' metric is deprecated")
+                with pytest.raises(TypeError):
+                    cdist(X1, X1, metric, **kwargs)
 
-        with suppress_warnings() as w:
-            log = w.record(message=warn_msg_kwargs)
-            w.filter(DeprecationWarning,
-                     message="'wminkowski' metric is deprecated")
-            cdist(X1, X1, metric, **kwargs)
-            pdist(X1, metric, **kwargs)
-            assert_(len(log) == 2)
+                with pytest.raises(TypeError):
+                    pdist(X1, metric, **kwargs)
 
 
 def test_Xdist_non_negative_weights():

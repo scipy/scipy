@@ -2656,6 +2656,9 @@ class gamma_gen(rv_continuous):
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
 
+    def _isf(self, q, a):
+        return sc.gammainccinv(a, q)
+
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
@@ -4013,16 +4016,9 @@ class invweibull_gen(rv_continuous):
         return 1+_EULER + _EULER / c - np.log(c)
 
     def _fitstart(self, data, args=None):
-        # The default implementation of _fitstart uses
-        #     args = (1.0,)*self.numargs
-        # These args are passed to _fit_loc_scale_support, which ultimately
-        # calls fit_loc_scale.  fit_loc_scale uses the moments to estimate
-        # parameters, but the invweibull requires c > 1 for the first moment
-        # to exist.  So we use 2.0 instead.
-        if args is None:
-            args = (2.0,)*self.numargs
-        loc, scale = self._fit_loc_scale_support(data, *args)
-        return args + (loc, scale)
+        # invweibull requires c > 1 for the first moment to exist, so use 2.0
+        args = (2.0,) if args is None else args
+        return super(invweibull_gen, self)._fitstart(data, args=args)
 
 
 invweibull = invweibull_gen(a=0, name='invweibull')
@@ -4152,10 +4148,19 @@ class laplace_gen(rv_continuous):
         return 0.5*np.exp(-abs(x))
 
     def _cdf(self, x):
-        return np.where(x > 0, 1.0-0.5*np.exp(-x), 0.5*np.exp(x))
+        with np.errstate(over='ignore'):
+            return np.where(x > 0, 1.0 - 0.5*np.exp(-x), 0.5*np.exp(x))
+
+    def _sf(self, x):
+        # By symmetry...
+        return self._cdf(-x)
 
     def _ppf(self, q):
         return np.where(q > 0.5, -np.log(2*(1-q)), np.log(2*q))
+
+    def _isf(self, q):
+        # By symmetry...
+        return -self._ppf(q)
 
     def _stats(self):
         return 0, 2, 0, 3
