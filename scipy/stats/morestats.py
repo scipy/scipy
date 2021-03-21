@@ -1035,10 +1035,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     Alternatively, we can define our own `optimizer` function.
 
     >>> from scipy import optimize
-
     >>> def optimizer(fun, args):
-    >>>     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
-    >>>                                     method="bounded")
+    ...     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
+    ...                                     method="bounded")
     >>> xt, _ = stats.boxcox(x, optimizer=optimizer)
 
     """
@@ -1141,12 +1140,12 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     >>> plt.show()
 
-    Alternatively, we can define own own `optimizer` function.
+    Alternatively, we can define our own `optimizer` function.
 
     >>> from scipy import optimize
     >>> def optimizer(fun, args):
-    >>>     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
-    >>>                                     method="bounded")
+    ...     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
+    ...                                     method="bounded")
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
     0.999...
     """
