@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose, suppress_warnings
+from numpy.testing import assert_allclose
 import pytest
 from scipy import stats
 
@@ -96,8 +96,7 @@ def test_cont_fit(distname, arg, method):
         # Note that if a fit succeeds, the other fit_sizes are skipped
         np.random.seed(1234)
 
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning, message=".*frechet_")
+        with np.errstate(all='ignore'):
             rvs = distfn.rvs(size=fit_size, *arg)
             est = distfn.fit(rvs, method=method)  # start with default values
 
