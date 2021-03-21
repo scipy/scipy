@@ -5,7 +5,8 @@ import multiprocessing
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
-                                                   _ConstraintWrapper)
+                                                   _ConstraintWrapper,
+                                                   _MinimizerWrapper)
 from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
@@ -270,6 +271,45 @@ class TestDifferentialEvolutionSolver(object):
                                         args=args,
                                         polish=True)
         assert_almost_equal(result.fun, 2 / 3.)
+
+    def test_minimizer_wrapper(self):
+        kwargs = {
+            'bounds': self.bounds.copy(),
+            'method': 'L-BFGS-B',
+            'maxiter': 10
+        }
+
+        x = [1.2, 0.3]
+
+        def minimizer(func, x, method, bounds, maxiter):
+            assert_equal(len(bounds), len(kwargs['bounds']))
+            for b1, b2 in zip(bounds, kwargs['bounds']):
+                assert_equal(b1[0], b2[0])
+                assert_equal(b1[1], b2[1])
+            assert_equal(method, kwargs['method'])
+            assert_equal(maxiter, kwargs['maxiter'])
+
+            return func(x)
+
+        wrapper = _MinimizerWrapper(minimizer, rosen, **kwargs)
+        res = wrapper(x)
+        assert_almost_equal(rosen(x), res)
+
+    def test_minimizer_kwargs_are_passed(self):
+        kwargs = {
+            'method': 'trust_constr',
+            'maxiter': 10
+        }
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             polish=True,
+                                             minimizer_kwargs=kwargs)
+        assert solver._wrapped_minimizer
+        wrapped_minimizer = solver._wrapped_minimizer
+        assert_string_equal(wrapped_minimizer.kwargs['method'],
+                            kwargs['method'])
+        assert_equal(wrapped_minimizer.kwargs['maxiter'], kwargs['maxiter'])
+        assert_equal(len(wrapped_minimizer.kwargs['bounds']), len(self.bounds))
 
     def test_init_with_invalid_strategy(self):
         # test that passing an invalid strategy raises ValueError
