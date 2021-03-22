@@ -84,6 +84,12 @@ SciPy can be installed via pip from `PyPI <https://pypi.org/project/scipy>`__.
         </div>
     </div>
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   install_upgrade
+
 Tutorials
 ---------
 
