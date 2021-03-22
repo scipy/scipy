@@ -514,7 +514,6 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
 
 
 cdef double _phi(double z) nogil:
-
     cdef double inv_sqrt_2pi = 0.3989422804014327
     return inv_sqrt_2pi * math.exp(-0.5 * z * z)
 
@@ -528,21 +527,22 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     # destined to be used in a LowLevelCallable
     q = (<double *>user_data)[0]
     k = (<double *>user_data)[1]
-    v = (<double *>user_data)[2]
+    df = (<double *>user_data)[2]
 
     s = x[1]
     z = x[0]
 
     # terms are evaluated within logarithms when possible to avoid overflows
-    log_terms = math.log(k) + (v / 2) * math.log(v) \
-               - (math.lgamma(v / 2) + (v / 2 - 1) * math.log(2)) \
-               + (v - 1) * math.log(s) - (v * s * s / 2) \
+    log_terms = math.log(k) + (df / 2) * math.log(df) \
+               - (math.lgamma(df / 2) + (df / 2 - 1) * math.log(2)) \
+               + (df - 1) * math.log(s) - (df * s * s / 2) \
                + math.log(0.3989422804014327) - 0.5 * z * z  # phi estimation.
 
     # this term is excluded from the logarithm as it results in zero division
     t4 = math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
     return math.exp(log_terms) * t4
+
 
 cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
@@ -552,21 +552,22 @@ cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogi
 
     return k * _phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
 
+
 cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil:
     # evaluates the integrand of equation (4) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
     q = (<double *>user_data)[0]
     k = (<double *>user_data)[1]
-    v = (<double *>user_data)[2]
+    df = (<double *>user_data)[2]
 
     z = x[0]
     s = x[1]
     # terms are evaluated within logarithms when possible to avoid overflows
-    const_log = (v / 2) * math.log(v) \
-                - math.lgamma(v / 2) \
-                - (v / 2 - 1) * math.log(2) \
-                + (v - 1) * math.log(s) \
-                - v * s * s / 2
+    const_log = (df / 2) * math.log(df) \
+                - math.lgamma(df / 2) \
+                - (df / 2 - 1) * math.log(2) \
+                + (df - 1) * math.log(s) \
+                - df * s * s / 2
 
     r_log = math.log(k) \
         + math.log(k - 1) \
@@ -579,11 +580,12 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
 
     return math.exp(r_log + const_log) * r_nolog
 
+
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
     K = (<double *>user_data)[0] # the Kth moment to calc.
     k = (<double *>user_data)[1]
-    v = (<double *>user_data)[2]
+    df = (<double *>user_data)[2]
 
     z = x_arg[0]
     s = x_arg[1]
@@ -593,9 +595,10 @@ cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data
     cdef double pdf_data[3]
     pdf_data[0] = x # Q is integrated over by the third integral
     pdf_data[1] = k
-    pdf_data[2] = v
+    pdf_data[2] = df
 
     return  math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
+
 
 ctypedef fused real:
     float
