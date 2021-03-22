@@ -1,4 +1,6 @@
-# Tests for specific distributions of fitting censored data.
+# Tests for:
+#   * fitting specific distributions to censored data
+#   * the CensoredData class
 
 import pytest
 import numpy as np
