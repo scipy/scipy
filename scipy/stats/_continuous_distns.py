@@ -629,7 +629,7 @@ class beta_gen(rv_continuous):
 
     def _fitstart(self, data):
         if isinstance(data, CensoredData):
-            return super(beta_gen, self)._fitstart(data)
+            data = data._uncensor()
 
         g1 = _skew(data)
         g2 = _kurtosis(data)
