@@ -15,4 +15,13 @@ This distribution has two shape parameters :math:`\nu>0` and :math:`k>0` and sup
 
     \end{eqnarray*}
 
+When :math:`\nu` is sufficiently large, the asymptopic approximation of :math:`F(q;k,\nu)` is used:
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*}
+        F(q;k,\nu) = k\int_{-\infty}^\infty \varphi(z) [\Phi(q+z)-\Phi(z)]^{k-1} \mathrm{d}z\\
+    \end{eqnarray*}
+
 Implementation: `scipy.stats.studentized_range`
