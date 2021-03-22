@@ -6045,11 +6045,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     of length 3.
 
     >>> stats.ttest_ind(a, b, trim=.2)
-    (4.591598691181999, 0.00998909252078421)
-
+    Ttest_indResult(statistic=3.4463884028073513, pvalue=0.01369338726499547)
     """
-    if not 0 <= trim < .5:
-        raise ValueError("trim percentage should be within [0, .5).")
+    if not (0 <= trim < .5):
+        raise ValueError("Trimming percentage should be 0 <= pct < .5.")
 
     a, b, axis = _chk2_asarray(a, b, axis)
 

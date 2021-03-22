@@ -4084,6 +4084,7 @@ class Test_ttest_ind_common:
         assert_allclose(statistics, res.statistic)
         assert_allclose(pvalues, res.pvalue)
 
+
 class Test_ttest_trim:
 
     def test_ttest_compare_r1(self):
@@ -4312,7 +4313,7 @@ class Test_ttest_trim:
                                    alternative='less')
         assert_allclose(res_less.pvalue, 0.001439, atol=1e-6)
         assert_allclose(res_less.statistic, -4.2461, atol=1e-4)
-        
+
     def test_errors_unsupported(self):
         # confirm that attempting to trim with NaNs or permutations raises an
         # error
@@ -4346,6 +4347,11 @@ class Test_ttest_trim:
         assert_array_equal(np.isnan(res.pvalue), expected)
         assert_array_equal(np.isnan(res.statistic), expected)
 
+    @pytest.mark.parametrize("pct", ([-.2, .5, .55]))
+    def test_trim_bounds(self, pct):
+        with assert_raises(ValueError, match="Trimming percentage should be "
+                                             "0 <= pct < .5."):
+            stats.ttest_ind([1, 2], [2, 1], trim=pct)
 
 
 def test__broadcast_concatenate():
