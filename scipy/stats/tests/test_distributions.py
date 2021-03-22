@@ -3992,7 +3992,7 @@ class TestBurr(object):
         assert_(np.isfinite(e4))
 
 
-class TestStudentizedRange(object):
+class TestStudentizedRange:
     # Critical Q values were selected from this table:
     # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
     # For alpha=.05 and .01, and for each value of v=[1, 3, 10, 20],
@@ -4007,12 +4007,12 @@ class TestStudentizedRange(object):
                8.261, 15.64, 18.22, 19.77,
                4.482, 6.875, 7.712, 8.226,
                4.024, 5.839, 6.450, 6.823]
-    ks_d = np.ravel(list((repeat(ks, 4))))
-    vs_d = np.ravel(list(zip(*(repeat(vs, 4)))))
-    p95 = [.95] * 16
-    p99 = [.99] * 16
-    sig_k_v_q = (list(zip(p95, ks_d, vs_d, alpha05))
-                 + list(zip(p99, ks_d, vs_d, alpha01)))
+    alphas = alpha05 + alpha01
+    ks_d_16 = np.ravel(list((repeat(ks, 4))))
+    vs_d_16 = np.ravel(list(zip(*(repeat(vs, 4)))))
+    ks_d = np.tile(ks_d_16, 2)
+    vs_d = np.tile(vs_d_16, 2)
+    ps = [.95] * 16 + [.99] * 16
 
     pregenerated_data = json.load(open(os.path.join(os.path.dirname(__file__), "data/studentized_range_mpmath_ref.json"), "r"))
 
@@ -4031,19 +4031,15 @@ class TestStudentizedRange(object):
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
-    @pytest.mark.parametrize("significance, k, v,q", sig_k_v_q)
-    def test_cdf_against_tables(self, significance, k, v, q):
-        res_p = stats.studentized_range.cdf(q, k, v)
-        # some table values are only accurate to the second decimal place.
-        atol = 1e-3 if q < 10 else 1e-2 if q < 100 else 1e-1
-        assert_allclose(res_p, significance, atol=atol)
+    def test_cdf_against_tables(self):
+        res_p = stats.studentized_range.cdf(self.alphas, self.ks_d, self.vs_d)
+        assert_array_almost_equal(res_p, self.ps, decimal=4)
 
-    @pytest.mark.parametrize("significance,k,v,q", sig_k_v_q)
-    def test_ppf_against_tables(self, significance, k, v, q):
-        res_q = stats.studentized_range.ppf(significance, k, v)
-        # some table values are only accurate to the second decimal place.
-        atol = 1e-3 if q < 10 else 1e-2 if q < 100 else 1e-1
-        assert_allclose(res_q, q, atol=atol)
+    @pytest.mark.slow
+    def test_ppf_against_tables(self):
+        res_q = stats.studentized_range.ppf(self.ps, self.ks_d, self.vs_d)
+        # some table values only provide up to the tenths place
+        assert_array_almost_equal(res_q, self.alphas, decimal=1)
 
     def test_pdf_integration(self):
         k, v = 3, 10
