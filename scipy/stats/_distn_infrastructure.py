@@ -985,59 +985,32 @@ class rv_generic(object):
         """
         return self.a, self.b
 
-    def _support_mask(self, x, *args):
+    def _support_mask_common(self, x, *args, cmp=np.less_equal):
+        # Return a boolean array with the same shape as x that is True
+        # for values of x that are in the support.
         a, b = self._get_support(*args)
         with np.errstate(invalid='ignore'):
             if isinstance(x, CensoredData):
                 mask = np.empty(x._lower.shape, dtype=bool)
 
-                cmask = x._not_censored
-                vals = x._lower[cmask]
-                mask[cmask] = (a <= vals) & (vals <= b)
-
                 cmask = x._left_censored
-                vals = x._upper[cmask]
-                mask[cmask] = (a <= vals) # & (vals <= b)
+                mask[cmask] = cmp(a, x._upper[cmask])
 
                 cmask = x._right_censored
-                vals = x._lower[cmask]
-                # mask[cmask] = (a <= vals) & (vals <= b)
-                mask[cmask] = (vals <= b)
+                mask[cmask] = cmp(x._lower[cmask], b)
 
-                cmask = x._interval_censored
-                # mask[cmask] = (a <= x._lower[cmask]) & (x._upper[cmask] <= b)
-                mask[cmask] = (a <= x._upper[cmask]) & (x._lower[cmask] <= b)
+                cmask = x._interval_censored | x._not_censored
+                mask[cmask] = cmp(a, x._upper[cmask]) & cmp(x._lower[cmask], b)
 
                 return mask
             else:
-                return (a <= x) & (x <= b)
+                return cmp(a, x) & cmp(x, b)
+
+    def _support_mask(self, x, *args):
+        return self._support_mask_common(x, *args, cmp=np.less_equal)
 
     def _open_support_mask(self, x, *args):
-        a, b = self._get_support(*args)
-        with np.errstate(invalid='ignore'):
-            if isinstance(x, CensoredData):
-                mask = np.empty(x._lower.shape, dtype=bool)
-
-                cmask = x._not_censored
-                vals = x._lower[cmask]
-                mask[cmask] = (a < vals) & (vals < b)
-
-                cmask = x._left_censored
-                vals = x._upper[cmask]
-                mask[cmask] = (a < vals) # & (vals < b)
-
-                cmask = x._right_censored
-                vals = x._lower[cmask]
-                # mask[cmask] = (a < vals) & (vals < b)
-                mask[cmask] = (vals < b)
-
-                cmask = x._interval_censored
-                # mask[cmask] = (a < x._lower[cmask]) & (x._upper[cmask] < b)
-                mask[cmask] = (a < x._upper[cmask]) & (x._lower[cmask] < b)
-
-                return mask
-            else:
-                return (a < x) & (x < b)
+        return self._support_mask_common(x, *args, cmp=np.less)
 
     def _rvs(self, *args, size=None, random_state=None):
         # This method must handle size being a tuple, and it must
