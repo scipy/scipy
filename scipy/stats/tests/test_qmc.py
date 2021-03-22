@@ -140,11 +140,7 @@ class TestUtils:
             qmc.discrepancy([1, 3])
 
         sample = [[0, 0], [1, 1], [0.5, 0.5]]
-        with pytest.raises(
-            ValueError,
-            match=r"'toto' is not a valid method. Options are "
-            r"CD, WD, MD, L2-star.",
-        ):
+        with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
             qmc.discrepancy(sample, method="toto")
 
     def test_discrepancy_parallel(self, monkeypatch):

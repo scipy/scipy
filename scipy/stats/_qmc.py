@@ -288,10 +288,8 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
     if method in methods:
         return methods[method](sample, iterative, workers=workers)
     else:
-        raise ValueError(
-            "{!r} is not a valid method. Options are "
-            "CD, WD, MD, L2-star.".format(method)
-        )
+        raise ValueError(f"{method!r} is not a valid method. It must be one of"
+                         f" {set(methods)!r}")
 
 
 def update_discrepancy(x_new, sample, initial_disc):
