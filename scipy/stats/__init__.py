@@ -278,7 +278,6 @@ Statistical tests
    ttest_ind
    ttest_ind_from_stats
    ttest_rel
-   ttest_trimmed
    chisquare
    cramervonmises
    power_divergence
