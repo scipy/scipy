@@ -8856,19 +8856,18 @@ class rv_histogram(rv_continuous):
 
 class studentized_range_gen(rv_continuous):
     """
-    The generalized studentized range continuous random variable.
+    The studentized range continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    t: student's t distribution
+    t: Student's t distribution
 
     Notes
     -----
-    When `v` is arbitrarily large, in this implementation greater than or equal
-    to 2000, an asymptotic method is used in calculation of the cumulative
-    distribution function. [4]_
+    When `df` exceeds 100,000, an asymptotic approximation (infinte degrees of
+    freedom) is used to compute the cumulative distribution function. [4]_
 
     References
     ----------
@@ -8984,7 +8983,6 @@ class studentized_range_gen(rv_continuous):
         cython_symbol = '_genstudentized_range_pdf'
         _a, _b = self._get_support()
         x = np.atleast_1d(x)
-
 
         def _single_pdf(q, k, df):
             arg = [q, k, df]
