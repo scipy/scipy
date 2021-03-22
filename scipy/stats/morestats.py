@@ -601,7 +601,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     osr = sort(x)
     if _perform_fit:
         # perform a linear least squares fit.
-        slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
+        slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
@@ -1411,7 +1411,7 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
+        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
     where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
@@ -1482,7 +1482,7 @@ def yeojohnson_llf(lmb, data):
 def yeojohnson_normmax(x, brack=(-2, 2)):
     """
     Compute optimal Yeo-Johnson transform parameter.
-    
+
     Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
 
@@ -1742,7 +1742,7 @@ def anderson(x, dist='norm'):
     -----
     Critical values provided are for the following significance levels:
 
-    normal/exponenential
+    normal/exponential
         15%, 10%, 5%, 2.5%, 1%
     logistic
         25%, 10%, 5%, 2.5%, 1%, 0.5%
@@ -2445,6 +2445,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
 
+    Note: `binom_test` is deprecated; it is recommended that `binomtest`
+    be used instead.
+
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
@@ -2819,21 +2822,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Parameters
     ----------
     x : array_like
-        Either the first set of measurements (in which case `y` is the second
+        Either the first set of measurements (in which case ``y`` is the second
         set of measurements), or the differences between two sets of
-        measurements (in which case `y` is not to be specified.)  Must be
+        measurements (in which case ``y`` is not to be specified.)  Must be
         one-dimensional.
     y : array_like, optional
-        Either the second set of measurements (if `x` is the first set of
-        measurements), or not specified (if `x` is the differences between
+        Either the second set of measurements (if ``x`` is the first set of
+        measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {'pratt', 'wilcox', 'zsplit'}, optional
-        The following options are available (default is 'wilcox'):
-     
-          * 'pratt': Includes zero-differences in the ranking process,
+    zero_method : {"pratt", "wilcox", "zsplit"}, optional
+        The following options are available (default is "wilcox"):
+
+          * "pratt": Includes zero-differences in the ranking process,
             but drops the ranks of the zeros, see [4]_, (more conservative).
-          * 'wilcox': Discards all zero-differences, the default.
-          * 'zsplit': Includes zero-differences in the ranking process and 
+          * "wilcox": Discards all zero-differences, the default.
+          * "zsplit": Includes zero-differences in the ranking process and
             split the zero rank between positive and negative ones.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2848,11 +2851,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     Returns
     -------
     statistic : float
-        If `alternative` is "two-sided", the sum of the ranks of the
+        If ``alternative`` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on `alternative` and `mode`.
+        The p-value for the test depending on ``alternative`` and ``mode``.
 
     See Also
     --------
@@ -2866,8 +2869,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     is that the differences are symmetric, see [2]_.
     The two-sided test has the null hypothesis that the median of the
     differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is 
-    positive against the alternative that it is negative 
+    zero. The one-sided test has the null hypothesis that the median is
+    positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)
@@ -3414,9 +3417,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    return ((high - low)/2.0/pi)**2 * -2 * log(R)
 
 
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
@@ -3468,6 +3473,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         nsum[nsum == 0] = np.nan
         sin_mean = sin_samp.sum(axis=axis) / nsum
         cos_mean = cos_samp.sum(axis=axis) / nsum
-    R = hypot(sin_mean, cos_mean)
+    # hypot can go slightly above 1 due to rounding errors
+    with np.errstate(invalid='ignore'):
+        R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))

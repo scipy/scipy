@@ -1,8 +1,8 @@
 /*
 This file is part of pocketfft.
 
-Copyright (C) 2010-2019 Max-Planck-Society
-Copyright (C) 2019 Peter Bell
+Copyright (C) 2010-2020 Max-Planck-Society
+Copyright (C) 2019-2020 Peter Bell
 
 For the odd-sized DCT-IV transforms:
   Copyright (C) 2003, 2007-14 Matteo Frigo
@@ -70,6 +70,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <queue>
 #include <atomic>
 #include <functional>
+#include <new>
 
 #ifdef POCKETFFT_PTHREADS
 #  include <pthread.h>
@@ -140,9 +141,36 @@ template<> struct VLEN<double> { static constexpr size_t val=2; };
 #elif (defined(__VSX__))
 template<> struct VLEN<float> { static constexpr size_t val=4; };
 template<> struct VLEN<double> { static constexpr size_t val=2; };
+#elif (defined(__ARM_NEON__) || defined(__ARM_NEON))
+template<> struct VLEN<float> { static constexpr size_t val=4; };
+template<> struct VLEN<double> { static constexpr size_t val=2; };
 #else
 #define POCKETFFT_NO_VECTORS
 #endif
+#endif
+
+#if __cplusplus >= 201703L
+inline void *aligned_alloc(size_t align, size_t size)
+  {
+  void *ptr = ::aligned_alloc(align,size);
+  if (!ptr) throw std::bad_alloc();
+  return ptr;
+  }
+inline void aligned_dealloc(void *ptr)
+    { free(ptr); }
+#else // portable emulation
+inline void *aligned_alloc(size_t align, size_t size)
+  {
+  align = std::max(align, alignof(max_align_t));
+  void *ptr = malloc(size+align);
+  if (!ptr) throw std::bad_alloc();
+  void *res = reinterpret_cast<void *>
+    ((reinterpret_cast<uintptr_t>(ptr) & ~(uintptr_t(align-1))) + uintptr_t(align));
+  (reinterpret_cast<void**>(res))[-1] = ptr;
+  return res;
+  }
+inline void aligned_dealloc(void *ptr)
+  { if (ptr) free((reinterpret_cast<void**>(ptr))[-1]); }
 #endif
 
 template<typename T> class arr
@@ -161,29 +189,15 @@ template<typename T> class arr
       }
     static void dealloc(T *ptr)
       { free(ptr); }
-#elif __cplusplus >= 201703L
+#else
     static T *ralloc(size_t num)
       {
       if (num==0) return nullptr;
-      void *res = aligned_alloc(64,num*sizeof(T));
-      if (!res) throw std::bad_alloc();
-      return reinterpret_cast<T *>(res);
+      void *ptr = aligned_alloc(64, num*sizeof(T));
+      return static_cast<T*>(ptr);
       }
     static void dealloc(T *ptr)
-      { free(ptr); }
-#else // portable emulation
-    static T *ralloc(size_t num)
-      {
-      if (num==0) return nullptr;
-      void *ptr = malloc(num*sizeof(T)+64);
-      if (!ptr) throw std::bad_alloc();
-      T *res = reinterpret_cast<T *>
-        ((reinterpret_cast<size_t>(ptr) & ~(size_t(63))) + 64);
-      (reinterpret_cast<void**>(res))[-1] = ptr;
-      return res;
-      }
-    static void dealloc(T *ptr)
-      { if (ptr) free((reinterpret_cast<void**>(ptr))[-1]); }
+      { aligned_dealloc(ptr); }
 #endif
 
   public:
@@ -551,77 +565,156 @@ template <typename T> class concurrent_queue
   {
     std::queue<T> q_;
     std::mutex mut_;
-    std::condition_variable item_added_;
-    bool shutdown_;
-    using lock_t = std::unique_lock<std::mutex>;
+    std::atomic<size_t> size_;
+    using lock_t = std::lock_guard<std::mutex>;
 
   public:
-    concurrent_queue(): shutdown_(false) {}
 
     void push(T val)
       {
-      {
       lock_t lock(mut_);
-      if (shutdown_)
-        throw std::runtime_error("Item added to queue after shutdown");
-      q_.push(move(val));
-      }
-      item_added_.notify_one();
+      ++size_;
+      q_.push(std::move(val));
       }
 
-    bool pop(T & val)
+    bool try_pop(T &val)
       {
+      if (size_ == 0) return false;
       lock_t lock(mut_);
-      item_added_.wait(lock, [this] { return (!q_.empty() || shutdown_); });
-      if (q_.empty())
-        return false;  // We are shutting down
+      // Queue might have been emptied while we acquired the lock
+      if (q_.empty()) return false;
 
       val = std::move(q_.front());
+      --size_;
       q_.pop();
       return true;
       }
 
-    void shutdown()
-      {
-      {
-      lock_t lock(mut_);
-      shutdown_ = true;
-      }
-      item_added_.notify_all();
-      }
+    bool empty() const { return size_==0; }
+  };
 
-    void restart() { shutdown_ = false; }
+// C++ allocator with support for over-aligned types
+template <typename T> struct aligned_allocator
+  {
+  using value_type = T;
+  template <class U>
+  aligned_allocator(const aligned_allocator<U>&) {}
+  aligned_allocator() = default;
+
+  T *allocate(size_t n)
+    {
+    void* mem = aligned_alloc(alignof(T), n*sizeof(T));
+    return static_cast<T*>(mem);
+    }
+
+  void deallocate(T *p, size_t /*n*/)
+    { aligned_dealloc(p); }
   };
 
 class thread_pool
   {
-    concurrent_queue<std::function<void()>> work_queue_;
-    std::vector<std::thread> threads_;
-
-    void worker_main()
+    // A reasonable guess, probably close enough for most hardware
+    static constexpr size_t cache_line_size = 64;
+    struct alignas(cache_line_size) worker
       {
+      std::thread thread;
+      std::condition_variable work_ready;
+      std::mutex mut;
+      std::atomic_flag busy_flag = ATOMIC_FLAG_INIT;
       std::function<void()> work;
-      while (work_queue_.pop(work))
-        work();
-      }
+
+      void worker_main(
+        std::atomic<bool> &shutdown_flag,
+        std::atomic<size_t> &unscheduled_tasks,
+        concurrent_queue<std::function<void()>> &overflow_work)
+        {
+        using lock_t = std::unique_lock<std::mutex>;
+        bool expect_work = true;
+        while (!shutdown_flag || expect_work)
+          {
+          std::function<void()> local_work;
+          if (expect_work || unscheduled_tasks == 0)
+            {
+            lock_t lock(mut);
+            // Wait until there is work to be executed
+            work_ready.wait(lock, [&]{ return (work || shutdown_flag); });
+            local_work.swap(work);
+            expect_work = false;
+            }
+
+          bool marked_busy = false;
+          if (local_work)
+            {
+            marked_busy = true;
+            local_work();
+            }
+
+          if (!overflow_work.empty())
+            {
+            if (!marked_busy && busy_flag.test_and_set())
+              {
+              expect_work = true;
+              continue;
+              }
+            marked_busy = true;
+
+            while (overflow_work.try_pop(local_work))
+              {
+              --unscheduled_tasks;
+              local_work();
+              }
+            }
+
+          if (marked_busy) busy_flag.clear();
+          }
+        }
+      };
+
+    concurrent_queue<std::function<void()>> overflow_work_;
+    std::mutex mut_;
+    std::vector<worker, aligned_allocator<worker>> workers_;
+    std::atomic<bool> shutdown_;
+    std::atomic<size_t> unscheduled_tasks_;
+    using lock_t = std::lock_guard<std::mutex>;
 
     void create_threads()
       {
-      size_t nthreads = threads_.size();
+      lock_t lock(mut_);
+      size_t nthreads=workers_.size();
       for (size_t i=0; i<nthreads; ++i)
         {
-        try { threads_[i] = std::thread([this]{ worker_main(); }); }
+        try
+          {
+          auto *worker = &workers_[i];
+          worker->busy_flag.clear();
+          worker->work = nullptr;
+          worker->thread = std::thread([worker, this]
+            {
+            worker->worker_main(shutdown_, unscheduled_tasks_, overflow_work_);
+            });
+          }
         catch (...)
           {
-          shutdown();
+          shutdown_locked();
           throw;
           }
         }
       }
 
+    void shutdown_locked()
+      {
+      shutdown_ = true;
+      for (auto &worker : workers_)
+        worker.work_ready.notify_all();
+
+      for (auto &worker : workers_)
+        if (worker.thread.joinable())
+          worker.thread.join();
+      }
+
   public:
     explicit thread_pool(size_t nthreads):
-      threads_(nthreads)
+      workers_(nthreads)
       { create_threads(); }
 
     thread_pool(): thread_pool(max_threads) {}
@@ -630,25 +723,43 @@ class thread_pool
 
     void submit(std::function<void()> work)
       {
-      work_queue_.push(move(work));
+      lock_t lock(mut_);
+      if (shutdown_)
+        throw std::runtime_error("Work item submitted after shutdown");
+
+      ++unscheduled_tasks_;
+
+      // First check for any idle workers and wake those
+      for (auto &worker : workers_)
+        if (!worker.busy_flag.test_and_set())
+          {
+          --unscheduled_tasks_;
+          {
+          lock_t lock(worker.mut);
+          worker.work = std::move(work);
+          }
+          worker.work_ready.notify_one();
+          return;
+          }
+
+      // If no workers were idle, push onto the overflow queue for later
+      overflow_work_.push(std::move(work));
       }
 
     void shutdown()
       {
-      work_queue_.shutdown();
-      for (auto &thread : threads_)
-        if (thread.joinable())
-          thread.join();
+      lock_t lock(mut_);
+      shutdown_locked();
       }
 
     void restart()
       {
-      work_queue_.restart();
+      shutdown_ = false;
       create_threads();
       }
   };
 
-thread_pool & get_pool()
+inline thread_pool & get_pool()
   {
   static thread_pool pool;
 #ifdef POCKETFFT_PTHREADS
@@ -3382,7 +3493,7 @@ template<typename T> void c2r(const shape_t &shape_out,
     stride_inter[size_t(i)] =
       stride_inter[size_t(i+1)]*ptrdiff_t(shape_in[size_t(i+1)]);
   arr<std::complex<T>> tmp(nval);
-  auto newaxes = shape_t({axes.begin(), --axes.end()});
+  auto newaxes = shape_t{axes.begin(), --axes.end()};
   c2c(shape_in, stride_in, stride_inter, newaxes, forward, data_in, tmp.data(),
     T(1), nthreads);
   c2r(shape_out, stride_inter, stride_out, axes.back(), forward,

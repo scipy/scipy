@@ -1827,45 +1827,50 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
-    element is returned along the first axis of the result.
+    element to each foreground element is returned in a separate array.
 
     Parameters
     ----------
     input : array_like
         Input
-    metric : str, optional
-        Three types of distance metric are supported: 'euclidean', 'taxicab',
-        and 'chessboard'.
-    sampling : {int, sequence of ints}, optional
-        This parameter is only used in the case of the euclidean `metric`
-        distance transform.
-
-        The sampling along each axis can be given by the `sampling` parameter
-        which should be a sequence of length equal to the input rank, or a
-        single number in which the `sampling` is assumed to be equal along all
-        axes.
+    metric : {'euclidean', 'taxicab', 'chessboard'}, optional
+        'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
+        The default is 'euclidean'.
+    sampling : float, or sequence of float, optional
+        This parameter is only used when `metric` is 'euclidean'.
+        Spacing of elements along each dimension. If a sequence, must be of
+        length equal to the input rank; if a single number, this is used for
+        all axes. If not specified, a grid spacing of unity is implied.
     return_distances : bool, optional
-        The `return_distances` flag can be used to indicate if the distance
-        transform is returned.
-
-        The default is True.
+        Whether to calculate the distance transform.
+        Default is True.
     return_indices : bool, optional
-        The `return_indices` flags can be used to indicate if the feature
-        transform is returned.
-
-        The default is False.
-    distances : float64 ndarray, optional
-        Optional output array to hold distances (if `return_distances` is
-        True).
-    indices : int64 ndarray, optional
-        Optional output array to hold indices (if `return_indices` is True).
+        Whether to calculate the feature transform.
+        Default is False.
+    distances : ndarray, optional
+        An output array to store the calculated distance transform, instead of 
+        returning it.
+        `return_distances` must be True.
+        It must be the same shape as `input`, and of type float64 if `metric`
+        is 'euclidean', uint32 otherwise.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of
+        returning it.
+        `return_indicies` must be True.
+        Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
     -------
-    distances : ndarray
-        Distance array if `return_distances` is True.
-    indices : ndarray
-        Indices array if `return_indices` is True.
+    distances : ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True and `distances` is not supplied.
+        It will have the same shape as the input array.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each
+        dimension of the input. See distance_transform_edt documentation for an
+        example.
+        Returned only when `return_indices` is True and `indices` is not
+        supplied.
 
     Notes
     -----
@@ -1874,9 +1879,11 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     chessboard algorithms.
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
+    ft_inplace = isinstance(indices, numpy.ndarray)
+    dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
 
     tmp1 = numpy.asarray(input) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
@@ -1924,9 +1931,9 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     if return_indices:
         if isinstance(indices, numpy.ndarray):
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices must of int32 type')
+                raise RuntimeError('indices array must be int32')
             if indices.shape != (tmp1.ndim,) + tmp1.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('indices array has wrong shape')
             tmp2 = indices
         else:
             tmp2 = numpy.indices(tmp1.shape, dtype=numpy.int32)
@@ -1939,9 +1946,9 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
 
     # construct and return the result
     result = []
-    if return_distances and not isinstance(distances, numpy.ndarray):
+    if return_distances and not dt_inplace:
         result.append(dt)
-    if return_indices and not isinstance(indices, numpy.ndarray):
+    if return_indices and not ft_inplace:
         result.append(ft)
 
     if len(result) == 2:
@@ -1957,11 +1964,15 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     Distance transform for chamfer type of transforms.
 
+    In addition to the distance transform, the feature transform can
+    be calculated. In this case the index of the closest background
+    element to each foreground element is returned in a separate array.
+
     Parameters
     ----------
     input : array_like
         Input
-    metric : {'chessboard', 'taxicab'}, optional
+    metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
         generate_binary_structure with a squared distance equal to 1. If
@@ -1970,30 +1981,46 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
+        A custom metric may be provided, in the form of a matrix where
+        each dimension has a length of three.
+        'cityblock' and 'manhattan' are also valid, and map to 'taxicab'.
+        The default is 'chessboard'.
+    return_distances : bool, optional
+        Whether to calculate the distance transform.
+        Default is True.
+    return_indices : bool, optional
+        Whether to calculate the feature transform.
+        Default is False.
+    distances : int32 ndarray, optional
+        An output array to store the calculated distance transform, instead of
+        returning it.
+        `return_distances` must be True.
+        It must be the same shape as `input`.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of
+        returning it.
+        `return_indicies` must be True.
+        Its shape must be `(input.ndim,) + input.shape`.
 
-        The default for `metric` is 'chessboard'.
-    return_distances, return_indices : bool, optional
-        The `return_distances`, and `return_indices` flags can be used to
-        indicate if the distance transform, the feature transform, or both
-        must be returned.
-
-        If the feature transform is returned (``return_indices=True``),
-        the index of the closest background element is returned along
-        the first axis of the result.
-
-        The `return_distances` default is True, and the
-        `return_indices` default is False.
-    distances, indices : ndarrays of int32, optional
-        The `distances` and `indices` arguments can be used to give optional
-        output arrays that must be the same shape as `input`.
+    Returns
+    -------
+    distances : int32 ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True, and `distances` is not supplied.
+        It will have the same shape as the input array.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each
+        dimension of the input. See distance_transform_edt documentation for an
+        example.
+        Returned only when `return_indices` is True, and `indices` is not
+        supplied.
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
-
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
     input = numpy.asarray(input)
     if metric in ['taxicab', 'cityblock', 'manhattan']:
         rank = input.ndim
@@ -2041,9 +2068,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         ft = numpy.ravel(ft)
         if ft_inplace:
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices must of int32 type')
+                raise RuntimeError('indices array must be int32')
             if indices.shape != (dt.ndim,) + dt.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('indices array has wrong shape')
             tmp = indices
         else:
             tmp = numpy.indices(dt.shape, dtype=numpy.int32)
@@ -2075,33 +2102,45 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
-    element is returned along the first axis of the result.
+    element to each foreground element is returned in a separate array.
 
     Parameters
     ----------
     input : array_like
         Input data to transform. Can be any type but will be converted
         into binary: 1 wherever input equates to True, 0 elsewhere.
-    sampling : float or int, or sequence of same, optional
+    sampling : float, or sequence of float, optional
         Spacing of elements along each dimension. If a sequence, must be of
         length equal to the input rank; if a single number, this is used for
         all axes. If not specified, a grid spacing of unity is implied.
     return_distances : bool, optional
-        Whether to return distance matrix. At least one of
-        return_distances/return_indices must be True. Default is True.
+        Whether to calculate the distance transform.
+        Default is True.
     return_indices : bool, optional
-        Whether to return indices matrix. Default is False.
-    distances : ndarray, optional
-        Used for output of distance array, must be of type float64.
-    indices : ndarray, optional
-        Used for output of indices, must be of type int32.
+        Whether to calculate the feature transform.
+        Default is False.
+    distances : float64 ndarray, optional
+        An output array to store the calculated distance transform, instead of
+        returning it.
+        `return_distances` must be True.
+        It must be the same shape as `input`.
+    indices : int32 ndarray, optional
+        An output array to store the calculated feature transform, instead of
+        returning it.
+        `return_indicies` must be True.
+        Its shape must be `(input.ndim,) + input.shape`.
 
     Returns
     -------
-    distance_transform_edt : ndarray or list of ndarrays
-        Either distance matrix, index matrix, or a list of the two,
-        depending on `return_x` flags and `distance` and `indices`
-        input parameters.
+    distances : float64 ndarray, optional
+        The calculated distance transform. Returned only when
+        `return_distances` is True and `distances` is not supplied.
+        It will have the same shape as the input array.
+    indices : int32 ndarray, optional
+        The calculated feature transform. It has an input-shaped array for each
+        dimension of the input. See example below.
+        Returned only when `return_indices` is True and `indices` is not
+        supplied.
 
     Notes
     -----
@@ -2177,12 +2216,12 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
             [0, 0, 3, 3, 4]]])
 
     """
-    if (not return_distances) and (not return_indices):
-        msg = 'at least one of distances/indices must be specified'
-        raise RuntimeError(msg)
-
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
+    _distance_tranform_arg_check(
+        dt_inplace, ft_inplace, return_distances, return_indices
+    )
+
     # calculate the feature transform
     input = numpy.atleast_1d(numpy.where(input, 1, 0).astype(numpy.int8))
     if sampling is not None:
@@ -2194,9 +2233,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     if ft_inplace:
         ft = indices
         if ft.shape != (input.ndim,) + input.shape:
-            raise RuntimeError('indices has wrong shape')
+            raise RuntimeError('indices array has wrong shape')
         if ft.dtype.type != numpy.int32:
-            raise RuntimeError('indices must be of int32 type')
+            raise RuntimeError('indices array must be int32')
     else:
         ft = numpy.zeros((input.ndim,) + input.shape, dtype=numpy.int32)
 
@@ -2212,9 +2251,9 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         if dt_inplace:
             dt = numpy.add.reduce(dt, axis=0)
             if distances.shape != dt.shape:
-                raise RuntimeError('indices has wrong shape')
+                raise RuntimeError('distances array has wrong shape')
             if distances.dtype.type != numpy.float64:
-                raise RuntimeError('indices must be of float64 type')
+                raise RuntimeError('distances array must be float64')
             numpy.sqrt(dt, distances)
         else:
             dt = numpy.add.reduce(dt, axis=0)
@@ -2233,3 +2272,20 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
         return result[0]
     else:
         return None
+
+
+def _distance_tranform_arg_check(distances_out, indices_out,
+                                 return_distances, return_indices):
+    """Raise a RuntimeError if the arguments are invalid"""
+    error_msgs = []
+    if (not return_distances) and (not return_indices):
+        error_msgs.append(
+            'at least one of return_distances/return_indices must be True')
+    if distances_out and not return_distances:
+        error_msgs.append(
+            'return_distances must be True if distances is supplied'
+        )
+    if indices_out and not return_indices:
+        error_msgs.append('return_indices must be True if indices is supplied')
+    if error_msgs:
+        raise RuntimeError(', '.join(error_msgs))

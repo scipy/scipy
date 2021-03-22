@@ -122,46 +122,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 
-def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
-    """
-    Convert legacy positional arguments to keyword arguments for pdist/cdist.
-    """
-    if not args:
-        return kwargs
-
-    if (callable(metric) and metric not in [
-            braycurtis, canberra, chebyshev, cityblock, correlation, cosine,
-            dice, euclidean, hamming, jaccard, jensenshannon, kulsinski,
-            mahalanobis, matching, minkowski, rogerstanimoto, russellrao,
-            seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule,
-            wminkowski]):
-        raise TypeError('When using a custom metric arguments must be passed'
-                        'as keyword (i.e., ARGNAME=ARGVALUE)')
-
-    if func_name == 'pdist':
-        old_arg_names = ['p', 'w', 'V', 'VI']
-    else:
-        old_arg_names = ['p', 'V', 'VI', 'w']
-
-    num_args = len(args)
-    warnings.warn('%d metric parameters have been passed as positional.'
-                  'This will raise an error in a future version.'
-                  'Please pass arguments as keywords(i.e., ARGNAME=ARGVALUE)'
-                  % num_args, DeprecationWarning)
-
-    if num_args > 4:
-        raise ValueError('Deprecated %s signature accepts only 4'
-                         'positional arguments (%s), %d given.'
-                         % (func_name, ', '.join(old_arg_names), num_args))
-
-    for old_arg, arg in zip(old_arg_names, args):
-        if old_arg in kwargs:
-            raise TypeError('%s() got multiple values for argument %s'
-                            % (func_name, old_arg))
-        kwargs[old_arg] = arg
-    return kwargs
-
-
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
     if a.base is not None:
@@ -182,15 +142,6 @@ def _correlation_pdist_wrap(X, dm, **kwargs):
 
 def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
-
-
-def _filter_deprecated_kwargs(kwargs, args_blocklist):
-    # Filtering out old default keywords
-    for k in args_blocklist:
-        if k in kwargs:
-            del kwargs[k]
-            warnings.warn('Got unexpected kwarg %s. This will raise an error'
-                          ' in a future version.' % k, DeprecationWarning)
 
 
 def _nbool_correspond_all(u, v, w=None):
@@ -370,9 +321,9 @@ def directed_hausdorff(u, v, seed=0):
 
     Parameters
     ----------
-    u : (M,N) ndarray
+    u : (M,N) array_like
         Input array.
-    v : (O,N) ndarray
+    v : (O,N) array_like
         Input array.
     seed : int or None
         Local `numpy.random.RandomState` seed. Default is 0, a random
@@ -482,7 +433,7 @@ def minkowski(u, v, p=2, w=None):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -547,7 +498,7 @@ def wminkowski(u, v, p, w):
         Input array.
     v : (N,) array_like
         Input array.
-    p : int
+    p : scalar
         The order of the norm of the difference :math:`{||u-v||}_p`.
     w : (N,) array_like
         The weight vector.
@@ -704,6 +655,8 @@ def correlation(u, v, w=None, centered=True):
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
+    centered : bool, optional
+        If True, `u` and `v` will be centered. Default is True.
 
     Returns
     -------
@@ -770,7 +723,8 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    return correlation(u, v, w=w, centered=False)
+    # clamp the result to 0-2
+    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
 
 
 def hamming(u, v, w=None):
@@ -872,7 +826,7 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Jaccard_index
     .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
-       distance", 2016, Available online: https://arxiv.org/pdf/1612.02696.pdf
+       distance", 2016, :arxiv:`1612.02696`
 
     Examples
     --------
@@ -1063,7 +1017,7 @@ def mahalanobis(u, v, VI):
         Input array.
     v : (N,) array_like
         Input array.
-    VI : ndarray
+    VI : array_like
         The inverse of the covariance matrix.
 
     Returns
@@ -1373,9 +1327,9 @@ def dice(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) ndarray, bool
+    u : (N,) array_like, bool
         Input 1-D array.
-    v : (N,) ndarray, bool
+    v : (N,) array_like, bool
         Input 1-D array.
     w : (N,) array_like, optional
         The weights for each value in `u` and `v`. Default is None,
@@ -1736,7 +1690,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     elif "w" in kwargs:
         if (mstr in _METRICS['seuclidean'].aka or
                 mstr in _METRICS['mahalanobis'].aka):
-            raise ValueError("metric %s incompatible with weights" % mstr)
+            raise TypeError(f"metric {mstr} incompatible with weights")
 
         # XXX: C-versions do not support weights
         # need to use python version for weighting
@@ -1746,7 +1700,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     return mstr, kwargs
 
 
-def pdist(X, metric='euclidean', *args, **kwargs):
+def pdist(X, metric='euclidean', **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
 
@@ -1754,7 +1708,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     Parameters
     ----------
-    X : ndarray
+    X : array_like
         An m by n array of m original observations in an
         n-dimensional space.
     metric : str or function, optional
@@ -1764,8 +1718,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -1799,7 +1751,8 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry ``ij``.
+        is computed and stored in entry
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     See Also
     --------
@@ -2006,8 +1959,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
-
     X = np.asarray(X, order='c')
 
     s = X.shape
@@ -2026,30 +1977,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['jensenshannon'].aka
-       or metric == 'test_jensenshannon' or metric == jensenshannon):
-        kwargs_blocklist = ["p", "w", "V", "VI"]
-
-    elif(metric in _METRICS['minkowski'].aka
-         or metric in _METRICS['wminkowski'].aka
-         or metric in ['test_minkowski', 'test_wminkowski']
-         or metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-
-    elif(metric in _METRICS['mahalanobis'].aka
-         or metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2084,22 +2011,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                                "pdist_%s_%s_wrap" % (metric_name, typ))
             pdist_fn(X, dm, **kwargs)
             return dm
-
-        elif mstr in ['old_cosine', 'old_cos']:
-            warnings.warn('"old_cosine" is deprecated and will be removed in '
-                          'a future version. Use "cosine" instead.',
-                          DeprecationWarning)
-            X = _convert_to_double(X)
-            norms = np.einsum('ij,ij->i', X, X, dtype=np.double)
-            np.sqrt(norms, out=norms)
-            nV = norms.reshape(m, 1)
-            # The numerator u * v
-            nm = np.dot(X, X.T)
-            # The denom. ||u||*||v||
-            de = np.dot(nV, nV.T)
-            dm = 1.0 - (nm / de)
-            dm[range(0, m), range(0, m)] = 0.0
-            dm = squareform(dm)
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
                 dm = pdist(X, _TEST_METRICS[mstr], **kwargs)
@@ -2120,7 +2031,7 @@ def squareform(X, force="no", checks=True):
 
     Parameters
     ----------
-    X : ndarray
+    X : array_like
         Either a condensed or redundant distance matrix.
     force : str, optional
         As with MATLAB(TM), if force is equal to ``'tovector'`` or
@@ -2242,7 +2153,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     Parameters
     ----------
-    D : ndarray
+    D : array_like
         The candidate object to test for validity.
     tol : float, optional
         The distance matrix should be symmetric. `tol` is the maximum
@@ -2331,7 +2242,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 
     Parameters
     ----------
-    y : ndarray
+    y : array_like
         The condensed distance matrix.
     warning : bool, optional
         Invokes a warning if the variable passed is not a valid
@@ -2385,7 +2296,7 @@ def num_obs_dm(d):
 
     Parameters
     ----------
-    d : ndarray
+    d : array_like
         The target distance matrix.
 
     Returns
@@ -2406,7 +2317,7 @@ def num_obs_y(Y):
 
     Parameters
     ----------
-    Y : ndarray
+    Y : array_like
         Condensed distance matrix.
 
     Returns
@@ -2428,7 +2339,7 @@ def num_obs_y(Y):
     return d
 
 
-def cdist(XA, XB, metric='euclidean', *args, **kwargs):
+def cdist(XA, XB, metric='euclidean', **kwargs):
     """
     Compute distance between each pair of the two collections of inputs.
 
@@ -2436,11 +2347,11 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     Parameters
     ----------
-    XA : ndarray
+    XA : array_like
         An :math:`m_A` by :math:`n` array of :math:`m_A`
         original observations in an :math:`n`-dimensional space.
         Inputs are converted to float type.
-    XB : ndarray
+    XB : array_like
         An :math:`m_B` by :math:`n` array of :math:`m_B`
         original observations in an :math:`n`-dimensional space.
         Inputs are converted to float type.
@@ -2451,8 +2362,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2463,14 +2372,14 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         The p-norm to apply for Minkowski, weighted and unweighted.
         Default: 2.
 
-        w : ndarray
+        w : array_like
         The weight vector for metrics that support weights (e.g., Minkowski).
 
-        V : ndarray
+        V : array_like
         The variance vector for standardized Euclidean.
         Default: var(vstack([XA, XB]), axis=0, ddof=1)
 
-        VI : ndarray
+        VI : array_like
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(vstack([XA, XB].T))).T
 
@@ -2727,8 +2636,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
 
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "cdist")
-
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
 
@@ -2757,23 +2664,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['minkowski'].aka or
-       metric in _METRICS['wminkowski'].aka or
-       metric in ['test_minkowski', 'test_wminkowski'] or
-       metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-    elif(metric in _METRICS['mahalanobis'].aka or
-         metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
 

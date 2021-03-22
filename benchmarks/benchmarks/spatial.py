@@ -1,36 +1,19 @@
 import numpy as np
 
-try:
+from .common import Benchmark, LimitedParamBenchmark, safe_import
+
+with safe_import():
     from scipy.spatial import cKDTree, KDTree
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import distance
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import ConvexHull, Voronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import SphericalVoronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import geometric_slerp
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial.transform import Rotation
-except ImportError:
-    pass
-
-from .common import Benchmark, LimitedParamBenchmark
 
 
 class Build(Benchmark):

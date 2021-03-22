@@ -63,7 +63,7 @@ class ParseArffError(ArffError):
 # ----------
 # Attributes
 # ----------
-class Attribute(object):
+class Attribute:
 
     type_name = None
 
@@ -475,7 +475,10 @@ def split_data_line(line, dialect=None):
     # Remove the line end if any
     if line[-1] == '\n':
         line = line[:-1]
-
+    
+    # Remove potential trailing whitespace
+    line = line.strip()
+    
     sniff_line = line
 
     # Add a delimiter if none is present, so that the csv.Sniffer
@@ -648,7 +651,7 @@ def read_header(ofile):
     return relation, attributes
 
 
-class MetaData(object):
+class MetaData:
     """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.

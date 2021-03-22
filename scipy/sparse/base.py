@@ -55,7 +55,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class spmatrix(object):
+class spmatrix:
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -1146,7 +1146,7 @@ class spmatrix(object):
             New values of the diagonal elements.
 
             Values may have any length. If the diagonal is longer than values,
-            then the remaining diagonal entries will not be set. If values if
+            then the remaining diagonal entries will not be set. If values are
             longer than the diagonal, then the remaining values are ignored.
 
             If a scalar value is given, all of the diagonal is set to it.

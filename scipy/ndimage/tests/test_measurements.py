@@ -12,7 +12,7 @@ import scipy.ndimage as ndimage
 from . import types
 
 
-class Test_measurements_stats(object):
+class Test_measurements_stats:
     """ndimage.measurements._stats() is a utility used by other functions."""
 
     def test_a(self):
@@ -81,7 +81,7 @@ class Test_measurements_stats(object):
             assert_array_equal(centers, [0.5, 8.0])
 
 
-class Test_measurements_select(object):
+class Test_measurements_select:
     """ndimage.measurements._select() is a utility used by other functions."""
 
     def test_basic(self):
@@ -696,6 +696,20 @@ def test_median03():
                        [3, 3, 0, 0]])
     output = ndimage.median(a, labels=labels)
     assert_almost_equal(output, 3.0)
+
+
+def test_median_gh12836_bool():
+    # test boolean addition fix on example from gh-12836
+    a = np.asarray([1, 1], dtype=bool)
+    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    assert_array_almost_equal(output, [1.0])
+
+
+def test_median_no_int_overflow():
+    # test integer overflow fix on example from gh-12836
+    a = np.asarray([65, 70], dtype=np.int8)
+    output = ndimage.median(a, labels=np.ones((2,)), index=[1])
+    assert_array_almost_equal(output, [67.5])
 
 
 def test_variance01():
@@ -1324,4 +1338,16 @@ class TestWatershedIft:
                     [-1, 1, 1, 1, 1, 1, -1],
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
+        assert_array_almost_equal(out, expected)
+
+    def test_watershed_ift08(self):
+        # Test cost larger than uint8. See gh-10069.
+        shape = (2, 2)
+        data = np.array([[256, 0],
+                         [0, 0]], np.uint16)
+        markers = np.array([[1, 0],
+                            [0, 0]], np.int8)
+        out = ndimage.watershed_ift(data, markers)
+        expected = [[1, 1],
+                    [1, 1]]
         assert_array_almost_equal(out, expected)

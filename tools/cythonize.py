@@ -40,6 +40,7 @@ import re
 import sys
 import hashlib
 import subprocess
+from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool, Lock
 from os.path import dirname, join
 
@@ -70,15 +71,28 @@ def process_pyx(fromfile, tofile, cwd):
             for line in pt:
                 if "cython" not in line.lower():
                     continue
-                _, line = line.split('=')
-                required_version, _ = line.split('"')
+                line = ''.join(line.split('=')[1:])  # get rid of "Cython>="
+                if ',<' in line:
+                    # There's an upper bound as well
+                    split_on = ',<'
+                    if ',<=' in line:
+                        split_on = ',<='
+                    min_required_version, max_required_version = line.split(split_on)
+                    max_required_version, _ = max_required_version.split('"')
+                else:
+                    min_required_version, _ = line.split('"')
+
                 break
             else:
                 raise ImportError()
 
-        if LooseVersion(cython_version) < LooseVersion(required_version):
+        # Note: we only check lower bound, for upper bound we rely on pip
+        # respecting pyproject.toml. Reason: we want to be able to build/test
+        # with more recent Cython locally or on master, upper bound is for
+        # sdist in a release.
+        if LooseVersion(cython_version) < LooseVersion(min_required_version):
             raise Exception('Building SciPy requires Cython >= {}, found '
-                            '{}'.format(required_version, cython_version))
+                            '{}'.format(min_required_version, cython_version))
 
     except ImportError:
         pass
@@ -246,8 +260,13 @@ def find_process_files(root_dir):
     lock = Lock()
 
     try:
-        num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', ''))
+        num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', cpu_count()))
         pool = Pool(processes=num_proc)
+    except ImportError as e:
+        # Allow building (single-threaded) on GNU/Hurd, which does not
+        # support semaphores so Pool cannot initialize.
+        pool = type('', (), {'imap_unordered': lambda self, func,
+                iterable: map(func, iterable)})()
     except ValueError:
         pool = Pool()
 

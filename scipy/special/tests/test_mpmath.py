@@ -674,7 +674,7 @@ HYPERKW = dict(maxprec=200, maxterms=200)
 
 @pytest.mark.slow
 @check_version(mpmath, '0.17')
-class TestSystematic(object):
+class TestSystematic:
 
     def test_airyai(self):
         # oscillating function, limit range

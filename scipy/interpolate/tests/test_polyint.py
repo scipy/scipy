@@ -152,7 +152,7 @@ def test_complex():
     assert_allclose(dydx, p(x, 1))
 
 
-class TestKrogh(object):
+class TestKrogh:
     def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -282,7 +282,7 @@ class TestKrogh(object):
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
 
-class TestTaylor(object):
+class TestTaylor:
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
@@ -292,7 +292,7 @@ class TestTaylor(object):
         assert_almost_equal(p(0),0)
 
 
-class TestBarycentric(object):
+class TestBarycentric:
     def setup_method(self):
         self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
         self.test_xs = np.linspace(-1, 1, 100)
@@ -359,7 +359,7 @@ class TestBarycentric(object):
         assert_almost_equal(value, 9.5)
 
 
-class TestPCHIP(object):
+class TestPCHIP:
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))
@@ -486,7 +486,7 @@ class TestPCHIP(object):
         assert_allclose(r, 0.5)
 
 
-class TestCubicSpline(object):
+class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
                           tol=1e-14):
@@ -603,6 +603,27 @@ class TestCubicSpline(object):
         y = np.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
         assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
+
+    def test_second_derivative_continuity_gh_11758(self):
+        # gh-11758: C2 continuity fail
+        x = np.array([0.9, 1.3, 1.9, 2.1, 2.6, 3.0, 3.9, 4.4, 4.7, 5.0, 6.0,
+                      7.0, 8.0, 9.2, 10.5, 11.3, 11.6, 12.0, 12.6, 13.0, 13.3])
+        y = np.array([1.3, 1.5, 1.85, 2.1, 2.6, 2.7, 2.4, 2.15, 2.05, 2.1,
+                      2.25, 2.3, 2.25, 1.95, 1.4, 0.9, 0.7, 0.6, 0.5, 0.4, 1.3])
+        S = CubicSpline(x, y, bc_type='periodic', extrapolate='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+
+    def test_three_points(self):
+        # gh-11758: Fails computing a_m2_m1
+        # In this case, s (first derivatives) could be found manually by solving
+        # system of 2 linear equations. Due to solution of this system,
+        # s[i] = (h1m2 + h2m1) / (h1 + h2), where h1 = x[1] - x[0], h2 = x[2] - x[1],
+        # m1 = (y[1] - y[0]) / h1, m2 = (y[2] - y[1]) / h2
+        x = np.array([1.0, 2.75, 3.0])
+        y = np.array([1.0, 15.0, 1.0])
+        S = CubicSpline(x, y, bc_type='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+        assert_allclose(S.derivative(1)(x), np.array([-48.0, -48.0, -48.0]))
 
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)

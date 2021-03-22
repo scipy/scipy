@@ -458,10 +458,13 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
 
         if dtype == 'V1':
             # Rearrange raw bytes into smallest compatible numpy dtype
-            dt = numpy.int32 if bytes_per_sample == 3 else numpy.int64
-            a = numpy.zeros((len(data) // bytes_per_sample, dt().itemsize),
+            dt = f'{fmt}i4' if bytes_per_sample == 3 else f'{fmt}i8'
+            a = numpy.zeros((len(data) // bytes_per_sample, numpy.dtype(dt).itemsize),
                             dtype='V1')
-            a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
+            if is_big_endian:
+                a[:, :bytes_per_sample] = data.reshape((-1, bytes_per_sample))
+            else:
+                a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
             data = a.view(dt).reshape(a.shape[:-1])
     else:
         if bytes_per_sample in {1, 2, 4, 8}:

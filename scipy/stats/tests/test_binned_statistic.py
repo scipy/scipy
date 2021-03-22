@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state
 from .common_tests import check_named_results
 
 
-class TestBinnedStatistic(object):
+class TestBinnedStatistic:
 
     @classmethod
     def setup_class(cls):
@@ -487,3 +487,31 @@ class TestBinnedStatistic(object):
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
+    
+    def test_dd_range_errors(self):
+        # Test that descriptive exceptions are raised as appropriate for bad
+        # values of the `range` argument. (See gh-12996)
+        with assert_raises(ValueError,
+                           match='In range, start must be <= stop'):
+            binned_statistic_dd([self.y], self.v,
+                                range=[[1, 0]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 1 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[1, 0], [0, 1]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 2 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1], [1, 0]])
+        with assert_raises(
+                ValueError,
+                match='range given for 1 dimensions; 2 required'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1]])
+
+    def test_binned_statistic_float32(self):
+        X = np.array([0, 0.42358226], dtype=np.float32)
+        stat, _, _ = binned_statistic(X, None, 'count', bins=5)
+        assert_allclose(stat, np.array([1, 0, 0, 0, 1], dtype=np.float64))

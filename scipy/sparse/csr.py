@@ -231,7 +231,7 @@ class csr_matrix(_cs_matrix):
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_matrix
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """
