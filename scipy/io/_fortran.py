@@ -30,7 +30,7 @@ class FortranFormattingError(TypeError, IOError):
     pass
 
 
-class FortranFile(object):
+class FortranFile:
     """
     A file object for unformatted sequential files from Fortran code.
 

@@ -9,7 +9,7 @@ from .optimize import (_check_unknown_options, wrap_function, _status_message,
 __all__ = []
 
 
-class BaseQuadraticSubproblem(object):
+class BaseQuadraticSubproblem:
     """
     Base/abstract class defining the quadratic model for trust-region
     minimization. Child classes must implement the ``solve`` method.

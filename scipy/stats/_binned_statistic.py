@@ -645,7 +645,7 @@ def _calc_binned_statistic(Vdim, bin_numbers, result, values, stat_func,
             # if the stat_func is np.std, calc std only when binned data is 2
             # or more for speed up.
             if is_callable or not (stat_func is np.std and len(bin_map[i]) < 2):
-                result[vv, i] = stat_func(bin_map[i])
+                result[vv, i] = stat_func(np.array(bin_map[i]))
 
 
 def _create_binned_data(bin_numbers, unique_bin_numbers, values, vv):
@@ -694,13 +694,16 @@ def _bin_edges(sample, bins=None, range=None):
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
+    # Preserve sample floating point precision in bin edges
+    edges_dtype = sample.dtype if np.issubdtype(sample.dtype, np.floating) else float
+
     # Create edge arrays
     for i in builtins.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
-            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
+            edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1, dtype=edges_dtype)
         else:
-            edges[i] = np.asarray(bins[i], float)
+            edges[i] = np.asarray(bins[i], edges_dtype)
             nbin[i] = len(edges[i]) + 1  # +1 for outlier bins
         dedges[i] = np.diff(edges[i])
 

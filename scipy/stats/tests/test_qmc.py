@@ -11,7 +11,7 @@ from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
                               update_discrepancy,
-                              QMCEngine)
+                              QMCEngine, check_random_state)
 
 
 class TestUtils:
@@ -277,6 +277,43 @@ class TestVDC:
         assert_almost_equal(sample, out[3:])
 
 
+class RandomEngine(qmc.QMCEngine):
+    def __init__(self, d, seed):
+        super().__init__(d=d, seed=seed)
+
+    def random(self, n=1):
+        self.num_generated += n
+        try:
+            sample = self.rng.random((n, self.d))
+        except AttributeError:
+            sample = self.rng.random_sample((n, self.d))
+        return sample
+
+
+def test_subclassing_QMCEngine():
+    seed = np.random.RandomState(123456)
+    engine = RandomEngine(2, seed=seed)
+
+    sample_1 = engine.random(n=5)
+    sample_2 = engine.random(n=7)
+    assert engine.num_generated == 12
+
+    # reset and re-sample
+    engine.reset()
+    assert engine.num_generated == 0
+
+    sample_1_test = engine.random(n=5)
+    assert_equal(sample_1, sample_1_test)
+
+    # repeat reset and fast forward
+    engine.reset()
+    engine.fast_forward(n=5)
+    sample_2_test = engine.random(n=7)
+
+    assert_equal(sample_2, sample_2_test)
+    assert engine.num_generated == 12
+
+
 class QMCEngineTests:
     """Generic tests for QMC engines."""
     qmce = NotImplemented
@@ -307,6 +344,18 @@ class QMCEngineTests:
         assert_array_equal(np.empty((4, 0)), sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
+    def test_0sample(self, scramble):
+        engine = self.engine(d=2, scramble=scramble)
+        sample = engine.random(0)
+        assert_array_equal(np.empty((0, 2)), sample)
+
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
+    def test_1sample(self, scramble):
+        engine = self.engine(d=2, scramble=scramble)
+        sample = engine.random(1)
+        assert (1, 2) == sample.shape
+
+    @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_bounds(self, scramble):
         engine = self.engine(d=100, scramble=scramble)
         sample = engine.random(512)
@@ -335,16 +384,14 @@ class QMCEngineTests:
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
-        ref_sample = self.reference(scramble=scramble)
         engine = self.engine(d=2, scramble=scramble)
-
-        _ = engine.random(n=len(ref_sample) // 2)
+        ref_sample = engine.random(n=8)
 
         engine.reset()
         assert engine.num_generated == 0
 
-        sample = engine.random(n=len(ref_sample))
-        assert_almost_equal(sample, ref_sample, decimal=1)
+        sample = engine.random(n=8)
+        assert_allclose(sample, ref_sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_fast_forward(self, scramble):
@@ -408,14 +455,6 @@ class TestHalton(QMCEngineTests):
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.73412877, 0.50416027],
-                              [0.5924405, 0.51284543],
-                              [0.57790629, 0.70797228],
-                              [0.44357794, 0.64496811],
-                              [0.23461223, 0.55712172],
-                              [0.45337347, 0.4440004],
-                              [0.73381992, 0.01751516],
-                              [0.52245145, 0.33099331]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
@@ -423,48 +462,26 @@ class TestLHS(QMCEngineTests):
     def test_fast_forward(self, *args):
         pytest.skip("Not applicable: not a sequence.")
 
-    def test_sample_centered(self):
-        engine = self.engine(d=2, scramble=False, centered=True)
-        sample = engine.random(n=5)
-        out = np.array([[0.3, 0.5],
-                        [0.5, 0.3],
-                        [0.1, 0.7],
-                        [0.7, 0.7],
-                        [0.7, 0.1]])
-        assert_almost_equal(sample, out, decimal=1)
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
 
+    def test_sample_stratified(self):
+        d, n = 4, 20
+        expected1d = (np.arange(n) + 0.5) / n
+        expected = np.broadcast_to(expected1d, (d, n)).T
 
-class TestOLHS(QMCEngineTests):
-    qmce = qmc.OrthogonalLatinHypercube
-    can_scramble = False
-    unscramble_nd = np.array([[0.01587123, 0.01618008],
-                              [0.24583973, 0.35254855],
-                              [0.66702772, 0.82434795],
-                              [0.80642206, 0.89219419],
-                              [0.2825595, 0.41900669],
-                              [0.98003189, 0.52861091],
-                              [0.54709371, 0.23248484],
-                              [0.48715457, 0.72209797]])
+        engine = self.engine(d=d, scramble=False, centered=True)
+        sample = engine.random(n=n)
+        sorted_sample = np.sort(sample, axis=0)
 
-    def test_continuing(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
+        assert_equal(sorted_sample, expected)
+        assert np.any(sample != expected)
 
-    def test_fast_forward(self, *args):
-        pytest.skip("Not applicable: not a sequence.")
-
-    def test_iid(self):
-        # Checking independency of the random numbers generated
-        engine = self.engine(d=2, scramble=False)
-        n_samples = 500
-        sample = engine.random(n=n_samples)
-        min_b = 50  # number of bins
-        bins = np.linspace(0, 1, min(min_b, n_samples) + 1)
-        hist = np.histogram(sample[:, 0], bins=bins)
-        out = np.array([n_samples / min_b] * min_b)
-        assert_equal(hist[0], out)
-
-        hist = np.histogram(sample[:, 1], bins=bins)
-        assert_equal(hist[0], out)
+        engine = self.engine(d=d, scramble=False, centered=False)
+        sample = engine.random(n=n)
+        sorted_sample = np.sort(sample, axis=0)
+        assert_allclose(sorted_sample, expected, atol=0.5 / n)
+        assert np.any(sample - expected > 0.5 / n)
 
 
 class TestSobol(QMCEngineTests):

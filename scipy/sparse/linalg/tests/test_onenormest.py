@@ -38,7 +38,7 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(object):
+class TestOnenormest:
 
     @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
@@ -230,7 +230,7 @@ class TestOnenormest(object):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(object):
+class TestAlgorithm_2_2:
 
     def test_randn_inv(self):
         np.random.seed(1234)

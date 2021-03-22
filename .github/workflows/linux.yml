@@ -75,6 +75,11 @@ jobs:
     - name: Install packages
       run: |
         python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
+        python3.9 -m pip install -r mypy_requirements.txt
+
+    - name: Mypy
+      run: |
+        python3.9 -u runtests.py --mypy
 
     - name: Test SciPy
       run: |

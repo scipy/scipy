@@ -18,7 +18,7 @@ except ImportError:
 # Machinery for systematic tests with mpmath
 # ------------------------------------------------------------------------------
 
-class Arg(object):
+class Arg:
     """Generate a set of numbers on the real axis, concentrating on
     'interesting' regions and covering all orders of magnitude.
 
@@ -129,7 +129,7 @@ class Arg(object):
         return pts
 
 
-class FixedArg(object):
+class FixedArg:
     def __init__(self, values):
         self._values = np.asarray(values)
 
@@ -137,7 +137,7 @@ class FixedArg(object):
         return self._values
 
 
-class ComplexArg(object):
+class ComplexArg:
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
         self.imag = Arg(a.imag, b.imag)
@@ -149,7 +149,7 @@ class ComplexArg(object):
         return (x[:,None] + 1j*y[None,:]).ravel()
 
 
-class IntArg(object):
+class IntArg:
     def __init__(self, a=-1000, b=1000):
         self.a = a
         self.b = b
@@ -176,7 +176,7 @@ def get_args(argspec, n):
     return args
 
 
-class MpmathData(object):
+class MpmathData:
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
                  ignore_inf_sign=False, distinguish_nan_and_inf=True,

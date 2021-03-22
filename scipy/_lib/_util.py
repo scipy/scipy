@@ -34,6 +34,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     broadcasted together.
 
     """
+    cond = np.asarray(cond)
     if fillvalue is None:
         if f2 is None:
             raise ValueError("One of (fillvalue, f2) must be given.")
@@ -43,7 +44,8 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         if f2 is not None:
             raise ValueError("Only one of (fillvalue, f2) can be given.")
 
-    arrays = np.broadcast_arrays(*arrays)
+    args = np.broadcast_arrays(cond, *arrays)
+    cond,  arrays = args[0], args[1:]
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     tcode = np.mintypecode([a.dtype.char for a in arrays])
     out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
@@ -152,7 +154,7 @@ def float_factorial(n: int) -> float:
     return float(math.factorial(n)) if n < 171 else np.inf
 
 
-class DeprecatedImport(object):
+class DeprecatedImport:
     """
     Deprecated import with redirection and warning.
 
@@ -370,7 +372,7 @@ def getfullargspec_no_self(func):
                        kwdefaults or None, annotations)
 
 
-class MapWrapper(object):
+class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
     `multiprocessing.Pool.map`.

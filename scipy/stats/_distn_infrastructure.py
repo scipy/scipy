@@ -427,7 +427,7 @@ def _fit_determine_optimizer(optimizer):
 
 
 # Frozen RV class
-class rv_frozen(object):
+class rv_frozen:
 
     def __init__(self, dist, *args, **kwds):
         self.args = args
@@ -524,10 +524,14 @@ class rv_frozen(object):
         return self.dist.support(*self.args, **self.kwds)
 
 
-# This should be rewritten
 def argsreduce(cond, *args):
-    """Return the sequence of ravel(args[i]) where ravel(condition) is
-    True in 1D.
+    """Clean arguments to:
+
+    1. Ensure all arguments are iterable (arrays of dimension at least one
+    2. If cond != True and size > 1, ravel(args[i]) where ravel(condition) is
+       True, in 1D.
+
+    Return list of processed arguments.
 
     Examples
     --------
@@ -538,20 +542,39 @@ def argsreduce(cond, *args):
     >>> C = rand((1, 5))
     >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
+    (4, 5)
     >>> B1.shape
-    (20,)
+    (1,)
+    >>> C1.shape
+    (1, 5)
     >>> cond[2,:] = 0
-    >>> [A2, B2, C2] = argsreduce(cond, A, B, C)
-    >>> B2.shape
+    >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
+    >>> A1.shape
     (15,)
-
+    >>> B1.shape
+    (1,)
+    >>> C1.shape
+    (15,)
     """
+    # some distributions assume arguments are iterable.
     newargs = np.atleast_1d(*args)
+
+    # np.atleast_1d returns an array if only one argument, or a list of arrays
+    # if more than one argument.
     if not isinstance(newargs, list):
         newargs = [newargs, ]
-    expand_arr = (cond == cond)
-    return [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
+    if np.all(cond):
+        # Nothing to do
+        return newargs
+
+    s = cond.shape
+    # np.extract returns flattened arrays, which are not broadcastable together
+    # unless they are either the same size or size == 1.
+    return [(arg if np.size(arg) == 1
+            else np.extract(cond, np.broadcast_to(arg, s)))
+            for arg in newargs]
 
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
@@ -597,7 +620,7 @@ def _ncx2_cdf(x, df, nc):
     return chndtr(x, df, nc)
 
 
-class rv_generic(object):
+class rv_generic:
     """Class which encapsulates common functionality between rv_discrete
     and rv_continuous.
 
@@ -1421,13 +1444,25 @@ class rv_generic(object):
             scale parameter, Default is 1.
         Returns
         -------
-        a, b : float
+        a, b : array_like
             end-points of the distribution's support.
 
         """
         args, loc, scale = self._parse_args(*args, **kwargs)
+        arrs = np.broadcast_arrays(*args, loc, scale)
+        args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
+        cond = self._argcheck(*args) & (scale > 0)
         _a, _b = self._get_support(*args)
-        return _a * scale + loc, _b * scale + loc
+        if cond.all():
+            return _a * scale + loc, _b * scale + loc
+        elif cond.ndim == 0:
+            return self.badvalue, self.badvalue
+        # promote bounds to at least float to fill in the badvalue
+        _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
+        out_a, out_b = _a * scale + loc, _b * scale + loc
+        place(out_a, 1-cond, self.badvalue)
+        place(out_b, 1-cond, self.badvalue)
+        return out_a, out_b
 
 
 def _get_fixed_fit_value(kwds, names):
