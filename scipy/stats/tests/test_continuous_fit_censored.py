@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, gumbel_l, gumbel_r,
                          invgauss, invweibull, laplace, logistic, lognorm, nct,
-                         norm, weibull_max, weibull_min)
+                         norm, uniform, weibull_max, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -622,3 +622,30 @@ class TestCensoredData:
             func([1, 2, np.nan], [0, 1, 1])
         with pytest.raises(ValueError, match='must have the same length'):
             func([1, 2, 3], [0, 0, 1, 1])
+
+
+def test_support_mask():
+    # Use the uniform distribution to test the _support_mask
+    # method applied to an instance of CensoredData.
+    x_y = np.array([[-np.inf, -1],   # False
+                    [-np.inf, 0],    # True
+                    [-2, -1],        # False
+                    [-2, 0],         # True
+                    [-1, -1],        # False
+                    [0, 0],          # True
+                    [-0.1, 0.1],     # True
+                    [1, 1],          # False
+                    [1, 2],          # False
+                    [0, np.inf],     # True
+                    [1, np.inf]])    # False
+    # The support bounds of the uniform distribution that we'll use
+    # for this test.
+    a, b = [-0.5, 0.5]
+    loc, scale = a, b - a
+    # _support_mask expects the data to be in the standard form,
+    # so shift by loc and divide by scale.
+    x_y = (x_y - loc)/scale
+    c = CensoredData(x_y[:, 0], x_y[:, 1])
+    mask = uniform._support_mask(c, a, (b-a))
+    expected = [0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0]
+    assert_equal(mask, expected)

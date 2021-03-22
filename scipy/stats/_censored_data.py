@@ -103,6 +103,11 @@ class CensoredData:
         self._interval_censored = ~(self._not_censored | self._left_censored
                                     | self._right_censored)
 
+    def __repr__(self):
+        lower_str = " ".join(np.array_repr(self._lower).split())
+        upper_str = " ".join(np.array_repr(self._upper).split())
+        return (f"CensoredData({lower_str}, {upper_str})")
+
     def __str__(self):
         n = len(self._lower)
         num_nc = np.count_nonzero(self._not_censored)

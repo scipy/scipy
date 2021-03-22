@@ -1000,6 +1000,7 @@ class rv_generic(object):
                 mask[cmask] = cmp(x._lower[cmask], b)
 
                 cmask = x._interval_censored | x._not_censored
+                # Ranges [a, b] and [x._lower, x._upper] intersect.
                 mask[cmask] = cmp(a, x._upper[cmask]) & cmp(x._lower[cmask], b)
 
                 return mask
