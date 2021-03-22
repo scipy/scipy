@@ -5,7 +5,7 @@ import pytest
 from scipy.special._ufuncs import _cosine_cdf, _cosine_invcdf
 
 
-# These values are (x, p) where p is the expected exact value of 
+# These values are (x, p) where p is the expected exact value of
 # _cosine_cdf(x).  These values will be tested for exact agreement.
 _coscdf_exact = [
     (-4.0, 0.0),
@@ -42,7 +42,7 @@ def test_cosine_cdf(x, expected):
     assert_allclose(_cosine_cdf(x), expected, rtol=5e-15)
 
 
-# These values are (p, x) where x is the expected exact value of 
+# These values are (p, x) where x is the expected exact value of
 # _cosine_invcdf(p).  These values will be tested for exact agreement.
 _cosinvcdf_exact = [
     (0.0, -np.pi),
