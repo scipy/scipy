@@ -23,7 +23,7 @@ from scipy.special._ufuncs import (
     _igam_fac)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
 

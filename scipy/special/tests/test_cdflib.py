@@ -32,7 +32,7 @@ from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
 
