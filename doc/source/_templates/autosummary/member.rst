@@ -4,7 +4,7 @@
 
 .. currentmodule:: {{ module }}
 
-method
+member
 
 .. auto{{ objtype }}:: {{ fullname | replace("scipy.", "scipy::") }}
 

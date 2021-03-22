@@ -1,10 +1,14 @@
+{% if objtype == 'property' %}
 :orphan:
+{% endif %}
 
 {{ fullname | escape | underline}}
 
 .. currentmodule:: {{ module }}
 
-method
+{% if objtype == 'property' %}
+property
+{% endif %}
 
 .. auto{{ objtype }}:: {{ fullname | replace("scipy.", "scipy::") }}
 

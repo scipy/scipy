@@ -116,7 +116,7 @@ Thumbs.db
 # Documentation generated files #
 #################################
 doc/frontpage/build
-doc/source/generated
+doc/source/reference/generated
 
 # Things specific to this project #
 ###################################
