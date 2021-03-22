@@ -385,7 +385,7 @@ wsokalmichener = _weight_checked(sokalmichener)
 wrussellrao = _weight_checked(russellrao)
 
 
-class TestCdist(object):
+class TestCdist:
 
     def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
@@ -488,7 +488,7 @@ class TestCdist(object):
                       cdist, [[0, 1]], [[2, 3]], metric='mahalanobis')
 
     def test_cdist_custom_notdouble(self):
-        class myclass(object):
+        class myclass:
             pass
 
         def _my_metric(x, y):
@@ -647,7 +647,7 @@ class TestCdist(object):
                 # test that output is numerically equivalent
                 _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
-class TestPdist(object):
+class TestPdist:
 
     def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
@@ -1379,7 +1379,7 @@ class TestPdist(object):
 
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
-        class myclass(object):
+        class myclass:
             pass
 
         def _my_metric(x, y):
@@ -1519,7 +1519,7 @@ class TestPdist(object):
                 # test that output is numerically equivalent
                 _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
-class TestSomeDistanceFunctions(object):
+class TestSomeDistanceFunctions:
 
     def setup_method(self):
         # 1D arrays
@@ -1611,7 +1611,7 @@ class TestSomeDistanceFunctions(object):
             assert_almost_equal(dist, np.sqrt(6.0))
 
 
-class TestSquareForm(object):
+class TestSquareForm:
     checked_dtypes = [np.float64, np.float32, np.int32, np.int8, bool]
 
     def test_squareform_matrix(self):
@@ -1678,7 +1678,7 @@ class TestSquareForm(object):
                     assert_equal(A[i, j], 0)
 
 
-class TestNumObsY(object):
+class TestNumObsY:
 
     def test_num_obs_y_multi_matrix(self):
         for n in range(2, 10):
@@ -1730,7 +1730,7 @@ class TestNumObsY(object):
         return np.random.rand((n * (n - 1)) // 2)
 
 
-class TestNumObsDM(object):
+class TestNumObsDM:
 
     def test_num_obs_dm_multi_matrix(self):
         for n in range(1, 10):
@@ -1769,7 +1769,7 @@ def is_valid_dm_throw(D):
     return is_valid_dm(D, throw=True)
 
 
-class TestIsValidDM(object):
+class TestIsValidDM:
 
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.double)
@@ -1842,7 +1842,7 @@ def is_valid_y_throw(y):
     return is_valid_y(y, throw=True)
 
 
-class TestIsValidY(object):
+class TestIsValidY:
     # If test case name ends on "_E" then an exception is expected for the
     # given input, if it ends in "_F" then False is expected for the is_valid_y
     # check.  Otherwise the input is expected to be valid.

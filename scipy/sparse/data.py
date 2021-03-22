@@ -154,7 +154,7 @@ def _find_missing_index(ind, n):
         return -1
 
 
-class _minmax_mixin(object):
+class _minmax_mixin:
     """Mixin for min and max methods.
 
     These are not implemented for dia_matrix, hence the separate class.

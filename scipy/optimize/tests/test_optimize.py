@@ -51,7 +51,7 @@ def test_check_grad():
     assert_(r > 1e-7)
 
 
-class CheckOptimize(object):
+class CheckOptimize:
     """ Base test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -794,7 +794,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_l_bfgs_b_maxiter(self):
         # gh7854
         # Ensure that not more than maxiters are ever run.
-        class Callback(object):
+        class Callback:
             def __init__(self):
                 self.nit = 0
                 self.fun = None
@@ -1300,7 +1300,7 @@ class TestOptimizeSimple(CheckOptimize):
                     "Duplicate evaluations made by {}".format(method))
 
 
-class TestLBFGSBBounds(object):
+class TestLBFGSBBounds:
     def setup_method(self):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
@@ -1361,7 +1361,7 @@ class TestLBFGSBBounds(object):
             assert_allclose(res.x, self.solution, atol=1e-6)
 
 
-class TestOptimizeScalar(object):
+class TestOptimizeScalar:
     def setup_method(self):
         self.solution = 1.5
 
@@ -1560,7 +1560,7 @@ def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
 
 
-class TestNewtonCg(object):
+class TestNewtonCg:
     def test_rosenbrock(self):
         x0 = np.array([-1.2, 1.0])
         sol = optimize.minimize(optimize.rosen, x0,
@@ -1808,7 +1808,7 @@ def test_linesearch_powell_bounded():
         assert_allclose(direction, l * xi, atol=1e-6)
 
 
-class TestRosen(object):
+class TestRosen:
 
     def test_hess(self):
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
@@ -1868,7 +1868,7 @@ def test_minimize_multiple_constraints():
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
 
 
-class TestOptimizeResultAttributes(object):
+class TestOptimizeResultAttributes:
     # Test that all minimizers return an OptimizeResult containing
     # all the OptimizeResult attributes
     def setup_method(self):
@@ -2015,7 +2015,7 @@ def test_cobyla_threadsafe():
             res = t.result()
    
    
-class TestIterationLimits(object):
+class TestIterationLimits:
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
     # by exceeding the limits.
@@ -2106,7 +2106,7 @@ def test_result_x_shape_when_len_x_is_one():
         assert res.x.shape == (1,)
 
 
-class FunctionWithGradient(object):
+class FunctionWithGradient:
     def __init__(self):
         self.number_of_calls = 0
 

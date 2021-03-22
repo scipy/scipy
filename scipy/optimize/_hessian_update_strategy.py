@@ -8,7 +8,7 @@ from warnings import warn
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
 
 
-class HessianUpdateStrategy(object):
+class HessianUpdateStrategy:
     """Interface for implementing Hessian update strategies.
 
     Many optimization methods make use of Hessian (or inverse Hessian)

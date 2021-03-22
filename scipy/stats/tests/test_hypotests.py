@@ -14,7 +14,7 @@ from scipy.stats import distributions
 from .common_tests import check_named_results
 
 
-class TestEppsSingleton(object):
+class TestEppsSingleton:
     def test_statistic_1(self):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
@@ -72,7 +72,7 @@ class TestEppsSingleton(object):
         check_named_results(res, attributes)
 
 
-class TestCvm(object):
+class TestCvm:
     # the expected values of the cdfs are taken from Table 1 in
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
     # Cramér-von Mises Statistics, 1996.
@@ -164,7 +164,7 @@ class TestCvm(object):
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
 
-class TestSomersD(object):
+class TestSomersD:
 
     def test_like_kendalltau(self):
         # All tests correspond with one in test_stats.py `test_kendalltau`
@@ -409,7 +409,7 @@ class TestSomersD(object):
         assert_equal(res.table, np.eye(10))
 
 
-class TestBarnardExact(object):
+class TestBarnardExact:
     """Some tests to show that barnard_exact() works correctly."""
 
     @pytest.mark.parametrize(
@@ -556,7 +556,7 @@ class TestBarnardExact(object):
         )
 
 
-class TestCvm_2samp(object):
+class TestCvm_2samp:
     def test_invalid_input(self):
         x = np.arange(10).reshape((2, 5))
         y = np.arange(5)

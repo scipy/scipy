@@ -6,7 +6,7 @@ from scipy.optimize import shgo
 from scipy.optimize._shgo import SHGO
 
 
-class StructTestFunction(object):
+class StructTestFunction:
     def __init__(self, bounds, expected_x, expected_fun=None,
                  expected_xl=None, expected_funl=None):
         self.bounds = bounds
@@ -310,7 +310,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
 
 
 # Base test functions:
-class TestShgoSobolTestFunctions(object):
+class TestShgoSobolTestFunctions:
     """
     Global optimization tests with Sobol sampling:
     """
@@ -367,7 +367,7 @@ class TestShgoSobolTestFunctions(object):
         #    run_test(test11_1)
 
 
-class TestShgoSimplicialTestFunctions(object):
+class TestShgoSimplicialTestFunctions:
     """
     Global optimization tests with Simplicial sampling:
     """
@@ -419,7 +419,7 @@ class TestShgoSimplicialTestFunctions(object):
 
 
 # Argument test functions
-class TestShgoArguments(object):
+class TestShgoArguments:
     def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
         run_test(test1_2, n=None, iters=2, sampling_method='simplicial')
@@ -660,7 +660,7 @@ class TestShgoArguments(object):
         run_test(test1_1, n=30, sampling_method=sample)
 
 # Failure test functions
-class TestShgoFailures(object):
+class TestShgoFailures:
     def test_1_maxiter(self):
         """Test failure on insufficient iterations"""
         options = {'maxiter': 2}

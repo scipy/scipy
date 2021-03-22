@@ -71,7 +71,7 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
-class TestWhiten(object):
+class TestWhiten:
     def test_whiten(self):
         desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
@@ -111,7 +111,7 @@ class TestWhiten(object):
                 assert_raises(ValueError, whiten, obs)
 
 
-class TestVq(object):
+class TestVq:
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, matrix:
@@ -170,7 +170,7 @@ class TestVq(object):
         assert_array_equal(codes0, codes1)
 
 
-class TestKMean(object):
+class TestKMean:
     def test_large_features(self):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
