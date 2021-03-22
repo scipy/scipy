@@ -9,7 +9,7 @@ import pytest
 from scipy.special._testutils import assert_func_equal
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     pass
 

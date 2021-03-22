@@ -1,5 +1,5 @@
 
-import mpmath  # type: ignore[import]
+import mpmath
 
 
 def f(x):
