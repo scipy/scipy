@@ -8888,21 +8888,21 @@ class studentized_range_gen(rv_continuous):
 
     Examples
     --------
-    >>> from scipy.stats import %(name)s
+    >>> from scipy.stats import studentized_range
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
 
     Calculate a few first moments:
 
-    %(set_vals_stmt)s
-    >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+    >>> k, df = 3, 10
+    >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
 
     Display the probability density function (``pdf``):
 
-    >>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
-    ...                 %(name)s.ppf(0.99, %(shapes)s), 100)
-    >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
-    ...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
+    >>> x = np.linspace(studentized_range.ppf(0.01, k, df),
+    ...                 studentized_range.ppf(0.99, k, df), 100)
+    >>> ax.plot(x, studentized_range.pdf(x, k, df),
+    ...         'r-', lw=5, alpha=0.6, label='studentized_range pdf')
 
     Alternatively, the distribution object can be called (as a function)
     to fix the shape, location and scale parameters. This returns a "frozen"
@@ -8910,13 +8910,13 @@ class studentized_range_gen(rv_continuous):
 
     Freeze the distribution and display the frozen ``pdf``:
 
-    >>> rv = %(name)s(%(shapes)s)
+    >>> rv = studentized_range(k, df)
     >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
 
     Check accuracy of ``cdf`` and ``ppf``:
 
-    >>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
-    >>> np.allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+    >>> vals = studentized_range.ppf([0.001, 0.5, 0.999], k, df)
+    >>> np.allclose([0.001, 0.5, 0.999], studentized_range.cdf(vals, k, df))
     True
 
     Rather than using (``%(name)s.rvs``) to generate random variates, which is
@@ -8924,28 +8924,16 @@ class studentized_range_gen(rv_continuous):
     an interpolator, and then perform inverse transform sampling with this
     approximate inverse CDF.
 
-    Using the shape parameters, obtain the bounds data that will be input to
-    ``cdf`` for later use in interpolation.
+    This distribution has an infinite but thin right tail, so we focus our
+    attention on the leftmost 99.9 percent.
 
-    >>> a, b = %(name)s.support(k, df)
+    >>> a, b = studentized_range.ppf([0, .999], k, df)
     >>> a, b
-    (0, inf)
-
-    Note that the upper limit for the range for the ``cdf`` input is
-    technically infinite. Inputting 1 to the ``ppf`` gives infinity:
-
-    >>> %(name)s.ppf(1, k, df)
-    inf
-
-    To obtain a finite limit we can input a value that nears 1.
-
-    >>> b = %(name)s.ppf(.999, k, df)
-    >>> b
-    7.41058083802274
+    0, 7.41058083802274
 
     >>> from scipy.interpolate import interp1d
     >>> xs = np.linspace(a, b, 50)
-    >>> cdf = %(name)s.cdf(xs, k, df)
+    >>> cdf = studentized_range.cdf(xs, k, df)
     >>> ppf = interp1d(cdf, xs, kind='next', fill_value='extrapolate')
     >>> random_state = np.random.default_rng(123)
     >>> r = ppf(random_state.uniform(size=1000))
