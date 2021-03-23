@@ -9084,14 +9084,14 @@ class studentized_range_gen(rv_continuous):
            https://en.wikipedia.org/wiki/Studentized_range_distribution
     .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
            Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
-           378–389., doi:10.1590/1413-70542017414047716.
-    .. [3] Harter, H. Leon. “Tables of Range and Studentized Range.” The Annals
-           of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122–1147.
+           378-389., doi:10.1590/1413-70542017414047716.
+    .. [3] Harter, H. Leon. "Tables of Range and Studentized Range." The Annals
+           of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122-1147.
            JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.
-    .. [4] Lund, R. E., and J. R. Lund. “Algorithm AS 190: Probabilities and
-           Upper Quantiles for the Studentized Range.” Journal of the Royal
+    .. [4] Lund, R. E., and J. R. Lund. "Algorithm AS 190: Probabilities and
+           Upper Quantiles for the Studentized Range." Journal of the Royal
            Statistical Society. Series C (Applied Statistics), vol. 32, no. 2,
-           1983, pp. 204–210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
+           1983, pp. 204-210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
            Feb. 2021.
 
     Examples

@@ -4340,7 +4340,10 @@ class TestStudentizedRange:
     vs_d = np.tile(vs_d_16, 2)
     ps = [.95] * 16 + [.99] * 16
 
-    pregenerated_data = json.load(open(os.path.join(os.path.dirname(__file__), "data/studentized_range_mpmath_ref.json"), "r"))
+    path_prefix = os.path.dirname(__file__)
+    relative_path = "data/studentized_range_mpmath_ref.json"
+    with open(os.path.join(path_prefix, relative_path), "r"):
+        pregenerated_data = json.load()
 
     @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
     def test_cdf_against_mp(self, case_result):
@@ -4406,6 +4409,7 @@ class TestStudentizedRange:
             # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
             # range causes the results to converge and pass default atol.
             assert_allclose(res_act, res_exp, atol=1e-5)
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
