@@ -104,7 +104,7 @@ Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
 OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [15]_
 Windows            ``VS2017-Win2016``        Visual Studio 2017 (15.9)    See ``azure-pipelines.yml``
-================   =======================  ===========================  ==============================
+================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.8, see [15]_.
 
@@ -116,7 +116,7 @@ SciPy is compatible with most modern C compilers (in particular ``clang``).
 In addition to concerns about compatibility with non-standard platforms,
 there was a long-standing restriction that Windows builds of SciPy had to use
 the same version of the Microsoft Visual C++ compiler as were used for CPython
-itself, for reasons of ABI-compatibility [7]_, [8]_, [9]_.
+itself, for reasons of ABI-compatibility [6]_, [7]_, [8]_, [9]_.
 
 With the introduction of the "Universal C Runtime" [16]_ since the release of
 Visual Studio 2015, this restriction has been lifted. For more context, see the
