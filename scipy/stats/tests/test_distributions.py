@@ -3022,11 +3022,27 @@ class TestDifferentialEntropy(object):
     def test_differential_entropy_raises_value_error(self):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
-        with assert_raises(ValueError):
-            stats.differential_entropy(values, window_length=0, axis=1)
 
-        with assert_raises(ValueError):
-            stats.differential_entropy(values, window_length=50, axis=1)
+        error_str = (
+            r"Window length \({window_length}\) must be positive and less "
+            r"than half the sample size \({sample_size}\)."
+        )
+
+        sample_size = values.shape[1]
+
+        for window_length in {-1, 0, sample_size//2, sample_size}:
+
+            formatted_error_str = error_str.format(
+                window_length=window_length,
+                sample_size=sample_size,
+            )
+
+            with assert_raises(ValueError, match=formatted_error_str):
+                stats.differential_entropy(
+                    values,
+                    window_length=window_length,
+                    axis=1,
+                )
 
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
         random_state = np.random.RandomState(0)
