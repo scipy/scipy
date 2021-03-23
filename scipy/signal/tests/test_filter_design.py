@@ -23,7 +23,7 @@ from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = None
 

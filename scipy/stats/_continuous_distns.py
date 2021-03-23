@@ -1336,7 +1336,16 @@ class cosine_gen(rv_continuous):
         return 1.0/2/np.pi*(1+np.cos(x))
 
     def _cdf(self, x):
-        return 1.0/2/np.pi*(np.pi + x + np.sin(x))
+        return scu._cosine_cdf(x)
+
+    def _sf(self, x):
+        return scu._cosine_cdf(-x)
+
+    def _ppf(self, p):
+        return scu._cosine_invcdf(p)
+
+    def _isf(self, p):
+        return -scu._cosine_invcdf(p)
 
     def _stats(self):
         return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)

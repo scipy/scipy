@@ -12,7 +12,7 @@ import os
 from scipy.special._precompute.utils import lagrange_inversion
 
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 
