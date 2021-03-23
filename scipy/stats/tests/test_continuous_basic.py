@@ -44,7 +44,7 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
                      'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
                      'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
-                     'rv_histogram_instance']
+                     'rv_histogram_instance', 'studentized_range']
 
 # these were really slow in `test_fit`.py.
 # note that this list is used to skip both fit_test and fit_fix tests
@@ -63,7 +63,7 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull']
                      + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
-                        'powerlognorm', 'johnsonsu']
+                        'powerlognorm', 'johnsonsu', 'studentized_range']
                      + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
@@ -74,7 +74,8 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'vonmises', 'vonmises_line']
+                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'studentized_range']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
@@ -85,7 +86,7 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'invweibull']
                          + ['ksone', 'kstwo', 'pareto', 'powernorm',
-                            'powerlognorm', 'johnsonsu']
+                            'powerlognorm', 'johnsonsu', 'studentized_range']
                          + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
@@ -102,7 +103,8 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'cosine', 'dgamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
