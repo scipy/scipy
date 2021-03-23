@@ -1,7 +1,6 @@
 import warnings
 
 import numpy as np
-import random
 from .common import Benchmark, safe_import, is_xslow
 
 with safe_import():
@@ -51,15 +50,15 @@ class Kendalltau(Benchmark):
     ]
 
     def setup(self, nan_policy, method, variant):
-        a = [x for x in range(0, 200)]
-        random.shuffle(a)
-        b = [x for x in range(0, 200)]
-        random.shuffle(b)
+        a = np.arange(200)
+        np.random.shuffle(a)
+        b = np.arange(200)
+        np.random.shuffle(b)
         self.a = a
         self.b = b
 
     def time_kendalltau(self, nan_policy, method, variant):
-        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy = nan_policy, method = method, variant = variant)
+        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, method=method, variant=variant)
 
 
 class InferentialStats(Benchmark):
