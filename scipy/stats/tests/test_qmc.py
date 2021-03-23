@@ -10,8 +10,7 @@ from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy,
-                              QMCEngine, check_random_state)
+                              update_discrepancy, QMCEngine)
 
 
 class TestUtils:
@@ -181,7 +180,7 @@ class TestUtils:
             disc2 = np.sum(np.sum(np.prod(1
                                           + 1/2*np.abs(xij - 0.5)
                                           + 1/2*np.abs(xkj - 0.5)
-                                          - 1/2*np.abs(xij - xkj), axis = 2),
+                                          - 1/2*np.abs(xij - xkj), axis=2),
                                   axis=0))
             return (13/12)**s - 2/n * disc1 + 1/n**2*disc2
 
@@ -191,7 +190,7 @@ class TestUtils:
             xkj = x[:, None, :]
             disc = np.sum(np.sum(np.prod(3/2
                                          - np.abs(xij - xkj)
-                                         + np.abs(xij - xkj)**2, axis = 2),
+                                         + np.abs(xij - xkj)**2, axis=2),
                                  axis=0))
             return -(4/3)**s + 1/n**2 * disc
 
@@ -208,7 +207,7 @@ class TestUtils:
                                           - 1/4*np.abs(xkj - 0.5)
                                           - 3/4*np.abs(xij - xkj)
                                           + 1/2*np.abs(xij - xkj)**2,
-                                          axis = 2), axis=0))
+                                          axis=2), axis=0))
             return (19/12)**s - 2/n * disc1 + 1/n**2*disc2
 
         def disc_star_l2(x):
@@ -463,7 +462,8 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
 
     def test_sample_stratified(self):
         d, n = 4, 20
