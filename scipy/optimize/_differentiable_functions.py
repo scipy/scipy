@@ -8,7 +8,7 @@ from scipy.sparse.linalg import LinearOperator
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class ScalarFunction(object):
+class ScalarFunction:
     """Scalar function and its derivatives.
 
     This class defines a scalar function F: R^n->R and methods for
@@ -262,7 +262,7 @@ class ScalarFunction(object):
         return self.f, self.g
 
 
-class VectorFunction(object):
+class VectorFunction:
     """Vector function and its derivatives.
 
     This class defines a vector function F: R^n->R^m and methods for
@@ -523,7 +523,7 @@ class VectorFunction(object):
         return self.H
 
 
-class LinearVectorFunction(object):
+class LinearVectorFunction:
     """Linear vector function and its derivatives.
 
     Defines a linear function F = A x, where x is N-D vector and

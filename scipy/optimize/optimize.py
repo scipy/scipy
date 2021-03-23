@@ -52,7 +52,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                                     'bounds.'}
 
 
-class MemoizeJac(object):
+class MemoizeJac:
     """ Decorator that caches the return values of a function returning `(fun, grad)`
         each time it is called. """
 
@@ -2757,7 +2757,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     direc : ndarray, optional
         Initial fitting step and parameter order set as an (N, N) array, where N
         is the number of fitting parameters in `x0`. Defaults to step size 1.0
-        fitting all parameters simultaneously (``np.ones((N, N))``). To
+        fitting all parameters simultaneously (``np.eye((N, N))``). To
         prevent initial consideration of values in a step or to change initial
         step size, set to 0 or desired step size in the Jth position in the Mth
         block, where J is the position in `x0` and M is the desired evaluation
@@ -3320,7 +3320,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin
 
 
-class _Brute_Wrapper(object):
+class _Brute_Wrapper:
     """
     Object to wrap user cost function for optimize.brute, allowing picklability
     """

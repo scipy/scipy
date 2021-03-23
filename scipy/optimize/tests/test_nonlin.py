@@ -104,7 +104,7 @@ F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
 #-------------------------------------------------------------------------------
 
 
-class TestNonlin(object):
+class TestNonlin:
     """
     Check the Broyden methods for a few test problems.
 
@@ -157,7 +157,7 @@ class TestNonlin(object):
                 self._check_root(f, meth)
 
 
-class TestSecant(object):
+class TestSecant:
     """Check that some Jacobian approximations satisfy the secant condition"""
 
     xs = [np.array([1,2,3,4,5], float),
@@ -233,7 +233,7 @@ class TestSecant(object):
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
 
 
-class TestLinear(object):
+class TestLinear:
     """Solve a linear equation;
     some methods find the exact solution in a finite number of steps"""
 
@@ -275,7 +275,7 @@ class TestLinear(object):
         self._check(nonlin.KrylovJacobian, 20, 2, True, inner_m=10)
 
 
-class TestJacobianDotSolve(object):
+class TestJacobianDotSolve:
     """Check that solve/dot methods in Jacobian approximations are consistent"""
 
     def _func(self, x):
@@ -370,7 +370,7 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
-class TestNonlinOldTests(object):
+class TestNonlinOldTests:
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
