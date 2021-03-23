@@ -397,6 +397,7 @@ Contingency table functions
    contingency.association
    contingency.odds_ratio
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------

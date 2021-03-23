@@ -1,4 +1,4 @@
-import pickle
+
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -7,7 +7,7 @@ from scipy.integrate import IntegrationWarning
 
 from scipy import stats
 from scipy.special import betainc
-from. common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_entropy_vect_scale,
@@ -32,18 +32,6 @@ not for numerically exact results.
 # to _distr_params
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
-
-# Last three of these fail all around. Need to be checked
-distcont_extra = [
-    ['betaprime', (100, 86)],
-    ['fatiguelife', (5,)],
-    ['invweibull', (0.58847112119264788,)],
-    # burr: sample mean test fails still for c<1
-    ['burr', (0.94839838075366045, 4.3820284068855795)],
-    # genextreme: sample mean test, sf-logsf test fail
-    ['genextreme', (3.3184017469423535,)],
-]
-
 
 distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
@@ -106,12 +94,12 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
-                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'cosine', 'dgamma',
+                   'dweibull', 'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'loguniform', 'maxwell', 'nakagami',
+                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+                   'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
@@ -223,6 +211,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
         if distname not in skip_fit_fix_test[method]:
             check_fit_args_fix(distfn, arg, rvs[:n_fit_samples], method)
 
+
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 def test_rvs_scalar(distname, arg):
     # rvs should return a scalar when given scalar arguments (gh-12428)
@@ -235,6 +224,7 @@ def test_rvs_scalar(distname, arg):
     assert np.isscalar(distfn.rvs(*arg))
     assert np.isscalar(distfn.rvs(*arg, size=()))
     assert np.isscalar(distfn.rvs(*arg, size=None))
+
 
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
@@ -358,6 +348,7 @@ def test_rvs_gh2069_regression():
     assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
                      [[1], [2]], (4,))
+
 
 def test_nomodify_gh9900_regression():
     # Regression test for gh-9990

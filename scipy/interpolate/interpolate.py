@@ -86,7 +86,7 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-class interp2d(object):
+class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
@@ -717,7 +717,7 @@ class interp1d(_Interpolator1D):
         return below_bounds, above_bounds
 
 
-class _PPolyBase(object):
+class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
@@ -1905,7 +1905,7 @@ class BPoly(_PPolyBase):
         return out
 
 
-class NdPPoly(object):
+class NdPPoly:
     """
     Piecewise tensor product polynomial
 
@@ -2338,7 +2338,7 @@ class NdPPoly(object):
         return c
 
 
-class RegularGridInterpolator(object):
+class RegularGridInterpolator:
     """
     Interpolation on a regular grid in arbitrary dimensions
 

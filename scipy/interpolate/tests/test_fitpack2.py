@@ -13,7 +13,7 @@ from scipy.interpolate.fitpack2 import (UnivariateSpline,
         RectSphereBivariateSpline)
 
 
-class TestUnivariateSpline(object):
+class TestUnivariateSpline:
     def test_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
@@ -325,7 +325,7 @@ class TestUnivariateSpline(object):
                         spl2([0.1, 0.5, 0.9, 0.99]))
 
 
-class TestLSQBivariateSpline(object):
+class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
@@ -484,7 +484,7 @@ class TestLSQBivariateSpline(object):
         assert_almost_equal(lut(x, y, grid=False), z)
 
 
-class TestSmoothBivariateSpline(object):
+class TestSmoothBivariateSpline:
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -606,7 +606,7 @@ class TestSmoothBivariateSpline(object):
         assert_allclose(spl1(0.1, 0.5), spl2(0.1, 0.5))
 
 
-class TestLSQSphereBivariateSpline(object):
+class TestLSQSphereBivariateSpline:
     def setup_method(self):
         # define the input data and coordinates
         ntheta, nphi = 70, 90
@@ -743,7 +743,7 @@ class TestLSQSphereBivariateSpline(object):
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
 
-class TestSmoothSphereBivariateSpline(object):
+class TestSmoothSphereBivariateSpline:
     def setup_method(self):
         theta = array([.25*pi, .25*pi, .25*pi, .5*pi, .5*pi, .5*pi, .75*pi,
                        .75*pi, .75*pi])
@@ -828,7 +828,7 @@ class TestSmoothSphereBivariateSpline(object):
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
 
-class TestRectBivariateSpline(object):
+class TestRectBivariateSpline:
     def test_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
@@ -945,7 +945,7 @@ class TestRectBivariateSpline(object):
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
 
-class TestRectSphereBivariateSpline(object):
+class TestRectSphereBivariateSpline:
     def test_defaults(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)

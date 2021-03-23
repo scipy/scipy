@@ -68,7 +68,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
-class UnivariateSpline(object):
+class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
@@ -822,7 +822,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 # ############### Bivariate spline ####################
 
-class _BivariateSplineBase(object):
+class _BivariateSplineBase:
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).

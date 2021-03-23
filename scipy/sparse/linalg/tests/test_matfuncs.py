@@ -68,7 +68,7 @@ def test_onenorm_matrix_power_nnm():
             assert_allclose(observed, expected)
 
 
-class TestExpM(object):
+class TestExpM:
     def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -551,7 +551,7 @@ class TestExpM(object):
         assert_allclose(E1, E2)
 
 
-class TestOperators(object):
+class TestOperators:
 
     def test_product_operator(self):
         random.seed(1234)

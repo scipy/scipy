@@ -18,7 +18,7 @@ parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
 
-class TestMMIOArray(object):
+class TestMMIOArray:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -132,6 +132,14 @@ class TestMMIOArray(object):
         with pytest.raises(ValueError, match='not of length 2'):
             scipy.io.mmread(io.BytesIO(text))
 
+    def test_gh13634_non_skew_symmetric_int(self):
+        self.check_exact(array([[1, 2], [-2, 99]], dtype=np.int32),
+                         (2, 2, 4, 'array', 'integer', 'general'))
+
+    def test_gh13634_non_skew_symmetric_float(self):
+        self.check(array([[1, 2], [-2, 99.]], dtype=np.float32),
+                   (2, 2, 4, 'array', 'real', 'general'))
+
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
@@ -218,12 +226,12 @@ class TestMMIOSparseCSR(TestMMIOArray):
                          (2, 2, 3, 'coordinate', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
-                         (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
+        self.check_exact(scipy.sparse.csr_matrix([[0, 2], [-2, 0]]),
+                         (2, 2, 1, 'coordinate', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
-        self.check(scipy.sparse.csr_matrix(array([[1, 2], [-2.0, 4]], 'f')),
-                   (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
+        self.check(scipy.sparse.csr_matrix(array([[0, 2], [-2.0, 0]], 'f')),
+                   (2, 2, 1, 'coordinate', 'real', 'skew-symmetric'))
 
     def test_simple_hermitian_complex(self):
         self.check(scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]),
@@ -251,6 +259,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
         assert_array_almost_equal(p, b.todense())
+
+    def test_gh13634_non_skew_symmetric_int(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
+        self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
+
+    def test_gh13634_non_skew_symmetric_float(self):
+        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99.]], dtype=np.float32)
+        self.check(a, (2, 2, 4, 'coordinate', 'real', 'general'))
 
 
 _32bit_integer_dense_example = '''\
@@ -319,7 +335,7 @@ _over64bit_integer_sparse_example = '''\
 '''
 
 
-class TestMMIOReadLargeIntegers(object):
+class TestMMIOReadLargeIntegers:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -517,7 +533,7 @@ _empty_lines_example = '''\
 '''
 
 
-class TestMMIOCoordinate(object):
+class TestMMIOCoordinate:
     def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')

@@ -1081,7 +1081,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         return result
 
 
-class ClusterNode(object):
+class ClusterNode:
     """
     A tree node class for representing a cluster.
 
