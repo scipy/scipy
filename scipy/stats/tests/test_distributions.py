@@ -4066,14 +4066,14 @@ class TestStudentizedRange:
 
     @pytest.mark.slow
     def test_moment_against_pdf(self):
-        k, nu = 3, 10
+        k, v = 3, 10
         moments = [1, 2, 3, 4]
 
         for moment in moments:
-            res_act = stats.studentized_range.moment(moment, k, nu)
+            res_act = stats.studentized_range.moment(moment, k, v)
 
             def wrapper(x):
-                return x ** moment * stats.studentized_range.pdf(x, k, nu)
+                return x ** moment * stats.studentized_range.pdf(x, k, v)
             res_exp = quad(wrapper, 0, np.inf)[0]
 
             # Atol is large B/C of integration innacuracy with quad.
