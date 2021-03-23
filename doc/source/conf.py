@@ -350,15 +350,7 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 # Autosummary
 # -----------------------------------------------------------------------------
 
-autosummary_generate = True  # glob.glob("*.rst")
-
-# -----------------------------------------------------------------------------
-# Autodoc
-# -----------------------------------------------------------------------------
-
-autodoc_default_options = {
-    'inherited-members': None,
-}
+autosummary_generate = True
 
 # -----------------------------------------------------------------------------
 # Coverage checker

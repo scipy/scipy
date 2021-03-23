@@ -1,2 +1,4 @@
 .. automodule:: scipy.stats._result_classes
-   :members:
+   :no-members:
+   :no-inherited-members:
+   :no-special-members:
