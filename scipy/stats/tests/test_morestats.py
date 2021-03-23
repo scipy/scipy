@@ -997,6 +997,7 @@ class TestMood(object):
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
+    @pytest.mark.xfail("R corrects for ties; SciPy should, too. See gh-13730.")
     @pytest.mark.parametrize("alternative, expected",
                              [('two-sided', (1.037127561496, 0.299676411857)),
                               ('less', (1.0371275614961, 0.8501617940715)),
