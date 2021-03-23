@@ -9160,7 +9160,9 @@ class studentized_range_gen(rv_continuous):
     def _munp(self, K, k, df):
         cython_symbol = '_genstudentized_range_moment'
         _a, _b = self._get_support()
-        K = np.atleast_1d(K)
+        # all three of these are used to create a numpy array so they must
+        # be the same shape.
+        K, k, df = np.atleast_1d(K, k, df)
 
         def _single_moment(K, k, df):
             arg = [K, k, df]
