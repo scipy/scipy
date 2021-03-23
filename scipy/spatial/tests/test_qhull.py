@@ -125,7 +125,7 @@ for name in DATASETS:
         _add_inc_data(name, chunksize)
 
 
-class Test_Qhull(object):
+class Test_Qhull:
     def test_swapping(self):
         # Check that Qhull state swapping works
 
@@ -169,7 +169,7 @@ class Test_Qhull(object):
         Voronoi(points)
 
 
-class TestUtilities(object):
+class TestUtilities:
     """
     Check that utility functions work.
 
@@ -383,7 +383,7 @@ class TestUtilities(object):
                                                unit_cube_tol=2*eps)
 
 
-class TestVertexNeighborVertices(object):
+class TestVertexNeighborVertices:
     def _check(self, tri):
         expected = [set() for j in range(tri.points.shape[0])]
         for s in tri.simplices:
@@ -416,7 +416,7 @@ class TestVertexNeighborVertices(object):
         self._check(tri)
 
 
-class TestDelaunay(object):
+class TestDelaunay:
     """
     Check that triangulation works.
 
@@ -989,7 +989,7 @@ class TestVoronoi:
             # XXX: compare ridge_points --- not clear exactly how to do this
 
 
-class Test_HalfspaceIntersection(object):
+class Test_HalfspaceIntersection:
     def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):
         """Check that every line in arr1 is only once in arr2"""
         assert_equal(arr1.shape, arr2.shape)

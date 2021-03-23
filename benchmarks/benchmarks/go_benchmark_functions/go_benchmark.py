@@ -8,7 +8,7 @@ with safe_import():
     from scipy.special import factorial
 
 
-class Benchmark(object):
+class Benchmark:
 
     """
     Defines a global optimization benchmark problem.

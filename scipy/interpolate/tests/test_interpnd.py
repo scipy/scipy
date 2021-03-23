@@ -17,7 +17,7 @@ def data_file(basename):
                         'data', basename)
 
 
-class TestLinearNDInterpolation(object):
+class TestLinearNDInterpolation:
     def test_smoketest(self):
         # Test at single points
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
@@ -167,7 +167,7 @@ class TestLinearNDInterpolation(object):
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
 
-class TestEstimateGradients2DGlobal(object):
+class TestEstimateGradients2DGlobal:
     def test_smoketest(self):
         x = np.array([(0, 0), (0, 2),
                       (1, 0), (1, 2), (0.25, 0.75), (0.6, 0.8)], dtype=float)
@@ -204,7 +204,7 @@ class TestEstimateGradients2DGlobal(object):
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
-class TestCloughTocher2DInterpolator(object):
+class TestCloughTocher2DInterpolator:
 
     def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False, rescale=False, **kw):
         np.random.seed(1234)

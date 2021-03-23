@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import List
 
-class ReportBase(object):
+class ReportBase:
     COLUMN_NAMES: List[str] = NotImplemented
     COLUMN_WIDTHS: List[int] = NotImplemented
     ITERATION_FORMATS: List[str] = NotImplemented
