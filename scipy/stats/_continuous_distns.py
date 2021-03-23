@@ -52,14 +52,23 @@ def _remove_optimizer_parameters(kwds):
 
 
 def _call_super_mom(fun):
-    # if fit method is overridden only for MLE and doens't specify what to do
-    # if method == 'mm', this decorator calls generic implementation
-    def wrapper(self, *args, **kwds):
+    # If fit method is overridden only for MLE and doesn't specify what to do
+    # if method == 'mm' or with censored data, this decorator calls the generic
+    # implementation.
+
+    def wrapper(self, data, *args, **kwds):
         method = kwds.get('method', 'mle').lower()
-        if method == 'mm':
-            return super(type(self), self).fit(*args, **kwds)
+        censored = isinstance(data, CensoredData)
+        if method == 'mm' or (censored and data.num_censored() > 0):
+            return super(type(self), self).fit(data, *args, **kwds)
         else:
-            return fun(self, *args, **kwds)
+            if censored:
+                data = data._lower
+            return fun(self, data, *args, **kwds)
+
+    if hasattr(fun, '__doc__'):
+        wrapper.__doc__ = fun.__doc__
+
     return wrapper
 
 
@@ -344,9 +353,6 @@ class norm_gen(rv_continuous):
         estimation of the normal distribution parameters, so the
         `optimizer` and `method` arguments are ignored.\n\n""")
     def fit(self, data, **kwds):
-        if isinstance(data, CensoredData):
-            return super(norm_gen, self).fit(data, **kwds)
-
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
@@ -657,7 +663,7 @@ class beta_gen(rv_continuous):
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
-        if isinstance(data, CensoredData) or floc is None or fscale is None:
+        if floc is None or fscale is None:
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
 
@@ -1181,6 +1187,8 @@ class cauchy_gen(rv_continuous):
 
     def _fitstart(self, data, args=None):
         # Initialize ML guesses using quartiles instead of moments.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         p25, p50, p75 = np.percentile(data, [25, 50, 75])
         return p50, (p75 - p25)/2
 
@@ -1549,9 +1557,6 @@ class expon_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
-
-        if isinstance(data, CensoredData):
-            return super(expon_gen, self).fit(data, *args, **kwds)
 
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
@@ -2542,6 +2547,8 @@ class genextreme_gen(rv_continuous):
         return m, v, sk, ku
 
     def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         # This is better than the default shape of (1,).
         g = _skew(data)
         if g < 0:
@@ -3074,9 +3081,6 @@ class gumbel_r_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
-
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -3171,8 +3175,6 @@ class gumbel_l_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(gumbel_l_gen, self).fit(data, *args, **kwds)
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
@@ -4183,9 +4185,6 @@ class laplace_gen(rv_continuous):
         estimation of the Laplace distribution parameters, so the keyword
         arguments `loc`, `scale`, and `optimizer` are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(laplace_gen, self).fit(data, *args, **kwds)
-
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -4982,9 +4981,6 @@ class logistic_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(logistic_gen, self).fit(data, *args, **kwds)
-
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -5213,9 +5209,8 @@ class lognorm_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
 
-        if isinstance(data, CensoredData) or floc is None:
-            # loc is not fixed or we're fitting censored data.
-            # Use the default fit method.
+        if floc is None:
+            # loc is not fixed. Use the default fit method.
             return super(lognorm_gen, self).fit(data, *args, **kwds)
 
         f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
@@ -5901,6 +5896,8 @@ class nakagami_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _fitstart(self, data, args=None):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         if args is None:
             args = (1.0,) * self.numargs
         # Analytical justified estimates
@@ -6321,9 +6318,6 @@ class pareto_gen(rv_continuous):
 
     @_call_super_mom
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(pareto_gen, self).fit(data, *args, **kwds)
-
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
@@ -6845,9 +6839,6 @@ class rayleigh_gen(rv_continuous):
         for the root finder; the `scale` parameter and any other parameters
         for the optimizer are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        if isinstance(data, CensoredData):
-            return super(rayleigh_gen, set).fit(data, *args, **kwds)
-
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
@@ -7210,6 +7201,8 @@ class skewcauchy_gen(rv_continuous):
         # Use 0 as the initial guess of the skewness shape parameter.
         # For the location and scale, estimate using the median and
         # quartiles.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         p25, p50, p75 = np.percentile(data, [25, 50, 75])
         return 0.0, p50, (p75 - p25)/2
 
@@ -8264,9 +8257,6 @@ class uniform_gen(rv_continuous):
         if len(args) > 0:
             raise TypeError("Too many arguments.")
 
-        if isinstance(data, CensoredData):
-            return super(uniform_gen, self).fit(data, *args, **kwds)
-
         floc = kwds.pop('floc', None)
         fscale = kwds.pop('fscale', None)
 
@@ -8512,6 +8502,8 @@ class wrapcauchy_gen(rv_continuous):
         # Use 0.5 as the initial guess of the shape parameter.
         # For the location and scale, use the minimum and
         # peak-to-peak/(2*pi), respectively.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
 

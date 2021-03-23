@@ -35,7 +35,7 @@ from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
 
 import numpy as np
 
-from ._constants import _XMAX
+from ._constants import _LOGXMAX
 from ._censored_data import CensoredData
 
 
@@ -426,6 +426,27 @@ def _fit_determine_optimizer(optimizer):
         except AttributeError as e:
             raise ValueError("%s is not a valid optimizer" % optimizer) from e
     return optimizer
+
+
+def _sum_finite(x):
+    """
+    For a 1D array x, return a tuple containing the sum of the
+    finite values of x and the number of nonfinite values.
+
+    This is a utility function used when evaluating the negative
+    loglikelihood for a distribution and an array of samples.
+
+    Examples
+    --------
+    >>> tot, nbad = _sum_finite(np.array([-2, -np.inf, 5, 1]))
+    >>> tot
+    4.0
+    >>> nbad
+    1
+    """
+    finite_x = np.isfinite(x)
+    bad_count = finite_x.size - np.count_nonzero(finite_x)
+    return np.sum(x[finite_x]), bad_count
 
 
 # Frozen RV class
@@ -2241,42 +2262,39 @@ class rv_continuous(rv_generic):
         return self._nnlf(x, *args) + n_log_scale
 
     def _nnlf_and_penalty(self, x, args):
-        cond0 = ~self._support_mask(x, *args)
-        n_bad = np.count_nonzero(cond0, axis=0)
-        if n_bad > 0:
-            x = argsreduce(~cond0, x)[0]
-        logpdf = self._logpdf(x, *args)
-        finite_logpdf = np.isfinite(logpdf)
-        n_bad += np.sum(~finite_logpdf, axis=0)
-        if n_bad > 0:
-            penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
-        return -np.sum(logpdf, axis=0)
+        """
+        Compute the penalized negative log-likelihood for the
+        "standardized" data (i.e. already shifted by loc and
+        scaled by scale) for the shape parameters in `args`.
 
-    def _censored_nnlf_and_penalty(self, x, args):
-        # Modified version of _nnlf_and_penalty.
+        `x` can be a 1D numpy array or a CensoredData instance.
+        """
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0)
-        if n_bad > 0:
-            x = CensoredData(x._lower[~cond0], x._upper[~cond0])
-
-        # logpdf of the noncensored data.
-        logpdf_nc = self._logpdf(x._lower[x._not_censored], *args)
-        # logcdf of the left-censored data.
-        logcdf_lc = self._logcdf(x._upper[x._left_censored], *args)
-        # logsf of the right-censored data.
-        logsf_rc = self._logsf(x._lower[x._right_censored], *args)
-        # Probability of the interval-censored data.
-        ic = x._interval_censored
-        prob_ic = self._delta_cdf(x._lower[ic], x._upper[ic], *args)
-        logprob_ic = np.log(prob_ic)
-        s = (np.sum(logpdf_nc) + np.sum(logcdf_lc) + np.sum(logsf_rc)
-             + np.sum(logprob_ic))
-        if n_bad > 0:
-            penalty = n_bad * log(_XMAX) * 100
+        if isinstance(x, CensoredData):
+            if n_bad > 0:
+                x = CensoredData(x._lower[~cond0], x._upper[~cond0])
+            ic = x._interval_censored
+            terms = [
+                # logpdf of the noncensored data.
+                self._logpdf(x._lower[x._not_censored], *args),
+                # logcdf of the left-censored data.
+                self._logcdf(x._upper[x._left_censored], *args),
+                # logsf of the right-censored data.
+                self._logsf(x._lower[x._right_censored], *args),
+                # log of probability of the interval censored data.
+                np.log(self._delta_cdf(x._lower[ic], x._upper[ic], *args)),
+            ]
         else:
-            penalty = 0.0
-        return -s + penalty
+            if n_bad > 0:
+                x = argsreduce(~cond0, x)[0]
+            terms = [self._logpdf(x, *args)]
+
+        totals, bad_counts = zip(*[_sum_finite(term) for term in terms])
+        total = sum(totals)
+        n_bad += sum(bad_counts)
+
+        return -total + n_bad * _LOGXMAX * 100
 
     def _penalized_nnlf(self, theta, x):
         ''' Return penalized negative loglikelihood function,
@@ -2288,12 +2306,12 @@ class rv_continuous(rv_generic):
             return inf
         if isinstance(x, CensoredData):
             x = CensoredData((x._lower - loc)/scale, (x._upper - loc)/scale)
-            n = np.count_nonzero(x._not_censored)
-            return self._censored_nnlf_and_penalty(x, args) + n * log(scale)
+            n_log_scale = (len(x) - x.num_censored()) * log(scale)
         else:
-            x = asarray((x-loc) / scale)
+            x = (x - loc) / scale
             n_log_scale = len(x) * log(scale)
-            return self._nnlf_and_penalty(x, args) + n_log_scale
+
+        return self._nnlf_and_penalty(x, args) + n_log_scale
 
     # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
@@ -2521,8 +2539,15 @@ class rv_continuous(rv_generic):
         method = kwds.get('method', "mle").lower()
 
         censored = isinstance(data, CensoredData)
-        if censored and method != 'mle':
-            raise ValueError('For censored data, the method must be "MLE".')
+        if censored:
+            if method != 'mle':
+                raise ValueError('For censored data, the method must'
+                                 ' be "MLE".')
+            if len(data) == np.count_nonzero(data._not_censored):
+                # There are no censored values in data, so replace the
+                # CensoredData instance with a regular array.
+                data = data._lower
+                censored = False
 
         Narg = len(args)
         if Narg > self.numargs:
@@ -2823,7 +2848,8 @@ class rv_continuous(rv_generic):
         that is numerically more accurate than `1 - dist.cdf(x, ...)`.
         """
         cdf1 = self.cdf(x1, *args, loc=loc, scale=scale)
-        # Possible optimizations (needs investigation-these might not be better):
+        # Possible optimizations (needs investigation-these might not be
+        # better):
         # * Use _lazywhere instead of np.where
         # * Instead of cdf1 > 0.5, compare x1 to the median.
         result = np.where(cdf1 > 0.5,
@@ -2833,6 +2859,7 @@ class rv_continuous(rv_generic):
         if result.ndim == 0:
             result = result[()]
         return result
+
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):

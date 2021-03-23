@@ -101,6 +101,13 @@ def test_cont_fit(distname, arg, method):
         with np.errstate(all='ignore'):
             rvs = distfn.rvs(size=fit_size, *arg)
             est = distfn.fit(rvs, method=method)  # start with default values
+            if method.lower() == 'mle':
+                data = stats.CensoredData(rvs, rvs)
+                est2 = distfn.fit(data)
+                if not np.allclose(est2, est, atol=1e-9):
+                    raise AssertionError(
+                        'Different results when fitting trivially censored'
+                        f' data: {distfn.name}: est={est} est2={est2}')
 
         diff = est - truearg
 

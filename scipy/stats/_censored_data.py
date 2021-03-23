@@ -129,6 +129,9 @@ class CensoredData:
         """
         return len(self._lower)
 
+    def num_censored(self):
+        return len(self._lower) - np.count_nonzero(self._not_censored)
+
     @classmethod
     def right_censored(cls, x, censored):
         """

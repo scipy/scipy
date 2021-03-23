@@ -625,6 +625,13 @@ class TestCensoredData:
         with pytest.raises(ValueError, match='must have the same length'):
             func([1, 2, 3], [0, 0, 1, 1])
 
+    def test_count_censored(self):
+        x = [1, 2, 3]
+        data1 = CensoredData(x, x)
+        assert data1.num_censored() == 0
+        data2 = CensoredData([0, 2.5, -np.inf], [1, 2.5, 10])
+        assert data2.num_censored() == 2
+
 
 def test_support_mask():
     # Use the uniform distribution to test the _support_mask
