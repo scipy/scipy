@@ -50,6 +50,7 @@ class Kendalltau(Benchmark):
     ]
 
     def setup(self, nan_policy, method, variant):
+        np.random.seed(12345678)
         a = np.arange(200)
         np.random.shuffle(a)
         b = np.arange(200)
