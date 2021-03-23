@@ -253,6 +253,7 @@ invdistcont = [
     ['recipinvgauss', (-1, )],
     ['semicircular', ()],
     ['skewnorm', (np.inf, )],
+    ['studentized_range', (-1, 1)],
     ['t', (-1, )],
     ['trapezoid', (0, 2)],
     ['triang', (2, )],
