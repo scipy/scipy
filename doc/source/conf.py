@@ -193,6 +193,10 @@ html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
+html_css_files = [
+    "scipy.css",
+]
+
 # html_additional_pages = {
 #     'index': 'indexcontent.html',
 # }
