@@ -4342,8 +4342,8 @@ class TestStudentizedRange:
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
-    with open(os.path.join(path_prefix, relative_path), "r"):
-        pregenerated_data = json.load()
+    with open(os.path.join(path_prefix, relative_path), "r") as file:
+        pregenerated_data = json.load(file)
 
     @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
     def test_cdf_against_mp(self, case_result):
