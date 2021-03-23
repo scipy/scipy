@@ -1,4 +1,3 @@
-
 .. _continuous-studentized_range:
 
 Studentized Range Distribution
@@ -9,11 +8,12 @@ This distribution has two shape parameters :math:`\nu>0` and :math:`k>0` and sup
    :nowrap:
 
     \begin{eqnarray*}
-        f(q;k,\nu) = \frac{\nu^{\nu/2}}{\Gamma(\nu/2)\,2^{\nu/2-1}}\,  \int_0^\infty\int_{-\infty}^\infty  s^{\nu-1}\,e^{-\nu s^{2}/2}  \,sk(k-1) \varphi(z) \varphi(sq+z) [\Phi(sq+z)-\Phi(z)]^{k-2} \,\mathrm{d}z \, \mathrm{d}s\\
+        f(q;k,\nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)\,2^{\nu/2-1}}\,  \int_0^\infty\int_{-\infty}^\infty  s^{\nu-1}\,e^{-\nu s^{2}/2}  \,s \varphi(z) \varphi(sq+z) [\Phi(sq+z)-\Phi(z)]^{k-2} \,\mathrm{d}z \, \mathrm{d}s\\
 
-        F(q;k,\nu) = \frac{\nu^{\nu/2}}{\Gamma(\nu/2)\,2^{\nu/2-1}}\, \int_0^\infty\int_{-\infty}^\infty s^{\nu-1}\,e^{-\nu s^{2}/2}  k\varphi(z) [\Phi(sq+z)-\Phi(z)]^{k-1} \mathrm{d}z  \, \mathrm{d}s\\
+        F(q;k,\nu) = \frac{k\nu^{\nu/2}}{\Gamma(\nu/2)\,2^{\nu/2-1}}\, \int_0^\infty\int_{-\infty}^\infty s^{\nu-1}\,e^{-\nu s^{2}/2}  \varphi(z) [\Phi(sq+z)-\Phi(z)]^{k-1} \mathrm{d}z  \, \mathrm{d}s\\
 
     \end{eqnarray*}
+
 Note: :math:`\varphi(z)` and :math:`\Phi(z)` represent the normal PDF and normal CDF, respectively.
 
 When :math:`\nu` is sufficiently large, the asymptopic approximation of :math:`F(q;k,\nu)` is used:
