@@ -1502,6 +1502,20 @@ def chebyt(n, monic=False):
     --------
     chebyu : Chebyshev polynomial of the second kind.
 
+    Examples
+    --------
+    Chebyshev polynomials t_2, t_3, t_4:
+
+    >>> from scipy.special import chebyt
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-2., 2., 0.1)
+    >>> plt.plot(x, chebyt(2)(x), 'b', label='t_2')
+    >>> plt.plot(x, chebyt(3)(x), 'r', label='t_3')
+    >>> plt.plot(x, chebyt(4)(x), 'g', label='t_4')
+    >>> plt.ylim(-5., 5.)
+    >>> plt.legend()
+    >>> plt.show()
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1606,6 +1620,20 @@ def chebyu(n, monic=False):
     --------
     chebyt : Chebyshev polynomial of the first kind.
 
+    Examples
+    --------
+    Chebyshev polynomials u_0, u_1, u_2:
+
+    >>> from scipy.special import chebyu
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-2., 2., 0.1)
+    >>> plt.plot(x, chebyu(0)(x), 'b', label='u_0')
+    >>> plt.plot(x, chebyu(1)(x), 'r', label='u_1')
+    >>> plt.plot(x, chebyu(2)(x), 'g', label='u_2')
+    >>> plt.ylim(-5., 5.)
+    >>> plt.legend()
+    >>> plt.show()
     """
     base = jacobi(n, 0.5, 0.5, monic=monic)
     if monic:
