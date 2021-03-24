@@ -1564,7 +1564,7 @@ class TestBoxcox(object):
         # to only about five significant digits.
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
-    @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
     def test_bounded_optimizer_within_bounds(self, bounds):
         # Define custom optimizer with bounds.
         def optimizer(fun, args):
@@ -1581,17 +1581,18 @@ class TestBoxcox(object):
         # Get unbounded solution.
         _, lmbda = stats.boxcox(_boxcox_data, lmbda=None)
 
-        # Set bounds around solution.
-        bounds = (lmbda - 1, lmbda + 1)
+        # Set tolerance and bounds around solution.
+        bounds = (lmbda + 0.1, lmbda + 1)
+        options = {'xatol': 1e-12}
 
         def optimizer(fun, args):
             return optimize.minimize_scalar(fun, bounds=bounds, args=args,
-                                            method="bounded")
+                                            method="bounded", options=options)
 
-        # Check bounded solution.
+        # Check bounded solution. Lower bound should be active.
         _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
         assert lmbda_bounded != lmbda
-        assert bounds[0] < lmbda_bounded < bounds[1]
+        assert_allclose(lmbda_bounded, bounds[0])
 
     @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
     def test_bad_optimizer_type_raises_error(self, optimizer):
@@ -1632,16 +1633,18 @@ class TestBoxcoxNormmax(object):
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
-    @pytest.mark.parametrize("method", ["mle", "pearsonr"])
-    @pytest.mark.parametrize("bounds", [(-1, 1), (0, 1), (-2, -1)])
+    @pytest.mark.parametrize("method", ["mle", "pearsonr", "all"])
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
     def test_bounded_optimizer_within_bounds(self, method, bounds):
 
         def optimizer(fun, args):
             return optimize.minimize_scalar(fun, bounds=bounds, args=args,
                                             method="bounded")
 
-        maxlog = stats.boxcox_normmax(self.x, method=method, optimizer=optimizer)
-        assert bounds[0] < maxlog < bounds[1]
+        maxlog = stats.boxcox_normmax(self.x, method=method,
+                                      optimizer=optimizer)
+        assert np.all(bounds[0] < maxlog)
+        assert np.all(maxlog < bounds[1])
 
 
 class TestBoxcoxNormplot(object):
