@@ -350,6 +350,8 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
               parameters as `table` and whose mean is ``table[0, 0]``.
         pvalue : float
             The p-value associated with the computed odds ratio.
+            The null hypothesis of the statistical test is that the
+            odds ratio is 1.
 
             * If `kind` is ``'sample'``, the p-value is based on the
               normal approximation to the distribution of the log of
