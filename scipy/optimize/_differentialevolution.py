@@ -371,9 +371,11 @@ class DifferentialEvolutionSolver(object):
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword. Using ``init='sobol'`` the population
-        would be the closest upper rounding of a power of 2.).
+        ``n = popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. Using
+        ``init='sobol'`` the population
+        would be the closest upper rounding of a power of 2 so that ``n = 2
+        ** m``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -437,7 +439,8 @@ class DifferentialEvolutionSolver(object):
 
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
-        which is an upper rounding of a power of 2. 'halton' has no
+        which is an upper rounding of a power of 2 so that ``n = 2
+        ** m``. 'halton' has no
         requirements but is a bit less efficient.
 
         'random' initializes the population randomly - this has the drawback
@@ -594,22 +597,23 @@ class DifferentialEvolutionSolver(object):
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
-
-        # check first str otherwise will fail to compare str with array
-        if isinstance(init, str) and (init == 'sobol'):
-            # must be Ns=2**m for Sobol'
-            n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
-            self.num_population_members = n_s
-
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
+        # check first str otherwise will fail to compare str with array
         if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
-            elif init in ['sobol', 'halton']:
-                self.init_population_qmc(qmc_engine=init)
+            elif init == 'sobol':
+                # must be Ns=2**m for Sobol'
+                n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
+                self.num_population_members = n_s
+                self.population_shape = (self.num_population_members,
+                                         self.parameter_count)
+                self.init_population_qmc(qmc_engine='sobol')
+            elif init == 'halton':
+                self.init_population_qmc(qmc_engine='halton')
             elif init == 'random':
                 self.init_population_random()
             else:

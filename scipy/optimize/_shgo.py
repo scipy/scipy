@@ -93,7 +93,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
         ``scipy.optimize.minimize`` Some important options could be:
 
             * method : str
-                The minimization method (Default is ``SLSQP``).
+                The minimization method, the default is ``SLSQP``.
             * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).
@@ -304,7 +304,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     >>> bounds = [(-512, 512), (-512, 512)]
 
     `shgo` has built-in low discrepancy sampling sequences. First, we will
-    input 64 initial sampling points of the Sobol' sequence:
+    input 64 initial sampling points of the *Sobol'* sequence:
 
     >>> result = shgo(eggholder, bounds, n=64, sampling_method='sobol')
     >>> result.x, result.fun
@@ -340,7 +340,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     If we want to find a larger number of local minima, we can increase the
     number of sampling points or the number of iterations. We'll increase the
     number of sampling points to 64 and the number of iterations from the
-    default of 1 to 5. Using ``simplicial`` this would have gives us
+    default of 1 to 3. Using ``simplicial`` this would have gives us
     64 x 3 = 192 initial sampling points.
 
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')
@@ -350,7 +350,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     Note the difference between, e.g., ``n=192, iters=1`` and ``n=64,
     iters=3``.
     In the first case the promising points contained in the minimiser pool
-    is processed only once. In the latter case it is processed every 64
+    are processed only once. In the latter case it is processed every 64
     sampling points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the

@@ -698,7 +698,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         Number of sampling points used in the construction of the sampling
         method. Note that this argument will automatically be converted to
         the next higher power of 2 since `scipy.stats.qmc.Sobol` is used to
-        select sample point. Default is 32. Must be positive. In most cases,
+        select sample points. Default is 32. Must be positive. In most cases,
         32 points is enough to reach good precision. More points comes at
         performance cost.
 
