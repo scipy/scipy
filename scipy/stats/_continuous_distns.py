@@ -5876,8 +5876,7 @@ class nakagami_gen(rv_continuous):
         if args is None:
             args = (1.0,) * self.numargs
         # Analytical justified estimates
-        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/
-        #      continuous_nakagami.html
+        # see: https://docs.scipy.org/doc/scipy/reference/tutorial/stats/continuous_nakagami.html
         loc = np.min(data)
         scale = np.sqrt(np.sum((data - loc)**2) / len(data))
         return args + (loc, scale)
