@@ -9633,9 +9633,9 @@ add_newdoc("wright_bessel",
 
     Now, let us verify the relation
 
-    .. math:: \Phi(a, b-1; x) = a*x*Phi(a, b+a; x) + (b-1)*Phi(a, b; x)
+    .. math:: \Phi(a, b-1; x) = a x \Phi(a, b+a; x) + (b-1) \Phi(a, b; x)
 
-    >>> a*x*wright_bessel(a, b+a, x) + (b-1)*wright_bessel(a, b, x)
+    >>> a * x * wright_bessel(a, b+a, x) + (b-1) * wright_bessel(a, b, x)
     4.5314465939443025
 
     References
