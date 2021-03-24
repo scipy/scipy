@@ -4324,7 +4324,7 @@ class TestStudentizedRange:
     # For alpha=.05 and .01, and for each value of v=[1, 3, 10, 20],
     # a Q was picked from each table for k=[2, 8, 14, 20].
     ks = [2, 8, 14, 20]
-    vs = [1, 3, 10, 20, 120]
+    vs = [1, 3, 10, 20, 120, np.inf]
     # these arrays are written with `k` as column, and `v` as rows, but they
     # must be reshaped with a new order to be in the proper order to compare
     # with the product.
@@ -4332,19 +4332,22 @@ class TestStudentizedRange:
                           4.501, 8.853, 10.35, 11.24,
                           3.151, 5.305, 6.028, 6.467,
                           2.950, 4.768, 5.357, 5.714,
-                          2.800, 4.363, 4.842, 5.126]).reshape((4, 5),
+                          2.800, 4.363, 4.842, 5.126,
+                          2.772, 4.286, 4.743, 5.012]).reshape((4, 6),
                                                                order="F")
     alpha01 = np.asarray([90.03, 227.2, 271.8, 298.0,
                           8.261, 15.64, 18.22, 19.77,
                           4.482, 6.875, 7.712, 8.226,
                           4.024, 5.839, 6.450, 6.823,
-                          3.702, 5.118, 5.562, 5.827]).reshape((4, 5),
+                          3.702, 5.118, 5.562, 5.827,
+                          3.643, 4.987, 5.400, 5.645]).reshape((4, 6),
                                                                order="F")
     alpha001 = np.asarray([900.3, 2272, 2718, 2980,
                           18.28, 34.12, 39.69, 43.05,
                           6.487, 9.352, 10.39, 11.03,
                           5.444, 7.313, 7.966, 8.370,
-                          4.772, 6.039, 6.448, 6.695]).reshape((4, 5),
+                          4.772, 6.039, 6.448, 6.695,
+                          4.654, 5.823, 6.191, 6.411]).reshape((4, 6),
                                                                order="F")
     alphas = np.ravel(np.concatenate((alpha05, alpha01, alpha001)))
     ps = [.95, .99, .999]
