@@ -1036,7 +1036,8 @@ class Sobol(QMCEngine):
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT), dtype=int))
+        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT),
+                                  dtype=int))
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
