@@ -9234,7 +9234,7 @@ class studentized_range_gen(rv_continuous):
                 llc = LowLevelCallable.from_cython(
                     _stats, cython_symbol, usr_data)
 
-                ranges = [(_a, _b)]
+                ranges = [(-np.inf, _b)]
                 opts = dict(epsabs=1e-11, epsrel=1e-12)
 
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
