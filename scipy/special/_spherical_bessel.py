@@ -61,6 +61,7 @@ def spherical_jn(n, z, derivative=False):
     >>> plt.plot(x, spherical_jn(2, x), 'g', label='j_2')
     >>> plt.legend()
     >>> plt.show()
+
     """
     if derivative:
         return _spherical_jn_d(n, z)
@@ -115,7 +116,6 @@ def spherical_yn(n, z, derivative=False):
 
     Examples
     --------
-
     The first spherical Bessel functions of the second kind:
 
     >>> from scipy.special import spherical_yn
@@ -128,6 +128,7 @@ def spherical_yn(n, z, derivative=False):
     >>> plt.ylim(-1.5, 0.5)
     >>> plt.legend()
     >>> plt.show()
+
     """
     if derivative:
         return _spherical_yn_d(n, z)
@@ -180,7 +181,6 @@ def spherical_in(n, z, derivative=False):
 
     Examples
     --------
-
     The first modified spherical Bessel functions of the first kind:
 
     >>> from scipy.special import spherical_in
@@ -193,6 +193,7 @@ def spherical_in(n, z, derivative=False):
     >>> plt.ylim(-0.5, 3.5)
     >>> plt.legend()
     >>> plt.show()
+
     """
     if derivative:
         return _spherical_in_d(n, z)
@@ -245,7 +246,6 @@ def spherical_kn(n, z, derivative=False):
 
     Examples
     --------
-
     The first modified spherical Bessel functions of the second kind:
 
     >>> from scipy.special import spherical_kn
@@ -258,6 +258,7 @@ def spherical_kn(n, z, derivative=False):
     >>> plt.ylim(-0.5, 3.5)
     >>> plt.legend()
     >>> plt.show()
+    
     """
     if derivative:
         return _spherical_kn_d(n, z)
