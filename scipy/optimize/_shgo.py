@@ -340,7 +340,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     If we want to find a larger number of local minima, we can increase the
     number of sampling points or the number of iterations. We'll increase the
     number of sampling points to 64 and the number of iterations from the
-    default of 1 to 3. Using ``simplicial`` this would have gives us
+    default of 1 to 3. Using ``simplicial`` this would have given us
     64 x 3 = 192 initial sampling points.
 
     >>> result_2 = shgo(eggholder, bounds, n=64, iters=3, sampling_method='sobol')

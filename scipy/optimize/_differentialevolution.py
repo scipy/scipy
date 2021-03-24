@@ -74,8 +74,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -135,8 +137,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         maximize coverage of the available parameter space.
 
         'sobol' and 'halton' are superior alternatives and maximize even more
-        the parameter space. 'sobol' will always use an initial population
-        which is a power of 2. 'halton' has no requirements but is a bit less
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
         efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
@@ -371,11 +374,10 @@ class DifferentialEvolutionSolver(object):
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``n = popsize * len(x)`` individuals. This keyword is overridden if an
-        initial population is supplied via the `init` keyword. Using
-        ``init='sobol'`` the population
-        would be the closest upper rounding of a power of 2 so that ``n = 2
-        ** m``.
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -439,9 +441,9 @@ class DifferentialEvolutionSolver(object):
 
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
-        which is an upper rounding of a power of 2 so that ``n = 2
-        ** m``. 'halton' has no
-        requirements but is a bit less efficient.
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -606,7 +608,7 @@ class DifferentialEvolutionSolver(object):
             if init == 'latinhypercube':
                 self.init_population_lhs()
             elif init == 'sobol':
-                # must be Ns=2**m for Sobol'
+                # must be Ns = 2**m for Sobol'
                 n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
                 self.num_population_members = n_s
                 self.population_shape = (self.num_population_members,
