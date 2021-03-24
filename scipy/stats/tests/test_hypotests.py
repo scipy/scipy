@@ -622,7 +622,6 @@ class TestCvm_2samp:
         assert_equal(r1.statistic, r2.statistic)
         assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
 
-    #@pytest.mark.slow
     def test_method_auto(self):
         x = np.arange(10)
         y = [0.5, 4.7, 13.1]
