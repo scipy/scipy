@@ -1575,8 +1575,8 @@ class TestBoxcox(object):
         assert bounds[0] < lmbda < bounds[1]
 
     def test_bounded_optimizer_against_unbounded_optimizer(self):
-        # Test whether setting bounds on optimizer excludes solution from unbounded
-        # optimizer.
+        # Test whether setting bounds on optimizer excludes solution from
+        # unbounded optimizer.
 
         # Get unbounded solution.
         _, lmbda = stats.boxcox(_boxcox_data, lmbda=None)
@@ -1590,7 +1590,8 @@ class TestBoxcox(object):
                                             method="bounded", options=options)
 
         # Check bounded solution. Lower bound should be active.
-        _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+        _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None,
+                                        optimizer=optimizer)
         assert lmbda_bounded != lmbda
         assert_allclose(lmbda_bounded, bounds[0])
 
@@ -1608,8 +1609,8 @@ class TestBoxcox(object):
         def optimizer(fun, args):
             return 1
 
-        with pytest.raises(ValueError,
-                           match="`optimizer` must return an `OptimizeResult` object"):
+        message = "`optimizer` must return an `OptimizeResult` object"
+        with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
 

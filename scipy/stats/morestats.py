@@ -1104,9 +1104,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         Input array.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
-         `optimize.brent` solver.  Note that this is in most cases not critical; the
-         final result is allowed to be outside this bracket. This will be ignored if
-         `optimizer` is not None.
+         `optimize.brent` solver.  Note that this is in most cases not
+         critical; the final result is allowed to be outside this bracket.
+         This will be ignored if `optimizer` is not None.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:
@@ -1160,7 +1160,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> import matplotlib.pyplot as plt
     >>> np.random.seed(1234)  # make this example reproducible
 
-    We can generate some data and determine the optimal ``lmbda`` in various ways:
+    We can generate some data and determine the optimal ``lmbda`` in various
+    ways:
 
     >>> x = stats.loggamma.rvs(5, size=30) + 5
     >>> y, lmax_mle = stats.boxcox(x)
@@ -1215,10 +1216,10 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         if brack is not None:
             raise ValueError("`brack` must be None if `optimizer` is given")
 
-        # `optimizer` is expected to return a `OptimizeResult` object, we here get the
-        # solution to the optimization problem.
+        # `optimizer` is expected to return a `OptimizeResult` object, we here
+        # get the solution to the optimization problem.
         def _optimizer(func, args):
-            return optimizer(func, args=args).x # [()]
+            return optimizer(func, args=args).x  # [()]
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
@@ -1260,7 +1261,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         return optimfunc(x)
     except AttributeError as e:
         if "has no attribute 'x'" in str(e):
-            raise ValueError("`optimizer` must return an `OptimizeResult` object")
+            raise ValueError("`optimizer` must return an `OptimizeResult` "
+                             "object")
         else:
             raise
 
