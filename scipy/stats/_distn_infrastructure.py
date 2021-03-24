@@ -2926,10 +2926,11 @@ def differential_entropy(
 
     Entropy of a standard normal distribution:
 
-    >>> random_state = np.random.RandomState(0)
-    >>> values = random_state.standard_normal(100)
+    >>> # We use high numbered seeds in order to have good entropy in the RNG
+    >>> rng = np.random.default_rng(seed=148632)
+    >>> values = rng.standard_normal(100)
     >>> differential_entropy(values)
-    1.342551187000946
+    1.401904073487716
 
     Compare with the true entropy:
 
