@@ -9140,10 +9140,12 @@ class studentized_range_gen(rv_continuous):
     0, 7.41058083802274
 
     >>> from scipy.interpolate import interp1d
+    >>> random_state = np.random.default_rng(123)
     >>> xs = np.linspace(a, b, 50)
     >>> cdf = studentized_range.cdf(xs, k, df)
-    >>> ppf = interp1d(cdf, xs, kind='next', fill_value='extrapolate')
-    >>> random_state = np.random.default_rng(123)
+    # Create an interpolant of the inverse CDF
+    >>> ppf = interp1d(cdf, xs, fill_value='extrapolate')
+    # Perform inverse transform sampling using the interpolant
     >>> r = ppf(random_state.uniform(size=1000))
 
     And compare the histogram:
@@ -9156,6 +9158,10 @@ class studentized_range_gen(rv_continuous):
 
     def _argcheck(self, k, df):
         return np.all(k > 1) and np.all(df > 0)
+
+    def _fitstart(self, data):
+        # Default is k=1, but that is not a valid value of the parameter.
+        return super(studentized_range_gen, self)._fitstart(data, args=(2, 1))
 
     def _munp(self, K, k, df):
         cython_symbol = '_genstudentized_range_moment'
