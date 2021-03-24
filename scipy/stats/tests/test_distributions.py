@@ -289,6 +289,21 @@ class TestBradford:
         assert_allclose(x, xx)
 
 
+class TestChi:
+
+    # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
+    #     1 - CDF[ChiDistribution[4], 10]
+    CHI_SF_10_4 = 9.83662422461598e-21
+
+    def test_sf(self):
+        s = stats.chi.sf(10, 4)
+        assert_allclose(s, self.CHI_SF_10_4, rtol=1e-15)
+
+    def test_isf(self):
+        x = stats.chi.isf(self.CHI_SF_10_4, 4)
+        assert_allclose(x, 10, rtol=1e-15)
+
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
