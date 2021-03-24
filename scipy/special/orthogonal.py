@@ -317,6 +317,22 @@ def jacobi(n, alpha, beta, monic=False):
     :math:`P_n^{(\alpha, \beta)}` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x)^\alpha(1 + x)^\beta`.
 
+    Examples
+    --------
+    Jacobi polynomials P_n with alpha=1.5, beta=-0.5, n=1,2,3,4
+
+    >>> from scipy.special import jacobi
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-1., 1., 0.05)
+    >>> plt.plot(x, jacobi(1, 1.5, -0.5)(x), label='P_1, alpha=1.5, beta=-0.5)')
+    >>> plt.plot(x, jacobi(2, 1.5, -0.5)(x), label='P_2, alpha=1.5, beta=-0.5)')
+    >>> plt.plot(x, jacobi(3, 1.5, -0.5)(x), label='P_3, alpha=1.5, beta=-0.5)')
+    >>> plt.plot(x, jacobi(4, 1.5, -0.5)(x), label='P_4, alpha=1.5, beta=-0.5)')
+    >>> plt.ylim(-1.5, 5.)
+    >>> plt.legend()
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -427,6 +443,21 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    Examples
+    --------
+    Jacobi shifted polynomials G_n with p=1.5, q=0.5, n=1,2,3
+
+    >>> from scipy.special import sh_jacobi
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-1., 1.5, 0.1)
+    >>> plt.plot(x, sh_jacobi(1, 1.5, 0.5)(x), label='G_1, p=1.5, q=0.5')
+    >>> plt.plot(x, sh_jacobi(2, 1.5, 0.5)(x), label='G_2, p=1.5, q=0.5')
+    >>> plt.plot(x, sh_jacobi(3, 1.5, 0.5)(x), label='G_3, p=1.5, q=0.5')
+    >>> plt.ylim(-1.5, 2.)
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     if n < 0:
@@ -555,6 +586,21 @@ def genlaguerre(n, alpha, monic=False):
     --------
     laguerre : Laguerre polynomial.
 
+    Examples
+    --------
+    Generalized Laguerre polynomial L_3 with alpha=0, 1, 2
+
+    >>> from scipy.special import genlaguerre
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> x = np.arange(-2., 10., 0.1)
+    >>> plt.plot(x, genlaguerre(3, 0)(x), label='L_3, alpha=0')
+    >>> plt.plot(x, genlaguerre(3, 1)(x), label='L_3, alpha=1')
+    >>> plt.plot(x, genlaguerre(3, 2)(x), label='L_3, alpha=2')
+    >>> plt.ylim(-5., 10.)
+    >>> plt.legend()
+    >>> plt.show()
+    
     """
     if alpha <= -1:
         raise ValueError("alpha must be > -1")
