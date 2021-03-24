@@ -152,7 +152,7 @@ def test_complex():
     assert_allclose(dydx, p(x, 1))
 
 
-class TestKrogh(object):
+class TestKrogh:
     def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -282,7 +282,7 @@ class TestKrogh(object):
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
 
-class TestTaylor(object):
+class TestTaylor:
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
@@ -292,7 +292,7 @@ class TestTaylor(object):
         assert_almost_equal(p(0),0)
 
 
-class TestBarycentric(object):
+class TestBarycentric:
     def setup_method(self):
         self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
         self.test_xs = np.linspace(-1, 1, 100)
@@ -359,7 +359,7 @@ class TestBarycentric(object):
         assert_almost_equal(value, 9.5)
 
 
-class TestPCHIP(object):
+class TestPCHIP:
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))
@@ -486,7 +486,7 @@ class TestPCHIP(object):
         assert_allclose(r, 0.5)
 
 
-class TestCubicSpline(object):
+class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
                           tol=1e-14):

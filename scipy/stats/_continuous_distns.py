@@ -502,7 +502,8 @@ class arcsine_gen(rv_continuous):
     """
     def _pdf(self, x):
         # arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
-        return 1.0/np.pi/np.sqrt(x*(1-x))
+        with np.errstate(divide='ignore'):
+            return 1.0/np.pi/np.sqrt(x*(1-x))
 
     def _cdf(self, x):
         return 2.0/np.pi*np.arcsin(np.sqrt(x))
@@ -1335,7 +1336,16 @@ class cosine_gen(rv_continuous):
         return 1.0/2/np.pi*(1+np.cos(x))
 
     def _cdf(self, x):
-        return 1.0/2/np.pi*(np.pi + x + np.sin(x))
+        return scu._cosine_cdf(x)
+
+    def _sf(self, x):
+        return scu._cosine_cdf(-x)
+
+    def _ppf(self, p):
+        return scu._cosine_invcdf(p)
+
+    def _isf(self, p):
+        return -scu._cosine_invcdf(p)
 
     def _stats(self):
         return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)
@@ -2643,6 +2653,9 @@ class gamma_gen(rv_continuous):
 
     def _ppf(self, q, a):
         return sc.gammaincinv(a, q)
+
+    def _isf(self, q, a):
+        return sc.gammainccinv(a, q)
 
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
@@ -4184,6 +4197,11 @@ class invweibull_gen(rv_continuous):
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - np.log(c)
 
+    def _fitstart(self, data, args=None):
+        # invweibull requires c > 1 for the first moment to exist, so use 2.0
+        args = (2.0,) if args is None else args
+        return super(invweibull_gen, self)._fitstart(data, args=args)
+
 
 invweibull = invweibull_gen(a=0, name='invweibull')
 
@@ -4312,10 +4330,19 @@ class laplace_gen(rv_continuous):
         return 0.5*np.exp(-abs(x))
 
     def _cdf(self, x):
-        return np.where(x > 0, 1.0-0.5*np.exp(-x), 0.5*np.exp(x))
+        with np.errstate(over='ignore'):
+            return np.where(x > 0, 1.0 - 0.5*np.exp(-x), 0.5*np.exp(x))
+
+    def _sf(self, x):
+        # By symmetry...
+        return self._cdf(-x)
 
     def _ppf(self, q):
         return np.where(q > 0.5, -np.log(2*(1-q)), np.log(2*q))
+
+    def _isf(self, q):
+        # By symmetry...
+        return -self._ppf(q)
 
     def _stats(self):
         return 0, 2, 0, 3

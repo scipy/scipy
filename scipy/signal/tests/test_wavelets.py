@@ -5,7 +5,7 @@ from numpy.testing import assert_equal, \
 from scipy.signal import wavelets
 
 
-class TestWavelets(object):
+class TestWavelets:
     def test_qmf(self):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 

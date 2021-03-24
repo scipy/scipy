@@ -50,7 +50,7 @@ def test_gc_state():
 @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated():
     # Ordinary use
-    class C(object):
+    class C:
         def __init__(self, arg0, arg1, name='myname'):
             self.name = name
     for gc_current in (True, False):
@@ -67,7 +67,7 @@ def test_assert_deallocated():
 
 @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_nodel():
-    class C(object):
+    class C:
         pass
     with pytest.raises(ReferenceError):
         # Need to delete after using if in with-block context
@@ -81,7 +81,7 @@ def test_assert_deallocated_nodel():
 
 @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular():
-    class C(object):
+    class C:
         def __init__(self):
             self._circular = self
     with pytest.raises(ReferenceError):
@@ -92,7 +92,7 @@ def test_assert_deallocated_circular():
 
 @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular2():
-    class C(object):
+    class C:
         def __init__(self):
             self._circular = self
     with pytest.raises(ReferenceError):

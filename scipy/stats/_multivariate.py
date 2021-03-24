@@ -112,7 +112,7 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
-class _PSD(object):
+class _PSD:
     """
     Compute coordinated functions of a symmetric positive semidefinite matrix.
 
@@ -183,7 +183,7 @@ class _PSD(object):
         return self._pinv
 
 
-class multi_rv_generic(object):
+class multi_rv_generic:
     """
     Class which encapsulates common functionality between all multivariate
     distributions.
@@ -219,7 +219,7 @@ class multi_rv_generic(object):
             return self._random_state
 
 
-class multi_rv_frozen(object):
+class multi_rv_frozen:
     """
     Class which encapsulates common functionality between all frozen
     multivariate distributions.

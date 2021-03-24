@@ -397,6 +397,7 @@ Contingency table functions
    contingency.relative_risk
    contingency.association
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------

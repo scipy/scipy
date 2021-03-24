@@ -299,7 +299,7 @@ bounds = None
 ################
 
 
-class LinprogCommonTests(object):
+class LinprogCommonTests:
     """
     Base class for `linprog` tests. Generally, each test will be performed
     once for every derived class of LinprogCommonTests, each of which will
@@ -1847,7 +1847,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
         super(TestLinprogIPSparsePresolve, self).test_bug_6690()
 
 
-class TestLinprogIPSpecific(object):
+class TestLinprogIPSpecific:
     method = "interior-point"
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense
@@ -2020,7 +2020,7 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 ###########################
 
 
-class AutoscaleTests(object):
+class AutoscaleTests:
     options = {"autoscale": True}
 
     test_bug_6139 = LinprogCommonTests.test_bug_6139
@@ -2063,7 +2063,7 @@ class TestAutoscaleRS(AutoscaleTests):
 ###########################
 
 
-class RRTests(object):
+class RRTests:
     method = "interior-point"
     LCT = LinprogCommonTests
     # these are a few of the existing tests that have redundancy
