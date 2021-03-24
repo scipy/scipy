@@ -2,6 +2,7 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
+from __future__ import annotations
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 import sys
@@ -2856,7 +2857,7 @@ def entropy(pk, qk=None, base=None, axis=0):
 
 
 def differential_entropy(
-    values: np.ndarray,
+    values: np.typing.ArrayLike,
     *,
     window_length: Optional[int] = None,
     base: Optional[float] = None,
