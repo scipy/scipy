@@ -15,6 +15,7 @@ from pytest import raises as assert_raises
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
+from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -685,6 +686,89 @@ class TestBinomTestP(TestBinomP):
 
 class TestBinomTest:
     """Tests for stats.binomtest."""
+
+    # Expected results here are from old binom_test function.
+    # The alternative will be left unspecified which defaults
+    # it to two-sided.
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_two_sided_pvalues1(self):
+        # These tests work on all OS's but fail on
+        # Linux_Python_37_32bit_full due to numerical issues caused
+        # by large inputs.
+        res = stats.binomtest(10079999, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.979042561004596, rtol=1e-15)
+        res = stats.binomtest(10079990, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9785298857599378, rtol=1e-15)
+        res = stats.binomtest(10080009, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9786038762958954, rtol=1e-15)
+        res = stats.binomtest(10080017, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-15)
+
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_two_sided_pvalues2(self):
+        res = stats.binomtest(9, n=21, p=0.48)
+        assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-15)
+        res = stats.binomtest(4, 21, 0.48)
+        assert_allclose(res.pvalue, 0.008139563452105921, rtol=1e-15)
+        res = stats.binomtest(11, 21, 0.48)
+        assert_allclose(res.pvalue, 0.8278629664608201, rtol=1e-15)
+        res = stats.binomtest(7, 21, 0.48)
+        assert_allclose(res.pvalue, 0.19667729017182273, rtol=1e-15)
+        res = stats.binomtest(3, 10, .5)
+        assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-15)
+        res = stats.binomtest(2, 2, .4)
+        assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-15)
+        res = stats.binomtest(2, 4, .3)
+        assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-15)
+
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_edge_cases(self):
+        res = stats.binomtest(484, 967, 0.5)
+        assert_allclose(res.pvalue, 0.999999999998212, rtol=1e-15)
+        res = stats.binomtest(3, 47, 3/47)
+        assert_allclose(res.pvalue, 0.9999999999999998, rtol=1e-15)
+        res = stats.binomtest(13, 46, 13/46)
+        assert_allclose(res.pvalue, 0.9999999999999987, rtol=1e-15)
+        res = stats.binomtest(15, 44, 15/44)
+        assert_allclose(res.pvalue, 0.9999999999999989, rtol=1e-15)
+        res = stats.binomtest(7, 13, 0.5)
+        assert_allclose(res.pvalue, 0.9999999999999999, rtol=1e-15)
+        res = stats.binomtest(6, 11, 0.5)
+        assert_allclose(res.pvalue, 0.9999999999999997, rtol=1e-15)
+
+    def test_binary_srch_for_binom_tst(self):
+        # Test that old behavior of binomtest is maintained
+        # by the new binary search method in cases where d
+        # exactly equals the input on one side.
+        n = 10
+        p = 0.5
+        k = 3
+        # First test for the case where k > mode of PMF
+        i = np.arange(np.ceil(p * n), n+1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y, probably consistent with R.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        ix = _binary_search_for_binom_tst(lambda x1:
+                                          -stats.binom.pmf(x1, n, p),
+                                          -d, np.ceil(p * n), n)
+        y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
+        assert_allclose(y1, y2, rtol=1e-9)
+        # Now test for the other side.
+        k = 7
+        i = np.arange(np.floor(p * n) + 1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        ix = _binary_search_for_binom_tst(lambda x1:
+                                          stats.binom.pmf(x1, n, p),
+                                          d, 0, np.floor(p * n))
+        y2 = ix + 1
+        assert_allclose(y1, y2, rtol=1e-9)
 
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',

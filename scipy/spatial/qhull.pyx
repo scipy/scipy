@@ -2497,7 +2497,7 @@ class Voronoi(_QhullUser):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndim)
-        Coordinates of points to construct a convex hull from
+        Coordinates of points to construct a Voronoi diagram from
     furthest_site : bool, optional
         Whether to compute a furthest-site Voronoi diagram. Default: False
     incremental : bool, optional
