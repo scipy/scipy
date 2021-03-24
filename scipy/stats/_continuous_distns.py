@@ -2817,6 +2817,8 @@ class erlang_gen(gamma_gen):
         # Override gamma_gen_fitstart so that an integer initial value is
         # used.  (Also regularize the division, to avoid issues when
         # _skew(data) is 0 or close to 0.)
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         a = int(4.0 / (1e-8 + _skew(data)**2))
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
@@ -3640,9 +3642,10 @@ class geninvgauss_gen(rv_continuous):
         # kve instead of kv works better for large values of b
         # warn if kve produces infinite values and replace by nan
         # otherwise c = -inf and the results are often incorrect
-        @np.vectorize
         def logpdf_single(x, p, b):
             return _stats.geninvgauss_logpdf(x, p, b)
+
+        logpdf_single = np.vectorize(logpdf_single, otypes=[np.float64])
 
         z = logpdf_single(x, p, b)
         if np.isnan(z).any():
@@ -3658,13 +3661,14 @@ class geninvgauss_gen(rv_continuous):
     def _cdf(self, x, *args):
         _a, _b = self._get_support(*args)
 
-        @np.vectorize
         def _cdf_single(x, *args):
             p, b = args
             user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf', user_data)
 
             return integrate.quad(llc, _a, x)[0]
+
+        _cdf_single = np.vectorize(_cdf_single, otypes=[np.float64])
 
         return _cdf_single(x, *args)
 
@@ -4801,6 +4805,8 @@ class levy_stable_gen(rv_continuous):
         return data_out.T[0]
 
     def _fitstart(self, data):
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
         # We follow McCullock 1986 method - Simple Consistent Estimators
         # of Stable Distribution Parameters
 
