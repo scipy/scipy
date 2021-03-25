@@ -43,13 +43,13 @@ def assert_csc_almost_equal(r, l):
     assert_array_almost_equal_nulp(r.data, l.data, 10000)
 
 
-class TestHBReader(object):
+class TestHBReader:
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE))
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
 
 
-class TestHBReadWrite(object):
+class TestHBReadWrite:
 
     def check_save_load(self, value):
         with tempfile.NamedTemporaryFile(mode='w+t') as file:

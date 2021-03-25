@@ -22,7 +22,7 @@ def check_arguments(fun, y0, support_complex):
     return fun_wrapped, y0
 
 
-class OdeSolver(object):
+class OdeSolver:
     """Base class for ODE solvers.
 
     In order to implement a new solver you need to follow the guidelines:
@@ -214,7 +214,7 @@ class OdeSolver(object):
         raise NotImplementedError
 
 
-class DenseOutput(object):
+class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 
     It interpolates between `t_min` and `t_max` (see Attributes below).
