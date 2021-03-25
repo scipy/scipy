@@ -583,7 +583,7 @@ class TestAnsari:
         # 
         # ```
         pval = stats.ansari(x, y, alternative=alternative).pvalue
-        assert_almost_equal(pval, expected)
+        assert_allclose(pval, expected, atol=1e-12)
 
     def test_alternative_approx(self):
         # intuitive tests for approximation
@@ -593,8 +593,8 @@ class TestAnsari:
         # switch to approximation.
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
-        assert_almost_equal(pval_l, 1.0)
-        assert_almost_equal(pval_g, 0.0)
+        assert_allclose(pval_l, 1.0, atol=1e-12)
+        assert_allclose(pval_g, 0.0, atol=1e-12)
 
 
 class TestBartlett:
