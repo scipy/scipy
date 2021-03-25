@@ -978,7 +978,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
 
-        If `lmbda` is None, `optimizer` is ignored.
+        If `lmbda` is not None, `optimizer` is ignored.
 
     Returns
     -------
