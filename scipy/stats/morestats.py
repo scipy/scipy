@@ -1053,7 +1053,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Suppose we are only interested in values of `lmbda` on the interval [3, 4],
     and we want to use `scipy.optimize.minimize_scalar` with
-    ``method='bounded'``to perform optimization of the log-likelihood function.
+    ``method='bounded'`` to perform optimization of the log-likelihood function.
     To do this, we define a custom `optimizer` function that accepts
     positional argument `fun` and keyword argument `args` and passes them to
     `scipy.optimize.minimize_scalar` with the desired options:
