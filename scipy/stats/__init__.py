@@ -149,6 +149,18 @@ Continuous distributions
    weibull_max       -- Maximum Weibull (see Frechet)
    wrapcauchy        -- Wrapped Cauchy
 
+The ``fit`` method of the univariate continuous distributions uses
+maximum likelihood estimation to fit the distribution to a data set.
+The ``fit`` method can accept regular data or *censored data*.
+Censored data is represented with instances of the `CensoredData`
+class.
+
+.. autosummary::
+   :toctree: generated/
+
+   CensoredData
+
+
 Multivariate distributions
 --------------------------
 
@@ -194,27 +206,12 @@ Discrete distributions
    zipf                     -- Zipf (Zeta)
    zipfian                  -- Zipfian
 
-Censored data class
--------------------
-
-The univariate continuous distributions can be fit to censored data
-by maximum likelihood estimation.  Censored data is represented with
-instances of the `CensoredData` class.
-
-.. autosummary::
-   :toctree: generated/
-
-   CensoredData
-
-
-Statistical functions
-=====================
 
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
 
 Summary statistics
-------------------
+==================
 
 .. autosummary::
    :toctree: generated/
@@ -247,7 +244,7 @@ Summary statistics
    median_abs_deviation
 
 Frequency statistics
---------------------
+====================
 
 .. autosummary::
    :toctree: generated/
@@ -266,7 +263,7 @@ Frequency statistics
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
 Correlation functions
----------------------
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -285,7 +282,7 @@ Correlation functions
    multiscale_graphcorr
 
 Statistical tests
------------------
+=================
 
 .. autosummary::
    :toctree: generated/
@@ -334,7 +331,7 @@ Statistical tests
 
 
 Quasi-Monte Carlo
------------------
+=================
 
 .. toctree::
    :maxdepth: 4
@@ -343,12 +340,15 @@ Quasi-Monte Carlo
 
 
 Masked statistics functions
----------------------------
+===========================
 
 .. toctree::
 
    stats.mstats
 
+
+Other statistical functionality
+===============================
 
 Transformations
 ---------------
