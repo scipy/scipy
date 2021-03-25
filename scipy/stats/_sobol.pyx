@@ -138,10 +138,10 @@ cdef int low_0_bit(const int x) nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 1
-    while x & (1 << (i-1)) != 0:
+    cdef int i = 0
+    while x & (1 << i) != 0:
         i += 1
-    return i
+    return i + 1
 
 
 @cython.boundscheck(False)
