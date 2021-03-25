@@ -1609,7 +1609,7 @@ class TestBoxcox(object):
         def optimizer(fun, args):
             return 1
 
-        message = "`optimizer` must return an `OptimizeResult` object"
+        message = "`optimizer` must return an object containing the optimal..."
         with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 

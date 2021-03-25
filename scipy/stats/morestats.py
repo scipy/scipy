@@ -1219,7 +1219,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         # `optimizer` is expected to return a `OptimizeResult` object, we here
         # get the solution to the optimization problem.
         def _optimizer(func, args):
-            return optimizer(func, args=args).x  # [()]
+            return getattr(optimizer(func, args=args), 'x', None)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
@@ -1257,14 +1257,12 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    try:
-        return optimfunc(x)
-    except AttributeError as e:
-        if "has no attribute 'x'" in str(e):
-            raise ValueError("`optimizer` must return an `OptimizeResult` "
-                             "object")
-        else:
-            raise
+    res = optimfunc(x)
+    if res is None:
+        message = ValueError("`optimizer` must return an object containing "
+                             "the optimal `lmbda` in attribute `x`")
+        raise ValueError(message)
+    return res
 
 
 def _normplot(method, x, la, lb, plot=None, N=80):
