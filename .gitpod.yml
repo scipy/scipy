@@ -14,12 +14,13 @@ tasks:
     prebuild: |
       conda activate scipydev
       python setup.py build_ext --inplace
-      conda develop .
       git submodule update --init
       cd doc 
       make html-scipyorg
       pip install sphinx-autobuild
-    command: conda activate scipydev
+    command: |
+      conda activate scipydev
+      conda develop .
   - name: Develop here
     init: mkdir -p /workspace/scipy/.theia &&  cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
     command: conda activate scipydev

@@ -1,7 +1,7 @@
 # Using the Scipy-dev Docker image as a base
 # This way, we ensure we have all the needed compilers and dependencies
 # while reducing the build time
-ARG BASE_CONTAINER=scipy/scipy-dev:20210217-master-395b89d6
+ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER}
 
 # -----------------------------------------------------------------------------
@@ -10,6 +10,7 @@ FROM ${BASE_CONTAINER}
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
     bash-completion \
+    git \
     htop \
     jq \
     less \

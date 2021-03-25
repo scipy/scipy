@@ -259,6 +259,18 @@ def test_from_rotvec_small_angle():
     assert_equal(quat[2], np.array([0, 0, 0, 1]))
 
 
+def test_degrees_from_rotvec():
+    rotvec1 = [1.0 / np.cbrt(3), 1.0 / np.cbrt(3), 1.0 / np.cbrt(3)]
+    rot1 = Rotation.from_rotvec(rotvec1, degrees=True)
+    quat1 = rot1.as_quat()
+
+    rotvec2 = np.deg2rad(rotvec1)
+    rot2 = Rotation.from_rotvec(rotvec2)
+    quat2 = rot2.as_quat()
+
+    assert_allclose(quat1, quat2)
+
+
 def test_malformed_1d_from_rotvec():
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([1, 2])
@@ -307,6 +319,17 @@ def test_as_rotvec_single_2d_input():
     assert_allclose(actual_rotvec, expected_rotvec)
 
 
+def test_as_rotvec_degrees():
+    # x->y, y->z, z->x
+    mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+    rot = Rotation.from_matrix(mat)
+    rotvec = rot.as_rotvec(degrees=True)
+    angle = np.linalg.norm(rotvec)
+    assert_allclose(angle, 120.0)
+    assert_allclose(rotvec[0], rotvec[1])
+    assert_allclose(rotvec[1], rotvec[2])
+
+
 def test_rotvec_calc_pipeline():
     # Include small angles
     rotvec = np.array([
@@ -315,6 +338,7 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
+    assert_allclose(Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec)
 
 
 def test_from_1d_single_mrp():

@@ -18,7 +18,7 @@ def _generate_spherical_points(ndim=3, n_pts=2):
     return points[0], points[1]
 
 
-class TestGeometricSlerp(object):
+class TestGeometricSlerp:
     # Test various properties of the geometric slerp code
 
     @pytest.mark.parametrize("n_dims", [2, 3, 5, 7, 9])
