@@ -43,7 +43,7 @@ def _debug_print(s):
         print(s)
 
 
-class TestInterpolativeDecomposition(object):
+class TestInterpolativeDecomposition:
     def test_id(self):
         for dtype in [np.float64, np.complex128]:
             self.check_id(dtype)

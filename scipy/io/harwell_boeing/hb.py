@@ -43,7 +43,7 @@ def _nbytes_full(fmt, nlines):
     return (fmt.repeat * fmt.width + 1) * (nlines - 1)
 
 
-class HBInfo(object):
+class HBInfo:
     @classmethod
     def from_data(cls, m, title="Default title", key="0", mxtype=None, fmt=None):
         """Create a HBInfo instance from an existing sparse matrix.
@@ -359,7 +359,7 @@ def _write_data(m, fid, header):
                 header.values_format)
 
 
-class HBMatrixType(object):
+class HBMatrixType:
     """Class to hold the matrix type."""
     # q2f* translates qualified names to Fortran character
     _q2f_type = {
@@ -420,7 +420,7 @@ class HBMatrixType(object):
                (self.value_type, self.structure, self.storage)
 
 
-class HBFile(object):
+class HBFile:
     def __init__(self, file, hb_info=None):
         """Create a HBFile instance.
 

@@ -26,7 +26,7 @@ class LRUDict(collections.OrderedDict):
         raise NotImplementedError()
 
 
-class SemiInfiniteFunc(object):
+class SemiInfiniteFunc:
     """
     Argument transform from (start, +-oo) to (0, 1)
     """
@@ -54,7 +54,7 @@ class SemiInfiniteFunc(object):
             return self._sgn * (f / t) / t
 
 
-class DoubleInfiniteFunc(object):
+class DoubleInfiniteFunc:
     """
     Argument transform from (-oo, oo) to (-1, 1)
     """
@@ -91,7 +91,7 @@ def _get_sizeof(obj):
         return 64
 
 
-class _Bunch(object):
+class _Bunch:
     def __init__(self, **kwargs):
         self.__keys = kwargs.keys()
         self.__dict__.update(**kwargs)

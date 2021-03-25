@@ -52,7 +52,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                                     'bounds.'}
 
 
-class MemoizeJac(object):
+class MemoizeJac:
     """ Decorator that caches the return values of a function returning `(fun, grad)`
         each time it is called. """
 
@@ -3320,7 +3320,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin
 
 
-class _Brute_Wrapper(object):
+class _Brute_Wrapper:
     """
     Object to wrap user cost function for optimize.brute, allowing picklability
     """

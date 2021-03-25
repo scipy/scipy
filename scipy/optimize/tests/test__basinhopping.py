@@ -64,7 +64,7 @@ def myTakeStep2(x):
     return x
 
 
-class MyAcceptTest(object):
+class MyAcceptTest:
     """pass a custom accept test
 
     This does nothing but make sure it's being used and ensure all the
@@ -85,7 +85,7 @@ class MyAcceptTest(object):
             return True
 
 
-class MyCallBack(object):
+class MyCallBack:
     """pass a custom callback function
 
     This makes sure it's being used. It also returns True after 10
@@ -103,7 +103,7 @@ class MyCallBack(object):
             return True
 
 
-class TestBasinHopping(object):
+class TestBasinHopping:
 
     def setup_method(self):
         """ Tests setup.
@@ -331,7 +331,7 @@ class TestBasinHopping(object):
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
-class Test_Storage(object):
+class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
         self.f0 = 0
@@ -365,7 +365,7 @@ class Test_Storage(object):
         assert_(ret)
 
 
-class Test_RandomDisplacement(object):
+class Test_RandomDisplacement:
     def setup_method(self):
         self.stepsize = 1.0
         self.displace = RandomDisplacement(stepsize=self.stepsize)
@@ -382,7 +382,7 @@ class Test_RandomDisplacement(object):
         assert_almost_equal(np.var(x), v, 1)
 
 
-class Test_Metropolis(object):
+class Test_Metropolis:
     def setup_method(self):
         self.T = 2.
         self.met = Metropolis(self.T)
@@ -424,7 +424,7 @@ class Test_Metropolis(object):
             met.accept_reject(0, 2000)
 
 
-class Test_AdaptiveStepsize(object):
+class Test_AdaptiveStepsize:
     def setup_method(self):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)

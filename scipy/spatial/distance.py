@@ -122,46 +122,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 
-def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
-    """
-    Convert legacy positional arguments to keyword arguments for pdist/cdist.
-    """
-    if not args:
-        return kwargs
-
-    if (callable(metric) and metric not in [
-            braycurtis, canberra, chebyshev, cityblock, correlation, cosine,
-            dice, euclidean, hamming, jaccard, jensenshannon, kulsinski,
-            mahalanobis, matching, minkowski, rogerstanimoto, russellrao,
-            seuclidean, sokalmichener, sokalsneath, sqeuclidean, yule,
-            wminkowski]):
-        raise TypeError('When using a custom metric arguments must be passed'
-                        'as keyword (i.e., ARGNAME=ARGVALUE)')
-
-    if func_name == 'pdist':
-        old_arg_names = ['p', 'w', 'V', 'VI']
-    else:
-        old_arg_names = ['p', 'V', 'VI', 'w']
-
-    num_args = len(args)
-    warnings.warn('%d metric parameters have been passed as positional.'
-                  'This will raise an error in a future version.'
-                  'Please pass arguments as keywords(i.e., ARGNAME=ARGVALUE)'
-                  % num_args, DeprecationWarning)
-
-    if num_args > 4:
-        raise ValueError('Deprecated %s signature accepts only 4'
-                         'positional arguments (%s), %d given.'
-                         % (func_name, ', '.join(old_arg_names), num_args))
-
-    for old_arg, arg in zip(old_arg_names, args):
-        if old_arg in kwargs:
-            raise TypeError('%s() got multiple values for argument %s'
-                            % (func_name, old_arg))
-        kwargs[old_arg] = arg
-    return kwargs
-
-
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
     if a.base is not None:
@@ -182,15 +142,6 @@ def _correlation_pdist_wrap(X, dm, **kwargs):
 
 def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
-
-
-def _filter_deprecated_kwargs(kwargs, args_blocklist):
-    # Filtering out old default keywords
-    for k in args_blocklist:
-        if k in kwargs:
-            del kwargs[k]
-            warnings.warn('Got unexpected kwarg %s. This will raise an error'
-                          ' in a future version.' % k, DeprecationWarning)
 
 
 def _nbool_correspond_all(u, v, w=None):
@@ -772,7 +723,8 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    return correlation(u, v, w=w, centered=False)
+    # clamp the result to 0-2
+    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
 
 
 def hamming(u, v, w=None):
@@ -1738,7 +1690,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     elif "w" in kwargs:
         if (mstr in _METRICS['seuclidean'].aka or
                 mstr in _METRICS['mahalanobis'].aka):
-            raise ValueError("metric %s incompatible with weights" % mstr)
+            raise TypeError(f"metric {mstr} incompatible with weights")
 
         # XXX: C-versions do not support weights
         # need to use python version for weighting
@@ -1748,7 +1700,7 @@ def _select_weighted_metric(mstr, kwargs, out):
     return mstr, kwargs
 
 
-def pdist(X, metric='euclidean', *args, **kwargs):
+def pdist(X, metric='euclidean', **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
 
@@ -1766,8 +1718,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2009,8 +1959,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
-
     X = np.asarray(X, order='c')
 
     s = X.shape
@@ -2029,30 +1977,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['jensenshannon'].aka
-       or metric == 'test_jensenshannon' or metric == jensenshannon):
-        kwargs_blocklist = ["p", "w", "V", "VI"]
-
-    elif(metric in _METRICS['minkowski'].aka
-         or metric in _METRICS['wminkowski'].aka
-         or metric in ['test_minkowski', 'test_wminkowski']
-         or metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-
-    elif(metric in _METRICS['mahalanobis'].aka
-         or metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2087,22 +2011,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                                "pdist_%s_%s_wrap" % (metric_name, typ))
             pdist_fn(X, dm, **kwargs)
             return dm
-
-        elif mstr in ['old_cosine', 'old_cos']:
-            warnings.warn('"old_cosine" is deprecated and will be removed in '
-                          'a future version. Use "cosine" instead.',
-                          DeprecationWarning)
-            X = _convert_to_double(X)
-            norms = np.einsum('ij,ij->i', X, X, dtype=np.double)
-            np.sqrt(norms, out=norms)
-            nV = norms.reshape(m, 1)
-            # The numerator u * v
-            nm = np.dot(X, X.T)
-            # The denom. ||u||*||v||
-            de = np.dot(nV, nV.T)
-            dm = 1.0 - (nm / de)
-            dm[range(0, m), range(0, m)] = 0.0
-            dm = squareform(dm)
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
                 dm = pdist(X, _TEST_METRICS[mstr], **kwargs)
@@ -2431,7 +2339,7 @@ def num_obs_y(Y):
     return d
 
 
-def cdist(XA, XB, metric='euclidean', *args, **kwargs):
+def cdist(XA, XB, metric='euclidean', **kwargs):
     """
     Compute distance between each pair of the two collections of inputs.
 
@@ -2454,8 +2362,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         'kulsinski', 'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
-    *args : tuple. Deprecated.
-        Additional arguments should be passed as keyword arguments
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -2730,8 +2636,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
 
-    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "cdist")
-
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
 
@@ -2760,23 +2664,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-
-    # compute blocklist for deprecated kwargs
-    if(metric in _METRICS['minkowski'].aka or
-       metric in _METRICS['wminkowski'].aka or
-       metric in ['test_minkowski', 'test_wminkowski'] or
-       metric in [minkowski, wminkowski]):
-        kwargs_blocklist = ["V", "VI"]
-    elif(metric in _METRICS['seuclidean'].aka or
-         metric == 'test_seuclidean' or metric == seuclidean):
-        kwargs_blocklist = ["p", "w", "VI"]
-    elif(metric in _METRICS['mahalanobis'].aka or
-         metric == 'test_mahalanobis' or metric == mahalanobis):
-        kwargs_blocklist = ["p", "w", "V"]
-    else:
-        kwargs_blocklist = ["p", "V", "VI"]
-
-    _filter_deprecated_kwargs(kwargs, kwargs_blocklist)
 
     if callable(metric):
 
