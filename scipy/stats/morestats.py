@@ -975,7 +975,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
         `lmbda` in an attribute `x`.
 
-        See the example below or the documentation of
+        See the example in `boxcox_normmax` or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
 
         If `lmbda` is not None, `optimizer` is ignored.
@@ -1046,25 +1046,6 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     >>> ax2.set_title('Probplot after Box-Cox transformation')
 
     >>> plt.show()
-
-    The value of `lmbda` that maximizes the log-likelihood function is:
-    >>> lmbda
-    2.769...
-
-    Suppose we are only interested in values of `lmbda` on the interval [3, 4],
-    and we want to use `scipy.optimize.minimize_scalar` with
-    ``method='bounded'`` to perform optimization of the log-likelihood function.
-    To do this, we define a custom `optimizer` function that accepts
-    positional argument `fun` and keyword argument `args` and passes them to
-    `scipy.optimize.minimize_scalar` with the desired options:
-
-    >>> from scipy import optimize
-    >>> def optimizer(fun, args):
-    ...     return optimize.minimize_scalar(fun, bounds=(3, 4), args=args,
-    ...                                     method="bounded")
-    >>> xt, lmbda = stats.boxcox(x, optimizer=optimizer)
-    >>> lmbda
-    3.000...
 
     """
     x = np.asarray(x)
