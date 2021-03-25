@@ -1041,7 +1041,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     We now use `boxcox` to transform the data so it's closest to normal:
 
     >>> ax2 = fig.add_subplot(212)
-    >>> xt, lmbda = stats.boxcox(x)
+    >>> xt, _ = stats.boxcox(x)
     >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
     >>> ax2.set_title('Probplot after Box-Cox transformation')
 
