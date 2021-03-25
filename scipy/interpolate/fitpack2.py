@@ -900,6 +900,11 @@ class _BivariateSplineBase:
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
 
+            if (x.size >= 2) and (not np.all(np.diff(x) >= 0.0)):
+                raise ValueError("x must be strictly increasing when `grid` is True")
+            if (y.size >= 2) and (not np.all(np.diff(y) >= 0.0)):
+                raise ValueError("y must be strictly increasing when `grid` is True")
+
             if dx or dy:
                 z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
