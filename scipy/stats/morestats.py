@@ -2084,7 +2084,8 @@ def ansari(x, y, alternative='two-sided'):
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
     for the equality of the scale parameter of the distributions
-    from which two samples were drawn.
+    from which two samples were drawn. The null hypothesis states that
+    the ratio or the scales of both the distributions is 1.
 
     Parameters
     ----------
@@ -2092,7 +2093,13 @@ def ansari(x, y, alternative='two-sided'):
         Arrays of sample data.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
-        See explanation in Notes.
+        The following options are available:
+
+        * 'two-sided': the ratio of scales is not equal to 1.
+        * 'less': the ratio of scales of the given distributions is less
+                  than 1.
+        * 'greater': the ratio of scales of the given distributions is
+                     greater than 1.
 
     Returns
     -------
@@ -2105,37 +2112,6 @@ def ansari(x, y, alternative='two-sided'):
     --------
     fligner : A non-parametric test for the equality of k variances
     mood : A non-parametric test for the equality of two scale parameters
-
-    Notes
-    -----
-    The ``mode`` parameter is used in the following manner:
-
-    - For ``mode='auto'``, the p-value given is exact when the sample sizes
-      are both less than 55 and there are no ties, otherwise a normal
-      approximation for the p-value is used.
-    - For ``mode='exact'``, the p-value given is exact when there are
-      no ties, otherwise a normal approximation for the p-value is used.
-    - For ``mode='approx'``, a normal approximation for the p-value
-      is used.
-
-    The ``alternative`` parameter is used in the following manner:
-
-    - For ``alternative='two-sided'``, the null hypothesis states that
-      the ratio or the scales of both the distributions is 1. The
-      alternative hypothesis says that the ratio of scales is not equal
-      to 1.
-    - For `alternative='less'`, the null hypothesis states that the
-      ratio of the scales of both the distributions is greater than 1.
-      Stated another way, the null hypothesis says that the scale of
-      ``x`` is greater than that of ``y``. The alternative hypothesis
-      says that the ratio of scales of the given distributions is less
-      than 1.
-    - For `alternative='greater'`, the null hypothesis states that the
-      ratio of the scales of both the distributions is less than 1.
-      Stated another way, the null hypothesis says that the scale of
-      ``x`` is less than that of ``y``. The alternative hypothesis
-      says that the ratio of scales of the given distributions is greater
-      than 1.
 
     References
     ----------
