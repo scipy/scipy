@@ -1087,6 +1087,21 @@ class TestRectSphereBivariateSpline:
         spl2 = RectSphereBivariateSpline(x.tolist(), y.tolist(), z.tolist())
         assert_array_almost_equal(spl1(x, y), spl2(x, y))
 
+    def test_negative_evaluation(self):
+        lats = np.array([25, 30, 35, 40, 45])
+        lons = np.array([-90, -85, -80, -75, 70])
+        mesh = np.meshgrid(lats, lons)
+        data = mesh[0] + mesh[1]  # lon + lat value
+        lat_r = np.radians(lats)
+        lon_r = np.radians(lons)
+        interpolator = RectSphereBivariateSpline(lat_r, lon_r, data)
+        query_lat = np.radians(np.array([35, 37.5]))
+        query_lon = np.radians(np.array([-80, -77.5]))
+        data_interp = interpolator(query_lat, query_lon)
+        ans = np.array([[-45.0, -42.480862],
+                        [-49.0625, -46.54315]])
+        assert_array_almost_equal(data_interp, ans)
+
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
     if dx == 0 and dy == 0:
