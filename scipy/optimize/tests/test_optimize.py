@@ -2248,5 +2248,5 @@ def test_x_overwritten_user_function():
             jac = fquad_jac
         if meth in meth_hess:
             hess = fquad_hess
-        res = minimize(fquad, x0, method=meth, jac=jac, hess=hess)
-        assert_allclose(res.x, np.arange(np.size(x0)))
+        res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
+        assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
