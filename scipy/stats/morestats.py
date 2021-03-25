@@ -959,7 +959,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
-    optimizer : callable, optional (default: `scipy.optimize.brent`)
+    optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
         the value of `lmbda` that maximizes the log-likelihood function.
         `optimizer` is a callable that accepts two arguments:
@@ -1123,7 +1123,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         'all'
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
-    optimizer : callable, optional (default: `scipy.optimize.brent`)
+    optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
         the value of `lmbda` that maximizes the log-likelihood function.
         `optimizer` is a callable that accepts two arguments:
@@ -1259,8 +1259,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     optimfunc = methods[method]
     res = optimfunc(x)
     if res is None:
-        message = ValueError("`optimizer` must return an object containing "
-                             "the optimal `lmbda` in attribute `x`")
+        message = ("`optimizer` must return an object containing the optimal "
+                   "`lmbda` in attribute `x`")
         raise ValueError(message)
     return res
 
