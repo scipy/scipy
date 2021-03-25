@@ -935,12 +935,16 @@ class TestCorrSpearmanr2(object):
         # Simple test - Based on the above ``test_spearmanr_vs_r``
         x1 = [1, 2, 3, 4, 5]
         x2 = [5, 6, 7, 8, 7]
+
+        # strong positive correlation
         expected = (0.82078268166812329, 0.088587005313543798)
 
+        # correlation > 0 -> large "less" p-value
         res = stats.spearmanr(x1, x2, alternative="less")
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], 1 - (expected[1] / 2))
 
+        # correlation > 0 -> small "less" p-value
         res = stats.spearmanr(x1, x2, alternative="greater")
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1] / 2)
@@ -948,43 +952,34 @@ class TestCorrSpearmanr2(object):
         with pytest.raises(ValueError, match="alternative must be 'less'..."):
             stats.spearmanr(x1, x2, alternative="ekki-ekki")
 
+    @pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
+    def test_alternative_nan_policy(self, alternative):
         # Test nan policies
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
         x1nan = x1 + [np.nan]
         x2nan = x2 + [np.nan]
 
+        # test nan_policy="propagate"
         assert_array_equal(stats.spearmanr(x1nan, x2nan), (np.nan, np.nan))
 
-        # Test omission
-        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit')
-        res_expected = stats.spearmanr(x1, x2)
-        assert_allclose(res_actual, res_expected)
-
+        # test nan_policy="omit"
         res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
-                                     alternative="less")
-        res_expected = stats.spearmanr(x1, x2, alternative="less")
+                                     alternative=alternative)
+        res_expected = stats.spearmanr(x1, x2, alternative=alternative)
         assert_allclose(res_actual, res_expected)
 
-        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
-                                     alternative="greater")
-        res_expected = stats.spearmanr(x1, x2, alternative="greater")
-        assert_allclose(res_actual, res_expected)
-
-        # Test value raises
+        # test nan_policy="raise"
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
             stats.spearmanr(x1nan, x2nan, nan_policy='raise',
-                            alternative="less")
-        with pytest.raises(ValueError, match=message):
-            stats.spearmanr(x1nan, x2nan, nan_policy='raise',
-                            alternative="greater")
+                            alternative=alternative)
 
+        # test invalid nan_policy
         message = "nan_policy must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.spearmanr(x1nan, x2nan, nan_policy='ekki-ekki',
-                            alternative="less")
-        with pytest.raises(ValueError, match=message):
-            stats.spearmanr(x1nan, x2nan, nan_policy='ekki-ekki',
-                            alternative="greater")
+                            alternative=alternative)
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
