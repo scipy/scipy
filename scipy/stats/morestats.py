@@ -12,7 +12,7 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2078,7 +2078,7 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
-def ansari(x, y, alternative='two-sided', mode='auto'):
+def ansari(x, y, alternative='two-sided'):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
 
@@ -2093,9 +2093,6 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         See explanation in Notes.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
-        Defines the distribution used for calculating the p-value.
-        Default is 'auto'. See explanation in Notes.
 
     Returns
     -------
@@ -2202,8 +2199,6 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
-    if mode not in {'auto', 'exact', 'approx'}:
-        raise ValueError("'mode' must be 'auto', 'exact' or 'approx'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2220,31 +2215,34 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
-    if mode == 'exact' and repeats:
-        raise ValueError("can't compute exact statistic with ties. "
-                         "Please use `mode='auto'` or `mode='approx'`.")
-    if mode == 'auto' and repeats and (m < 55 or n < 55):
+    if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
-    if (mode == 'exact' and not repeats) or (mode == 'auto' and exact):
+    if exact:
         astart, a1, ifault = statlib.gscale(n, m)
-        ind = int(AB - astart)
+        ind = AB - astart
         total = np.sum(a1, axis=0)
         if ind < len(a1)/2.0:
+            cind = int(ceil(ind))
+            if cind != ind:
+                cind = cind - 1
             if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[:ind+1], axis=0) / total
+                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
             elif alternative == 'greater':
                 # see [3]_
-                pval = np.sum(a1[:ind+1], axis=0) / total
+                pval = np.sum(a1[:cind+1], axis=0) / total
             else:
                 # see [3]_
-                pval = 1.0 - np.sum(a1[:ind], axis=0) / total
+                pval = 1.0 - np.sum(a1[:cind], axis=0) / total
         else:
+            find = int(floor(ind))
+            if find != ind:
+                find = find + 1
             if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[ind:], axis=0) / total
+                pval = 2.0 * np.sum(a1[find:], axis=0) / total
             elif alternative == 'greater':
-                pval = 1.0 - np.sum(a1[ind+1:], axis=0) / total
+                pval = 1.0 - np.sum(a1[find+1:], axis=0) / total
             else:
-                pval = np.sum(a1[ind:], axis=0) / total
+                pval = np.sum(a1[find:], axis=0) / total
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2263,12 +2261,7 @@ def ansari(x, y, alternative='two-sided', mode='auto'):
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
     z = (mnAB - AB) / sqrt(varAB)
-    if alternative == 'two-sided':
-        pval = distributions.norm.sf(abs(z)) * 2.0
-    elif alternative == 'greater':
-        pval = distributions.norm.sf(z)
-    else:
-        pval = distributions.norm.cdf(z)
+    z, pval = _normtest_finish(z, alternative)
     return AnsariResult(AB, pval)
 
 
