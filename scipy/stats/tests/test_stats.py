@@ -1453,7 +1453,7 @@ class TestRegression(object):
     def test_regress_alternative(self):
         # test alternative parameter
         x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y = 0.2 * np.linspace(0, 100, 100) + 10  # slope is greater than zero
         y += np.sin(np.linspace(0, 20, 100))
 
         with pytest.raises(ValueError, match="alternative must be 'less'..."):
@@ -1461,9 +1461,11 @@ class TestRegression(object):
 
         res1 = stats.linregress(x, y, alternative="two-sided")
 
+        # slope is greater than zero, so "less" p-value should be large
         res2 = stats.linregress(x, y, alternative="less")
         assert_allclose(res2.pvalue, 1 - (res1.pvalue / 2))
 
+        # slope is greater than zero, so "greater" p-value should be small
         res3 = stats.linregress(x, y, alternative="greater")
         assert_allclose(res3.pvalue, res1.pvalue / 2)
 
