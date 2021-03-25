@@ -1244,8 +1244,14 @@ class chi_gen(rv_continuous):
     def _cdf(self, x, df):
         return sc.gammainc(.5*df, .5*x**2)
 
+    def _sf(self, x, df):
+        return sc.gammaincc(.5*df, .5*x**2)
+
     def _ppf(self, q, df):
         return np.sqrt(2*sc.gammaincinv(.5*df, q))
+
+    def _isf(self, q, df):
+        return np.sqrt(2*sc.gammainccinv(.5*df, q))
 
     def _stats(self, df):
         mu = np.sqrt(2)*sc.gamma(df/2.0+0.5)/sc.gamma(df/2.0)
