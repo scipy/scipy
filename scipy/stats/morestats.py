@@ -960,10 +960,25 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
     optimizer : callable, optional
-        Callable which follows the `optimize.minimize_scalar` interface, with two input
-        arguments (the function over which to optimize and arguments to that
-        function) and `OptimizeResult` as the output object. See
-        `scipy.optimize.minimize_scalar` for more details.
+        If `lmbda` is None, `optimizer` is the scalar optimizer used to find
+        the value of `lmbda` that maximizes the log-likelihood function.
+        `optimizer` is a callable that accepts two arguments:
+
+        fun : callable
+            The objective function, which evaluates the negative
+            log-likelihood function at a provided value of `lmbda`
+        args : tuple, optional
+            Additional arguments passed to the objective function as a
+            keyword argument
+
+        and returns an object, such as an instance of
+        `scipy.optimize.OptimizeResult`, which holds the optimal value of
+        `lmbda` in an attribute `x`.
+
+        See the example in `boxcox_normmax` or the documentation of
+        `scipy.optimize.minimize_scalar` for more information.
+
+        If `lmbda` is not None, `optimizer` is ignored.
 
     Returns
     -------
@@ -1032,14 +1047,6 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     >>> plt.show()
 
-    Alternatively, we can define our own `optimizer` function.
-
-    >>> from scipy import optimize
-    >>> def optimizer(fun, args):
-    ...     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
-    ...                                     method="bounded")
-    >>> xt, _ = stats.boxcox(x, optimizer=optimizer)
-
     """
     x = np.asarray(x)
     if x.ndim != 1:
@@ -1078,9 +1085,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         Input array.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
-         `optimize.brent` solver.  Note that this is in most cases not critical; the
-         final result is allowed to be outside this bracket. This will be ignored if
-         `optimizer` is not None.
+         `optimize.brent` solver.  Note that this is in most cases not
+         critical; the final result is allowed to be outside this bracket.
+         This will be ignored if `optimizer` is not None.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:
@@ -1098,10 +1105,25 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
     optimizer : callable, optional
-        Callable which follows the `optimize.minimize_scalar` interface, with two input
-        arguments (the function over which to optimize and arguments to that
-        function) and `OptimizeResult` as the output object. See
-        `scipy.optimize.minimize_scalar` for more details.
+        If `lmbda` is None, `optimizer` is the scalar optimizer used to find
+        the value of `lmbda` that maximizes the log-likelihood function.
+        `optimizer` is a callable that accepts two arguments:
+
+        fun : callable
+            The objective function, which evaluates the negative
+            log-likelihood function at a provided value of `lmbda`
+        args : tuple, optional
+            Additional arguments passed to the objective function as a
+            keyword argument
+
+        and returns an object, such as an instance of
+        `scipy.optimize.OptimizeResult`, which holds the optimal value of
+        `lmbda` in an attribute `x`.
+
+        See the example below or the documentation of
+        `scipy.optimize.minimize_scalar` for more information.
+
+        If `lmbda` is not None, `optimizer` is ignored.
 
     Returns
     -------
@@ -1119,7 +1141,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> import matplotlib.pyplot as plt
     >>> np.random.seed(1234)  # make this example reproducible
 
-    We can generate some data and determine the optimal ``lmbda`` in various ways:
+    We can generate some data and determine the optimal ``lmbda`` in various
+    ways:
 
     >>> x = stats.loggamma.rvs(5, size=30) + 5
     >>> y, lmax_mle = stats.boxcox(x)
@@ -1140,14 +1163,21 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     >>> plt.show()
 
-    Alternatively, we can define our own `optimizer` function.
+    Alternatively, we can define our own `optimizer` function. Suppose we
+    are only interested in values of `lmbda` on the interval [6, 7], we
+    want to use `scipy.optimize.minimize_scalar` with ``method='bounded'``,
+    and we want to use tighter tolerances when optimizing the log-likelihood
+    function. To do this, we define a function that accepts positional argument
+    `fun` and keyword argument `args` and passes them to
+    `scipy.optimize.minimize_scalar` along with the desired options:
 
     >>> from scipy import optimize
+    >>> options = {'xatol': 1e-12}  # absolute tolerance on `x`
     >>> def optimizer(fun, args):
-    ...     return optimize.minimize_scalar(fun, bounds=(0, 1), args=args,
-    ...                                     method="bounded")
+    ...     return optimize.minimize_scalar(fun, bounds=(6, 7), args=args,
+    ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
-    0.999...
+    6.999...
     """
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
@@ -1167,10 +1197,10 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         if brack is not None:
             raise ValueError("`brack` must be None if `optimizer` is given")
 
-        # `optimizer` is expected to return a `OptimizeResult` object, we here get the
-        # solution to the optimization problem.
+        # `optimizer` is expected to return a `OptimizeResult` object, we here
+        # get the solution to the optimization problem.
         def _optimizer(func, args):
-            return optimizer(func, args).x.item()
+            return getattr(optimizer(func, args=args), 'x', None)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
@@ -1208,13 +1238,12 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    try:
-        return optimfunc(x)
-    except AttributeError as e:
-        if "has no attribute 'x'" in str(e):
-            raise ValueError("`optimizer` must return an `OptimizeResult` object")
-        else:
-            raise
+    res = optimfunc(x)
+    if res is None:
+        message = ("`optimizer` must return an object containing the optimal "
+                   "`lmbda` in attribute `x`")
+        raise ValueError(message)
+    return res
 
 
 def _normplot(method, x, la, lb, plot=None, N=80):
