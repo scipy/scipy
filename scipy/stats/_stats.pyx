@@ -519,7 +519,8 @@ cdef double _phi(double z) nogil:
 
 
 cdef double _Phi(double z) nogil:
-    return 0.5 * math.erfc(-z * math.M_SQRT1_2)
+    cdef double m_sqrt1_2 = 0.7071067811865475
+    return 0.5 * math.erfc(-z * m_sqrt1_2)
 
 
 cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil:
