@@ -2236,8 +2236,13 @@ def test_x_overwritten_user_function():
 
     fquad_hess = lambda x: np.eye(np.size(x)) * 2.0
 
-    meth_jac = ['newton-cg', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
-    meth_hess = ['dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']
+    meth_jac = [
+        'newton-cg', 'dogleg', 'trust-ncg', 'trust-exact',
+        'trust-krylov', 'trust-constr'
+    ]
+    meth_hess = [
+        'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov', 'trust-constr'
+    ]
 
     x0 = np.ones(5) * 1.5
 
