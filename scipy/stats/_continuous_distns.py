@@ -9063,8 +9063,7 @@ class rv_histogram(rv_continuous):
 
 
 class studentized_range_gen(rv_continuous):
-    """
-    The studentized range continuous random variable.
+    r"""The studentized range continuous random variable.
 
     %(before_notes)s
 
@@ -9074,6 +9073,17 @@ class studentized_range_gen(rv_continuous):
 
     Notes
     -----
+    The probability density function for `studentized_range` is:
+
+    .. math::
+
+        f(q;k,\nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)\,2^{\nu/2-1}}\,
+                     \int_0^\infty\int_{-\infty}^\infty
+                     s^{\nu-1}\,e^{-\nu s^{2}/2}  \,s \varphi(z) \varphi(sq+z)
+                     [\Phi(sq+z)-\Phi(z)]^{k-2} \,\mathrm{d}z \, \mathrm{d}s\\
+
+    %(after_notes)s
+
     When `df` exceeds 100,000, an asymptotic approximation (infinte degrees of
     freedom) is used to compute the cumulative distribution function. [4]_
 
