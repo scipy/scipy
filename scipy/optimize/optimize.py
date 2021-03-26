@@ -315,11 +315,11 @@ def rosen(x):
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
-    
+
     For higher-dimensional input ``rosen`` broadcasts.
     In the following example, we use this to plot a 2D landscape.
     Note that ``rosen_hess`` does not broadcast in this manner.
-    
+
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.mplot3d import Axes3D
     >>> x = np.linspace(-1, 1, 50)
@@ -2891,6 +2891,9 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         Set to True to return a list of the best solution at each of the
         iterations.
     bounds : `Bounds`
+        Note: If ``minimize`` is used to invoke ``Powell``, the bounds can
+        be specified *either* in the ``option`` *or* in the minimize interface;
+        they have the equivalent meaning and a redundand definition will fail.
         If bounds are not provided, then an unbounded line search will be used.
         If bounds are provided and the initial guess is within the bounds, then
         every function evaluation throughout the minimization procedure will be
