@@ -6045,7 +6045,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     of length 3.
 
     >>> stats.ttest_ind(a, b, trim=.2)
-    Ttest_indResult(statistic=3.4463884028073513, pvalue=0.01369338726499547)
+    Ttest_indResult(statistic=3.4463884028073513,
+                    pvalue=0.01369338726499547)
     """
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= pct < .5.")
