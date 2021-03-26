@@ -4321,39 +4321,36 @@ class TestBurr:
 class TestStudentizedRange:
     # Critical Q values were selected from this table:
     # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
-    # For alpha=.05 and .01, and for each value of v=[1, 3, 10, 20],
-    # a Q was picked from each table for k=[2, 8, 14, 20].
+    # For alpha=.05, .01, and .001, and for each value of v=[1, 3, 10, 20],
+    # a Q was picked from each table for k=[2, 8, 14, 20, 120, inf].
     ks = [2, 8, 14, 20]
     vs = [1, 3, 10, 20, 120, np.inf]
     # these arrays are written with `k` as column, and `v` as rows, but they
     # must be reshaped with a new order to be in the proper order to compare
     # with the product.
-    alpha05 = np.asarray([17.97, 45.40, 54.33, 59.56,
-                          4.501, 8.853, 10.35, 11.24,
-                          3.151, 5.305, 6.028, 6.467,
-                          2.950, 4.768, 5.357, 5.714,
-                          2.800, 4.363, 4.842, 5.126,
-                          2.772, 4.286, 4.743, 5.012]).reshape((4, 6),
-                                                               order="F")
-    alpha01 = np.asarray([90.03, 227.2, 271.8, 298.0,
-                          8.261, 15.64, 18.22, 19.77,
-                          4.482, 6.875, 7.712, 8.226,
-                          4.024, 5.839, 6.450, 6.823,
-                          3.702, 5.118, 5.562, 5.827,
-                          3.643, 4.987, 5.400, 5.645]).reshape((4, 6),
-                                                               order="F")
-    alpha001 = np.asarray([900.3, 2272, 2718, 2980,
-                          18.28, 34.12, 39.69, 43.05,
-                          6.487, 9.352, 10.39, 11.03,
-                          5.444, 7.313, 7.966, 8.370,
-                          4.772, 6.039, 6.448, 6.695,
-                          4.654, 5.823, 6.191, 6.411]).reshape((4, 6),
-                                                               order="F")
-    alphas = np.ravel(np.concatenate((alpha05, alpha01, alpha001)))
+    q05 = [17.97, 45.40, 54.33, 59.56,
+           4.501, 8.853, 10.35, 11.24,
+           3.151, 5.305, 6.028, 6.467,
+           2.950, 4.768, 5.357, 5.714,
+           2.800, 4.363, 4.842, 5.126,
+           2.772, 4.286, 4.743, 5.012]
+    q01 = [90.03, 227.2, 271.8, 298.0,
+           8.261, 15.64, 18.22, 19.77,
+           4.482, 6.875, 7.712, 8.226,
+           4.024, 5.839, 6.450, 6.823,
+           3.702, 5.118, 5.562, 5.827,
+           3.643, 4.987, 5.400, 5.645]
+    # Q values for alpha=.001 are taken from here:
+    # https://www.jstor.org/stable/2237810
+    q001 = [900.3, 2272, 2718, 2980,
+            18.28, 34.12, 39.69, 43.05,
+            6.487, 9.352, 10.39, 11.03,
+            5.444, 7.313, 7.966, 8.370,
+            4.772, 6.039, 6.448, 6.695,
+            4.654, 5.823, 6.191, 6.411]
+    qs = np.concatenate((q05, q01, q001))
     ps = [.95, .99, .999]
-    data = np.asarray(list(product(ps, ks, vs)))
-    data_rows = np.moveaxis(data, 0, -1)
-    ps, ks, vs, = data_rows
+    data = zip(product(ps, vs, ks), qs)
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
@@ -4377,13 +4374,17 @@ class TestStudentizedRange:
                         rtol=src_case["expected_rtol"])
 
     def test_cdf_against_tables(self):
-        res_p = stats.studentized_range.cdf(self.alphas, self.ks, self.vs)
-        assert_allclose(res_p, self.ps, rtol=1e-4)
+        for pvk, q in self.data:
+            p_expected, v, k = pvk
+            res_p = stats.studentized_range.cdf(q, k, v)
+            assert_allclose(res_p, p_expected, rtol=1e-4)
 
     @pytest.mark.slow
     def test_ppf_against_tables(self):
-        res_q = stats.studentized_range.ppf(self.ps, self.ks, self.vs)
-        assert_allclose(res_q, self.alphas, rtol=1e-3)
+        for pvk, q_expected in self.data:
+            p, v, k = pvk
+            res_q = stats.studentized_range.ppf(p, k, v)
+            assert_allclose(res_q, q_expected, rtol=1e-4)
 
     def test_pdf_integration(self):
         k, v = 3, 10
