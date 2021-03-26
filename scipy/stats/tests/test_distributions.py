@@ -4425,6 +4425,14 @@ class TestStudentizedRange:
             # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
             # range causes the results to converge and pass default atol.
             assert_allclose(res_act, res_exp, atol=1e-5)
+    
+    @pytest.mark.slow
+    def test_fitstart_valid(self):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            # the integration warning message may differ
+            sup.filter(IntegrationWarning)
+            k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
+        assert_(stats.studentized_range._argcheck(k, df))
 
 
 def test_540_567():
