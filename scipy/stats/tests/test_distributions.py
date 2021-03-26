@@ -4319,146 +4319,111 @@ class TestBurr:
 
 
 class TestStudentizedRange:
-    def test_linux32b_check_pdf_logpdf_at_endpoints(self):
-        points = np.zeros(100)
-        res = stats.studentized_range.pdf(points, 3, 10)
-        assert_allclose(points, res)
-        
-        msg=""
-        args = [3, 10]
-        distfn = stats.studentized_range
-        points = np.array([0, 1])
-        vals = distfn.ppf(points, *args)
-        vals = vals[np.isfinite(vals)]
-        with np.testing.suppress_warnings() as sup:
-            # Several distributions incur divide by zero or encounter invalid values when computing
-            # the pdf or logpdf at the endpoints.
-            suppress_messsages = [
-                "divide by zero encountered in true_divide",  # multiple distributions
-                "divide by zero encountered in log",  # multiple distributions
-                "divide by zero encountered in power",  # gengamma
-                "invalid value encountered in add",  # genextreme
-                "invalid value encountered in subtract",  # gengamma
-                "invalid value encountered in multiply",  # recipinvgauss
-                "invalid value encountered in log"  # studentized_range
-                ]
-            for msg in suppress_messsages:
-                sup.filter(category=RuntimeWarning, message=msg)
-    
-            pdf = distfn.pdf(vals, *args)
-            logpdf = distfn.logpdf(vals, *args)
-            pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
-            logpdf = logpdf[np.isfinite(logpdf)]
-            msg += " - logpdf-log(pdf) relationship"
-            np.testing.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+    # Critical Q values were selected from this table:
+    # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
+    # For alpha=.05 and .01, and for each value of v=[1, 3, 10, 20],
+    # a Q was picked from each table for k=[2, 8, 14, 20].
+    ks = [2, 8, 14, 20]
+    vs = [1, 3, 10, 20, 120, np.inf]
+    # these arrays are written with `k` as column, and `v` as rows, but they
+    # must be reshaped with a new order to be in the proper order to compare
+    # with the product.
+    alpha05 = np.asarray([17.97, 45.40, 54.33, 59.56,
+                          4.501, 8.853, 10.35, 11.24,
+                          3.151, 5.305, 6.028, 6.467,
+                          2.950, 4.768, 5.357, 5.714,
+                          2.800, 4.363, 4.842, 5.126,
+                          2.772, 4.286, 4.743, 5.012]).reshape((4, 6),
+                                                               order="F")
+    alpha01 = np.asarray([90.03, 227.2, 271.8, 298.0,
+                          8.261, 15.64, 18.22, 19.77,
+                          4.482, 6.875, 7.712, 8.226,
+                          4.024, 5.839, 6.450, 6.823,
+                          3.702, 5.118, 5.562, 5.827,
+                          3.643, 4.987, 5.400, 5.645]).reshape((4, 6),
+                                                               order="F")
+    alpha001 = np.asarray([900.3, 2272, 2718, 2980,
+                          18.28, 34.12, 39.69, 43.05,
+                          6.487, 9.352, 10.39, 11.03,
+                          5.444, 7.313, 7.966, 8.370,
+                          4.772, 6.039, 6.448, 6.695,
+                          4.654, 5.823, 6.191, 6.411]).reshape((4, 6),
+                                                               order="F")
+    alphas = np.ravel(np.concatenate((alpha05, alpha01, alpha001)))
+    ps = [.95, .99, .999]
+    data = np.asarray(list(product(ps, ks, vs)))
+    data_rows = np.moveaxis(data, 0, -1)
+    ps, ks, vs, = data_rows
 
+    path_prefix = os.path.dirname(__file__)
+    relative_path = "data/studentized_range_mpmath_ref.json"
+    with open(os.path.join(path_prefix, relative_path), "r") as file:
+        pregenerated_data = json.load(file)
 
-    
-    # # Critical Q values were selected from this table:
-    # # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
-    # # For alpha=.05 and .01, and for each value of v=[1, 3, 10, 20],
-    # # a Q was picked from each table for k=[2, 8, 14, 20].
-    # ks = [2, 8, 14, 20]
-    # vs = [1, 3, 10, 20, 120, np.inf]
-    # # these arrays are written with `k` as column, and `v` as rows, but they
-    # # must be reshaped with a new order to be in the proper order to compare
-    # # with the product.
-    # alpha05 = np.asarray([17.97, 45.40, 54.33, 59.56,
-    #                       4.501, 8.853, 10.35, 11.24,
-    #                       3.151, 5.305, 6.028, 6.467,
-    #                       2.950, 4.768, 5.357, 5.714,
-    #                       2.800, 4.363, 4.842, 5.126,
-    #                       2.772, 4.286, 4.743, 5.012]).reshape((4, 6),
-    #                                                            order="F")
-    # alpha01 = np.asarray([90.03, 227.2, 271.8, 298.0,
-    #                       8.261, 15.64, 18.22, 19.77,
-    #                       4.482, 6.875, 7.712, 8.226,
-    #                       4.024, 5.839, 6.450, 6.823,
-    #                       3.702, 5.118, 5.562, 5.827,
-    #                       3.643, 4.987, 5.400, 5.645]).reshape((4, 6),
-    #                                                            order="F")
-    # alpha001 = np.asarray([900.3, 2272, 2718, 2980,
-    #                       18.28, 34.12, 39.69, 43.05,
-    #                       6.487, 9.352, 10.39, 11.03,
-    #                       5.444, 7.313, 7.966, 8.370,
-    #                       4.772, 6.039, 6.448, 6.695,
-    #                       4.654, 5.823, 6.191, 6.411]).reshape((4, 6),
-    #                                                            order="F")
-    # alphas = np.ravel(np.concatenate((alpha05, alpha01, alpha001)))
-    # ps = [.95, .99, .999]
-    # data = np.asarray(list(product(ps, ks, vs)))
-    # data_rows = np.moveaxis(data, 0, -1)
-    # ps, ks, vs, = data_rows
+    @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
+    def test_cdf_against_mp(self, case_result):
+        print(case_result)
+        src_case = case_result["src_case"]
 
-    # path_prefix = os.path.dirname(__file__)
-    # relative_path = "data/studentized_range_mpmath_ref.json"
-    # with open(os.path.join(path_prefix, relative_path), "r") as file:
-    #     pregenerated_data = json.load(file)
+        mp_result = case_result["mp_result"]
+        print(src_case)
 
-    # @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
-    # def test_cdf_against_mp(self, case_result):
-    #     print(case_result)
-    #     src_case = case_result["src_case"]
+        res = stats.studentized_range.cdf(src_case["q"],
+                                          src_case["k"],
+                                          src_case["v"])
 
-    #     mp_result = case_result["mp_result"]
-    #     print(src_case)
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
 
-    #     res = stats.studentized_range.cdf(src_case["q"],
-    #                                       src_case["k"],
-    #                                       src_case["v"])
+    def test_cdf_against_tables(self):
+        res_p = stats.studentized_range.cdf(self.alphas, self.ks, self.vs)
+        assert_allclose(res_p, self.ps, rtol=1e-4)
 
-    #     assert_allclose(res, mp_result,
-    #                     atol=src_case["expected_atol"],
-    #                     rtol=src_case["expected_rtol"])
+    @pytest.mark.slow
+    def test_ppf_against_tables(self):
+        res_q = stats.studentized_range.ppf(self.ps, self.ks, self.vs)
+        assert_allclose(res_q, self.alphas, rtol=1e-3)
 
-    # def test_cdf_against_tables(self):
-    #     res_p = stats.studentized_range.cdf(self.alphas, self.ks, self.vs)
-    #     assert_allclose(res_p, self.ps, rtol=1e-4)
+    def test_pdf_integration(self):
+        k, v = 3, 10
 
-    # @pytest.mark.slow
-    # def test_ppf_against_tables(self):
-    #     res_q = stats.studentized_range.ppf(self.ps, self.ks, self.vs)
-    #     assert_allclose(res_q, self.alphas, rtol=1e-3)
+        # Test whether PDF integration is 1 like it should be.
+        res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
+        assert_allclose(res[0], 1)
 
-    # def test_pdf_integration(self):
-    #     k, v = 3, 10
+    @pytest.mark.slow
+    def test_pdf_against_cdf(self):
+        k, v = 3, 10
 
-    #     # Test whether PDF integration is 1 like it should be.
-    #     res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
-    #     assert_allclose(res[0], 1)
+        # Test whether the integrated PDF matches the CDF using cumulative
+        # integration. Use a small step size to reduce error due to the
+        # summation. This is slow, but tests the results well.
+        x = np.arange(0, 10, step=0.01)
 
-    # @pytest.mark.slow
-    # def test_pdf_against_cdf(self):
-    #     k, v = 3, 10
+        y_cdf = stats.distributions.studentized_range.cdf(x, k, v)[1:]
+        y_pdf_raw = stats.distributions.studentized_range.pdf(x, k, v)
+        y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
 
-    #     # Test whether the integrated PDF matches the CDF using cumulative
-    #     # integration. Use a small step size to reduce error due to the
-    #     # summation. This is slow, but tests the results well.
-    #     x = np.arange(0, 10, step=0.01)
+        # Because of error caused by the summation, use a relatively large rtol
+        assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
-    #     y_cdf = stats.distributions.studentized_range.cdf(x, k, v)[1:]
-    #     y_pdf_raw = stats.distributions.studentized_range.pdf(x, k, v)
-    #     y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
+    @pytest.mark.slow
+    def test_moment_against_pdf(self):
+        k, v = 3, 10
+        moments = [1, 2, 3, 4]
 
-    #     # Because of error caused by the summation, use a relatively large rtol
-    #     assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
+        for moment in moments:
+            res_act = stats.studentized_range.moment(moment, k, v)
 
-    # @pytest.mark.slow
-    # def test_moment_against_pdf(self):
-    #     k, v = 3, 10
-    #     moments = [1, 2, 3, 4]
+            def wrapper(x):
+                return x ** moment * stats.studentized_range.pdf(x, k, v)
+            res_exp = quad(wrapper, 0, np.inf)[0]
 
-    #     for moment in moments:
-    #         res_act = stats.studentized_range.moment(moment, k, v)
-
-    #         def wrapper(x):
-    #             return x ** moment * stats.studentized_range.pdf(x, k, v)
-    #         res_exp = quad(wrapper, 0, np.inf)[0]
-
-    #         # Atol is large B/C of integration innacuracy with quad.
-    #         # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
-    #         # range causes the results to converge and pass default atol.
-    #         assert_allclose(res_act, res_exp, atol=1e-5)
+            # Atol is large B/C of integration innacuracy with quad.
+            # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
+            # range causes the results to converge and pass default atol.
+            assert_allclose(res_act, res_exp, atol=1e-5)
 
 
 def test_540_567():
