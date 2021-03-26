@@ -36,7 +36,7 @@ def _eps_cast(dtyp):
     return np.finfo(dt).eps
 
 
-class TestSolveBanded(object):
+class TestSolveBanded:
 
     def test_real(self):
         a = array([[1.0, 20, 0, 0],
@@ -175,7 +175,7 @@ class TestSolveBanded(object):
         assert_array_almost_equal(dot(a, x), b)
 
 
-class TestSolveHBanded(object):
+class TestSolveHBanded:
 
     def test_01_upper(self):
         # Solve
@@ -490,7 +490,7 @@ class TestSolveHBanded(object):
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
 
-class TestSolve(object):
+class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -774,7 +774,7 @@ class TestSolve(object):
                                 err_msg=err_msg)
 
 
-class TestSolveTriangular(object):
+class TestSolveTriangular:
 
     def test_simple(self):
         """
@@ -836,7 +836,7 @@ class TestSolveTriangular(object):
         assert_array_almost_equal(sol, [1, 0])
 
 
-class TestInv(object):
+class TestInv:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -879,7 +879,7 @@ class TestInv(object):
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
 
-class TestDet(object):
+class TestDet:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -926,7 +926,7 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
-class TestLstsq(object):
+class TestLstsq:
 
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
@@ -1213,7 +1213,7 @@ class TestLstsq(object):
             assert_equal(s, np.empty((0,)))
 
 
-class TestPinv(object):
+class TestPinv:
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1270,7 +1270,7 @@ class TestPinv(object):
         assert a_pinv.flags['C_CONTIGUOUS']
 
 
-class TestPinvSymmetric(object):
+class TestPinvSymmetric:
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1325,7 +1325,7 @@ def test_auto_rcond(scale, pinv_):
     assert_allclose(x_inv, expected)
 
 
-class TestVectorNorms(object):
+class TestVectorNorms:
 
     def test_types(self):
         for dtype in np.typecodes['AllFloat']:
@@ -1385,7 +1385,7 @@ class TestVectorNorms(object):
         assert_allclose(res, 1.0)
 
 
-class TestMatrixNorms(object):
+class TestMatrixNorms:
 
     def test_matrix_norms(self):
         # Not all of these are matrix norms in the most technical sense.
@@ -1432,7 +1432,7 @@ class TestMatrixNorms(object):
         assert_(b.shape == c.shape)
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     def test_solve(self):
         assert_no_overwrite(solve, [(3, 3), (3,)])
 
@@ -1465,7 +1465,7 @@ class TestOverwrite(object):
         assert_no_overwrite(pinvh, [(3, 3)])
 
 
-class TestSolveCirculant(object):
+class TestSolveCirculant:
 
     def test_basic1(self):
         c = np.array([1, 2, 3, 5])
@@ -1550,7 +1550,7 @@ class TestSolveCirculant(object):
         assert_allclose(x, y)
 
 
-class TestMatrix_Balance(object):
+class TestMatrix_Balance:
 
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')

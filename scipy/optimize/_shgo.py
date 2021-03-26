@@ -445,7 +445,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     return shc.res
 
 
-class SHGO(object):
+class SHGO:
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):

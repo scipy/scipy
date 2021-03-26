@@ -777,18 +777,20 @@ cdef class Rotation(object):
     @classmethod
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def from_rotvec(cls, rotvec):
+    def from_rotvec(cls, rotvec, degrees=False):
         """Initialize from rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation (in
-        radians) [1]_.
+        the axis of rotation and whose norm gives the angle of rotation [1]_.
 
         Parameters
         ----------
         rotvec : array_like, shape (N, 3) or (3,)
             A single vector or a stack of vectors, where `rot_vec[i]` gives
             the ith rotation vector.
+        degrees : bool, optional
+            If True, then the given magnitudes are assumed to be in degrees.
+            Default is False.
 
         Returns
         -------
@@ -812,6 +814,12 @@ cdef class Rotation(object):
         >>> r.as_rotvec().shape
         (3,)
 
+        Initialize a rotation in degrees, and view it in degrees:
+
+        >>> r = R.from_rotvec(45 * np.array([0, 1, 0]), degrees=True)
+        >>> r.as_rotvec(degrees=True)
+        array([ 0., 45.,  0.])
+
         Initialize multiple rotations in one object:
 
         >>> r = R.from_rotvec([
@@ -832,6 +840,8 @@ cdef class Rotation(object):
         """
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
+        if degrees:
+            rotvec = np.deg2rad(rotvec)
 
         if rotvec.ndim not in [1, 2] or rotvec.shape[len(rotvec.shape)-1] != 3:
             raise ValueError("Expected `rot_vec` to have shape (3,) "
@@ -1282,17 +1292,19 @@ cdef class Rotation(object):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def as_rotvec(self):
+    def as_rotvec(self, degrees=False):
         """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation (in
-        radians) [1]_.
+        the axis of rotation and whose norm gives the angle of rotation [1]_.
 
         Returns
         -------
         rotvec : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
+        degrees : boolean, optional
+            Returned magnitudes are in degrees if this flag is True, else they are
+            in radians. Default is False.
 
         References
         ----------
@@ -1309,6 +1321,15 @@ cdef class Rotation(object):
         array([0.        , 0.        , 1.57079633])
         >>> r.as_rotvec().shape
         (3,)
+
+        Represent a rotation in degrees:
+
+        >>> r = R.from_euler('YX', (-90, -90), degrees=True)
+        >>> s = r.as_rotvec(degrees=True)
+        >>> s
+        array([-69.2820323, -69.2820323, -69.2820323])
+        >>> np.linalg.norm(s)
+        120.00000000000001
 
         Represent a stack with a single rotation:
 
@@ -1328,6 +1349,7 @@ cdef class Rotation(object):
         (2, 3)
 
         """
+        
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
@@ -1352,6 +1374,9 @@ cdef class Rotation(object):
             rotvec[ind, 0] = scale * quat[0]
             rotvec[ind, 1] = scale * quat[1]
             rotvec[ind, 2] = scale * quat[2]
+
+        if degrees:
+            rotvec = np.rad2deg(rotvec)
 
         if self._single:
             return np.asarray(rotvec[0])

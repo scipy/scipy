@@ -427,7 +427,7 @@ def _fit_determine_optimizer(optimizer):
 
 
 # Frozen RV class
-class rv_frozen(object):
+class rv_frozen:
 
     def __init__(self, dist, *args, **kwds):
         self.args = args
@@ -620,7 +620,7 @@ def _ncx2_cdf(x, df, nc):
     return chndtr(x, df, nc)
 
 
-class rv_generic(object):
+class rv_generic:
     """Class which encapsulates common functionality between rv_discrete
     and rv_continuous.
 
