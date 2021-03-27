@@ -262,11 +262,7 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError("Sample is not in unit hypercube")
 
-    if not isinstance(workers, int):
-        raise ValueError(
-            f"workers param needs to be an int. Found " f"{type(workers)!r}"
-        )
-
+    workers = int(workers)
     if workers == -1:
         workers = os.cpu_count()
         if workers is None:
