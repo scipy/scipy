@@ -103,7 +103,7 @@ Currently, SciPy wheels are being built as follows:
 Linux (nightly)    ``ubuntu-18.04``          GCC 4.8                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [15]_
 OSX                ``macOS-10.14``           LLVM 11.0                    Built in separate repo [15]_
-Windows            ``VS2017-Win2016``        Visual Studio 2017 (15.9)    See ``azure-pipelines.yml``
+Windows            ``windows-2019``          Visual Studio 2019 (16.9)    See ``azure-pipelines.yml``
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.8, see [15]_.
@@ -144,14 +144,17 @@ Therefore, using C features beyond C90 is contingent upon updating the windows
 toolchain for SciPy, as well as checking compiler support for the desired feature
 across all minimally supported compiler versions. In short:
 
-===================   ==============   =============================================
+===================   ==============   =================================================
 CPython               MS Visual C++    C Standard
-===================   ==============   =============================================
+===================   ==============   =================================================
 2.7, 3.0, 3.1, 3.2       9.0           C90
 3.3, 3.4                10.0           C90 & some of C99
 3.5, 3.6                14.0           C90 & most of C99
-3.7, 3.8, 3.9           15.7           Dependent on MSVC version used to build SciPy
-===================   ==============   =============================================
+3.7, 3.8, 3.9           15.7`*`        C99/C11/C17 (excluding all C11-optional features)
+===================   ==============   =================================================
+
+`*` Due to the universal C runtime since Visual Studio 2015, the compiler version used
+to build a library does not need to match the compiler version used to compile CPython.
 
 
 C and C++ Language Standards
@@ -168,13 +171,12 @@ attempting to predict adoption timelines for newer standards.
  2019              C90 for old code, may consider C99 for new
  2020              C99
  2020              C++11
- 2021              C++14
- ?                 C11, C17, C++17, C++20
+ 2021              C11, C17, C++14
+ ?                 C++17, C++20
 ================  =======================================================================
 
-For C, C11/C17 support will be available as soon as the ``vmImage`` for
-building SciPy is upgraded to ``windows-2019`` (which is compatible with
-currently supported CPython versions and "just" needs to be executed). This is
+For C, C11/C17 is supported since upgrading the ``vmImage``
+used for building SciPy to ``windows-2019``. This is
 because GCC & LLVM support all relevant C11 features with the oldest currently
 used versions, and C17 is just a bugfix for C11, as mentioned above.
 
