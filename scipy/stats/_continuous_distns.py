@@ -9137,10 +9137,10 @@ class studentized_range_gen(rv_continuous):
     >>> np.allclose([0.001, 0.5, 0.999], studentized_range.cdf(vals, k, df))
     True
 
-    Rather than using (``%(name)s.rvs``) to generate random variates, which is
-    very slow for this distribution, we can approximate the inverse CDF using
-    an interpolator, and then perform inverse transform sampling with this
-    approximate inverse CDF.
+    Rather than using (``studentized_range.rvs``) to generate random variates,
+    which is very slow for this distribution, we can approximate the inverse
+    CDF using an interpolator, and then perform inverse transform sampling
+    with this approximate inverse CDF.
 
     This distribution has an infinite but thin right tail, so we focus our
     attention on the leftmost 99.9 percent.
