@@ -2113,6 +2113,12 @@ def ansari(x, y, alternative='two-sided'):
     fligner : A non-parametric test for the equality of k variances
     mood : A non-parametric test for the equality of two scale parameters
 
+    Notes
+    -----
+    The p-value given is exact when the sample sizes are both less than
+    55 and there are no ties, otherwise a normal approximation for the
+    p-value is used.
+
     References
     ----------
     .. [1] Ansari, A. R. and Bradley, R. A. (1960) Rank-sum tests for
@@ -2236,6 +2242,9 @@ def ansari(x, y, alternative='two-sided'):
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
+    # Small values of AB indicate larger dispersion for the x sample.
+    # Large values of AB indicate larger dispersion for the y sample.
+    # This is opposite to the way we define the ratio of scales. see [1]_.
     z = (mnAB - AB) / sqrt(varAB)
     z, pval = _normtest_finish(z, alternative)
     return AnsariResult(AB, pval)
