@@ -30,6 +30,7 @@ def _cy_wrapper_l2_star_discrepancy(
         workers: int,
 ) -> float: ...
 
+
 def _cy_wrapper_update_discrepancy(
         x_new_view: npt.ArrayLike,
         sample_view: npt.ArrayLike,
