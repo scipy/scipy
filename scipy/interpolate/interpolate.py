@@ -409,6 +409,10 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
+    
+    If the values in `x` are not unique, the resulting behavior is
+    undefined and specific to the choice of `kind`, i.e., changing
+    `kind` will change the behavior for duplicates.
 
 
     Examples

@@ -9624,6 +9624,20 @@ add_newdoc("wright_bessel",
     Due to the compexity of the function with its three parameters, only
     non-negative arguments are implemented.
 
+    Examples
+    --------
+    >>> from scipy.special import wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> wright_bessel(a, b-1, x)
+    4.5314465939443025
+
+    Now, let us verify the relation
+
+    .. math:: \Phi(a, b-1; x) = a x \Phi(a, b+a; x) + (b-1) \Phi(a, b; x)
+
+    >>> a * x * wright_bessel(a, b+a, x) + (b-1) * wright_bessel(a, b, x)
+    4.5314465939443025
+
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 10.46.
