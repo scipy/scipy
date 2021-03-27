@@ -174,6 +174,9 @@ class TestUtils:
         with pytest.raises(NotImplementedError, match="Cannot determine the"):
             qmc.discrepancy(sample, workers=-1)
 
+        with pytest.raises(ValueError, match="Invalid number of workers..."):
+            qmc.discrepancy(sample, workers=-2)
+
     def test_update_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
         space_1 = (2.0 * space_1 - 1.0) / (2.0 * 6.0)
