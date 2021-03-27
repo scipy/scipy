@@ -161,7 +161,7 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
         Refer to the notes for more details. Default is ``CD``.
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is given all
-        CPU threads are used. Default: 1.
+        CPU threads are used. Default is 1.
 
     Returns
     -------
