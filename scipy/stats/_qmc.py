@@ -325,8 +325,8 @@ def update_discrepancy(x_new, sample, initial_disc):
     0.008142039609053513
 
     """
-    sample = np.asarray(sample)
-    x_new = np.asarray(x_new)
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+    x_new = np.asarray(x_new, dtype=np.float64, order="C")
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
