@@ -34,7 +34,7 @@ class CensoredData:
     Instances of this class represent censored data.
 
     Instances may be passed to the ``fit`` method of continuous
-    univariate SciPy distributions for MLE fitting.
+    univariate SciPy distributions for maximum likelihood estimation.
 
     Left-, right-, and interval-censored data can be represented.
 
@@ -45,9 +45,27 @@ class CensoredData:
 
     For convenience, the class methods ``left_censored`` and
     ``right_censored`` are provided to create a ``CensoredData``
-    instance from a single one-dimensional array of observations
-    and a corresponding boolean array to indicate which observations
+    instance from a single one-dimensional array of measurements
+    and a corresponding boolean array to indicate which measurements
     are censored.
+
+    Parameters
+    ----------
+    lower, upper : array_like
+        The data, a possibly mixed collection of censored and uncensored
+        measurements.  The arrays must be one-dimensional and have the same
+        length.  The values are interpreted as follows:
+
+        * ``lower[k] == upper[k]``: the common value is an uncensored
+          measurement.
+        * ``upper[k] == inf``: the measurement is right-censored; the
+          value in ``lower[k]`` is the lower bound for the true unknown
+          value.
+        * ``lower[k] == -inf``: the measurement is left-censored; the value
+          in ``upper[k]`` is the upper bound for the true unknown value.
+        * ``lower[k] < upper[k]``, and both values are finite: the
+          measurement is interval-censored; the true unknown value is
+          between ``lower[k]`` and ``upper[k]``.
 
     Examples
     --------
@@ -62,31 +80,45 @@ class CensoredData:
     CensoredData(5 values: 2 not censored, 1 left-censored,
     1 right-censored, 1 interval-censored)
 
-    The first value is left-censored; the true (but unknown) value is
-    less than or equal to 0.  The second and third values, 1 and 1.5,
-    are not censored.  The fourth value is interval-censored; the true
-    value is in the interval [2, 3].  The last value is right-censored;
-    the true value is greater than or equal to 10.
+    The first value represents a left-censored measurement; the true (but
+    unknown) value is less than or equal to 0.  The second and third
+    values, 1 and 1.5, are not censored.  The fourth value represents an
+    interval-censored measurement; the true value is in the interval [2, 3].
+    The last value represents a right-censored measurement; the true value
+    is greater than or equal to 10.
 
-    A common case is to have data that is a mix of uncensored values and
-    censored values that are all right-censored (or all left-censored)
-    with the same bound on the censored values.  For example, a measuring
-    device might have an upper limit of 100, so a reading of 100 means
-    the true value is unknown, but the value is not less than 100.
-    Suppose we have nine readings from such a device, with six being
-    [65, 51, 88, 93, 96, 89] and three being 100.  To create an instance
-    of `CensoredData` to represent this data, we can use the class method
-    `CensoredData.right_censored` as follows:
+    A common case is to have a mix of uncensored measurements and censored
+    measurements that are all right-censored (or all left-censored). For
+    example, consider an experiment in which six devices are started at
+    various times and left running until they fail.  Assume that time is
+    measured in hours, and the experiment is stopped after 30 hours, even
+    if all the devices have not failed by that time.  We might end up with
+    data such as this::
 
-    >>> values = [65, 51, 88, 93, 96, 89, 100, 100, 100]
-    >>> censored = [0, 0, 0, 0, 0, 0, 1, 1, 1]
+        Device  Start-time  Fail-time  Time-to-failure
+           1         0         13           13
+           2         2         24           22
+           3         5         22           17
+           4         8         23           15
+           5        10        ***          >20
+           6        12        ***          >18
 
-    A 1 (or any True value) in the sequence ``censored`` indicates
-    that the corresponding value in ``values`` is right-censored.
+    Two of the devices had not failed when the experiment was stopped;
+    the measurements of the time-to-failure for these two devices are
+    right-censored.  We'll use the method `CensoredData.right_censored` to
+    create a representation of this data.  The time-to-failure measurements
+    are put the list ``ttf``.  The ``censored`` list indicates which values
+    in ``ttf`` are censored.
 
-    >>> data = CensoredData.right_censored(values, censored)
+    >>> ttf = [13, 22, 17, 15, 20, 18]
+    >>> censored = [False, False, False, False, True, True]
+
+    Pass these lists to `CensoredData.right_censored` to create an
+    instance of `CensoredData`.
+
+    >>> data = CensoredData.right_censored(ttf, censored)
     >>> print(data)
-    CensoredData(9 values: 6 not censored, 3 right-censored)
+    CensoredData(6 values: 4 not censored, 2 right-censored)
     """
 
     def __init__(self, lower, upper):
