@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+
 def _cy_wrapper_centered_discrepancy(
         sample: npt.ArrayLike, 
         iterative: bool, 
