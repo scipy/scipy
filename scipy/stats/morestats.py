@@ -2085,7 +2085,8 @@ def ansari(x, y, alternative='two-sided'):
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
     for the equality of the scale parameter of the distributions
     from which two samples were drawn. The null hypothesis states that
-    the ratio or the scales of both the distributions is 1.
+    the ratio of the scale of the distribution underlying `x` to the scale
+    of the distribution underlying `y` is 1.
 
     Parameters
     ----------
@@ -2096,10 +2097,8 @@ def ansari(x, y, alternative='two-sided'):
         The following options are available:
 
         * 'two-sided': the ratio of scales is not equal to 1.
-        * 'less': the ratio of scales of the given distributions is less
-                  than 1.
-        * 'greater': the ratio of scales of the given distributions is
-                     greater than 1.
+        * 'less': the ratio of scales is less than 1.
+        * 'greater': the ratio of scales is greater than 1.
 
     Returns
     -------
