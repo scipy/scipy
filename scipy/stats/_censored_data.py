@@ -36,7 +36,18 @@ class CensoredData:
     Instances may be passed to the ``fit`` method of continuous
     univariate SciPy distributions for maximum likelihood estimation.
 
-    Left-, right-, and interval-censored data can be represented.
+    Data is *censored* when the true value is unknown, but it has
+    a known upper or lower bound.  The conventional terminology is:
+
+    * left-censored: a data point is below a certain value but it is
+      unknown by how much.
+    * right-censored: a data point is above a certain value but it is
+      unknown by how much.
+    * interval-censored: a data point is somewhere on an interval between
+      two values.
+
+    Left-, right-, and interval-censored data can be represented by
+    `CensoredData`.
 
     For interval-censored data, pass the lower and upper limits of
     the intervals as one-dimensional arrays to the ``CensoredData``
