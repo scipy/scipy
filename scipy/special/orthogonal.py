@@ -694,6 +694,21 @@ def laguerre(n, monic=False):
     The polynomials :math:`L_n` are orthogonal over :math:`[0,
     \infty)` with weight function :math:`e^{-x}`.
 
+    Examples
+    --------
+    The Laguerre polynomials are the special case alpha=0 of the generalized
+    Laguerre polynomials:
+    >>> from scipy.special import genlaguerre, laguerre
+    >>> import matplotlib.pyplot as plt
+    >>> fig, (ax1, ax2) = plt.subplots(2)
+    >>> ax1.plot(x, genlaguerre(3, 0)(x), label='L_3, alpha=0')
+    >>> ax1.set_ylim(-5., 10.)
+    >>> ax1.legend()
+    >>> ax2.plot(x, laguerre(3)(x), label='L_3')
+    >>> ax2.set_ylim(-5., 10.)
+    >>> ax2.legend()
+    >>> plt.show()
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
