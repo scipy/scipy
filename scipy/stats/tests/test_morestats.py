@@ -545,7 +545,7 @@ class TestAnsari:
         # mass under the calculated statistic.
         astart, dist, _ = gscale(len(x1), len(x2))
         ind = int(statistic - astart)
-        prob = dist[ind] / np.sum(dist)
+        prob = np.float64(dist[ind]) / np.sum(dist)
         assert pval_g + pval_l == 1 + prob
         # sanity check. The result should flip if
         # we exchange x and y.
@@ -574,13 +574,13 @@ class TestAnsari:
         # > x <- c(1,2,3)
         # > y <- c(4,5,6,7,8)
         # > ansari.test(x, y, alternative='less', exact=TRUE)
-        # 
+        #
         #     Ansari-Bradley test
-        # 
+        #
         # data:  x and y
         # AB = 6, p-value = 0.8928571428571
         # alternative hypothesis: true ratio of scales is less than 1
-        # 
+        #
         # ```
         pval = stats.ansari(x, y, alternative=alternative).pvalue
         assert_allclose(pval, expected, atol=1e-12)

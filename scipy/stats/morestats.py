@@ -2078,6 +2078,65 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
+class _ABW:
+    '''Distribution of Ansari-Bradley W-statistic under the null hypothesis'''
+    # TODO: calculate exact distribution considering ties
+    # We could avoid summing over more than half the frequencies,
+    # but inititally it doesn't seem worth the extra complexity
+
+    def __init__(self):
+        '''Minimal initializer'''
+        self.m = None
+        self.n = None
+
+    def _recalc(self, n, m):
+        '''When necessary, recalculate exact distribution'''
+        if n != self.n or m != self.m:
+            self.n, self.m = n, m
+            # distribution is NOT symmetric when m + n is odd
+            # n is len(x), m is len(y), and ratio of scales is defined x/y
+            astart, a1, _ = statlib.gscale(n, m)
+            self.astart = astart  # minimum value of statistic
+            # Exact distribution of test statistic under null hypothesis
+            # expressed as frequencies/counts/integers to maintain precision.
+            # Stored as floats to avoid overflow of sums.
+            self.freqs = a1.astype(np.float64)
+            self.total = self.freqs.sum()  # could calculate from m and n
+            # probability mass is self.freqs / self.total;
+
+    def pmf(self, k, n, m):
+        '''Probability mass function'''
+        self._recalc(n, m)
+        # The convention here is that PMF at k = 12.5 is the same as at k = 12,
+        # -> use `floor` in case of ties.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[ind] / self.total
+
+    def cdf(self, k, n, m):
+        '''Cumulative distribution function'''
+        self._recalc(n, m)
+        # This is a bit subtle; easiest to think through an example:
+        # the CDF at k = 12.5 should be the same as at k = 12 -> `floor`
+        # The convention is for CDF at k = 12 to included the probability mass
+        # at k = 12 -> slice `:ind+1`.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[:ind+1].sum() / self.total
+
+    def sf(self, k, n, m):
+        '''Survival function'''
+        self._recalc(n, m)
+        # This is a bit subtle; easiest to think through an example:
+        # the SF at k = 12.5 should be the same at k = 13 -> `ceil`.
+        # The convention is for  SF at k = 13 to included the probability mass
+        # at k = 13 -> slice `ind:`.
+        ind = np.ceil(k - self.astart).astype(int)
+        return self.freqs[ind:].sum() / self.total
+
+
+# Maintain state for faster repeat calls to ansari w/ method='exact'
+_abw_state = _ABW()
+
+
 def ansari(x, y, alternative='two-sided'):
     """
     Perform the Ansari-Bradley test for equal scale parameters.
@@ -2199,31 +2258,15 @@ def ansari(x, y, alternative='two-sided'):
     if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
-        astart, a1, ifault = statlib.gscale(n, m)
-        ind = AB - astart
-        total = np.sum(a1, axis=0)
-        if ind < len(a1)/2.0:
-            cind = int(ceil(ind))
-            if cind != ind:
-                cind = cind - 1
-            if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
-            elif alternative == 'greater':
-                # see [3]_
-                pval = np.sum(a1[:cind+1], axis=0) / total
-            else:
-                # see [3]_
-                pval = 1.0 - np.sum(a1[:cind], axis=0) / total
+        if alternative == 'two-sided':
+            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
+                                    _abw_state.sf(AB, n, m))
+        elif alternative == 'greater':
+            # AB statistic is _smaller_ when ratio of scales is larger,
+            # so this is the opposite of the usual calculation
+            pval = _abw_state.cdf(AB, n, m)
         else:
-            find = int(floor(ind))
-            if find != ind:
-                find = find + 1
-            if alternative == 'two-sided':
-                pval = 2.0 * np.sum(a1[find:], axis=0) / total
-            elif alternative == 'greater':
-                pval = 1.0 - np.sum(a1[find+1:], axis=0) / total
-            else:
-                pval = np.sum(a1[find:], axis=0) / total
+            pval = _abw_state.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
