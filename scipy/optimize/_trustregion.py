@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, wrap_function, _status_message,
+from .optimize import (_check_unknown_options, _wrap_function, _status_message,
                        OptimizeResult, _prepare_scalar_function)
 
 __all__ = []
@@ -160,7 +160,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if hess is not None:
         hess = sf.hess
     # ScalarFunction doesn't represent hessp
-    nhessp, hessp = wrap_function(hessp, args)
+    nhessp, hessp = _wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:

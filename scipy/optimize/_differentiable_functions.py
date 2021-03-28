@@ -103,6 +103,7 @@ class ScalarFunction:
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
 
+        # the astype call ensures that self.x is a copy of x0
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
         self.nfev = 0
@@ -127,7 +128,10 @@ class ScalarFunction:
         # Function evaluation
         def fun_wrapped(x):
             self.nfev += 1
-            return fun(x, *args)
+            # Send a copy because the user may overwrite it.
+            # Overwriting results in undefined behaviour because
+            # fun(self.x) will change self.x, with the two no longer linked.
+            return fun(np.copy(x), *args)
 
         def update_fun():
             self.f = fun_wrapped(self.x)
@@ -139,7 +143,7 @@ class ScalarFunction:
         if callable(grad):
             def grad_wrapped(x):
                 self.ngev += 1
-                return np.atleast_1d(grad(x, *args))
+                return np.atleast_1d(grad(np.copy(x), *args))
 
             def update_grad():
                 self.g = grad_wrapped(self.x)
@@ -156,25 +160,25 @@ class ScalarFunction:
 
         # Hessian Evaluation
         if callable(hess):
-            self.H = hess(x0, *args)
+            self.H = hess(np.copy(x0), *args)
             self.H_updated = True
             self.nhev += 1
 
             if sps.issparse(self.H):
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return sps.csr_matrix(hess(x, *args))
+                    return sps.csr_matrix(hess(np.copy(x), *args))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return hess(x, *args)
+                    return hess(np.copy(x), *args)
 
             else:
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return np.atleast_2d(np.asarray(hess(x, *args)))
+                    return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
             def update_hess():
@@ -207,7 +211,8 @@ class ScalarFunction:
                 self._update_grad()
                 self.x_prev = self.x
                 self.g_prev = self.g
-
+                # ensure that self.x is a copy of x. Don't store a reference
+                # otherwise the memoization doesn't work properly.
                 self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
@@ -215,6 +220,8 @@ class ScalarFunction:
                 self._update_hess()
         else:
             def update_x(x):
+                # ensure that self.x is a copy of x. Don't store a reference
+                # otherwise the memoization doesn't work properly.
                 self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
