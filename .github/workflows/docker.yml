@@ -3,13 +3,15 @@ name: Build Docker images
 on:
   push: 
     branches:
-      - master
+    - master
+    paths:
+    - 'tools/docker_dev/Dockerfile'
     tags:
       - '*'
 
 jobs: 
   build:
-    name: Build Docker image 
+    name: Build base Docker image 
     runs-on: ubuntu-latest
     environment: scipy-dev
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
