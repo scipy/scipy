@@ -203,7 +203,7 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_info, **kwargs):
         # validate kwargs
         _validate_kwargs = metric_info.validator
         if _validate_kwargs:
-            kwargs = _validate_kwargs(np.vstack([XA, XB]), mA + mB, n, **kwargs)
+            kwargs = _validate_kwargs((XA, XB), mA + mB, n, **kwargs)
     else:
         typ = None
     return XA, XB, typ, kwargs
@@ -230,7 +230,9 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "singular. For observations with %d "
                              "dimensions, at least %d observations "
                              "are required." % (m, n, n + 1))
-        CV = np.atleast_2d(np.cov(X.astype(np.double).T))
+        if isinstance(X, tuple):
+            X = np.vstack(X)
+        CV = np.atleast_2d(np.cov(X.astype(np.double, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
     return kwargs
@@ -270,7 +272,9 @@ def _validate_pdist_input(X, m, n, metric_info, **kwargs):
 def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     V = kwargs.pop('V', None)
     if V is None:
-        V = np.var(X.astype(np.double), axis=0, ddof=1)
+        if isinstance(X, tuple):
+            X = np.vstack(X)
+        V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
         if len(V.shape) != 1:
