@@ -944,6 +944,35 @@ class TestRectBivariateSpline:
                                    bbox=bbox.tolist())
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
 
+    def test_not_increasing_input(self):
+        # gh-8565
+        NSamp = 20
+        Theta = np.random.uniform(0, np.pi, NSamp)
+        Phi = np.random.uniform(0, 2 * np.pi, NSamp)
+        Data = np.ones(NSamp)
+
+        Interpolator = SmoothSphereBivariateSpline(Theta, Phi, Data, s=3.5)
+
+        NLon = 6
+        NLat = 3
+        GridPosLats = np.arange(NLat) / NLat * np.pi
+        GridPosLons = np.arange(NLon) / NLon * 2 * np.pi
+
+        # No error
+        Interpolator(GridPosLats, GridPosLons)
+
+        nonGridPosLats = GridPosLats.copy()
+        nonGridPosLats[2] = 0.001
+        with assert_raises(ValueError) as exc_info:
+            Interpolator(nonGridPosLats, GridPosLons)
+        assert "x must be strictly increasing" in str(exc_info.value)
+
+        nonGridPosLons = GridPosLons.copy()
+        nonGridPosLons[2] = 0.001
+        with assert_raises(ValueError) as exc_info:
+            Interpolator(GridPosLats, nonGridPosLons)
+        assert "y must be strictly increasing" in str(exc_info.value)
+
 
 class TestRectSphereBivariateSpline:
     def test_defaults(self):
@@ -1057,6 +1086,21 @@ class TestRectSphereBivariateSpline:
         # list input
         spl2 = RectSphereBivariateSpline(x.tolist(), y.tolist(), z.tolist())
         assert_array_almost_equal(spl1(x, y), spl2(x, y))
+
+    def test_negative_evaluation(self):
+        lats = np.array([25, 30, 35, 40, 45])
+        lons = np.array([-90, -85, -80, -75, 70])
+        mesh = np.meshgrid(lats, lons)
+        data = mesh[0] + mesh[1]  # lon + lat value
+        lat_r = np.radians(lats)
+        lon_r = np.radians(lons)
+        interpolator = RectSphereBivariateSpline(lat_r, lon_r, data)
+        query_lat = np.radians(np.array([35, 37.5]))
+        query_lon = np.radians(np.array([-80, -77.5]))
+        data_interp = interpolator(query_lat, query_lon)
+        ans = np.array([[-45.0, -42.480862],
+                        [-49.0625, -46.54315]])
+        assert_array_almost_equal(data_interp, ans)
 
 
 def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
