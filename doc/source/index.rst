@@ -105,4 +105,4 @@ science, and engineering.
    User Guide <tutorial/index>
    API reference <reference/index>
    Development <dev/index>
-   Release notes <whatsnew/index>
+   Release notes <release>
