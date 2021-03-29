@@ -209,6 +209,19 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_info, **kwargs):
     return XA, XB, typ, kwargs
 
 
+def _validate_weight_with_size(X, m, n, **kwargs):
+    w = kwargs.pop('w', None)
+    if w is None:
+        return kwargs
+
+    if w.ndim != 1 or w.shape[0] != n:
+        raise ValueError("Weights must have same size as input vector. "
+                         f"{w.shape[0]} vs. {n}")
+
+    kwargs['w'] = _validate_weights(w)
+    return kwargs
+
+
 def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
@@ -239,9 +252,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
-    w = kwargs.pop('w', None)
-    if w is not None:
-        kwargs['w'] = _validate_weights(w)
+    kwargs = _validate_weight_with_size(X, m, n, **kwargs)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     else:
@@ -1764,6 +1775,7 @@ _METRIC_INFOS = [
         canonical_name='chebyshev',
         aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
         dist_func=chebyshev,
+        validator=_validate_weight_with_size,
         cdist_func=CDistWeightedMetricWrapper(
             'chebyshev', 'weighted_chebyshev'),
         pdist_func=PDistWeightedMetricWrapper(
