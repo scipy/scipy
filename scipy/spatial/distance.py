@@ -110,9 +110,11 @@ __all__ = [
 
 import warnings
 import numpy as np
+import dataclasses
+
+from typing import List, Optional, Set, Callable
 
 from functools import partial
-from collections import namedtuple
 from scipy._lib._util import _asarray_validated
 from scipy._lib.deprecation import _deprecated
 
@@ -188,10 +190,10 @@ def _nbool_correspond_ft_tf(u, v, w=None):
     return (nft, ntf)
 
 
-def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
-    if metric_name is not None:
+def _validate_cdist_input(XA, XB, mA, mB, n, metric_info, **kwargs):
+    if metric_info is not None:
         # get supported types
-        types = _METRICS[metric_name].types
+        types = metric_info.types
         # choose best type
         typ = types[types.index(XA.dtype)] if XA.dtype in types else types[0]
         # validate data
@@ -199,7 +201,7 @@ def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
         XB = _convert_to_type(XB, out_type=typ)
 
         # validate kwargs
-        _validate_kwargs = _METRICS[metric_name].validator
+        _validate_kwargs = metric_info.validator
         if _validate_kwargs:
             kwargs = _validate_kwargs(np.vstack([XA, XB]), mA + mB, n, **kwargs)
     else:
@@ -247,17 +249,17 @@ def _validate_minkowski_kwargs(X, m, n, **kwargs):
     return kwargs
 
 
-def _validate_pdist_input(X, m, n, metric_name, **kwargs):
-    if metric_name is not None:
+def _validate_pdist_input(X, m, n, metric_info, **kwargs):
+    if metric_info is not None:
         # get supported types
-        types = _METRICS[metric_name].types
+        types = metric_info.types
         # choose best type
         typ = types[types.index(X.dtype)] if X.dtype in types else types[0]
         # validate data
         X = _convert_to_type(X, out_type=typ)
 
         # validate kwargs
-        _validate_kwargs = _METRICS[metric_name].validator
+        _validate_kwargs = metric_info.validator
         if _validate_kwargs:
             kwargs = _validate_kwargs(X, m, n, **kwargs)
     else:
@@ -1613,63 +1615,131 @@ _convert_to_bool = partial(_convert_to_type, out_type=bool)
 _distance_wrap.pdist_correlation_double_wrap = _correlation_pdist_wrap
 _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 
+
+
+@dataclasses.dataclass(frozen=True)
+class MetricInfo:
+    # Name of python distance function
+    canonical_name: str
+    # All aliases, including canonical_name
+    aka: Set[str]
+    # function that checks kwargs and computes default values:
+    # f(X, m, n, **kwargs)
+    validator: Optional[Callable] = None
+    # list of supported types:
+    # X (pdist) and XA (cdist) are used to choose the type. if there is no
+    # match the first type is used. Default double
+    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+
+
 # Registry of implemented metrics:
-# Dictionary with the following structure:
-# {
-#  metric_name : MetricInfo(aka, types=[double], validator=None)
-# }
-#
-# Where:
-# `metric_name` must be equal to python metric name
-#
-# MetricInfo is a named tuple with fields:
-#  'aka' : [list of aliases],
-#
-#  'validator': f(X, m, n, **kwargs)    # function that check kwargs and
-#                                       # computes default values.
-#
-#  'types': [list of supported types],  # X (pdist) and XA (cdist) are used to
-#                                       # choose the type. if there is no match
-#                                       # the first type is used. Default double
-# }
-MetricInfo = namedtuple("MetricInfo", 'aka types validator ')
-MetricInfo.__new__.__defaults__ = (['double'], None)
+_METRIC_INFOS = [
+    MetricInfo(
+        canonical_name='braycurtis',
+        aka={'braycurtis'},
+    ),
+    MetricInfo(
+        canonical_name='canberra',
+        aka={'canberra'},
+    ),
+    MetricInfo(
+        canonical_name='chebyshev',
+        aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
+    ),
+    MetricInfo(
+        canonical_name='cityblock',
+        aka={'cityblock', 'cblock', 'cb', 'c'},
+    ),
+    MetricInfo(
+        canonical_name='correlation',
+        aka={'correlation', 'co'},
+    ),
+    MetricInfo(
+        canonical_name='cosine',
+        aka={'cosine', 'cos'},
+    ),
+    MetricInfo(
+        canonical_name='dice',
+        aka={'dice'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='euclidean',
+        aka={'euclidean', 'euclid', 'eu', 'e'},
+    ),
+    MetricInfo(
+        canonical_name='hamming',
+        aka={'matching', 'hamming', 'hamm', 'ha', 'h'},
+        types=['double', 'bool'],
+        validator=_validate_hamming_kwargs,
+    ),
+    MetricInfo(
+        canonical_name='jaccard',
+        aka={'jaccard', 'jacc', 'ja', 'j'},
+        types=['double', 'bool'],
+    ),
+    MetricInfo(
+        canonical_name='jensenshannon',
+        aka={'jensenshannon', 'js'},
+    ),
+    MetricInfo(
+        canonical_name='kulsinski',
+        aka={'kulsinski'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='mahalanobis',
+        aka={'mahalanobis', 'mahal', 'mah'},
+        validator=_validate_mahalanobis_kwargs,
+    ),
+    MetricInfo(
+        canonical_name='minkowski',
+        aka={'minkowski', 'mi', 'm', 'pnorm'},
+        validator=_validate_minkowski_kwargs,
+    ),
+    MetricInfo(
+        canonical_name='rogerstanimoto',
+        aka={'rogerstanimoto'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='russellrao',
+        aka={'russellrao'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='seuclidean',
+        aka={'seuclidean', 'se', 's'},
+        validator=_validate_seuclidean_kwargs,
+    ),
+    MetricInfo(
+        canonical_name='sokalmichener',
+        aka={'sokalmichener'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='sokalsneath',
+        aka={'sokalsneath'},
+        types=['bool'],
+    ),
+    MetricInfo(
+        canonical_name='sqeuclidean',
+        aka={'sqeuclidean', 'sqe', 'sqeuclid'},
+    ),
+    MetricInfo(
+        canonical_name='wminkowski',
+        aka={'wminkowski', 'wmi', 'wm', 'wpnorm'},
+        validator=_validate_wminkowski_kwargs,
+    ),
+    MetricInfo(
+        canonical_name='yule',
+        aka={'yule'},
+        types=['bool'],
+    ),
+]
 
-_METRICS = {
-    'braycurtis': MetricInfo(aka=['braycurtis']),
-    'canberra': MetricInfo(aka=['canberra']),
-    'chebyshev': MetricInfo(aka=['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']),
-    'cityblock': MetricInfo(aka=['cityblock', 'cblock', 'cb', 'c']),
-    'correlation': MetricInfo(aka=['correlation', 'co']),
-    'cosine': MetricInfo(aka=['cosine', 'cos']),
-    'dice': MetricInfo(aka=['dice'], types=['bool']),
-    'euclidean': MetricInfo(aka=['euclidean', 'euclid', 'eu', 'e']),
-    'hamming': MetricInfo(aka=['matching', 'hamming', 'hamm', 'ha', 'h'],
-                          types=['double', 'bool'],
-                          validator=_validate_hamming_kwargs),
-    'jaccard': MetricInfo(aka=['jaccard', 'jacc', 'ja', 'j'],
-                          types=['double', 'bool']),
-    'jensenshannon': MetricInfo(aka=['jensenshannon', 'js'],
-                                types=['double']),
-    'kulsinski': MetricInfo(aka=['kulsinski'], types=['bool']),
-    'mahalanobis': MetricInfo(aka=['mahalanobis', 'mahal', 'mah'],
-                              validator=_validate_mahalanobis_kwargs),
-    'minkowski': MetricInfo(aka=['minkowski', 'mi', 'm', 'pnorm'],
-                            validator=_validate_minkowski_kwargs),
-    'rogerstanimoto': MetricInfo(aka=['rogerstanimoto'], types=['bool']),
-    'russellrao': MetricInfo(aka=['russellrao'], types=['bool']),
-    'seuclidean': MetricInfo(aka=['seuclidean', 'se', 's'],
-                             validator=_validate_seuclidean_kwargs),
-    'sokalmichener': MetricInfo(aka=['sokalmichener'], types=['bool']),
-    'sokalsneath': MetricInfo(aka=['sokalsneath'], types=['bool']),
-    'sqeuclidean': MetricInfo(aka=['sqeuclidean', 'sqe', 'sqeuclid']),
-    'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
-                             validator=_validate_wminkowski_kwargs),
-    'yule': MetricInfo(aka=['yule'], types=['bool']),
-}
-
-
-_METRIC_ALIAS = dict((alias, name)
+_METRICS = {info.canonical_name: info for info in _METRIC_INFOS}
+_METRIC_ALIAS = dict((alias, info)
                      for name, info in _METRICS.items()
                      for alias in info.aka)
 
@@ -1692,10 +1762,10 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_") or mstr in (
-            _METRICS['hamming'].aka +
-            _METRICS['wminkowski'].aka +
-            _METRICS['minkowski'].aka):
+    if mstr.startswith("test_") or (
+            mstr in _METRICS['hamming'].aka or
+            mstr in _METRICS['wminkowski'].aka or
+            mstr in _METRICS['minkowski'].aka):
         # These support weights
         pass
     elif "w" in kwargs:
@@ -1991,11 +2061,11 @@ def pdist(X, metric='euclidean', **kwargs):
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
-        metric_name = _METRIC_ALIAS.get(mstr, None)
+        metric_info = _METRIC_ALIAS.get(mstr, None)
 
-        if metric_name is not None:
-            X, typ, kwargs = _validate_pdist_input(X, m, n,
-                                                   metric_name, **kwargs)
+        if metric_info is not None:
+            X, typ, kwargs = _validate_pdist_input(
+                X, m, n, metric_info, **kwargs)
 
         k = 0
         for i in range(0, m - 1):
@@ -2008,12 +2078,13 @@ def pdist(X, metric='euclidean', **kwargs):
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
-        metric_name = _METRIC_ALIAS.get(mstr, None)
+        metric_info = _METRIC_ALIAS.get(mstr, None)
 
-        if metric_name is not None:
-            X, typ, kwargs = _validate_pdist_input(X, m, n,
-                                                   metric_name, **kwargs)
+        if metric_info is not None:
+            X, typ, kwargs = _validate_pdist_input(
+                X, m, n, metric_info, **kwargs)
 
+            metric_name = metric_info.canonical_name
             if 'w' in kwargs:
                 metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
 
@@ -2679,10 +2750,10 @@ def cdist(XA, XB, metric='euclidean', **kwargs):
     if callable(metric):
 
         mstr = getattr(metric, '__name__', 'Unknown')
-        metric_name = _METRIC_ALIAS.get(mstr, None)
+        metric_info = _METRIC_ALIAS.get(mstr, None)
 
-        XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
-                                                    metric_name, **kwargs)
+        XA, XB, typ, kwargs = _validate_cdist_input(
+            XA, XB, mA, mB, n, metric_info, **kwargs)
 
         for i in range(0, mA):
             for j in range(0, mB):
@@ -2693,11 +2764,12 @@ def cdist(XA, XB, metric='euclidean', **kwargs):
 
         mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
-        metric_name = _METRIC_ALIAS.get(mstr, None)
-        if metric_name is not None:
-            XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
-                                                        metric_name, **kwargs)
+        metric_info = _METRIC_ALIAS.get(mstr, None)
+        if metric_info is not None:
+            XA, XB, typ, kwargs = _validate_cdist_input(
+                XA, XB, mA, mB, n, metric_info, **kwargs)
 
+            metric_name = metric_info.canonical_name
             if 'w' in kwargs:
                 metric_name = _C_WEIGHTED_METRICS.get(metric_name, metric_name)
 
