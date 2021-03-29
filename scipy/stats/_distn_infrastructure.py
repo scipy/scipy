@@ -36,7 +36,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-from typing import Optional
+from typing import Optional, Union, Any
 import math
 
 
@@ -2862,7 +2862,7 @@ def differential_entropy(
     window_length: Optional[int] = None,
     base: Optional[float] = None,
     axis: int = 0,
-) -> np.ndarray:
+) -> Union[np.number, np.ndarray]:
     r"""Given a sample of a distribution, calculate the differential entropy.
 
     This routine uses the Vasicek estimator of the differential entropy. Given
@@ -2922,7 +2922,6 @@ def differential_entropy(
 
     Examples
     --------
-
     >>> from scipy.stats import differential_entropy, norm
 
     Entropy of a standard normal distribution:
@@ -2948,7 +2947,7 @@ def differential_entropy(
     if not 2 <= 2 * window_length < len(values):
         raise ValueError(
             f"Window length ({window_length}) must be positive and less "
-            f"than half the sample size ({len(values)})."
+            f"than half the sample size ({len(values)}).",
         )
 
     sorted_data = np.sort(values, axis=0)
@@ -2971,7 +2970,7 @@ def differential_entropy(
     )
 
     logs = np.log(
-        len(differences) * differences / (2 * window_length)
+        len(differences) * differences / (2 * window_length),
     )
     if base is not None:
         logs /= np.log(base)
