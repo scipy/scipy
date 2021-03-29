@@ -5,7 +5,7 @@ import numpy as np
 
 from scipy.special import ndtr, ndtri
 from scipy.optimize import brentq
-from ._discrete_distns import nchypergeom_fisher, hypergeom
+from ._discrete_distns import nchypergeom_fisher
 from .stats import fisher_exact
 
 
@@ -114,7 +114,10 @@ def _conditional_oddsratio(table):
     Conditional MLE of the odds ratio for the 2x2 contingency table.
     """
     x, M, n, N = _hypergeom_params_from_table(table)
-    lo, hi = hypergeom.support(M, n, N)
+    # Get the bounds of the support.  The support of the noncentral
+    # hypergeometric distribution with parameters M, n, and N is the same
+    # for all values of the noncentrality parameter, so we can use 1 here.
+    lo, hi = nchypergeom_fisher.support(M, n, N, 1)
 
     # Check if x is at one of the extremes of the support.  If so, we know
     # the odds ratio is either 0 or inf.

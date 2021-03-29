@@ -83,12 +83,6 @@ class TestOddsRatio:
         ci = result.odds_ratio_ci()
         assert_equal((ci.low, ci.high), (0, np.inf))
 
-    @pytest.mark.parametrize('kind', ['sample', 'conditional'])
-    @pytest.mark.parametrize('bad_table', [123, "foo", [10, 11, 12]])
-    def test_input_validation(self, kind, bad_table):
-        with pytest.raises(ValueError, match="Invalid shape"):
-            odds_ratio(bad_table, kind=kind)
-
     def test_sample_odds_ratio_ci(self):
         # Compare the sample odds ratio confidence interval to the R function
         # oddsratio.wald from the epitools package, e.g.
@@ -106,3 +100,31 @@ class TestOddsRatio:
         assert_allclose(result.odds_ratio, 1.134146, rtol=1e-6)
         ci = result.odds_ratio_ci()
         assert_allclose([ci.low, ci.high], [0.4879913, 2.635883], rtol=1e-6)
+
+    @pytest.mark.parametrize('kind', ['sample', 'conditional'])
+    @pytest.mark.parametrize('bad_table', [123, "foo", [10, 11, 12]])
+    def test_invalid_table_shape(self, kind, bad_table):
+        with pytest.raises(ValueError, match="Invalid shape"):
+            odds_ratio(bad_table, kind=kind)
+
+    def test_invalid_table_type(self):
+        with pytest.raises(ValueError, match='must be an array of integers'):
+            odds_ratio([[1.0, 3.4], [5.0, 9.9]])
+
+    def test_negative_table_values(self):
+        with pytest.raises(ValueError, match='must be nonnegative'):
+            odds_ratio([[1, 2], [3, -4]])
+
+    def test_invalid_kind(self):
+        with pytest.raises(ValueError, match='`kind` must be'):
+            odds_ratio([[10, 20], [30, 14]], kind='magnetoreluctance')
+
+    def test_invalid_alternative(self):
+        with pytest.raises(ValueError, match='`alternative` must be'):
+            odds_ratio([[10, 20], [30, 14]], alternative='depleneration')
+
+    @pytest.mark.parametrize('level', [-0.5, 1.5])
+    def test_invalid_confidence_level(self, level):
+        result = odds_ratio([[5, 10], [2, 32]])
+        with pytest.raises(ValueError, match='must be between 0 and 1'):
+            result.odds_ratio_ci(confidence_level=level)
