@@ -3098,6 +3098,21 @@ class TestEntropy:
         assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
                                   stats.entropy(pk, qk, axis=1))
 
+    def test_entropy_broadcasting(self):
+        np.random.rand(0)
+        x = np.random.rand(3)
+        y = np.random.rand(2, 1)
+        res = stats.entropy(x, y, axis=-1)
+        assert_equal(res[0], stats.entropy(x, y[0]))
+        assert_equal(res[1], stats.entropy(x, y[1]))
+
+    def test_entropy_shape_mismatch(self):
+        x = np.random.rand(10, 1, 12)
+        y = np.random.rand(11, 2)
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, y)
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
