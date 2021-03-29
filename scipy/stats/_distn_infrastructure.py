@@ -36,7 +36,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 import numpy as np
 
 from ._constants import _XMAX
-from typing import Optional
+from typing import Optional, Any
 import math
 
 
@@ -2884,7 +2884,7 @@ def differential_entropy(
     window_length: Optional[int] = None,
     base: Optional[float] = None,
     axis: int = 0,
-) -> np.ndarray:
+) -> Any:
     r"""Given a sample of a distribution, calculate the differential entropy.
 
     This routine uses the Vasicek estimator of the differential entropy. Given

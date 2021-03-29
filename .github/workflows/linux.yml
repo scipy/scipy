@@ -51,7 +51,6 @@ jobs:
 
   test_nightly:
     name: Nightly CPython
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -67,20 +66,53 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
         python3.9 -m pip install --upgrade pip setuptools
-
     - name: Install other build dependencies
       run: |
         sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
     - name: Install packages
       run: |
         python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
         python3.9 -m pip install -r mypy_requirements.txt
-
     - name: Mypy
       run: |
         python3.9 -u runtests.py --mypy
-
     - name: Test SciPy
       run: |
         python3.9 -u runtests.py -m fast
+  build_docs:
+    name: Build Docs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Python 3.9
+      if: matrix.python-version == '3.9'
+      run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
+        python3.9 -m pip install --upgrade pip setuptools
+    - name: Install other build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra latexmk texlive-xetex fonts-freefont-otf
+    - name: update submodules
+      run: |
+        git submodule init
+        git submodule update
+    - name: Install packages
+      run: |
+        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
+        python3.9 -m pip install --user nose mpmath argparse Pillow codecov matplotlib "Sphinx!=3.1.0" asv pythran
+    - name: Build Scipy
+      run: |
+        python3.9 -u runtests.py -gbj2
+    - name: Build Docs
+      run: |
+        python3.9 -u runtests.py -g -j2 --doc html-scipyorg --doc latex
+        make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
+        cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
