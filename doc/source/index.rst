@@ -8,7 +8,7 @@ SciPy documentation
 
 **Date**: |today| **Version**: |version|
 
-**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.1/scipy-ref-1.6.1.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-|version|/scipy-html-|version|.zip>`__
+**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.1/scipy-ref-1.6.1.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-1.6.1/scipy-html-1.6.1.zip>`__
 
 **Useful links**:
 `Binary Installers <https://pypi.org/project/scipy>`__ |
