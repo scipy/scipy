@@ -8,7 +8,7 @@ from numpy.polynomial.chebyshev import Chebyshev
 from scipy.integrate import odeint
 
 
-class LSQBenchmarkProblem(object):
+class LSQBenchmarkProblem:
     """Template class for nonlinear least squares benchmark problems.
 
     The optimized variable is n-dimensional vector x and the objective function 

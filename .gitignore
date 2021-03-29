@@ -17,6 +17,7 @@
 *.tmp
 *.vim
 tags
+.theia/
 
 # Compiled source #
 ###################
@@ -194,6 +195,7 @@ scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
+scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
@@ -203,7 +205,9 @@ scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
+scipy/signal/_spectral.cpp
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
@@ -280,5 +284,4 @@ scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
-scipy/optimize/_highs/cython/src/_mpswriter.cxx
 scipy/optimize/_highs/cython/src/_highs_constants.cxx

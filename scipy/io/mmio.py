@@ -357,25 +357,31 @@ class MMFile:
                 for ((i, j), aij) in a.items():
                     if i > j:
                         aji = a[j, i]
-                        yield (aij, aji)
+                        yield (aij, aji, False)
+                    elif i == j:
+                        yield (aij, aij, True)
 
         # non-sparse input
         else:
             # define iterator over symmetric pair entries
             def symm_iterator():
                 for j in range(n):
-                    for i in range(j+1, n):
+                    for i in range(j, n):
                         aij, aji = a[i][j], a[j][i]
-                        yield (aij, aji)
+                        yield (aij, aji, i == j)
 
         # check for symmetry
-        for (aij, aji) in symm_iterator():
-            if issymm and aij != aji:
-                issymm = False
-            if isskew and aij != -aji:
+        # yields aij, aji, is_diagonal
+        for (aij, aji, is_diagonal) in symm_iterator():
+            if isskew and is_diagonal and aij != 0:
                 isskew = False
-            if isherm and aij != conj(aji):
-                isherm = False
+            else:
+                if issymm and aij != aji:
+                    issymm = False
+                if isskew and aij != -aji:
+                    isskew = False
+                if isherm and aij != conj(aji):
+                    isherm = False
             if not (issymm or isskew or isherm):
                 break
 

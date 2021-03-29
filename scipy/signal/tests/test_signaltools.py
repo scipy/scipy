@@ -34,7 +34,7 @@ from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 
 
-class _TestConvolve(object):
+class _TestConvolve:
 
     def test_basic(self):
         a = [3, 4, 5, 6, 5, 4]
@@ -254,7 +254,7 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, [3], 2)
 
 
-class _TestConvolve2d(object):
+class _TestConvolve2d:
 
     def test_2d_arrays(self):
         a = [[1, 2, 3], [3, 4, 5]]
@@ -426,7 +426,7 @@ class TestConvolve2d(_TestConvolve2d):
         assert fails[0].size == 0
 
 
-class TestFFTConvolve(object):
+class TestFFTConvolve:
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real(self, axes):
@@ -804,7 +804,7 @@ def gen_oa_shapes_eq(sizes):
             if a >= b]
 
 
-class TestOAConvolve(object):
+class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
                              gen_oa_shapes_eq(list(range(100)) +
@@ -940,7 +940,7 @@ class TestOAConvolve(object):
         assert_equal(out, a * b)
 
 
-class TestAllFreqConvolves(object):
+class TestAllFreqConvolves:
 
     @pytest.mark.parametrize('convapproach',
                              [fftconvolve, oaconvolve])
@@ -1020,7 +1020,7 @@ class TestAllFreqConvolves(object):
         assert res.dtype == dtype
 
 
-class TestMedFilt(object):
+class TestMedFilt:
 
     IN = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
           [50, 50, 50, 50, 50, 0, 72, 77, 68, 66],
@@ -1095,7 +1095,7 @@ class TestMedFilt(object):
         assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
                            out_object)
 
-class TestWiener(object):
+class TestWiener:
 
     def test_basic(self):
         g = array([[5, 6, 4, 3],
@@ -1114,7 +1114,7 @@ padtype_options = ["mean", "median", "minimum", "maximum", "line"]
 padtype_options += _upfirdn_modes
 
 
-class TestResample(object):
+class TestResample:
     def test_basic(self):
         # Some basic tests
 
@@ -1312,7 +1312,7 @@ class TestResample(object):
                     assert_allclose(y_g[::down], y_s)
 
 
-class TestCSpline1DEval(object):
+class TestCSpline1DEval:
 
     def test_basic(self):
         y = array([1, 2, 3, 4, 3, 2, 1, 2, 3.0])
@@ -1343,14 +1343,14 @@ class TestCSpline1DEval(object):
 
         assert_equal(ynew.dtype, y.dtype)
 
-class TestOrderFilt(object):
+class TestOrderFilt:
 
     def test_basic(self):
         assert_array_equal(signal.order_filter([1, 2, 3], [1, 0, 1], 1),
                            [2, 3, 2])
 
 
-class _TestLinearFilter(object):
+class _TestLinearFilter:
 
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
@@ -1790,7 +1790,7 @@ def test_lfilter_notimplemented_input():
                                 np.uint, int, np.ulonglong, np.ulonglong,
                                 np.float32, np.float64, np.longdouble,
                                 Decimal])
-class TestCorrelateReal(object):
+class TestCorrelateReal:
     def _setup_rank1(self, dt):
         a = np.linspace(0, 3, 4).astype(dt)
         b = np.linspace(1, 2, 2).astype(dt)
@@ -1908,7 +1908,7 @@ class TestCorrelateReal(object):
         assert_equal(y.dtype, dt)
 
 
-class TestCorrelate(object):
+class TestCorrelate:
     # Tests that don't depend on dtype
 
     def test_invalid_shapes(self):
@@ -1982,7 +1982,7 @@ def test_correlation_lags(mode, behind, input_size):
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
-class TestCorrelateComplex(object):
+class TestCorrelateComplex:
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
     # assert_array_almost_equal().
@@ -2076,7 +2076,7 @@ class TestCorrelateComplex(object):
         assert_equal(correlate([3j], [4]), correlate(3j, 4))
 
 
-class TestCorrelate2d(object):
+class TestCorrelate2d:
 
     def test_consistency_correlate_funcs(self):
         # Compare np.correlate, signal.correlate, signal.correlate2d
@@ -2115,7 +2115,7 @@ class TestCorrelate2d(object):
         assert_equal(signal.correlate2d([[3j]], [[4]]), 12j)
 
 
-class TestLFilterZI(object):
+class TestLFilterZI:
 
     def test_basic(self):
         a = np.array([1.0, -1.0, 0.5])
@@ -2134,7 +2134,7 @@ class TestLFilterZI(object):
         assert_allclose(zi2, zi1, rtol=1e-12)
 
 
-class TestFiltFilt(object):
+class TestFiltFilt:
     filtfilt_kind = 'tf'
 
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
@@ -2383,7 +2383,7 @@ def test_filtfilt_gust():
     check_filtfilt_gust(b, a, (length,), 0, approx_impulse_len)
 
 
-class TestDecimate(object):
+class TestDecimate:
     def test_bad_args(self):
         x = np.arange(12)
         assert_raises(TypeError, signal.decimate, x, q=0.5, n=1)
@@ -2484,7 +2484,7 @@ class TestDecimate(object):
         assert_array_less(np.linalg.norm(x_out), 0.01)
 
 
-class TestHilbert(object):
+class TestHilbert:
 
     def test_bad_args(self):
         x = np.array([1.0 + 0.0j])
@@ -2571,7 +2571,7 @@ class TestHilbert(object):
         assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
 
-class TestHilbert2(object):
+class TestHilbert2:
 
     def test_bad_args(self):
         # x must be real.
@@ -2589,7 +2589,7 @@ class TestHilbert2(object):
         assert_raises(ValueError, hilbert2, x, N=(2,))
 
 
-class TestPartialFractionExpansion(object):
+class TestPartialFractionExpansion:
     @staticmethod
     def assert_rp_almost_equal(r, p, r_true, p_true, decimal=7):
         r_true = np.asarray(r_true)
@@ -2955,7 +2955,7 @@ class TestPartialFractionExpansion(object):
         assert_almost_equal(a, [1, -1])
 
 
-class TestVectorstrength(object):
+class TestVectorstrength:
 
     def test_single_1dperiod(self):
         events = np.array([.5])
@@ -3151,7 +3151,7 @@ def test_nonnumeric_dtypes(func):
 
 
 @pytest.mark.parametrize('dt', 'fdgFDGO')
-class TestSOSFilt(object):
+class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
     def test_rank1(self, dt):
@@ -3324,7 +3324,7 @@ class TestSOSFilt(object):
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
 
-class TestDeconvolve(object):
+class TestDeconvolve:
 
     def test_basic(self):
         # From docstring example
@@ -3335,7 +3335,7 @@ class TestDeconvolve(object):
         assert_allclose(recovered, original)
 
 
-class TestDetrend(object):
+class TestDetrend:
 
     def test_basic(self):
         detrended = detrend(array([1, 2, 3]))
@@ -3349,7 +3349,7 @@ class TestDetrend(object):
         assert_array_almost_equal(copy_array, inplace)
 
 
-class TestUniqueRoots(object):
+class TestUniqueRoots:
     def test_real_no_repeat(self):
         p = [-1.0, -0.5, 0.3, 1.2, 10.0]
         unique, multiplicity = unique_roots(p)

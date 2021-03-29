@@ -73,7 +73,7 @@ mclass_info = {
     }
 
 
-class VarHeader4(object):
+class VarHeader4:
     # Mat4 variables never logical or global
     is_logical = False
     is_global = False
@@ -91,7 +91,7 @@ class VarHeader4(object):
         self.is_complex = is_complex
 
 
-class VarReader4(object):
+class VarReader4:
     ''' Class to read matlab 4 variables '''
 
     def __init__(self, file_reader):
@@ -442,7 +442,7 @@ def arr_to_2d(arr, oned_as='row'):
     return arr.reshape(dims)
 
 
-class VarWriter4(object):
+class VarWriter4:
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
         self.oned_as = file_writer.oned_as
@@ -580,7 +580,7 @@ class VarWriter4(object):
         self.write_bytes(ijv)
 
 
-class MatFile4Writer(object):
+class MatFile4Writer:
     ''' Class for writing matlab 4 format files '''
     def __init__(self, file_stream, oned_as=None):
         self.file_stream = file_stream

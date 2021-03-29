@@ -52,7 +52,7 @@ from scipy.spatial.distance import cdist, pdist, squareform
 __all__ = ['Rbf']
 
 
-class Rbf(object):
+class Rbf:
     """
     Rbf(*args)
 

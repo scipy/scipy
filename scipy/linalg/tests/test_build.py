@@ -42,7 +42,7 @@ class FindDependenciesLdd:
         return founds
 
 
-class TestF77Mismatch(object):
+class TestF77Mismatch:
     @pytest.mark.skipif(not(sys.platform[:5] == 'linux'),
                         reason="Skipping fortran compiler mismatch on non Linux platform")
     def test_lapack(self):

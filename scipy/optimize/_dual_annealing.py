@@ -17,7 +17,7 @@ from scipy._lib._util import check_random_state
 __all__ = ['dual_annealing']
 
 
-class VisitingDistribution(object):
+class VisitingDistribution:
     """
     Class used to generate new coordinates based on the distorted
     Cauchy-Lorentz distribution. Depending on the steps within the strategy
@@ -36,7 +36,7 @@ class VisitingDistribution(object):
         Parameter for visiting distribution. Default value is 2.62.
         Higher values give the visiting distribution a heavier tail, this
         makes the algorithm jump to a more distant region.
-        The value range is (0, 3]. It's value is fixed for the life of the
+        The value range is (1, 3]. It's value is fixed for the life of the
         object.
     rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
         A `~numpy.random.RandomState`, `~numpy.random.Generator` object
@@ -124,7 +124,7 @@ class VisitingDistribution(object):
         return x / den
 
 
-class EnergyState(object):
+class EnergyState:
     """
     Class used to record the energy state. At any time, it knows what is the
     currently used coordinates and the most recent best location.
@@ -208,7 +208,7 @@ class EnergyState(object):
         self.current_location = np.copy(x)
 
 
-class StrategyChain(object):
+class StrategyChain:
     """
     Class that implements within a Markov chain the strategy for location
     acceptance and local search decision making.
@@ -355,7 +355,7 @@ class StrategyChain(object):
                         'during dual annealing')
 
 
-class ObjectiveFunWrapper(object):
+class ObjectiveFunWrapper:
 
     def __init__(self, func, maxfun=1e7, *args):
         self.func = func
@@ -373,7 +373,7 @@ class ObjectiveFunWrapper(object):
         return self.func(x, *self.args)
 
 
-class LocalSearchWrapper(object):
+class LocalSearchWrapper:
     """
     Class used to wrap around the minimizer used for local search
     Default local minimizer is SciPy minimizer L-BFGS-B
@@ -464,7 +464,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
-        the algorithm jump to a more distant region. The value range is (0, 3].
+        the algorithm jump to a more distant region. The value range is (1, 3].
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
