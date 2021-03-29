@@ -13,7 +13,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import stats
-from scipy.stats.statlib import gscale
+from scipy.stats.morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -536,17 +536,20 @@ class TestAnsari:
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
-        statistic = stats.ansari(x1, x2, alternative='less').statistic
+        statistic, pval = stats.ansari(x1, x2)
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
         assert pval_g < 0.05 # level of significance.
         # also check if the p-values sum up to 1 plus the the probability
         # mass under the calculated statistic.
-        astart, dist, _ = gscale(len(x1), len(x2))
-        ind = int(statistic - astart)
-        prob = np.float64(dist[ind]) / np.sum(dist)
-        assert pval_g + pval_l == 1 + prob
+        prob = _abw_state.pmf(statistic, len(x1), len(x2))
+        assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1+prob-pval/2, atol=1e-12)
         # sanity check. The result should flip if
         # we exchange x and y.
         pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
@@ -595,6 +598,16 @@ class TestAnsari:
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert_allclose(pval_l, 1.0, atol=1e-12)
         assert_allclose(pval_g, 0.0, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        x1 = stats.norm.rvs(0, 2, size=60, random_state=123)
+        x2 = stats.norm.rvs(0, 1.5, size=60, random_state=123)
+        pval = stats.ansari(x1, x2).pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
 class TestBartlett:
