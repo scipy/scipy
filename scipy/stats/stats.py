@@ -6045,12 +6045,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
 
-    .. [4] Karen K. Yuen (1974), The two-sample trimmed t for unequal
-           population variances, Biometrika Volume 61, Number 1, 165-170,
-           DOI: https://doi.org/10.1093/biomet/61.1.165
+    .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
+           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+
     .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
            Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
            no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
+           Accessed 30 Mar. 2021.
 
     Examples
     --------
@@ -6162,6 +6164,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
+            #
             v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, n1, axis)
             v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, n2, axis)
 
@@ -6175,10 +6178,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
 
 def _ttest_trim_var_mean_len(a, trim, n, axis):
+    """Variance, mean, and length of winsorized input along specified axis"""
+    # for use with `ttest_ind` when trimming.
     # further calculations in this test assume that the inputs are sorted.
+    # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
     a = np.sort(a, axis=axis)
 
-    # `g_*` is the number of elements to be replaced on each tail.
+    # `g_*` is the number of elements to be replaced on each tail, converted
+    # from a percentage amount of trimming
     g = int(n * trim)
 
     # Calculate the Winsorized variance of the input samples according to
@@ -6188,23 +6195,37 @@ def _ttest_trim_var_mean_len(a, trim, n, axis):
     # the total number of elements in the trimmed samples
     n -= 2 * g
 
-    # calculate the g-times trimmed mean
+    # calculate the g-times trimmed mean, as defined in [4] (1-1)
     m = trim_mean(a, trim, axis=axis)
     return v, m, n
 
 
 def _calculate_winsorized_variance(a, g, n, axis):
-    # it is expected that the input `a` is sorted along the correct axis.
+    """Calculates g-times winsorized variance along specified axis"""
+    # it is expected that the input `a` is sorted along the correct axis
     # move the intended axis to the end that way it is easier to manipulate
     a = np.moveaxis(a, axis, -1)
+
     # build a right and left tail to replace the trimmed values, fill new tails
-    # with the leftmost and rightmost value from the trimmed array.
+    # with the leftmost and rightmost value from the trimmed array. This can be
+    # see in effect in (1-3) in [4], where the leftmost and rightmost tails are
+    # replaced with `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}`
+    # on the right. Zero-indexing turns `g + 1` to `g`, and `n - g` to
+    # `n - g - 1` in arraying splicing.
     left_tail = np.repeat(a[..., [g]], g, axis=-1)
     right_tail = np.repeat(a[..., [n - g - 1]], g, axis=-1)
+
+    # Winsorization and variance calculation are done in one step in [4] (1-3),
+    # but here winsorization is done first.
     a_win = np.concatenate((left_tail, a[..., g: n - g], right_tail), axis=-1)
-    # determine the variance. In the paper, the degrees of freedom is
-    # expressed as (n - 2g - 1), and this is converted to numpy's N - `ddof`
+
+    # determine the variance. In [4], the degrees of freedom is expressed as
+    # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
+    # page 369, beginning of page 370). This is converted to NumPy's format,
+    # `n - ddof` for use with with `np.var`. The results are converted to array
+    # to accommodate later array indexing.
     vars = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+
     # with `nan_policy='propagate'`, NaNs are sorted to the end of the array,
     # and may be completely trimmed out. In these cases, replace computed
     # variances with `np.nan` if the original sample contained NaNs.
