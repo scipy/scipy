@@ -2829,6 +2829,32 @@ def test_percentileofscore():
 
     assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
+    # score *arrays*
+    a = 1 + np.arange(10)
+    assert_equal(pcos(a, [4, 5]), [40.0, 50.0])
+    assert_equal(pcos(a, [[4, 5], [6, 7]]), [[40.0, 50.0], [60.0, 70.0]])
+    for (kind, result) in [('mean',   [35.0, 45.0]),
+                           ('strict', [30.0, 40.0]),
+                           ('weak',   [40.0, 50.0])]:
+        assert_equal(pcos(a, [4, 5], kind=kind), result)
+
+    # infinite inputs
+    assert_equal(pcos([1,3],      [-np.inf, +np.inf]), [0.0, 100.0])
+    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf]), [0.0, 100.0])
+    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="strict"), [0.0, 50.0])
+    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="mean"),   [0.0, 75.0])
+    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="weak"),   [0.0, 100.0])
+
+    # nan's
+    assert_equal(pcos([], 1), np.nan)
+    assert_equal(pcos([np.nan, 1, 2],   [0, 1, 2], nan_policy='omit'),      [0, 50.0, 100.0])
+    assert_equal(pcos([np.nan, 2],      [0, 1, 2], nan_policy='propagate'), [np.nan, np.nan, np.nan])
+    assert_equal(pcos([np.nan, np.nan], [0, 1, 2], nan_policy='omit'),      [np.nan, np.nan, np.nan])
+    assert_equal(pcos([1, 2], [1, 2, np.nan], nan_policy='propagate'),      [50.0, 100.0, np.nan])
+    assert_raises(ValueError, pcos, [1, 2, 3, np.nan], [1, 2, 3], nan_policy='raise')
+    assert_raises(ValueError, pcos, [1, 2, 3], [1, 2, 3, np.nan], nan_policy='raise')
+    assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], [np.nan, 2], nan_policy='omit')
+
 
 PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
                                    'chi2',     # Pearson's
