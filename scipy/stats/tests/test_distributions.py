@@ -289,6 +289,21 @@ class TestBradford:
         assert_allclose(x, xx)
 
 
+class TestChi:
+
+    # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
+    #     1 - CDF[ChiDistribution[4], 10]
+    CHI_SF_10_4 = 9.83662422461598e-21
+
+    def test_sf(self):
+        s = stats.chi.sf(10, 4)
+        assert_allclose(s, self.CHI_SF_10_4, rtol=1e-15)
+
+    def test_isf(self):
+        x = stats.chi.isf(self.CHI_SF_10_4, 4)
+        assert_allclose(x, 10, rtol=1e-15)
+
+
 class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
@@ -3082,6 +3097,21 @@ class TestEntropy:
         qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
                                   stats.entropy(pk, qk, axis=1))
+
+    def test_entropy_broadcasting(self):
+        np.random.rand(0)
+        x = np.random.rand(3)
+        y = np.random.rand(2, 1)
+        res = stats.entropy(x, y, axis=-1)
+        assert_equal(res[0], stats.entropy(x, y[0]))
+        assert_equal(res[1], stats.entropy(x, y[1]))
+
+    def test_entropy_shape_mismatch(self):
+        x = np.random.rand(10, 1, 12)
+        y = np.random.rand(11, 2)
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, y)
 
 
 def TestArgsreduce():

@@ -41,6 +41,27 @@ class CorrelationFunctions(Benchmark):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
 
+class Kendalltau(Benchmark):
+    param_names = ['nan_policy','method','variant']
+    params = [
+        ['propagate', 'raise', 'omit'],
+        ['auto', 'asymptotic', 'exact'],
+        ['b', 'c']
+    ]
+
+    def setup(self, nan_policy, method, variant):
+        np.random.seed(12345678)
+        a = np.arange(200)
+        np.random.shuffle(a)
+        b = np.arange(200)
+        np.random.shuffle(b)
+        self.a = a
+        self.b = b
+
+    def time_kendalltau(self, nan_policy, method, variant):
+        tau, p_value = stats.kendalltau(self.a, self.b, nan_policy=nan_policy, method=method, variant=variant)
+
+
 class InferentialStats(Benchmark):
     def setup(self):
         np.random.seed(12345678)

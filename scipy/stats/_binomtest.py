@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from math import sqrt
 import numpy as np
 from scipy._lib._util import _validate_int
