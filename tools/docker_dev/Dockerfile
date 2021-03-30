@@ -1,5 +1,8 @@
 # 
 # Dockerfile for Scipy development 
+# Note this is also the base for the Gitpod Docker image, see: .gitpod.Dockerfile
+# This should only be updated through GitHub actions when there are changes made 
+# to the environment.yml file
 # 
 # Usage: 
 # -------

@@ -10,6 +10,8 @@ FROM ${BASE_CONTAINER}
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
     bash-completion \
+    dirmngr \
+    gpg-agent \
     git \
     htop \
     jq \
@@ -21,7 +23,12 @@ RUN apt-get update && \
     ssl-cert \
     time \
     zip \
-    unzip \
+    unzip && \
+    # this needs to be done after installing dirmngr
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \ 
+    apt-add-repository https://cli.github.com/packages && \ 
+    apt-get install -yq --no-install-recommends \
+    gh \ 
     && locale-gen en_US.UTF-8 \
     && apt-get clean \
     && rm -rf /var/cache/apt/* \
@@ -35,7 +42,11 @@ ENV LANG=en_US.UTF-8 \
     HOME=/home/gitpod \
     GP_USER=gitpod \
     GP_GROUP=gitpod \
-    CONDA_DIR=/opt/conda
+    CONDA_DIR=/opt/conda \ 
+    WORKSPACE=/workspace/scipy/
+
+# Change default shell - this avoids issues with Conda later
+SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
 
 # Copy multiple scripts - fix directory permissions and 
 # basic workspace configurations
@@ -55,14 +66,27 @@ RUN useradd -l -u 33333 -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_U
 # Using root to fix permissions - make sure we change to 'gitpod' always
 USER root
 
-# Making the directories human writable - this is needed to use `conda develop`
-# $HOME is by default user writable
-RUN fix_permissions $CONDA_DIR && \
+RUN mkdir -p ${WORKSPACE} && \ 
+    echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.profile && \ 
+    conda init bash && \
+    # Making the directories human writable - this is needed to use `conda develop`
+    # $HOME is by default user writable
     fix_permissions ${CONDA_DIR}/envs/scipydev/ && \
-    workspace_config
+    fix_permissions $CONDA_DIR && \
+    workspace_config 
+
+
+# Ensure the following happens in the workspace
+WORKDIR ${WORKSPACE}
+RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . && \
+    conda activate scipydev && \
+    python setup.py build_ext --inplace && \
+    conda develop . && \ 
+    python -m pip install --upgrade pip --no-cache-dir && \ 
+    python -m pip install sphinx-autobuild --no-cache-dir
 
 # Always favour the least-privileged user, in this case gitpod
 USER gitpod
 
 # Ensure we are in the correct directory
-WORKDIR $HOME
+WORKDIR ${WORKSPACE}
