@@ -216,16 +216,20 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'page_trend_test', 'somersd']
 
 
-def _contains_nan(a, nan_policy='propagate'):
+def _contains_nan(a, nan_policy='propagate', summary_check=True):
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
     try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
-            contains_nan = np.isnan(np.sum(a))
+        # The summary check avoids creating a (potentially huge) array.
+        # However, it will set contains_nan to True for (e.g.) [-inf, 0, +inf].
+        # If this is undesirabl, set summary_check to False instead.
+        if summary_check:
+            with np.errstate(invalid='ignore'):
+                contains_nan = np.isnan(np.sum(a))
+        else:
+            contains_nan = np.isnan(a).any()
     except TypeError:
         # This can happen when attempting to sum things which are not
         # numbers (e.g. as in the function `mode`). Try an alternative method:
@@ -2066,8 +2070,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
     array([nan, nan])
 
-    The 'omit' policy does not make sense for nan's among the scores,
-    and so will through an error in that case.
+    The 'omit' policy does not make sense if there are nan's among the scores,
+    and so an error in that case.
     """
 
     a = np.asarray(a)
@@ -2075,32 +2079,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    def _contains_nan2(a, nan_policy='propagate'):
-        """Cannot use standard _contains_nan because a list with both +/- inf
-        will count as containing nans. => modify the first check/try.
-        """
-        policies = ['propagate', 'raise', 'omit']
-        if nan_policy not in policies:
-            raise ValueError("nan_policy must be one of {%s}" %
-                             ', '.join("'%s'" % s for s in policies))
-        try:
-            contains_nan = np.isnan(a).any()
-        except TypeError:
-            try:
-                contains_nan = np.nan in set(a.ravel())
-            except TypeError:
-                contains_nan = False
-                nan_policy = 'omit'
-                warnings.warn("The input array could not be properly checked for nan "
-                              "values. nan values will be ignored.", RuntimeWarning)
-
-        if contains_nan and nan_policy == 'raise':
-            raise ValueError("The input contains nan values")
-
-        return contains_nan, nan_policy
-
-    cna, npa = _contains_nan2(a, nan_policy)
-    cns, nps = _contains_nan2(score, nan_policy)
+    cna, npa = _contains_nan(a, nan_policy, summary_check=False)
+    cns, nps = _contains_nan(score, nan_policy, summary_check=False)
 
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
