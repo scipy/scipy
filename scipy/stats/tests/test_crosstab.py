@@ -88,3 +88,23 @@ def test_crosstab_extra_levels(sparse):
         assert_array_equal(count.A, expected_count)
     else:
         assert_array_equal(count, expected_count)
+
+
+def test_validation_at_least_one():
+    with pytest.raises(TypeError, match='At least one'):
+        crosstab()
+
+
+def test_validation_same_lengths():
+    with pytest.raises(ValueError, match='must have the same length'):
+        crosstab([1, 2], [1, 2, 3, 4])
+
+
+def test_validation_sparse_only_two_args():
+    with pytest.raises(ValueError, match='only two input sequences'):
+        crosstab([0, 1, 1], [8, 8, 9], [1, 3, 3], sparse=True)
+
+
+def test_validation_len_levels_matches_args():
+    with pytest.raises(ValueError, match='number of input sequences'):
+        crosstab([0, 1, 1], [8, 8, 9], levels=([0, 1, 2, 3],))

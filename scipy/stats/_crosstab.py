@@ -140,6 +140,7 @@ def crosstab(*args, levels=None, sparse=False):
     >>> count.A
     array([[2, 3, 0],
            [1, 0, 4]])
+
     """
     nargs = len(args)
     if nargs == 0:
