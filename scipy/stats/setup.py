@@ -1,6 +1,8 @@
 from os.path import join
 from platform import system
 
+from numpy.distutils.misc_util import get_info
+
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -9,7 +11,7 @@ def pre_build_hook(build_ext, ext):
         ext.extra_compile_args.append(std_flag)
 
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     import numpy as np
     config = Configuration('stats', parent_package, top_path)
@@ -21,35 +23,38 @@ def configuration(parent_package='',top_path=None):
 
     # add statlib module
     config.add_extension('statlib',
-        sources=['statlib.pyf'],
-        f2py_options=['--no-wrap-functions'],
-        libraries=['statlib'],
-        depends=statlib_src
-    )
+                         sources=['statlib.pyf'],
+                         f2py_options=['--no-wrap-functions'],
+                         libraries=['statlib'],
+                         depends=statlib_src)
 
     # add _stats module
     config.add_extension('_stats',
-        sources=['_stats.c'],
-    )
+                         sources=['_stats.c'])
 
     # add mvn module
     config.add_extension('mvn',
-        sources=['mvn.pyf', 'mvndst.f'],
-    )
+                         sources=['mvn.pyf', 'mvndst.f'])
 
     # add _sobol module
     config.add_extension('_sobol',
-        sources=['_sobol.c', ],
-    )
+                         sources=['_sobol.c'])
     config.add_data_files('_sobol_direction_numbers.npz')
 
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
-    from _generate_pyx import isNPY_OLD # type: ignore[import]
+    from _generate_pyx import isNPY_OLD  # type: ignore[import]
     NPY_OLD = isNPY_OLD()
-    biasedurn_libs = [] if NPY_OLD else ['npyrandom']
-    biasedurn_libdirs = [] if NPY_OLD else [join(np.get_include(),
-                                                 '..', '..', 'random', 'lib')]
+
+    if NPY_OLD:
+        biasedurn_libs = []
+        biasedurn_libdirs = []
+    else:
+        biasedurn_libs = ['npyrandom', 'npymath']
+        biasedurn_libdirs = [join(np.get_include(),
+                                  '..', '..', 'random', 'lib')]
+        biasedurn_libdirs += get_info('npymath')['library_dirs']
+
     ext = config.add_extension(
         'biasedurn',
         sources=[
@@ -74,4 +79,5 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
+
     setup(**configuration(top_path='').todict())
