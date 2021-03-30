@@ -628,10 +628,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         high-dimensional minimization [1]_.
     bounds : sequence or `Bounds`, optional
         Bounds on variables. There are two ways to specify the bounds:
+
             1. Instance of `Bounds` class.
             2. Sequence of ``(min, max)`` pairs for each element in `x`. None
                is used to specify no bound.
-        Note that this function just clips all vertices in simplex based on
+
+        Note that this just clips all vertices in simplex based on
         the bounds.
 
     References
