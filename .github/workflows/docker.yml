@@ -5,7 +5,7 @@ on:
     branches:
     - master
     paths:
-    - 'tools/docker_dev/Dockerfile'
+    - './tools/docker_dev/environment.yml'
     tags:
       - '*'
 
