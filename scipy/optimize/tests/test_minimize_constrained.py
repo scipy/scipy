@@ -678,70 +678,25 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
 
 
-class TestBoundedNelderMead(TestCase):
+class TestBoundedNelderMead:
 
-    def test_rosen_brock0(self):
+    @pytest.mark.parametrize('bounds',
+                             [Bounds(-np.inf, np.inf),
+                              Bounds(-np.inf, -0.8),
+                              Bounds(3.0, np.inf),
+                              Bounds([3.0, 1.0], [4.0, 5.0]),
+                              ])
+    def test_rosen_brock_with_bounds(self, bounds):
         prob = Rosenbrock()
-        bounds = Bounds(-np.inf, np.inf)
-
-        result = minimize(prob.fun, prob.x0,
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert_allclose(result.x, [1.0, 1.0], rtol=10 ** -3)
-
-        result_no_bounds = minimize(prob.fun, prob.x0,
-                                    method='Nelder-Mead')
-        assert_allclose(result.x, result_no_bounds.x)
-
-    def test_rosen_brock1(self):
-        prob = Rosenbrock()
-        bounds = Bounds(-np.inf, -0.8)
-        result = minimize(prob.fun, [-10, -10],
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert np.less_equal(bounds.lb, result.x).all()
-        assert np.less_equal(result.x, bounds.ub).all()
-        assert np.allclose(prob.fun(result.x), result.fun)
-
-    def test_rosen_brock2(self):
-        prob = Rosenbrock()
-        bounds = Bounds(3.0, np.inf)
-        result = minimize(prob.fun, [3, 100],
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert np.less_equal(bounds.lb, result.x).all()
-        assert np.less_equal(result.x, bounds.ub).all()
-        assert np.allclose(prob.fun(result.x), result.fun)
-
-    def test_rosen_brock3(self):
-        prob = Rosenbrock()
-        bounds = Bounds([3.0, 1.0], [4.0, 5.0])
-        result = minimize(prob.fun, [3, 1],
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert np.less_equal(bounds.lb, result.x).all()
-        assert np.less_equal(result.x, bounds.ub).all()
-        assert np.allclose(prob.fun(result.x), result.fun)
-
-    def test_rosen_brock4(self):
-        prob = Rosenbrock()
-        bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
-        result = minimize(prob.fun, [-10, 5],
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert np.less_equal(bounds.lb, result.x).all()
-        assert np.less_equal(result.x, bounds.ub).all()
-        assert np.allclose(prob.fun(result.x), result.fun)
-
-    def test_rosen_brock5(self):
-        prob = Rosenbrock()
-        bounds = [(-np.inf, 4.0), (1.0, 5.0)]
-        result = minimize(prob.fun, [-10, 3],
-                          method='Nelder-Mead',
-                          bounds=bounds)
-        assert bounds[0][0] <= result.x[0] <= bounds[0][1]
-        assert bounds[1][0] <= result.x[1] <= bounds[1][1]
-        assert np.allclose(prob.fun(result.x), result.fun)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, -10],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.less_equal(bounds.lb, result.x).all()
+            assert np.less_equal(result.x, bounds.ub).all()
+            assert np.allclose(prob.fun(result.x), result.fun)
 
     def test_equal_all_bounds(self):
         prob = Rosenbrock()
