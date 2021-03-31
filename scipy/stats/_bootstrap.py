@@ -48,7 +48,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
     for indices, alpha_i in np.ndenumerate(alpha):
         theta_hat_b_i = theta_hat_b[indices]
         percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
-    return percentiles
+    return percentiles[()]  # return scalar instead of 0d array
 
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
@@ -285,6 +285,41 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> print(ci)
     (-8.395704005413752, -5.386430769302427)
 
+    Paired-sample statistics work, too. For example, consider the Pearson
+    correlation coefficient.
+
+    >>> from scipy.stats import pearsonr
+    >>> np.random.seed(0)
+    >>> n = 100
+    >>> x = np.linspace(0, 10, n)
+    >>> y = x + np.random.rand(n)
+    >>> print(pearsonr(x, y))
+    (0.9952211894457882, 7.825101935996682e-101)
+
+    To ensure that samples remain paired, we define a function that accepts
+    an array of _indices_ of the observations for which the statistic is to
+    be calculated.
+
+    >>> def my_statistic(i):
+    >>>     a = x[i]
+    >>>     b = y[i]
+    >>>     res = stats.pearsonr(a, b)
+    >>>     return res[0]
+    >>> i = np.arange(n)
+    >>> print(my_statistic(i))
+    0.9952211894457882
+
+    `pearsonr` isn't vectorized, but NumPy can take care of that.
+
+    >>> def my_vectorized_statistic(i, axis):
+    >>>    return np.apply_along_axis(my_statistic, axis, i)
+
+    We call `bootstrap_ci` using the indices of the observations as the data.
+
+    >>> ci = bootstrap_ci((i,), my_vectorized_statistic)
+    >>> print(ci)
+    (0.9940304577292599, 0.9967262700698384)
+
     """
     # Input validation
     args = _bootstrap_ci_iv(data, statistic, axis, confidence_level,
@@ -309,7 +344,9 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
-        percentile_fun = lambda a, q: np.percentile(a=a, q=q, axis=-1)
+
+        def percentile_fun(a, q):
+            return np.percentile(a=a, q=q, axis=-1)
 
     # Calculate confidence interval of statistic
     ci_l = percentile_fun(theta_hat_b, interval[0]*100)

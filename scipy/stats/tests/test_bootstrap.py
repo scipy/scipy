@@ -85,6 +85,7 @@ tests_against_itself = {"basic": 888,
                         "percentile": 886}
 
 
+@pytest.mark.xfail_on_32bit("Uses too much memory")
 @pytest.mark.parametrize("method, expected", tests_against_itself.items())
 def test_bootstrap_ci_against_itself(method, expected):
     # The expected values in this test were generated using bootstrap_ci
