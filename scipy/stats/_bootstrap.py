@@ -301,10 +301,10 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     be calculated.
 
     >>> def my_statistic(i):
-    >>>     a = x[i]
-    >>>     b = y[i]
-    >>>     res = pearsonr(a, b)
-    >>>     return res[0]
+    ...     a = x[i]
+    ...     b = y[i]
+    ...     res = pearsonr(a, b)
+    ...     return res[0]
     >>> i = np.arange(n)
     >>> print(my_statistic(i))
     0.9952211894457882
@@ -312,9 +312,9 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     `pearsonr` isn't vectorized, but NumPy can take care of that.
 
     >>> def my_vectorized_statistic(i, axis):
-    >>>    return np.apply_along_axis(my_statistic, axis, i)
+    ...    return np.apply_along_axis(my_statistic, axis, i)
 
-    We call `bootstrap_ci` using the indices of the observations as the data.
+    We call `bootstrap_ci` using the indices of the observations as `data`.
 
     >>> ci = bootstrap_ci((i,), my_vectorized_statistic)
     >>> print(ci)
