@@ -2798,9 +2798,15 @@ class TestsPercentileOfScore:
                                               ("mean",   45),
                                               ("strict", 30),
                                               ("weak",   60)])
-    def test_large_numbers_missing(self, kind, result):
+    def test_large_numbers_multiple3(self, kind, result):
         assert_equal(self.f([10, 20, 30, 40, 40, 40, 50, 60, 70, 80], 40, kind=kind), result)
 
+    @pytest.mark.parametrize("kind, result", [("rank",   30),
+                                              ("mean",   30),
+                                              ("strict", 30),
+                                              ("weak",   30)])
+    def test_large_numbers_missing(self, kind, result):
+        assert_equal(self.f([10, 20, 30, 50, 60, 70, 80, 90, 100, 110], 40, kind=kind), result)
 
     @pytest.mark.parametrize("kind, result", [("rank",   [0, 10, 100, 100]),
                                               ("mean",   [0, 5, 95, 100]),
