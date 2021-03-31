@@ -69,7 +69,7 @@ Debian / Ubuntu
 
 To build from source, the following packages are needed::
 
-   sudo apt-get install gcc gfortran python-dev libopenblas-dev liblapack-dev cython
+   sudo apt-get install gcc gfortran python3-dev libopenblas-dev liblapack-dev cython3
 
 To customize which BLAS is used, you can set up a `site.cfg` file. See
 the `site.cfg.example` file in the numpy source for the options you
