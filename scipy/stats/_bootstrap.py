@@ -2,7 +2,6 @@ import scipy.stats as stats
 import numpy as np
 from scipy._lib._util import check_random_state
 
-
 def _jackknife_resample(data):
     '''Jackknife resample the data using'''
     n = data.shape[-1]
@@ -30,7 +29,11 @@ def _bootstrap_resample(data, n_resamples=None, random_state=None):
 
 
 def _percentile_of_score(data, score, axis):
-    '''Vectorized, simplified scipy.stats.percentileofscore'''
+    '''Vectorized, simplified scipy.stats.percentileofscore
+
+    Unlike `stats.percentileofscore`, the percentile returned is a fraction
+    in [0, 1].
+    '''
     B = data.shape[axis]
     return (data < score).sum(axis=axis) / B
 
@@ -59,7 +62,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     # calculate a_hat
     jackknife_data = _jackknife_resample(data)
     theta_hat_i = statistic(jackknife_data, axis=-1)
-    theta_hat_dot = theta_hat_i.mean(axis=-1)[..., None]
+    theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
     den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
     a_hat = num / den
@@ -68,9 +71,9 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     z_alpha = stats.norm.ppf(alpha)
     z_1alpha = -z_alpha
     num1 = z0_hat + z_alpha
-    alpha_1 = stats.norm.cdf(z0_hat + num1/(1 - a_hat*(num1)))
+    alpha_1 = stats.norm.cdf(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
-    alpha_2 = stats.norm.cdf(z0_hat + num2/(1 - a_hat*(num2)))
+    alpha_2 = stats.norm.cdf(z0_hat + num2/(1 - a_hat*num2))
     return alpha_1, alpha_2
 
 
@@ -82,15 +85,21 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    if not data:
+    n_samples = 0
+    try:
+        n_samples = len(data)
+    except TypeError:
         raise ValueError("`data` must be a sequence of samples.")
+
+    if n_samples == 0:
+        raise ValueError("`data` must contain at least one sample.")
 
     data_iv = []
     for sample in data:
         sample = np.atleast_1d(sample)
         if sample.shape[axis] <= 1:
-            raise ValueError("`data` must contain two or more observations "
-                             "along `axis`.")
+            raise ValueError("each sample in `data` must contain two or more "
+                             "observations along `axis`.")
         sample = np.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
@@ -276,7 +285,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     theta_hat_b = statistic(*resampled_data, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2
+    alpha = (1 - confidence_level)/2.
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
         percentile_fun = _percentile_along_axis

@@ -6,9 +6,13 @@ from scipy.stats import bootstrap_ci
 def test_bootstrap_ci_iv():
     message = "`data` must be a sequence of samples."
     with pytest.raises(ValueError, match=message):
+        bootstrap_ci(1, np.mean)
+
+    message = "`data` must contain at least one sample."
+    with pytest.raises(ValueError, match=message):
         bootstrap_ci(tuple(), np.mean)
 
-    message = "`data` must contain two or more observations along `axis`."
+    message = "each sample in `data` must contain two or more observations..."
     with pytest.raises(ValueError, match=message):
         bootstrap_ci(([1, 2, 3], [1]), np.mean)
 
