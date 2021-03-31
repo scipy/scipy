@@ -116,6 +116,10 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
+    message = "`method = 'BCa' is only available for one-sample statistics"
+    if n_samples > 1 and method == 'bca':
+        raise ValueError(message)
+
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, axis_int, confidence_level_float,

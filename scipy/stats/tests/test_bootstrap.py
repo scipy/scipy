@@ -38,6 +38,16 @@ def test_bootstrap_ci_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap_ci(([1, 2, 3],), np.mean, method='ekki')
 
+    message = "`method = 'BCa' is only available for one-sample statistics"
+
+    def statistic(x, y, axis):
+        mean1 = np.mean(x, axis)
+        mean2 = np.mean(y, axis)
+        return mean1 - mean2
+
+    with pytest.raises(ValueError, match=message):
+        bootstrap_ci(([.1, .2, .3], [.1, .2, .3]), statistic, method='BCa')
+
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
         bootstrap_ci(([1, 2, 3],), np.mean, random_state='herring')
