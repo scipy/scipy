@@ -268,7 +268,8 @@ def discrepancy(sample, iterative=False, method="CD", workers=1):
         if workers is None:
             raise NotImplementedError(
                 "Cannot determine the number of cpus using os.cpu_count(), "
-                "cannot use -1 for the number of workers")
+                "cannot use -1 for the number of workers"
+            )
     elif workers <= 0:
         raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
                          "or > 0")
@@ -339,7 +340,7 @@ def update_discrepancy(x_new, sample, initial_disc):
         raise ValueError('x_new is not in unit hypercube')
 
     if x_new.shape[0] != sample.shape[1]:
-        raise ValueError('x_new and sample must be broadcastable')
+        raise ValueError("x_new and sample must be broadcastable")
 
     return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 

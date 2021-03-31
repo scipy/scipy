@@ -46,7 +46,7 @@ def configuration(parent_package='',top_path=None):
 
     # add _qmc_cy module
     ext = config.add_extension('_qmc_cy',
-        sources=['_qmc_cy.cxx', ])
+                               sources=['_qmc_cy.cxx'])
     ext._pre_build_hook = set_cxx_flags_hook
 
     # add BiasedUrn module
