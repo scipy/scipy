@@ -303,7 +303,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> def my_statistic(i):
     >>>     a = x[i]
     >>>     b = y[i]
-    >>>     res = stats.pearsonr(a, b)
+    >>>     res = pearsonr(a, b)
     >>>     return res[0]
     >>> i = np.arange(n)
     >>> print(my_statistic(i))
