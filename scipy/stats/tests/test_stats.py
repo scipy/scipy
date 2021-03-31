@@ -2752,114 +2752,91 @@ class TestStudentTest(object):
         assert_allclose(p, self.P1_1_g)
         assert_allclose(t, self.T1_1)
 
-def test_percentileofscore():
-    pcos = stats.percentileofscore
 
-    assert_equal(pcos([1,2,3,4,5,6,7,8,9,10],4), 40.0)
+class TestsPercentileOfScore:
 
-    for (kind, result) in [('mean', 35.0),
-                           ('strict', 30.0),
-                           ('weak', 40.0)]:
-        assert_equal(pcos(np.arange(10) + 1, 4, kind=kind), result)
+    def f(self, *args, **kwargs):
+        return stats.percentileofscore(*args, **kwargs)
 
-    # multiple - 2
-    for (kind, result) in [('rank', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 50.0),
-                           ('mean', 40.0)]:
-        assert_equal(pcos([1,2,3,4,4,5,6,7,8,9], 4, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank",   40),
+                                              ("mean",   35),
+                                              ("strict", 30),
+                                              ("weak",   40)])
+    def test_unique(self, kind, result):
+        assert_equal(self.f([1,2,3,4,5,6,7,8,9,10], 4, kind=kind), result)
 
-    # multiple - 3
-    assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4), 50.0)
-    for (kind, result) in [('rank', 50.0),
-                           ('mean', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 60.0)]:
+    @pytest.mark.parametrize("kind, result", [("rank",   45),
+                                              ("mean",   40),
+                                              ("strict", 30),
+                                              ("weak",   50)])
+    def test_multiple2(self, kind, result):
+        assert_equal(self.f([1,2,3,4,4,5,6,7,8,9], 4, kind=kind), result)
 
-        assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank",   50),
+                                              ("mean",   45),
+                                              ("strict", 30),
+                                              ("weak",   60)])
+    def test_multiple3(self, kind, result):
+        assert_equal(self.f([1,2,3,4,4,4,5,6,7,8], 4, kind=kind), result)
 
-    # missing
-    for kind in ('rank', 'mean', 'strict', 'weak'):
-        assert_equal(pcos([1,2,3,5,6,7,8,9,10,11], 4, kind=kind), 30)
+    @pytest.mark.parametrize("kind, result", [("rank",   30),
+                                              ("mean",   30),
+                                              ("strict", 30),
+                                              ("weak",   30)])
+    def test_missing(self, kind, result):
+        assert_equal(self.f([1,2,3,5,6,7,8,9,10,11], 4, kind=kind), result)
 
-    # larger numbers
-    for (kind, result) in [('mean', 35.0),
-                           ('strict', 30.0),
-                           ('weak', 40.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 40,
-                   kind=kind), result)
 
-    for (kind, result) in [('mean', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 60.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
-                   40, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank",   40),
+                                              ("mean",   35),
+                                              ("strict", 30),
+                                              ("weak",   40)])
+    def test_large_numbers(self, kind, result):
+        assert_equal(self.f([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 40, kind=kind), result)
 
-    for kind in ('rank', 'mean', 'strict', 'weak'):
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   40, kind=kind), 30.0)
+    @pytest.mark.parametrize("kind, result", [("rank",   50),
+                                              ("mean",   45),
+                                              ("strict", 30),
+                                              ("weak",   60)])
+    def test_large_numbers_missing(self, kind, result):
+        assert_equal(self.f([10, 20, 30, 40, 40, 40, 50, 60, 70, 80], 40, kind=kind), result)
 
-    # boundaries
-    for (kind, result) in [('rank', 10.0),
-                           ('mean', 5.0),
-                           ('strict', 0.0),
-                           ('weak', 10.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   10, kind=kind), result)
 
-    for (kind, result) in [('rank', 100.0),
-                           ('mean', 95.0),
-                           ('strict', 90.0),
-                           ('weak', 100.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   110, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank",   [0, 10, 100, 100]),
+                                              ("mean",   [0, 5, 95, 100]),
+                                              ("strict", [0, 0, 90, 100]),
+                                              ("weak",   [0, 10, 100, 100])])
+    def test_boundaries(self, kind, result):
+        assert_equal(self.f([10, 20, 30, 50, 60, 70, 80, 90, 100, 110], [0, 10, 110, 200], kind=kind), result)
 
-    # out of bounds
-    for (kind, score, result) in [('rank', 200, 100.0),
-                                  ('mean', 200, 100.0),
-                                  ('mean', 0, 0.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   score, kind=kind), result)
 
-    assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
+    @pytest.mark.parametrize("kind, result", [("rank",   [0, 10, 100]),
+                                              ("mean",   [0, 5, 95]),
+                                              ("strict", [0, 0, 90]),
+                                              ("weak",   [0, 10, 100])])
+    def test_inf(self, kind, result):
+        assert_equal(self.f([1, 2, 3, 4, 5, 6, 7, 8, 9, +np.inf], [-np.inf, 1, +np.inf], kind=kind), result)
 
-    # array scores
-    a = 1 + np.arange(10)
-    assert_equal(pcos(a, [4, 5]), [40.0, 50.0])
-    assert_equal(pcos(a, [[4, 5], [6, 7]]), [[40.0, 50.0], [60.0, 70.0]])
-    for (kind, result) in [('mean',   [35.0, 45.0]),
-                           ('strict', [30.0, 40.0]),
-                           ('weak',   [40.0, 50.0])]:
-        assert_equal(pcos(a, [4, 5], kind=kind), result)
+    @pytest.mark.parametrize("policy, a, score, result",
+                             [("propagate", []              , 1             , np.nan),
+                              ("propagate", [np.nan]        , 1             , np.nan),
+                              ("propagate", [np.nan]        , [0, 1, 2]     , [np.nan, np.nan, np.nan]),
+                              ("propagate", [1, 2]          , [1, 2, np.nan], [50, 100, np.nan]),
+                              ("omit"     , [1, 2, np.nan],   [0, 1, 2]     , [0, 50, 100]),
+                              ("omit"     , [np.nan, np.nan], [0, 1, 2]     , [np.nan, np.nan, np.nan]),
+                              ])
+    def test_nans_ok(self, policy, a, score, result):
+        assert_equal(self.f(a, score, nan_policy=policy), result)
 
-    # infinite inputs
-    assert_equal(pcos([1,3],      [-np.inf, +np.inf]), [0.0, 100.0])
-    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf]), [0.0, 100.0])
-    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="strict"), [0.0, 50.0])
-    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="mean"),   [0.0, 75.0])
-    assert_equal(pcos([1,np.inf], [-np.inf, +np.inf], kind="weak"),   [0.0, 100.0])
-
-    # nan's that should not raise error
-    assert_equal(pcos([], 1), np.nan)
-    assert_equal(pcos([np.nan, 1, 2],   [0, 1, 2], nan_policy='omit'),      [0, 50.0, 100.0])
-    assert_equal(pcos([np.nan, 2],      [0, 1, 2], nan_policy='propagate'), [np.nan, np.nan, np.nan])
-    assert_equal(pcos([np.nan, np.nan], [0, 1, 2], nan_policy='omit'),      [np.nan, np.nan, np.nan])
-    assert_equal(pcos([1, 2], [1, 2, np.nan], nan_policy='propagate'),      [50.0, 100.0, np.nan])
-
-    # nan's that do raise error
-    with assert_raises(ValueError, match=("The input contains nan values")):
-        pcos([1, 2, 3, np.nan], [1, 2, 3], nan_policy='raise')
-    with assert_raises(ValueError, match=("The input contains nan values")):
-        pcos([1, 2, 3], [1, 2, 3, np.nan], nan_policy='raise')
-    with assert_raises(ValueError, match=("The input scores contains nan values,"
-                                          " which is incompatible with the 'omit' policy.")):
-        pcos([1, 2, 3, 3, 4], [np.nan, 2], nan_policy='omit')
+    @pytest.mark.parametrize("policy, a, score, message", [
+        ("raise", [1, 2, 3, np.nan], [1, 2, 3], "The input contains nan values"),
+        ("raise", [1, 2, 3], [1, 2, 3, np.nan], "The input contains nan values"),
+        ("omit",  [1, 2, 3], [1, 2, 3, np.nan], ("The input scores contains nan values,"
+                                                 " which is incompatible with the 'omit' policy.")),
+    ])
+    def test_nans_fail(self, policy, a, score, message):
+        with assert_raises(ValueError, match=message):
+            self.f(a, score, nan_policy=policy)
 
 
 PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
