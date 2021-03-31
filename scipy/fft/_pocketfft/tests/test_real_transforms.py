@@ -411,7 +411,7 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
         assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
 
-class Test_DCTN_IDCTN(object):
+class Test_DCTN_IDCTN:
     dec = 14
     dct_type = [1, 2, 3, 4]
     norms = [None, 'backward', 'ortho', 'forward']

@@ -51,7 +51,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from .coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape))
+                    other = self.__class__(coo_matrix(arg1, shape=shape,
+                                                      dtype=dtype))
                     self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format

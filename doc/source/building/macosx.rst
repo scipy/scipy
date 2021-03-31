@@ -1,6 +1,6 @@
-===============================
-Building from source on Mac OSX
-===============================
+==============================
+Building from source on macOS
+==============================
 
 .. note::
 
@@ -23,8 +23,8 @@ Apple ships its own version of Python with OS X. However, we
 Alternatively, use Python from one of the OS X package managers
 (Homebrew, MacPorts, Fink).
 
-Compilers (C/C++/FORTRAN/Cython)
---------------------------------
+Compilers (C/C++/FORTRAN/Cython/Pythran)
+----------------------------------------
 
 Though virtually any commercial C/C++ compiler may be used with SciPy, Clang C/C++ compiler,
 which is a Xcode command line tool, can be used for OS X.
@@ -39,8 +39,9 @@ use the following binaries:
 
 See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
-Unless you are building from released source packages, the `Cython
-<https://cython.org/>`__ compiler is also needed.
+`Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__,
+two ahead-of-time compilers, are also needed.
+
 
 BLAS/LAPACK Installation
 ------------------------

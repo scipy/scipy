@@ -17,7 +17,7 @@ from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
 
 
-class ReturnShape(object):
+class ReturnShape:
     """This class exists to create a callable that does not have a '__name__' attribute.
 
     __init__ takes the argument 'shape', which should be a tuple of ints. When an instance
@@ -106,7 +106,7 @@ def pressure_network_fun_and_grad(flow_rates, Qtot, k):
             pressure_network_jacobian(flow_rates, Qtot, k))
 
 
-class TestFSolve(object):
+class TestFSolve:
     def test_pressure_network_no_gradient(self):
         # fsolve without gradient, equal pipes -> equal flows.
         k = np.full(4, 0.5)
@@ -208,7 +208,7 @@ class TestFSolve(object):
         return sequence_parallel([self.test_pressure_network_with_gradient] * 10)
 
 
-class TestRootHybr(object):
+class TestRootHybr:
     def test_pressure_network_no_gradient(self):
         # root/hybr without gradient, equal pipes -> equal flows
         k = np.full(4, 0.5)
@@ -240,7 +240,7 @@ class TestRootHybr(object):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestRootLM(object):
+class TestRootLM:
     def test_pressure_network_no_gradient(self):
         # root/lm without gradient, equal pipes -> equal flows
         k = np.full(4, 0.5)
@@ -251,7 +251,7 @@ class TestRootLM(object):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestLeastSq(object):
+class TestLeastSq:
     def setup_method(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
@@ -391,7 +391,7 @@ class TestLeastSq(object):
         return sequence_parallel([self.test_basic_with_gradient] * 10)
 
 
-class TestCurveFit(object):
+class TestCurveFit:
     def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
@@ -423,7 +423,7 @@ class TestCurveFit(object):
                                   decimal=4)
 
     def test_func_is_classmethod(self):
-        class test_self(object):
+        class test_self:
             """This class tests if curve_fit passes the correct number of
                arguments when the model function is a class instance method.
             """
@@ -804,7 +804,7 @@ class TestCurveFit(object):
                       args=(1,))
 
 
-class TestFixedPoint(object):
+class TestFixedPoint:
 
     def test_scalar_trivial(self):
         # f(x) = 2x; fixed point should be x=0

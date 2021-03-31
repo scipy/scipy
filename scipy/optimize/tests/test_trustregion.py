@@ -25,7 +25,7 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(object):
+class TestTrustRegionSolvers:
 
     def setup_method(self):
         self.x_opt = [1.0, 1.0]

@@ -33,11 +33,10 @@ SciPy depend on
 
 * Python header files (typically a package named ``python-dev`` or ``python-devel``)
 
-* Unless you are building from released source packages, the `Cython
-  <https://cython.org/>`__ compiler is necessary (typically in a
-  package named ``cython``). For building recent SciPy, it is possible
-  that you need Cython in a newer version than is available in your
-  distribution.
+* The `Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__
+  ahead-of-time compilers are necessary (typically packaged as ``cython``
+  and ``pythran``.  For building recent SciPy, it is possible that you need
+  Cython in a newer version than is available in your distribution.
 
 Typically, you will want to install all of the above from packages
 supplied by your Linux distribution, as building them yourself is
@@ -109,7 +108,7 @@ Fedora 26
 
 To install scipy build requirements, you can do::
 
-    sudo dnf install gcc-gfortran python3-devel python2-devel openblas-devel lapack-devel Cython
+    sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel pythran Cython
 
 
 Intel C compiler and MKL

@@ -699,6 +699,11 @@ All functions
    ctgsen
    ztgsen
 
+   stgsen_lwork
+   dtgsen_lwork
+   ctgsen_lwork
+   ztgsen_lwork
+
    stpttf
    dtpttf
    ctpttf

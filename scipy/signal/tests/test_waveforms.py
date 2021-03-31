@@ -44,7 +44,7 @@ def compute_frequency(t, theta):
     return tf, f
 
 
-class TestChirp(object):
+class TestChirp:
 
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
@@ -219,7 +219,7 @@ class TestChirp(object):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestSweepPoly(object):
+class TestSweepPoly:
 
     def test_sweep_poly_quad1(self):
         p = np.poly1d([1.0, 0.0, 1.0])
@@ -287,7 +287,7 @@ class TestSweepPoly(object):
         assert_(abserr < 1e-6)
 
 
-class TestGaussPulse(object):
+class TestGaussPulse:
 
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
@@ -314,7 +314,7 @@ class TestGaussPulse(object):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestUnitImpulse(object):
+class TestUnitImpulse:
 
     def test_no_index(self):
         assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])

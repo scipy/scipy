@@ -13,7 +13,7 @@ from .test_minimize_constrained import (Maratos, HyperbolicIneq, Rosenbrock,
                                         BoundedRosenbrock, Elec)
 
 
-class TestOldToNew(object):
+class TestOldToNew:
     x0 = (2, 0)
     bnds = ((0, None), (0, None))
     method = "trust-constr"
@@ -57,7 +57,7 @@ class TestOldToNew(object):
         assert_allclose(res.fun, 1.125, rtol=1e-4)
 
 
-class TestNewToOld(object):
+class TestNewToOld:
 
     def test_multiple_constraint_objects(self):
         fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
@@ -162,7 +162,7 @@ class TestNewToOld(object):
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
 
 
-class TestNewToOldSLSQP(object):
+class TestNewToOldSLSQP:
     method = 'slsqp'
     elec = Elec(n_electrons=2)
     elec.x_opt = np.array([-0.58438468, 0.58438466, 0.73597047,
@@ -240,7 +240,7 @@ class TestNewToOldSLSQP(object):
                          method=self.method, bounds=bnds, constraints=cons)
 
 
-class TestNewToOldCobyla(object):
+class TestNewToOldCobyla:
     method = 'cobyla'
 
     list_of_problems = [
