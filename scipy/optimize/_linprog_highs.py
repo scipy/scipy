@@ -311,10 +311,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             simplex_dual_edge_weight_strategy_enum,
         'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
         'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+        'ipm_iteration_limit': maxiter,
+        'simplex_iteration_limit': maxiter,
     }
-
-    options['ipm_iteration_limit'] = maxiter
-    options['simplex_iteration_limit'] = maxiter
 
     # np.inf doesn't work; use very large constant
     rhs = _replace_inf(rhs)
@@ -338,16 +337,26 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # this needs to be updated if we start choosing the solver intelligently
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
+    # HiGHS will report OPTIMAL if the scaled model is solved to optimality
+    # even if the unscaled original model is infeasible;
+    # Catch that case here and provide a more useful message
+    if ((res['status'] == MODEL_STATUS_OPTIMAL) and
+            (res['unscaled_status'] != res['status'])):
+        _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
+        status, message = 4, ('An optimal solution to the scaled model was '
+                              f'found but was {unscaled_message} in the '
+                              'unscaled model. For more information run with '
+                              'the option `disp: True`.')
+    else:
+        status, message = statuses[res['status']]
+
     sol = {'x': np.array(res['x']) if 'x' in res else None,
            'slack': slack,
-           # TODO: Add/test dual info like:
-           # 'lambda': res.get('lambda'),
-           # 's': res.get('s'),
            'fun': res.get('fun'),
            'con': con,
-           'status': statuses[res['status']][0],
+           'status': status,
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
-           'message': statuses[res['status']][1],
+           'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
            }

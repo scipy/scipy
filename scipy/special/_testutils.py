@@ -16,7 +16,7 @@ __all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
@@ -83,7 +83,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
