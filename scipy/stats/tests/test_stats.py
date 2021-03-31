@@ -2763,7 +2763,7 @@ class TestsPercentileOfScore:
                                               ("strict", 30),
                                               ("weak", 40)])
     def test_unique(self, kind, result):
-        assert_equal(self.f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, kind=kind),  result)
+        assert_equal(self.f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 4, kind=kind), result)
 
     @pytest.mark.parametrize("kind, result", [("rank", 45),
                                               ("mean", 40),
@@ -2827,8 +2827,7 @@ class TestsPercentileOfScore:
                               ("propagate", [np.nan], [0, 1, 2], [np.nan, np.nan, np.nan]),
                               ("propagate", [1, 2], [1, 2, np.nan], [50, 100, np.nan]),
                               ("omit", [1, 2, np.nan], [0, 1, 2], [0, 50, 100]),
-                              ("omit", [np.nan, np.nan], [0, 1, 2], [np.nan, np.nan, np.nan]),
-                              ])
+                              ("omit", [np.nan, np.nan], [0, 1, 2], [np.nan, np.nan, np.nan])])
     def test_nans_ok(self, policy, a, score, result):
         assert_equal(self.f(a, score, nan_policy=policy), result)
 
@@ -2836,7 +2835,7 @@ class TestsPercentileOfScore:
         ("raise", [1, 2, 3, np.nan], [1, 2, 3], "The input contains nan values"),
         ("raise", [1, 2, 3], [1, 2, 3, np.nan], "The input contains nan values"),
         ("omit", [1, 2, 3], [1, 2, 3, np.nan], ("The input scores contains nan values,"
-                                                 " which is incompatible with the 'omit' policy.")),
+                                                " which is incompatible with the 'omit' policy.")),
     ])
     def test_nans_fail(self, policy, a, score, message):
         with assert_raises(ValueError, match=message):
