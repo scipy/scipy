@@ -3,7 +3,7 @@ import numpy as np
 from scipy._lib._util import check_random_state
 
 def _jackknife_resample(data):
-    '''Jackknife resample the data using'''
+    '''Jackknife resample the data. Currently supports only one-sample data'''
     n = data.shape[-1]
 
     # jackknife - each row leaves out one observation
@@ -42,7 +42,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
     '''np.percentile with different percentile for each slice'''
     shape = theta_hat_b.shape[:-1]
     alpha = np.broadcast_to(alpha, shape)
-    percentiles = np.zeros_like(alpha)
+    percentiles = np.zeros_like(alpha, dtype=np.float64)
     for indices, alpha_i in np.ndenumerate(alpha):
         theta_hat_b_i = theta_hat_b[indices]
         percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
