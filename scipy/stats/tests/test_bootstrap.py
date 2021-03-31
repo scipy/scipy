@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 from scipy.stats import bootstrap_ci
+from numpy.testing import assert_allclose
+from scipy import stats
 
 
 def test_bootstrap_ci_iv():
@@ -39,3 +41,80 @@ def test_bootstrap_ci_iv():
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
         bootstrap_ci(([1, 2, 3],), np.mean, random_state='herring')
+
+
+tests_R = {"basic": (23.77, 79.12),
+           "percentile": (28.86, 84.21),
+           "BCa": (32.31, 91.43)}
+
+
+@pytest.mark.parametrize("method, expected", tests_R.items())
+def test_bootstrap_ci_against_R(method, expected):
+    # Compare against R's "boot" library
+    # library(boot)
+
+    # stat <- function (x, a) {
+    #     mean(x[a])
+    # }
+
+    # x <- c(10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
+    #        23, 34, 50, 81, 89, 121, 134, 213)
+
+    # # Use a large value so we get a few significant digits for the CI.
+    # n = 1000000
+    # bootresult = boot(x, stat, n)
+    # result <- boot.ci(bootresult)
+    # print(result)
+    x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
+                  23, 34, 50, 81, 89, 121, 134, 213])
+    res = bootstrap_ci((x,), np.mean, n_resamples=1000000, method=method)
+    assert_allclose(res, expected, rtol=0.005)
+
+
+tests_against_itself = {"basic": 888,
+                        "percentile": 886}
+
+
+@pytest.mark.parametrize("method, expected", tests_against_itself.items())
+def test_bootstrap_ci_against_itself(method, expected):
+    # The expected values in this test were generated using bootstrap_ci
+    # to check for unintended changes in behavior. The test also makes sure
+    # that bootstrap_ci works with multi-sample statistics and that the
+    # `axis` argument works as expected / function is vectorized.
+    np.random.seed(0)
+
+    n1 = 100  # size of sample 1
+    n2 = 120  # size of sample 2
+    n_resamples = 1000  # number of bootstrap resamples used to form each CI
+    confidence_level = 0.9
+
+    # The statistic we're interested in is the difference in means
+    def my_stat(data1, data2, axis=-1):
+        mean1 = np.mean(data1, axis=axis)
+        mean2 = np.mean(data2, axis=axis)
+        return mean1 - mean2
+
+    # The true difference in the means is -0.1
+    dist1 = stats.norm(loc=0, scale=1)
+    dist2 = stats.norm(loc=0.1, scale=1)
+    stat_true = dist1.mean() - dist2.mean()
+
+    # Do the same thing 1000 times. (The code is fully vectorized.)
+    n_replications = 1000
+    data1 = dist1.rvs(size=(n_replications, n1))
+    data2 = dist2.rvs(size=(n_replications, n2))
+    ci = bootstrap_ci((data1, data2),
+                      statistic=my_stat,
+                      confidence_level=confidence_level,
+                      n_resamples=n_resamples,
+                      method=method,
+                      axis=-1)
+
+    # ci contains vectors of lower and upper confidence interval bounds
+    ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
+    assert ci_contains_true == expected
+
+    # ci_contains_true is not inconsistent with confidence_level
+    pvalue = stats.binomtest(ci_contains_true, n_replications,
+                             confidence_level).pvalue
+    assert pvalue > 0.1
