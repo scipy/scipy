@@ -3,19 +3,28 @@ import numpy as np
 from scipy._lib._util import check_random_state
 
 
-def _resample_data(data, n_resamples=None, random_state=None):
-    '''Resample the data'''
+def _jackknife_resample(data):
+    '''Jackknife resample the data using'''
     n = data.shape[-1]
-    if n_resamples:
-        # bootstrap - each row is a random resample of original observations
-        i = random_state.randint(0, n, (n_resamples, n))
-    else:
-        # jackknife - each row leaves out one observation
-        j = np.ones((n, n), dtype=bool)
-        np.fill_diagonal(j, False)
-        i = np.arange(n)
-        i = np.broadcast_to(i, (n, n))
-        i = i[j].reshape((n, n-1))
+
+    # jackknife - each row leaves out one observation
+    j = np.ones((n, n), dtype=bool)
+    np.fill_diagonal(j, False)
+    i = np.arange(n)
+    i = np.broadcast_to(i, (n, n))
+    i = i[j].reshape((n, n-1))
+
+    resamples = data[..., i]
+    return resamples
+
+
+def _bootstrap_resample(data, n_resamples=None, random_state=None):
+    '''Bootstrap resample the data'''
+    n = data.shape[-1]
+
+    # bootstrap - each row is a random resample of original observations
+    i = random_state.randint(0, n, (n_resamples, n))
+
     resamples = data[..., i]
     return resamples
 
@@ -48,7 +57,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     z0_hat = stats.norm.ppf(percentile)
 
     # calculate a_hat
-    jackknife_data = _resample_data(data)
+    jackknife_data = _jackknife_resample(data)
     theta_hat_i = statistic(jackknife_data, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1)[..., None]
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
@@ -259,8 +268,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     # Generate resamples
     resampled_data = []
     for sample in data:
-        resample = _resample_data(sample, n_resamples=n_resamples,
-                                  random_state=random_state)
+        resample = _bootstrap_resample(sample, n_resamples=n_resamples,
+                                       random_state=random_state)
         resampled_data.append(resample)
 
     # Compute bootstrap distribution of statistic
