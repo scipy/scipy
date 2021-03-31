@@ -108,16 +108,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         obey any specified `bounds`.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
-        callable, it should return the  Hessian matrix:
+        trust-ncg, trust-krylov, trust-exact and trust-constr. If it is
+        callable, it should return the Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
         where x is a (n,) ndarray and `args` is a tuple with the fixed
-        parameters. LinearOperator and sparse matrix returns are
-        allowed only for 'trust-constr' method. Alternatively, the keywords
+        parameters. LinearOperator and sparse matrix returns are only allowed
+        for 'trust-constr' method. Alternatively, the keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation. Or, objects implementing
+        for numerical estimation. Or, objects implementing the
         `HessianUpdateStrategy` interface can be used to approximate
         the Hessian. Available quasi-Newton methods implementing
         this interface are:
@@ -129,8 +129,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         the Hessian cannot be estimated with options
         {'2-point', '3-point', 'cs'} and needs to be
         estimated using one of the quasi-Newton strategies.
-        Finite-difference options {'2-point', '3-point', 'cs'} and
-        `HessianUpdateStrategy` are available only for 'trust-constr' method.
+        'trust-exact' cannot use a finite-difference scheme, and must be used
+        with a callable returning an (n, n) array.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
