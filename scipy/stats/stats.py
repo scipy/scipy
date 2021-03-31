@@ -224,7 +224,7 @@ def _contains_nan(a, nan_policy='propagate', summary_check=True):
     try:
         # The summary check avoids creating a (potentially huge) array.
         # However, it will set contains_nan to True for (e.g.) [-inf, 0, +inf].
-        # If this is undesirabl, set summary_check to False instead.
+        # If this is undesirable, set summary_check to False instead.
         if summary_check:
             with np.errstate(invalid='ignore'):
                 contains_nan = np.isnan(np.sum(a))
