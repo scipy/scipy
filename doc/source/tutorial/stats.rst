@@ -152,22 +152,6 @@ argument:
     >>> norm.rvs(size=3)
     array([-0.35687759,  1.34347647, -0.11710531])   # random
 
-Note that drawing random numbers relies on generators from
-`numpy.random`
-package. In the example above, the specific stream of
-random numbers is not reproducible across runs. To achieve reproducibility,
-you can explicitly seed a global variable
-
-    >>> np.random.seed(1234)
-
-Relying on a global state is not recommended, though. A better way is to use
-the `random_state` parameter, which accepts an instance of
-`numpy.random.RandomState` class, or an integer, which is then used to
-seed an internal ``RandomState`` object:
-
-    >>> norm.rvs(size=5, random_state=1234)
-    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])
-
 Don't think that ``norm.rvs(5)`` generates 5 variates:
 
     >>> norm.rvs(5)
@@ -178,6 +162,39 @@ keyword argument, ``loc``, which is the first of a pair of keyword arguments
 taken by all continuous distributions.
 This brings us to the topic of the next subsection.
 
+Random number generation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Drawing random numbers relies on generators from `numpy.random` package.
+In the examples above, the specific stream of
+random numbers is not reproducible across runs. To achieve reproducibility,
+you can explicitly *seed* the random number generator. In NumPy, a generator
+is an instance of `numpy.random.Generator`. Here is the canonical way to create
+a generator:
+
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+
+And fixing the seed can be done like this:
+
+    >>> from numpy.random import SeedSequence
+    >>> seed = SeedSequence().entropy
+    >>> rng = default_rng(seed)
+
+.. warning:: Do not use common values such as 0. Using just a small set of
+             seeds to instantiate larger state spaces means that there are some
+             initial states that are impossible to reach. This creates some
+             biases if everyone uses such values.
+
+The `random_state` parameter in distributions accepts an instance of
+`numpy.random.Generator` class, or an integer, which is then used to
+seed an internal ``Generator`` object:
+
+    >>> norm.rvs(size=5, random_state=rng)
+    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])  #random
+
+For further info, see `NumPy's documentation
+<https://numpy.org/doc/stable/reference/random/index.html>`__.
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
@@ -558,11 +575,10 @@ Let's generate a random sample and compare observed frequencies with
 the probabilities.
 
     >>> n_sample = 500
-    >>> np.random.seed(87655678)   # fix the seed for replicability
     >>> rvs = normdiscrete.rvs(size=n_sample)
     >>> f, l = np.histogram(rvs, bins=gridlimits)
     >>> sfreq = np.vstack([gridint, f, probs*n_sample]).T
-    >>> print(sfreq)
+    >>> print(sfreq)  # random
     [[-1.00000000e+01  0.00000000e+00  2.95019349e-02]
      [-9.00000000e+00  0.00000000e+00  1.32294142e-01]
      [-8.00000000e+00  0.00000000e+00  5.06497902e-01]
@@ -622,8 +638,7 @@ First, we create some random variables. We set a seed so that in each run
 we get identical results to look at. As an example we take a sample from
 the Student t distribution:
 
-    >>> np.random.seed(282629734)
-    >>> x = stats.t.rvs(10, size=1000)
+    >>> x = stats.t.rvs(10, size=1000, random_state=seed)
 
 Here, we set the required shape parameter of the t distribution, which
 in statistics corresponds to the degrees of freedom, to 10. Using size=1000 means
@@ -1122,7 +1137,6 @@ Let's use a custom plotting function to plot the data relationship:
 
 Let's look at some linear data first:
 
-    >>> np.random.seed(12345678)
     >>> x = np.linspace(-1, 1, num=100)
     >>> y = x + 0.3 * np.random.random(x.size)
 
@@ -1158,7 +1172,6 @@ case is **equivalent to the global scale**, marked by a red spot on the map.
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
 
-    >>> np.random.seed(12345678)
     >>> unif = np.array(np.random.uniform(0, 5, size=100))
     >>> x = unif * np.cos(np.pi * unif)
     >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
@@ -1339,9 +1352,9 @@ skip some points, or reset it. Let's take 5 points from
 :class:`~stats.qmc.Halton`. And then ask for a second set of 5 points:
 
     >>> from scipy.stats import qmc
-    >>> engine = qmc.Halton(d=2, seed=12345)
+    >>> engine = qmc.Halton(d=2)
     >>> engine.random(5)
-    array([[0.22166437, 0.07980522],
+    array([[0.22166437, 0.07980522],  # random
            [0.72166437, 0.93165708],
            [0.47166437, 0.41313856],
            [0.97166437, 0.19091633],
@@ -1358,7 +1371,7 @@ points:
 
     >>> engine.reset()
     >>> engine.random(5)
-    array([[0.22166437, 0.07980522],
+    array([[0.22166437, 0.07980522],  # random
            [0.72166437, 0.93165708],
            [0.47166437, 0.41313856],
            [0.97166437, 0.19091633],
@@ -1369,7 +1382,7 @@ And here we advance the sequence to get the same second set of 5 points:
     >>> engine.reset()
     >>> engine.fast_forward(5)
     >>> engine.random(5)
-    array([[0.51853937, 0.52424967],
+    array([[0.51853937, 0.52424967],  # random
            [0.26853937, 0.30202745],
            [0.76853937, 0.857583  ],
            [0.14353937, 0.63536078],
@@ -1412,16 +1425,16 @@ defined. Following is an example wrapping `numpy.random.Generator`.
 
 Then we use it as any other QMC engine:
 
-    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine = RandomEngine(2)
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
            [0.67275604, 0.94180287]])
     >>> engine.reset()
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
