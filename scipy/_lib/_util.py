@@ -189,6 +189,7 @@ class DeprecatedImport:
 
 
 # copy-pasted from scikit-learn utils/validation.py
+# change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
 def check_random_state(seed):
     """Turn seed into a np.random.RandomState instance
 

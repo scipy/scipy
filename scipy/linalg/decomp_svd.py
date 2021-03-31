@@ -73,8 +73,11 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> m, n = 9, 6
-    >>> a = np.random.randn(m, n) + 1.j*np.random.randn(m, n)
+    >>> a = rng.random((m, n)) + 1.j*rng.random((m, n))
     >>> U, s, Vh = linalg.svd(a)
     >>> U.shape,  s.shape, Vh.shape
     ((9, 9), (6,), (6, 6))
@@ -168,6 +171,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     handling of the edge case of empty ``a``, where it returns an
     empty sequence:
 
+    >>> import numpy as np
     >>> a = np.empty((0, 2))
     >>> from scipy.linalg import svdvals
     >>> svdvals(a)
@@ -213,7 +217,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     `scipy.stats.ortho_group`.
 
     >>> from scipy.stats import ortho_group
-    >>> np.random.seed(123)
     >>> orth = ortho_group.rvs(4)
     >>> svdvals(orth)
     array([ 1.,  1.,  1.,  1.])
@@ -254,6 +257,7 @@ def diagsvd(s, M, N):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import diagsvd
     >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
     >>> diagsvd(vals, 3, 4)
@@ -306,6 +310,7 @@ def orth(A, rcond=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import orth
     >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
     >>> orth(A)
@@ -355,6 +360,7 @@ def null_space(A, rcond=None):
     --------
     1-D null space:
 
+    >>> import numpy as np
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
     >>> ns = null_space(A)
@@ -364,7 +370,9 @@ def null_space(A, rcond=None):
 
     2-D null space:
 
-    >>> B = np.random.rand(3, 5)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> B = rng.random((3, 5))
     >>> Z = null_space(B)
     >>> Z.shape
     (5, 2)
@@ -389,6 +397,7 @@ def null_space(A, rcond=None):
 
 
 def subspace_angles(A, B):
+    # Steps here omit the U and V calculation steps from the paper
     r"""
     Compute the subspace angles between two matrices.
 
@@ -429,7 +438,10 @@ def subspace_angles(A, B):
     An Hadamard matrix, which has orthogonal columns, so we expect that
     the suspace angle to be :math:`\frac{\pi}{2}`:
 
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
     >>> from scipy.linalg import hadamard, subspace_angles
+    >>> rng = default_rng()
     >>> H = hadamard(4)
     >>> print(H)
     [[ 1  1  1  1]
@@ -446,11 +458,10 @@ def subspace_angles(A, B):
 
     The angles between non-orthogonal subspaces are in between these extremes:
 
-    >>> x = np.random.RandomState(0).randn(4, 3)
+    >>> x = rng.random((4, 3))
     >>> np.rad2deg(subspace_angles(x[:, :2], x[:, [2]]))
     array([ 55.832])
     """
-    # Steps here omit the U and V calculation steps from the paper
 
     # 1. Compute orthonormal bases of column-spaces
     A = _asarray_validated(A, check_finite=True)

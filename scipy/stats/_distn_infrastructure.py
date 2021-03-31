@@ -650,14 +650,13 @@ class rv_generic:
 
     @property
     def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
+        """ Get or set the ``Generator`` object for generating random variates.
 
-        This can be either None, int, a RandomState instance, or a
-        np.random.Generator instance.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState or Generator instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
         """
         return self._random_state
@@ -1036,13 +1035,12 @@ class rv_generic:
             Scale parameter (default=1).
         size : int or tuple of ints, optional
             Defining number of random variates (default is 1).
-        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-            If `seed` is `None` the `~np.random.RandomState` singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used, seeded
-            with seed.
-            If `seed` is already a ``RandomState`` or ``Generator`` instance,
-            then that object is used.
-            Default is None.
+        random_state : {None, int, `numpy.random.Generator`}, optional
+            If `seed` is None the `numpy.random.Generator` singleton is used.
+            If `seed` is an int, a new ``Generator`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` instance then that instance is
+            used.
 
         Returns
         -------
@@ -1530,14 +1528,12 @@ class rv_continuous(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        This parameter defines the object to use for drawing random variates.
-        If `seed` is `None` the `~np.random.RandomState` singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance,
-        then that object is used.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Methods
     -------
@@ -2922,14 +2918,12 @@ class rv_discrete(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        This parameter defines the object to use for drawing random variates.
-        If `seed` is `None` the `~np.random.RandomState` singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance,
-        then that object is used.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Methods
     -------
@@ -3169,16 +3163,12 @@ class rv_discrete(rv_generic):
         size : int or tuple of ints, optional
             Defining number of random variates (Default is 1).  Note that `size`
             has to be given as keyword, not as positional argument.
-        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-            This parameter defines the object to use for drawing random
-            variates.
-            If `random_state` is `None` the `~np.random.RandomState` singleton
-            is used.
-            If `random_state` is an int, a new ``RandomState`` instance is used,
-            seeded with random_state.
-            If `random_state` is already a ``RandomState`` or ``Generator``
-            instance, then that object is used.
-            Default is None.
+        random_state : {None, int, `numpy.random.Generator`}, optional
+            If `seed` is None the `numpy.random.Generator` singleton is used.
+            If `seed` is an int, a new ``Generator`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` instance then that instance is
+            used.
 
         Returns
         -------

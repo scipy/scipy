@@ -712,9 +712,13 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used. This random state will be used
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
+        This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
     data_rvs : callable, optional
@@ -738,12 +742,14 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
 
-    >>> class CustomRandomState(np.random.RandomState):
+    >>> class CustomRandomState(np.random.Generator):
     ...     def randint(self, k):
-    ...         i = np.random.randint(k)
+    ...         i = rng.integers(k)
     ...         return i - i % 2
-    >>> np.random.seed(12345)
     >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
@@ -756,12 +762,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.randn(*size)
-    >>> X = CustomDistribution(seed=2906)
+    ...         return random_state.random(*size)
+    >>> X = CustomDistribution(random_state=rng)
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A
-    array([[ 0.        ,  0.        ,  0.        ,  0.        ],
+    array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
 
@@ -827,9 +833,12 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int, np.random.Generator}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------

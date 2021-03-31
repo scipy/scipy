@@ -2146,10 +2146,12 @@ cdef class Rotation(object):
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : int, RandomState instance or None, optional
-            Accepts an integer as a seed for the random generator or a
-            RandomState object. If None (default), uses global `numpy.random`
-            random state.
+        random_state : {None, int, `numpy.random.Generator`}, optional
+            If `seed` is None the `numpy.random.Generator` singleton is used.
+            If `seed` is an int, a new ``Generator`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` instance then that instance is
+            used.
 
         Returns
         -------
@@ -2169,12 +2171,12 @@ cdef class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random(random_state=1234).as_euler('zxy', degrees=True)
+        >>> R.random().as_euler('zxy', degrees=True)  # doctest: +SKIP
         array([-110.5976185 ,   55.32758512,   76.3289269 ])
 
         Sample a stack of rotations:
 
-        >>> R.random(5, random_state=1234).as_euler('zxy', degrees=True)
+        >>> R.random(5).as_euler('zxy', degrees=True)  # doctest: +SKIP
         array([[-110.5976185 ,   55.32758512,   76.3289269 ],
                [ -91.59132005,  -14.3629884 ,  -93.91933182],
                [  25.23835501,   45.02035145, -121.67867086],

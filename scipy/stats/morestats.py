@@ -256,16 +256,17 @@ def kstat(data, n=2):
     Examples
     --------
     >>> from scipy import stats
-    >>> rndm = np.random.RandomState(1234)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
 
     As sample size increases, n-th moment and n-th k-statistic converge to the
     same number (although they aren't identical). In the case of the normal
     distribution, they converge to zero.
 
     >>> for n in [2, 3, 4, 5, 6, 7]:
-    ...     x = rndm.normal(size=10**n)
+    ...     x = rng.normal(size=10**n)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
-    ...     print("%.3g %.3g %.3g" % (m, k, m-k))
+    ...     print("%.3g %.3g %.3g" % (m, k, m-k))  # doctest: +SKIP
     -0.631 -0.651 0.0194
     0.0282 0.0283 -8.49e-05
     -0.0454 -0.0454 1.36e-05

@@ -60,10 +60,12 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : int, `RandomState`, `Generator` or None, optional (default: None)
-            Accepts an integer as a seed for the random generator or a
-            ``RandomState`` or ``Generator`` object. If None (default), uses
-            global `numpy.random` random state.
+        rng : {None, int, `numpy.random.Generator`}, optional
+            If `seed` is None the `numpy.random.Generator` singleton is used.
+            If `seed` is an int, a new ``Generator`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` instance then that instance is
+            used.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -288,10 +290,12 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : int, `RandomState`, `Generator` or None, optional (default: None)
-        Accepts an integer as a seed for the random generator or a
-        ``RandomState`` or ``Generator`` object. If None (default), uses
-        global `numpy.random` random state.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
@@ -587,10 +591,12 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
 
-    rng : int, `RandomState`, `Generator` or None, optional (default: None)
-        Accepts an integer as a seed for the random generator or a
-        ``RandomState`` or ``Generator`` object. If None (default), uses
-        global `numpy.random` random state.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.

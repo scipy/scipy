@@ -191,7 +191,7 @@ The `random_state` parameter in distributions accepts an instance of
 seed an internal ``Generator`` object:
 
     >>> norm.rvs(size=5, random_state=rng)
-    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])  #random
+    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])  # random
 
 For further info, see `NumPy's documentation
 <https://numpy.org/doc/stable/reference/random/index.html>`__.

@@ -2251,7 +2251,10 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Examples
     --------
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
     >>> from scipy import stats
+    >>> rng = default_rng()
     >>> x = [1, 4, 2, 1, 3, 1]
     >>> res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
     >>> res.cumcount
@@ -2261,7 +2264,6 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Create a normal distribution with 1000 random values
 
-    >>> rng = np.random.RandomState(seed=12345)
     >>> samples = stats.norm.rvs(size=1000, random_state=rng)
 
     Calculate cumulative frequencies
@@ -2333,7 +2335,10 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Examples
     --------
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
     >>> from scipy import stats
+    >>> rng = default_rng()
     >>> a = np.array([2, 4, 1, 2, 3, 2])
     >>> res = stats.relfreq(a, numbins=4)
     >>> res.frequency
@@ -2343,7 +2348,6 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Create a normal distribution with 1000 random values
 
-    >>> rng = np.random.RandomState(seed=12345)
     >>> samples = stats.norm.rvs(size=1000, random_state=rng)
 
     Calculate relative frequencies
@@ -5095,10 +5099,12 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         such as `multiprocessing.Pool.map` for evaluating the population in
         parallel. This evaluation is carried out as `workers(func, iterable)`.
         Requires that `func` be pickleable.
-    random_state : int or np.random.RandomState instance, optional
-        If already a RandomState instance, use it.
-        If seed is an int, return a new RandomState instance seeded with seed.
-        If None, use np.random.RandomState. Default is None.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
@@ -5193,10 +5199,12 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
         Note that this will not run if inputs are distance matrices.
-    random_state : int or np.random.RandomState instance, optional
-        If already a RandomState instance, use it.
-        If seed is an int, return a new RandomState instance seeded with seed.
-        If None, use np.random.RandomState. Default is None.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
@@ -5323,8 +5331,8 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     >>> x = np.arange(100)
     >>> y = np.arange(79)
-    >>> mgc = multiscale_graphcorr(x, y, random_state=1)
-    >>> '%.3f, %.2f' % (mgc.stat, mgc.pvalue)
+    >>> mgc = multiscale_graphcorr(x, y)
+    >>> '%.3f, %.2f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
     '0.033, 0.02'
 
     or, if shape of the inputs are the same,
@@ -5332,7 +5340,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> x = np.arange(100)
     >>> y = x
     >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
-    >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)
+    >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
     '-0.008, 1.0'
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
@@ -5965,7 +5973,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 1.7.0
 
-    random_state : int, RandomState, or Generator, optional
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
 
@@ -6203,7 +6216,12 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     equal_var: bool, optional
         If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
         an ordinary t-test is conducted.
-    random_state : int, RandomState, or Generator, optional
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
         Pseudorandom number generator state used for generating random
         permutations.
 

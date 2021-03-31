@@ -1341,11 +1341,13 @@ def cut_tree(Z, n_clusters=None, height=None):
     Examples
     --------
     >>> from scipy import cluster
-    >>> np.random.seed(23)
-    >>> X = np.random.randn(50, 4)
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> X = rng.random((50, 4))
     >>> Z = cluster.hierarchy.ward(X)
     >>> cutree = cluster.hierarchy.cut_tree(Z, n_clusters=[5, 10])
-    >>> cutree[:10]
+    >>> cutree[:10]  # doctest: +SKIP
     array([[0, 0],
            [1, 1],
            [2, 2],

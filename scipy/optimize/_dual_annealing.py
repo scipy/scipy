@@ -38,9 +38,12 @@ class VisitingDistribution:
         makes the algorithm jump to a more distant region.
         The value range is (1, 3]. It's value is fixed for the life of the
         object.
-    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
-        A `~numpy.random.RandomState`, `~numpy.random.Generator` object
-        for using the current state of the created random generator container.
+    rand_gen : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
     """
     TAIL_LIMIT = 1.e8
     MIN_VISIT_BOUND = 1.e-10
@@ -226,10 +229,12 @@ class StrategyChain:
         Instance of `ObjectiveFunWrapper` class.
     minimizer_wrapper: LocalSearchWrapper
         Instance of `LocalSearchWrapper` class.
-    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
-        A `~numpy.random.RandomState` or `~numpy.random.Generator`
-        object for using the current state of the created random generator
-        container.
+    rand_gen : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
     energy_state: EnergyState
         Instance of `EnergyState` class.
     """
@@ -475,13 +480,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int, `~numpy.random.RandomState`, `~numpy.random.Generator`}, optional
-        If `seed` is not specified the `~numpy.random.RandomState` singleton is
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
         used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with `seed`.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance, then
-        that instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the visiting distribution function
         and new coordinates generation.
@@ -625,7 +629,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # Wrapper fot the minimizer
     minimizer_wrapper = LocalSearchWrapper(
         bounds, func_wrapper, **local_search_options)
-    # Initialization of RandomState for reproducible runs if seed provided
+    # Initialization of random Generator for reproducible runs if seed provided
     rand_state = check_random_state(seed)
     # Initialization of the energy state
     energy_state = EnergyState(lower, upper, callback)

@@ -26,12 +26,12 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns: int
         Number of columns of S
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
@@ -70,12 +70,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size: int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
 
     Returns
     -------
