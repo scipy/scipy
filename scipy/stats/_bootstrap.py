@@ -1,6 +1,8 @@
 import scipy.stats as stats
 import numpy as np
 from scipy._lib._util import check_random_state
+from scipy.special import ndtr, ndtri
+
 
 def _jackknife_resample(data):
     '''Jackknife resample the data. Currently supports only one-sample data'''
@@ -57,7 +59,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     # calculate z0_hat
     theta_hat = statistic(data, axis=axis)[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
-    z0_hat = stats.norm.ppf(percentile)
+    z0_hat = ndtri(percentile)
 
     # calculate a_hat
     jackknife_data = _jackknife_resample(data)
@@ -68,12 +70,12 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     a_hat = num / den
 
     # calculate alpha_1, alpha_2
-    z_alpha = stats.norm.ppf(alpha)
+    z_alpha = ndtri(alpha)
     z_1alpha = -z_alpha
     num1 = z0_hat + z_alpha
-    alpha_1 = stats.norm.cdf(z0_hat + num1/(1 - a_hat*num1))
+    alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
-    alpha_2 = stats.norm.cdf(z0_hat + num2/(1 - a_hat*num2))
+    alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
     return alpha_1, alpha_2
 
 
