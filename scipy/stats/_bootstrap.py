@@ -51,7 +51,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     """Bias-corrected and accelerated interval """
-    # closely follows [1] "BCa Bootstrap CIs"
+    # closely follows [2] "BCa Bootstrap CIs"
     data = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
@@ -188,9 +188,11 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
 
     References
     ----------
-    .. [1] Nathaniel E. Helwig, "Bootstrap Confidence Intervals",
+    .. [1] B. Efron and R. J. Tibshirani, An Introduction to the Bootstrap,
+       Chapman & Hall/CRC, Boca Raton, FL, USA (1993)
+    .. [2] Nathaniel E. Helwig, "Bootstrap Confidence Intervals",
        http://users.stat.umn.edu/~helwig/notes/bootci-Notes.pdf
-    .. [2] Bootstrapping (statistics), Wikipedia,
+    .. [3] Bootstrapping (statistics), Wikipedia,
        https://en.wikipedia.org/wiki/Bootstrapping_(statistics)
 
     Examples
@@ -241,6 +243,16 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> data = (dist.rvs(size=(n_trials, 100)),)
     >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1,
     ...                                 confidence_level=0.9)
+
+    Here, `ci_l` and `ci_u` contain the confidence interval for each of the
+    ``n_trials = 1000`` samples.
+
+    >>> print(ci_l[995:])
+    [3.68561285 3.36053728 3.75620766 3.8530454  3.5833175 ]
+    >>> print(ci_u[995:])
+    [4.72530116 4.06591756 4.61738788 5.18122861 4.5465164 ]
+
+    And again, approximately 90% contain the true value, ``std_true = 4``.
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
     882
 
@@ -296,7 +308,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     # Calculate confidence interval of statistic
     ci_l = percentile_fun(theta_hat_b, interval[0]*100)
     ci_u = percentile_fun(theta_hat_b, interval[1]*100)
-    if method == 'basic':  # see [2]
+    if method == 'basic':  # see [3]
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
