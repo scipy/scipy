@@ -4,7 +4,6 @@
 set -e
 
 # Add git aliases
-
 git config --global alias.co checkout
 git config --global alias.ci commit
 git config --global alias.st status
@@ -13,11 +12,18 @@ git config --global alias.hist "log --pretty=format:'%h %ad | %s%d [%an]' --grap
 git config --global alias.type 'cat-file -t'
 git config --global alias.dump 'cat-file -p'
 
+# Enable basic vim defaults in ~/.vimrc
+echo "filetype plugin indent on" >>~/.vimrc
+echo "set colorcolumn=80" >>~/.vimrc
+echo "set number" >>~/.vimrc
+echo "syntax enable" >>~/.vimrc
+
 # Vanity custom bash prompt - makes it more legible tbh
 echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '" >>~/.bashrc
 
-# Add conda
+# Add conda -- interactive login
 echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.profile
 
 # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >>/etc/skel/.bashrc
+# also for reference
+echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >>~/.bashrc

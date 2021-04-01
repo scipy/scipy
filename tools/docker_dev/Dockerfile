@@ -1,8 +1,5 @@
 # 
 # Dockerfile for Scipy development 
-# Note this is also the base for the Gitpod Docker image, see: .gitpod.Dockerfile
-# This should only be updated through GitHub actions when there are changes made 
-# to the environment.yml file
 # 
 # Usage: 
 # -------
@@ -27,7 +24,8 @@
 # Ubuntu 20.04 (focal)
 # https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
 # OS/ARCH: linux/amd64
-ARG BASE_CONTAINER=ubuntu:focal-20210325
+ARG ROOT_CONTAINER=ubuntu:focal-20210325
+ARG BASE_CONTAINER=${ROOT_CONTAINER}
 
 # hadolint ignore=DL3006 as base container is tagged
 FROM ${BASE_CONTAINER}
@@ -96,27 +94,22 @@ RUN apt-get update && \
 
 # Enable prompt color in the skeleton .bashrc
 # hadolint ignore=SC2016
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
-    # Enable basic vim defaults in ~/.vimrc
-    echo "filetype plugin indent on" >> ~/.vimrc && \
-    echo "set colorcolumn=80" >> ~/.vimrc && \
-    echo "set number" >> ~/.vimrc && \
-    echo "syntax enable" >> ~/.vimrc
+RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----
 RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${miniforge_version}/${miniforge_installer}" && \
     echo "${miniforge_checksum} *${miniforge_installer}" | sha256sum --check && \
-    /bin/bash "${miniforge_installer}" -f -b -p ${CONDA_DIR} && \
+    /bin/bash "${miniforge_installer}" -f -b -p $CONDA_DIR && \
     rm "${miniforge_installer}" && \
     # Conda configuration see https://conda.io/projects/conda/en/latest/configuration.html
-    echo "conda ${CONDA_VERSION}" >> ${CONDA_DIR}/conda-meta/pinned && \
+    echo "conda ${CONDA_VERSION}" >> $CONDA_DIR/conda-meta/pinned && \
     conda config --system --set auto_update_conda false && \
     conda config --system --set show_channel_urls true && \
     # This allows to change the Python version installed by passing the arg `PYTHON_VERSION` at build time
     # then version is added to conda-meta/pinned 
     if [ ! $PYTHON_VERSION = 'default' ]; then conda install --yes python=$PYTHON_VERSION; fi && \
-    conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> ${CONDA_DIR}/conda-meta/pinned && \
+    conda list python | grep '^python ' | tr -s ' ' | cut -d '.' -f 1,2 | sed 's/$/.*/' >> $CONDA_DIR/conda-meta/pinned && \
     conda install --quiet --yes \
     "conda=${CONDA_VERSION}" \
     'pip' && \
@@ -124,10 +117,9 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     conda clean --all -f -y 
 
 # make conda activate command available from /bin/bash (login and interactive)
-RUN echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.profile && \ 
-    # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-    echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc && \
-    conda init bash && \
+RUN ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
     echo "conda activate scipydev" >> ~/.bashrc
 
 # -----------------------------------------------------------------------------
@@ -138,11 +130,9 @@ RUN echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.profile && \
 COPY ./environment.yml /tmp/environment.yml
 
 RUN conda env create -f /tmp/environment.yml && \
-    # conda activate "${CONDA_ENV}" && \
-    conda clean --all -f -y  && \
-    rm -rf /tmp/* && \
-    find /opt/conda/ -follow -type f -name '*.a' -delete && \
-    find /opt/conda/ -follow -type f -name '*.js.map' -delete 
+    conda activate "${CONDA_ENV}" && \
+    conda clean --all -f -y && \
+    rm -rf /tmp/* 
 
 # -----------------------------------------------------------------------------
 # Create a Scipy directory inside /home/ 
