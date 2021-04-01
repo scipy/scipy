@@ -36,6 +36,7 @@ _LOG_PI = np.log(np.pi)
 _doc_random_state = """\
 random_state : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
     If `seed` is None (or `np.random`), the `numpy.random.RandomState`
     singleton is used.
     If `seed` is an int, a new ``RandomState`` instance is used,
@@ -693,6 +694,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             covariance matrix (default False).
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -1139,6 +1141,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     %(_matnorm_doc_default_callparams)s
     seed : {None, int, `numpy.random.Generator`,
         `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2031,6 +2034,7 @@ class wishart_gen(multi_rv_generic):
             Degrees of freedom
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2233,6 +2237,7 @@ class wishart_frozen(multi_rv_frozen):
         Scale matrix of the distribution
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3216,6 +3221,7 @@ class multinomial_frozen(multi_rv_frozen):
         probability of a trial falling into each category; should sum to 1
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3395,6 +3401,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
             Dimension of matrices
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,

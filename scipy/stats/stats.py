@@ -5073,6 +5073,7 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         Requires that `func` be pickleable.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

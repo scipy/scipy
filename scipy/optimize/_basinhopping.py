@@ -256,6 +256,7 @@ class RandomDisplacement:
         Maximum stepsize in any dimension
     random_gen : {None, int, `numpy.random.Generator`,
                   `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -300,6 +301,7 @@ class Metropolis:
         The "temperature" parameter for the accept or reject criterion.
     random_gen : {None, int, `numpy.random.Generator`,
                   `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -422,6 +424,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         number of iterations.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

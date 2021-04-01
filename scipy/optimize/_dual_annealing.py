@@ -40,6 +40,7 @@ class VisitingDistribution:
         object.
     rand_gen : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -234,6 +235,7 @@ class StrategyChain:
         Instance of `LocalSearchWrapper` class.
     rand_gen : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -488,6 +490,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         done. Default value is 1e7.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

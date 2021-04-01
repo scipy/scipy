@@ -24,6 +24,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

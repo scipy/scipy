@@ -574,6 +574,7 @@ def argsreduce(cond, *args):
             else np.extract(cond, np.broadcast_to(arg, s)))
             for arg in newargs]
 
+
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
     return (%(shape_arg_str)s), %(locscale_out)s
@@ -970,6 +971,7 @@ class rv_generic:
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
+
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)
@@ -1034,6 +1036,7 @@ class rv_generic:
             Defining number of random variates (default is 1).
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -1477,6 +1480,7 @@ def _get_fixed_fit_value(kwds, names):
 ##                units of percent-point-function (as a function of q).
 ##                Also, the derivative of the percent-point function.
 
+
 class rv_continuous(rv_generic):
     """A generic continuous random variable class meant for subclassing.
 
@@ -1519,6 +1523,7 @@ class rv_continuous(rv_generic):
         backwards compatibility, do not use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2267,6 +2272,7 @@ class rv_continuous(rv_generic):
             n_params = len(shapes) + 2 - len(fixedn)
             exponents = (np.arange(1, n_params+1))[:, np.newaxis]
             data_moments = np.sum(data[None, :]**exponents/len(data), axis=1)
+
             def objective(theta, x):
                 return self._moment_error(theta, x, data_moments)
         elif method == "mle":
@@ -2309,8 +2315,8 @@ class rv_continuous(rv_generic):
                                  for i in range(len(data_moments))])
         if np.any(np.isnan(dist_moments)):
             raise ValueError("Method of moments encountered a non-finite "
-                              "distribution moment and cannot continue. "
-                              "Consider trying method='MLE'.")
+                             "distribution moment and cannot continue. "
+                             "Consider trying method='MLE'.")
 
         return (((data_moments - dist_moments) /
                   np.maximum(np.abs(data_moments), 1e-8))**2).sum()
@@ -2858,6 +2864,7 @@ def entropy(pk, qk=None, base=None, axis=0):
 # Must over-ride one of _pmf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
 
+
 class rv_discrete(rv_generic):
     """A generic discrete random variable class meant for subclassing.
 
@@ -2903,6 +2910,7 @@ class rv_discrete(rv_generic):
         backwards compatibility, do not use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2933,10 +2941,8 @@ class rv_discrete(rv_generic):
     __call__
     support
 
-
     Notes
     -----
-
     This class is similar to `rv_continuous`. Whether a shape parameter is
     valid is decided by an ``_argcheck`` method (which defaults to checking
     that its arguments are strictly positive.)
@@ -2974,7 +2980,6 @@ class rv_discrete(rv_generic):
 
     Examples
     --------
-
     Custom made discrete distribution:
 
     >>> from scipy import stats
@@ -3147,6 +3152,7 @@ class rv_discrete(rv_generic):
             has to be given as keyword, not as positional argument.
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,

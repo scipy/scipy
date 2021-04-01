@@ -714,6 +714,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         type of the returned matrix values.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -837,6 +838,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         type of the returned matrix values.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

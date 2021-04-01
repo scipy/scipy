@@ -62,6 +62,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
         rng : {None, int, `numpy.random.Generator`,
                `numpy.random.RandomState`}, optional
+
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -236,10 +237,8 @@ def _common_input_validation(A, B, partial_match):
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               P0="barycenter", shuffle_input=False, maxiter=30,
-                              tol=0.03, **unknown_options
-                              ):
-    r"""
-    Solve the quadratic assignment problem (approximately).
+                              tol=0.03, **unknown_options):
+    r"""Solve the quadratic assignment problem (approximately).
 
     This function solves the Quadratic Assignment Problem (QAP) and the
     Graph Matching Problem (GMP) using the Fast Approximate QAP Algorithm
@@ -264,15 +263,12 @@ def _quadratic_assignment_faq(A, B,
     Note that the quadratic assignment problem is NP-hard. The results given
     here are approximations and are not guaranteed to be optimal.
 
-
     Parameters
     ----------
     A : 2-D array, square
         The square matrix :math:`A` in the objective function above.
-
     B : 2-D array, square
         The square matrix :math:`B` in the objective function above.
-
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem. This is the method-specific
         documentation for 'faq'.
@@ -280,10 +276,8 @@ def _quadratic_assignment_faq(A, B,
 
     Options
     -------
-
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
@@ -294,13 +288,13 @@ def _quadratic_assignment_faq(A, B,
 
     rng : {None, int, `numpy.random.Generator`,
            `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
 
@@ -315,14 +309,11 @@ def _quadratic_assignment_faq(A, B,
         If ``"randomized"`` the initial search position is
         :math:`P_0 = (J + K) / 2`, where :math:`J` is the barycenter and
         :math:`K` is a random doubly stochastic matrix.
-
     shuffle_input : bool (default: False)
         Set to `True` to resolve degenerate gradients randomly. For
         non-degenerate gradients this option has no effect.
-
     maxiter : int, positive (default: 30)
         Integer specifying the max number of Frank-Wolfe iterations performed.
-
     tol : float (default: 0.03)
         Tolerance for termination. Frank-Wolfe iteration terminates when
         :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m')}} \leq tol`,
@@ -400,6 +391,7 @@ def _quadratic_assignment_faq(A, B,
 
     .. [3] "Doubly stochastic Matrix," Wikipedia.
            https://en.wikipedia.org/wiki/Doubly_stochastic_matrix
+
     """
 
     _check_unknown_options(unknown_options)
@@ -576,15 +568,12 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     Note that the quadratic assignment problem is NP-hard. The results given
     here are approximations and are not guaranteed to be optimal.
 
-
     Parameters
     ----------
     A : 2-D array, square
         The square matrix :math:`A` in the objective function above.
-
     B : 2-D array, square
         The square matrix :math:`B` in the objective function above.
-
     method :  str in {'faq', '2opt'} (default: 'faq')
         The algorithm used to solve the problem. This is the method-specific
         documentation for '2opt'.
@@ -592,19 +581,17 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
 
     Options
     -------
-
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-
     rng : {None, int, `numpy.random.Generator`,
            `numpy.random.RandomState`}, optional
+
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
-
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
@@ -612,7 +599,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_match[i, 0]`` of `A` is matched to node
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
-
     partial_guess : 2-D array of integers, optional (default: None)
         A guess for the matching between the two matrices. Unlike
         `partial_match`, `partial_guess` does not fix the indices; they are
@@ -622,7 +608,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_guess[i, 0]`` of `A` is matched to node
         ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
-
 
     Returns
     -------
