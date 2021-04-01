@@ -257,7 +257,6 @@ Correlation functions
 .. autosummary::
    :toctree: generated/
 
-   f_oneway
    alexandergovern
    pearsonr
    spearmanr
@@ -269,6 +268,20 @@ Correlation functions
    siegelslopes
    theilslopes
    multiscale_graphcorr
+
+Analysis of variance
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   f_oneway
+   anova.oneway
+   anova.oneway_from_labels_values
+   anova.twoway_from_a_b_values
+   anova.twoway_from_data_grid
+   anova.twoway_nested_from_data_grid
+   anova.twoway_nested_from_a_b_values
 
 Statistical tests
 =================
@@ -449,6 +462,8 @@ from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
+from . import anova
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
