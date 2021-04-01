@@ -5173,12 +5173,15 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
         Note that this will not run if inputs are distance matrices.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -5402,8 +5405,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
 
 def _mgc_stat(distx, disty):
-    r"""
-    Helper function that calculates the MGC stat. See above for use.
+    r"""Helper function that calculates the MGC stat. See above for use.
 
     Parameters
     ----------
@@ -5423,6 +5425,7 @@ def _mgc_stat(distx, disty):
                 MGC-map of the statistics.
             - opt_scale : (float, float)
                 The estimated optimal scale as a `(x, y)` pair.
+
     """
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
@@ -5464,6 +5467,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     -------
     sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
+
     """
     m, n = stat_mgc_map.shape
 
@@ -5512,8 +5516,8 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
         The sample MGC statistic within `[-1, 1]`.
     opt_scale: (float, float)
         The estimated optimal scale as an `(x, y)` pair.
-    """
 
+    """
     m, n = stat_mgc_map.shape
 
     # the global scale at is the statistic calculated at maximial nearest
@@ -5545,9 +5549,9 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
 
 def _two_sample_transform(u, v):
-    """
-    Helper function that concatenates x and y for two sample MGC stat. See
-    above for use.
+    """Helper function that concatenates x and y for two sample MGC stat.
+
+    See above for use.
 
     Parameters
     ----------
@@ -5562,6 +5566,7 @@ def _two_sample_transform(u, v):
     y : ndarray
         Label matrix for `x` where 0 refers to samples that comes from `u` and
         1 refers to samples that come from `v`. `y` thus has shape `(2n, 1)`.
+
     """
     nx = u.shape[0]
     ny = v.shape[0]
@@ -5579,8 +5584,7 @@ Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
-    """
-    Calculate the T-test for the mean of ONE group of scores.
+    """Calculate the T-test for the mean of ONE group of scores.
 
     This is a two-sided test for the null hypothesis that the expected value
     (mean) of a sample of independent observations `a` is equal to the given
@@ -5657,7 +5661,6 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     >>> result.pvalue
     array([[4.99613833e-01, 9.65686743e-01],
            [7.89094663e-03, 1.49986458e-04]])
-
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -5948,12 +5951,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 1.7.0
 
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
 
@@ -6128,7 +6135,9 @@ def _broadcast_concatenate(xs, axis):
 
 
 def _data_permutations(data, n, axis=-1, random_state=None):
-    """Vectorized permutation of data, assumes `random_state` is already checked"""
+    """
+    Vectorized permutation of data, assumes `random_state` is already checked.
+    """
     random_state = check_random_state(random_state)
     if axis < 0:  # we'll be adding a new dimension at the end
         axis = data.ndim + axis
@@ -6172,7 +6181,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
                        alternative="two-sided"):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
-    using permutation methods
+    using permutation methods.
 
     This test is similar to `stats.ttest_ind`, except it doesn't rely on an
     approximate normality assumption since it uses a permutation test.
@@ -6253,8 +6262,7 @@ Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
-    """
-    Calculate the t-test on TWO RELATED samples of scores, a and b.
+    """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
     This is a two-sided test for the null hypothesis that 2 related or
     repeated samples have identical average (expected) values.
@@ -6377,8 +6385,7 @@ _power_div_lambda_names = {
 
 
 def _count(a, axis=None):
-    """
-    Count the number of non-masked elements of an array.
+    """Count the number of non-masked elements of an array.
 
     This function behaves like np.ma.count(), but is much faster
     for ndarrays.
@@ -6409,8 +6416,7 @@ Power_divergenceResult = namedtuple('Power_divergenceResult',
 
 
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
-    """
-    Cressie-Read power divergence statistic and goodness of fit test.
+    """Cressie-Read power divergence statistic and goodness of fit test.
 
     This function tests the null hypothesis that the categorical data
     has the given frequencies, using the Cressie-Read power divergence

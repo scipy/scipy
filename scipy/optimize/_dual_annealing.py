@@ -39,11 +39,10 @@ class VisitingDistribution:
         The value range is (1, 3]. It's value is fixed for the life of the
         object.
     rand_gen : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
+            `numpy.random.RandomState`}, optional
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.

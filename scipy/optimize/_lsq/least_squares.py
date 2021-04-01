@@ -670,7 +670,9 @@ def least_squares(
     >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
-    >>> def gen_data(t, a, b, c, noise=0., n_outliers=0, random_state=None):
+    >>> def gen_data(t, a, b, c, noise=0., n_outliers=0, seed=None):
+    ...     rng = default_rng(seed)
+    ...
     ...     y = a + b * np.exp(t * c)
     ...
     ...     error = noise * rng.standard_normal(t.size)
