@@ -132,7 +132,7 @@ def test_bootstrap_ci_against_itself(method, expected):
     assert pvalue > 0.1
 
 
-def test_jackknife():
+def test_jackknife_resample():
     shape = 3, 4, 5, 6
     x = np.random.rand(*shape)
     y = bootstrap._jackknife_resample(x)
@@ -142,5 +142,27 @@ def test_jackknife():
         # (last axis is the one the statistic will be taken over / consumed)
         slc = y[..., i, :]
         expected = np.delete(x, i, axis=-1)
+
+        assert np.array_equal(slc, expected)
+
+
+def test_bootstrap_resample():
+    # currently bootstrap_ci only works with RandomState (apparently)
+    rng1 = np.random.RandomState(0)
+    rng2 = np.random.RandomState(0)
+
+    n_resamples = 10
+    shape = 3, 4, 5, 6
+    x = np.random.rand(*shape)
+    y = bootstrap._bootstrap_resample(x, n_resamples, random_state=rng1)
+
+    np.random.seed(0)
+    for i in range(n_resamples):
+        # each resample is indexed along second to last axis
+        # (last axis is the one the statistic will be taken over / consumed)
+        slc = y[..., i, :]
+
+        js = rng2.randint(0, shape[-1], shape[-1])
+        expected = x[..., js]
 
         assert np.array_equal(slc, expected)
