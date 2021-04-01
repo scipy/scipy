@@ -82,13 +82,57 @@ def test_bootstrap_ci_against_R(method, expected):
     assert_allclose(res, expected, rtol=0.005)
 
 
-tests_against_itself = {"basic": 888,
-                        "percentile": 886}
+tests_against_itself_1samp = {"basic": 1780,
+                              "percentile": 1784,
+                              "BCa": 1784}
 
 
 @pytest.mark.xfail_on_32bit("Uses too much memory")
-@pytest.mark.parametrize("method, expected", tests_against_itself.items())
-def test_bootstrap_ci_against_itself(method, expected):
+@pytest.mark.parametrize("method, expected",
+                         tests_against_itself_1samp.items())
+def test_bootstrap_ci_against_itself_1samp(method, expected):
+    # The expected values in this test were generated using bootstrap_ci
+    # to check for unintended changes in behavior. The test also makes sure
+    # that bootstrap_ci works with multi-sample statistics and that the
+    # `axis` argument works as expected / function is vectorized.
+    np.random.seed(0)
+
+    n = 100  # size of sample
+    n_resamples = 1000  # number of bootstrap resamples used to form each CI
+    confidence_level = 0.9
+
+    # The true mean is 5
+    dist = stats.norm(loc=5, scale=1)
+    stat_true = dist.mean()
+
+    # Do the same thing 1000 times. (The code is fully vectorized.)
+    n_replications = 2000
+    data = dist.rvs(size=(n_replications, n))
+    ci = bootstrap_ci((data,),
+                      statistic=np.mean,
+                      confidence_level=confidence_level,
+                      n_resamples=n_resamples,
+                      method=method,
+                      axis=-1)
+
+    # ci contains vectors of lower and upper confidence interval bounds
+    ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
+    assert ci_contains_true == expected
+
+    # ci_contains_true is not inconsistent with confidence_level
+    pvalue = stats.binomtest(ci_contains_true, n_replications,
+                             confidence_level).pvalue
+    assert pvalue > 0.1
+
+
+tests_against_itself_2samp = {"basic": 888,
+                              "percentile": 886}
+
+
+@pytest.mark.xfail_on_32bit("Uses too much memory")
+@pytest.mark.parametrize("method, expected",
+                         tests_against_itself_2samp.items())
+def test_bootstrap_ci_against_itself_2samp(method, expected):
     # The expected values in this test were generated using bootstrap_ci
     # to check for unintended changes in behavior. The test also makes sure
     # that bootstrap_ci works with multi-sample statistics and that the
