@@ -34,12 +34,14 @@ _LOG_PI = np.log(np.pi)
 
 
 _doc_random_state = """\
-random_state : {None, int, `numpy.random.Generator`}, optional
-    If `seed` is None the `numpy.random.Generator` singleton is used.
-    If `seed` is an int, a new ``Generator`` instance is used,
+random_state : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+    If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+    singleton is used.
+    If `seed` is an int, a new ``RandomState`` instance is used,
     seeded with `seed`.
-    If `seed` is already a ``Generator`` instance then that instance is
-    used.
+    If `seed` is already a ``Generator`` or ``RandomState`` instance then
+    that instance is used.
 """
 
 
@@ -195,14 +197,12 @@ class multi_rv_generic:
     def random_state(self):
         """ Get or set the Generator object for generating random variates.
 
-        This can be either None, int, or a
-        `np.random.Generator` instance.
-
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
         """
         return self._random_state
@@ -706,12 +706,14 @@ class multivariate_normal_frozen(multi_rv_frozen):
         allow_singular : bool, optional
             If this flag is True then tolerate a singular
             covariance matrix (default False).
-        seed : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
         maxpts : integer, optional
             The maximum number of points to use for integration of the
             cumulative distribution function (default `1000000*dim`)
@@ -1151,34 +1153,37 @@ matrix_normal = matrix_normal_gen()
 
 
 class matrix_normal_frozen(multi_rv_frozen):
+    """Create a frozen matrix normal distribution.
+
+    Parameters
+    ----------
+    %(_matnorm_doc_default_callparams)s
+    seed : {None, int, `numpy.random.Generator`,
+        `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance
+        then that instance is used.
+
+    Examples
+    --------
+    >>> from scipy.stats import matrix_normal
+
+    >>> distn = matrix_normal(mean=np.zeros((3,3)))
+    >>> X = distn.rvs(); X
+    array([[-0.02976962,  0.93339138, -0.09663178],
+           [ 0.67405524,  0.28250467, -0.93308929],
+           [-0.31144782,  0.74535536,  1.30412916]])
+    >>> distn.pdf(X)
+    2.5160642368346784e-05
+    >>> distn.logpdf(X)
+    -10.590229595124615
+    """
+
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
-        """
-        Create a frozen matrix normal distribution.
 
-        Parameters
-        ----------
-        %(_matnorm_doc_default_callparams)s
-        seed : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
-
-        Examples
-        --------
-        >>> from scipy.stats import matrix_normal
-
-        >>> distn = matrix_normal(mean=np.zeros((3,3)))
-        >>> X = distn.rvs(); X
-        array([[-0.02976962,  0.93339138, -0.09663178],
-               [ 0.67405524,  0.28250467, -0.93308929],
-               [-0.31144782,  0.74535536,  1.30412916]])
-        >>> distn.pdf(X)
-        2.5160642368346784e-05
-        >>> distn.logpdf(X)
-        -10.590229595124615
-        """
         self._dist = matrix_normal_gen(seed)
         self.dims, self.mean, self.rowcov, self.colcov = \
             self._dist._process_parameters(mean, rowcov, colcov)
@@ -2056,13 +2061,14 @@ class wishart_gen(multi_rv_generic):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        random_state : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
-            Object used for drawing the random variates.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Notes
         -----
@@ -2250,8 +2256,7 @@ wishart = wishart_gen()
 
 
 class wishart_frozen(multi_rv_frozen):
-    """
-    Create a frozen Wishart distribution.
+    """Create a frozen Wishart distribution.
 
     Parameters
     ----------
@@ -2259,12 +2264,14 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     """
     def __init__(self, df, scale, seed=None):
@@ -3246,8 +3253,7 @@ multinomial = multinomial_gen()
 
 
 class multinomial_frozen(multi_rv_frozen):
-    r"""
-    Create a frozen Multinomial distribution.
+    r"""Create a frozen Multinomial distribution.
 
     Parameters
     ----------
@@ -3255,12 +3261,14 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
     """
     def __init__(self, n, p, seed=None):
         self._dist = multinomial_gen(seed)
@@ -3433,19 +3441,20 @@ special_ortho_group = special_ortho_group_gen()
 
 class special_ortho_group_frozen(multi_rv_frozen):
     def __init__(self, dim=None, seed=None):
-        """
-        Create a frozen SO(N) distribution.
+        """Create a frozen SO(N) distribution.
 
         Parameters
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Examples
         --------

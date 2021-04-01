@@ -427,8 +427,7 @@ class gaussian_kde:
         return result
 
     def resample(self, size=None, seed=None):
-        """
-        Randomly sample a dataset from the estimated pdf.
+        """Randomly sample a dataset from the estimated pdf.
 
         Parameters
         ----------
@@ -436,12 +435,14 @@ class gaussian_kde:
             The number of samples to draw.  If not provided, then the size is
             the same as the effective number of samples in the underlying
             dataset.
-        seed : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
 
         Returns
         -------

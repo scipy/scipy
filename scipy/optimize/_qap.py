@@ -60,12 +60,14 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        rng : {None, int, `numpy.random.Generator`,
+               `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance then
+            that instance is used.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -290,12 +292,14 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    rng : {None, int, `numpy.random.Generator`,
+           `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
@@ -352,13 +356,15 @@ def _quadratic_assignment_faq(A, B,
     As mentioned above, a barycenter initialization often results in a better
     solution than a single random initialization.
 
-    >>> np.random.seed(0)
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> n = 15
-    >>> A = np.random.rand(n, n)
-    >>> B = np.random.rand(n, n)
+    >>> A = rng.random((n, n))
+    >>> B = rng.random((n, n))
     >>> res = quadratic_assignment(A, B)  # FAQ is default method
     >>> print(res.fun)
-    46.871483385480545
+    46.871483385480545  # may vary
 
     >>> options = {"P0": "randomized"}  # use randomized initialization
     >>> res = quadratic_assignment(A, B, options=options)
@@ -591,12 +597,14 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
 
-    rng : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    rng : {None, int, `numpy.random.Generator`,
+           `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.

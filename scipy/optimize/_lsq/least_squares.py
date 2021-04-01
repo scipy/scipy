@@ -673,7 +673,7 @@ def least_squares(
     >>> def gen_data(t, a, b, c, noise=0., n_outliers=0, random_state=None):
     ...     y = a + b * np.exp(t * c)
     ...
-    ...     error = noise * rng.random(t.size)
+    ...     error = noise * rng.standard_normal(t.size)
     ...     outliers = rng.integers(0, t.size, n_outliers)
     ...     error[outliers] *= 10
     ...

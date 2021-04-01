@@ -42,7 +42,9 @@ class Rotation:
     def identity(cls, num: Optional[int] = ...) -> Rotation: ...
     @classmethod
     def random(cls, num: Optional[int] = ...,
-               random_state: Optional[Union[_IntegerType, np.random.Generator]] = ...) -> Rotation: ...
+               random_state: Optional[Union[_IntegerType,
+                                            np.random.Generator,
+                                            np.random.RandomState]] = ...) -> Rotation: ...
     @classmethod
     def align_vectors(cls, a: npt.ArrayLike, b: npt.ArrayLike,
                       weights: Optional[npt.ArrayLike] = ...,

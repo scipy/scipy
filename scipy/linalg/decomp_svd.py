@@ -77,7 +77,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
     >>> m, n = 9, 6
-    >>> a = rng.random((m, n)) + 1.j*rng.random((m, n))
+    >>> a = rng.standard_normal((m, n)) + 1.j*rng.standard_normal((m, n))
     >>> U, s, Vh = linalg.svd(a)
     >>> U.shape,  s.shape, Vh.shape
     ((9, 9), (6,), (6, 6))
@@ -397,7 +397,6 @@ def null_space(A, rcond=None):
 
 
 def subspace_angles(A, B):
-    # Steps here omit the U and V calculation steps from the paper
     r"""
     Compute the subspace angles between two matrices.
 
@@ -458,10 +457,11 @@ def subspace_angles(A, B):
 
     The angles between non-orthogonal subspaces are in between these extremes:
 
-    >>> x = rng.random((4, 3))
+    >>> x = rng.standard_normal((4, 3))
     >>> np.rad2deg(subspace_angles(x[:, :2], x[:, [2]]))
     array([ 55.832])
     """
+    # Steps here omit the U and V calculation steps from the paper
 
     # 1. Compute orthonormal bases of column-spaces
     A = _asarray_validated(A, check_finite=True)

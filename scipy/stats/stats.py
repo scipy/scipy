@@ -1875,40 +1875,40 @@ def jarque_bera(x):
     message="`itemfreq` is deprecated and will be removed in a "
             "future version. Use instead `np.unique(..., return_counts=True)`")
 def itemfreq(a):
+    """Return a 2-D array of item frequencies.
+
+    Parameters
+    ----------
+    a : (N,) array_like
+        Input array.
+
+    Returns
+    -------
+    itemfreq : (K, 2) ndarray
+        A 2-D frequency table.  Column 1 contains sorted, unique values from
+        `a`, column 2 contains their respective counts.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
+    >>> stats.itemfreq(a)
+    array([[ 0.,  2.],
+           [ 1.,  4.],
+           [ 2.,  2.],
+           [ 4.,  1.],
+           [ 5.,  1.]])
+    >>> np.bincount(a)
+    array([2, 4, 2, 0, 1, 1])
+
+    >>> stats.itemfreq(a/10.)
+    array([[ 0. ,  2. ],
+           [ 0.1,  4. ],
+           [ 0.2,  2. ],
+           [ 0.4,  1. ],
+           [ 0.5,  1. ]])
+
     """
-Return a 2-D array of item frequencies.
-
-Parameters
-----------
-a : (N,) array_like
-    Input array.
-
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
-
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
-
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-"""
     items, inv = np.unique(a, return_inverse=True)
     freq = np.bincount(inv)
     return np.array([items, freq]).T
@@ -1916,8 +1916,7 @@ array([[ 0. ,  2. ],
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
-    """
-    Calculate the score at a given percentile of the input sequence.
+    """Calculate the score at a given percentile of the input sequence.
 
     For example, the score at `per=50` is the median. If the desired quantile
     lies between two data points, we interpolate between them, according to
@@ -5099,12 +5098,14 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         such as `multiprocessing.Pool.map` for evaluating the population in
         parallel. This evaluation is carried out as `workers(func, iterable)`.
         Requires that `func` be pickleable.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------

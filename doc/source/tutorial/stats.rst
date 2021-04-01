@@ -177,14 +177,18 @@ a generator:
 
 And fixing the seed can be done like this:
 
-    >>> from numpy.random import SeedSequence
-    >>> seed = SeedSequence().entropy
-    >>> rng = default_rng(seed)
+    >>> # do NOT copy this value
+    >>> rng = default_rng(301439351238479871608357552876690613766)
 
-.. warning:: Do not use common values such as 0. Using just a small set of
-             seeds to instantiate larger state spaces means that there are some
-             initial states that are impossible to reach. This creates some
-             biases if everyone uses such values.
+.. warning:: Do not use this number or common values such as 0. Using just a
+             small set of seeds to instantiate larger state spaces means that
+             there are some initial states that are impossible to reach. This
+             creates some biases if everyone uses such values. A proper way to
+             get a seed is to use a `numpy.random.SeedSequence`:
+
+             >>> from numpy.random import SeedSequence
+             >>> print(SeedSequence().entropy)
+             301439351238479871608357552876690613766  # random
 
 The `random_state` parameter in distributions accepts an instance of
 `numpy.random.Generator` class, or an integer, which is then used to

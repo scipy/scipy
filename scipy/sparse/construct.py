@@ -712,12 +712,14 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
@@ -762,7 +764,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.random(*size)
+    ...         return random_state.standard_normal(*size)
     >>> X = CustomDistribution(random_state=rng)
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
@@ -833,12 +835,14 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------

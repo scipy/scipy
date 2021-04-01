@@ -1347,7 +1347,7 @@ def cut_tree(Z, n_clusters=None, height=None):
     >>> X = rng.random((50, 4))
     >>> Z = cluster.hierarchy.ward(X)
     >>> cutree = cluster.hierarchy.cut_tree(Z, n_clusters=[5, 10])
-    >>> cutree[:10]  # doctest: +SKIP
+    >>> cutree[:10]
     array([[0, 0],
            [1, 1],
            [2, 2],
@@ -1357,7 +1357,7 @@ def cut_tree(Z, n_clusters=None, height=None):
            [0, 0],
            [1, 5],
            [3, 6],
-           [4, 7]])
+           [4, 7]])  # random
 
     """
     nobs = num_obs_linkage(Z)

@@ -22,12 +22,14 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         Defining number of random variates (default is 1).
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------

@@ -2146,12 +2146,14 @@ cdef class Rotation(object):
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : {None, int, `numpy.random.Generator`}, optional
-            If `seed` is None the `numpy.random.Generator` singleton is used.
-            If `seed` is an int, a new ``Generator`` instance is used,
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` instance then that instance is
-            used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -2171,13 +2173,13 @@ cdef class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random().as_euler('zxy', degrees=True)  # doctest: +SKIP
-        array([-110.5976185 ,   55.32758512,   76.3289269 ])
+        >>> R.random().as_euler('zxy', degrees=True)
+        array([-110.5976185 ,   55.32758512,   76.3289269 ])  # random
 
         Sample a stack of rotations:
 
-        >>> R.random(5).as_euler('zxy', degrees=True)  # doctest: +SKIP
-        array([[-110.5976185 ,   55.32758512,   76.3289269 ],
+        >>> R.random(5).as_euler('zxy', degrees=True)
+        array([[-110.5976185 ,   55.32758512,   76.3289269 ],  # random
                [ -91.59132005,  -14.3629884 ,  -93.91933182],
                [  25.23835501,   45.02035145, -121.67867086],
                [ -51.51414184,  -15.29022692, -172.46870023],

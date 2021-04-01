@@ -580,8 +580,8 @@ class QMCEngine(ABC):
     use, we can create an instance to sample from.
 
     >>> engine = RandomEngine(2)
-    >>> engine.random(5)  # doctest: +SKIP
-    array([[0.22733602, 0.31675834],
+    >>> engine.random(5)
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
@@ -812,8 +812,8 @@ class LatinHypercube(QMCEngine):
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
-    >>> sample  # doctest: +SKIP
-    array([[0.1545328 , 0.53664833],
+    >>> sample
+    array([[0.1545328 , 0.53664833],  # random
            [0.84052691, 0.06474907],
            [0.52177809, 0.93343721],
            [0.68033825, 0.36265316],
@@ -821,15 +821,15 @@ class LatinHypercube(QMCEngine):
 
     Compute the quality of the sample using the discrepancy criterion.
 
-    >>> qmc.discrepancy(sample)  # doctest: +SKIP
-    0.019558034794794565
+    >>> qmc.discrepancy(sample)
+    0.019558034794794565  # random
 
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)  # doctest: +SKIP
-    array([[1.54532796, 3.609945  ],
+    >>> qmc.scale(sample, l_bounds, u_bounds)
+    array([[1.54532796, 3.609945  ],  # random
            [8.40526909, 2.1942472 ],
            [5.2177809 , 4.80031164],
            [6.80338249, 3.08795949],
