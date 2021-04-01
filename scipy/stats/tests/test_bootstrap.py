@@ -55,6 +55,19 @@ def test_bootstrap_ci_iv():
         bootstrap_ci(([1, 2, 3],), np.mean, random_state='herring')
 
 
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+def test_bootstrap_ci_against_theory(method):
+    # based on https://www.statology.org/confidence-intervals-python/
+    data = stats.norm.rvs(loc=5, scale=2, size=5000)
+    alpha = 0.95
+    expected = stats.t.interval(alpha=alpha, df=len(data)-1,
+                                loc=np.mean(data), scale=stats.sem(data))
+    res = bootstrap_ci((data,), np.mean, n_resamples=5000,
+                       confidence_level=alpha, method=method,
+                       random_state=0)
+    assert_allclose(res, expected, 4e-4)
+
+
 tests_R = {"basic": (23.77, 79.12),
            "percentile": (28.86, 84.21),
            "BCa": (32.31, 91.43)}
@@ -227,7 +240,7 @@ def test_percentile_of_score(score, axis):
 
     p2 = vectorized_pos(x, score, axis=-1)/100
 
-    np.testing.assert_allclose(p, p2, 1e-15)
+    assert_allclose(p, p2, 1e-15)
 
 
 def test_percentile_along_axis():
@@ -243,4 +256,4 @@ def test_percentile_along_axis():
     for i in range(shape[0]):
         res = y[i]
         expected = np.percentile(x[i], q[i], axis=-1)
-        np.testing.assert_allclose(res, expected, 1e-15)
+        assert_allclose(res, expected, 1e-15)
