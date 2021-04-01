@@ -181,3 +181,19 @@ def test_percentile_of_score(score, axis):
     p2 = vectorized_pos(x, score, axis=-1)/100
 
     np.testing.assert_allclose(p, p2, 1e-15)
+
+
+def test_percentile_along_axis():
+    # the difference between _percentile_along_axis and np.percentile is that
+    # np.percentile gets _all_ the qs for each axis slice, whereas
+    # _percentile_along_axis gets the q corresponding with each axis slice
+
+    shape = 10, 20
+    x = np.random.rand(*shape)
+    q = np.random.rand(*shape[:-1]) * 100
+    y = bootstrap._percentile_along_axis(x, q)
+
+    for i in range(shape[0]):
+        res = y[i]
+        expected = np.percentile(x[i], q[i], axis=-1)
+        np.testing.assert_allclose(res, expected, 1e-15)

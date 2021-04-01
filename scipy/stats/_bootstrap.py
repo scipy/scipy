@@ -42,6 +42,9 @@ def _percentile_of_score(a, score, axis):
 
 def _percentile_along_axis(theta_hat_b, alpha):
     '''np.percentile with different percentile for each slice'''
+    # the difference between _percentile_along_axis and np.percentile is that
+    # np.percentile gets _all_ the qs for each axis slice, whereas
+    # _percentile_along_axis gets the q corresponding with each axis slice
     shape = theta_hat_b.shape[:-1]
     alpha = np.broadcast_to(alpha, shape)
     percentiles = np.zeros_like(alpha, dtype=np.float64)
@@ -342,6 +345,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
         percentile_fun = _percentile_along_axis
+
     else:
         interval = alpha, 1-alpha
 
