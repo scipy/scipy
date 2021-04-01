@@ -403,9 +403,7 @@ def _skew(data):
 
 
 def _kurtosis(data):
-    """
-    kurtosis is fourth central moment / variance**2 - 3
-    """
+    """kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
@@ -682,8 +680,7 @@ class rv_generic:
             self.__init__()
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created methods to the rv_* instance.
+        """Attaches dynamically created methods to the rv_* instance.
 
         This method must be overridden by subclasses, and must itself call
          _attach_argparser_methods. This method is called in __init__ in
@@ -1022,8 +1019,7 @@ class rv_generic:
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self, *args, **kwds):
-        """
-        Random variates of given type.
+        """Random variates of given type.
 
         Parameters
         ----------
@@ -1099,8 +1095,7 @@ class rv_generic:
         return vals
 
     def stats(self, *args, **kwds):
-        """
-        Some statistics of the given RV.
+        """Some statistics of the given RV.
 
         Parameters
         ----------
@@ -1213,8 +1208,7 @@ class rv_generic:
             return tuple(output)
 
     def entropy(self, *args, **kwds):
-        """
-        Differential entropy of the RV.
+        """Differential entropy of the RV.
 
         Parameters
         ----------
@@ -1249,8 +1243,7 @@ class rv_generic:
         return output
 
     def moment(self, n, *args, **kwds):
-        """
-        n-th order non-central moment of distribution.
+        """n-th order non-central moment of distribution.
 
         Parameters
         ----------
@@ -1295,8 +1288,7 @@ class rv_generic:
             return result * loc**n
 
     def median(self, *args, **kwds):
-        """
-        Median of the distribution.
+        """Median of the distribution.
 
         Parameters
         ----------
@@ -1322,8 +1314,7 @@ class rv_generic:
         return self.ppf(0.5, *args, **kwds)
 
     def mean(self, *args, **kwds):
-        """
-        Mean of the distribution.
+        """Mean of the distribution.
 
         Parameters
         ----------
@@ -1348,8 +1339,7 @@ class rv_generic:
         return res
 
     def var(self, *args, **kwds):
-        """
-        Variance of the distribution.
+        """Variance of the distribution.
 
         Parameters
         ----------
@@ -1374,8 +1364,7 @@ class rv_generic:
         return res
 
     def std(self, *args, **kwds):
-        """
-        Standard deviation of the distribution.
+        """Standard deviation of the distribution.
 
         Parameters
         ----------
@@ -1398,8 +1387,7 @@ class rv_generic:
         return res
 
     def interval(self, alpha, *args, **kwds):
-        """
-        Confidence interval with equal areas around the median.
+        """Confidence interval with equal areas around the median.
 
         Parameters
         ----------
@@ -1431,8 +1419,7 @@ class rv_generic:
         return a, b
 
     def support(self, *args, **kwargs):
-        """
-        Return the support of the distribution.
+        """Support of the distribution.
 
         Parameters
         ----------
@@ -1491,8 +1478,7 @@ def _get_fixed_fit_value(kwds, names):
 ##                Also, the derivative of the percent-point function.
 
 class rv_continuous(rv_generic):
-    """
-    A generic continuous random variable class meant for subclassing.
+    """A generic continuous random variable class meant for subclassing.
 
     `rv_continuous` is a base class to construct specific distribution classes
     and instances for continuous random variables. It cannot be used
@@ -1749,7 +1735,7 @@ class rv_continuous(rv_generic):
 
     def _attach_methods(self):
         """
-        Attaches dynamically created methods to the rv_continuous instance
+        Attaches dynamically created methods to the rv_continuous instance.
         """
         # _attach_methods is responsible for calling _attach_argparser_methods
         self._attach_argparser_methods()
@@ -1770,10 +1756,10 @@ class rv_continuous(rv_generic):
         self.generic_moment.nin = self.numargs + 1
 
     def _updated_ctor_param(self):
-        """ Return the current version of _ctor_param, possibly updated by user.
+        """Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing.
-            Keep this in sync with the signature of __init__.
+        Used by freezing.
+        Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
         dct['a'] = self.a
@@ -1842,8 +1828,7 @@ class rv_continuous(rv_generic):
     ## in rv_generic
 
     def pdf(self, x, *args, **kwds):
-        """
-        Probability density function at x of the given RV.
+        """Probability density function at x of the given RV.
 
         Parameters
         ----------
@@ -1882,8 +1867,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logpdf(self, x, *args, **kwds):
-        """
-        Log of the probability density function at x of the given RV.
+        """Log of the probability density function at x of the given RV.
 
         This uses a more numerically accurate calculation if available.
 
@@ -1967,8 +1951,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logcdf(self, x, *args, **kwds):
-        """
-        Log of the cumulative distribution function at x of the given RV.
+        """Log of the cumulative distribution function at x of the given RV.
 
         Parameters
         ----------
@@ -2010,8 +1993,7 @@ class rv_continuous(rv_generic):
         return output
 
     def sf(self, x, *args, **kwds):
-        """
-        Survival function (1 - `cdf`) at x of the given RV.
+        """Survival function (1 - `cdf`) at x of the given RV.
 
         Parameters
         ----------
@@ -2052,8 +2034,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logsf(self, x, *args, **kwds):
-        """
-        Log of the survival function of the given RV.
+        """Log of the survival function of the given RV.
 
         Returns the log of the "survival function," defined as (1 - `cdf`),
         evaluated at `x`.
@@ -2098,8 +2079,7 @@ class rv_continuous(rv_generic):
         return output
 
     def ppf(self, q, *args, **kwds):
-        """
-        Percent point function (inverse of `cdf`) at q of the given RV.
+        """Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2144,8 +2124,7 @@ class rv_continuous(rv_generic):
         return output
 
     def isf(self, q, *args, **kwds):
-        """
-        Inverse survival function (inverse of `sf`) at q of the given RV.
+        """Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2202,13 +2181,13 @@ class rv_continuous(rv_generic):
         return loc, scale, args
 
     def nnlf(self, theta, x):
-        '''Return negative loglikelihood function.
+        """Negative loglikelihood function.
 
         Notes
         -----
         This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
         parameters (including loc and scale).
-        '''
+        """
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
@@ -2232,10 +2211,11 @@ class rv_continuous(rv_generic):
         return -np.sum(logpdf, axis=0)
 
     def _penalized_nnlf(self, theta, x):
-        ''' Return penalized negative loglikelihood function,
+        """Penalized negative loglikelihood function.
+
         i.e., - sum (log pdf(x, theta), axis=0) + penalty
-           where theta are the parameters (including loc and scale)
-        '''
+        where theta are the parameters (including loc and scale)
+        """
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
@@ -2243,8 +2223,8 @@ class rv_continuous(rv_generic):
         n_log_scale = len(x) * log(scale)
         return self._nnlf_and_penalty(x, args) + n_log_scale
 
-    # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
+        """Starting point for fit (shape arguments + loc + scale)."""
         if args is None:
             args = (1.0,)*self.numargs
         loc, scale = self._fit_loc_scale_support(data, *args)
@@ -2515,8 +2495,7 @@ class rv_continuous(rv_generic):
         return vals
 
     def _fit_loc_scale_support(self, data, *args):
-        """
-        Estimate loc and scale parameters from data accounting for support.
+        """Estimate loc and scale parameters from data accounting for support.
 
         Parameters
         ----------
@@ -2880,8 +2859,7 @@ def entropy(pk, qk=None, base=None, axis=0):
 #  x_k, p(x_k) lists in initialization
 
 class rv_discrete(rv_generic):
-    """
-    A generic discrete random variable class meant for subclassing.
+    """A generic discrete random variable class meant for subclassing.
 
     `rv_discrete` is a base class to construct specific distribution classes
     and instances for discrete random variables. It can also be used
@@ -3066,9 +3044,7 @@ class rv_discrete(rv_generic):
         return dct
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created methods to the rv_discrete instance
-        """
+        """Attaches dynamically created methods to the rv_discrete instance."""
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
 
@@ -3120,10 +3096,10 @@ class rv_discrete(rv_generic):
                 'optional\n        scale parameter (default=1)', '')
 
     def _updated_ctor_param(self):
-        """ Return the current version of _ctor_param, possibly updated by user.
+        """Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing.
-            Keep this in sync with the signature of __init__.
+        Used by freezing.
+        Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
         dct['a'] = self.a
@@ -3157,8 +3133,7 @@ class rv_discrete(rv_generic):
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
 
     def rvs(self, *args, **kwargs):
-        """
-        Random variates of given type.
+        """Random variates of given type.
 
         Parameters
         ----------
@@ -3189,8 +3164,7 @@ class rv_discrete(rv_generic):
         return super(rv_discrete, self).rvs(*args, **kwargs)
 
     def pmf(self, k, *args, **kwds):
-        """
-        Probability mass function at k of the given RV.
+        """Probability mass function at k of the given RV.
 
         Parameters
         ----------
@@ -3226,8 +3200,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logpmf(self, k, *args, **kwds):
-        """
-        Log of the probability mass function at k of the given RV.
+        """Log of the probability mass function at k of the given RV.
 
         Parameters
         ----------
@@ -3264,8 +3237,7 @@ class rv_discrete(rv_generic):
         return output
 
     def cdf(self, k, *args, **kwds):
-        """
-        Cumulative distribution function of the given RV.
+        """Cumulative distribution function of the given RV.
 
         Parameters
         ----------
@@ -3304,8 +3276,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logcdf(self, k, *args, **kwds):
-        """
-        Log of the cumulative distribution function at k of the given RV.
+        """Log of the cumulative distribution function at k of the given RV.
 
         Parameters
         ----------
@@ -3345,8 +3316,7 @@ class rv_discrete(rv_generic):
         return output
 
     def sf(self, k, *args, **kwds):
-        """
-        Survival function (1 - `cdf`) at k of the given RV.
+        """Survival function (1 - `cdf`) at k of the given RV.
 
         Parameters
         ----------
@@ -3384,8 +3354,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logsf(self, k, *args, **kwds):
-        """
-        Log of the survival function of the given RV.
+        """Log of the survival function of the given RV.
 
         Returns the log of the "survival function," defined as 1 - `cdf`,
         evaluated at `k`.
@@ -3427,8 +3396,7 @@ class rv_discrete(rv_generic):
         return output
 
     def ppf(self, q, *args, **kwds):
-        """
-        Percent point function (inverse of `cdf`) at q of the given RV.
+        """Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -3468,8 +3436,7 @@ class rv_discrete(rv_generic):
         return output
 
     def isf(self, q, *args, **kwds):
-        """
-        Inverse survival function (inverse of `sf`) at q of the given RV.
+        """Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
@@ -3612,7 +3579,6 @@ class rv_discrete(rv_generic):
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             chunksize=32):
     """Helper for computing the expectation value of `fun`."""
-
     # short-circuit if the support size is small enough
     if (ub - lb) <= chunksize:
         supp = np.arange(lb, ub+1, inc)
@@ -3689,7 +3655,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
 class rv_sample(rv_discrete):
     """A 'sample' discrete distribution defined by the support and values.
 
-       The ctor ignores most of the arguments, only needs the `values` argument.
+    The ctor ignores most of the arguments, only needs the `values` argument.
     """
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
@@ -3753,9 +3719,7 @@ class rv_sample(rv_discrete):
         return dct
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created argparser methods.
-        """
+        """Attaches dynamically created argparser methods."""
         self._attach_argparser_methods()
 
     def _get_support(self, *args):
@@ -3851,8 +3815,7 @@ def _check_shape(argshape, size):
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
-    """
-    Collect names of statistical distributions and their generators.
+    """Collect names of statistical distributions and their generators.
 
     Parameters
     ----------

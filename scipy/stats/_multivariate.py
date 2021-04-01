@@ -49,7 +49,6 @@ def _squeeze_output(out):
     """
     Remove single-dimensional entries from array and convert to scalar,
     if necessary.
-
     """
     out = out.squeeze()
     if out.ndim == 0:
@@ -58,8 +57,7 @@ def _squeeze_output(out):
 
 
 def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
-    """
-    Determine which eigenvalues are "small" given the spectrum.
+    """Determine which eigenvalues are "small" given the spectrum.
 
     This is for compatibility across various linear algebra functions
     that should agree about whether or not a Hermitian matrix is numerically
@@ -93,8 +91,7 @@ def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
 
 
 def _pinv_1d(v, eps=1e-5):
-    """
-    A helper function for computing the pseudoinverse.
+    """A helper function for computing the pseudoinverse.
 
     Parameters
     ----------
@@ -187,7 +184,6 @@ class multi_rv_generic:
     """
     Class which encapsulates common functionality between all multivariate
     distributions.
-
     """
     def __init__(self, seed=None):
         super(multi_rv_generic, self).__init__()
@@ -268,8 +264,7 @@ mvn_docdict_noparams = {
 
 
 class multivariate_normal_gen(multi_rv_generic):
-    r"""
-    A multivariate normal random variable.
+    r"""A multivariate normal random variable.
 
     The `mean` keyword specifies the mean. The `cov` keyword specifies the
     covariance matrix.
@@ -357,11 +352,9 @@ class multivariate_normal_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
     def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
-        """
-        Create a frozen multivariate normal distribution.
+        """Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
-
         """
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
@@ -371,9 +364,7 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         Infer dimensionality from mean or covariance matrix, ensure that
         mean and covariance are full vector resp. matrix.
-
         """
-
         # Try to infer dimensionality
         if dim is None:
             if mean is None:
@@ -434,7 +425,6 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         Adjust quantiles array so that last axis labels the components of
         each data point.
-
         """
         x = np.asarray(x, dtype=float)
 
@@ -449,7 +439,8 @@ class multivariate_normal_gen(multi_rv_generic):
         return x
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
-        """
+        """Log of the multivariate normal probability density function.
+
         Parameters
         ----------
         x : ndarray
@@ -476,8 +467,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
     def logpdf(self, x, mean=None, cov=1, allow_singular=False):
-        """
-        Log of the multivariate normal probability density function.
+        """Log of the multivariate normal probability density function.
 
         Parameters
         ----------
@@ -502,8 +492,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def pdf(self, x, mean=None, cov=1, allow_singular=False):
-        """
-        Multivariate normal probability density function.
+        """Multivariate normal probability density function.
 
         Parameters
         ----------
@@ -528,7 +517,8 @@ class multivariate_normal_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def _cdf(self, x, mean, cov, maxpts, abseps, releps):
-        """
+        """Log of the multivariate normal cumulative distribution function.
+
         Parameters
         ----------
         x : ndarray
@@ -561,8 +551,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
                abseps=1e-5, releps=1e-5):
-        """
-        Log of the multivariate normal cumulative distribution function.
+        """Log of the multivariate normal cumulative distribution function.
 
         Parameters
         ----------
@@ -600,8 +589,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
             abseps=1e-5, releps=1e-5):
-        """
-        Multivariate normal cumulative distribution function.
+        """Multivariate normal cumulative distribution function.
 
         Parameters
         ----------
@@ -638,8 +626,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
-        """
-        Draw random samples from a multivariate normal distribution.
+        """Draw random samples from a multivariate normal distribution.
 
         Parameters
         ----------
@@ -666,8 +653,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):
-        """
-        Compute the differential entropy of the multivariate normal.
+        """Compute the differential entropy of the multivariate normal.
 
         Parameters
         ----------
@@ -694,8 +680,7 @@ multivariate_normal = multivariate_normal_gen()
 class multivariate_normal_frozen(multi_rv_frozen):
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
                  maxpts=None, abseps=1e-5, releps=1e-5):
-        """
-        Create a frozen multivariate normal distribution.
+        """Create a frozen multivariate normal distribution.
 
         Parameters
         ----------
@@ -769,8 +754,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.cov, size, random_state)
 
     def entropy(self):
-        """
-        Computes the differential entropy of the multivariate normal.
+        """Computes the differential entropy of the multivariate normal.
 
         Returns
         -------
@@ -832,8 +816,7 @@ matnorm_docdict_noparams = {
 
 
 class matrix_normal_gen(multi_rv_generic):
-    r"""
-    A matrix normal random variable.
+    r"""A matrix normal random variable.
 
     The `mean` keyword specifies the mean. The `rowcov` keyword specifies the
     among-row covariance matrix. The 'colcov' keyword specifies the
@@ -929,6 +912,7 @@ class matrix_normal_gen(multi_rv_generic):
     >>> equiv_cov = np.kron(V,U)
     >>> multivariate_normal.pdf(vectorised_X, mean=equiv_mean, cov=equiv_cov)
     0.023410202050005054
+
     """
 
     def __init__(self, seed=None):
@@ -936,8 +920,7 @@ class matrix_normal_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, matnorm_docdict_params)
 
     def __call__(self, mean=None, rowcov=1, colcov=1, seed=None):
-        """
-        Create a frozen matrix normal distribution.
+        """Create a frozen matrix normal distribution.
 
         See `matrix_normal_frozen` for more information.
 
@@ -948,7 +931,6 @@ class matrix_normal_gen(multi_rv_generic):
         """
         Infer dimensionality from mean or covariance matrices. Handle
         defaults. Ensure compatible dimensions.
-
         """
 
         # Process mean
@@ -1015,7 +997,6 @@ class matrix_normal_gen(multi_rv_generic):
         """
         Adjust quantiles array so that last two axes labels the components of
         each data point.
-
         """
         X = np.asarray(X, dtype=float)
         if X.ndim == 2:
@@ -1027,7 +1008,8 @@ class matrix_normal_gen(multi_rv_generic):
 
     def _logpdf(self, dims, X, mean, row_prec_rt, log_det_rowcov,
                 col_prec_rt, log_det_colcov):
-        """
+        """Log of the matrix normal probability density function.
+
         Parameters
         ----------
         dims : tuple
@@ -1063,8 +1045,7 @@ class matrix_normal_gen(multi_rv_generic):
                        + numrows*log_det_colcov + maha)
 
     def logpdf(self, X, mean=None, rowcov=1, colcov=1):
-        """
-        Log of the matrix normal probability density function.
+        """Log of the matrix normal probability density function.
 
         Parameters
         ----------
@@ -1092,8 +1073,7 @@ class matrix_normal_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def pdf(self, X, mean=None, rowcov=1, colcov=1):
-        """
-        Matrix normal probability density function.
+        """Matrix normal probability density function.
 
         Parameters
         ----------
@@ -1114,8 +1094,7 @@ class matrix_normal_gen(multi_rv_generic):
         return np.exp(self.logpdf(X, mean, rowcov, colcov))
 
     def rvs(self, mean=None, rowcov=1, colcov=1, size=1, random_state=None):
-        """
-        Draw random samples from a matrix normal distribution.
+        """Draw random samples from a matrix normal distribution.
 
         Parameters
         ----------
@@ -1290,8 +1269,7 @@ def _dirichlet_check_input(alpha, x):
 
 
 def _lnB(alpha):
-    r"""
-    Internal helper function to compute the log of the useful quotient
+    r"""Internal helper function to compute the log of the useful quotient.
 
     .. math::
 
@@ -1312,8 +1290,7 @@ def _lnB(alpha):
 
 
 class dirichlet_gen(multi_rv_generic):
-    r"""
-    A Dirichlet random variable.
+    r"""A Dirichlet random variable.
 
     The `alpha` keyword specifies the concentration parameters of the
     distribution.
@@ -1427,7 +1404,8 @@ class dirichlet_gen(multi_rv_generic):
         return dirichlet_frozen(alpha, seed=seed)
 
     def _logpdf(self, x, alpha):
-        """
+        """Log of the Dirichlet probability density function.
+
         Parameters
         ----------
         x : ndarray
@@ -1445,8 +1423,7 @@ class dirichlet_gen(multi_rv_generic):
         return - lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
 
     def logpdf(self, x, alpha):
-        """
-        Log of the Dirichlet probability density function.
+        """Log of the Dirichlet probability density function.
 
         Parameters
         ----------
@@ -1467,8 +1444,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def pdf(self, x, alpha):
-        """
-        The Dirichlet probability density function.
+        """The Dirichlet probability density function.
 
         Parameters
         ----------
@@ -1489,8 +1465,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def mean(self, alpha):
-        """
-        Compute the mean of the dirichlet distribution.
+        """Compute the mean of the dirichlet distribution.
 
         Parameters
         ----------
@@ -1508,8 +1483,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def var(self, alpha):
-        """
-        Compute the variance of the dirichlet distribution.
+        """Compute the variance of the dirichlet distribution.
 
         Parameters
         ----------
@@ -1529,8 +1503,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def entropy(self, alpha):
-        """
-        Compute the differential entropy of the dirichlet distribution.
+        """Compute the differential entropy of the dirichlet distribution.
 
         Parameters
         ----------
@@ -1554,8 +1527,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
-        """
-        Draw random samples from a Dirichlet distribution.
+        """Draw random samples from a Dirichlet distribution.
 
         Parameters
         ----------
@@ -1642,8 +1614,7 @@ wishart_docdict_noparams = {
 
 
 class wishart_gen(multi_rv_generic):
-    r"""
-    A Wishart random variable.
+    r"""A Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
@@ -1753,11 +1724,9 @@ class wishart_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
     def __call__(self, df=None, scale=None, seed=None):
-        """
-        Create a frozen Wishart distribution.
+        """Create a frozen Wishart distribution.
 
         See `wishart_frozen` for more information.
-
         """
         return wishart_frozen(df, scale, seed)
 
@@ -1842,7 +1811,8 @@ class wishart_gen(multi_rv_generic):
         return n, shape
 
     def _logpdf(self, x, dim, df, scale, log_det_scale, C):
-        """
+        """Log of the Wishart probability density function.
+
         Parameters
         ----------
         x : ndarray
@@ -1887,8 +1857,7 @@ class wishart_gen(multi_rv_generic):
         return out
 
     def logpdf(self, x, df, scale):
-        """
-        Log of the Wishart probability density function.
+        """Log of the Wishart probability density function.
 
         Parameters
         ----------
@@ -1917,8 +1886,7 @@ class wishart_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def pdf(self, x, df, scale):
-        """
-        Wishart probability density function.
+        """Wishart probability density function.
 
         Parameters
         ----------
@@ -1940,7 +1908,8 @@ class wishart_gen(multi_rv_generic):
         return np.exp(self.logpdf(x, df, scale))
 
     def _mean(self, dim, df, scale):
-        """
+        """Mean of the Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -1956,8 +1925,7 @@ class wishart_gen(multi_rv_generic):
         return df * scale
 
     def mean(self, df, scale):
-        """
-        Mean of the Wishart distribution
+        """Mean of the Wishart distribution.
 
         Parameters
         ----------
@@ -1973,7 +1941,8 @@ class wishart_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def _mode(self, dim, df, scale):
-        """
+        """Mode of the Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -1993,8 +1962,7 @@ class wishart_gen(multi_rv_generic):
         return out
 
     def mode(self, df, scale):
-        """
-        Mode of the Wishart distribution
+        """Mode of the Wishart distribution
 
         Only valid if the degrees of freedom are greater than the dimension of
         the scale matrix.
@@ -2013,7 +1981,8 @@ class wishart_gen(multi_rv_generic):
         return _squeeze_output(out) if out is not None else out
 
     def _var(self, dim, df, scale):
-        """
+        """Variance of the Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -2033,8 +2002,7 @@ class wishart_gen(multi_rv_generic):
         return var
 
     def var(self, df, scale):
-        """
-        Variance of the Wishart distribution
+        """Variance of the Wishart distribution.
 
         Parameters
         ----------
@@ -2101,7 +2069,8 @@ class wishart_gen(multi_rv_generic):
         return A
 
     def _rvs(self, n, shape, dim, df, C, random_state):
-        """
+        """Draw random samples from a Wishart distribution.
+
         Parameters
         ----------
         n : integer
@@ -2145,8 +2114,7 @@ class wishart_gen(multi_rv_generic):
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
-        """
-        Draw random samples from a Wishart distribution.
+        """Draw random samples from a Wishart distribution.
 
         Parameters
         ----------
@@ -2177,7 +2145,8 @@ class wishart_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def _entropy(self, dim, df, log_det_scale):
-        """
+        """Compute the differential entropy of the Wishart.
+
         Parameters
         ----------
         dim : int
@@ -2204,8 +2173,7 @@ class wishart_gen(multi_rv_generic):
         )
 
     def entropy(self, df, scale):
-        """
-        Compute the differential entropy of the Wishart.
+        """Compute the differential entropy of the Wishart.
 
         Parameters
         ----------
@@ -2226,8 +2194,7 @@ class wishart_gen(multi_rv_generic):
         return self._entropy(dim, df, log_det_scale)
 
     def _cholesky_logdet(self, scale):
-        """
-        Compute Cholesky decomposition and determine (log(det(scale)).
+        """Compute Cholesky decomposition and determine (log(det(scale)).
 
         Parameters
         ----------
@@ -2386,8 +2353,7 @@ def _cho_inv_batch(a, check_finite=True):
 
 
 class invwishart_gen(wishart_gen):
-    r"""
-    An inverse Wishart random variable.
+    r"""An inverse Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
     specifies the scale matrix, which must be symmetric and positive definite.
@@ -2490,8 +2456,7 @@ class invwishart_gen(wishart_gen):
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
     def __call__(self, df=None, scale=None, seed=None):
-        """
-        Create a frozen inverse Wishart distribution.
+        """Create a frozen inverse Wishart distribution.
 
         See `invwishart_frozen` for more information.
 
@@ -2499,7 +2464,8 @@ class invwishart_gen(wishart_gen):
         return invwishart_frozen(df, scale, seed)
 
     def _logpdf(self, x, dim, df, scale, log_det_scale):
-        """
+        """Log of the inverse Wishart probability density function.
+
         Parameters
         ----------
         x : ndarray
@@ -2543,8 +2509,7 @@ class invwishart_gen(wishart_gen):
         return out
 
     def logpdf(self, x, df, scale):
-        """
-        Log of the inverse Wishart probability density function.
+        """Log of the inverse Wishart probability density function.
 
         Parameters
         ----------
@@ -2570,8 +2535,7 @@ class invwishart_gen(wishart_gen):
         return _squeeze_output(out)
 
     def pdf(self, x, df, scale):
-        """
-        Inverse Wishart probability density function.
+        """Inverse Wishart probability density function.
 
         Parameters
         ----------
@@ -2593,7 +2557,8 @@ class invwishart_gen(wishart_gen):
         return np.exp(self.logpdf(x, df, scale))
 
     def _mean(self, dim, df, scale):
-        """
+        """Mean of the inverse Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -2613,8 +2578,7 @@ class invwishart_gen(wishart_gen):
         return out
 
     def mean(self, df, scale):
-        """
-        Mean of the inverse Wishart distribution
+        """Mean of the inverse Wishart distribution.
 
         Only valid if the degrees of freedom are greater than the dimension of
         the scale matrix plus one.
@@ -2634,7 +2598,8 @@ class invwishart_gen(wishart_gen):
         return _squeeze_output(out) if out is not None else out
 
     def _mode(self, dim, df, scale):
-        """
+        """Mode of the inverse Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -2650,8 +2615,7 @@ class invwishart_gen(wishart_gen):
         return scale / (df + dim + 1)
 
     def mode(self, df, scale):
-        """
-        Mode of the inverse Wishart distribution
+        """Mode of the inverse Wishart distribution.
 
         Parameters
         ----------
@@ -2668,7 +2632,8 @@ class invwishart_gen(wishart_gen):
         return _squeeze_output(out)
 
     def _var(self, dim, df, scale):
-        """
+        """Variance of the inverse Wishart distribution.
+
         Parameters
         ----------
         dim : int
@@ -2691,8 +2656,7 @@ class invwishart_gen(wishart_gen):
         return var
 
     def var(self, df, scale):
-        """
-        Variance of the inverse Wishart distribution
+        """Variance of the inverse Wishart distribution.
 
         Only valid if the degrees of freedom are greater than the dimension of
         the scale matrix plus three.
@@ -2711,7 +2675,8 @@ class invwishart_gen(wishart_gen):
         return _squeeze_output(out) if out is not None else out
 
     def _rvs(self, n, shape, dim, df, C, random_state):
-        """
+        """Draw random samples from an inverse Wishart distribution.
+
         Parameters
         ----------
         n : integer
@@ -2760,8 +2725,7 @@ class invwishart_gen(wishart_gen):
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
-        """
-        Draw random samples from an inverse Wishart distribution.
+        """Draw random samples from an inverse Wishart distribution.
 
         Parameters
         ----------
@@ -2805,8 +2769,7 @@ invwishart = invwishart_gen()
 
 class invwishart_frozen(multi_rv_frozen):
     def __init__(self, df, scale, seed=None):
-        """
-        Create a frozen inverse Wishart distribution.
+        """Create a frozen inverse Wishart distribution.
 
         Parameters
         ----------
@@ -2914,8 +2877,7 @@ multinomial_docdict_noparams = {
 
 
 class multinomial_gen(multi_rv_generic):
-    r"""
-    A multinomial random variable.
+    r"""A multinomial random variable.
 
     Methods
     -------
@@ -3023,16 +2985,14 @@ class multinomial_gen(multi_rv_generic):
             doccer.docformat(self.__doc__, multinomial_docdict_params)
 
     def __call__(self, n, p, seed=None):
-        """
-        Create a frozen multinomial distribution.
+        """Create a frozen multinomial distribution.
 
         See `multinomial_frozen` for more information.
         """
         return multinomial_frozen(n, p, seed)
 
     def _process_parameters(self, n, p):
-        """
-        Return: n_, p_, npcond.
+        """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
@@ -3052,8 +3012,7 @@ class multinomial_gen(multi_rv_generic):
         return n, p, ncond | pcond
 
     def _process_quantiles(self, x, n, p):
-        """
-        Return: x_, xcond.
+        """Returns: x_, xcond.
 
         x_ is an int array; xcond is a boolean array flagging values out of the
         domain.
@@ -3090,8 +3049,7 @@ class multinomial_gen(multi_rv_generic):
         return gammaln(n+1) + np.sum(xlogy(x, p) - gammaln(x+1), axis=-1)
 
     def logpmf(self, x, n, p):
-        """
-        Log of the Multinomial probability mass function.
+        """Log of the Multinomial probability mass function.
 
         Parameters
         ----------
@@ -3123,8 +3081,7 @@ class multinomial_gen(multi_rv_generic):
         return self._checkresult(result, npcond_, np.NAN)
 
     def pmf(self, x, n, p):
-        """
-        Multinomial probability mass function.
+        """Multinomial probability mass function.
 
         Parameters
         ----------
@@ -3144,8 +3101,7 @@ class multinomial_gen(multi_rv_generic):
         return np.exp(self.logpmf(x, n, p))
 
     def mean(self, n, p):
-        """
-        Mean of the Multinomial distribution
+        """Mean of the Multinomial distribution.
 
         Parameters
         ----------
@@ -3161,8 +3117,7 @@ class multinomial_gen(multi_rv_generic):
         return self._checkresult(result, npcond, np.NAN)
 
     def cov(self, n, p):
-        """
-        Covariance matrix of the multinomial distribution.
+        """Covariance matrix of the multinomial distribution.
 
         Parameters
         ----------
@@ -3185,8 +3140,7 @@ class multinomial_gen(multi_rv_generic):
         return self._checkresult(result, npcond, np.nan)
 
     def entropy(self, n, p):
-        r"""
-        Compute the entropy of the multinomial distribution.
+        r"""Compute the entropy of the multinomial distribution.
 
         The entropy is computed using this expression:
 
@@ -3225,8 +3179,7 @@ class multinomial_gen(multi_rv_generic):
         return self._checkresult(term1 + term2, npcond, np.nan)
 
     def rvs(self, n, p, size=None, random_state=None):
-        """
-        Draw random samples from a Multinomial distribution.
+        """Draw random samples from a Multinomial distribution.
 
         Parameters
         ----------
@@ -3311,8 +3264,7 @@ for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
 
 
 class special_ortho_group_gen(multi_rv_generic):
-    r"""
-    A matrix-valued SO(N) random variable.
+    r"""A matrix-valued SO(N) random variable.
 
     Return a random rotation matrix, drawn from the Haar distribution
     (the only uniform distribution on SO(n)).
@@ -3374,19 +3326,14 @@ class special_ortho_group_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def __call__(self, dim=None, seed=None):
-        """
-        Create a frozen SO(N) distribution.
+        """Create a frozen SO(N) distribution.
 
         See `special_ortho_group_frozen` for more information.
-
         """
         return special_ortho_group_frozen(dim, seed=seed)
 
     def _process_parameters(self, dim):
-        """
-        Dimension N must be specified; it cannot be inferred.
-        """
-
+        """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
                                 and must be a scalar greater than 1.""")
@@ -3394,8 +3341,7 @@ class special_ortho_group_gen(multi_rv_generic):
         return dim
 
     def rvs(self, dim, size=1, random_state=None):
-        """
-        Draw random samples from SO(N).
+        """Draw random samples from SO(N).
 
         Parameters
         ----------
@@ -3471,8 +3417,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
 
 
 class ortho_group_gen(multi_rv_generic):
-    r"""
-    A matrix-valued O(N) random variable.
+    r"""A matrix-valued O(N) random variable.
 
     Return a random orthogonal matrix, drawn from the O(N) Haar
     distribution (the only uniform distribution on O(N)).
@@ -3524,10 +3469,7 @@ class ortho_group_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def _process_parameters(self, dim):
-        """
-        Dimension N must be specified; it cannot be inferred.
-        """
-
+        """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
                              "and must be a scalar greater than 1.")
@@ -3535,8 +3477,7 @@ class ortho_group_gen(multi_rv_generic):
         return dim
 
     def rvs(self, dim, size=1, random_state=None):
-        """
-        Draw random samples from O(N).
+        """Draw random samples from O(N).
 
         Parameters
         ----------
@@ -3578,8 +3519,7 @@ ortho_group = ortho_group_gen()
 
 
 class random_correlation_gen(multi_rv_generic):
-    r"""
-    A random correlation matrix.
+    r"""A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
 
@@ -3725,8 +3665,7 @@ class random_correlation_gen(multi_rv_generic):
         return m
 
     def rvs(self, eigs, random_state=None, tol=1e-13, diag_tol=1e-7):
-        """
-        Draw random correlation matrices
+        """Draw random correlation matrices.
 
         Parameters
         ----------
@@ -3770,8 +3709,7 @@ random_correlation = random_correlation_gen()
 
 
 class unitary_group_gen(multi_rv_generic):
-    r"""
-    A matrix-valued U(N) random variable.
+    r"""A matrix-valued U(N) random variable.
 
     Return a random unitary matrix.
 
@@ -3816,10 +3754,7 @@ class unitary_group_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def _process_parameters(self, dim):
-        """
-        Dimension N must be specified; it cannot be inferred.
-        """
-
+        """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
                              "and must be a scalar greater than 1.")
@@ -3827,8 +3762,7 @@ class unitary_group_gen(multi_rv_generic):
         return dim
 
     def rvs(self, dim, size=1, random_state=None):
-        """
-        Draw random samples from U(N).
+        """Draw random samples from U(N).
 
         Parameters
         ----------
@@ -3900,8 +3834,7 @@ mvt_docdict_noparams = {
 
 
 class multivariate_t_gen(multi_rv_generic):
-    r"""
-    A multivariate t-distributed random variable.
+    r"""A multivariate t-distributed random variable.
 
     The `loc` parameter specifies the location. The `shape` parameter specifies
     the positive semidefinite shape matrix. The `df` parameter specifies the
@@ -3965,8 +3898,7 @@ class multivariate_t_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        """
-        Initialize a multivariate t-distributed random variable.
+        """Initialize a multivariate t-distributed random variable.
 
         Parameters
         ----------
@@ -3979,10 +3911,9 @@ class multivariate_t_gen(multi_rv_generic):
 
     def __call__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
-        """
-        Create a frozen multivariate t-distribution. See
-        `multivariate_t_frozen` for parameters.
+        """Create a frozen multivariate t-distribution.
 
+        See `multivariate_t_frozen` for parameters.
         """
         if df == np.inf:
             return multivariate_normal_frozen(mean=loc, cov=shape,
@@ -3992,8 +3923,7 @@ class multivariate_t_gen(multi_rv_generic):
                                      allow_singular=allow_singular, seed=seed)
 
     def pdf(self, x, loc=None, shape=1, df=1, allow_singular=False):
-        """
-        Multivariate t-distribution probability density function.
+        """Multivariate t-distribution probability density function.
 
         Parameters
         ----------
@@ -4024,8 +3954,7 @@ class multivariate_t_gen(multi_rv_generic):
         return np.exp(logpdf)
 
     def logpdf(self, x, loc=None, shape=1, df=1):
-        """
-        Log of the multivariate t-distribution probability density function.
+        """Log of the multivariate t-distribution probability density function.
 
         Parameters
         ----------
@@ -4103,8 +4032,7 @@ class multivariate_t_gen(multi_rv_generic):
         return _squeeze_output(A - B - C - D + E)
 
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
-        """
-        Draw random samples from a multivariate t-distribution.
+        """Draw random samples from a multivariate t-distribution.
 
         Parameters
         ----------
@@ -4154,7 +4082,6 @@ class multivariate_t_gen(multi_rv_generic):
         """
         Adjust quantiles array so that last axis labels the components of
         each data point.
-
         """
         x = np.asarray(x, dtype=float)
         if x.ndim == 0:
@@ -4170,7 +4097,6 @@ class multivariate_t_gen(multi_rv_generic):
         """
         Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
-
         """
         if loc is None and shape is None:
             loc = np.asarray(0, dtype=float)
@@ -4232,8 +4158,7 @@ class multivariate_t_frozen(multi_rv_frozen):
 
     def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
-        """
-        Create a frozen multivariate t distribution.
+        """Create a frozen multivariate t distribution.
 
         Parameters
         ----------
@@ -4325,8 +4250,7 @@ mhg_docdict_noparams = {
 
 
 class multivariate_hypergeom_gen(multi_rv_generic):
-    r"""
-    A multivariate hypergeometric random variable.
+    r"""A multivariate hypergeometric random variable.
 
     Methods
     -------
@@ -4443,8 +4367,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
 
     def __call__(self, m, n, seed=None):
-        """
-        Create a frozen multivariate_hypergeom distribution.
+        """Create a frozen multivariate_hypergeom distribution.
 
         See `multivariate_hypergeom_frozen` for more information.
         """
@@ -4534,8 +4457,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return num - den
 
     def logpmf(self, x, m, n):
-        """
-        Log of the multivariate hypergeometric probability mass function.
+        """Log of the multivariate hypergeometric probability mass function.
 
         Parameters
         ----------
@@ -4571,8 +4493,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return self._checkresult(result, mncond_, np.nan)
 
     def pmf(self, x, m, n):
-        """
-        Multivariate hypergeometric probability mass function.
+        """Multivariate hypergeometric probability mass function.
 
         Parameters
         ----------
@@ -4593,8 +4514,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return out
 
     def mean(self, m, n):
-        """
-        Mean of the multivariate hypergeometric distribution
+        """Mean of the multivariate hypergeometric distribution.
 
         Parameters
         ----------
@@ -4618,8 +4538,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return self._checkresult(mu, mncond, np.nan)
 
     def var(self, m, n):
-        """
-        Variance of the multivariate hypergeometric distribution.
+        """Variance of the multivariate hypergeometric distribution.
 
         Parameters
         ----------
@@ -4644,8 +4563,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return self._checkresult(output, mncond, np.nan)
 
     def cov(self, m, n):
-        """
-        Covariance matrix of the multivariate hypergeometric distribution.
+        """Covariance matrix of the multivariate hypergeometric distribution.
 
         Parameters
         ----------
@@ -4683,8 +4601,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         return self._checkresult(output, mncond, np.nan)
 
     def rvs(self, m, n, size=None, random_state=None):
-        """
-        Draw random samples from a multivariate hypergeometric distribution.
+        """Draw random samples from a multivariate hypergeometric distribution.
 
         Parameters
         ----------

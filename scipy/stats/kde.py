@@ -585,7 +585,6 @@ class gaussian_kde:
         """
         Evaluate the log of the estimated pdf on a provided set of points.
         """
-
         points = atleast_2d(x)
 
         d, m = points.shape

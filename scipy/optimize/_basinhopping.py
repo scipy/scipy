@@ -350,8 +350,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
                  seed=None):
-    """
-    Find the global minimum of a function using the basin-hopping algorithm
+    """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
     algorithm with local minimization at each step. Designed to mimic

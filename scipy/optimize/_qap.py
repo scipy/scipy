@@ -552,8 +552,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
                                partial_match=None,
                                partial_guess=None,
                                **unknown_options):
-    r"""
-    Solve the quadratic assignment problem (approximately).
+    r"""Solve the quadratic assignment problem (approximately).
 
     This function solves the Quadratic Assignment Problem (QAP) and the
     Graph Matching Problem (GMP) using the 2-opt algorithm [1]_.
@@ -652,8 +651,8 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
            203-215, https://doi.org/10.1016/j.patcog.2018.09.014
-    """
 
+    """
     _check_unknown_options(unknown_options)
     rng = check_random_state(rng)
     A, B, partial_match = _common_input_validation(A, B, partial_match)

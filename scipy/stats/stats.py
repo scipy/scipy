@@ -359,8 +359,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 
 
 def gmean(a, axis=0, dtype=None, weights=None):
-    """
-    Compute the geometric mean along the specified axis.
+    """Compute the geometric mean along the specified axis.
 
     Return the geometric average of the array elements.
     That is:  n-th root of (x1 * x2 * ... * xn)
@@ -436,8 +435,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
 
 def hmean(a, axis=0, dtype=None):
-    """
-    Calculate the harmonic mean along the specified axis.
+    """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
 
@@ -507,8 +505,7 @@ ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
 def mode(a, axis=0, nan_policy='propagate'):
-    """
-    Return an array of the modal (most common) value in the passed array.
+    """Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only the smallest is returned.
     The bin-count for the modal bins is also returned.
@@ -646,8 +643,7 @@ def _mask_to_limits(a, limits, inclusive):
 
 
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
-    """
-    Compute the trimmed mean.
+    """Compute the trimmed mean.
 
     This function finds the arithmetic mean of given values, ignoring values
     outside the given `limits`.
@@ -696,8 +692,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
-    """
-    Compute the trimmed variance.
+    """Compute the trimmed variance.
 
     This function computes the sample variance of an array of values,
     while ignoring values which are outside of given `limits`.
@@ -751,8 +746,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
-    """
-    Compute the trimmed minimum.
+    """Compute the trimmed minimum.
 
     This function finds the miminum value of an array `a` along the
     specified axis, but only considering values greater than a specified
@@ -814,8 +808,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
 
 def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
-    """
-    Compute the trimmed maximum.
+    """Compute the trimmed maximum.
 
     This function computes the maximum value of an array along a given axis,
     while ignoring values larger than a specified upper limit.
@@ -876,8 +869,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
 
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
-    """
-    Compute the trimmed sample standard deviation.
+    """Compute the trimmed sample standard deviation.
 
     This function finds the sample standard deviation of given values,
     ignoring values outside the given `limits`.
@@ -925,8 +917,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
-    """
-    Compute the trimmed standard error of the mean.
+    """Compute the trimmed standard error of the mean.
 
     This function finds the standard error of the mean for given
     values, ignoring values outside the given `limits`.
@@ -984,8 +975,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
-    r"""
-    Calculate the nth moment about the mean for a sample.
+    r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
     points. It is often used to calculate coefficients of skewness and kurtosis
@@ -1121,8 +1111,7 @@ def _moment(a, moment, axis, *, mean=None):
 
 
 def variation(a, axis=0, nan_policy='propagate', ddof=0):
-    """
-    Compute the coefficient of variation.
+    """Compute the coefficient of variation.
 
     The coefficient of variation is the standard deviation divided by the
     mean.  This function is equivalent to::
@@ -1181,8 +1170,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0):
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
-    r"""
-    Compute the sample skewness of a data set.
+    r"""Compute the sample skewness of a data set.
 
     For normally distributed data, the skewness should be about zero. For
     unimodal continuous distributions, a skewness value greater than zero means
@@ -1284,8 +1272,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
 
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
-    """
-    Compute the kurtosis (Fisher or Pearson) of a dataset.
+    """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
     Kurtosis is the fourth central moment divided by the square of the
     variance. If Fisher's definition is used, then 3.0 is subtracted from
@@ -1400,8 +1387,7 @@ DescribeResult = namedtuple('DescribeResult',
 
 
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
-    """
-    Compute several descriptive statistics of the passed array.
+    """Compute several descriptive statistics of the passed array.
 
     Parameters
     ----------
@@ -1510,8 +1496,7 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
-    """
-    Test whether the skew is different from the normal distribution.
+    """Test whether the skew is different from the normal distribution.
 
     This function tests the null hypothesis that the skewness of
     the population that the sample was drawn from is the same
@@ -1616,8 +1601,7 @@ KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
-    """
-    Test whether a dataset has normal kurtosis.
+    """Test whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
@@ -1732,8 +1716,7 @@ NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
 def normaltest(a, axis=0, nan_policy='propagate'):
-    """
-    Test whether a sample differs from a normal distribution.
+    """Test whether a sample differs from a normal distribution.
 
     This function tests the null hypothesis that a sample comes
     from a normal distribution.  It is based on D'Agostino and
@@ -1809,8 +1792,7 @@ Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
 
 
 def jarque_bera(x):
-    """
-    Perform the Jarque-Bera goodness of fit test on sample data.
+    """Perform the Jarque-Bera goodness of fit test on sample data.
 
     The Jarque-Bera test tests whether the sample data has the skewness and
     kurtosis matching a normal distribution.
@@ -2038,8 +2020,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
 
 
 def percentileofscore(a, score, kind='rank'):
-    """
-    Compute the percentile rank of a score relative to a list of scores.
+    """Compute the percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
     scores in `a` are below the given score. In the case of gaps or
@@ -2132,8 +2113,7 @@ HistogramResult = namedtuple('HistogramResult',
 
 
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
-    """
-    Create a histogram.
+    """Create a histogram.
 
     Separate the range into several bins and return the number of instances
     in each bin.
@@ -2215,8 +2195,7 @@ CumfreqResult = namedtuple('CumfreqResult',
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
-    """
-    Return a cumulative frequency histogram, using the histogram function.
+    """Return a cumulative frequency histogram, using the histogram function.
 
     A cumulative histogram is a mapping that counts the cumulative number of
     observations in all of the bins up to the specified bin.
@@ -2299,8 +2278,7 @@ RelfreqResult = namedtuple('RelfreqResult',
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
-    """
-    Return a relative frequency histogram, using the histogram function.
+    """Return a relative frequency histogram, using the histogram function.
 
     A relative frequency  histogram is a mapping of the number of
     observations in each of the bins relative to the total of observations.
@@ -2381,8 +2359,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #####################################
 
 def obrientransform(*args):
-    """
-    Compute the O'Brien transform on input data (any number of arrays).
+    """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
     Each array in ``*args`` is one level of a factor.
@@ -2465,8 +2442,7 @@ def obrientransform(*args):
 
 
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
-    """
-    Compute standard error of the mean.
+    """Compute standard error of the mean.
 
     Calculate the standard error of the mean (or standard error of
     measurement) of the values in the input array.
@@ -4884,8 +4860,7 @@ WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
-    r"""
-    Compute a weighted version of Kendall's :math:`\tau`.
+    r"""Compute a weighted version of Kendall's :math:`\tau`.
 
     The weighted :math:`\tau` is a weighted version of Kendall's
     :math:`\tau` in which exchanges of high weight are more influential than
@@ -5059,9 +5034,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 # FROM MGCPY: https://github.com/neurodata/mgcpy
 
 class _ParallelP:
-    """
-    Helper function to calculate parallel p-value.
-    """
+    """Helper function to calculate parallel p-value."""
+
     def __init__(self, x, y, random_states):
         self.x = x
         self.y = y
@@ -5078,8 +5052,7 @@ class _ParallelP:
 
 
 def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
-    r"""
-    Helper function that calculates the p-value. See below for uses.
+    r"""Helper function that calculates the p-value. See below for uses.
 
     Parameters
     ----------
@@ -5145,8 +5118,7 @@ MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                          workers=1, is_twosamp=False, random_state=None):
-    r"""
-    Computes the Multiscale Graph Correlation (MGC) test statistic.
+    r"""Computes the Multiscale Graph Correlation (MGC) test statistic.
 
     Specifically, for each point, MGC finds the :math:`k`-nearest neighbors for
     one property (e.g. cloud density), and the :math:`l`-nearest neighbors for
@@ -5343,6 +5315,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
     >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
     '-0.008, 1.0'
+
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise ValueError("x and y must be ndarrays")
