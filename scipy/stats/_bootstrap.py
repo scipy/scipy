@@ -2,6 +2,7 @@ import scipy.stats as stats
 import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri
+from scipy._lib._util import rng_integers
 
 
 def _jackknife_resample(sample):
@@ -24,7 +25,7 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
-    i = random_state.randint(0, n, (n_resamples, n))
+    i = rng_integers(random_state, 0, n, (n_resamples, n))
 
     resamples = sample[..., i]
     return resamples

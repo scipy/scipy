@@ -4,6 +4,7 @@ from scipy.stats import bootstrap_ci
 from numpy.testing import assert_allclose
 from scipy import stats
 from .. import _bootstrap as bootstrap
+from scipy._lib._util import rng_integers
 
 
 def test_bootstrap_ci_iv():
@@ -190,10 +191,12 @@ def test_jackknife_resample():
         assert np.array_equal(slc, expected)
 
 
-def test_bootstrap_resample():
+@pytest.mark.parametrize("rng", [np.random.RandomState,
+                                 np.random.default_rng])
+def test_bootstrap_resample(rng):
     # currently bootstrap_ci only works with RandomState (apparently)
-    rng1 = np.random.RandomState(0)
-    rng2 = np.random.RandomState(0)
+    rng1 = rng(0)
+    rng2 = rng(0)
 
     n_resamples = 10
     shape = 3, 4, 5, 6
@@ -206,7 +209,7 @@ def test_bootstrap_resample():
         # (last axis is the one the statistic will be taken over / consumed)
         slc = y[..., i, :]
 
-        js = rng2.randint(0, shape[-1], shape[-1])
+        js = rng_integers(rng2, 0, shape[-1], shape[-1])
         expected = x[..., js]
 
         assert np.array_equal(slc, expected)
