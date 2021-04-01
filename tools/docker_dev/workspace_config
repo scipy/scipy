@@ -18,12 +18,15 @@ echo "set colorcolumn=80" >>~/.vimrc
 echo "set number" >>~/.vimrc
 echo "syntax enable" >>~/.vimrc
 
-# Vanity custom bash prompt - makes it more legible tbh
+# Vanity custom bash prompt - makes it more legible
 echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '" >>~/.bashrc
 
-# Add conda -- interactive login
-echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.profile
+# make conda activate command available from /bin/bash (login and interactive)
+ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.bashrc
+echo "conda activate base" >>~/.bashrc
+echo "conda activate scipydev" >>~/.bashrc
 
-# Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-# also for reference
-echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >>~/.bashrc
+# Enable prompt color in the skeleton .bashrc
+# hadolint ignore=SC2016
+sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc

@@ -91,12 +91,6 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
-
-# Enable prompt color in the skeleton .bashrc
-# hadolint ignore=SC2016
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
-
-# -----------------------------------------------------------------------------
 # ---- Installing conda  ----
 RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${miniforge_version}/${miniforge_installer}" && \
     echo "${miniforge_checksum} *${miniforge_installer}" | sha256sum --check && \
@@ -116,11 +110,14 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     conda update --all --quiet --yes && \
     conda clean --all -f -y 
 
-# make conda activate command available from /bin/bash (login and interactive)
-RUN ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc && \
-    echo "conda activate scipydev" >> ~/.bashrc
+# -----------------------------------------------------------------------------
+# ---- Copy needed files ----
+# Copy multiple scripts - fix directory permissions and 
+# basic workspace configurations
+COPY ./workspace_config /usr/local/bin/workspace_config
+
+RUN chmod a+rx /usr/local/bin/workspace_config && \
+    workspace_config 
 
 # -----------------------------------------------------------------------------
 # ---- Create conda environment ----
@@ -130,7 +127,6 @@ RUN ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
 COPY ./environment.yml /tmp/environment.yml
 
 RUN conda env create -f /tmp/environment.yml && \
-    conda activate "${CONDA_ENV}" && \
     conda clean --all -f -y && \
     rm -rf /tmp/* 
 
