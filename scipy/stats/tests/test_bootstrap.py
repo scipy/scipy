@@ -65,7 +65,7 @@ def test_bootstrap_ci_against_theory(method):
     res = bootstrap_ci((data,), np.mean, n_resamples=5000,
                        confidence_level=alpha, method=method,
                        random_state=0)
-    assert_allclose(res, expected, 4e-4)
+    assert_allclose(res, expected, 6e-4)
 
 
 tests_R = {"basic": (23.77, 79.12),
