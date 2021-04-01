@@ -1,4 +1,3 @@
-import scipy.stats as stats
 import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri
