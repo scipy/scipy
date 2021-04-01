@@ -3,6 +3,7 @@ import pytest
 from scipy.stats import bootstrap_ci
 from numpy.testing import assert_allclose
 from scipy import stats
+from .. import _bootstrap as bootstrap
 
 
 def test_bootstrap_ci_iv():
@@ -129,3 +130,17 @@ def test_bootstrap_ci_against_itself(method, expected):
     pvalue = stats.binomtest(ci_contains_true, n_replications,
                              confidence_level).pvalue
     assert pvalue > 0.1
+
+
+def test_jackknife():
+    shape = 3, 4, 5, 6
+    x = np.random.rand(*shape)
+    y = bootstrap._jackknife_resample(x)
+
+    for i in range(shape[-1]):
+        # each resample is indexed along second to last axis
+        # (last axis is the one the statistic will be taken over / consumed)
+        slc = y[..., i, :]
+        expected = np.delete(x, i, axis=-1)
+
+        assert np.array_equal(slc, expected)
