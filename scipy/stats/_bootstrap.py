@@ -4,9 +4,9 @@ from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri
 
 
-def _jackknife_resample(data):
-    '''Jackknife resample the data. Currently supports only one-sample data'''
-    n = data.shape[-1]
+def _jackknife_resample(sample):
+    '''Jackknife resample the sample. Supports only one-sample stats for now'''
+    n = sample.shape[-1]
 
     # jackknife - each row leaves out one observation
     j = np.ones((n, n), dtype=bool)
@@ -15,29 +15,29 @@ def _jackknife_resample(data):
     i = np.broadcast_to(i, (n, n))
     i = i[j].reshape((n, n-1))
 
-    resamples = data[..., i]
+    resamples = sample[..., i]
     return resamples
 
 
-def _bootstrap_resample(data, n_resamples=None, random_state=None):
-    '''Bootstrap resample the data'''
-    n = data.shape[-1]
+def _bootstrap_resample(sample, n_resamples=None, random_state=None):
+    '''Bootstrap resample the sample'''
+    n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
     i = random_state.randint(0, n, (n_resamples, n))
 
-    resamples = data[..., i]
+    resamples = sample[..., i]
     return resamples
 
 
-def _percentile_of_score(data, score, axis):
+def _percentile_of_score(a, score, axis):
     '''Vectorized, simplified scipy.stats.percentileofscore
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     '''
-    B = data.shape[axis]
-    return (data < score).sum(axis=axis) / B
+    B = a.shape[axis]
+    return (a < score).sum(axis=axis) / B
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -54,16 +54,16 @@ def _percentile_along_axis(theta_hat_b, alpha):
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     """Bias-corrected and accelerated interval """
     # closely follows [2] "BCa Bootstrap CIs"
-    data = data[0]  # only works with 1 sample statistics right now
+    sample = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
-    theta_hat = statistic(data, axis=axis)[..., None]
+    theta_hat = statistic(sample, axis=axis)[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    jackknife_data = _jackknife_resample(data)
-    theta_hat_i = statistic(jackknife_data, axis=-1)
+    jackknife_sample = _jackknife_resample(sample)
+    theta_hat_i = statistic(jackknife_sample, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
     den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
