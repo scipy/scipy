@@ -166,3 +166,18 @@ def test_bootstrap_resample():
         expected = x[..., js]
 
         assert np.array_equal(slc, expected)
+
+
+@pytest.mark.parametrize("score", [0, 0.5, 1])
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_percentile_of_score(score, axis):
+    shape = 10, 20, 30
+    x = np.random.rand(*shape)
+    p = bootstrap._percentile_of_score(x, score, axis=-1)
+
+    def vectorized_pos(a, score, axis):
+        return np.apply_along_axis(stats.percentileofscore, axis, a, score)
+
+    p2 = vectorized_pos(x, score, axis=-1)/100
+
+    np.testing.assert_allclose(p, p2, 1e-15)
