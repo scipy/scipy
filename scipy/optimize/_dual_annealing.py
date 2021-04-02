@@ -38,14 +38,9 @@ class VisitingDistribution:
         makes the algorithm jump to a more distant region.
         The value range is (1, 3]. It's value is fixed for the life of the
         object.
-    rand_gen : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
+        A `~numpy.random.RandomState`, `~numpy.random.Generator` object
+        for using the current state of the created random generator container.
 
     """
     TAIL_LIMIT = 1.e8
