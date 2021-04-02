@@ -356,6 +356,17 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 
 autosummary_generate = True
 
+
+# -----------------------------------------------------------------------------
+# Autodoc
+# -----------------------------------------------------------------------------
+
+autodoc_default_options = {
+    'inherited-members': None,
+}
+autodoc_typehints = 'none'
+
+
 # -----------------------------------------------------------------------------
 # Coverage checker
 # -----------------------------------------------------------------------------
