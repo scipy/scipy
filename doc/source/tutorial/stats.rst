@@ -168,7 +168,7 @@ Random number generation
 Drawing random numbers relies on generators from `numpy.random` package.
 In the examples above, the specific stream of
 random numbers is not reproducible across runs. To achieve reproducibility,
-you can explicitly *seed* the random number generator. In NumPy, a generator
+you can explicitly *seed* a random number generator. In NumPy, a generator
 is an instance of `numpy.random.Generator`. Here is the canonical way to create
 a generator:
 
@@ -183,7 +183,7 @@ And fixing the seed can be done like this:
 .. warning:: Do not use this number or common values such as 0. Using just a
              small set of seeds to instantiate larger state spaces means that
              there are some initial states that are impossible to reach. This
-             creates some biases if everyone uses such values. A proper way to
+             creates some biases if everyone uses such values. A good way to
              get a seed is to use a `numpy.random.SeedSequence`:
 
              >>> from numpy.random import SeedSequence
