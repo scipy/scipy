@@ -559,7 +559,7 @@ class QMCEngine(ABC):
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed):
+    ...     def __init__(self, d, seed=None):
     ...         super().__init__(d=d, seed=seed)
     ...
     ...
@@ -592,7 +592,7 @@ class QMCEngine(ABC):
 
     >>> _ = engine.reset()
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],

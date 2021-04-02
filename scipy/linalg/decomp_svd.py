@@ -453,7 +453,7 @@ def subspace_angles(A, B):
 
     >>> x = rng.standard_normal((4, 3))
     >>> np.rad2deg(subspace_angles(x[:, :2], x[:, [2]]))
-    array([ 55.832])
+    array([ 55.832])  # random
     """
     # Steps here omit the U and V calculation steps from the paper
 

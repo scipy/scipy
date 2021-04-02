@@ -747,14 +747,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy import stats
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
-
-    >>> class CustomRandomState(np.random.Generator):
-    ...     def randint(self, k):
-    ...         i = rng.integers(k)
-    ...         return i - i % 2
-    >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -764,8 +758,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.stats import rv_continuous
     >>> class CustomDistribution(rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
-    ...         return random_state.standard_normal(*size)
-    >>> X = CustomDistribution(random_state=rng)
+    ...         return random_state.standard_normal(size)
+    >>> X = CustomDistribution(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
     >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A

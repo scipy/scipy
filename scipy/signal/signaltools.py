@@ -3434,8 +3434,8 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     >>> npoints = 1000
     >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max() < 0.01
-    True
+    >>> (signal.detrend(x) - noise).max()
+    0.06  # random
 
     """
     if type not in ['linear', 'l', 'constant', 'c']:
