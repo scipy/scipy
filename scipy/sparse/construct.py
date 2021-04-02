@@ -745,7 +745,6 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     --------
     >>> from scipy.sparse import random
     >>> from scipy import stats
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
 

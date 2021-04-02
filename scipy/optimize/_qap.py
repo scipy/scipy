@@ -112,7 +112,6 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...               [150, 130, 0, 120], [170, 100, 120, 0]])
@@ -347,7 +346,6 @@ def _quadratic_assignment_faq(A, B,
     As mentioned above, a barycenter initialization often results in a better
     solution than a single random initialization.
 
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
     >>> n = 15

@@ -2236,7 +2236,6 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Examples
     --------
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> from scipy import stats
     >>> rng = default_rng()
@@ -2319,7 +2318,6 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Examples
     --------
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> from scipy import stats
     >>> rng = default_rng()

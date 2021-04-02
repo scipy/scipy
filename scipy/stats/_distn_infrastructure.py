@@ -534,7 +534,6 @@ def argsreduce(cond, *args):
 
     Examples
     --------
-    >>> import numpy as np
     >>> rand = np.random.random_sample
     >>> A = rand((4, 5))
     >>> B = 2

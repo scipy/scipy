@@ -3429,7 +3429,6 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     Examples
     --------
     >>> from scipy import signal
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
     >>> npoints = 1000

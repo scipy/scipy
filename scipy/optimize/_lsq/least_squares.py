@@ -667,7 +667,6 @@ def least_squares(
     First, define the function which generates the data with noise and
     outliers, define the model parameters, and generate data:
 
-    >>> import numpy as np
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
     >>> def gen_data(t, a, b, c, noise=0., n_outliers=0, seed=None):
