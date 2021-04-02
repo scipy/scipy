@@ -19,7 +19,8 @@ from scipy._lib._util import check_random_state
 
 from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
-# for root finding for continuous distribution ppf, and max likelihood estimation
+# for root finding for continuous distribution ppf, and max likelihood
+# estimation
 from scipy import optimize
 
 # for functions of continuous distributions (e.g. moments, entropy, cdf)
@@ -635,11 +636,14 @@ class rv_generic:
         self._random_state = check_random_state(seed)
 
         # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size' is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions have not
+        # inside _rvs().  The code is being changed so that 'size'
+        # is an argument
+        # to self._rvs(). However some external (non-SciPy) distributions
+        # have not
         # been updated.  Maintain backwards compatibility by checking if
         # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs() before calling self._rvs().
+        # and if not set self._size inside self.rvs()
+        # before calling self._rvs().
         argspec = inspect.getfullargspec(self._rvs)
         self._rvs_uses_size_attribute = (argspec.varkw is None and
                                          'size' not in argspec.args and
@@ -740,7 +744,7 @@ class rv_generic:
             # are shapes.
             shapes_list = []
             for meth in meths_to_inspect:
-                shapes_args = _getfullargspec(meth)   # NB: does not contain self
+                shapes_args = _getfullargspec(meth)  # NB does not contain self
                 args = shapes_args.args[1:]       # peel off 'x', too
 
                 if args:
@@ -816,7 +820,8 @@ class rv_generic:
             try:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
-                raise Exception("Unable to construct docstring for distribution \"%s\": %s" %
+                raise Exception("Unable to construct docstring for "
+                                "distribution \"%s\": %s" %
                                 (self.name, repr(e))) from e
 
         # correct for empty shapes
@@ -935,7 +940,8 @@ class rv_generic:
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. %s, %s, %s" % (size, size_, bcast_shape))
+                             "the parameters. %s, %s, %s" % (size, size_,
+                                                             bcast_shape))
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -943,9 +949,9 @@ class rv_generic:
 
         return param_bcast, loc_bcast, scale_bcast, size_
 
-    ## These are the methods you must define (standard form functions)
-    ## NB: generic _pdf, _logpdf, _cdf are different for
-    ## rv_continuous and rv_discrete hence are defined in there
+    # These are the methods you must define (standard form functions)
+    # NB: generic _pdf, _logpdf, _cdf are different for
+    # rv_continuous and rv_discrete hence are defined in there
     def _argcheck(self, *args):
         """Default check for correct values on args and keywords.
 
@@ -996,7 +1002,7 @@ class rv_generic:
         # an empty tuple, which means a scalar random variate is to be
         # generated.
 
-        ## Use basic inverse cdf algorithm for RV generation as default.
+        # Use basic inverse cdf algorithm for RV generation as default.
         U = random_state.uniform(size=size)
         Y = self._ppf(U, *args)
         return Y
@@ -1472,13 +1478,13 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
-##  continuous random variables: implement maybe later
-##
-##  hf  --- Hazard Function (PDF / SF)
-##  chf  --- Cumulative hazard function (-log(SF))
-##  psf --- Probability sparsity function (reciprocal of the pdf) in
-##                units of percent-point-function (as a function of q).
-##                Also, the derivative of the percent-point function.
+#  continuous random variables: implement maybe later
+#
+#  hf  --- Hazard Function (PDF / SF)
+#  chf  --- Cumulative hazard function (-log(SF))
+#  psf --- Probability sparsity function (reciprocal of the pdf) in
+#                units of percent-point-function (as a function of q).
+#                Also, the derivative of the percent-point function.
 
 
 class rv_continuous(rv_generic):
@@ -1818,7 +1824,7 @@ class rv_continuous(rv_generic):
     def _pdf(self, x, *args):
         return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
-    ## Could also define any of these
+    # Could also define any of these
     def _logpdf(self, x, *args):
         return log(self._pdf(x, *args))
 
@@ -1829,8 +1835,8 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
-    ## in rv_generic
+    # generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    # in rv_generic
 
     def pdf(self, x, *args, **kwds):
         """Probability density function at x of the given RV.
@@ -2319,7 +2325,7 @@ class rv_continuous(rv_generic):
                              "Consider trying method='MLE'.")
 
         return (((data_moments - dist_moments) /
-                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
+                 np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
         """
@@ -2363,7 +2369,8 @@ class rv_continuous(rv_generic):
 
             - fscale : hold scale parameter fixed to specified value.
 
-            - optimizer : The optimizer to use.  The optimizer must take ``func``,
+            - optimizer : The optimizer to use.
+              The optimizer must take ``func``,
               and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
               function to be optimized) and ``disp=0`` to suppress
@@ -2377,8 +2384,9 @@ class rv_continuous(rv_generic):
         Returns
         -------
         parameter_tuple : tuple of floats
-            Estimates for any shape parameters (if applicable), followed by those
-            for location and scale. For most random variables, shape statistics
+            Estimates for any shape parameters (if applicable),
+            followed by those for location and scale.
+            For most random variables, shape statistics
             will be returned, but there are exceptions (e.g. ``norm``).
 
         Notes
@@ -2420,7 +2428,8 @@ class rv_continuous(rv_generic):
         >>> a, b = 1., 2.
         >>> x = beta.rvs(a, b, size=1000)
 
-        Now we can fit all four parameters (``a``, ``b``, ``loc`` and ``scale``):
+        Now we can fit all four parameters (``a``, ``b``, ``loc``
+        and ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
 
@@ -3157,8 +3166,8 @@ class rv_discrete(rv_generic):
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance then
-            that instance is used.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -3536,12 +3545,14 @@ class rv_discrete(rv_generic):
 
         Notes
         -----
-        For heavy-tailed distributions, the expected value may or may not exist,
-        depending on the function, `func`. If it does exist, but the sum converges
+        For heavy-tailed distributions, the expected value may or
+        may not exist,
+        depending on the function, `func`. If it does exist, but the
+        sum converges
         slowly, the accuracy of the result may be rather low. For instance, for
         ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
-        increasing `maxcount` and/or `chunksize` may improve the result, but may
-        also make zipf very slow.
+        increasing `maxcount` and/or `chunksize` may improve the result,
+        but may also make zipf very slow.
 
         The function is not vectorized.
 
