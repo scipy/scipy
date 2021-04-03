@@ -2754,7 +2754,7 @@ class TestStudentTest:
         assert_allclose(t, self.T1_1)
 
 
-class TestsPercentileOfScore:
+class TestPercentileOfScore:
 
     def f(self, *args, **kwargs):
         return stats.percentileofscore(*args, **kwargs)
