@@ -20,7 +20,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
 from numpy.testing import suppress_warnings
 from scipy.stats import mstats_basic
 
-class TestMquantiles(object):
+class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867
         data = np.array([[6., 7., 1.],
@@ -53,7 +53,7 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     assert_equal(x.dtype, dtype)
 
 
-class TestGeoMean(object):
+class TestGeoMean:
     def test_1d(self):
         a = [1, 2, 3, 4]
         desired = np.power(1*2*3*4, 1./4.)
@@ -112,7 +112,7 @@ class TestGeoMean(object):
         check_equal_gmean(np.ma.array(a), desired)
 
 
-class TestHarMean(object):
+class TestHarMean:
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
         desired = 3. / (1./1 + 1./2 + 1./3)
@@ -147,7 +147,7 @@ class TestHarMean(object):
         check_equal_hmean(np.ma.array(a), desired)
 
 
-class TestRanking(object):
+class TestRanking:
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
@@ -169,7 +169,7 @@ class TestRanking(object):
                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
-class TestCorr(object):
+class TestCorr:
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -409,7 +409,7 @@ class TestCorr(object):
         check_named_results(res, attributes, ma=True)
 
 
-class TestTrimming(object):
+class TestTrimming:
 
     def test_trim(self):
         a = ma.arange(10)
@@ -508,7 +508,7 @@ class TestTrimming(object):
         assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
-class TestMoments(object):
+class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
@@ -639,7 +639,7 @@ class TestMoments(object):
         assert_equal(im, cp)
 
 
-class TestPercentile(object):
+class TestPercentile:
     def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
@@ -660,7 +660,7 @@ class TestPercentile(object):
         assert_equal(mstats.scoreatpercentile(x, 50), [1, 1, 1])
 
 
-class TestVariability(object):
+class TestVariability:
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -692,7 +692,7 @@ class TestVariability(object):
         assert_almost_equal(desired, y, decimal=12)
 
 
-class TestMisc(object):
+class TestMisc:
 
     def test_obrientransform(self):
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -1154,7 +1154,7 @@ class TestDescribe:
         assert_allclose(result.kurtosis, [-1.3, -2.0])
 
 
-class TestCompareWithStats(object):
+class TestCompareWithStats:
     """
     Class to compare mstats results with stats results.
 
@@ -1575,7 +1575,7 @@ class TestCompareWithStats(object):
         assert_equal(result, result2)
 
 
-class TestBrunnerMunzel(object):
+class TestBrunnerMunzel:
     # Data from (Lumley, 1996)
     X = np.ma.masked_invalid([1, 2, 1, 1, 1, np.nan, 1, 1,
                               1, 1, 1, 2, 4, 1, 1, np.nan])

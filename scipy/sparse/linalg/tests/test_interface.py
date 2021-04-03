@@ -15,7 +15,7 @@ from scipy.sparse.linalg import interface
 from scipy.sparse.sputils import matrix
 
 
-class TestLinearOperator(object):
+class TestLinearOperator:
     def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
@@ -186,7 +186,7 @@ class TestLinearOperator(object):
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(object):
+class TestAsLinearOperator:
     def setup_method(self):
         self.cases = []
 
