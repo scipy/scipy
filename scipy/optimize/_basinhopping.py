@@ -246,8 +246,7 @@ class AdaptiveStepsize:
 
 
 class RandomDisplacement:
-    """
-    Add a random displacement of maximum size `stepsize` to each coordinate
+    """Add a random displacement of maximum size `stepsize` to each coordinate.
 
     Calling this updates `x` in-place.
 
@@ -255,9 +254,18 @@ class RandomDisplacement:
     ----------
     stepsize : float, optional
         Maximum stepsize in any dimension
-    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}
-        The random number generator that generates the displacements
+    random_gen : {None, int, `numpy.random.Generator`,
+                  `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
     """
+
     def __init__(self, stepsize=0.5, random_gen=None):
         self.stepsize = stepsize
         self.random_gen = check_random_state(random_gen)
@@ -285,16 +293,25 @@ class MinimizerWrapper:
 
 
 class Metropolis:
-    """
-    Metropolis acceptance criterion
+    """Metropolis acceptance criterion.
 
     Parameters
     ----------
     T : float
         The "temperature" parameter for the accept or reject criterion.
-    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}
-        Random number generator used for acceptance test
+    random_gen : {None, int, `numpy.random.Generator`,
+                  `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Random number generator used for acceptance test.
+
     """
+
     def __init__(self, T, random_gen=None):
         # Avoid ZeroDivisionError since "MBH can be regarded as a special case
         # of the BH framework with the Metropolis criterion, where temperature
@@ -335,8 +352,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
                  seed=None):
-    """
-    Find the global minimum of a function using the basin-hopping algorithm
+    """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
     algorithm with local minimization at each step. Designed to mimic
@@ -406,13 +422,15 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance, then
-        that object is used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the default Metropolis
         `accept_test` and the default `take_step`. If you supply your own
@@ -637,7 +655,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     """
     x0 = np.array(x0)
 
-    # set up the np.random.RandomState generator
+    # set up the np.random generator
     rng = check_random_state(seed)
 
     # set up minimizer
