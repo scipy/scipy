@@ -48,6 +48,7 @@ def _remove_optimizer_parameters(kwds):
     if kwds:
         raise TypeError("Unknown arguments: %s." % kwds)
 
+
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm', this decorator calls generic implementation
@@ -58,6 +59,7 @@ def _call_super_mom(fun):
         else:
             return fun(self, *args, **kwds)
     return wrapper
+
 
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
@@ -8483,24 +8485,17 @@ class wrapcauchy_gen(rv_continuous):
         return (1.0-c*c)/(2*np.pi*(1+c*c-2*c*np.cos(x)))
 
     def _cdf(self, x, c):
-        output = np.zeros(x.shape, dtype=x.dtype)
-        val = (1.0+c)/(1.0-c)
-        c1 = x < np.pi
-        c2 = 1-c1
-        xp = np.extract(c1, x)
-        xn = np.extract(c2, x)
-        if np.any(xn):
-            valn = np.extract(c2, np.ones_like(x)*val)
-            xn = 2*np.pi - xn
-            yn = np.tan(xn/2.0)
-            on = 1.0-1.0/np.pi*np.arctan(valn*yn)
-            np.place(output, c2, on)
-        if np.any(xp):
-            valp = np.extract(c1, np.ones_like(x)*val)
-            yp = np.tan(xp/2.0)
-            op = 1.0/np.pi*np.arctan(valp*yp)
-            np.place(output, c1, op)
-        return output
+
+        def f1(x, cr):
+            # CDF for 0 <= x < pi
+            return 1/np.pi * np.arctan(cr*np.tan(x/2))
+
+        def f2(x, cr):
+            # CDF for pi <= x <= 2*pi
+            return 1 - 1/np.pi * np.arctan(cr*np.tan((2*np.pi - x)/2))
+
+        cr = (1 + c)/(1 - c)
+        return _lazywhere(x < np.pi, (x, cr), f=f1, f2=f2)
 
     def _ppf(self, q, c):
         val = (1.0-c)/(1.0+c)
