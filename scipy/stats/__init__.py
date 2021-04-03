@@ -444,6 +444,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._bootstrap import bootstrap_ci
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

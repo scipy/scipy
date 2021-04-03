@@ -180,11 +180,13 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
         The default is ``0.95``.
     n_resamples : int, optional
         The number of resamples performed to form the bootstrap distribution
-        of the statistic. The default is ``10000``.
+        of the statistic. The default is ``1000``.
     method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse'or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``). The default is ``'basic'``.
+        bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
+        Note that only ``'percentile'`` and ``'basic'`` support multi-sample
+        statistics at this time.
     random_state: int, RandomState, or Generator, optional
         Pseudorandom number generator state used to generate resamples.
 
@@ -262,6 +264,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     [4.72530116 4.06591756 4.61738788 5.18122861 4.5465164 ]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
+
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
     882
 
@@ -341,7 +344,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     theta_hat_b = statistic(*resampled_data, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2.
+    alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis, alpha, theta_hat_b)
         percentile_fun = _percentile_along_axis
