@@ -1647,6 +1647,28 @@ class TestBoxcoxNormmax(object):
         assert np.all(bounds[0] < maxlog)
         assert np.all(maxlog < bounds[1])
 
+    def test_user_defined_optimizer(self):
+        # tests an optimizer that is not based on scipy.optimize.minimize
+        lmbda = stats.boxcox_normmax(self.x)
+        lmbda_rounded = np.round(lmbda, 5)
+        lmbda_range = np.linspace(lmbda_rounded-0.01, lmbda_rounded+0.01, 1001)
+
+        class MyResult:
+            pass
+
+        def optimizer(fun):
+            # brute force minimum over the range
+            objs = []
+            for lmbda in lmbda_range:
+                objs.append(fun(lmbda))
+            res = MyResult()
+            res.x = lmbda_range[np.argmin(objs)]
+            return res
+
+        lmbda2 = stats.boxcox_normmax(self.x, optimizer=optimizer)
+        assert lmbda2 != lmbda                 # not identical
+        assert_allclose(lmbda2, lmbda, 1e-5)   # but as close as it should be
+
 
 class TestBoxcoxNormplot(object):
     def setup_method(self):
