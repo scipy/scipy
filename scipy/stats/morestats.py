@@ -1200,7 +1200,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         # `optimizer` is expected to return a `OptimizeResult` object, we here
         # get the solution to the optimization problem.
         def _optimizer(func, args):
-            return getattr(optimizer(func, args=args), 'x', None)
+            def func_wrapped(x):
+                return func(x, *args)
+            return getattr(optimizer(func_wrapped), 'x', None)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
