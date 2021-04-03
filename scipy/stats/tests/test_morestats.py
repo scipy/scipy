@@ -1567,8 +1567,8 @@ class TestBoxcox(object):
     @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
     def test_bounded_optimizer_within_bounds(self, bounds):
         # Define custom optimizer with bounds.
-        def optimizer(fun, args):
-            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
                                             method="bounded")
 
         _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
@@ -1585,8 +1585,8 @@ class TestBoxcox(object):
         bounds = (lmbda + 0.1, lmbda + 1)
         options = {'xatol': 1e-12}
 
-        def optimizer(fun, args):
-            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
                                             method="bounded", options=options)
 
         # Check bounded solution. Lower bound should be active.
@@ -1606,7 +1606,7 @@ class TestBoxcox(object):
         # `OptimizeResult` object
 
         # Define test function that always returns 1
-        def optimizer(fun, args):
+        def optimizer(fun):
             return 1
 
         message = "`optimizer` must return an object containing the optimal..."
@@ -1638,14 +1638,36 @@ class TestBoxcoxNormmax(object):
     @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
     def test_bounded_optimizer_within_bounds(self, method, bounds):
 
-        def optimizer(fun, args):
-            return optimize.minimize_scalar(fun, bounds=bounds, args=args,
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
                                             method="bounded")
 
         maxlog = stats.boxcox_normmax(self.x, method=method,
                                       optimizer=optimizer)
         assert np.all(bounds[0] < maxlog)
         assert np.all(maxlog < bounds[1])
+
+    def test_user_defined_optimizer(self):
+        # tests an optimizer that is not based on scipy.optimize.minimize
+        lmbda = stats.boxcox_normmax(self.x)
+        lmbda_rounded = np.round(lmbda, 5)
+        lmbda_range = np.linspace(lmbda_rounded-0.01, lmbda_rounded+0.01, 1001)
+
+        class MyResult:
+            pass
+
+        def optimizer(fun):
+            # brute force minimum over the range
+            objs = []
+            for lmbda in lmbda_range:
+                objs.append(fun(lmbda))
+            res = MyResult()
+            res.x = lmbda_range[np.argmin(objs)]
+            return res
+
+        lmbda2 = stats.boxcox_normmax(self.x, optimizer=optimizer)
+        assert lmbda2 != lmbda                 # not identical
+        assert_allclose(lmbda2, lmbda, 1e-5)   # but as close as it should be
 
 
 class TestBoxcoxNormplot(object):

@@ -961,15 +961,12 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         Must be between 0.0 and 1.0.
     optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
-        the value of `lmbda` that maximizes the log-likelihood function.
-        `optimizer` is a callable that accepts two arguments:
+        the value of `lmbda` that minimizes the negative log-likelihood
+        function. `optimizer` is a callable that accepts one argument:
 
         fun : callable
             The objective function, which evaluates the negative
             log-likelihood function at a provided value of `lmbda`
-        args : tuple, optional
-            Additional arguments passed to the objective function as a
-            keyword argument
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
@@ -1106,15 +1103,12 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             Useful to compare different methods.
     optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
-        the value of `lmbda` that maximizes the log-likelihood function.
-        `optimizer` is a callable that accepts two arguments:
+        the value of `lmbda` that minimizes the negative log-likelihood
+        function. `optimizer` is a callable that accepts one argument:
 
         fun : callable
             The objective function, which evaluates the negative
             log-likelihood function at a provided value of `lmbda`
-        args : tuple, optional
-            Additional arguments passed to the objective function as a
-            keyword argument
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
@@ -1168,13 +1162,13 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     want to use `scipy.optimize.minimize_scalar` with ``method='bounded'``,
     and we want to use tighter tolerances when optimizing the log-likelihood
     function. To do this, we define a function that accepts positional argument
-    `fun` and keyword argument `args` and passes them to
-    `scipy.optimize.minimize_scalar` along with the desired options:
+    `fun` and uses `scipy.optimize.minimize_scalar` to minimize `fun` subject
+    to the provided bounds and tolerances:
 
     >>> from scipy import optimize
     >>> options = {'xatol': 1e-12}  # absolute tolerance on `x`
-    >>> def optimizer(fun, args):
-    ...     return optimize.minimize_scalar(fun, bounds=(6, 7), args=args,
+    >>> def optimizer(fun):
+    ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
     ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
     6.999...
@@ -1200,7 +1194,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         # `optimizer` is expected to return a `OptimizeResult` object, we here
         # get the solution to the optimization problem.
         def _optimizer(func, args):
-            return getattr(optimizer(func, args=args), 'x', None)
+            def func_wrapped(x):
+                return func(x, *args)
+            return getattr(optimizer(func_wrapped), 'x', None)
 
     def _pearsonr(x):
         osm_uniform = _calc_uniform_order_statistic_medians(len(x))
