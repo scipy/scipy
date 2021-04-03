@@ -204,10 +204,11 @@ def test_jackknife_resample():
         assert np.array_equal(slc, expected)
 
 
-@pytest.mark.parametrize("rng", [np.random.RandomState,
-                                 np.random.default_rng])
-def test_bootstrap_resample(rng):
-    # currently bootstrap_ci only works with RandomState (apparently)
+@pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
+def test_bootstrap_resample(rng_name):
+    rng = getattr(np.random, rng_name, None)
+    if rng is None:
+        pytest.skip(f"{rng_name} not available.")
     rng1 = rng(0)
     rng2 = rng(0)
 
