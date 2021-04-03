@@ -961,8 +961,8 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         Must be between 0.0 and 1.0.
     optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
-        the value of `lmbda` that maximizes the log-likelihood function.
-        `optimizer` is a callable that accepts one argument:
+        the value of `lmbda` that minimizes the negative log-likelihood
+        function. `optimizer` is a callable that accepts one argument:
 
         fun : callable
             The objective function, which evaluates the negative
@@ -1103,8 +1103,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             Useful to compare different methods.
     optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
-        the value of `lmbda` that maximizes the log-likelihood function.
-        `optimizer` is a callable that accepts one argument:
+        the value of `lmbda` that minimizes the negative log-likelihood
+        function. `optimizer` is a callable that accepts one argument:
 
         fun : callable
             The objective function, which evaluates the negative
