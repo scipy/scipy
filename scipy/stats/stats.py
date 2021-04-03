@@ -177,6 +177,7 @@ from itertools import permutations
 
 import numpy as np
 from numpy import array, asarray, ma
+from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
@@ -2177,22 +2178,28 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         score = score[..., None]
         count = lambda x: np.count_nonzero(x, -1)
 
-        # Compute
-        if kind == 'rank':
-            left  = count(a < score)
-            right = count(a <= score)
-            plus1 = left < right
-            perct = (left + right + plus1) * (50.0 / n)
-        elif kind == 'strict':
-            perct = count(a < score) * (100.0 / n)
-        elif kind == 'weak':
-            perct = count(a <= score) * (100.0 / n)
-        elif kind == 'mean':
-            left  = count(a < score)
-            right = count(a <= score)
-            perct = (left + right) * (50.0 / n)
-        else:
-            raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        # Despite masking, Azure pipelines produces warnings
+        # when there are nans (which should not be processed)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+
+            # Compute
+            if kind == 'rank':
+                left  = count(a < score)
+                right = count(a <= score)
+                plus1 = left < right
+                perct = (left + right + plus1) * (50.0 / n)
+            elif kind == 'strict':
+                perct = count(a < score) * (100.0 / n)
+            elif kind == 'weak':
+                perct = count(a <= score) * (100.0 / n)
+            elif kind == 'mean':
+                left  = count(a < score)
+                right = count(a <= score)
+                perct = (left + right) * (50.0 / n)
+            else:
+                raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
     # Re-insert nan's
     perct = ma.filled(perct, np.nan)
