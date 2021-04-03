@@ -227,6 +227,7 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   differential_entropy
    median_absolute_deviation
    median_abs_deviation
 
@@ -396,6 +397,7 @@ Contingency table functions
    contingency.relative_risk
    contingency.association
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------
@@ -442,6 +444,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._entropy import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

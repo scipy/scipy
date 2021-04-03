@@ -249,7 +249,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     m = sum(cons_lengths)
 
     def calcfc(x, con):
-        f = fun(x, *args)
+        f = fun(np.copy(x), *args)
         i = 0
         for size, c in izip(cons_lengths, constraints):
             con[i: i + size] = c['fun'](x, *c['args'])

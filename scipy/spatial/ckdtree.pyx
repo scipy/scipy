@@ -423,6 +423,13 @@ cdef class cKDTree:
     which can be used to rapidly look up the nearest neighbors of any
     point.
 
+    .. note::
+       `cKDTree` is functionally identical to `KDTree`. Prior to SciPy
+       v1.6.0, `cKDTree` had better performance and slightly different
+       functionality but now the two names exist only for
+       backward-compatibility reasons. If compatibility with SciPy < 1.6 is not
+       a concern, prefer `KDTree`.
+
     Parameters
     ----------
     data : array_like, shape (n,m)

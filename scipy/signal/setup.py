@@ -21,7 +21,7 @@ def configuration(parent_package='', top_path=None):
                          **numpy_nodepr_api)
     sigtools._pre_build_hook = set_c_flags_hook
 
-    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         import pythran
         ext = pythran.dist.PythranExtension(
             'scipy.signal._max_len_seq_inner',
