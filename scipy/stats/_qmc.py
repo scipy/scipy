@@ -26,6 +26,7 @@ def check_random_state(seed=None):
     ----------
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
@@ -558,7 +559,7 @@ class QMCEngine(ABC):
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed):
+    ...     def __init__(self, d, seed=None):
     ...         super().__init__(d=d, seed=seed)
     ...
     ...
@@ -579,9 +580,9 @@ class QMCEngine(ABC):
     After subclassing `QMCEngine` to define the sampling strategy we want to
     use, we can create an instance to sample from.
 
-    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine = RandomEngine(2)
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
@@ -591,7 +592,7 @@ class QMCEngine(ABC):
 
     >>> _ = engine.reset()
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
@@ -810,10 +811,10 @@ class LatinHypercube(QMCEngine):
     Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
+    >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.1545328 , 0.53664833],
+    array([[0.1545328 , 0.53664833],  # random
            [0.84052691, 0.06474907],
            [0.52177809, 0.93343721],
            [0.68033825, 0.36265316],
@@ -822,14 +823,14 @@ class LatinHypercube(QMCEngine):
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.019558034794794565
+    0.019558034794794565  # random
 
     Finally, samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[1.54532796, 3.609945  ],
+    array([[1.54532796, 3.609945  ],  # random
            [8.40526909, 2.1942472 ],
            [5.2177809 , 4.80031164],
            [6.80338249, 3.08795949],
