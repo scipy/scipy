@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 import warnings
 from collections import namedtuple
@@ -256,17 +257,18 @@ def kstat(data, n=2):
     Examples
     --------
     >>> from scipy import stats
-    >>> rndm = np.random.RandomState(1234)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
 
     As sample size increases, n-th moment and n-th k-statistic converge to the
     same number (although they aren't identical). In the case of the normal
     distribution, they converge to zero.
 
     >>> for n in [2, 3, 4, 5, 6, 7]:
-    ...     x = rndm.normal(size=10**n)
+    ...     x = rng.normal(size=10**n)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
     ...     print("%.3g %.3g %.3g" % (m, k, m-k))
-    -0.631 -0.651 0.0194
+    -0.631 -0.651 0.0194  # random
     0.0282 0.0283 -8.49e-05
     -0.0454 -0.0454 1.36e-05
     7.53e-05 7.53e-05 -2.26e-09
@@ -305,8 +307,7 @@ def kstat(data, n=2):
 
 
 def kstatvar(data, n=2):
-    r"""
-    Return an unbiased estimator of the variance of the k-statistic.
+    r"""Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
 
@@ -357,8 +358,7 @@ def kstatvar(data, n=2):
 
 
 def _calc_uniform_order_statistic_medians(n):
-    """
-    Approximations of uniform order statistic medians.
+    """Approximations of uniform order statistic medians.
 
     Parameters
     ----------
@@ -451,7 +451,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
 
 
 def _add_axis_labels_title(plot, xlabel, ylabel, title):
-    """Helper function to add axes labels and a title to stats plots"""
+    """Helper function to add axes labels and a title to stats plots."""
     try:
         if hasattr(plot, 'set_title'):
             # Matplotlib Axes instance or something that looks like it
@@ -626,8 +626,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
 
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
-    """
-    Calculate the shape parameter that maximizes the PPCC.
+    """Calculate the shape parameter that maximizes the PPCC.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
@@ -713,22 +712,23 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
         r, prob = stats.pearsonr(xvals, yvals)
         return 1 - r
 
-    return optimize.brent(tempfunc, brack=brack, args=(osm_uniform, osr, dist.ppf))
+    return optimize.brent(tempfunc, brack=brack,
+                          args=(osm_uniform, osr, dist.ppf))
 
 
 def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
-    """
-    Calculate and optionally plot probability plot correlation coefficient.
+    """Calculate and optionally plot probability plot correlation coefficient.
 
     The probability plot correlation coefficient (PPCC) plot can be used to
     determine the optimal shape parameter for a one-parameter family of
-    distributions.  It cannot be used for distributions without shape parameters
+    distributions.  It cannot be used for distributions without shape
+    parameters
     (like the normal distribution) or with multiple shape parameters.
 
     By default a Tukey-Lambda distribution (`stats.tukeylambda`) is used. A
     Tukey-Lambda PPCC plot interpolates from long-tailed to short-tailed
-    distributions via an approximately normal one, and is therefore particularly
-    useful in practice.
+    distributions via an approximately normal one, and is therefore
+    particularly useful in practice.
 
     Parameters
     ----------
@@ -944,8 +944,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
 
 
 def boxcox(x, lmbda=None, alpha=None):
-    r"""
-    Return a dataset transformed by a Box-Cox power transformation.
+    r"""Return a dataset transformed by a Box-Cox power transformation.
 
     Parameters
     ----------
@@ -1165,8 +1164,10 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
 
 def _normplot(method, x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
-    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
-    details."""
+    optionally show it.
+
+    See `boxcox_normplot` or `yeojohnson_normplot` for details.
+    """
 
     if method == 'boxcox':
         title = 'Box-Cox Normality Plot'
@@ -1269,8 +1270,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
 
 def yeojohnson(x, lmbda=None):
-    r"""
-    Return a dataset transformed by a Yeo-Johnson power transformation.
+    r"""Return a dataset transformed by a Yeo-Johnson power transformation.
 
     Parameters
     ----------
@@ -1339,7 +1339,6 @@ def yeojohnson(x, lmbda=None):
     >>> plt.show()
 
     """
-
     x = np.asarray(x)
     if x.size == 0:
         return x
@@ -1362,9 +1361,9 @@ def yeojohnson(x, lmbda=None):
 
 
 def _yeojohnson_transform(x, lmbda):
-    """Return x transformed by the Yeo-Johnson power transform with given
-    parameter lmbda."""
-
+    """Returns `x` transformed by the Yeo-Johnson power transform with given
+    parameter `lmbda`.
+    """
     out = np.zeros_like(x)
     pos = x >= 0  # binary mask
 
@@ -1480,8 +1479,7 @@ def yeojohnson_llf(lmb, data):
 
 
 def yeojohnson_normmax(x, brack=(-2, 2)):
-    """
-    Compute optimal Yeo-Johnson transform parameter.
+    """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
     maximum likelihood estimation.
@@ -1527,7 +1525,6 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     >>> plt.show()
 
     """
-
     def _neg_llf(lmbda, data):
         return -yeojohnson_llf(lmbda, data)
 
@@ -1606,9 +1603,9 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
+
 def shapiro(x):
-    """
-    Perform the Shapiro-Wilk test for normality.
+    """Perform the Shapiro-Wilk test for normality.
 
     The Shapiro-Wilk test tests the null hypothesis that the
     data was drawn from a normal distribution.
@@ -1703,8 +1700,7 @@ AndersonResult = namedtuple('AndersonResult', ('statistic',
 
 
 def anderson(x, dist='norm'):
-    """
-    Anderson-Darling test for data coming from a particular distribution.
+    """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
@@ -1831,8 +1827,7 @@ def anderson(x, dist='norm'):
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
-    """
-    Compute A2akN equation 7 of Scholz and Stephens.
+    """Compute A2akN equation 7 of Scholz and Stephens.
 
     Parameters
     ----------
@@ -1853,8 +1848,8 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     -------
     A2aKN : float
         The A2aKN statistics of Scholz and Stephens 1987.
-    """
 
+    """
     A2akN = 0.
     Z_ssorted_left = Z.searchsorted(Zstar, 'left')
     if N == Zstar.size:
@@ -1875,8 +1870,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
 
 def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
-    """
-    Compute A2akN equation 6 of Scholz & Stephens.
+    """Compute A2akN equation 6 of Scholz & Stephens.
 
     Parameters
     ----------
@@ -1897,8 +1891,8 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     -------
     A2KN : float
         The A2KN statistics of Scholz and Stephens 1987.
-    """
 
+    """
     A2kN = 0.
     lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
                                                               'left')
@@ -2079,8 +2073,7 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
 def ansari(x, y):
-    """
-    Perform the Ansari-Bradley test for equal scale parameters.
+    """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
     for the equality of the scale parameter of the distributions
@@ -2150,6 +2143,7 @@ def ansari(x, y):
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
     are not equal.
+
     """
     x, y = asarray(x), asarray(y)
     n = len(x)
@@ -2211,8 +2205,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 def bartlett(*args):
-    """
-    Perform Bartlett's test for equal variances.
+    """Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
@@ -2282,6 +2275,7 @@ def bartlett(*args):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     # Handle empty input and input that is not 1d
     for a in args:
@@ -2313,8 +2307,7 @@ LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
 def levene(*args, center='median', proportiontocut=0.05):
-    """
-    Perform Levene test for equal variances.
+    """Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
     are from populations with equal variances.  Levene's test is an
@@ -2385,6 +2378,7 @@ def levene(*args, center='median', proportiontocut=0.05):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -2442,8 +2436,7 @@ def levene(*args, center='median', proportiontocut=0.05):
 
 
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
-    """
-    Perform a test that the probability of success is p.
+    """Perform a test that the probability of success is p.
 
     Note: `binom_test` is deprecated; it is recommended that `binomtest`
     be used instead.
@@ -2552,8 +2545,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 def fligner(*args, center='median', proportiontocut=0.05):
-    """
-    Perform Fligner-Killeen test for equality of variance.
+    """Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
     are from populations with equal variances.  Fligner-Killeen's test is
@@ -2637,6 +2629,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
 
     >>> [np.var(x, ddof=1) for x in [a, b, c]]
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
+
     """
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
@@ -2682,8 +2675,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
 
 
 def mood(x, y, axis=0):
-    """
-    Perform Mood's test for equal scale parameters.
+    """Perform Mood's test for equal scale parameters.
 
     Mood's two-sample test for scale parameters is a non-parametric
     test for the null hypothesis that two samples are drawn from the
@@ -2811,8 +2803,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", mode='auto'):
-    """
-    Calculate the Wilcoxon signed-rank test.
+    """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
     related paired samples come from the same distribution. In particular,
@@ -3064,8 +3055,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
 def median_test(*args, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
-    """
-    Perform a Mood's median test.
+    """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
@@ -3302,8 +3292,7 @@ def _circfuncs_common(samples, high, low, nan_policy='propagate'):
 
 
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """
-    Compute the circular mean for samples in a range.
+    """Compute the circular mean for samples in a range.
 
     Parameters
     ----------
@@ -3371,8 +3360,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """
-    Compute the circular variance for samples assumed to be in a range.
+    """Compute the circular variance for samples assumed to be in a range.
 
     Parameters
     ----------

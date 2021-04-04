@@ -17,7 +17,8 @@ from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 
-from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, xlogy, ive)
+
 
 # for root finding for continuous distribution ppf, and maximum likelihood
 # estimation
@@ -28,6 +29,10 @@ from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
+
+# for scipy.stats.entropy. Attempts to import just that function or file
+# have cause import problems
+from scipy import stats
 
 from numpy import (arange, putmask, ones, shape, ndarray, zeros, floor,
                    logical_and, log, sqrt, place, argmax, vectorize, asarray,
@@ -405,9 +410,7 @@ def _skew(data):
 
 
 def _kurtosis(data):
-    """
-    kurtosis is fourth central moment / variance**2 - 3
-    """
+    """kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
@@ -558,7 +561,6 @@ def argsreduce(cond, *args):
 
     Examples
     --------
-    >>> import numpy as np
     >>> rand = np.random.random_sample
     >>> A = rand((4, 5))
     >>> B = 2
@@ -660,11 +662,14 @@ class rv_generic:
         self._random_state = check_random_state(seed)
 
         # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size' is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions have not
+        # inside _rvs().  The code is being changed so that 'size'
+        # is an argument
+        # to self._rvs(). However some external (non-SciPy) distributions
+        # have not
         # been updated.  Maintain backwards compatibility by checking if
         # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs() before calling self._rvs().
+        # and if not set self._size inside self.rvs()
+        # before calling self._rvs().
         argspec = inspect.getfullargspec(self._rvs)
         self._rvs_uses_size_attribute = (argspec.varkw is None and
                                          'size' not in argspec.args and
@@ -674,14 +679,14 @@ class rv_generic:
 
     @property
     def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
+        """Get or set the generator object for generating random variates.
 
-        This can be either None, int, a RandomState instance, or a
-        np.random.Generator instance.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState or Generator instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
         """
         return self._random_state
@@ -706,8 +711,7 @@ class rv_generic:
             self.__init__()
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created methods to the rv_* instance.
+        """Attaches dynamically created methods to the rv_* instance.
 
         This method must be overridden by subclasses, and must itself call
          _attach_argparser_methods. This method is called in __init__ in
@@ -766,7 +770,7 @@ class rv_generic:
             # are shapes.
             shapes_list = []
             for meth in meths_to_inspect:
-                shapes_args = _getfullargspec(meth)   # NB: does not contain self
+                shapes_args = _getfullargspec(meth)  # NB does not contain self
                 args = shapes_args.args[1:]       # peel off 'x', too
 
                 if args:
@@ -842,7 +846,8 @@ class rv_generic:
             try:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
-                raise Exception("Unable to construct docstring for distribution \"%s\": %s" %
+                raise Exception("Unable to construct docstring for "
+                                "distribution \"%s\": %s" %
                                 (self.name, repr(e))) from e
 
         # correct for empty shapes
@@ -970,9 +975,9 @@ class rv_generic:
 
         return param_bcast, loc_bcast, scale_bcast, size_
 
-    ## These are the methods you must define (standard form functions)
-    ## NB: generic _pdf, _logpdf, _cdf are different for
-    ## rv_continuous and rv_discrete hence are defined in there
+    # These are the methods you must define (standard form functions)
+    # NB: generic _pdf, _logpdf, _cdf are different for
+    # rv_continuous and rv_discrete hence are defined in there
     def _argcheck(self, *args):
         """Default check for correct values on args and keywords.
 
@@ -998,6 +1003,7 @@ class rv_generic:
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
+
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)
@@ -1022,7 +1028,7 @@ class rv_generic:
         # an empty tuple, which means a scalar random variate is to be
         # generated.
 
-        ## Use basic inverse cdf algorithm for RV generation as default.
+        # Use basic inverse cdf algorithm for RV generation as default.
         U = random_state.uniform(size=size)
         Y = self._ppf(U, *args)
         return Y
@@ -1047,8 +1053,7 @@ class rv_generic:
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self, *args, **kwds):
-        """
-        Random variates of given type.
+        """Random variates of given type.
 
         Parameters
         ----------
@@ -1061,13 +1066,15 @@ class rv_generic:
             Scale parameter (default=1).
         size : int or tuple of ints, optional
             Defining number of random variates (default is 1).
-        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-            If `seed` is `None` the `~np.random.RandomState` singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used, seeded
-            with seed.
-            If `seed` is already a ``RandomState`` or ``Generator`` instance,
-            then that object is used.
-            Default is None.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -1123,8 +1130,7 @@ class rv_generic:
         return vals
 
     def stats(self, *args, **kwds):
-        """
-        Some statistics of the given RV.
+        """Some statistics of the given RV.
 
         Parameters
         ----------
@@ -1237,8 +1243,7 @@ class rv_generic:
             return tuple(output)
 
     def entropy(self, *args, **kwds):
-        """
-        Differential entropy of the RV.
+        """Differential entropy of the RV.
 
         Parameters
         ----------
@@ -1273,8 +1278,7 @@ class rv_generic:
         return output
 
     def moment(self, n, *args, **kwds):
-        """
-        n-th order non-central moment of distribution.
+        """n-th order non-central moment of distribution.
 
         Parameters
         ----------
@@ -1319,8 +1323,7 @@ class rv_generic:
             return result * loc**n
 
     def median(self, *args, **kwds):
-        """
-        Median of the distribution.
+        """Median of the distribution.
 
         Parameters
         ----------
@@ -1346,8 +1349,7 @@ class rv_generic:
         return self.ppf(0.5, *args, **kwds)
 
     def mean(self, *args, **kwds):
-        """
-        Mean of the distribution.
+        """Mean of the distribution.
 
         Parameters
         ----------
@@ -1372,8 +1374,7 @@ class rv_generic:
         return res
 
     def var(self, *args, **kwds):
-        """
-        Variance of the distribution.
+        """Variance of the distribution.
 
         Parameters
         ----------
@@ -1398,8 +1399,7 @@ class rv_generic:
         return res
 
     def std(self, *args, **kwds):
-        """
-        Standard deviation of the distribution.
+        """Standard deviation of the distribution.
 
         Parameters
         ----------
@@ -1422,8 +1422,7 @@ class rv_generic:
         return res
 
     def interval(self, alpha, *args, **kwds):
-        """
-        Confidence interval with equal areas around the median.
+        """Confidence interval with equal areas around the median.
 
         Parameters
         ----------
@@ -1455,8 +1454,7 @@ class rv_generic:
         return a, b
 
     def support(self, *args, **kwargs):
-        """
-        Return the support of the distribution.
+        """Support of the distribution.
 
         Parameters
         ----------
@@ -1506,18 +1504,18 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
-##  continuous random variables: implement maybe later
-##
-##  hf  --- Hazard Function (PDF / SF)
-##  chf  --- Cumulative hazard function (-log(SF))
-##  psf --- Probability sparsity function (reciprocal of the pdf) in
-##                units of percent-point-function (as a function of q).
-##                Also, the derivative of the percent-point function.
+#  continuous random variables: implement maybe later
+#
+#  hf  --- Hazard Function (PDF / SF)
+#  chf  --- Cumulative hazard function (-log(SF))
+#  psf --- Probability sparsity function (reciprocal of the pdf) in
+#                units of percent-point-function (as a function of q).
+#                Also, the derivative of the percent-point function.
+
 
 
 class rv_continuous(rv_generic):
-    """
-    A generic continuous random variable class meant for subclassing.
+    """A generic continuous random variable class meant for subclassing.
 
     `rv_continuous` is a base class to construct specific distribution classes
     and instances for continuous random variables. It cannot be used
@@ -1556,14 +1554,15 @@ class rv_continuous(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        This parameter defines the object to use for drawing random variates.
-        If `seed` is `None` the `~np.random.RandomState` singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance,
-        then that object is used.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Methods
     -------
@@ -1774,7 +1773,7 @@ class rv_continuous(rv_generic):
 
     def _attach_methods(self):
         """
-        Attaches dynamically created methods to the rv_continuous instance
+        Attaches dynamically created methods to the rv_continuous instance.
         """
         # _attach_methods is responsible for calling _attach_argparser_methods
         self._attach_argparser_methods()
@@ -1795,10 +1794,10 @@ class rv_continuous(rv_generic):
         self.generic_moment.nin = self.numargs + 1
 
     def _updated_ctor_param(self):
-        """ Return the current version of _ctor_param, possibly updated by user.
+        """Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing.
-            Keep this in sync with the signature of __init__.
+        Used by freezing.
+        Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
         dct['a'] = self.a
@@ -1852,7 +1851,7 @@ class rv_continuous(rv_generic):
     def _pdf(self, x, *args):
         return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
-    ## Could also define any of these
+    # Could also define any of these
     def _logpdf(self, x, *args):
         return log(self._pdf(x, *args))
 
@@ -1863,12 +1862,11 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
-    ## in rv_generic
+    # generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    # in rv_generic
 
     def pdf(self, x, *args, **kwds):
-        """
-        Probability density function at x of the given RV.
+        """Probability density function at x of the given RV.
 
         Parameters
         ----------
@@ -1907,8 +1905,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logpdf(self, x, *args, **kwds):
-        """
-        Log of the probability density function at x of the given RV.
+        """Log of the probability density function at x of the given RV.
 
         This uses a more numerically accurate calculation if available.
 
@@ -1992,8 +1989,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logcdf(self, x, *args, **kwds):
-        """
-        Log of the cumulative distribution function at x of the given RV.
+        """Log of the cumulative distribution function at x of the given RV.
 
         Parameters
         ----------
@@ -2035,8 +2031,7 @@ class rv_continuous(rv_generic):
         return output
 
     def sf(self, x, *args, **kwds):
-        """
-        Survival function (1 - `cdf`) at x of the given RV.
+        """Survival function (1 - `cdf`) at x of the given RV.
 
         Parameters
         ----------
@@ -2077,8 +2072,7 @@ class rv_continuous(rv_generic):
         return output
 
     def logsf(self, x, *args, **kwds):
-        """
-        Log of the survival function of the given RV.
+        """Log of the survival function of the given RV.
 
         Returns the log of the "survival function," defined as (1 - `cdf`),
         evaluated at `x`.
@@ -2123,8 +2117,7 @@ class rv_continuous(rv_generic):
         return output
 
     def ppf(self, q, *args, **kwds):
-        """
-        Percent point function (inverse of `cdf`) at q of the given RV.
+        """Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2169,8 +2162,7 @@ class rv_continuous(rv_generic):
         return output
 
     def isf(self, q, *args, **kwds):
-        """
-        Inverse survival function (inverse of `sf`) at q of the given RV.
+        """Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2227,13 +2219,13 @@ class rv_continuous(rv_generic):
         return loc, scale, args
 
     def nnlf(self, theta, x):
-        '''Return negative loglikelihood function.
+        """Negative loglikelihood function.
 
         Notes
         -----
         This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
         parameters (including loc and scale).
-        '''
+        """
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
@@ -2280,10 +2272,11 @@ class rv_continuous(rv_generic):
         return -total + n_bad * _LOGXMAX * 100
 
     def _penalized_nnlf(self, theta, x):
-        ''' Return penalized negative loglikelihood function,
+        """Penalized negative loglikelihood function.
+
         i.e., - sum (log pdf(x, theta), axis=0) + penalty
-           where theta are the parameters (including loc and scale)
-        '''
+        where theta are the parameters (including loc and scale)
+        """
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
@@ -2296,8 +2289,8 @@ class rv_continuous(rv_generic):
 
         return self._nnlf_and_penalty(x, args) + n_log_scale
 
-    # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
+        """Starting point for fit (shape arguments + loc + scale)."""
         if args is None:
             args = (1.0,)*self.numargs
         loc, scale = self._fit_loc_scale_support(data, *args)
@@ -2587,8 +2580,7 @@ class rv_continuous(rv_generic):
         return vals
 
     def _fit_loc_scale_support(self, data, *args):
-        """
-        Estimate loc and scale parameters from data accounting for support.
+        """Estimate loc and scale parameters from data accounting for support.
 
         Parameters
         ----------
@@ -2913,79 +2905,12 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
             return c
 
 
-def entropy(pk, qk=None, base=None, axis=0):
-    """Calculate the entropy of a distribution for given probability values.
-
-    If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=axis)``.
-
-    If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=axis)``.
-
-    This routine will normalize `pk` and `qk` if they don't sum to 1.
-
-    Parameters
-    ----------
-    pk : sequence
-        Defines the (discrete) distribution. ``pk[i]`` is the (possibly
-        unnormalized) probability of event ``i``.
-    qk : sequence, optional
-        Sequence against which the relative entropy is computed. Should be in
-        the same format as `pk`.
-    base : float, optional
-        The logarithmic base to use, defaults to ``e`` (natural logarithm).
-    axis: int, optional
-        The axis along which the entropy is calculated. Default is 0.
-
-    Returns
-    -------
-    S : float
-        The calculated entropy.
-
-    Examples
-    --------
-
-    >>> from scipy.stats import entropy
-
-    Bernoulli trial with different p.
-    The outcome of a fair coin is the most uncertain:
-
-    >>> entropy([1/2, 1/2], base=2)
-    1.0
-
-    The outcome of a biased coin is less uncertain:
-
-    >>> entropy([9/10, 1/10], base=2)
-    0.46899559358928117
-
-    Relative entropy:
-
-    >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
-    0.5108256237659907
-
-    """
-    pk = asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
-    if qk is None:
-        vec = entr(pk)
-    else:
-        qk = asarray(qk)
-        if qk.shape != pk.shape:
-            raise ValueError("qk and pk must have same shape.")
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
-        vec = rel_entr(pk, qk)
-    S = np.sum(vec, axis=axis)
-    if base is not None:
-        S /= log(base)
-    return S
-
-
 # Must over-ride one of _pmf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
 
+
 class rv_discrete(rv_generic):
-    """
-    A generic discrete random variable class meant for subclassing.
+    """A generic discrete random variable class meant for subclassing.
 
     `rv_discrete` is a base class to construct specific distribution classes
     and instances for discrete random variables. It can also be used
@@ -3027,14 +2952,15 @@ class rv_discrete(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        This parameter defines the object to use for drawing random variates.
-        If `seed` is `None` the `~np.random.RandomState` singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance,
-        then that object is used.
-        Default is None.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Methods
     -------
@@ -3059,10 +2985,8 @@ class rv_discrete(rv_generic):
     __call__
     support
 
-
     Notes
     -----
-
     This class is similar to `rv_continuous`. Whether a shape parameter is
     valid is decided by an ``_argcheck`` method (which defaults to checking
     that its arguments are strictly positive.)
@@ -3100,7 +3024,6 @@ class rv_discrete(rv_generic):
 
     Examples
     --------
-
     Custom made discrete distribution:
 
     >>> from scipy import stats
@@ -3170,9 +3093,7 @@ class rv_discrete(rv_generic):
         return dct
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created methods to the rv_discrete instance
-        """
+        """Attaches dynamically created methods to the rv_discrete instance."""
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.vecentropy = vectorize(self._entropy)
 
@@ -3224,10 +3145,10 @@ class rv_discrete(rv_generic):
                 'optional\n        scale parameter (default=1)', '')
 
     def _updated_ctor_param(self):
-        """ Return the current version of _ctor_param, possibly updated by user.
+        """Return the current version of _ctor_param, possibly updated by user.
 
-            Used by freezing.
-            Keep this in sync with the signature of __init__.
+        Used by freezing.
+        Keep this in sync with the signature of __init__.
         """
         dct = self._ctor_param.copy()
         dct['a'] = self.a
@@ -3261,8 +3182,7 @@ class rv_discrete(rv_generic):
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
 
     def rvs(self, *args, **kwargs):
-        """
-        Random variates of given type.
+        """Random variates of given type.
 
         Parameters
         ----------
@@ -3272,18 +3192,17 @@ class rv_discrete(rv_generic):
         loc : array_like, optional
             Location parameter (default=0).
         size : int or tuple of ints, optional
-            Defining number of random variates (Default is 1).  Note that `size`
+            Defining number of random variates (Default is 1). Note that `size`
             has to be given as keyword, not as positional argument.
-        random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-            This parameter defines the object to use for drawing random
-            variates.
-            If `random_state` is `None` the `~np.random.RandomState` singleton
-            is used.
-            If `random_state` is an int, a new ``RandomState`` instance is used,
-            seeded with random_state.
-            If `random_state` is already a ``RandomState`` or ``Generator``
-            instance, then that object is used.
-            Default is None.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -3295,8 +3214,7 @@ class rv_discrete(rv_generic):
         return super(rv_discrete, self).rvs(*args, **kwargs)
 
     def pmf(self, k, *args, **kwds):
-        """
-        Probability mass function at k of the given RV.
+        """Probability mass function at k of the given RV.
 
         Parameters
         ----------
@@ -3332,8 +3250,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logpmf(self, k, *args, **kwds):
-        """
-        Log of the probability mass function at k of the given RV.
+        """Log of the probability mass function at k of the given RV.
 
         Parameters
         ----------
@@ -3370,8 +3287,7 @@ class rv_discrete(rv_generic):
         return output
 
     def cdf(self, k, *args, **kwds):
-        """
-        Cumulative distribution function of the given RV.
+        """Cumulative distribution function of the given RV.
 
         Parameters
         ----------
@@ -3410,8 +3326,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logcdf(self, k, *args, **kwds):
-        """
-        Log of the cumulative distribution function at k of the given RV.
+        """Log of the cumulative distribution function at k of the given RV.
 
         Parameters
         ----------
@@ -3451,8 +3366,7 @@ class rv_discrete(rv_generic):
         return output
 
     def sf(self, k, *args, **kwds):
-        """
-        Survival function (1 - `cdf`) at k of the given RV.
+        """Survival function (1 - `cdf`) at k of the given RV.
 
         Parameters
         ----------
@@ -3490,8 +3404,7 @@ class rv_discrete(rv_generic):
         return output
 
     def logsf(self, k, *args, **kwds):
-        """
-        Log of the survival function of the given RV.
+        """Log of the survival function of the given RV.
 
         Returns the log of the "survival function," defined as 1 - `cdf`,
         evaluated at `k`.
@@ -3533,8 +3446,7 @@ class rv_discrete(rv_generic):
         return output
 
     def ppf(self, q, *args, **kwds):
-        """
-        Percent point function (inverse of `cdf`) at q of the given RV.
+        """Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -3574,8 +3486,7 @@ class rv_discrete(rv_generic):
         return output
 
     def isf(self, q, *args, **kwds):
-        """
-        Inverse survival function (inverse of `sf`) at q of the given RV.
+        """Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
@@ -3621,7 +3532,7 @@ class rv_discrete(rv_generic):
 
     def _entropy(self, *args):
         if hasattr(self, 'pk'):
-            return entropy(self.pk)
+            return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
             return _expect(lambda x: entr(self.pmf(x, *args)),
@@ -3669,12 +3580,14 @@ class rv_discrete(rv_generic):
 
         Notes
         -----
-        For heavy-tailed distributions, the expected value may or may not exist,
-        depending on the function, `func`. If it does exist, but the sum converges
+        For heavy-tailed distributions, the expected value may or
+        may not exist,
+        depending on the function, `func`. If it does exist, but the
+        sum converges
         slowly, the accuracy of the result may be rather low. For instance, for
         ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
-        increasing `maxcount` and/or `chunksize` may improve the result, but may
-        also make zipf very slow.
+        increasing `maxcount` and/or `chunksize` may improve the result,
+        but may also make zipf very slow.
 
         The function is not vectorized.
 
@@ -3718,7 +3631,6 @@ class rv_discrete(rv_generic):
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             chunksize=32):
     """Helper for computing the expectation value of `fun`."""
-
     # short-circuit if the support size is small enough
     if (ub - lb) <= chunksize:
         supp = np.arange(lb, ub+1, inc)
@@ -3795,7 +3707,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
 class rv_sample(rv_discrete):
     """A 'sample' discrete distribution defined by the support and values.
 
-       The ctor ignores most of the arguments, only needs the `values` argument.
+    The ctor ignores most of the arguments, only needs the `values` argument.
     """
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
@@ -3859,9 +3771,7 @@ class rv_sample(rv_discrete):
         return dct
 
     def _attach_methods(self):
-        """
-        Attaches dynamically created argparser methods.
-        """
+        """Attaches dynamically created argparser methods."""
         self._attach_argparser_methods()
 
     def _get_support(self, *args):
@@ -3905,7 +3815,7 @@ class rv_sample(rv_discrete):
         return Y
 
     def _entropy(self):
-        return entropy(self.pk)
+        return stats.entropy(self.pk)
 
     def generic_moment(self, n):
         n = asarray(n)
@@ -3957,8 +3867,7 @@ def _check_shape(argshape, size):
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
-    """
-    Collect names of statistical distributions and their generators.
+    """Collect names of statistical distributions and their generators.
 
     Parameters
     ----------

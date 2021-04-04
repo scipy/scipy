@@ -380,6 +380,7 @@ autosummary_generate = glob.glob("*.rst")
 autodoc_default_options = {
     'inherited-members': None,
 }
+autodoc_typehints = 'none'
 
 # -----------------------------------------------------------------------------
 # Coverage checker

@@ -240,6 +240,7 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   differential_entropy
    median_absolute_deviation
    median_abs_deviation
 
@@ -457,6 +458,8 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
+from ._entropy import *
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
