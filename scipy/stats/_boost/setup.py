@@ -7,9 +7,10 @@ def pre_build_hook(build_ext, ext):
     if std_flag is not None:
         ext.extra_compile_args.append(std_flag)
 
+
 def configuration(parent_package='', top_path=None):
     from scipy._lib._boost_utils import _boost_dir
-    from _info import _klass_mapper
+    from scipy.stats._boost._info import _klass_mapper
     from numpy.distutils.misc_util import Configuration
     import numpy as np
     config = Configuration('_boost', parent_package, top_path)

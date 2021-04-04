@@ -34,9 +34,9 @@ def make_boost():
     copyfile(inc_dir / src, src_dir / src)
 
     # generate the PXD and PYX wrappers
-    from _boost.include.gen_func_defs_pxd import _gen_func_defs_pxd
-    from _boost.include.code_gen import _ufunc_gen
-    from _boost._info import _x_funcs, _no_x_funcs, _klass_mapper
+    from _boost.include.gen_func_defs_pxd import _gen_func_defs_pxd  # type: ignore
+    from _boost.include.code_gen import _ufunc_gen  # type: ignore
+    from _boost._info import _x_funcs, _no_x_funcs, _klass_mapper  # type: ignore
     _gen_func_defs_pxd(
         f'{src_dir}/func_defs.pxd',
         x_funcs=_x_funcs,

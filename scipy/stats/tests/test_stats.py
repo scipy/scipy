@@ -2831,7 +2831,7 @@ def test_percentileofscore():
     assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
 
-PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
+PowerDivCase = namedtuple('Case',
                           ['f_obs', 'f_exp', 'ddof', 'axis',
                            'chi2',     # Pearson's
                            'log',      # G-test (log-likelihood)
