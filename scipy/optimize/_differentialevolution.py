@@ -24,7 +24,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=(), x0=None):
+                           workers=1, constraints=(), x0=None, alpha=0.2):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -144,14 +144,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
-    updating : {'immediate', 'deferred'}, optional
+    updating : {'immediate', 'deferred', 'worst'}, optional
         If ``'immediate'``, the best solution vector is continuously updated
         within a single generation [4]_. This can lead to faster convergence as
         trial vectors can take advantage of continuous improvements in the best
         solution.
         With ``'deferred'``, the best solution vector is updated once per
-        generation. Only ``'deferred'`` is compatible with parallelization, and
-        the `workers` keyword can over-ride this option.
+        generation.
+        With ``'worst'``, only the worst solution vectors, numbering
+        ``floor(M * alpha)``, are updated per generation. This can reduce the
+        total number of function evaluations.
+
+        Only ``'deferred'`` and ``'worst'`` are compatible with
+        parallelization.
 
         .. versionadded:: 1.2.0
 
@@ -179,6 +184,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+
+        .. versionadded:: 1.7.0
+
+    alpha : float, optional
+        Specifies the fraction of the population that is updated with the
+        ``'worst'`` updating approach.
 
         .. versionadded:: 1.7.0
 
@@ -314,7 +325,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      updating=updating,
                                      workers=workers,
                                      constraints=constraints,
-                                     x0=x0) as solver:
+                                     x0=x0,
+                                     alpha=alpha) as solver:
         ret = solver.solve()
 
     return ret
@@ -438,14 +450,19 @@ class DifferentialEvolutionSolver:
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
-    updating : {'immediate', 'deferred'}, optional
-        If `immediate` the best solution vector is continuously updated within
-        a single generation. This can lead to faster convergence as trial
-        vectors can take advantage of continuous improvements in the best
+    updating : {'immediate', 'deferred', 'worst'}, optional
+        If ``'immediate'``, the best solution vector is continuously updated
+        within a single generation [4]_. This can lead to faster convergence as
+        trial vectors can take advantage of continuous improvements in the best
         solution.
-        With `deferred` the best solution vector is updated once per
-        generation. Only `deferred` is compatible with parallelization, and the
-        `workers` keyword can over-ride this option.
+        With ``'deferred'``, the best solution vector is updated once per
+        generation.
+        With ``'worst'``, only the worst solution vectors, numbering
+        ``floor(M * alpha)``, are updated per generation. This can reduce the
+        total number of function evaluations.
+
+        Only ``'deferred'`` and ``'worst'`` are compatible with
+        parallelization.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
         sections and evaluated in parallel
@@ -464,6 +481,9 @@ class DifferentialEvolutionSolver:
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+    alpha : float, optional
+        Specifies the fraction of the population that is updated with the
+        ``'worst'`` updating approach.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -489,7 +509,7 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=(), x0=None):
+                 workers=1, constraints=(), x0=None, alpha=0.2):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -503,7 +523,7 @@ class DifferentialEvolutionSolver:
         self.polish = polish
 
         # set the updating / parallelisation options
-        if updating in ['immediate', 'deferred']:
+        if updating in ['immediate', 'deferred', 'worst']:
             self._updating = updating
 
         # want to use parallelisation, but updating is immediate
@@ -624,6 +644,10 @@ class DifferentialEvolutionSolver:
 
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
+
+        # the number of population members updated if updating == 'worst'
+        self.alpha = int(np.floor(np.clip(alpha, 0, 1)
+                                  * self.num_population_members))
 
         self.disp = disp
 
@@ -1066,9 +1090,10 @@ class DifferentialEvolutionSolver:
 
         if self._updating == 'immediate':
             self._update_immediately()
-
         elif self._updating == 'deferred':
             self._update_deferred()
+        elif self._updating == 'worst':
+            self._update_worst()
 
         return self.x, self.population_energies[0]
 
@@ -1164,6 +1189,50 @@ class DifferentialEvolutionSolver:
                                              self.constraint_violation)
 
         # make sure the best solution is updated if updating='deferred'.
+        # put the lowest energy into the best solution position.
+        self._promote_lowest_energy()
+
+    def _update_worst(self):
+        # only update the worst population energies per generation
+        if self._nfev >= self.maxfun:
+            raise StopIteration
+
+        # what are the worst solutions?
+        worst_idx = self._rank()[-self.alpha:]
+
+        # create trial solutions
+        trial_pop = np.array(
+            [self._mutate(i) for i in worst_idx])
+
+        # enforce bounds
+        self._ensure_constraint(trial_pop)
+
+        # determine the energies of the objective function, but only for
+        # feasible trials
+        feasible, cv = self._calculate_population_feasibilities(trial_pop)
+        trial_energies = np.full(np.size(worst_idx), np.inf)
+
+        # only calculate for feasible entries
+        trial_energies[feasible] = self._calculate_population_energies(
+            trial_pop[feasible])
+
+        # which solutions are 'improved'?
+        improved = [self._accept_trial(*val) for val in
+                    zip(
+                        trial_energies,
+                       feasible,
+                       cv,
+                       self.population_energies[worst_idx],
+                       self.feasible[worst_idx],
+                       self.constraint_violation[worst_idx]
+                    )]
+
+        loc = worst_idx[improved]
+        self.population[loc] = trial_pop[improved]
+        self.population_energies[loc] = trial_energies[improved]
+        self.feasible[loc] = feasible[improved]
+        self.constraint_violation[loc] = cv[improved]
+
         # put the lowest energy into the best solution position.
         self._promote_lowest_energy()
 

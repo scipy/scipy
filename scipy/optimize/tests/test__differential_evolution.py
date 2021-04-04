@@ -572,33 +572,40 @@ class TestDifferentialEvolutionSolver:
         assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
-    def test_immediate_updating(self):
-        # check setting of immediate updating, with default workers
+    def test_worst_updating(self):
         bounds = [(0., 2.), (0., 2.)]
-        solver = DifferentialEvolutionSolver(rosen, bounds)
-        assert_(solver._updating == 'immediate')
+        solver = DifferentialEvolutionSolver(rosen, bounds, updating='worst')
+        assert_(solver._updating == 'worst')
+        assert_(solver._mapwrapper._mapfunc is map)
+        solver.solve()
 
-        # should raise a UserWarning because the updating='immediate'
-        # is being overridden by the workers keyword
-        with warns(UserWarning):
-            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
-                pass
-        assert_(solver._updating == 'deferred')
-
-    def test_parallel(self):
-        # smoke test for parallelization with deferred updating
-        bounds = [(0., 2.), (0., 2.)]
-        with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
-                rosen, bounds, updating='deferred', workers=p.map) as solver:
-            assert_(solver._mapwrapper.pool is not None)
-            assert_(solver._updating == 'deferred')
-            solver.solve()
-
-        with DifferentialEvolutionSolver(rosen, bounds, updating='deferred',
-                                         workers=2) as solver:
-            assert_(solver._mapwrapper.pool is not None)
-            assert_(solver._updating == 'deferred')
-            solver.solve()
+    # def test_immediate_updating(self):
+    #     # check setting of immediate updating, with default workers
+    #     bounds = [(0., 2.), (0., 2.)]
+    #     solver = DifferentialEvolutionSolver(rosen, bounds)
+    #     assert_(solver._updating == 'immediate')
+    #
+    #     # should raise a UserWarning because the updating='immediate'
+    #     # is being overridden by the workers keyword
+    #     with warns(UserWarning):
+    #         with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
+    #             pass
+    #     assert_(solver._updating == 'deferred')
+    #
+    # def test_parallel(self):
+    #     # smoke test for parallelization with deferred updating
+    #     bounds = [(0., 2.), (0., 2.)]
+    #     with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
+    #             rosen, bounds, updating='deferred', workers=p.map) as solver:
+    #         assert_(solver._mapwrapper.pool is not None)
+    #         assert_(solver._updating == 'deferred')
+    #         solver.solve()
+    #
+    #     with DifferentialEvolutionSolver(rosen, bounds, updating='deferred',
+    #                                      workers=2) as solver:
+    #         assert_(solver._mapwrapper.pool is not None)
+    #         assert_(solver._updating == 'deferred')
+    #         solver.solve()
 
     def test_converged(self):
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
@@ -1218,7 +1225,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
     def test_rank(self):
-        solver = DifferentialEvolutionSolver(rosen, [(-2, 2) * 5])
+        solver = DifferentialEvolutionSolver(rosen, [(-2, 2)] * 5)
 
         solver.num_population_members = 5
         solver.feasible = np.array([True, True, False, True, False])
