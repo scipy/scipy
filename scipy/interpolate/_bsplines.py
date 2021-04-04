@@ -609,70 +609,80 @@ def _process_deriv_spec(deriv):
 
 def _woodbury_algorithm(A, ur, ll, b, k):
     '''
-    Implementation of Woodbury algorithm applied to banded
-    matrices with two blocks in upper right and lower left
-    corners.
+    Solve a cyclic banded linear system with upper right
+    and lower blocks of size ``(k-1) / 2`` using
+    the Woodbury formula
     
     Parameters
     ----------
     A : 2-D array, shape(k, n)
         Matrix of diagonals of original matrix(see 
         ``solve_banded`` documentation).
-    ur : 2-D array, shape(bs,bs)
+    ur : 2-D array, shape(bs, bs)
         Upper right block matrix.
-    ll : 2-D array, shape(bs,bs)
+    ll : 2-D array, shape(bs, bs)
         Lower left block matrix.
     b : 1-D array, shape(n,)
-        Vector of constant terms of the SLE.
+        Vector of constant terms of the system of linear equations.
     k : int
         B-spline degree.
         
     Returns
     -------
     c : 1-D array, shape(n,)
-        Solution of the original SLE.
+        Solution of the original system of linear equations.
         
     Notes
     -----
-    SLE - system of linear equations.
-    
-    'n' should be greater than 'k', otherwise corner block
+    This algorithm works only for systems with banded matrix A plus
+    a correction term U @ V.T, where the matrix U @ V.T gives upper right
+    and lower left block of A
+    The system is solved with the following steps:
+        1.  New systems of linear equations are constructed:
+            A @ z_i = u_i,
+            u_i - columnn vector of U,
+            i = 1, ..., k - 1
+        2.  Matrix Z is formed from vectors z_i:
+            Z = [ z_1 | z_2 | ... | z_{k - 1} ]
+        3.  Matrix H = (1 + V.T @ Z)^{-1}
+        4.  The system A' @ y = b is solved
+        5.  x = y - Z @ (H @ V.T @ y)
+    Also, ``n`` should be greater than ``k``, otherwise corner block
     elements will intersect with diagonals.
 
-    Almost diagonal matrix with upper right and lower left
-    blocks is solved with the following steps: blocks are
-    represented as vectors and new systems of linear equations
-    are constructed. Left parts of systems are the same - the
-    diagonal elements of the original matrix which makes it
-    possible to use a solution for banded matrices 
-    (``solve_banded``). Then the solution for the original SLE
-    is finally computed.
+    Examples
+    --------
+    Consider the case of n = 8, k = 5 (size of blocks - 2 x 2).
+    The matrix of a system:       U:          V:
+      x  x  x  *  *  a  b         a b 0 0     0 0 1 0
+      x  x  x  x  *  *  c         0 c 0 0     0 0 0 1
+      x  x  x  x  x  *  *         0 0 0 0     0 0 0 0
+      *  x  x  x  x  x  *         0 0 0 0     0 0 0 0
+      *  *  x  x  x  x  x         0 0 0 0     0 0 0 0
+      d  *  *  x  x  x  x         0 0 d 0     1 0 0 0
+      e  f  *  *  x  x  x         0 0 e f     0 1 0 0
 
     References
     ----------
     .. [1] William H. Press, Saul A. Teukolsky, William T. Vetterling
-           and Brian P. Flannery, Numerical Recipes, 2007, 2.7.3
+           and Brian P. Flannery, Numerical Recipes, 2007, Section 2.7.3
 
     '''
-    bs = int((k-1)/2)
+    bs = int((k - 1) /2)
+
     n = A.shape[1] + 1
-
     U = np.zeros((n - 1, k - 1))
-    V = np.zeros((k - 1, n - 1))  # V transpose 
+    V = np.zeros((k - 1, n - 1)) # V transpose 
 
-    # upper right
-
+    # upper right block 
     U[:bs, :bs] = ur
-    for j in range(bs): 
-        V[j, -bs + j] = 1
+    V[np.arange(bs), np.arange(bs) - bs] = 1
 
-    # lower left
-
+    # lower left block 
     U[-bs:, -bs:] = ll
-    for j in range(bs): 
-        V[-bs + j, j] = 1
+    V[np.arange(bs) - bs, np.arange(bs)] = 1
     
-    Z = solve_banded((bs, bs), A, U[:, 0])  # z0
+    Z = solve_banded((bs, bs), A, U[:, 0]) # z0
     Z = np.expand_dims(Z, axis=0)
     
     for i in range(1, k - 1):
@@ -680,23 +690,23 @@ def _woodbury_algorithm(A, ur, ll, b, k):
         zi = np.expand_dims(zi, axis=0)
         Z = np.concatenate((Z, zi), axis=0)
 
-    H = solve(np.identity(k - 1) + V @ Z.T, np.identity(k - 1))
+    H = np.linalg.inv(np.identity(k - 1) + V @ Z.T)
 
     y = solve_banded((bs, bs), A, b)
     c = y - Z.T @ (H @ (V @ y))
 
     return c
 
-def _periodic_nodes(x,l=1,r=1):
+def _periodic_knots(x, k):
     '''
-    returns vector of nodes on a circle
-    ``max(r, l)`` assumed to be greater than ``len(x)``
+    returns vector of nodes on circle
     '''
-    dx = np.diff(x)
-    t = np.zeros(len(x) + l + r)
-    t[:l] = [x[0] - sum(dx[-i:]) for i in range(l,0,-1)]
-    t[l:-r] = x
-    t[-r:] = [x[-1] + sum(dx[:i]) for i in range(1,r+1)]
+    xc = np.copy(x)
+    dx = np.diff(xc)
+    t = np.zeros(len(xc) + 2 * k)
+    t[:k] = [xc[0] - sum(dx[-i:]) for i in range(k, 0, -1)]
+    t[k: -k] = xc
+    t[-k:] = [xc[-1] + sum(dx[:i]) for i in range(1, k + 1)]
     return t
 
 def _make_periodic_spline(x, y, t, k, axis):
@@ -967,7 +977,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                            t[1:-1],
                            (x[-1],)*(k+1)]
             elif bc_type == 'periodic':
-                t = _periodic_nodes(x, k, k)
+                t = _periodic_knots(x, k)
             else:
                 t = _not_a_knot(x, k)
         else:
