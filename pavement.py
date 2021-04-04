@@ -209,7 +209,7 @@ def compute_md5(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = md5(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
 
     return checksums
 
@@ -221,7 +221,7 @@ def compute_sha256(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = sha256(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
 
     return checksums
 

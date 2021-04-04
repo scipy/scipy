@@ -24,7 +24,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=()):
+                           workers=1, constraints=(), x0=None):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -97,13 +97,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -172,6 +174,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         kwd. Uses the approach by Lampinen [5]_.
 
         .. versionadded:: 1.4.0
+
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -304,13 +313,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
                                      workers=workers,
-                                     constraints=constraints) as solver:
+                                     constraints=constraints,
+                                     x0=x0) as solver:
         ret = solver.solve()
 
     return ret
 
 
-class DifferentialEvolutionSolver(object):
+class DifferentialEvolutionSolver:
 
     """This class implements the differential evolution solver
 
@@ -378,13 +388,15 @@ class DifferentialEvolutionSolver(object):
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with seed.
-        If `seed` is already a ``RandomState`` or a ``Generator`` instance,
-        then that object is used.
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -448,6 +460,10 @@ class DifferentialEvolutionSolver(object):
     constraints : {NonLinearConstraint, LinearConstraint, Bounds}
         Constraints on the solver, over and above those applied by the `bounds`
         kwd. Uses the approach by Lampinen.
+    x0 : None or array-like, optional
+        Provides an initial guess to the minimization. Once the population has
+        been initialized this vector replaces the first (best) member. This
+        replacement is done even if `init` is given an initial population.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -473,7 +489,7 @@ class DifferentialEvolutionSolver(object):
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=()):
+                 workers=1, constraints=(), x0=None):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -580,11 +596,17 @@ class DifferentialEvolutionSolver(object):
         else:
             self.init_population_array(init)
 
-        # infrastructure for constraints
-        # dummy parameter vector for preparing constraints, this is required so
-        # that the number of constraints is known.
-        x0 = self._scale_parameters(self.population[0])
+        if x0 is not None:
+            # scale to within unit interval and
+            # ensure parameters are within bounds.
+            x0_scaled = self._unscale_parameters(np.asarray(x0))
+            if ((x0_scaled > 1.0) | (x0_scaled < 0.0)).any():
+                raise ValueError(
+                    "Some entries in x0 lay outside the specified bounds"
+                )
+            self.population[0] = x0_scaled
 
+        # infrastructure for constraints
         self.constraints = constraints
         self._wrapped_constraints = []
 
@@ -592,9 +614,13 @@ class DifferentialEvolutionSolver(object):
             # sequence of constraints, this will also deal with default
             # keyword parameter
             for c in constraints:
-                self._wrapped_constraints.append(_ConstraintWrapper(c, x0))
+                self._wrapped_constraints.append(
+                    _ConstraintWrapper(c, self.x)
+                )
         else:
-            self._wrapped_constraints = [_ConstraintWrapper(constraints, x0)]
+            self._wrapped_constraints = [
+                _ConstraintWrapper(constraints, self.x)
+            ]
 
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
@@ -1243,7 +1269,7 @@ class DifferentialEvolutionSolver(object):
         return idxs
 
 
-class _FunctionWrapper(object):
+class _FunctionWrapper:
     """
     Object to wrap user cost function, allowing picklability
     """
@@ -1255,7 +1281,7 @@ class _FunctionWrapper(object):
         return self.f(x, *self.args)
 
 
-class _ConstraintWrapper(object):
+class _ConstraintWrapper:
     """Object to wrap/evaluate user defined constraints.
 
     Very similar in practice to `PreparedConstraint`, except that no evaluation

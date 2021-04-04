@@ -35,7 +35,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
             raise ValueError("Can't find pole " + str(p1) + " in " + str(P2))
 
 
-class TestPlacePoles(object):
+class TestPlacePoles:
 
     def _check(self, A, B, P, **kwargs):
         """
@@ -397,7 +397,7 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class TestLsim(object):
+class TestLsim:
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -482,7 +482,7 @@ class TestLsim(object):
         assert_almost_equal(y, expected_y)
 
 
-class Test_lsim2(object):
+class Test_lsim2:
 
     def test_01(self):
         t = np.linspace(0,10,1001)
@@ -557,7 +557,7 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
 
-class _TestImpulseFuncs(object):
+class _TestImpulseFuncs:
     # Common tests for impulse/impulse2 (= self.func)
 
     def test_01(self):
@@ -640,7 +640,7 @@ class TestImpulse(_TestImpulseFuncs):
         self.func = impulse
 
 
-class _TestStepFuncs(object):
+class _TestStepFuncs:
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
@@ -735,7 +735,7 @@ class TestStep(_TestStepFuncs):
         step(([], [-1], 1+0j))
 
 
-class TestLti(object):
+class TestLti:
     def test_lti_instantiation(self):
         # Test that lti can be instantiated with sequences, scalars.
         # See PR-225.
@@ -763,7 +763,7 @@ class TestLti(object):
         assert_(s.dt is None)
 
 
-class TestStateSpace(object):
+class TestStateSpace:
     def test_initialization(self):
         # Check that all initializations work
         StateSpace(1, 1, 1, 1)
@@ -795,7 +795,7 @@ class TestStateSpace(object):
     def test_operators(self):
         # Test +/-/* operators on systems
 
-        class BadType(object):
+        class BadType:
             pass
 
         s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
@@ -920,7 +920,7 @@ class TestStateSpace(object):
         s = -s_discrete
         assert_(s.dt == 0.1)
 
-class TestTransferFunction(object):
+class TestTransferFunction:
     def test_initialization(self):
         # Check that all initializations work
         TransferFunction(1, 1)
@@ -948,7 +948,7 @@ class TestTransferFunction(object):
         assert_equal(s.zeros, [0])
 
 
-class TestZerosPolesGain(object):
+class TestZerosPolesGain:
     def test_initialization(self):
         # Check that all initializations work
         ZerosPolesGain(1, 1, 1)
@@ -967,7 +967,7 @@ class TestZerosPolesGain(object):
         assert_(s.to_zpk() is not s)
 
 
-class Test_abcd_normalize(object):
+class Test_abcd_normalize:
     def setup_method(self):
         self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.B = np.array([[-1.0], [5.0]])
@@ -1101,7 +1101,7 @@ class Test_abcd_normalize(object):
         assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
 
 
-class Test_bode(object):
+class Test_bode:
 
     def test_01(self):
         # Test bode() magnitude calculation (manual sanity check).
@@ -1201,7 +1201,7 @@ class Test_bode(object):
         assert_almost_equal(mag, expected_magnitude)
 
 
-class Test_freqresp(object):
+class Test_freqresp:
 
     def test_output_manual(self):
         # Test freqresp() output calculation (manual sanity check).

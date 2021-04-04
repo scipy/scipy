@@ -336,7 +336,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     Cross-correlation of a signal with its time-delayed self.
 
     >>> from scipy import signal
-    >>> rng = np.random.RandomState(0)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -1499,11 +1500,16 @@ def medfilt(volume, kernel_size=None):
     See Also
     --------
     scipy.ndimage.median_filter
+    scipy.signal.medfilt2d
 
     Notes
-    -------
+    -----
     The more general function `scipy.ndimage.median_filter` has a more
     efficient implementation of a median filter and therefore runs much faster.
+
+    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
+    the specialised function `scipy.signal.medfilt2d` may be faster.
+
     """
     volume = np.atleast_1d(volume)
     if kernel_size is None:
@@ -1519,7 +1525,7 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.')
 
-    domain = np.ones(kernel_size)
+    domain = np.ones(kernel_size, dtype=volume.dtype)
 
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
@@ -1821,11 +1827,21 @@ def medfilt2d(input, kernel_size=3):
     scipy.ndimage.median_filter
 
     Notes
-    -------
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
+    -----
+    This is faster than `medfilt` when the input dtype is ``uint8``,
+    ``float32``, or ``float64``; for other types, this falls back to
+    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
+    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    faster than this function.
+
     """
     image = np.asarray(input)
+
+    # checking dtype.type, rather than just dtype, is necessary for
+    # excluding np.longdouble with MS Visual C.
+    if image.dtype.type not in (np.ubyte, np.single, np.double):
+        return medfilt(image, kernel_size)
+
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = np.asarray(kernel_size)
@@ -2201,7 +2217,7 @@ def hilbert(x, N=None, axis=-1):
     original signal from ``np.real(hilbert(x))``.
 
     Examples
-    ---------
+    --------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
@@ -3413,12 +3429,13 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     Examples
     --------
     >>> from scipy import signal
-    >>> randgen = np.random.RandomState(9)
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
     >>> npoints = 1000
-    >>> noise = randgen.randn(npoints)
+    >>> noise = rng.standard_normal(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max() < 0.01
-    True
+    >>> (signal.detrend(x) - noise).max()
+    0.06  # random
 
     """
     if type not in ['linear', 'l', 'constant', 'c']:
@@ -3428,7 +3445,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
-        ret = data - np.expand_dims(np.mean(data, axis), axis)
+        ret = data - np.mean(data, axis, keepdims=True)
         return ret
     else:
         dshape = data.shape

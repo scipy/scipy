@@ -17,8 +17,8 @@ import numpy as np
 
 import scipy.linalg
 from scipy.stats._multivariate import (_PSD,
-                                       _lnB, 
-                                       _cho_inv_batch, 
+                                       _lnB,
+                                       _cho_inv_batch,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
@@ -35,7 +35,7 @@ from .common_tests import check_random_state_property
 from unittest.mock import patch
 
 
-class TestMultivariateNormal(object):
+class TestMultivariateNormal:
     def test_input_shape(self):
         mu = np.arange(3)
         cov = np.identity(2)
@@ -454,7 +454,7 @@ class TestMultivariateNormal(object):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
-class TestMatrixNormal(object):
+class TestMatrixNormal:
 
     def test_bad_input(self):
         # Check that bad inputs raise errors
@@ -630,7 +630,7 @@ class TestMatrixNormal(object):
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
-class TestDirichlet(object):
+class TestDirichlet:
 
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
@@ -842,7 +842,7 @@ def test_multivariate_normal_dimensions_mismatch():
         assert_equal(str(e)[:len(msg)], msg)
 
 
-class TestWishart(object):
+class TestWishart:
     def test_scale_dimensions(self):
         # Test that we can call the Wishart with various scale dimensions
 
@@ -875,8 +875,12 @@ class TestWishart(object):
             assert_equal(w.scale, true_scale)
             assert_equal(w.scale.shape, true_scale.shape)
 
-        # We cannot call with a df < dim
+        # We cannot call with a df < dim - 1
         assert_raises(ValueError, wishart, 1, np.eye(2))
+
+        # But we can call with dim - 1 < df < dim
+        wishart(1.1, np.eye(2))  # no error
+        # see gh-5562
 
         # We cannot call with a 3-dimension array
         scale = np.array(1, ndmin=3)
@@ -1029,7 +1033,7 @@ class TestWishart(object):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
-class TestMultinomial(object):
+class TestMultinomial:
     def test_logpmf(self):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
@@ -1174,7 +1178,7 @@ class TestMultinomial(object):
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
-class TestInvwishart(object):
+class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
         # answers
@@ -1338,7 +1342,7 @@ class TestInvwishart(object):
         assert_allclose(prob, expected)
 
 
-class TestSpecialOrthoGroup(object):
+class TestSpecialOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
@@ -1407,7 +1411,7 @@ class TestSpecialOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
-class TestOrthoGroup(object):
+class TestOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(515)
         x = ortho_group.rvs(3)
@@ -1500,7 +1504,7 @@ class TestOrthoGroup(object):
 
             assert_array_less(.05, p)
 
-class TestRandomCorrelation(object):
+class TestRandomCorrelation:
     def test_reproducibility(self):
         np.random.seed(514)
         eigs = (.5, .8, 1.2, 1.5)
@@ -1591,7 +1595,7 @@ class TestRandomCorrelation(object):
         assert_allclose(m[0,0], 1)
 
 
-class TestUnitaryGroup(object):
+class TestUnitaryGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = unitary_group.rvs(3)
@@ -1758,7 +1762,7 @@ class TestMultivariateT:
         assert mock.call_count == 2
 
     def test_shape_correctness(self):
-        # pdf and logpdf should return scalar when the 
+        # pdf and logpdf should return scalar when the
         # number of samples in x is one.
         dim = 4
         loc = np.zeros(dim)
@@ -1770,7 +1774,7 @@ class TestMultivariateT:
         res = multivariate_t(loc, shape, df).logpdf(x)
         assert np.isscalar(res)
 
-        # pdf() and logpdf() should return probabilities of shape 
+        # pdf() and logpdf() should return probabilities of shape
         # (n_samples,) when x has n_samples.
         n_samples = 7
         x = np.random.random((n_samples, dim))
@@ -1783,7 +1787,7 @@ class TestMultivariateT:
         res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs()
         assert np.isscalar(res)
 
-        # rvs() should return vector of shape (size,) if size argument 
+        # rvs() should return vector of shape (size,) if size argument
         # is applied.
         size = 7
         res = multivariate_t(np.zeros(1), np.eye(1), 1).rvs(size=size)

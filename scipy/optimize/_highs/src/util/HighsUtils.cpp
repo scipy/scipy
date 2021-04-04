@@ -501,6 +501,9 @@ bool initialiseValueDistribution(const std::string distribution_name,
                                  const double max_value_limit,
                                  const double base_value_limit,
                                  HighsValueDistribution& value_distribution) {
+  assert(min_value_limit > 0);
+  assert(max_value_limit > 0);
+  assert(base_value_limit > 1);
   value_distribution.distribution_name_ = distribution_name;
   value_distribution.value_name_ = value_name;
   if (min_value_limit <= 0) return false;

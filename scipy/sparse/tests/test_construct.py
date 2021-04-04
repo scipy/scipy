@@ -26,7 +26,7 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(object):
+class TestConstructUtils:
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],

@@ -50,7 +50,7 @@ from scipy.sparse.sputils import isshape, isintlike, asmatrix, is_pydata_spmatri
 __all__ = ['LinearOperator', 'aslinearoperator']
 
 
-class LinearOperator(object):
+class LinearOperator:
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the

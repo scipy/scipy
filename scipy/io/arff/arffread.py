@@ -63,7 +63,7 @@ class ParseArffError(ArffError):
 # ----------
 # Attributes
 # ----------
-class Attribute(object):
+class Attribute:
 
     type_name = None
 
@@ -651,7 +651,7 @@ def read_header(ofile):
     return relation, attributes
 
 
-class MetaData(object):
+class MetaData:
     """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
