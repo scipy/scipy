@@ -406,6 +406,11 @@ class TestCorrPearsonr:
         x = [1]
         y = [2]
         assert_raises(ValueError, stats.pearsonr, x, y)
+        
+    def test_pearsonr_result_attributes(self):
+        res = stats.pearsonr(X, X)
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes)
 
 
 class TestFisherExact:
