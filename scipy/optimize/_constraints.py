@@ -166,7 +166,7 @@ class Bounds:
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
