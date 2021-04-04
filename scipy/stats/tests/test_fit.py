@@ -41,6 +41,7 @@ mle_use_floc0 = [
     'pearson3',
     'genhalflogistic',
     'rdist',
+    'pareto',
     'powerlognorm',
     'wrapcauchy',
 ]
