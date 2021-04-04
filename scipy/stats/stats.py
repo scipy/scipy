@@ -4061,10 +4061,10 @@ def pearsonr(x, y):
 
     Returns
     -------
-    r : float
-        Pearson's correlation coefficient.
-    p-value : float
-        Two-tailed p-value.
+    correlation : float
+       Pearson's correlation coefficient.
+    pvalue : float
+       Two-tailed p-value.
 
     Warns
     -----
