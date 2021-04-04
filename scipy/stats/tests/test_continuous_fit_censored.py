@@ -4,9 +4,10 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from scipy.optimize import fmin
-from scipy.stats import (CensoredData, beta, expon, gamma, gumbel_l, gumbel_r,
-                         invgauss, invweibull, laplace, logistic, lognorm, nct,
-                         norm, weibull_max, weibull_min)
+from scipy.stats import (CensoredData, beta, cauchy, chi2, expon, gamma,
+                         gumbel_l, gumbel_r, invgauss, invweibull, laplace,
+                         logistic, lognorm, nct, ncx2, norm, weibull_max,
+                         weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -45,6 +46,84 @@ def test_beta():
 
     assert_allclose(a, 1.419941, rtol=5e-6)
     assert_allclose(b, 1.027066, rtol=5e-6)
+    assert loc == 0
+    assert scale == 1
+
+
+def test_cauchy_right_censored():
+    """
+    Test fitting the Cauchy distribution to right-censored data.
+
+    Calculation in R, with two values not censored [1, 10] and
+    one right-censored value [30].
+
+    > library(fitdistrplus)
+    > data <- data.frame(left=c(1, 10, 30), right=c(1, 10, NA))
+    > result = fitdistcens(data, 'cauchy', control=list(reltol=1e-14))
+    > result
+    Fitting of the distribution ' cauchy ' on censored data by maximum
+    likelihood
+    Parameters:
+             estimate
+    location 7.100001
+    scale    7.455866
+    """
+    data = CensoredData(x=[1, 10], right=[30])
+    loc, scale = cauchy.fit(data, optimizer=optimizer)
+    assert_allclose(loc, 7.10001, rtol=5e-6)
+    assert_allclose(scale, 7.455866, rtol=5e-6)
+
+
+def test_cauchy_mixed():
+    """
+    Test fitting the Cauchy distribution to data with mixed censoring.
+
+    Calculation in R, with:
+    * two values not censored [1, 10],
+    * one left-censored [1],
+    * one right-censored [30], and
+    * one interval-censored [[4, 8]].
+
+    > library(fitdistrplus)
+    > data <- data.frame(left=c(NA, 1, 4, 10, 30), right=c(1, 1, 8, 10, NA))
+    > result = fitdistcens(data, 'cauchy', control=list(reltol=1e-14))
+    > result
+    Fitting of the distribution ' cauchy ' on censored data by maximum
+    likelihood
+    Parameters:
+             estimate
+    location 4.605150
+    scale    5.900852
+    """
+    data = CensoredData(x=[1, 10], left=[1], right=[30], intervals=[[4, 8]])
+    loc, scale = cauchy.fit(data, optimizer=optimizer)
+    assert_allclose(loc, 4.605150, rtol=5e-6)
+    assert_allclose(scale, 5.900852, rtol=5e-6)
+
+
+def test_chi2_mixed():
+    """
+    Test fitting just the shape parameter (df) of chi2 to mixed data.
+
+    Calculation in R, with:
+    * two values not censored [1, 10],
+    * one left-censored [1],
+    * one right-censored [30], and
+    * one interval-censored [[4, 8]].
+
+    > library(fitdistrplus)
+    > data <- data.frame(left=c(NA, 1, 4, 10, 30), right=c(1, 1, 8, 10, NA))
+    > result = fitdistcens(data, 'chisq', control=list(reltol=1e-14))
+    > result
+    Fitting of the distribution ' chisq ' on censored data by maximum
+    likelihood
+    Parameters:
+             estimate
+    df 5.060329
+    """
+    data = CensoredData(x=[1, 10], left=[1], right=[30], intervals=[[4, 8]])
+    df, loc, scale = chi2.fit(data, floc=0, fscale=1, optimizer=optimizer)
+    assert_allclose(df, 5.060329, rtol=5e-6)
     assert loc == 0
     assert scale == 1
 
@@ -449,6 +528,38 @@ def test_nct():
     df, nc, loc, scale = nct.fit(data, floc=0, fscale=1, optimizer=optimizer)
     assert_allclose(df, 0.5432336, rtol=5e-6)
     assert_allclose(nc, 2.8893565, rtol=5e-6)
+    assert loc == 0
+    assert scale == 1
+
+
+def test_ncx2():
+    """
+    Test fitting the shape parameters (df, ncp) of ncx2 to mixed data.
+
+    Calculation in R, with
+    * 5 not censored values [2.7, 0.2, 6.5, 0.4, 0.1],
+    * 1 interval-censored value [[0.6, 1.0]], and
+    * 2 right-censored values [8, 8].
+
+    > library(fitdistrplus)
+    > data <- data.frame(left=c(2.7, 0.2, 6.5, 0.4, 0.1, 0.6, 8, 8),
+    +                    right=c(2.7, 0.2, 6.5, 0.4, 0.1, 1.0, NA, NA))
+    > result = fitdistcens(data, 'chisq', control=list(reltol=1e-14),
+    +                      start=list(df=1, ncp=2))
+    > result
+    Fitting of the distribution ' chisq ' on censored data by maximum
+    likelihood
+    Parameters:
+        estimate
+    df  1.052871
+    ncp 2.362934
+    """
+    data = CensoredData(x=[2.7, 0.2, 6.5, 0.4, 0.1], right=[8, 8],
+                        intervals=[[0.6, 1.0]])
+    df, ncp, loc, scale = ncx2.fit(data, floc=0, fscale=1,
+                                   optimizer=optimizer)
+    assert_allclose(df, 1.052871, rtol=5e-6)
+    assert_allclose(ncp, 2.362934, rtol=5e-6)
     assert loc == 0
     assert scale == 1
 
