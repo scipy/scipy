@@ -1216,3 +1216,13 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(np.array(c1(res.x)) <= 0.001))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_rank(self):
+        solver = DifferentialEvolutionSolver(rosen, [(-2, 2) * 5])
+
+        solver.num_population_members = 5
+        solver.feasible = np.array([True, True, False, True, False])
+        solver.population_energies = np.array([-2.0, -3.0, 100.0, 10.0, 50.0])
+        solver.constraint_violation = np.array([[0.0, 0.0, 50.0, 0.0,  0.0],
+                                         [0.0, 0.0,  0.0, 0.0, 25.0]]).T
+        assert_equal(solver._rank(), [1, 0, 3, 4, 2])

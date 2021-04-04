@@ -1167,6 +1167,26 @@ class DifferentialEvolutionSolver:
         # put the lowest energy into the best solution position.
         self._promote_lowest_energy()
 
+    def _rank(self):
+        # rank population members in order of fitness
+        M = self.num_population_members
+
+        # first get vectors that are feasible and sort by energy
+        feasible_members = np.arange(M)[self.feasible]
+        feasible_energies = self.population_energies[feasible_members]
+        idx = np.argsort(feasible_energies)
+        feasible_rank = feasible_members[idx]
+
+        # now sort infeasible by extent of constraint violation.
+        infeasible_members = np.arange(M)[~self.feasible]
+        constraint_violation = np.sum(
+            self.constraint_violation[infeasible_members], axis=1
+        )
+        idx = np.argsort(constraint_violation)
+        infeasible_rank = infeasible_members[idx]
+
+        return np.r_[feasible_rank, infeasible_rank]
+
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
