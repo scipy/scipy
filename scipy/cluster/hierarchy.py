@@ -1458,7 +1458,7 @@ def to_tree(Z, rd=False):
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
-    # Number of original objects is equal to the number of rows minus 1.
+    # Number of original objects is equal to the number of rows plus 1.
     n = Z.shape[0] + 1
 
     # Create a list full of None's to store the node objects
