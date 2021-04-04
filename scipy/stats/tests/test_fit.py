@@ -16,24 +16,33 @@ thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 mle_failing_fits = [
-        'burr',
-        'chi2',
         'gausshyper',
         'genexpon',
         'gengamma',
         'kappa4',
         'ksone',
         'kstwo',
-        'mielke',
         'ncf',
         'ncx2',
-        'pearson3',
-        'powerlognorm',
         'truncexpon',
         'tukeylambda',
         'vonmises',
         'levy_stable',
         'trapezoid',
+]
+
+# The MLE fit method of these distributions doesn't perform well when all
+# parameters are fit, so test them with the location fixed at 0.
+mle_use_floc0 = [
+    'burr',
+    'chi',
+    'chi2',
+    'mielke',
+    'pearson3',
+    'genhalflogistic',
+    'rdist',
+    'powerlognorm',
+    'wrapcauchy',
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
@@ -100,26 +109,31 @@ def test_cont_fit(distname, arg, method):
 
         with np.errstate(all='ignore'):
             rvs = distfn.rvs(size=fit_size, *arg)
-            est = distfn.fit(rvs, method=method)  # start with default values
-            if (method.lower() == 'mle' and
-                    distfn.name not in ['chi', 'genhalflogistic', 'rdist']):
+            if method == 'MLE' and distfn.name in mle_use_floc0:
+                kwds = {'floc': 0}
+            else:
+                kwds = {}
+            # start with default values
+            est = distfn.fit(rvs, method=method, **kwds)
+            if method == 'MLE':
                 # Trivial test of the use of CensoredData.  The fit() method
                 # will check that data contains no actual censored data, and
                 # do a regular uncensored fit.
-                data1 = stats.CensoredData(rvs, rvs)
-                est1 = distfn.fit(data1)
+                data1 = stats.CensoredData(rvs)
+                est1 = distfn.fit(data1, **kwds)
                 msg = ('Different results fitting uncensored data wrapped as'
                        f' CensoredData: {distfn.name}: est={est} est1={est1}')
                 assert_allclose(est1, est, rtol=1e-10, err_msg=msg)
                 # Convert the first `nic` values in rvs to interval-censored
-                # values. The interval is small, so est2 should be close to est.
+                # values. The interval is small, so est2 should be close to
+                # est.
                 nic = 20
-                intervals = np.vstack((rvs, rvs))
-                intervals[0, :nic] *= 0.975
-                intervals[1, :nic] *= 1.025
-                data2 = stats.CensoredData(intervals.min(axis=0),
-                                           intervals.max(axis=0))
-                est2 = distfn.fit(data2)
+                intervals = np.column_stack((rvs, rvs))
+                intervals[:nic, 0] *= 0.975
+                intervals[:nic, 1] *= 1.025
+                intervals.sort(axis=1)
+                data2 = stats.CensoredData(intervals=intervals)
+                est2 = distfn.fit(data2, **kwds)
                 msg = ('Different results fitting interval-censored'
                        f' data: {distfn.name}: est={est} est2={est2}')
                 assert_allclose(est2, est, rtol=0.05, err_msg=msg)

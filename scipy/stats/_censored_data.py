@@ -1,18 +1,44 @@
 import numpy as np
 
 
-def _validate_lower_upper(lower, upper):
-    if lower.ndim != 1 or upper.ndim != 1:
-        raise ValueError('The input arrays must be one-dimensional.')
-    if np.shape(lower) != np.shape(upper):
-        raise ValueError('lower and upper must have the same length.')
-    if np.isnan(lower).any() or np.isnan(upper).any():
-        raise ValueError('lower and upper must not contain nan.')
-    if (np.isinf(lower) & np.isinf(upper)).any():
-        raise ValueError('lower and upper must not both be infinite.')
-    if (lower > upper).any():
-        raise ValueError('Elements of lower must not be greater than the '
-                         'corresponding elements of upper.')
+def _validate_1d(a, name):
+    if np.ndim(a) != 1:
+        raise ValueError(f'{name} must be a one-dimensional sequence')
+    if np.isnan(a).any():
+        raise ValueError(f'{name} must not contain nan.')
+    if np.isinf(a).any():
+        raise ValueError(f'{name} must contain only finite values')
+
+
+def _validate_intervals(intervals):
+    intervals = np.asarray(intervals)
+    if intervals.shape == (0,):
+        # The input was a sequence with length 0.
+        intervals = intervals.reshape((0, 2))
+    if intervals.ndim != 2 or intervals.shape[-1] != 2:
+        raise ValueError('intervals must be a two-dimensional array'
+                         ' with shape (m, 2)')
+
+    if np.isnan(intervals).any():
+        raise ValueError('intervals must not contain nan.')
+    if np.isinf(intervals).all(axis=1).any():
+        raise ValueError('In each row in intervals, both values must not'
+                         ' be infinite.')
+    if (intervals[:, 0] > intervals[:, 1]).any():
+        raise ValueError('In each row of intervals, the left value must not'
+                         ' exceed the right value')
+
+    uncensored = intervals[:, 0] == intervals[:, 1]
+    left_censored = np.isinf(intervals[:, 0])
+    right_censored = np.isinf(intervals[:, 1])
+    interval_censored = np.isfinite(intervals).all(axis=1) & ~uncensored
+
+    x2 = intervals[uncensored, 0]
+    left2 = intervals[left_censored, 1]
+    right2 = intervals[right_censored, 0]
+    intervals2 = intervals[interval_censored]
+
+    return x2, left2, right2, intervals2
 
 
 def _validate_x_censored(x, censored):
@@ -35,6 +61,10 @@ class CensoredData:
 
     Instances may be passed to the ``fit`` method of continuous
     univariate SciPy distributions for maximum likelihood estimation.
+    The *only* method of the univariate continuous distributions that
+    understands `CensoredData` is the ``fit`` method.  An instance of
+    `CensoredData` can not be passed to methods such as ``pdf`` and
+    ``cdf``.
 
     Data is *censored* when the true value is unknown, but it has
     a known upper or lower bound.  The conventional terminology is:
@@ -62,44 +92,47 @@ class CensoredData:
 
     Parameters
     ----------
-    lower, upper : array_like
-        The data, a possibly mixed collection of censored and uncensored
-        measurements.  The arrays must be one-dimensional and have the same
-        length.  The values are interpreted as follows:
+    x : array_like, 1D
+        Uncensored observations.
+    left : array_like, 1D
+        Left-censored observations.
+    right : array_like, 1D
+        Right-censored observations.
+    intervals : array_like, 2D, with shape (m, 2)
+        Interval-censored observations.  Each row ``intervals[k, :]``
+        represents the interval for the kth interval-censored observation.
 
-        * ``lower[k] == upper[k]``: the common value is an uncensored
-          measurement.
-        * ``upper[k] == inf``: the measurement is right-censored; the
-          value in ``lower[k]`` is the lower bound for the true unknown
-          value.
-        * ``lower[k] == -inf``: the measurement is left-censored; the value
-          in ``upper[k]`` is the upper bound for the true unknown value.
-        * ``lower[k] < upper[k]``, and both values are finite: the
-          measurement is interval-censored; the true unknown value is
-          between ``lower[k]`` and ``upper[k]``.
+    Notes
+    -----
+    In the input array `intervals`, the lower bound of the interval may
+    be ``-inf``, and the upper bound may be ``inf`` (but both can't be
+    infinite). When the lower bound is ``-inf``, the row represents a left
+    censored observation, and when the upper bound is ``inf``, the row
+    represents a right-censored observation.  If the length of an interval
+    is 0 (i.e. ``intervals[k, 0] == intervals[k, 1]``, the observation is
+    treated as uncensored.  This means one can represent all the types
+    of censored and uncensored data in ``intervals``, but it is generally
+    more convenient to use `x`, `left` and `right` for uncensored,
+    left-censored and right-censord observations, respectively.
 
     Examples
     --------
     In the most general case, a censored data set may contain values that
     are left-censored, right-censored, interval-censored and not censored.
-    For example, here we create a data set with length five:
+    For example, here we create a data set with five observations.  Two
+    are uncensored (values 1 and 1.5), one is a left-censored observation
+    of 0, one is a right-censored observation of 10 and one is
+    interval-censored in the interval [2, 3].
 
     >>> from scipy.stats import CensoredData
-    >>> data = CensoredData([-np.inf, 1, 1.5, 2, 10],
-    ...                     [0,       1, 1.5, 3, np.inf])
+    >>> data = CensoredData(x=[1, 1.5], left=[0], right=[10],
+    ...                     intervals=[[2, 3]])
     >>> print(data)
     CensoredData(5 values: 2 not censored, 1 left-censored,
     1 right-censored, 1 interval-censored)
 
-    The first value represents a left-censored measurement; the true (but
-    unknown) value is less than or equal to 0.  The second and third
-    values, 1 and 1.5, are not censored.  The fourth value represents an
-    interval-censored measurement; the true value is in the interval [2, 3].
-    The last value represents a right-censored measurement; the true value
-    is greater than or equal to 10.
-
-    A common case is to have a mix of uncensored measurements and censored
-    measurements that are all right-censored (or all left-censored). For
+    A common case is to have a mix of uncensored observations and censored
+    observations that are all right-censored (or all left-censored). For
     example, consider an experiment in which six devices are started at
     various times and left running until they fail.  Assume that time is
     measured in hours, and the experiment is stopped after 30 hours, even
@@ -115,9 +148,15 @@ class CensoredData:
            6        12        ***          >18
 
     Two of the devices had not failed when the experiment was stopped;
-    the measurements of the time-to-failure for these two devices are
-    right-censored.  We'll use the method `CensoredData.right_censored` to
-    create a representation of this data.  The time-to-failure measurements
+    the observations of the time-to-failure for these two devices are
+    right-censored.  We can represent this data with
+
+    >>> data = CensoredData(x=[13, 22, 17, 15], right=[20, 18])
+    >>> print(data)
+    CensoredData(6 values: 4 not censored, 2 right-censored)
+
+    Alternatively, we can use the method `CensoredData.right_censored` to
+    create a representation of this data.  The time-to-failure observations
     are put the list ``ttf``.  The ``censored`` list indicates which values
     in ``ttf`` are censored.
 
@@ -132,31 +171,50 @@ class CensoredData:
     CensoredData(6 values: 4 not censored, 2 right-censored)
     """
 
-    def __init__(self, lower, upper):
-        lower = np.asarray(lower)
-        upper = np.asarray(upper)
-        _validate_lower_upper(lower, upper)
-        self._lower = lower
-        self._upper = upper
+    def __init__(self, x=None, *, left=None, right=None, intervals=None):
+        if x is None:
+            x = []
+        if left is None:
+            left = []
+        if right is None:
+            right = []
+        if intervals is None:
+            intervals = np.empty((0, 2))
 
-        # Precompute masks for the various types of censoring.
-        self._not_censored = lower == upper
-        self._left_censored = np.isneginf(lower)
-        self._right_censored = np.isposinf(upper)
-        self._interval_censored = ~(self._not_censored | self._left_censored
-                                    | self._right_censored)
+        _validate_1d(x, 'x')
+        _validate_1d(left, 'left')
+        _validate_1d(right, 'right')
+        x2, left2, right2, intervals2 = _validate_intervals(intervals)
+
+        self._x = np.concatenate((x, x2))
+        self._left = np.concatenate((left, left2))
+        self._right = np.concatenate((right, right2))
+        # Note that by construction, the private attribute _intervals
+        # will be a 2D array that contains only finite values representing
+        # intervals with nonzero but finite length.
+        self._intervals = intervals2
+
+        # # Precompute masks for the various types of censoring.
+        # self._not_censored = lower == upper
+        # self._left_censored = np.isneginf(lower)
+        # self._right_censored = np.isposinf(upper)
+        # self._interval_censored = ~(self._not_censored | self._left_censored
+        #                             | self._right_censored)
 
     def __repr__(self):
-        lower_str = " ".join(np.array_repr(self._lower).split())
-        upper_str = " ".join(np.array_repr(self._upper).split())
-        return (f"CensoredData({lower_str}, {upper_str})")
+        x_str = " ".join(np.array_repr(self._x).split())
+        left_str = " ".join(np.array_repr(self._left).split())
+        right_str = " ".join(np.array_repr(self._right).split())
+        intervals_str = " ".join(np.array_repr(self._intervals).split())
+        return (f"CensoredData(x={x_str}, left={left_str}, right={right_str},"
+                f" intervals={intervals_str}")
 
     def __str__(self):
-        n = len(self._lower)
-        num_nc = np.count_nonzero(self._not_censored)
-        num_lc = np.count_nonzero(self._left_censored)
-        num_rc = np.count_nonzero(self._right_censored)
-        num_ic = np.count_nonzero(self._interval_censored)
+        num_nc = len(self._x)
+        num_lc = len(self._left)
+        num_rc = len(self._right)
+        num_ic = len(self._intervals)
+        n = num_nc + num_lc + num_rc + num_ic
         parts = [f'{num_nc} not censored']
         if num_lc > 0:
             parts.append(f'{num_lc} left-censored')
@@ -166,14 +224,30 @@ class CensoredData:
             parts.append(f'{num_ic} interval-censored')
         return f'CensoredData({n} values: ' + ', '.join(parts) + ')'
 
+    # This is not a complete implementation of the arithmetic operators.
+    # All we need is substracting a scalar and dividing by a scalar.
+
+    def __sub__(self, other):
+        return CensoredData(x=self._x - other,
+                            left=self._left - other,
+                            right=self._right - other,
+                            intervals=self._intervals - other)
+
+    def __truediv__(self, other):
+        return CensoredData(x=self._x / other,
+                            left=self._left / other,
+                            right=self._right / other,
+                            intervals=self._intervals / other)
+
     def __len__(self):
         """
         The number of values (censored and not censored).
         """
-        return len(self._lower)
+        return (len(self._x) + len(self._left) + len(self._right)
+                + len(self._intervals))
 
     def num_censored(self):
-        return len(self._lower) - np.count_nonzero(self._not_censored)
+        return len(self._left) + len(self._right) + len(self._intervals)
 
     @classmethod
     def right_censored(cls, x, censored):
@@ -184,7 +258,7 @@ class CensoredData:
         ----------
         x : array_like
             `x` is the array of observed data or measurements.
-            `x` must be a one-dimensional sequence of numbers.
+            `x` must be a one-dimensional sequence of finite numbers.
         censored : array_like of bool
             `censored` must be a one-dimensional sequence of boolean
             values.  If ``censored[k]`` is True, the corresponding value
@@ -192,10 +266,7 @@ class CensoredData:
             is the lower bound of the true (but unknown) value.
         """
         x, censored = _validate_x_censored(x, censored)
-        lower = 1.0*x  # Copy x while ensuring lower is floating point.
-        upper = lower.copy()
-        upper[censored] = np.inf
-        return cls(lower=lower, upper=upper)
+        return cls(x=x[~censored], right=x[censored])
 
     @classmethod
     def left_censored(cls, x, censored):
@@ -206,7 +277,7 @@ class CensoredData:
         ----------
         x : array_like
             `x` is the array of observed data or measurements.
-            `x` must be a one-dimensional sequence of numbers.
+            `x` must be a one-dimensional sequence of finite numbers.
         censored : array_like of bool
             `censored` must be a one-dimensional sequence of boolean
             values.  If ``censored[k]`` is True, the corresponding value
@@ -214,10 +285,7 @@ class CensoredData:
             is the upper bound of the true (but unknown) value.
         """
         x, censored = _validate_x_censored(x, censored)
-        upper = 1.0*x  # Copy x while ensuring upper is floating point.
-        lower = upper.copy()
-        lower[censored] = -np.inf
-        return cls(lower=lower, upper=upper)
+        return cls(x=x[~censored], left=x[censored])
 
     def _uncensor(self):
         """
@@ -228,8 +296,21 @@ class CensoredData:
         data for the left- or right-censored data, and the mean for the
         interval-censored data.
         """
-        data = self._lower.copy()
-        data[self._left_censored] = self._upper[self._left_censored]
-        ic = self._interval_censored
-        data[ic] = 0.5*(self._lower[ic] + self._upper[ic])
+        data = np.concatenate((self._x, self._left, self._right,
+                               self._intervals.mean(axis=1)))
         return data
+
+    def _supported(self, a, b):
+        """
+        Return a subset of self containing the values that are in
+        (or overlap with) the interval (a, b).
+        """
+        x = self._x
+        x = x[(a < x) & (x < b)]
+        left = self._left
+        left = left[a < left]
+        right = self._right
+        right = right[right < b]
+        intervals = self._intervals
+        intervals = intervals[(a < intervals[:, 1]) & (intervals[:, 0] < b)]
+        return CensoredData(x, left=left, right=right, intervals=intervals)

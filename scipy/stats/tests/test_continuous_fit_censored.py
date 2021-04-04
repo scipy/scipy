@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy.optimize import fmin
 from scipy.stats import (CensoredData, beta, expon, gamma, gumbel_l, gumbel_r,
                          invgauss, invweibull, laplace, logistic, lognorm, nct,
-                         norm, uniform, weibull_max, weibull_min)
+                         norm, weibull_max, weibull_min)
 
 
 # In some tests, we'll use this optimizer for improved accuracy.
@@ -38,7 +38,10 @@ def test_beta():
        shape1    shape2
     0.9914177 0.6866565
     """
-    data = CensoredData([0.1, 0.5, 0.75, 0.8], [0.2, 0.55, 0.9, 0.95])
+    data = CensoredData(intervals=[[0.10, 0.20],
+                                   [0.50, 0.55],
+                                   [0.75, 0.90],
+                                   [0.80, 0.95]])
 
     # For this test, fit only the shape parameters; loc and scale are fixed.
     a, b, loc, scale = beta.fit(data, floc=0, fscale=1, optimizer=optimizer)
@@ -95,16 +98,18 @@ def test_expon_right_censored():
     6.277119
     """
     # This data has 10 uncensored values and 6 right-censored values.
-    x = CensoredData.right_censored([1, 2.5, 3, 6, 7.5, 10, 12, 12, 14.5, 15,
-                                     16, 16, 20, 20, 21, 22],
-                                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                     1, 1, 1, 1, 1, 1])
+    obs = [1, 2.5, 3, 6, 7.5, 10, 12, 12, 14.5, 15, 16, 16, 20, 20, 21, 22]
+    cens = [False]*10 + [True]*6
+    data = CensoredData.right_censored(obs, cens)
 
-    loc, scale = expon.fit(x, floc=0, optimizer=optimizer)
+    loc, scale = expon.fit(data, floc=0, optimizer=optimizer)
 
     assert loc == 0
-    n = np.count_nonzero(x._not_censored)
-    total = x._lower.sum()
+    # Use the analytical solution to compute the expected value.  This
+    # is the sum of the observed values divided by the number of uncensored
+    # values.
+    n = len(data) - data.num_censored()
+    total = data._x.sum() + data._right.sum()
     expected = total / n
     assert_allclose(scale, expected, 1e-8)
 
@@ -165,13 +170,16 @@ def test_gumbel():
     scale 4.843640
     """
     # First value is interval-censored. Last two are right-censored.
-    data = CensoredData([0, 2, 3, 9, 10, 10], [1, 2, 3, 9, np.inf, np.inf])
+    x = np.array([2, 3, 9])
+    right = np.array([10, 10])
+    intervals = np.array([[0, 1]])
+    data = CensoredData(x, right=right, intervals=intervals)
     loc, scale = gumbel_r.fit(data, optimizer=optimizer)
     assert_allclose(loc, 4.487853, rtol=5e-6)
     assert_allclose(scale, 4.843640, rtol=5e-6)
 
-    # Swap and negate the lower and upper arrays in data.
-    data2 = CensoredData(-data._upper, -data._lower)
+    # Negate the data and reverse the intervals, and test with gumbel_l.
+    data2 = CensoredData(-x, left=-right, intervals=-intervals[:, ::-1])
     # Fitting gumbel_l to data2 should give the same result as above, but
     # with loc negated.
     loc2, scale2 = gumbel_l.fit(data2, optimizer=optimizer)
@@ -240,23 +248,20 @@ def test_invgauss():
     Those last two values are the SciPy scale and shape parameters.
     """
     # One point is left-censored, and one is right-censored.
-    lo = np.array([-np.inf, 0.4813096, 0.5571880, 0.5132463, 0.3801414,
-                   0.5904386, 0.4822340, 0.3478597, 3, 0.7191797, 1.5810902,
-                   0.4442299])
-    hi = np.array([0.15, 0.4813096, 0.5571880, 0.5132463, 0.3801414, 0.5904386,
-                   0.4822340, 0.3478597, np.inf, 0.7191797, 1.5810902,
-                   0.4442299])
-    x = CensoredData(lo, hi)
+    data = CensoredData(x=[0.4813096, 0.5571880, 0.5132463, 0.3801414,
+                           0.5904386, 0.4822340, 0.3478597, 0.7191797,
+                           1.5810902, 0.4442299],
+                        left=[0.15], right=[3])
 
     # Fit only the shape parameter.
-    mu, loc, scale = invgauss.fit(x, floc=0, fscale=1, optimizer=optimizer)
+    mu, loc, scale = invgauss.fit(data, floc=0, fscale=1, optimizer=optimizer)
 
     assert_allclose(mu, 0.853469, rtol=5e-5)
     assert loc == 0
     assert scale == 1
 
     # Fit the shape and scale.
-    mu, loc, scale = invgauss.fit(x, floc=0, optimizer=optimizer)
+    mu, loc, scale = invgauss.fit(data, floc=0, optimizer=optimizer)
 
     assert_allclose(mu, 1.066716, rtol=5e-5)
     assert loc == 0
@@ -289,8 +294,9 @@ def test_invweibull():
         value
     loc     0
     """
-    # First value is interval-censored. Last two are right-censored.
-    data = CensoredData([0, 2, 3, 9, 10, 10], [1, 2, 3, 9, np.inf, np.inf])
+    # In the R data, the first value is interval-censored, and the last
+    # two are right-censored.  The rest are not censored.
+    data = CensoredData(x=[2, 3, 9], right=[10, 10], intervals=[[0, 1]])
     c, loc, scale = invweibull.fit(data, floc=0, optimizer=optimizer)
     assert_allclose(c, 0.6379845, rtol=5e-6)
     assert loc == 0
@@ -336,17 +342,14 @@ def test_laplace():
     0.1758864 7.0972125
     """
     # The value -50 is left-censored, and the value 50 is right-censored.
-    x = np.array([-50.0, -41.564, 50.0, 15.7384, 50.0, 10.0452,  -2.0684,
-                  -19.5399, 50.0, 9.0005, 27.1227, 4.3113, -3.7372,
-                  25.3111, 14.7987, 34.0887, 50.0, 42.8496, 18.5862,
-                  32.8921, 9.0448, -27.4591, -50.0,  19.5083, -9.7199])
-
-    left = x.copy()
-    left[left == -50] = -np.inf
-    right = x.copy()
-    right[right == 50] = np.inf
-    data = CensoredData(left, right)
-
+    obs = np.array([-50.0, -41.564, 50.0, 15.7384, 50.0, 10.0452, -2.0684,
+                    -19.5399, 50.0, 9.0005, 27.1227, 4.3113, -3.7372,
+                    25.3111, 14.7987, 34.0887, 50.0, 42.8496, 18.5862,
+                    32.8921, 9.0448, -27.4591, -50.0,  19.5083, -9.7199])
+    x = obs[(obs != -50.0) & (obs != 50)]
+    left = obs[obs == -50.0]
+    right = obs[obs == 50.0]
+    data = CensoredData(x=x, left=left, right=right)
     loc, scale = laplace.fit(data, loc=10, scale=10, optimizer=optimizer)
     assert_allclose(loc, 14.79870, rtol=5e-6)
     assert_allclose(scale, 30.93601, rtol=5e-6)
@@ -474,7 +477,10 @@ def test_norm():
          mean        sd
     0.1444432 0.1029451
     """
-    data = CensoredData([0.1, 0.5, 0.75, 0.8], [0.2, 0.55, 0.9, 0.95])
+    data = CensoredData(intervals=[[0.10, 0.20],
+                                   [0.50, 0.55],
+                                   [0.75, 0.90],
+                                   [0.80, 0.95]])
 
     loc, scale = norm.fit(data, optimizer=optimizer)
 
@@ -567,50 +573,82 @@ class TestCensoredData:
     def test_basic(self):
         left = [-np.inf, 1, 2, 5]
         right = [0, 1, 3, np.inf]
-        data = CensoredData(left, right)
-        assert_equal(data._lower, left)
-        assert_equal(data._upper, right)
-        assert_equal(data._not_censored, [False, True, False, False])
-        assert_equal(data._left_censored, [True, False, False, False])
-        assert_equal(data._right_censored, [False, False, False, True])
-        assert_equal(data._interval_censored, [False, False, True, False])
+        x = [1]
+        left = [0]
+        right = [2, 5]
+        intervals = [[2, 3]]
+        data = CensoredData(x, left=left, right=right, intervals=intervals)
+        assert_equal(data._x, x)
+        assert_equal(data._left, left)
+        assert_equal(data._right, right)
+        assert_equal(data._intervals, intervals)
 
         udata = data._uncensor()
-        assert_equal(udata, [0.0, 1.0, 2.5, 5.0])
+        assert_equal(udata, np.concatenate((x, left, right,
+                                            np.mean(intervals, axis=1))))
 
     def test_right_censored(self):
         x = np.array([0, 3, 2.5])
-        is_censored = np.array([0, 1, 0])
+        is_censored = np.array([0, 1, 0], dtype=bool)
         data = CensoredData.right_censored(x, is_censored)
-        assert_equal(data._lower, x)
-        assert_equal(data._upper, [0, np.inf, 2.5])
-        assert_equal(data._left_censored, [False, False, False])
-        assert_equal(data._right_censored, [False, True, False])
-        assert_equal(data._interval_censored, [False, False, False])
-        assert_equal(data._not_censored, [True, False, True])
+        assert_equal(data._x, x[~is_censored])
+        assert_equal(data._right, x[is_censored])
+        assert_equal(data._left, [])
+        assert_equal(data._intervals, np.empty((0, 2)))
 
     def test_left_censored(self):
         x = np.array([0, 3, 2.5])
-        is_censored = np.array([0, 1, 0])
+        is_censored = np.array([0, 1, 0], dtype=bool)
         data = CensoredData.left_censored(x, is_censored)
-        assert_equal(data._upper, x)
-        assert_equal(data._lower, [0, -np.inf, 2.5])
-        assert_equal(data._right_censored, [False, False, False])
-        assert_equal(data._left_censored, [False, True, False])
-        assert_equal(data._interval_censored, [False, False, False])
-        assert_equal(data._not_censored, [True, False, True])
+        assert_equal(data._x, x[~is_censored])
+        assert_equal(data._left, x[is_censored])
+        assert_equal(data._right, [])
+        assert_equal(data._intervals, np.empty((0, 2)))
+
+    def test_intervals_to_other_types(self):
+        # The intervals parameter can represent uncensored and
+        # left- or right-censored data.  Test the conversion of such
+        # an example to the canonical form in which the different
+        # types have been split into the separate arrays.
+        intervals = np.array([[0, 1],        # interval-censored
+                              [2, 2],        # not censored
+                              [3, 3],        # not censored
+                              [9, np.inf],   # right-censored
+                              [8, np.inf],   # right-censored
+                              [-np.inf, 0],  # left-censored
+                              [1, 2]])       # interval-censored
+        data = CensoredData(intervals=intervals)
+        assert_equal(data._x, [2, 3])
+        assert_equal(data._left, [0])
+        assert_equal(data._right, [9, 8])
+        assert_equal(data._intervals, [[0, 1], [1, 2]])
 
     def test_invalid_constructor_args(self):
-        with pytest.raises(ValueError, match='must be one-dimensional'):
-            CensoredData([[1, 2, 3]], [1, 2, 3])
-        with pytest.raises(ValueError, match='must have the same length'):
-            CensoredData([1, 2, 3], [1, 2])
+        with pytest.raises(ValueError, match='must be a one-dimensional'):
+            CensoredData(x=[[1, 2, 3]])
+        with pytest.raises(ValueError, match='must be a one-dimensional'):
+            CensoredData(left=[[1, 2, 3]])
+        with pytest.raises(ValueError, match='must be a one-dimensional'):
+            CensoredData(right=[[1, 2, 3]])
+        with pytest.raises(ValueError, match='must be a two-dimensional'):
+            CensoredData(intervals=[[1, 2, 3]])
+
         with pytest.raises(ValueError, match='must not contain nan'):
-            CensoredData([1, np.nan, 2], [3, 9, 10])
-        with pytest.raises(ValueError, match='must not both be infinite'):
-            CensoredData([1, 2, np.inf], [3, 9, np.inf])
-        with pytest.raises(ValueError, match='must not be greater than'):
-            CensoredData([1, 2, 2], [0, 2, 2])
+            CensoredData(x=[1, np.nan, 2])
+        with pytest.raises(ValueError, match='must not contain nan'):
+            CensoredData(left=[1, np.nan, 2])
+        with pytest.raises(ValueError, match='must not contain nan'):
+            CensoredData(right=[1, np.nan, 2])
+        with pytest.raises(ValueError, match='must not contain nan'):
+            CensoredData(intervals=[[1, np.nan], [2, 3]])
+
+        with pytest.raises(ValueError,
+                           match='both values must not be infinite'):
+            CensoredData(intervals=[[1, 3], [2, 9], [np.inf, np.inf]])
+
+        with pytest.raises(ValueError,
+                           match='left value must not exceed the right'):
+            CensoredData(intervals=[[1, 0], [2, 2]])
 
     @pytest.mark.parametrize('func', [CensoredData.left_censored,
                                       CensoredData.right_censored])
@@ -627,34 +665,8 @@ class TestCensoredData:
 
     def test_count_censored(self):
         x = [1, 2, 3]
-        data1 = CensoredData(x, x)
+        # data1 has no censored data.
+        data1 = CensoredData(x)
         assert data1.num_censored() == 0
-        data2 = CensoredData([0, 2.5, -np.inf], [1, 2.5, 10])
+        data2 = CensoredData(x=[2.5], left=[10], intervals=[[0, 1]])
         assert data2.num_censored() == 2
-
-
-def test_support_mask():
-    # Use the uniform distribution to test the _support_mask
-    # method applied to an instance of CensoredData.
-    x_y = np.array([[-np.inf, -1],   # False
-                    [-np.inf, 0],    # True
-                    [-2, -1],        # False
-                    [-2, 0],         # True
-                    [-1, -1],        # False
-                    [0, 0],          # True
-                    [-0.1, 0.1],     # True
-                    [1, 1],          # False
-                    [1, 2],          # False
-                    [0, np.inf],     # True
-                    [1, np.inf]])    # False
-    # The support bounds of the uniform distribution that we'll use
-    # for this test.
-    a, b = [-0.5, 0.5]
-    loc, scale = a, b - a
-    # _support_mask expects the data to be in the standard form,
-    # so shift by loc and divide by scale.
-    x_y = (x_y - loc)/scale
-    c = CensoredData(x_y[:, 0], x_y[:, 1])
-    mask = uniform._support_mask(c, a, (b-a))
-    expected = [0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0]
-    assert_equal(mask, expected)

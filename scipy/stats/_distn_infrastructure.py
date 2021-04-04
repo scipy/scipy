@@ -1006,33 +1006,15 @@ class rv_generic:
         """
         return self.a, self.b
 
-    def _support_mask_common(self, x, *args, cmp=np.less_equal):
-        # Return a boolean array with the same shape as x that is True
-        # for values of x that are in the support.
+    def _support_mask(self, x, *args):
         a, b = self._get_support(*args)
         with np.errstate(invalid='ignore'):
-            if isinstance(x, CensoredData):
-                mask = np.empty(x._lower.shape, dtype=bool)
-
-                cmask = x._left_censored
-                mask[cmask] = cmp(a, x._upper[cmask])
-
-                cmask = x._right_censored
-                mask[cmask] = cmp(x._lower[cmask], b)
-
-                cmask = x._interval_censored | x._not_censored
-                # Ranges [a, b] and [x._lower, x._upper] intersect.
-                mask[cmask] = cmp(a, x._upper[cmask]) & cmp(x._lower[cmask], b)
-
-                return mask
-            else:
-                return cmp(a, x) & cmp(x, b)
-
-    def _support_mask(self, x, *args):
-        return self._support_mask_common(x, *args, cmp=np.less_equal)
+            return (a <= x) & (x <= b)
 
     def _open_support_mask(self, x, *args):
-        return self._support_mask_common(x, *args, cmp=np.less)
+        a, b = self._get_support(*args)
+        with np.errstate(invalid='ignore'):
+            return (a < x) & (x < b)
 
     def _rvs(self, *args, size=None, random_state=None):
         # This method must handle size being a tuple, and it must
@@ -2269,23 +2251,24 @@ class rv_continuous(rv_generic):
 
         `x` can be a 1D numpy array or a CensoredData instance.
         """
-        cond0 = ~self._support_mask(x, *args)
-        n_bad = np.count_nonzero(cond0)
         if isinstance(x, CensoredData):
-            if n_bad > 0:
-                x = CensoredData(x._lower[~cond0], x._upper[~cond0])
-            ic = x._interval_censored
+            # Filter out the data that is not in the support.
+            xs = x._supported(*self._get_support(*args))
+            n_bad = len(x) - len(xs)
+            i1, i2 = xs._intervals.T
             terms = [
                 # logpdf of the noncensored data.
-                self._logpdf(x._lower[x._not_censored], *args),
+                self._logpdf(xs._x, *args),
                 # logcdf of the left-censored data.
-                self._logcdf(x._upper[x._left_censored], *args),
+                self._logcdf(xs._left, *args),
                 # logsf of the right-censored data.
-                self._logsf(x._lower[x._right_censored], *args),
-                # log of probability of the interval censored data.
-                np.log(self._delta_cdf(x._lower[ic], x._upper[ic], *args)),
+                self._logsf(xs._right, *args),
+                # log of probability of the interval-censored data.
+                np.log(self._delta_cdf(i1, i2, *args)),
             ]
         else:
+            cond0 = ~self._support_mask(x, *args)
+            n_bad = np.count_nonzero(cond0)
             if n_bad > 0:
                 x = argsreduce(~cond0, x)[0]
             terms = [self._logpdf(x, *args)]
@@ -2305,7 +2288,7 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
         if isinstance(x, CensoredData):
-            x = CensoredData((x._lower - loc)/scale, (x._upper - loc)/scale)
+            x = (x - loc) / scale
             n_log_scale = (len(x) - x.num_censored()) * log(scale)
         else:
             x = (x - loc) / scale
@@ -2543,10 +2526,10 @@ class rv_continuous(rv_generic):
             if method != 'mle':
                 raise ValueError('For censored data, the method must'
                                  ' be "MLE".')
-            if len(data) == np.count_nonzero(data._not_censored):
+            if data.num_censored() == 0:
                 # There are no censored values in data, so replace the
                 # CensoredData instance with a regular array.
-                data = data._lower
+                data = data._x
                 censored = False
 
         Narg = len(args)
