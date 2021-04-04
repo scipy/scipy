@@ -4030,6 +4030,9 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
                    "correlation coefficent may be inaccurate.")
         self.args = (msg,)
 
+        
+PearsonrResult = namedtuple('PearsonrResult', ('correlation', 'pvalue'))
+
 
 def pearsonr(x, y):
     r"""
@@ -4212,7 +4215,7 @@ def pearsonr(x, y):
     ab = n/2 - 1
     prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
 
-    return r, prob
+    return PearsonrResult(r, prob)
 
 
 def fisher_exact(table, alternative='two-sided'):
