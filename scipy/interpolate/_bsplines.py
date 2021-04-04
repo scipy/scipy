@@ -668,11 +668,12 @@ def _woodbury_algorithm(A, ur, ll, b, k):
            and Brian P. Flannery, Numerical Recipes, 2007, Section 2.7.3
 
     '''
-    bs = int((k - 1) /2)
+    k_mod = k - k % 2
+    bs = int((k - 1) / 2) + (k + 1) % 2
 
     n = A.shape[1] + 1
-    U = np.zeros((n - 1, k - 1))
-    V = np.zeros((k - 1, n - 1)) # V transpose 
+    U = np.zeros((n - 1, k_mod))
+    V = np.zeros((k_mod, n - 1)) # V transpose 
 
     # upper right block 
     U[:bs, :bs] = ur
@@ -685,12 +686,12 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     Z = solve_banded((bs, bs), A, U[:, 0]) # z0
     Z = np.expand_dims(Z, axis=0)
     
-    for i in range(1, k - 1):
+    for i in range(1, k_mod):
         zi = solve_banded((bs, bs), A, U[:, i])
         zi = np.expand_dims(zi, axis=0)
         Z = np.concatenate((Z, zi), axis=0)
 
-    H = np.linalg.inv(np.identity(k - 1) + V @ Z.T)
+    H = solve(np.identity(k_mod) + V @ Z.T, np.identity(k_mod))
 
     y = solve_banded((bs, bs), A, b)
     c = y - Z.T @ (H @ (V @ y))
@@ -702,6 +703,9 @@ def _periodic_knots(x, k):
     returns vector of nodes on circle
     '''
     xc = np.copy(x)
+    if k % 2 == 0:
+        dx = np.diff(xc)
+        xc[1: -1] -= dx[:-1] / 2 
     dx = np.diff(xc)
     t = np.zeros(len(xc) + 2 * k)
     t[:k] = [xc[0] - sum(dx[-i:]) for i in range(k, 0, -1)]
@@ -750,39 +754,47 @@ def _make_periodic_spline(x, y, t, k, axis):
     For now, this function works only for odd ``k``.
 
     '''
-    if k % 2 == 0:
-        raise NotImplementedError("Even k periodic case is not implemented yet.")    
     n = y.shape[0]
 
     if n <= k:
-        raise ValueError("n should be greater than k to form system.")
+        raise ValueError("Need at least k + 1 data points to fit a spline of degree k.")
     
-    # solving periodic case using Woodbury formula
-    # set up RHS
-    A = np.zeros((k, n - 1)) # matrix of diagonals suitable for 'solve_banded'
-    for i in range(n-1):
-        A[:,i] = _bspl.evaluate_all_bspl(t, k, x[i], i + k)[:-1][::-1]
-    offset = int((k-1)/2)
-    # upper right and lower left blocks of the original matrix
-    ur = np.zeros((offset,offset))
-    ll = np.zeros((offset,offset))
-    for i in range(1,offset + 1):
-        A[offset - i] = np.roll(A[offset - i],i)
-        if k % 2 == 1 or i < offset:
-            A[offset + i] = np.roll(A[offset + i], -i)
-            ur[-i:, i - 1] = np.copy(A[offset + i, -i:])
-        ll[-i, :i] = np.copy(A[offset - i, :i])
-    ur = ur.T
-    for i in range(1,offset):
-        ll[:, i] = np.roll(ll[:, i], i)
-        ur[:, -i-1] = np.roll(ur[:, -i - 1], -i)
+    nt = len(t) - k - 1
+
+    # size of block elements
+    kul = int(k / 2)
+    
+    # kl = ku = k
+    ab = np.zeros((3 * k + 1, nt), dtype=np.float_, order='F')
+
+    # upper right and lower left blocks
+    ur = np.zeros((kul, kul))
+    ll = np.zeros_like(ur)
+    
+    # `offset` is made to shift all the non-zero elements to the end of the
+    # matrix
+    _bspl._colloc(x, t, k, ab, offset=k)
+    
+    # remove zeros before the matrix
+    ab = ab[-k - (k + 1) % 2:, :]
+    
+    # The least elements in rows (except repetitions) are diagonals
+    # of block matricies. Upper right matrix is an upper triangular
+    # matrix while lower left is a lower triangular one.
+    for i in range(kul):
+        ur += np.diag(ab[-i - 1, i: kul], k=i)
+        ll += np.diag(ab[i, -kul - (k % 2): n - 1 + 2 * kul - i], k=-i)
+
+    # remove elements that occure in the last point
+    # (first and last points are equivalent)
+    A = ab[:, kul: -k + kul]
 
     extradim = prod(y.shape[1:])
     y_new = y.reshape(n, extradim)
-    c = np.zeros((n + k - 1,extradim))
+    c = np.zeros((n + k - 1, extradim))
     for i in range(extradim):
         cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
-        c[:, i] = np.concatenate((cc[-offset:], cc, cc[:offset + 1]))
+        c[:, i] = np.concatenate((cc[-kul:], cc, cc[:kul + k % 2]))
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
     return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -895,17 +907,17 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Build a B-spline curve with 2 dimensional y
     
-    >>> x = np.linspace(0,2*np.pi,10)
-    >>> y = np.array([np.sin(x),np.cos(x)])
+    >>> x = np.linspace(0, 2*np.pi, 10)
+    >>> y = np.array([np.sin(x), np.cos(x)])
 
     Periodic condition is satisfied because y coordinates of points on the ends
     are equivalent
 
     >>> ax = plt.axes(projection='3d')
-    >>> xx = np.linspace(0,2*np.pi,100)
-    >>> bspl = make_interp_spline(x,y,k=5,bc_type='periodic',axis=1)
-    >>> ax.plot3D(xx,*bspl(xx))
-    >>> ax.scatter3D(x,*y,color='red')
+    >>> xx = np.linspace(0, 2*np.pi, 100)
+    >>> bspl = make_interp_spline(x, y, k=5, bc_type='periodic', axis=1)
+    >>> ax.plot3D(xx, *bspl(xx))
+    >>> ax.scatter3D(x, *y, color='red')
     >>> plt.show()
 
     See Also
@@ -937,9 +949,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
-    if bc_type == 'periodic' and not np.allclose(y[0],y[-1],atol=1e-15):
-        raise ValueError("First and last points does not match while periodic case"
-                        " expected")
+    if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
+        raise ValueError("First and last points does not match while periodic case "
+                         "expected")
 
     # special-case k=0 right away
     if k == 0:
@@ -969,15 +981,15 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # come up with a sensible knot vector, if needed
     if t is None:
         if deriv_l is None and deriv_r is None:
-            if k == 2:
+            if bc_type == 'periodic':
+                t = _periodic_knots(x, k)
+            elif k == 2:
                 # OK, it's a bit ad hoc: Greville sites + omit
                 # 2nd and 2nd-to-last points, a la not-a-knot
                 t = (x[1:] + x[:-1]) / 2.
                 t = np.r_[(x[0],)*(k+1),
                            t[1:-1],
                            (x[-1],)*(k+1)]
-            elif bc_type == 'periodic':
-                t = _periodic_knots(x, k)
             else:
                 t = _not_a_knot(x, k)
         else:

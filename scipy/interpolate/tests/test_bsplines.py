@@ -820,7 +820,7 @@ class TestInterp(object):
             b = make_interp_spline(self.xx, self.yy, k)
             assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
-    @pytest.mark.parametrize('k', [3, 5])
+    @pytest.mark.parametrize('k', [2, 3, 4, 5])
     def test_periodic(self, k):
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
@@ -878,7 +878,7 @@ class TestInterp(object):
         t = np.zeros(n + 2 * k)
         assert_raises(ValueError, make_interp_spline, x, y, k, t, 'periodic')
 
-    @pytest.mark.parametrize('k', [3, 5])
+    @pytest.mark.parametrize('k', [2, 3, 4, 5])
     def test_periodic_splev(self, k):
         # comparision values of periodic b-spline with splev
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
@@ -1209,14 +1209,13 @@ def make_interp_full_matr(x, y, t, k):
     return c
 
 
-# a helper for test_periodic_full_matrix
 def make_interp_per_full_matr(x, y, t, k):
     x, y, t = map(np.asarray, (x, y, t))
 
     n = x.size
     nt = t.size - k - 1
 
-    # have n conditions for nt coefficients; need nt-n derivatives
+    # have `n` conditions for `nt` coefficients; need nt-n derivatives
     assert nt - n == k - 1
 
     # LHS: the collocation matrix + derivatives at edges
