@@ -6,7 +6,7 @@ def _distance_vector(x, y):
     """
     Returns the distance between the point `x` and each point in `y`
     """
-    n = len(y)
+    n = y.shape[0]
     out = np.zeros((n,), dtype=float)
     for i in range(n):
         out[i] = np.linalg.norm(x - y[i])
@@ -19,7 +19,7 @@ def _distance_matrix(x):
     """
     Returns the distance between each pair of points in `x`
     """
-    n = len(x)
+    n = x.shape[0]
     out = np.zeros((n, n), dtype=float)
     for i in range(n):
         for j in range(i):
@@ -34,7 +34,7 @@ def _polynomial_vector(x, powers):
     """
     Returns monomials with exponents from `powers` evaluated at the point `x`
     """
-    n = len(powers)
+    n = powers.shape[0]
     out = np.zeros((n,), dtype=float)
     for i in range(n):
         out[i] = np.prod(x**powers[i])
@@ -48,7 +48,8 @@ def _polynomial_matrix(x, powers):
     Returns monomials with exponents from `powers` evaluated at each point in
     `x`
     """
-    n, m = len(x), len(powers)
+    n = x.shape[0]
+    m = powers.shape[0]
     out = np.zeros((n, m), dtype=float)
     for i in range(n):
         for j in range(m):
@@ -128,8 +129,8 @@ _NAME_TO_FUNC = {
 #                              int[:, :])
 def _build_system(y, d, smoothing, kernel, epsilon, powers):
     """
-    Create the left-hand-side and right-hand-side of the system used for
-    solving the RBF interpolant coefficients
+    Create the left-hand-side and right-hand-side of the system used to solve
+    for the RBF interpolant coefficients
 
     Parameters
     ----------
@@ -156,7 +157,8 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Domain scaling used to create the polynomial matrix
 
     """
-    p, r = len(y), len(powers)
+    p, s = d.shape
+    r = powers.shape[0]
 
     yeps = y*epsilon
     kernel_func = _NAME_TO_FUNC[kernel]
@@ -179,7 +181,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     for i in range(p):
         lhs[i, i] += smoothing[i]
 
-    rhs = np.zeros((p + r, d.shape[1]), dtype=d.dtype)
+    rhs = np.zeros((p + r, s), dtype=d.dtype)
     rhs[:p] = d
 
     return lhs, rhs, shift, scale
@@ -221,11 +223,13 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     (Q, S) float or complex ndarray
 
     '''
-    q, p = len(x), len(y)
+    q = x.shape[0]
+    p = y.shape[0]
+    s = coeffs.shape[1]
 
     yeps = y*epsilon
     kernel_func = _NAME_TO_FUNC[kernel]
-    out = np.zeros((q, coeffs.shape[1]), dtype=coeffs.dtype)
+    out = np.zeros((q, s), dtype=coeffs.dtype)
     for i in range(q):
         xeps = x[i]*epsilon
         kvec = kernel_func(_distance_vector(xeps, yeps))
@@ -233,7 +237,8 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
         xhat = (x[i] - shift)/scale
         pvec = _polynomial_vector(xhat, powers)
 
-        out[i] = np.sum(kvec[:, None]*coeffs[:p], axis=0)
-        out[i] += np.sum(pvec[:, None]*coeffs[p:], axis=0)
+        for j in range(s):
+            out[i, j] = np.sum(coeffs[:p, j]*kvec)
+            out[i, j] += np.sum(coeffs[p:, j]*pvec)
 
     return out
