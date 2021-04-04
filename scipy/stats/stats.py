@@ -185,7 +185,7 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from dataclasses import make_dataclass
 
 
-# Functions classes in other files should be added in `__init__.py`, not here
+# Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
