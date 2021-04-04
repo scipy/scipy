@@ -294,7 +294,7 @@ def _validate_vector(u, dtype=None):
         raise ValueError("Input vector should be 1-D.")
     warnings.warn(
         "scipy.spatial.distance metrics ignoring length-1 dimensions is "
-        "deprecated and will raise an error in SciPy 1.9.",
+        "deprecated in SciPy 1.7 and will raise an error in SciPy 1.9.",
         DeprecationWarning)
     return u
 
