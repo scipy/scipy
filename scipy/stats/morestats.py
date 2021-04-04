@@ -495,7 +495,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         True (default).
     plot : object, optional
         If given, plots the quantiles.
-        If given and `fit` is True, plots the least squares fit.
+        If given and `fit` is True, also plots the least squares fit.
         `plot` is an object that has to have methods "plot" and "text".
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
