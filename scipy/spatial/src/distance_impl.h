@@ -222,7 +222,11 @@ yule_distance_char(const char *u, const char *v, const npy_intp n)
         nft += (!x) & y;
     }
     nff = n - ntt - ntf - nft;
-    return (2. * ntf * nft) / ((double)ntt * nff + (double)ntf * nft);
+    double half_R = (double)ntf * nft;
+    if (half_R == 0.0) {
+        return 0.0;
+    }
+    return (2. * half_R) / ((double)ntt * nff + half_R);
 }
 
 static NPY_INLINE double

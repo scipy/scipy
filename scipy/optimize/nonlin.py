@@ -412,7 +412,7 @@ def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
     return s, x, Fx, Fx_norm
 
 
-class TerminationCondition(object):
+class TerminationCondition:
     """
     Termination condition for an iteration. It is terminated if
 
@@ -476,7 +476,7 @@ class TerminationCondition(object):
 # Generic Jacobian approximation
 #------------------------------------------------------------------------------
 
-class Jacobian(object):
+class Jacobian:
     """
     Common interface for Jacobians or Jacobian approximations.
 
@@ -544,7 +544,7 @@ class Jacobian(object):
             self.update(x, F)
 
 
-class InverseJacobian(object):
+class InverseJacobian:
     def __init__(self, jacobian):
         self.jacobian = jacobian
         self.matvec = jacobian.solve
@@ -685,7 +685,7 @@ class GenericBroyden(Jacobian):
         self.last_x = x
 
 
-class LowRankMatrix(object):
+class LowRankMatrix:
     r"""
     A matrix represented as
 

@@ -44,7 +44,7 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'dfreqresp', 'dbode']
 
 
-class LinearTimeInvariant(object):
+class LinearTimeInvariant:
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
         if cls is LinearTimeInvariant:

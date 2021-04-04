@@ -335,7 +335,7 @@ def _onenormest_product(operator_seq,
             ProductOperator(*operator_seq, structure=structure))
 
 
-class _ExpmPadeHelper(object):
+class _ExpmPadeHelper:
     """
     Help lazily evaluate a matrix exponential.
 

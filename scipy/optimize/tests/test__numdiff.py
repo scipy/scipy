@@ -76,7 +76,7 @@ def test_correct_eps():
         )
 
 
-class TestAdjustSchemeToBounds(object):
+class TestAdjustSchemeToBounds:
     def test_no_bounds(self):
         x0 = np.zeros(3)
         h = np.full(3, 1e-2)
@@ -150,7 +150,7 @@ class TestAdjustSchemeToBounds(object):
         assert_equal(one_sided, np.array([False, True]))
 
 
-class TestApproxDerivativesDense(object):
+class TestApproxDerivativesDense:
     def fun_scalar_scalar(self, x):
         return np.sinh(x)
 
@@ -496,7 +496,7 @@ class TestApproxDerivativesDense(object):
         assert_(accuracy == 0)
 
 
-class TestApproxDerivativeSparse(object):
+class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
     def setup_method(self):
         np.random.seed(0)
@@ -587,7 +587,7 @@ class TestApproxDerivativeSparse(object):
         assert_(accuracy < 1e-9)
 
 
-class TestApproxDerivativeLinearOperator(object):
+class TestApproxDerivativeLinearOperator:
 
     def fun_scalar_scalar(self, x):
         return np.sinh(x)

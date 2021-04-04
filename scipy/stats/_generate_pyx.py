@@ -2,6 +2,7 @@ import pathlib
 from shutil import copyfile
 
 
+
 def isNPY_OLD():
     '''
     A new random C API was added in 1.18 and became stable in 1.19.

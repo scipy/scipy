@@ -52,7 +52,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                                     'bounds.'}
 
 
-class MemoizeJac(object):
+class MemoizeJac:
     """ Decorator that caches the return values of a function returning `(fun, grad)`
         each time it is called. """
 
@@ -451,14 +451,17 @@ def rosen_hess_prod(x, p):
     return Hp
 
 
-def wrap_function(function, args):
+def _wrap_function(function, args):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    # A copy of x is sent to the user function (gh13740)
     ncalls = [0]
     if function is None:
         return ncalls, None
 
-    def function_wrapper(*wrapper_args):
+    def function_wrapper(x, *wrapper_args):
         ncalls[0] += 1
-        return function(*(wrapper_args + args))
+        return function(np.copy(x), *(wrapper_args + args))
 
     return ncalls, function_wrapper
 
@@ -657,7 +660,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = wrap_function(func, args)
+    fcalls, func = _wrap_function(func, args)
 
     if adaptive:
         dim = float(len(x0))
@@ -2907,7 +2910,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = wrap_function(func, args)
+    fcalls, func = _wrap_function(func, args)
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
@@ -3320,7 +3323,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin
 
 
-class _Brute_Wrapper(object):
+class _Brute_Wrapper:
     """
     Object to wrap user cost function for optimize.brute, allowing picklability
     """

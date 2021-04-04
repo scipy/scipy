@@ -227,6 +227,7 @@ Summary statistics
    bayes_mvs
    mvsdist
    entropy
+   differential_entropy
    median_absolute_deviation
    median_abs_deviation
 
@@ -280,6 +281,7 @@ Statistical tests
    ttest_rel
    chisquare
    cramervonmises
+   cramervonmises_2samp
    power_divergence
    kstest
    ks_1samp
@@ -314,14 +316,6 @@ Statistical tests
    skewtest
    kurtosistest
    normaltest
-
-Objects returned by some statistical tests
-------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   BinomTestResult
 
 
 Quasi-Monte Carlo
@@ -400,8 +394,10 @@ Contingency table functions
    contingency.crosstab
    contingency.expected_freq
    contingency.margins
+   contingency.relative_risk
    contingency.association
    fisher_exact
+   barnard_exact
 
 Plot-tests
 ----------
@@ -436,10 +432,11 @@ Warnings used in :mod:`scipy.stats`
    SpearmanRConstantInputWarning
 
 """
+
 from .stats import *
 from .distributions import *
 from .morestats import *
-from ._binomtest import binomtest, BinomTestResult
+from ._binomtest import binomtest
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
@@ -447,6 +444,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._entropy import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

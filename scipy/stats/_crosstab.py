@@ -1,7 +1,8 @@
 import numpy as np
+from scipy.sparse import coo_matrix
 
 
-def crosstab(*args, levels=None):
+def crosstab(*args, levels=None, sparse=False):
     """
     Return table of counts for each possible unique combination in ``*args``.
 
@@ -26,6 +27,11 @@ def crosstab(*args, levels=None):
         does not occur in the corresponding sequence in `levels`, that value
         is ignored and not counted in the returned array `count`.  The default
         value of `levels` for ``args[i]`` is ``np.unique(args[i])``
+    sparse : bool, optional
+        If True, return a sparse matrix.  The matrix will be an instance of
+        the `scipy.sparse.coo_matrix` class.  Because SciPy's sparse matrices
+        must be 2-d, only two input sequences are allowed when `sparse` is
+        True.  Default is False.
 
     Returns
     -------
@@ -35,7 +41,7 @@ def crosstab(*args, levels=None):
         the corresponding dimensions of `count`.
         If `levels` was given, then if ``levels[i]`` is not None,
         ``elements[i]`` will hold the values given in ``levels[i]``.
-    count : numpy.ndarray
+    count : numpy.ndarray or scipy.sparse.coo_matrix
         Counts of the unique elements in ``zip(*args)``, stored in an array.
         Also known as a *contingency table* when ``len(args) > 1``.
 
@@ -124,6 +130,17 @@ def crosstab(*args, levels=None):
     array([[1, 1],
            [1, 4],
            [0, 3]])
+
+    Finally, let's repeat the first example, but return a sparse matrix:
+
+    >>> (avals, xvals), count = crosstab(a, x, sparse=True)
+    >>> count
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
+            with 4 stored elements in COOrdinate format>
+    >>> count.A
+    array([[2, 3, 0],
+           [1, 0, 4]])
+
     """
     nargs = len(args)
     if nargs == 0:
@@ -133,13 +150,14 @@ def crosstab(*args, levels=None):
     if not all(len(a) == len0 for a in args[1:]):
         raise ValueError("All input sequences must have the same length.")
 
+    if sparse and nargs != 2:
+        raise ValueError("When `sparse` is True, only two input sequences "
+                         "are allowed.")
+
     if levels is None:
         # Call np.unique with return_inverse=True on each argument.
-        actual_levels, inverses = zip(*[np.unique(a, return_inverse=True)
-                                        for a in args])
-        shape = [len(u) for u in actual_levels]
-        count = np.zeros(shape, dtype=int)
-        np.add.at(count, inverses, 1)
+        actual_levels, indices = zip(*[np.unique(a, return_inverse=True)
+                                       for a in args])
     else:
         # `levels` is not None...
         if len(levels) != nargs:
@@ -162,9 +180,15 @@ def crosstab(*args, levels=None):
             actual_levels.append(levels_list)
 
         mask_all = mask.all(axis=0)
+        indices = tuple(inv[:, mask_all])
+
+    if sparse:
+        count = coo_matrix((np.ones(len(indices[0]), dtype=int),
+                            (indices[0], indices[1])))
+        count.sum_duplicates()
+    else:
         shape = [len(u) for u in actual_levels]
         count = np.zeros(shape, dtype=int)
-        indices = tuple(inv[:, mask_all])
         np.add.at(count, indices, 1)
 
     return actual_levels, count

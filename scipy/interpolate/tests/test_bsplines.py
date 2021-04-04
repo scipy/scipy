@@ -15,7 +15,7 @@ import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
 
 
-class TestBSpline(object):
+class TestBSpline:
 
     def test_ctor(self):
         # knots should be an ordered 1-D array of finite real numbers
@@ -556,7 +556,7 @@ def _make_multiples(b):
     yield BSpline(t1, c, k)
 
 
-class TestInterop(object):
+class TestInterop:
     #
     # Test that FITPACK-based spl* functions can deal with BSpline objects
     #
@@ -791,7 +791,7 @@ class TestInterop(object):
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
 
-class TestInterp(object):
+class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
     #
@@ -1175,7 +1175,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
-class TestLSQ(object):
+class TestLSQ:
     #
     # Test make_lsq_spline
     #
