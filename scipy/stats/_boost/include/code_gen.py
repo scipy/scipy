@@ -4,6 +4,7 @@ from typing import NamedTuple
 from warnings import warn
 from textwrap import dedent
 
+
 class _MethodDef(NamedTuple):
     ufunc_name: str
     num_inputs: int
@@ -11,7 +12,8 @@ class _MethodDef(NamedTuple):
 
 
 def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
-              filename: str, boost_dist: str, x_funcs: list, no_x_funcs: list):
+               filename: str, boost_dist: str, x_funcs: list,
+               no_x_funcs: list):
     '''
     We need methods defined for each rv_continuous/_discrete internal method:
         i.e.: _pdf, _cdf, etc.
@@ -53,6 +55,7 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
         f'ctypedef int NINPUTS{n} "{n}"' for n in unique_num_inputs)
 
     with open(filename, 'w') as fp:
+        boost_hdr = f'boost/math/distributions/{boost_hdr_name}.hpp'
         fp.write(dedent(f'''\
             # distutils: language = c++
             # cython: language_level=3
@@ -72,7 +75,7 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
             from func_defs cimport (
                 {func_defs_cimports},
             )
-            cdef extern from "boost/math/distributions/{boost_hdr_name}.hpp" namespace "boost::math" nogil:
+            cdef extern from "{boost_hdr}" namespace "boost::math" nogil:
                 cdef cppclass {boost_dist} nogil:
                     pass
 
@@ -108,13 +111,16 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
                     'NPY_FLOAT16': 'npy_half',
                 }[T]
                 boost_fun = f'boost_{m.boost_func_name}{num_ctor_args}'
-                boost_tmpl = f'{boost_dist}, {", ".join([ctype]*(1+num_ctor_args))}'
-                fp.write(dedent(f'''
-                    loop_func{ii}[{jj}] = <PyUFuncGenericFunction>{loop_fun}[{ctype}, NINPUTS{m.num_inputs}]
-                    func{ii}[{jj}] = <void*>{boost_fun}[{boost_tmpl}]
-                    '''))
+                type_str = ", ".join([ctype]*(1+num_ctor_args))
+                boost_tmpl = f'{boost_dist}, {type_str}'
+                N = m.num_inputs
+                fp.write(f'''\
+loop_func{ii}[{jj}] = <PyUFuncGenericFunction>{loop_fun}[{ctype}, NINPUTS{N}]
+func{ii}[{jj}] = <void*>{boost_fun}[{boost_tmpl}]
+''')
                 for tidx in range(m.num_inputs+1):
-                    fp.write(f'types{ii}[{tidx}+{jj}*{m.num_inputs+1}] = {T}\n')
+                    fp.write(
+                        f'types{ii}[{tidx}+{jj}*{m.num_inputs+1}] = {T}\n')
             arg_list_str = ', '.join(ctor_args)
             if m.boost_func_name in x_funcs:
                 arg_list_str = 'x, ' + arg_list_str

@@ -2,7 +2,6 @@ import pathlib
 from shutil import copyfile
 
 
-
 def isNPY_OLD():
     '''
     A new random C API was added in 1.18 and became stable in 1.19.
@@ -24,7 +23,8 @@ def make_biasedurn():
 
 def make_boost():
     # create target directory
-    (pathlib.Path(__file__).parent / '_boost/src').mkdir(exist_ok=True, parents=True)
+    (pathlib.Path(__file__).parent / '_boost/src').mkdir(exist_ok=True,
+                                                         parents=True)
     src_dir = pathlib.Path(__file__).parent / '_boost/src'
 
     # copy contents of include into directory to satisfy Cython
@@ -34,9 +34,11 @@ def make_boost():
     copyfile(inc_dir / src, src_dir / src)
 
     # generate the PXD and PYX wrappers
-    from _boost.include.gen_func_defs_pxd import _gen_func_defs_pxd  # type: ignore
+    from _boost.include.gen_func_defs_pxd import (  # type: ignore
+        _gen_func_defs_pxd)
     from _boost.include.code_gen import _ufunc_gen  # type: ignore
-    from _boost._info import _x_funcs, _no_x_funcs, _klass_mapper  # type: ignore
+    from _boost._info import (  # type: ignore
+        _x_funcs, _no_x_funcs, _klass_mapper)
     _gen_func_defs_pxd(
         f'{src_dir}/func_defs.pxd',
         x_funcs=_x_funcs,
