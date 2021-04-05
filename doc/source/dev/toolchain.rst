@@ -29,7 +29,8 @@ section for an example.)
 - Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
-- Building the documentation requires the ``matplotlib``, Sphinx packages, as well as a LaTeX installation.
+- Building the documentation requires the ``matplotlib``, Sphinx packages along with PyData theme,
+  as well as a LaTeX installation.
 
 The tooling used to build CPython has some implications for the tooling used
 in building SciPy.
@@ -289,14 +290,15 @@ asv (airspeed velocity)    Recent     https://asv.readthedocs.io/
 Building the Documentation
 --------------------------
 
-==========   =================================================
- Tool        Version
-==========   =================================================
-Sphinx       Whatever recent versions work. >= 2.0.
-numpydoc     Whatever recent versions work. >= 0.8.0.
-matplotlib   Generally suggest >= 2.0.
-LaTeX        A recent distribution, such as ``TeX Live 2016``.
-==========   =================================================
+====================  =================================================
+ Tool                 Version
+====================  =================================================
+Sphinx                Whatever recent versions work. >= 2.0.
+PyData Sphinx theme   Whatever recent versions work.
+numpydoc              Whatever recent versions work. >= 0.8.0.
+matplotlib            Generally suggest >= 2.0.
+LaTeX                 A recent distribution, such as ``TeX Live 2016``.
+====================  =================================================
 
 [The ``numpydoc`` package is also used, but that is currently
 packaged in ``doc/sphinxext``.]
