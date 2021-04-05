@@ -55,13 +55,13 @@ def _is_conditionally_positive_definite(kernel, m):
             x = np.random.normal(0.0, 1.0, (nx, ndim))
             dist = _rbfinterp_pythran._distance_matrix(x)
             # add a small value to the diagonals in case the kernel _should_ be
-            # c.p.d but it is not due to numerical precision.
+            # c.p.d. but it is not due to numerical precision.
             A = kernel(dist) + 1e-12*np.eye(nx)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
             # A onto this space, and then see if it is positive definite using
-            # the Cholesky decomposition. If not, then the kernel is not c.p.d
+            # the Cholesky decomposition. If not, then the kernel is not c.p.d.
             # of order m
             Q2 = Q[:, P.shape[1]:]
             B = Q2.T.dot(A).dot(Q2)
@@ -73,7 +73,9 @@ def _is_conditionally_positive_definite(kernel, m):
     return True
 
 
-@pytest.mark.parametrize('kernel', _AVAILABLE)
+# sorting the parametrize arguments is necessary to avoid a parallelization
+# issue described here: https://github.com/pytest-dev/pytest-xdist/issues/432
+@pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
 def test_conditionally_positive_definite(kernel):
     # Test if each kernel in _AVAILABLE is conditionally positive definite of
     # order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
@@ -84,10 +86,10 @@ def test_conditionally_positive_definite(kernel):
 
 
 class _TestRBFInterpolator:
-    @pytest.mark.parametrize('kernel', _SCALE_INVARIANT)
+    @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
     def test_scale_invariance_1d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
-        # shape parameter (when smoothing == 0) in 1-D
+        # shape parameter (when smoothing == 0) in 1d
         np.random.seed(0)
         x = np.random.uniform(0.0, 3.0, (50, 1))
         y = _1d_test_function(x)
@@ -96,10 +98,10 @@ class _TestRBFInterpolator:
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
-    @pytest.mark.parametrize('kernel', _SCALE_INVARIANT)
+    @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
     def test_scale_invariance_2d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
-        # shape parameter (when smoothing == 0) in 2-D
+        # shape parameter (when smoothing == 0) in 2d
         np.random.seed(0)
         x = np.random.uniform(0.0, 1.0, (100, 2))
         y = _2d_test_function(x)
@@ -108,7 +110,7 @@ class _TestRBFInterpolator:
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
-    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_extreme_domains(self, kernel):
         # Make sure the interpolant remains numerically stable for very
         # large/small domains
@@ -187,7 +189,7 @@ class _TestRBFInterpolator:
         assert_allclose(yitp1.real, yitp2)
         assert_allclose(yitp1.imag, yitp3)
 
-    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_interpolation_misfit_1d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 1d
@@ -204,7 +206,7 @@ class _TestRBFInterpolator:
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
 
-    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_interpolation_misfit_2d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 2d
@@ -220,7 +222,7 @@ class _TestRBFInterpolator:
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 2.0e-4
 
-    @pytest.mark.parametrize('kernel', _AVAILABLE)
+    @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_smoothing_misfit(self, kernel):
         # Make sure we can find a smoothing parameter for each kernel that
         # removes a sufficient amount of noise
