@@ -22,9 +22,10 @@ echo "syntax enable" >>~/.vimrc
 echo "PS1='\[\e]0;\u \w\a\]\[\033[01;36m\]\u\[\033[m\] > \[\033[38;5;141m\]\w\[\033[m\] \\$ '" >>~/.bashrc
 
 # make conda activate command available from /bin/bash (login and interactive)
-ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+if [[ ! -f "/etc/profile.d/conda.sh" ]]; then
+    ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+fi
 echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.bashrc
-echo "conda activate base" >>~/.bashrc
 echo "conda activate scipydev" >>~/.bashrc
 
 # Enable prompt color in the skeleton .bashrc

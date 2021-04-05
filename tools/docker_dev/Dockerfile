@@ -31,7 +31,7 @@ ARG BASE_CONTAINER=${ROOT_CONTAINER}
 FROM ${BASE_CONTAINER}
 
 # Change default shell - this avoids issues with Conda later
-SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # -----------------------------------------------------------------------------
 # ---- Miniforge installer ----
@@ -64,11 +64,17 @@ ARG PYTHON_VERSION=default
 ENV CONDA_DIR=/opt/conda \
     SHELL=/bin/bash 
 
-ENV PATH=${CONDA_DIR}/bin:$PATH \
-    CONDA_VERSION="${conda_version}" \
+ENV CONDA_VERSION="${conda_version}" \
     MINIFORGE_VERSION="${miniforge_version}" \
     CONDA_ENV=scipydev \
-    PROJECT_DIR=/home/scipy
+    # ---- Gitpod user ----
+    GP_USER=gitpod \
+    GP_GROUP=gitpod \
+    UID=3333 
+
+ENV HOME="/home/${GP_USER}" \
+    PROJECT_DIR="${GP_HOME}/scipy"\
+    PATH=${CONDA_DIR}/bin:$PATH 
 
 # -----------------------------------------------------------------------------
 # ---- OS dependencies ----
@@ -82,13 +88,48 @@ RUN apt-get update && \
     git \
     libatlas-base-dev \
     software-properties-common \
+    sudo \
     vim \
     wget && \
     apt-get clean && \
     rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* && \
-    rm -rf /var/cache/apt/* && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/cache/apt/* 
+
+# -----------------------------------------------------------------------------
+# ---- Copy needed files ----
+# Copy multiple scripts - fix directory permissions and 
+# basic workspace configurations
+COPY ./workspace_config /usr/local/bin/workspace_config
+COPY ./fix_permissions /usr/local/bin/fix_permissions
+
+RUN chmod a+rx /usr/local/bin/workspace_config && \
+    chmod a+rx /usr/local/bin/fix_permissions 
+
+# -----------------------------------------------------------------------------
+# ---- Create gitpod user and group: needed for permissions later ----
+# '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
+RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
+    sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers && \
+    sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers && \
+    # create /home/gitpod too for later use
+    useradd -l -u ${UID} -G sudo -md ${HOME} -s /bin/bash -p ${GP_GROUP} ${GP_USER} && \
+    # passwordless sudo for users in the 'sudo' group
+    sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers && \
+    mkdir -p ${CONDA_DIR} && \
+    # transfer conda path ownership and ensure it is user writable
+    chown -R ${GP_USER}:${GP_GROUP} ${CONDA_DIR} && \
+    fix_permissions ${HOME} && \
+    fix_permissions ${CONDA_DIR} && \
+    workspace_config
+
+# Setup work directory for backward-compatibility
+RUN mkdir ${PROJECT_DIR} && \
+    fix_permissions ${HOME}
+
+USER ${GP_USER}
+
+WORKDIR /tmp
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----
@@ -108,16 +149,9 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     "conda=${CONDA_VERSION}" \
     'pip' && \
     conda update --all --quiet --yes && \
-    conda clean --all -f -y 
+    conda clean --all -f -y && \
+    fix_permissions ${CONDA_DIR}
 
-# -----------------------------------------------------------------------------
-# ---- Copy needed files ----
-# Copy multiple scripts - fix directory permissions and 
-# basic workspace configurations
-COPY ./workspace_config /usr/local/bin/workspace_config
-
-RUN chmod a+rx /usr/local/bin/workspace_config && \
-    workspace_config 
 
 # -----------------------------------------------------------------------------
 # ---- Create conda environment ----
@@ -127,11 +161,12 @@ RUN chmod a+rx /usr/local/bin/workspace_config && \
 COPY ./environment.yml /tmp/environment.yml
 
 RUN conda env create -f /tmp/environment.yml && \
-    conda clean --all -f -y && \
-    rm -rf /tmp/* 
+    fix_permissions ${CONDA_DIR} &&\
+    conda clean --all -f -y 
 
 # -----------------------------------------------------------------------------
 # Create a Scipy directory inside /home/ 
 # this will be used to mount the local volume
-RUN mkdir ${PROJECT_DIR}
+# RUN mkdir ${PROJECT_DIR}
 WORKDIR ${PROJECT_DIR}
+USER ${GP_USER}
