@@ -2,8 +2,47 @@
 # This way, we ensure we have all the needed compilers and dependencies
 # while reducing the build time
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
-FROM ${BASE_CONTAINER}
+FROM ${BASE_CONTAINER} as build
+
 # -----------------------------------------------------------------------------
+USER root
+
+# -----------------------------------------------------------------------------
+# ---- ENV variables ----
+# ---- Directories needed ----
+ENV HOME=/home/scipy \
+    CONDA_DIR=/opt/conda \ 
+    WORKSPACE=/workspace/scipy/ 
+
+# -----------------------------------------------------------------------------
+# Change default shell - this avoids issues with Conda later - note we do need
+# login bash here as we are building SciPy inside Docker
+# Fix DL4006
+SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
+
+RUN mkdir -p ${WORKSPACE} 
+
+# -----------------------------------------------------------------------------
+# ---- Build Scipy here ----
+# Ensure the following happens in the workspace
+WORKDIR ${WORKSPACE}
+
+# deep clone as we only need to build the latest dev version from master
+RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . && \
+    conda activate scipydev && \
+    python setup.py build_ext --inplace 
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ******************************************************************************
+# Ubuntu 20.04 (focal)
+# https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
+# OS/ARCH: linux/amd64
+
+FROM scipy/scipy-dev:latest as runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 USER root
 
@@ -15,13 +54,12 @@ RUN apt-get update && \
     bash-completion \
     dirmngr \
     gpg-agent \
-    git \
-    jq \
+    gnupg \
+    jq \ 
     less \
     locales \
     lsof \
     man-db \
-    sudo \
     ssl-cert \
     time && \
     # this needs to be done after installing dirmngr
@@ -46,12 +84,10 @@ ENV LANG=en_US.UTF-8 \
 # ---- Directories needed ----
 ENV HOME=/home/gitpod \
     CONDA_DIR=/opt/conda \ 
-    WORKSPACE=/workspace/scipy/ 
+    WORKSPACE=/workspace/scipy \
+    CONDA_ENV=scipydev
 
-# -----------------------------------------------------------------------------
-# Change default shell - this avoids issues with Conda later
-# Fix DL4006
-SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
+ENV PATH=${CONDA_DIR}/bin:$PATH 
 
 # -----------------------------------------------------------------------------
 # ---- Copy needed files ----
@@ -60,44 +96,24 @@ SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
 COPY ./tools/docker_dev/fix_permissions /usr/local/bin/fix_permissions
 COPY ./tools/docker_dev/workspace_config /usr/local/bin/workspace_config
 
-RUN chmod a+rx /usr/local/bin/fix_permissions && \
-    chmod a+rx /usr/local/bin/workspace_config
+WORKDIR ${WORKSPACE}
 
-# -----------------------------------------------------------------------------
-# ---- Create gitpod user and group: needed for permissions later ----
-# '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
-RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
-    sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers && \
-    sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers && \
-    useradd -l -u ${UID} -G sudo -md "${HOME}" -s /bin/bash -p ${GP_GROUP} ${GP_USER} && \
-    # passwordless sudo for users in the 'sudo' group
-    sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers && \
-    # transfer ownership to gitpod user 
-    chown -R ${GP_USER}:${GP_GROUP} ${CONDA_DIR} && \ 
-    fix_permissions ${CONDA_DIR} && \
-    mkdir -p ${WORKSPACE} && \
+RUN chmod a+rx /usr/local/bin/fix_permissions && \
+    chmod a+rx /usr/local/bin/workspace_config && \
+    workspace_config && \
     chown -R ${GP_USER}:${GP_GROUP} ${WORKSPACE} && \ 
+    # again, need to make sure this is user writable
     fix_permissions ${WORKSPACE}  
 
-# workspace configs here
-RUN workspace_config 
-
-# Always favour the least-privileged user, in this case gitpod
+# favour less privileged user
 USER ${GP_USER}
-# -----------------------------------------------------------------------------
-# ---- Build Scipy here ----
-# Ensure the following happens in the workspace
-WORKDIR ${WORKSPACE}
 
-RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . && \
-    conda activate scipydev && \
-    python setup.py build_ext --inplace && \
-    conda develop . && \ 
-    python -m pip install --no-cache-dir sphinx-autobuild && \
+# install Sphinx autobuild - needed for rst preview
+RUN python -m pip install --no-cache-dir sphinx-autobuild && \
     rm -rf /tmp/* && \
-    # for good measure as we installed things
-    fix_permissions ${WORKSPACE} && \
+    ${CONDA_DIR}/bin/conda clean -afy && \
     fix_permissions ${CONDA_DIR}
 
-# Ensure we are in the correct directory
-WORKDIR ${WORKSPACE}
+# Copy build directory from build stage - doing this to avoid issues
+# with how gitpod clones repos later it will end up in /home/gitpod/build
+COPY --chown=${GP_USER}:${GP_GROUP} --from=build ${WORKSPACE}/build/ ${HOME}/build/
