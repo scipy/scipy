@@ -114,11 +114,16 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
 
     numerator = U - mu
 
-    # Continuity correction. I still need to find a reference for this.
+    # Continuity correction.
+    # Because SF is always used to calculate the p-value, we can always
+    # _subtract_ 0.5 for the continuity correction. This always increases the
+    # p-value to accounts for the rest of the probability mass _at_ q = U.
     if continuity:
-        numerator -= 0.5 * (U != mu)
+        numerator -= 0.5
 
-    z = numerator / s
+    # no problem evaluating the norm SF at an infinity
+    with np.errstate(divide='ignore', invalid='ignore'):
+        z = numerator / s
     return z
 
 
@@ -409,8 +414,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     p *= f
 
     # Ensure that test statistic is not greater than 1
-    # This should not happen for asymptotic test with proper continuity
-    # correction, but could happen for exact test when U = m*n/2
+    # This could happen for exact test when U = m*n/2
     # Written to avoid dealing with floats and Nd arrays separately
     # If you prefer to branch, please suggest specific code
     pgt1 = p > 1

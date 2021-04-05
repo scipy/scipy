@@ -240,6 +240,13 @@ class TestMannWhitneyU:
 
     # --- Test Basic Functionality ---
 
+    x = [210.052110, 110.190630, 307.918612]
+    y = [436.08811482466416, 416.37397329768191, 179.96975939463582,
+         197.8118754228619, 34.038757281225756, 138.54220550921517,
+         128.7769351470246, 265.92721427951852, 275.6617533155341,
+         592.34083395416258, 448.73177590617018, 300.61495185038905,
+         187.97508449019588]
+
     # This test was written for mann_whitney_u in gh-4933.
     # Originally, the p-values for alternatives were swapped;
     # this has been corrected and the tests have been refactored for
@@ -268,13 +275,19 @@ class TestMannWhitneyU:
 
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     def test_basic(self, kwds, expected):
-        x = [210.052110, 110.190630, 307.918612]
-        y = [436.08811482466416, 416.37397329768191, 179.96975939463582,
-             197.8118754228619, 34.038757281225756, 138.54220550921517,
-             128.7769351470246, 265.92721427951852, 275.6617533155341,
-             592.34083395416258, 448.73177590617018, 300.61495185038905,
-             187.97508449019588]
-        res = mannwhitneyu(x, y, **kwds)
+        res = mannwhitneyu(self.x, self.y, **kwds)
+        assert_allclose(res, expected)
+
+    cases_continuity = [[{"alternative": 'two-sided', "method": "asymptotic"},
+                         (23, 0.6865041817876)],
+                        [{"alternative": 'less', "method": "asymptotic"},
+                         (23, 0.7047591913255)],
+                        [{"alternative": 'greater', "method": "asymptotic"},
+                         (23, 0.3432520908938)]]
+
+    @pytest.mark.parametrize(("kwds", "expected"), cases_continuity)
+    def test_continuity(self, kwds, expected):
+        res = mannwhitneyu(self.y, self.x, **kwds)
         assert_allclose(res, expected)
 
     def test_tie_correct(self):
@@ -404,14 +417,17 @@ class TestMannWhitneyU:
         assert_allclose(mannwhitneyu(1, 2, **kwds), result)
 
     def test_equal_scalar_data(self):
-        # when two scalars are equal, there is a NaN in the asymptotic
-        # approximation. This is the same behavior as R's wilcox.test.
+        # when two scalars are equal, there is an -0.5/0 in the asymptotic
+        # approximation. R gives pvalue=1.0 for alternatives 'less' and
+        # 'greater' but NA for 'two-sided'. I don't see why, so I don't
+        # see a need for a special case to match that behavior.
         assert_equal(mannwhitneyu(1, 1, method="exact"), (0.5, 1))
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value")
-            res = mannwhitneyu(1, 1, method="asymptotic")
-            assert res.statistic == 0.5
-            assert np.isnan(res.pvalue)
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic"), (0.5, 1))
+
+        # without continuity correction, this becomes 0/0, which really
+        # is undefined
+        assert_equal(mannwhitneyu(1, 1, method="asymptotic",
+                                  use_continuity=False), (0.5, np.nan))
 
     # --- Test Enhancements / Bug Reports ---
 
@@ -531,9 +547,21 @@ class TestMannWhitneyU:
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
             mannwhitneyu(a, b)
 
-    cases_2118 = [[[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
-                  [[1, 2, 3], [2], "less", (1.5, 0.5)],
-                  [[1, 2], [1, 2], "greater", (2, 0.5)]]
+    # All cases checked against R wilcox.test, e.g.
+    # options(digits=16)
+    # x = c(1, 2, 3)
+    # y = c(1.5, 2.5)
+    # wilcox.test(x, y, exact=FALSE, alternative='less')
+
+    cases_2118 = [[[1, 2, 3], [1.5, 2.5], "greater", (3, 0.6135850036578)],
+                  [[1, 2, 3], [1.5, 2.5], "less", (3, 0.6135850036578)],
+                  [[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
+                  [[1, 2, 3], [2], "greater", (1.5, 0.681324055883)],
+                  [[1, 2, 3], [2], "less", (1.5, 0.681324055883)],
+                  [[1, 2, 3], [2], "two-sided", (1.5, 1)],
+                  [[1, 2], [1, 2], "greater", (2, 0.667497228949)],
+                  [[1, 2], [1, 2], "less", (2, 0.667497228949)],
+                  [[1, 2], [1, 2], "two-sided", (2, 1)]]
 
     @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases_2118)
     def test_gh_2118(self, x, y, alternative, expected):
@@ -541,7 +569,7 @@ class TestMannWhitneyU:
         # applying continuity correction could result in p-value > 1
         res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
                            method="asymptotic")
-        assert_equal(res, expected)
+        assert_allclose(res, expected, rtol=1e-12)
 
 
 class TestSomersD:
