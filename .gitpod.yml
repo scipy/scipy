@@ -7,22 +7,23 @@
 # With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
-image:
-  file: ./tools/docker_dev/.gitpod.Dockerfile
+image: scipy/scipy-gitpod:latest
 tasks:
-  - name: Prebuild Scipy & docs
+  - name: Prebuild Scipy docs
     prebuild: |
       conda activate scipydev
-      python setup.py build_ext --inplace
       git submodule update --init
       cd doc 
       make html-scipyorg
-      pip install sphinx-autobuild
+      mv /home/gitpod/build /workspace/scipy/build
     command: |
       conda activate scipydev
       conda develop .
   - name: Develop here
-    init: mkdir -p /workspace/scipy/.theia &&  cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
+    init: |
+      mkdir -p /workspace/scipy/.theia 
+      cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
+      cp /home/gitpod/build /workspace/scipy/build
     command: conda activate scipydev
 
 # --------------------------------------------------------
