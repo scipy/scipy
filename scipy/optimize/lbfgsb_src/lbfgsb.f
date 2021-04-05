@@ -2900,8 +2900,9 @@ c     ************
      +'   may possibly be caused by a bad search direction.')
  9018 format (/,' The triangular system is singular.')
  9019 format (/,
-     +' Line search cannot locate an adequate point after 20 function',/
-     +,'  and gradient evaluations.  Previous x, f and g restored.',/,
+     +' Line search cannot locate an adequate point after MAXLS',/
+     +,'  function and gradient evaluations.',/
+     +,'  Previous x, f and g restored.',/,
      +' Possible causes: 1 error in function or gradient evaluation;',/,
      +'                  2 rounding error dominate computation.')
 

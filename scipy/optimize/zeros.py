@@ -30,7 +30,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
-class RootResults(object):
+class RootResults:
     """Represents the root finding result.
 
     Attributes
@@ -1026,7 +1026,7 @@ def _newton_quadratic(ab, fab, d, fd, k):
     return r
 
 
-class TOMS748Solver(object):
+class TOMS748Solver:
     """Solve f(x, *args) == 0 using Algorithm748 of Alefeld, Potro & Shi.
     """
     _MU = 0.5

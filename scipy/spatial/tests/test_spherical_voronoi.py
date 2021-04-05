@@ -95,7 +95,7 @@ def _sample_sphere(n, dim, seed=None):
     return points
 
 
-class TestSphericalVoronoi(object):
+class TestSphericalVoronoi:
 
     def setup_method(self):
         self.points = np.array([

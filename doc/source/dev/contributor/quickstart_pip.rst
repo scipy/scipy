@@ -9,17 +9,17 @@ Development environment quickstart guide using ``pip`` on Ubuntu Linux
 This is a high-level overview of what is needed to set up a development
 environment. This is only one possible way out of many. This guide assumes
 you have a fresh install of Ubuntu Linux 20.04, which only has a ``python3``
-executable. We also assume you have already installed ``git`` and cloned 
+executable. We also assume you have already installed ``git`` and cloned
 the SciPy repository.
 
 
 Installing the system-level dependencies
 ----------------------------------------
 
-First, you will also need the compilers for C, C++ and Fortran:: 
+First, you will also need the compilers for C, C++ and Fortran::
 
     sudo apt install -y gcc g++ gfortran
-    
+
 SciPy also requires BLAS and LAPACK libraries. You can install several variants
 (ATLAS, OpenBLAS etc), but here we take the simplest option::
 
@@ -34,14 +34,14 @@ Start with installing ``pip``::
     sudo apt install -y python3-pip
 
 All further work should proceed in a virtual environment. Popular options include
-the standard library ``venv`` module or a separate 
+the standard library ``venv`` module or a separate
 ``virtualenv`` package. There are muliple third-party tutorials on how to
 set up a virtual environment, so we cover only briefly these two options
 here.
 
 .. note::
 
-    We repeat: all work should happen in a virtual environment. Never use ``sudo pip``. 
+    We repeat: all work should happen in a virtual environment. Never use ``sudo pip``.
 
 
 Using ``virtualenv``
@@ -61,14 +61,14 @@ internally by the ``virtualenvwrapper``::
 Here we store the virtualenvs in a ``virtualenvs`` folder in the home directory.
 (you might need to create the folder manually).
 
-Now open a new terminal window for the changes to the ``.bashrc`` to take effect. 
+Now open a new terminal window for the changes to the ``.bashrc`` to take effect.
 
 Create a new virtual environment and activate it::
 
     mkvirtualenv scipy-dev
 
 Your command prompt now lists the name of your new environment, like so
-``(scipy-dev)$``. This means that the environment is active. If it is not, 
+``(scipy-dev)$``. This means that the environment is active. If it is not,
 activate it manually with::
 
     workon scipy-dev
@@ -106,7 +106,7 @@ Building SciPy
 
 Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-    python -m pip install numpy pytest cython pybind11
+    python -m pip install numpy pytest cython pythran pybind11
 
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
@@ -115,7 +115,7 @@ Now that you have all needed dependencies, navigate to the directory where
 you cloned the source code into, and build SciPy (this takes a while)::
 
     python setup.py build
-    
+
 Optionally, test it::
 
     python runtests.py

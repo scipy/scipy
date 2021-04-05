@@ -308,7 +308,7 @@ def matdims(arr, oned_as='column'):
     return shape
 
 
-class MatVarReader(object):
+class MatVarReader:
     ''' Abstract class defining required interface for var readers'''
     def __init__(self, file_reader):
         pass
@@ -322,7 +322,7 @@ class MatVarReader(object):
         pass
 
 
-class MatFileReader(object):
+class MatFileReader:
     """ Base object for reading mat files
 
     To make this class functional, you will need to override the
