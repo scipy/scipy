@@ -4017,11 +4017,11 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
-_POW10M1 = np.log(10)
+_POW10_LOG10 = np.log(10)
 
 def _pow10m1(x):
     """10 ** x - 1 for x near 0"""
-    return np.expm1(_POW10M1 * x)
+    return np.expm1(_POW10_LOG10 * x)
 
 
 def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
@@ -4266,71 +4266,120 @@ def cheb2ap(N, rs):
 
 EPSILON = 2e-16
 
-# tolerance for the inverse function solvers used in ellipap
-_ELLIP_TOL = 1e-8
+# number of terms in solving degree equation
+_ELLIPDEG_MMAX = 7
 
+def _ellipdeg(n, m1):
+    """Solve degree equation using nomes
 
-def _f_vratio(u, ineps, mp):
-    """Function to solve in _solve_vratio"""
-    s, c = special.ellipj(u, mp)[0:2]
-    return c * ineps - s
+    Given n, m1, solve
+       n * K(m) / K'(m) = K1(m1) / K1'(m1)
+    for m
 
+    See [1], Eq. (49)
 
-def _solve_vratio(ineps, m):
-    """Solve ineps = sn(u, 1 - m)/cn(u, 1 - m) for u
-    Assumes ineps > 0.
-    sc is periodic,  with period ellipk(1-m); returns root in [0, ellipk(1-m)]
+    References
+    ----------
+    .. [1] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
     """
-    # sn(0, 1-m) is 0, and cn(0, 1-m) is 1, while
-    # sn(ellipk(1-m), 1-m) is 1, and cn(ellipk(1-m), 1-m) is 0
-    # thus:
-    #  _f_vratio(lo) = ineps > 0
-    #  _f_vratio(hi) = -1 < 0
-    lo = 0
-    hi = special.ellipkm1(m)
+    K1 = special.ellipk(m1)
+    K1p = special.ellipkm1(m1)
 
-    res = root_scalar(_f_vratio,
-                      args=(ineps, 1 - m),
-                      bracket=[lo, hi],
-                      xtol=_ELLIP_TOL,
-                      rtol=_ELLIP_TOL,
-                      maxiter=1000)
+    q1 = np.exp(-np.pi * K1p / K1)
+    q = q1 ** (1/n)
 
-    if not res.converged:
-        errmsg = f"solving for ineps={ineps}, m={m} failed to converge"
-        raise ValueError(errmsg)
+    mnum = np.arange(_ELLIPDEG_MMAX + 1)
+    mden = np.arange(1, _ELLIPDEG_MMAX + 2)
 
-    return res.root
+    num = np.sum(q ** (mnum * (mnum+1)))
+    den = 1 + 2 * np.sum(q ** (mden**2))
+
+    return 16 * q * (num / den) ** 4
 
 
-def _f_kratio(m, krat):
-    """Function to solve in _solve_kratio"""
-    m = np.clip(m, 0, 1)
-    return special.ellipk(m) / special.ellipkm1(m) - krat
+def _arc_jac_sn(w, m):
+    """Inverse Jacobian elliptic sn
+
+    Solve for z in w = sn(z, m)
+
+    Parameters
+    ----------
+    w - complex scalar
+        argument
+
+    m - scalar
+        modulus; in interval [0, 1]
 
 
-def _solve_kratio(krat):
-    """Solve for m in krat = ellipk(m) / ellipk(1-m)"""
-    lo = 0
-    # ellipk(1) is inf, so move one step down
-    hi = np.nextafter(1, -np.inf)
-    klo = _f_kratio(lo, 0)
-    khi = _f_kratio(hi, 0)
-    if not klo <= krat <= khi:
-        errmsg = f"can't solve for krat={krat} outside interval [{klo},{khi}]"
-        raise ValueError(errmsg)
+    See [1], Eq. (56)
 
-    res = root_scalar(_f_kratio,
-                      args=(krat,),
-                      bracket=[lo, hi],
-                      xtol=_ELLIP_TOL,
-                      rtol=_ELLIP_TOL,
-                      maxiter=1000)
+    References
+    ----------
+    .. [1] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
 
-    if not res.converged:
-        raise ValueError(f"solving for krat={krat} failed to converge")
+    """
 
-    return res.root
+    def _complement(kx):
+        # (1-k**2) ** 0.5; the expression below 
+        # works for small kx
+        return ((1 - kx) * (1 + kx)) ** 0.5
+
+
+    k = m ** 0.5
+
+    if k > 1:
+        return np.nan
+    elif k == 1:
+        return np.arctanh(w)
+
+    ks = [k]
+    while ks[-1] != 0:
+        k_ = ks[-1]
+        k_p = _complement(k_)
+        ks.append((1 - k_p) / (1 + k_p))
+
+    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+
+    wns = [w]
+
+    for kn, knext in zip(ks[:-1], ks[1:]):
+        wn = wns[-1]
+        wnext = ( 2 * wn
+                  /
+                 ( (1 + knext) * (1 + _complement(kn * wn)) ) )
+        wns.append(wnext)
+
+    u = 2 / np.pi * np.arcsin(wns[-1])
+
+    z = K * u
+    return z
+
+
+def _arc_jac_sc1(w, m):
+    """Real inverse Jacobian sc, with complementary modulus
+
+    Solve for z in w = sc(z, 1-m)
+
+    w - real scalar
+
+    m - modulus
+
+    From [1], sc(z, m) = -i * sn(i * z, 1 - m)
+
+    References
+    ----------
+    .. [1] https://functions.wolfram.com/EllipticFunctions/JacobiSC/introductions/JacobiPQs/ShowAll.html, 
+       "Representations through other Jacobi functions"
+
+    """
+
+    zcomplex = _arc_jac_sn(1j * w, m)
+    if abs(zcomplex.real) > 1e-14:
+        raise ValueError
+
+    return zcomplex.imag
 
 
 def ellipap(N, rp, rs):
@@ -4350,6 +4399,9 @@ def ellipap(N, rp, rs):
     ----------
     .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
+
+    .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
+           https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
 
     """
     if abs(int(N)) != N:
@@ -4373,9 +4425,9 @@ def ellipap(N, rp, rs):
                          " specifications.")
 
     val = special.ellipk(ck1_sq), special.ellipkm1(ck1_sq)
-    krat = N * val[0] / val[1]
 
-    m = _solve_kratio(krat)
+    m = _ellipdeg(N, ck1_sq)
+
     capk = special.ellipk(m)
 
     j = numpy.arange(1 - N % 2, N, 2)
@@ -4387,7 +4439,7 @@ def ellipap(N, rp, rs):
     z = 1j * z
     z = numpy.concatenate((z, conjugate(z)))
 
-    r = _solve_vratio(1. / eps, ck1_sq)
+    r = _arc_jac_sc1(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
 
     [sv, cv, dv, phi] = special.ellipj(v0, 1 - m)
