@@ -6581,31 +6581,31 @@ class TestMGCStat:
 # https://github.com/nolanbconaway/poisson-etest/blob/master/test_etest.py
 # I already ask permission to use the test cases. The original implementation
 # have limitation for high value of count and nobs, we also test for that
-class TestPoissonETest(object):
+class TestPoissonETest:
 
     # should return the same value
     def test_same_results(self):
         count1, count2 = 20, 20
         nobs1, nobs2 = 10, 10
-        _, pval = stats.poisson_means_test(count1, nobs1, count2, nobs2)
-        assert_almost_equal(pval, 0.999999756892963, decimal=5)
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        assert_almost_equal(res.pvalue, 0.999999756892963, decimal=5)
 
     # should return different value, this implementation is free of
     # limitation in original code
     def test_different_results(self):
         count1, count2 = 10000, 10000
         nobs1, nobs2 = 10000, 10000
-        _, pval = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         with assert_raises(AssertionError):
-            assert_almost_equal(pval, 0.24866994128694545, decimal=5)
+            assert_almost_equal(res.pvalue, 0.24866994128694545, decimal=5)
 
     # the original code by author does not implement what they said in the paper
     def test_less_than_zero_lambda_hat2(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
-        _, pval = stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         with assert_raises(AssertionError):
-            assert_almost_equal(pval, 0.0, decimal=1)
+            assert_almost_equal(res.pvalue, 0.0, decimal=1)
 
     def test_non_int_args(self):
         count1, count2 = 0, 0
@@ -6634,12 +6634,6 @@ class TestPoissonETest(object):
         with assert_raises(ValueError):
             stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=diff)
 
-    def test_names(self):
-        count1, count2 = 20, 20
-        nobs1, nobs2 = 10, 10
-        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
 
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at

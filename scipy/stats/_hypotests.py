@@ -136,7 +136,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
-PoissonMeansTestResult = namedtuple('PoissonMeansTestResult', ('statistic', 'pvalue'))
+PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
+                                        ('statistic', 'pvalue'))
 
 
 def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
