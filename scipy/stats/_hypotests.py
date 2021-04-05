@@ -139,31 +139,32 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
 PoissonMeansTestResult = namedtuple('PoissonMeansTestResult', ('statistic', 'pvalue'))
 
 
-def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-sided'):
+def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
+                       alternative='two-sided'):
     r"""
-    Calculate E-test for the mean difference of two samples that follow a Poisson
-    distribution from descriptive statistics
+    Calculates the poisson mean test, the "E-test" for the mean difference of
+    two samples that follow a Poisson distribution from descriptive statistics.
 
-    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be independent
-    samples respectively, from :math:`Poisson(\lambda_1)` and :math:`Poisson(\lambda_2)` distributions. It is well known that
+    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be
+    independent samples, from :math:`Poisson(\lambda_1)` and
+    :math:`Poisson(\lambda_2)` distributions. It is well known that :math:`X_1`
+    and :math:`X_2` are independent:
     
     .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
-    
-    independently of
-    
+
     .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
     
-    Let `count1` and `count1` be the observed values of :math:`X_1` and :math:`X_2`,
-    respectively. The problem of interest here is to test
+    Let `count1` and `count1` be the observed values of :math:`X_1` and
+    :math:`X_2`, respectively. The problem of interest here is to test
     
     .. math::
        H_0: \lambda_1 - \lambda_2 \le \mathtt{diff} \quad vs. \quad
        H_a: \lambda_1 - \lambda_2 > \mathtt{diff}
     
-    for right sided `greater` hypothesis where :math:`\mathtt{diff} \ge 0` is a given
-    number, based on (`nobs1`, `count1`, `nobs2`, `count2`). `two-sided` and `greater`
-    cases are demonstrated by [1]_.The `less` hypothesis performed by switching the
-    arguments on `greater` hypothesis.
+    for right sided `greater` hypothesis where :math:`\mathtt{diff} \ge 0` is
+    a given number, based on (`nobs1`, `count1`, `nobs2`, `count2`). \
+    `two-sided` and `greater` cases are demonstrated by [1]_. The `less`
+    hypothesis performed by switching the arguments on `greater` hypothesis.
 
     Parameters
     ----------
@@ -187,13 +188,13 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
     Notes
     -----
     The Poisson distribution is commonly used to model many processes such as
-    transactions per user. A simple test to compare difference between two
-    means of Poisson samples is C-test, based on conditional distribution.
-    Meanwhile the E-test is an unconditional test
+    transactions per user. Unlike the simpler C-test, which follows a
+    conditional distribution, the E-test is an unconditional test.
 
-    Based the author results [1]_, E-test is more powerful than C-test. The E-test
-    is almost exact because the test exceed the nominal value only by negligible
-    amount. Compared to C-test which produce smaller size than nominal value.
+    The E-test has been evaluated an determined to be more powerful than the
+    comparable C-test [1]_. The E-test can be said to be almost exact because
+    the test exceeds the nominal value by a negligible amount, whereas the
+    C-test's results are smaller than the nominal value.
 
     References
     ----------
@@ -237,87 +238,110 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0, alternative='two-si
     produce similar p-value either with nobs=10 or nobs=100
     """
 
-    if any(not isinstance(item, int) for item in [count1, count2, nobs1, nobs2]):
-        raise TypeError('int arguments required for count1, count2, nobs1, and nobs2')
+    _chck_args_poisson_mean_test(count1, nobs1, count2, nobs2, diff,
+                                 alternative)
+
+    # reverse the arguments of sample one and sample two
+    # if the hypothesis selected is `less`, swap arguments for sample 1 and 2.
+    if alternative == 'less':
+        count1, count2 = count2, count1
+        nobs1, nobs2 = nobs2, nobs1
+
+    # the unbiased variance estimate [1] (3.2)
+    var = count1 / (nobs1 ** 2) + count2 / (nobs2 ** 2)
+
+    # the _observed_ pivot statistic for the input counts and obs. From the
+    # unnumbered equation following equation (3.3) This is used later in
+    # comparison with the computed pivot statistics in an indicator function.
+    t_k1k2 = (count1 / nobs1 - count2 / nobs2 - diff) / np.sqrt(var)
+
+    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
+    lmbd_hat2 = ((count1 + count2) / (nobs1 + nobs2) -
+                 diff * nobs1 / (nobs1 + nobs2))
+
+    # equation (3.5) of [1] is lengthy, so it is broken into several parts,
+    # beginning here. Note that the probability mass function of poisson is
+    # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
+    # here as nlmbd_hat*. 
+    
+    # compute constants (as seen in the first and second separated products in
+    # (3.5).). This is the shape (\mu) parameter of the poisson distribution.
+    nlmbd_hat1 = nobs1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = nobs2 * lmbd_hat2
+
+    # determine summation limits for tail ends of distribution
+    x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat1)
+    x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
+
+    # construct arrays to function as the x_1 and x_2 counters on the summation
+    # in (3.5). `x1` is the outer counter, with repeating counts
+    # [0, 0, 0, 1, 1, 1, ...] for every [1, 2, 3, 1, 2, 3, ...] in `x2`. 
+    x1 = np.repeat(np.arange(x1_lb, x1_ub + 1), x2_ub - x2_lb + 1)
+    x2 = np.resize(np.arange(x2_lb, x2_ub + 1), len(x1))
+
+    # this replaces the two analytical terms in the summation equation in (3.5)
+    # with `prob_x1` being the first and `prob_x2` being the second. (To make
+    # as clear as possible: the 1st contains a "+ d" term, the 2md does not.)
+    prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
+    prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
+
+    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
+    # case the null hypothesis cannot be rejected ... [and] it is not necessary
+    # to compute the p-value". [1] page 26 below eq. (3.6).
+    if lmbd_hat2 <= 0:
+        return PoissonMeansTestResult(None, 1)
+    
+    # pre-compute constants for use in the the "pivot statistic" per the 
+    # unnumbered equation following (3.3) on the fly.
+    lmbd_hat_x1 = x1 / nobs1
+    lmbd_hat_x2 = x2 / nobs2
+    diff_lmbd_x1x2 = lmbd_hat_x1 - lmbd_hat_x2 - diff
+    var_x1x2 = lmbd_hat_x1 / nobs1 + lmbd_hat_x2 / nobs2
+
+    ts = (alternative == 'two-sided')
+    # this is the 'pivot statistic' for use in the indicator of the summation
+    # (left side of "I[.]").
+    t_x1x2 = np.divide(
+        diff_lmbd_x1x2,
+        np.sqrt(var_x1x2),
+        # exclude the same cases that will be excluded in the indicator in the
+        # following `np.multiply` call so the shapes line up.
+        where=((np.abs(lmbd_hat_x1 - lmbd_hat_x2) > diff) if ts else
+               (diff_lmbd_x1x2 > 0))
+    )
+    # multiply the products inside the summation together (3.5)
+    p_x1x2 = np.multiply(
+        prob_x1,
+        prob_x2,
+        # the following implements the "I[.] ... the indicator function" per the
+        # paragraph following equation (3.5)
+        where=(np.abs(t_x1x2) >= np.abs(t_k1k2) if ts else (t_x1x2 >= t_k1k2))
+    )
+
+    # finish (3.5) by summing the result
+    pvalue = np.sum(p_x1x2)
+
+    return PoissonMeansTestResult(t_k1k2, pvalue)
+
+
+def _chck_args_poisson_mean_test(count1, nobs1, count2, nobs2, diff,
+                                 alternative):
+    """check for valid types and values of input to `poisson_mean_test`."""
+    if not all(isinstance(item, int) for item in [count1, nobs1,
+                                                  count2, nobs2]):
+        raise TypeError('count1, count2, nobs1, and nobs2 must be of type int')
 
     if count1 < 0 or count2 < 0:
-        raise ValueError('k1 and k2 should have values greater than or equal to 0')
+        raise ValueError('k1 and k2 should be greater than or equal to 0')
 
     if nobs1 <= 0 or nobs2 <= 0:
-        raise ValueError('n1 and n2 should have values greater than 0')
+        raise ValueError('nobs1 and nobs2 should be greater than 0')
 
     if diff < 0:
         raise ValueError('diff can not have negative values')
 
     if alternative not in ['two-sided', 'less', 'greater']:
-        raise ValueError("alternative should be one of {'two-sided', 'less', 'greater'}")
-
-    # reverse the arguments of sample one and sample two if the hypothesis selected
-    # is `less`
-    if alternative == 'less':
-        count1, count2 = count2, count1
-        nobs1, nobs2 = nobs2, nobs1
-
-    lmbd_hat2 = (count1 + count2) / (nobs1 + nobs2) - diff * nobs1 / (nobs1 + nobs2)
-
-    # based on paper explanation, we do not need to calculate p-value if the `lmbd_hat2`
-    # has value less than or equals zero, see Reference 1 page 26 below eq. 3.6
-    if lmbd_hat2 <= 0:
-        return PoissonMeansTestResult(None, 1)
-
-    var = count1 / nobs1 ** 2 + count2 / nobs2 ** 2
-
-    t_k1k2 = (count1 / nobs1 - count2 / nobs2 - diff) / np.sqrt(var)
-
-    nlmbd_hat1 = nobs1 * (lmbd_hat2 + diff)
-    nlmbd_hat2 = nobs2 * lmbd_hat2
-
-    x1_lb, x1_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat1)
-    x2_lb, x2_ub = poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
-
-    x1 = np.repeat(np.arange(x1_lb, x1_ub + 1), x2_ub - x2_lb + 1)
-    x2 = np.resize(np.arange(x2_lb, x2_ub + 1), len(x1))
-
-    prob_x1 = poisson.pmf(x1, nlmbd_hat1)
-    prob_x2 = poisson.pmf(x2, nlmbd_hat2)
-
-    lmbd_hat_x1 = x1 / nobs1
-    lmbd_hat_x2 = x2 / nobs2
-
-    diff_lmbd_x1x2 = lmbd_hat_x1 - lmbd_hat_x2 - diff
-    var_x1x2 = lmbd_hat_x1 / nobs1 + lmbd_hat_x2 / nobs2
-
-    if alternative == 'two-sided':
-        t_x1x2 = np.divide(
-            diff_lmbd_x1x2,
-            np.sqrt(var_x1x2),
-            out=np.zeros_like(diff_lmbd_x1x2),
-            where=(np.abs(lmbd_hat_x1 - lmbd_hat_x2) > diff)
-        )
-        p_x1x2 = np.multiply(
-            prob_x1,
-            prob_x2,
-            out=np.zeros_like(prob_x1),
-            where=(np.abs(t_x1x2) >= np.abs(t_k1k2))
-        )
-    else:
-        t_x1x2 = np.divide(
-            diff_lmbd_x1x2,
-            np.sqrt(var_x1x2),
-            out=np.zeros_like(diff_lmbd_x1x2),
-            where=(diff_lmbd_x1x2 > 0)
-        )
-        p_x1x2 = np.multiply(
-            prob_x1,
-            prob_x2,
-            out=np.zeros_like(prob_x1),
-            where=(t_x1x2 >= t_k1k2)
-        )
-
-    pvalue = np.sum(p_x1x2)
-
-    return PoissonMeansTestResult(t_k1k2, pvalue)
-
+        raise ValueError(f"unknown alternative '{alternative}'")
 
 class CramerVonMisesResult:
     def __init__(self, statistic, pvalue):

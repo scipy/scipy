@@ -135,8 +135,8 @@ Inferential Stats
    friedmanchisquare
    brunnermunzel
    combine_pvalues
-   poisson_means_test
    page_trend_test
+   poisson_means_test
 
 Statistical Distances
 ---------------------
@@ -191,11 +191,11 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from ._rvs_sampling import rvs_ratio_uniforms
-from ._hypotests import epps_singleton_2samp, cramervonmises, poisson_means_test
 from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
 from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp, barnard_exact)
+                         cramervonmises_2samp, barnard_exact,
+                         poisson_means_test)
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -221,8 +221,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'poisson_means_test', 'cramervonmises_2samp', 'alexandergovern',
-           'page_trend_test', 'somersd']
+           'cramervonmises_2samp', 'alexandergovern', 'page_trend_test',
+           'somersd', 'poisson_means_test']
 
 
 def _contains_nan(a, nan_policy='propagate'):
