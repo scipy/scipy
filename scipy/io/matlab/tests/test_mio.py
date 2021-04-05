@@ -948,6 +948,13 @@ def test_logical_out_type():
     assert_equal(var.dtype.type, np.uint8)
 
 
+def test_roundtrip_zero_dimensions():
+    stream = BytesIO()
+    savemat(stream, {'d':np.empty((10, 0))})
+    d = loadmat(stream)
+    assert d['d'].shape == (10, 0)
+
+
 def test_mat4_3d():
     # test behavior when writing 3-D arrays to matlab 4 files
     stream = BytesIO()
