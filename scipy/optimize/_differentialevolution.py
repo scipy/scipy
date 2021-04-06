@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, MapWrapper
+from scipy._lib._util import check_random_state, MapWrapper, rng_integers
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
@@ -144,7 +144,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
-    updating : {'immediate', 'deferred', 'worst'}, optional
+    updating : {'immediate', 'deferred', 'worst', 'plus'}, optional
         If ``'immediate'``, the best solution vector is continuously updated
         within a single generation [4]_. This can lead to faster convergence as
         trial vectors can take advantage of continuous improvements in the best
@@ -152,10 +152,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         With ``'deferred'``, the best solution vector is updated once per
         generation.
         With ``'worst'``, only the worst solution vectors, numbering
-        ``floor(M * alpha)``, are updated per generation. This can reduce the
-        total number of function evaluations.
+        ``floor(M * alpha)``, are updated per generation.
+        With ``'plus'``, a random selection of population members, numbering
+        ``floor(M * alpha)``, are chosen to create a trial population. Then
+        the ``M`` best solution vectors from the union of the existing and
+        trial populations are chosen to go forward into the next iteration.
 
-        Only ``'deferred'`` and ``'worst'`` are compatible with
+        Both ``'worst'`` and ``'plus'`` can reduce the total number of
+        function evaluations required, but at the increased risk of not
+        finding a global minimum [6]_.
+
+        ``'deferred'``, ``'worst'``, and ``'plus'`` are compatible with
         parallelization.
 
         .. versionadded:: 1.2.0
@@ -243,6 +250,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     convergence as trial vectors can immediately benefit from improved
     solutions. To use the original Storn and Price behaviour, updating the best
     solution once per iteration, set ``updating='deferred'``.
+    The `'plus'`` and ``'worst'`` updating approaches correspond to algorithms
+    3 and 4 from [6]_. These can reduce the total number of function
+    evaluations required to converge, but with an increased risk of not
+    finding a solution.
 
     .. versionadded:: 0.15.0
 
@@ -309,6 +320,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            evolution algorithm. Proceedings of the 2002 Congress on
            Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
            2002.
+    .. [6] Tanabe, Ryoji. "Analyzing adaptive parameter landscapes in
+           parameter adaptation methods for differential evolution."
+           Proceedings of the 2020 Genetic and Evolutionary Computation
+           Conference, pp. 645-653. 2020.
     """
 
     # using a context manager means that any created Pool objects are
@@ -450,7 +465,7 @@ class DifferentialEvolutionSolver:
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
-    updating : {'immediate', 'deferred', 'worst'}, optional
+    updating : {'immediate', 'deferred', 'worst', 'plus'}, optional
         If ``'immediate'``, the best solution vector is continuously updated
         within a single generation [4]_. This can lead to faster convergence as
         trial vectors can take advantage of continuous improvements in the best
@@ -458,10 +473,17 @@ class DifferentialEvolutionSolver:
         With ``'deferred'``, the best solution vector is updated once per
         generation.
         With ``'worst'``, only the worst solution vectors, numbering
-        ``floor(M * alpha)``, are updated per generation. This can reduce the
-        total number of function evaluations.
+        ``floor(M * alpha)``, are updated per generation.
+        With ``'plus'``, a random selection of population members, numbering
+        ``floor(M * alpha)``, are chosen to create a trial population. Then
+        the ``M`` best solution vectors from the union of the existing and
+        trial populations are chosen to go forward into the next iteration.
 
-        Only ``'deferred'`` and ``'worst'`` are compatible with
+        Both ``'worst'`` and ``'plus'`` can reduce the total number of
+        function evaluations required, but at the increased risk of not
+        finding a global minimum [6]_.
+
+        ``'deferred'``, ``'worst'``, and ``'plus'`` are compatible with
         parallelization.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
@@ -523,8 +545,13 @@ class DifferentialEvolutionSolver:
         self.polish = polish
 
         # set the updating / parallelisation options
-        if updating in ['immediate', 'deferred', 'worst']:
+        if updating in ['immediate', 'deferred', 'worst', 'plus']:
             self._updating = updating
+        else:
+            raise ValueError(
+                "The updating keyword argument must be one of {'immediate', "
+                "'deferred', 'worst', 'plus'}"
+            )
 
         # want to use parallelisation, but updating is immediate
         if workers != 1 and updating == 'immediate':
@@ -645,7 +672,8 @@ class DifferentialEvolutionSolver:
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
 
-        # the number of population members updated if updating == 'worst'
+        # the number of population members updated if updating == 'worst' or
+        # 'plus'
         self.alpha = int(np.floor(np.clip(alpha, 0, 1)
                                   * self.num_population_members))
 
@@ -1094,6 +1122,8 @@ class DifferentialEvolutionSolver:
             self._update_deferred()
         elif self._updating == 'worst':
             self._update_worst()
+        elif self._updating == 'plus':
+            self._update_plus()
 
         return self.x, self.population_energies[0]
 
@@ -1198,7 +1228,12 @@ class DifferentialEvolutionSolver:
             raise StopIteration
 
         # what are the worst solutions?
-        worst_idx = self._rank()[-self.alpha:]
+        rnk = rank(
+            self.feasible,
+            self.population_energies,
+            self.constraint_violation
+        )
+        worst_idx = rnk[-self.alpha:]
 
         # create trial solutions
         trial_pop = np.array(
@@ -1219,7 +1254,7 @@ class DifferentialEvolutionSolver:
         # which solutions are 'improved'?
         improved = [self._accept_trial(*val) for val in
                     zip(
-                        trial_energies,
+                       trial_energies,
                        feasible,
                        cv,
                        self.population_energies[worst_idx],
@@ -1236,25 +1271,54 @@ class DifferentialEvolutionSolver:
         # put the lowest energy into the best solution position.
         self._promote_lowest_energy()
 
-    def _rank(self):
-        # rank population members in order of fitness
-        M = self.num_population_members
+    def _update_plus(self):
+        # select a fraction of candidates, create trials from them, then
+        # take the best members of the union between the trial and original
+        # populations.
+        if self._nfev >= self.maxfun:
+            raise StopIteration
 
-        # first get vectors that are feasible and sort by energy
-        feasible_members = np.arange(M)[self.feasible]
-        feasible_energies = self.population_energies[feasible_members]
-        idx = np.argsort(feasible_energies)
-        feasible_rank = feasible_members[idx]
-
-        # now sort infeasible by extent of constraint violation.
-        infeasible_members = np.arange(M)[~self.feasible]
-        constraint_violation = np.sum(
-            self.constraint_violation[infeasible_members], axis=1
+        rng = self.random_number_generator
+        candidates = rng.choice(
+            np.arange(self.num_population_members),
+            size=self.alpha,
+            replace=False,
         )
-        idx = np.argsort(constraint_violation)
-        infeasible_rank = infeasible_members[idx]
+        candidates.sort()
 
-        return np.r_[feasible_rank, infeasible_rank]
+        # create trial solutions
+        trial_pop = np.array(
+            [self._mutate(i) for i in candidates])
+
+        # enforce bounds
+        self._ensure_constraint(trial_pop)
+
+        # determine the energies of the objective function, but only for
+        # feasible trials
+        feasible, cv = self._calculate_population_feasibilities(trial_pop)
+        trial_energies = np.full(np.size(candidates), np.inf)
+
+        # only calculate for feasible entries
+        trial_energies[feasible] = self._calculate_population_energies(
+            trial_pop[feasible])
+
+        # now work out best members of the combined populations
+        # concatenate all the population arrays
+        population_plus = np.r_[self.population, trial_pop]
+        energies_plus = np.r_[self.population_energies, trial_energies]
+        feasible_plus = np.r_[self.feasible, feasible]
+        constraint_violation_plus = np.r_[self.constraint_violation, cv]
+
+        rnk = rank(feasible_plus, energies_plus, constraint_violation_plus)
+        idx_to_take = rnk[:self.num_population_members]
+
+        self.population = population_plus[idx_to_take]
+        self.population_energies = energies_plus[idx_to_take]
+        self.feasible = feasible_plus[idx_to_take]
+        self.constraint_violation = constraint_violation_plus[idx_to_take]
+
+        # put the lowest energy into the best solution position.
+        self._promote_lowest_energy()
 
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
@@ -1458,3 +1522,29 @@ class _ConstraintWrapper:
         excess_ub = np.maximum(ev - self.bounds[1], 0)
 
         return excess_lb + excess_ub
+
+
+def rank(feasible, energies, constraint_violations):
+    # rank population members in order of fitness
+    # feasible : boolean array (M,) where M is the number of population
+    #   members
+    # energies : double array (M,)
+    # constraint_violations : double array (M, P) where P is the number of
+    #   constraints
+    M = np.size(energies)
+
+    # first get vectors that are feasible and sort by energy
+    feasible_members = np.arange(M)[feasible]
+    feasible_energies = energies[feasible_members]
+    idx = np.argsort(feasible_energies)
+    feasible_rank = feasible_members[idx]
+
+    # now sort infeasible by extent of constraint violation.
+    infeasible_members = np.arange(M)[~feasible]
+    constraint_violation = np.sum(
+        constraint_violations[infeasible_members], axis=1
+    )
+    idx = np.argsort(constraint_violation)
+    infeasible_rank = infeasible_members[idx]
+
+    return np.r_[feasible_rank, infeasible_rank]
