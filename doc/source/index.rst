@@ -8,16 +8,16 @@ SciPy documentation
 
 **Date**: |today| **Version**: |version|
 
-**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.1/scipy-ref-1.6.1.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-1.6.1/scipy-html-1.6.1.zip>`__
+**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.2/scipy-ref-1.6.2.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-1.6.2/scipy-html-1.6.2.zip>`__
 
 **Useful links**:
-`Binary Installers <https://pypi.org/project/scipy>`__ |
+`Install <https://scipy.org/install.html>`__ |
 `Source Repository <https://github.com/scipy/scipy>`__ |
 `Issues & Ideas <https://github.com/scipy/scipy/issues>`__ |
 `Q&A Support <https://stackoverflow.com/questions/tagged/scipy>`__ |
-`Mailing List <https://mail.python.org/pipermail/scipy-user>`__
+`Mailing List <https://scipy.org/scipylib/mailing-lists.html>`__
 
-:mod:`scipy` (pronounced "Sigh Pie") is open-source software for mathematics,
+**SciPy** (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering.
 
 .. raw:: html

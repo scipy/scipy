@@ -95,5 +95,5 @@ Tutorials
 
 For a quick overview of SciPy functionality, see the :ref:`user guide<user_guide>`.
 
-You can also referer to the :ref:`reference guide<scipy-api>` for an exhaustive
+You can also refer to the :ref:`reference guide<scipy-api>` for an exhaustive
 list of all what is possible with SciPy.
