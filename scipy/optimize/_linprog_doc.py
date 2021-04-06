@@ -81,8 +81,6 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
 
-    Options
-    -------
     maxiter : int
         The maximum number of iterations to perform in either phase.
         For :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`, this does not
@@ -288,8 +286,6 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
 
-    Options
-    -------
     maxiter : int
         The maximum number of iterations to perform in either phase.
         Default is the largest possible value for an ``int`` on the platform.
@@ -481,8 +477,6 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
 
-    Options
-    -------
     maxiter : int
         The maximum number of iterations to perform in either phase.
         For :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`, this does not
@@ -662,8 +656,6 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     callback : callable, optional
         Callback function to be executed once per iteration.
 
-    Options
-    -------
     maxiter : int (default: 1000)
         The maximum number of iterations of the algorithm.
     disp : bool (default: False)
@@ -990,8 +982,6 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
 
-    Options
-    -------
     maxiter : int (default: 5000)
        The maximum number of iterations to perform in either phase.
     disp : bool (default: False)
@@ -1166,8 +1156,6 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     callback : callable, optional
         Callback function to be executed once per iteration.
 
-    Options
-    -------
     maxiter : int (default: 5000)
        The maximum number of iterations to perform in either phase.
     disp : bool (default: False)

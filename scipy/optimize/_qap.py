@@ -273,8 +273,6 @@ def _quadratic_assignment_faq(A, B,
         documentation for 'faq'.
         :ref:`'2opt' <optimize.qap-2opt>` is also available.
 
-    Options
-    -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
     partial_match : 2-D array of integers, optional (default: None)
@@ -577,8 +575,6 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         documentation for '2opt'.
         :ref:`'faq' <optimize.qap-faq>` is also available.
 
-    Options
-    -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
     rng : {None, int, `numpy.random.Generator`,

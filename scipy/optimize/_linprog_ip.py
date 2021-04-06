@@ -858,8 +858,6 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem.
 
-    Options
-    -------
     maxiter : int (default = 1000)
         The maximum number of iterations of the algorithm.
     tol : float (default = 1e-8)

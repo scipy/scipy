@@ -479,8 +479,6 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem.
 
-    Options
-    -------
     maxiter : int
        The maximum number of iterations to perform in either phase.
     tol : float

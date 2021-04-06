@@ -97,8 +97,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     solver : "ipm" or "simplex" or None
         Which HiGHS solver to use.  If ``None``, "simplex" will be used.
 
-    Options
-    -------
     maxiter : int
         The maximum number of iterations to perform in either phase. For
         ``solver='ipm'``, this does not include the number of crossover

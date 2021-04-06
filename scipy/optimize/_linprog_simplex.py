@@ -503,8 +503,6 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
         Data needed by _postsolve to convert the solution to the standard-form
         problem into the solution to the original problem.
 
-    Options
-    -------
     maxiter : int
        The maximum number of iterations to perform.
     disp : bool
