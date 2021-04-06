@@ -3886,7 +3886,7 @@ def _integrate_continuous(vec,dt):
     return result
 
 
-def tf_estimate(dt,U,y,nzeros,npoles):
+def tf_estimate(dt,U,y,nnum,nden):
     """
     Estimate transfer function based on input data.
 
@@ -3898,10 +3898,10 @@ def tf_estimate(dt,U,y,nzeros,npoles):
         Data for the transfer function input signal.
     y : 1D ndarray, list
         Transfer function response to input signal U.
-    nzeros : int
-        Number of zeros to be computed in the transfer function.
-    npoles : int
-        Number of poles to be computed in the transfer function.
+    nnum : int
+        Number of coefficients in the numerator of the transfer function .
+    nden : int
+        Number of coefficients in the denominator of the transfer function.
 
     Returns
     -------
@@ -3944,13 +3944,13 @@ def tf_estimate(dt,U,y,nzeros,npoles):
     """    
     U_integrated_steps = []
     y_integrated_steps = []
-    for i in range(nzeros):
+    for i in range(nnum):
         if i is 0:
             U_integrated_steps.append(_integrate_continuous(U,dt))
         else:
             U_integrated_steps.append(_integrate_continuous(U_integrated_steps[i-1],dt))
 
-    for i in range(npoles-1):
+    for i in range(nden-1):
         if i is 0:
             y_integrated_steps.append(_integrate_continuous(y,dt))
         else:
@@ -3958,8 +3958,8 @@ def tf_estimate(dt,U,y,nzeros,npoles):
 
     X = np.array(y_integrated_steps+U_integrated_steps).transpose()
     results = pinv(X)@y
-    poles = [1]+list(results[:(npoles-1)]*-1)
-    zeros = list(results[(npoles-1):])
+    poles = [1]+list(results[:(nden-1)]*-1)
+    zeros = list(results[(nden-1):])
 
     tf = TransferFunction(zeros, poles)
     return tf
