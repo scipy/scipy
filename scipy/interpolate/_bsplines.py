@@ -673,7 +673,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
 
     n = A.shape[1] + 1
     U = np.zeros((n - 1, k_mod))
-    V = np.zeros((k_mod, n - 1)) # V transpose 
+    V = np.zeros((k_mod, n - 1))  # V transpose 
 
     # upper right block 
     U[:bs, :bs] = ur
@@ -683,7 +683,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     U[-bs:, -bs:] = ll
     V[np.arange(bs) - bs, np.arange(bs)] = 1
     
-    Z = solve_banded((bs, bs), A, U[:, 0]) # z0
+    Z = solve_banded((bs, bs), A, U[:, 0])  # z0
     Z = np.expand_dims(Z, axis=0)
     
     for i in range(1, k_mod):
@@ -744,20 +744,19 @@ def _make_periodic_spline(x, y, t, k, axis):
     coefficients of a spline function are the same, respectively. It follows
     from the fact that all ``k-1`` derivatives are equal term by term at ends
     and that the matrix of the original system of linear equations is
-    non-degenerate. So, we can reduce the number of equations to ``n - 1`` (first
-    ``k-1`` equations could be reduced). Another trick of this implementation is
-    cyclic shift of values of B-splines due to equality of ``k`` unknown
-    coefficients. With this we can receive matrix of the system with upper right
-    and lower left ‘blocks’, and ``k`` diagonals.  It allows to use Woodbury
-    formula to optimize the computations.
-
-    For now, this function works only for odd ``k``.
+    non-degenerate. So, we can reduce the number of equations to ``n - 1``
+    (first ``k-1`` equations could be reduced). Another trick of this 
+    implementation is cyclic shift of values of B-splines due to equality of
+    ``k`` unknown coefficients. With this we can receive matrix of the system
+    with upper right and lower left blocks, and ``k`` diagonals.  It allows
+    to use Woodbury formula to optimize the computations.
 
     '''
     n = y.shape[0]
 
     if n <= k:
-        raise ValueError("Need at least k + 1 data points to fit a spline of degree k.")
+        raise ValueError("Need at least k + 1 data points to fit a spline "
+                         "of degree k.")
     
     nt = len(t) - k - 1
 
@@ -830,10 +829,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
            equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
-        * ``"not-a-knot"`` (default): The first and second segments are the same
-          polynomial. This is equivalent to having ``bc_type=None``.
-        * ``"periodic"``: The values and the first ``k-1`` derivatives at the ends
-          are equivalent (for odd ``k`` only).
+        * ``"not-a-knot"`` (default): The first and second segments are the
+          same polynomial. This is equivalent to having ``bc_type=None``.
+        * ``"periodic"``: The values and the first ``k-1`` derivatives at the
+          ends are equivalent.
 
     axis : int, optional
         Interpolation axis. Default is 0.
@@ -950,8 +949,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match while periodic case "
-                         "expected")
+        raise ValueError("First and last points does not match while "
+                         "periodic case expected")
 
     # special-case k=0 right away
     if k == 0:
@@ -974,9 +973,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     k = operator.index(k)
 
-    if bc_type == 'periodic' and not t is None:
-        raise ValueError("For periodic case t is constructed automatically and "
-                        "can not be passed manually")
+    if bc_type == 'periodic' and t is not None:
+        raise ValueError("For periodic case t is constructed automatically "
+                         "and can not be passed manually")
 
     # come up with a sensible knot vector, if needed
     if t is None:

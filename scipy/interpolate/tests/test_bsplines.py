@@ -841,13 +841,13 @@ class TestInterp(object):
         x = np.sort(x)
         x[0] = 0.
         x[-1] = 2 * np.pi
-        y = np.zeros((2,n))
+        y = np.zeros((2, n))
         y[0] = np.sin(x)
         y[1] = np.cos(x)
-        b = make_interp_spline(x, y, k=5, bc_type='periodic',axis=1)
+        b = make_interp_spline(x, y, k=5, bc_type='periodic', axis=1)
         for i in range(n):
-            assert_allclose(b(x[i]),y[:,i],atol=1e-14)
-        assert_allclose(b(x[0]),b(x[-1]),atol=1e-14)
+            assert_allclose(b(x[i]), y[:, i], atol=1e-14)
+        assert_allclose(b(x[0]), b(x[-1]), atol=1e-14)
 
     def test_periodic_points_exception(self):
         # not enough points for interpolation
@@ -864,7 +864,7 @@ class TestInterp(object):
         n = 8
         x = np.sort(np.random.random_sample(n))
         y = np.random.random_sample(n)
-        y[0] = y[-1] - 1 # to be sure that they are not equal
+        y[0] = y[-1] - 1  # to be sure that they are not equal
         assert_raises(ValueError, make_interp_spline, x, y, k, None, 
         'periodic')
 
@@ -1178,7 +1178,8 @@ class TestInterp(object):
                 else:
                     d[i, j:] = np.diagonal(a, offset=j)
             b = np.random.random(n)
-            assert_allclose(_woodbury_algorithm(d, ur, ll, b, k), np.linalg.solve(a, b), atol=1e-14)
+            assert_allclose(_woodbury_algorithm(d, ur, ll, b, k),
+                            np.linalg.solve(a, b), atol=1e-14)
 
 
 def make_interp_full_matr(x, y, t, k):
@@ -1209,6 +1210,7 @@ def make_interp_full_matr(x, y, t, k):
     return c
 
 
+### XXX: 'periodic' interp spline using full matrices
 def make_interp_per_full_matr(x, y, t, k):
     x, y, t = map(np.asarray, (x, y, t))
 
@@ -1225,7 +1227,7 @@ def make_interp_per_full_matr(x, y, t, k):
 
     for i in range(k-1):
         bb = _bspl.evaluate_all_bspl(t, k, x[0], k, nu=i+1)
-        A[i,:k+1] = bb
+        A[i, :k+1] = bb
         bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i+1)[:-1]
         A[i, -k:] = -bb
 
