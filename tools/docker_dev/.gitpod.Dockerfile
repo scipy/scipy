@@ -16,7 +16,7 @@ ENV HOME=/home/scipy \
 
 # -----------------------------------------------------------------------------
 # Change default shell - this avoids issues with Conda later - note we do need
-# login bash here as we are building SciPy inside Docker
+# login bash here as we are building SciPy inside
 # Fix DL4006
 SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
 
@@ -27,7 +27,6 @@ RUN mkdir -p ${WORKSPACE}
 # Ensure the following happens in the workspace
 WORKDIR ${WORKSPACE}
 
-# deep clone as we only need to build the latest dev version from master
 RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . && \
     conda activate scipydev && \
     python setup.py build_ext --inplace 
@@ -80,7 +79,7 @@ ENV LANG=en_US.UTF-8 \
     # ---- Gitpod user ----
     GP_USER=gitpod \
     GP_GROUP=gitpod \
-    UID=3333
+    UID=33333
 # ---- Directories needed ----
 ENV HOME=/home/gitpod \
     CONDA_DIR=/opt/conda \ 
@@ -102,10 +101,8 @@ RUN chmod a+rx /usr/local/bin/fix_permissions && \
     chmod a+rx /usr/local/bin/workspace_config && \
     workspace_config && \
     chown -R ${GP_USER}:${GP_GROUP} ${WORKSPACE} && \ 
-    # again, need to make sure this is user writable
     fix_permissions ${WORKSPACE}  
 
-# favour less privileged user
 USER ${GP_USER}
 
 # install Sphinx autobuild - needed for rst preview
@@ -115,5 +112,5 @@ RUN python -m pip install --no-cache-dir sphinx-autobuild && \
     fix_permissions ${CONDA_DIR}
 
 # Copy build directory from build stage - doing this to avoid issues
-# with how gitpod clones repos later it will end up in /home/gitpod/build
+# with how gitpod clones repos later
 COPY --chown=${GP_USER}:${GP_GROUP} --from=build ${WORKSPACE}/build/ ${HOME}/build/

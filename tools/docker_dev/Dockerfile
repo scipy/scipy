@@ -70,7 +70,7 @@ ENV CONDA_VERSION="${conda_version}" \
     # ---- Gitpod user ----
     GP_USER=gitpod \
     GP_GROUP=gitpod \
-    UID=3333 
+    UID=33333
 
 ENV HOME="/home/${GP_USER}" \
     PROJECT_DIR="${GP_HOME}/scipy"\
