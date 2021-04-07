@@ -7,7 +7,7 @@
 # With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
-image: scipy/scipy-gitpod:latest
+image: trallard/scipy-gitpod:latest
 tasks:
   - name: Prebuild Scipy docs
     prebuild: |
@@ -15,10 +15,8 @@ tasks:
       git submodule update --init
       cd doc 
       make html-scipyorg
-      mv /home/gitpod/build /workspace/scipy/build
     command: |
       conda activate scipydev
-      conda develop .
   - name: Develop here
     init: |
       mkdir -p /workspace/scipy/.theia 

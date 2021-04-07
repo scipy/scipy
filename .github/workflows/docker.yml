@@ -1,13 +1,15 @@
-name: Build Docker images 
+name: Build Base Docker Image
 
 on:
   push: 
     branches:
     - master
+    - feature/*
     paths:
     - './tools/docker_dev/environment.yml'
     tags:
       - '*'
+  workflow_dispatch:
 
 jobs: 
   build:
@@ -53,4 +55,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
-            scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-dev:latest
+            trallard/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, trallard/scipy-dev:latest
+      - name: Image digest 
+        run: echo ${{ steps.docker_build.outputs.digest }}
