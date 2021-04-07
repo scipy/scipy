@@ -143,8 +143,11 @@ PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
 def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
                        alternative='two-sided'):
     r"""
-    Calculates the poisson mean test, the "E-test" for the mean difference of
+    Calculates the poisson mean test, the "e-test", for the mean difference of
     two samples that follow a Poisson distribution from descriptive statistics.
+
+    This is a two-sided test for the null hypothesis that two independent
+    samples have identical average (expected) values.
 
     Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be
     independent samples, from :math:`Poisson(\lambda_1)` and
@@ -169,14 +172,24 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
 
     Parameters
     ----------
-    count1, count2 : int
-        Count event of interest from the first and second samples respectively
-    nobs1, nobs2 : int
-        Sample size observed
+    count1 : int
+        Observed values of interest from sample 1.
+    nobs1:
+        Sample size from sample 1.
+    count2 : int
+        Observed values of interest from sample 2.
+    nobs2:
+        Sample size from sample 2.
     diff : int of float, optional
         The difference of mean between two samples under null hypothesis
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Which alternative hypothesis to test
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
 
     Returns
     -------
@@ -200,43 +213,63 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     References
     ----------
     .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
-       comparing two Poisson means. Journal of Statistical Planning and Inference,
-       119(1), 23-35.
+       comparing two Poisson means. Journal of Statistical Planning and
+       Inference, 119(1), 23-35.
+
     .. [2]  Przyborowski, J., & Wilenski, H. (1940). Homogeneity of results in
-       testing samples from Poisson series: With an application to testing clover
-       seed for dodder. Biometrika, 31(3/4), 313-323.
+       testing samples from Poisson series: With an application to testing
+       clover seed for dodder. Biometrika, 31(3/4), 313-323.
 
     Examples
     --------
     >>> from scipy import stats
 
-    Taken from Przyborowski and Wilenski (1940) [2]_. Suppose that a purchaser wishes to
-    test the number of dodder seeds (a weed) in a sack of clover seeds that he bought
-    from a seed manufacturing company. A 100 g sample is drawn from a sack of clover
-    seeds prior to being shipped to the purchaser. The sample is analyzed and found to
-    contain no dodder seeds; that is, k1 = 0. Upon arrival, the purchaser also draws
-    a 100 g sample from the sack. This time, three dodder seeds are found in the sample;
-    that is, k2 = 3. The purchaser wishes to determine if the difference between the
-    samples could not be due to chance.
+    Suppose that a gardener wishes to test the number of dodder seeds,
+    a weed, in a sack of clover seeds that they will buy from seed company.
+    A 100 gram sample is drawn from the sack prior to being shipped to the
+    gardener. The sample is analyzed, and it is found to contain no dodder
+    seeds; that is, count1 = 0. However, upon arrival, the gardener draws
+    another 100 gram sample from the sack. This time, three dodder seeds are
+    found in the sample; that is, count2 = 3. The user would like to know if
+    the difference between is significant and not due to chance. The null
+    hypothesis is that the variance in number of dodder seeds is merely due
+    to chance. The gardener decides that a significance level of 5% is
+    required to reject the null hypothesis in favor of the alternative.
+    (Przyborowski and Wilenski (1940) [2]_)
 
-    >>> stats.poisson_means_test(0, 100, 3, 100)
-    PoissonMeansTestResult(statistic=-1.7320508075688772, pvalue=0.08837900929018155)
-    >>> stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=100, equal_var=False,
-    ...                            mean2=3.0/100, std2=np.sqrt(.03), nobs2=100)
-    Ttest_indResult(statistic=-1.7320508075688772, pvalue=0.0863790757063214)
+    >>> res = stats.poisson_means_test(0, 100, 3, 100)
+    >>> res.statistic, res.pvalue
+    -1.7320508075688772, 0.08837900929018155
 
-    The result above show evidence that the difference between two samples is significant
-    at the level of significance 0.1. Both t-test and e-test show similar p-value, but
-    will be different if the sample size is small
+    The p-value is .088, indicating a near 9% chance of observing a value of
+    the test statistic under the null hypothesis. This exceeds 5%, so the
+    gardener does not reject the null hypothesis as the difference cannot be
+    regarded as significant.
 
-    >>> stats.poisson_means_test(0, 10, 3, 10)
-    PoissonMeansTestResult(statistic=-1.7320508075688772, pvalue=0.08837900929018155)
-    >>> stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=10, equal_var=False,
-    ...                            mean2=3.0/10, std2=np.sqrt(.3), nobs2=10)
-    Ttest_indResult(statistic=-1.7320508075688774, pvalue=0.11730680301423814)
+    Examine the same data using the more common t-test:
 
-    The t-test need n=100 to arrive at the similar p-value of e-test whereas the e-test
-    produce similar p-value either with nobs=10 or nobs=100
+    >>> res = stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=100,
+    ...                                  equal_var=False, mean2=3.0/100,
+    ...                                  std2=np.sqrt(.03), nobs2=100)
+    >>> res.statistic, res.pvalue
+    -1.7320508075688772, 0.0863790757063214
+
+    Both t-test and the poisson mean test show similar p-values and do not
+    reject the null hypothesis. The power of the poisson mean test is
+    demonstrated with smaller sample sizes:
+
+    >>> res = stats.poisson_means_test(0, 10, 3, 10)
+    >>> res.statistic, res.pvalue
+    1.7320508075688772, 0.08837900929018155)
+    >>> res = stats.ttest_ind_from_stats(mean1=0, std1=0, nobs1=10,
+    ...                                  equal_var=False, mean2=3.0/10,
+    ...                                  std2=np.sqrt(.3), nobs2=10)
+    >>> res.statistic, res.pvalue
+    -1.7320508075688774, 0.11730680301423814
+
+    With a sample size of 100, the t-test's p-value was comparable to that
+    of the e-test. At smaller sample sizes, the e-test maintains the p-value
+    while the t-test's p-value increases.
     """
 
     _chck_args_poisson_mean_test(count1, nobs1, count2, nobs2, diff,
@@ -248,6 +281,16 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
         count1, count2 = count2, count1
         nobs1, nobs2 = nobs2, nobs1
 
+    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
+    lmbd_hat2 = ((count1 + count2) / (nobs1 + nobs2) -
+                 diff * nobs1 / (nobs1 + nobs2))
+
+    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
+    # case the null hypothesis cannot be rejected ... [and] it is not necessary
+    # to compute the p-value". [1] page 26 below eq. (3.6).
+    if lmbd_hat2 <= 0:
+        return PoissonMeansTestResult(np.nan, 1)
+
     # the unbiased variance estimate [1] (3.2)
     var = count1 / (nobs1 ** 2) + count2 / (nobs2 ** 2)
 
@@ -256,21 +299,22 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     # comparison with the computed pivot statistics in an indicator function.
     t_k1k2 = (count1 / nobs1 - count2 / nobs2 - diff) / np.sqrt(var)
 
-    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
-    lmbd_hat2 = ((count1 + count2) / (nobs1 + nobs2) -
-                 diff * nobs1 / (nobs1 + nobs2))
-
     # equation (3.5) of [1] is lengthy, so it is broken into several parts,
     # beginning here. Note that the probability mass function of poisson is
     # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
-    # here as nlmbd_hat*. 
+    # here as nlmbd_hat*. The strategy for evaluating the double summation in
+    # (3.5) is to create two arrays of the values of the two products inside
+    # the summation and then broadcast them together into a matrix, and then
+    # sum across the entire matrix.
     
     # compute constants (as seen in the first and second separated products in
-    # (3.5).). This is the shape (\mu) parameter of the poisson distribution.
+    # (3.5).). (This is the shape (\mu) parameter of the poisson distribution.)
     nlmbd_hat1 = nobs1 * (lmbd_hat2 + diff)
     nlmbd_hat2 = nobs2 * lmbd_hat2
 
-    # determine summation limits for tail ends of distribution
+    # determine summation bounds for tail ends of distribution rather than
+    # summing to infinity. `x1*` is for the outer sum and `x2*` is the inner
+    # sum
     x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat1)
     x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
 
@@ -286,23 +330,19 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     # not.)
     prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
     prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
-
-    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
-    # case the null hypothesis cannot be rejected ... [and] it is not necessary
-    # to compute the p-value". [1] page 26 below eq. (3.6).
-    if lmbd_hat2 <= 0:
-        return PoissonMeansTestResult(None, 1)
     
-    # pre-compute constants for use in the the "pivot statistic" per the 
-    # unnumbered equation following (3.3) on the fly.
-    lmbd_hat_x1 = x1 / nobs1
-    lmbd_hat_x2 = x2 / nobs2
-    diff_lmbd_x1x2 = lmbd_hat_x1 - lmbd_hat_x2 - diff
-    var_x1x2 = lmbd_hat_x1 / nobs1 + lmbd_hat_x2 / nobs2
+    # compute constants for use in the the "pivot statistic" per the
+    # unnumbered equation following (3.3).
+    lmbd_x1 = x1 / nobs1
+    lmbd_x2 = x2 / nobs2
+    lmbds_diff = lmbd_x1 - lmbd_x2 - diff
+    var_x1x2 = lmbd_x1 / nobs1 + lmbd_x2 / nobs2
 
-    ts = (alternative == 'two-sided')
+    ts = alternative == 'two-sided'
+
     # this is the 'pivot statistic' for use in the indicator of the summation
-    # (left side of "I[.]").
+    # (left side of "I[.]"). It is computed with `np.divide` so that skipped
+    # values are 0.
     t_x1x2 = np.divide(
         lmbds_diff,
         np.sqrt(var_x1x2),
@@ -332,7 +372,8 @@ def _chck_args_poisson_mean_test(count1, nobs1, count2, nobs2, diff,
         raise TypeError('count1, count2, nobs1, and nobs2 must be of type int')
 
     if count1 < 0 or count2 < 0:
-        raise ValueError('k1 and k2 should be greater than or equal to 0')
+        raise ValueError('count1 and count2 should be greater than or equal '
+                         'to 0')
 
     if nobs1 <= 0 or nobs2 <= 0:
         raise ValueError('nobs1 and nobs2 should be greater than 0')
