@@ -537,7 +537,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
 def _kendall_p_exact(n, c):
     # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
     if n <= 0:
-        raise ValueError('n ({n}) must be positive')
+        raise ValueError(f'n ({n}) must be positive')
     elif c < 0 or 4*c > n*(n-1):
         raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
     elif n == 1:
