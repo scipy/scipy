@@ -1,6 +1,7 @@
 import pathlib
 import sys
 
+
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
@@ -10,7 +11,7 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from scipy._lib._boost_utils import _boost_dir
-    from scipy.stats._boost._info import _klass_mapper
+    from _info import _klass_mapper  # type: ignore
     from numpy.distutils.misc_util import Configuration
     import numpy as np
     config = Configuration('_boost', parent_package, top_path)
