@@ -17,7 +17,7 @@ your `SciPy <https://github.com/scipy/scipy>`_ clone::
     conda config --env --add channels conda-forge
 
     # Now install all packages that are needed in one `conda install` command
-    conda install python=3.8 numpy pybind11 cython pythran compilers pytest sphinx matplotlib mypy
+    conda install python=3.8 numpy pybind11 cython pythran compilers pytest sphinx pydata-sphinx-theme matplotlib mypy
 
     # Build SciPy for development work plus run tests
     python runtests.py    # Alternatively, it's fine to use `python setup.py develop`

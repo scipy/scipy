@@ -294,11 +294,11 @@ def matdims(arr, oned_as='column'):
     """
     shape = arr.shape
     if shape == ():  # scalar
-        return (1,1)
-    if functools.reduce(operator.mul, shape) == 0:  # zero elememts
-        return (0,) * np.max([arr.ndim, 2])
+        return (1, 1)
     if len(shape) == 1:  # 1D
-        if oned_as == 'column':
+        if shape[0] == 0:
+            return (0, 0)
+        elif oned_as == 'column':
             return shape + (1,)
         elif oned_as == 'row':
             return (1,) + shape

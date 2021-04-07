@@ -61,6 +61,21 @@ def check_vonmises_cdf_periodic(k, L, s, x):
     assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
 
 
+def test_distributions_submodule():
+    actual = set(scipy.stats.distributions.__all__)
+    continuous = [dist[0] for dist in distcont]    # continuous dist names
+    discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
+    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+             'entropy', 'trapz']
+    expected = continuous + discrete + other
+
+    # need to remove, e.g.,
+    # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
+    expected = set(filter(lambda s: not str(s).startswith('<'), expected))
+
+    assert actual == expected
+
+
 def test_vonmises_pdf_periodic():
     for k in [0.1, 1, 101]:
         for x in [0, 1, numpy.pi, 10, 100]:
