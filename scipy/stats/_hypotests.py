@@ -275,14 +275,15 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-10], nlmbd_hat2)
 
     # construct arrays to function as the x_1 and x_2 counters on the summation
-    # in (3.5). `x1` is the outer counter, with repeating counts
-    # [0, 0, 0, 1, 1, 1, ...] for every [1, 2, 3, 1, 2, 3, ...] in `x2`. 
-    x1 = np.repeat(np.arange(x1_lb, x1_ub + 1), x2_ub - x2_lb + 1)
-    x2 = np.resize(np.arange(x2_lb, x2_ub + 1), len(x1))
+    # in (3.5). `x1` is in columns and `x2` is in rows to allow for
+    # broadcasting.
+    x1 = np.arange(x1_lb, x1_ub + 1)
+    x2 = np.arange(x2_lb, x2_ub + 1)[:, None]
 
-    # this replaces the two analytical terms in the summation equation in (3.5)
-    # with `prob_x1` being the first and `prob_x2` being the second. (To make
-    # as clear as possible: the 1st contains a "+ d" term, the 2md does not.)
+    # these are the two products in equation (3.5) with `prob_x1` being the
+    # first (left side) and `prob_x2` being the second (right side). (To
+    # make as clear as possible: the 1st contains a "+ d" term, the 2nd does
+    # not.)
     prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
     prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
 
@@ -303,24 +304,22 @@ def poisson_means_test(count1, nobs1, count2, nobs2, diff=0,
     # this is the 'pivot statistic' for use in the indicator of the summation
     # (left side of "I[.]").
     t_x1x2 = np.divide(
-        diff_lmbd_x1x2,
+        lmbds_diff,
         np.sqrt(var_x1x2),
+        out=np.zeros_like(lmbds_diff),
         # exclude the same cases that will be excluded in the indicator in the
-        # following `np.multiply` call so the shapes line up.
-        where=((np.abs(lmbd_hat_x1 - lmbd_hat_x2) > diff) if ts else
-               (diff_lmbd_x1x2 > 0))
-    )
-    # multiply the products inside the summation together (3.5)
-    p_x1x2 = np.multiply(
-        prob_x1,
-        prob_x2,
-        # the following implements the "I[.] ... the indicator function" per the
-        # paragraph following equation (3.5)
-        where=(np.abs(t_x1x2) >= np.abs(t_k1k2) if ts else (t_x1x2 >= t_k1k2))
+        # following `np.multiply` call to avoid invalid divisions. In these
+        # for 'skipped' indices, the result is zero, as seen in the `out=`
+        where=(np.abs(lmbd_x1 - lmbd_x2) > diff if ts else lmbds_diff > 0)
     )
 
-    # finish (3.5) by summing the result
-    pvalue = np.sum(p_x1x2)
+    # `[indicator]` implements the "I[.] ... the indicator function" per
+    # the paragraph following equation (3.5).
+    indicator = np.abs(t_x1x2) >= np.abs(t_k1k2) if ts else t_x1x2 >= t_k1k2
+
+    # multiply all combinations of the products together, exclude terms
+    # based on the `indicator` and then sum. (3.5)
+    pvalue = (prob_x1 * prob_x2)[indicator].sum()
 
     return PoissonMeansTestResult(t_k1k2, pvalue)
 
