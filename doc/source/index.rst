@@ -8,7 +8,7 @@ SciPy documentation
 
 **Date**: |today| **Version**: |version|
 
-**Download documentation**: `PDF Version <https://docs.scipy.org/doc/scipy-1.6.2/scipy-ref-1.6.2.pdf>`__ | `Zipped HTML <https://docs.scipy.org/doc/scipy-1.6.2/scipy-html-1.6.2.zip>`__
+**Download documentation**: https://docs.scipy.org/doc/
 
 **Useful links**:
 `Install <https://scipy.org/install.html>`__ |
@@ -26,7 +26,14 @@ science, and engineering.
         <div class="row">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <div class="card text-center intro-card shadow">
-                <img src="_static/index_getting_started.svg" class="card-img-top" alt="getting started with SciPy action icon" height="52">
+
+.. image:: _static/index_getting_started.svg
+   :height: 52
+   :alt: getting started with SciPy action icon
+   :target: getting_started.html
+
+.. raw:: html
+
                 <div class="card-body flex-fill">
                     <h5 class="card-title">Getting started</h5>
                     <p class="card-text">New to <em>SciPy</em>? Check out the getting started guides. They
@@ -43,7 +50,14 @@ science, and engineering.
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <div class="card text-center intro-card shadow">
-                <img src="_static/index_user_guide.svg" class="card-img-top" alt="SciPy user guide action icon" height="52">
+
+.. image:: _static/index_user_guide.svg
+   :height: 52
+   :alt: SciPy user guide action icon
+   :target: tutorial/index.html#user-guide
+
+.. raw:: html
+
                 <div class="card-body flex-fill">
                     <h5 class="card-title">User guide</h5>
                     <p class="card-text">The user guide provides in-depth information on the
@@ -60,7 +74,14 @@ science, and engineering.
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <div class="card text-center intro-card shadow">
-                <img src="_static/index_api.svg" class="card-img-top" alt="api of SciPy action icon" height="52">
+
+.. image:: _static/index_api.svg
+   :height: 52
+   :alt: api of SciPy action icon
+   :target: reference/index.html#scipy-api
+
+.. raw:: html
+
                 <div class="card-body flex-fill">
                     <h5 class="card-title">API reference</h5>
                     <p class="card-text">The reference guide contains a detailed description of
@@ -78,7 +99,14 @@ science, and engineering.
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <div class="card text-center intro-card shadow">
-                <img src="_static/index_contribute.svg" class="card-img-top" alt="contribute to SciPy action icon" height="52">
+
+.. image:: _static/index_contribute.svg
+   :height: 52
+   :alt: contribute to SciPy action icon
+   :target: dev/index.html#scipy-development
+
+.. raw:: html
+
                 <div class="card-body flex-fill">
                     <h5 class="card-title">Developer guide</h5>
                     <p class="card-text">Saw a typo in the documentation? Want to improve
