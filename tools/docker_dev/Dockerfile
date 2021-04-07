@@ -16,7 +16,7 @@
 # docker run --rm -it -v $(pwd):/home/scipy scipy:<image-tag>
 # 
 # Once the container is running, you'll need to activate the conda environment
-# conda activate scipydev
+# conda activate scipy-dev
 # 
 # And run the tests with
 # python runtests.py
@@ -66,7 +66,7 @@ ENV CONDA_DIR=/opt/conda \
 
 ENV CONDA_VERSION="${conda_version}" \
     MINIFORGE_VERSION="${miniforge_version}" \
-    CONDA_ENV=scipydev \
+    CONDA_ENV=scipy-dev \
     # ---- Gitpod user ----
     GP_USER=gitpod \
     GP_GROUP=gitpod \
