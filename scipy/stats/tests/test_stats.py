@@ -6583,6 +6583,15 @@ class TestMGCStat:
 # have limitation for high value of count and nobs, we also test for that
 class TestPoissonETest:
 
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+        # example from [1], 6. Illustrative examples: Example 1
+        [0, 100, 3, 100, 0.0884],
+        [2, 100, 6, 100, 0.1749]
+    ))
+    def test_paper_examples(self, c1, n1, c2, n2, p_expect):
+        res = stats.poisson_means_test(c1, n1, c2, n2)
+        assert_allclose(res.pvalue, p_expect, atol=1e-4)
+
     # should return the same value
     def test_same_results(self):
         count1, count2 = 20, 20
@@ -6599,41 +6608,56 @@ class TestPoissonETest:
         with assert_raises(AssertionError):
             assert_almost_equal(res.pvalue, 0.24866994128694545, decimal=5)
 
-    # the original code by author does not implement what they said in the paper
+    # # the original code by author does not implement what they said in the paper
     def test_less_than_zero_lambda_hat2(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
         res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
-        with assert_raises(AssertionError):
-            assert_almost_equal(res.pvalue, 0.0, decimal=1)
+        # with assert_raises(AssertionError):
+        assert_almost_equal(res.pvalue, 0.0)
 
-    def test_non_int_args(self):
+    def test_non_int_args_error(self):
         count1, count2 = 0, 0
-        nobs1, nobs2 = 1, 0.7
-        alternative = 'less'
-        with assert_raises(TypeError):
-            stats.poisson_means_test(count1, nobs1, count2, nobs2,
-                                     alternative=alternative)
+        nobs1, nobs2 = 1, 1
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(.7, nobs1, count2, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, .7, count2, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, nobs1, .7, nobs2)
+        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+            stats.poisson_means_test(count1, nobs1, count2, .7)
 
-    def test_negative_k(self):
+    def test_negative_count_error(self):
         count1, count2 = -1, 1
         nobs1, nobs2 = 1, 1
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="...count2 should be greater "
+                                             "than or equal to 0"):
             stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        with assert_raises(ValueError, match="...count2 should be greater "
+                                             "than or equal to 0"):
+            stats.poisson_means_test(count2, nobs1, count1, nobs2)
 
-    def test_zero_n(self):
+    def test_zero_nobs_error(self):
         count1, count2 = 0, 0
-        nobs1, nobs2 = 0, 1
-        with assert_raises(ValueError):
-            stats.poisson_means_test(count1, nobs1, count2, nobs2)
+        nobs1, nobs2 = 1, 1
+        with assert_raises(ValueError, match="...nobs2 should be greater than "
+                                             "0"):
+            stats.poisson_means_test(count1, -1, count2, nobs2)
+        with assert_raises(ValueError, match="...nobs2 should be greater than "
+                                             "0"):
+            stats.poisson_means_test(count1, nobs1, count2, -1)
 
-    def test_diff_less_zero(self):
+    def test_diff_less_zero_error(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
         diff = -1
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="diff can not have negative"):
             stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=diff)
 
+    def test_invalid_alt(self):
+        with assert_raises(ValueError, match="unknown alternative 'error'"):
+            stats.poisson_means_test(1, 2, 1, 2, alternative='error')
 
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at
