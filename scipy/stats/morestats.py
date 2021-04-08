@@ -2776,10 +2776,18 @@ def mood(x, y, axis=0):
 
     Ri = all_ranks[:n]
     M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
+
     # Approx stat.
     mnM = n * (N * N - 1.0) / 12
-    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    z = (M - mnM) / sqrt(varM)
+    
+    _, t = np.unique(np.sort(xy), return_counts=1)
+    S = np.cumsum(t)
+    S_m1 = np.concatenate(([0], S[:-1]))
+    varM = (m * n * (N + 1.0) * (N + 2) * (N - 2) / 180 -
+            m * n / (180 * N * (N - 1)) * np.sum(
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_m1) ** 2))
+            ))
+    z = (M - mnM) / np.sqrt(varM)
 
     # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
     z_pos = z > 0
