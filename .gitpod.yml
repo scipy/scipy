@@ -10,8 +10,9 @@
 image: trallard/scipy-gitpod:latest
 tasks:
   - name: Prepare development
-    before: conda develop .
     init: |
+      python setup.py build_ext --inplace
+      conda develop .
       mkdir -p /workspace/scipy/.vscode 
       cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.vscode/settings.json
   - name: Prebuild docs

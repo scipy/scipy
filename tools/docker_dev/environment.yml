@@ -1,6 +1,6 @@
 # Optional dependencies left out: mpmath, gmpy2, libsuitesparse, 
 # libgmp,libmpfr, libsuitesparse, libmpc, sparse, scikit-umfpack
-name: scipydev 
+name: scipy-dev 
 dependencies:
   - pytest=6.2.1
   - pybind11=2.6.1
