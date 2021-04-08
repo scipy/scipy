@@ -7,7 +7,7 @@ def _distance_vector(x, y):
     Returns the distance between the point `x` and each point in `y`
     """
     n = y.shape[0]
-    out = np.zeros((n,), dtype=float)
+    out = np.empty((n,), dtype=float)
     for i in range(n):
         out[i] = np.linalg.norm(x - y[i])
 
@@ -20,9 +20,9 @@ def _distance_matrix(x):
     Returns the distance between each pair of points in `x`
     """
     n = x.shape[0]
-    out = np.zeros((n, n), dtype=float)
+    out = np.empty((n, n), dtype=float)
     for i in range(n):
-        for j in range(i):
+        for j in range(i+1):
             out[i, j] = np.linalg.norm(x[i] - x[j])
             out[j, i] = out[i, j]
 
@@ -35,7 +35,7 @@ def _polynomial_vector(x, powers):
     Returns monomials with exponents from `powers` evaluated at the point `x`
     """
     n = powers.shape[0]
-    out = np.zeros((n,), dtype=float)
+    out = np.empty((n,), dtype=float)
     for i in range(n):
         out[i] = np.prod(x**powers[i])
 
@@ -50,7 +50,7 @@ def _polynomial_matrix(x, powers):
     """
     n = x.shape[0]
     m = powers.shape[0]
-    out = np.zeros((n, m), dtype=float)
+    out = np.empty((n, m), dtype=float)
     for i in range(n):
         for j in range(m):
             out[i, j] = np.prod(x[i]**powers[j])
@@ -157,7 +157,8 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         Domain scaling used to create the polynomial matrix
 
     """
-    p, s = d.shape
+    p = d.shape[0]
+    s = d.shape[1]
     r = powers.shape[0]
 
     yeps = y*epsilon
@@ -174,15 +175,17 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     yhat = (y - shift)/scale
     pmat = _polynomial_matrix(yhat, powers)
 
-    lhs = np.zeros((p + r, p + r), dtype=float)
+    lhs = np.empty((p + r, p + r), dtype=float)
     lhs[:p, :p] = kmat
     lhs[:p, p:] = pmat
     lhs[p:, :p] = pmat.T
+    lhs[p:, p:] = 0.0
     for i in range(p):
         lhs[i, i] += smoothing[i]
 
-    rhs = np.zeros((p + r, s), dtype=d.dtype)
+    rhs = np.empty((p + r, s), dtype=d.dtype)
     rhs[:p] = d
+    rhs[p:] = 0.0
 
     return lhs, rhs, shift, scale
 
@@ -229,7 +232,7 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
 
     yeps = y*epsilon
     kernel_func = _NAME_TO_FUNC[kernel]
-    out = np.zeros((q, s), dtype=coeffs.dtype)
+    out = np.empty((q, s), dtype=coeffs.dtype)
     for i in range(q):
         xeps = x[i]*epsilon
         kvec = kernel_func(_distance_vector(xeps, yeps))
