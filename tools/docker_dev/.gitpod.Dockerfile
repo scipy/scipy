@@ -31,9 +31,6 @@ RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . &&
     # is present when launching gitpod
     python setup.py build --build-base=${BUILD_DIR}/scipy 
 
-RUN conda activate ${CONDA_ENV} && \
-    python setup.py develop --install-dir="${BUILD_DIR}/scipy" --build-dir="${BUILD_DIR}/scipy"
-
 
 
 

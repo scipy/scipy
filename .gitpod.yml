@@ -11,10 +11,11 @@ image: trallard/scipy-gitpod:latest
 tasks:
   - name: Prepare development
     init: |
-      export BUIL_DIR=/opt/conda/envs/scipy-dev/lib/python3.8/site-packages
+      export BUILD_DIR=/opt/conda/envs/scipy-dev/lib/python3.8/site-packages
       python setup.py develop --install-dir="${BUILD_DIR}/scipy" --build-dir="${BUILD_DIR}/scipy"
   - name: Prebuild docs
     init: |
+      conda develop .
       git submodule update --init
       cd doc 
       make html-scipyorg
@@ -27,13 +28,13 @@ ports:
 
 # --------------------------------------------------------
 # some useful extensions to have
-vscode:
-  extensions:
-    - eamodio.gitlens@10.2.3:CRhSs/nkGIS3K5yCBlhVTg==
-    - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
-    - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
-    - ritwickdey.liveserver@5.6.1:5Mhl1RgVVDcIym163x8r+w==
-    - ms-python.python@2020.10.332292344:5ctthQ25Qni5/aAuOIUTYQ==
+# vscode:
+#   extensions:
+#     - eamodio.gitlens@10.2.3:CRhSs/nkGIS3K5yCBlhVTg==
+#     - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
+#     - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
+#     - ritwickdey.liveserver@5.6.1:5Mhl1RgVVDcIym163x8r+w==
+#     - ms-python.python@2020.10.332292344:5ctthQ25Qni5/aAuOIUTYQ==
 
 # --------------------------------------------------------
 # using prebuilds for the container 
