@@ -6577,10 +6577,6 @@ class TestMGCStat:
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
 
-# I do not run the original fortran code, some test case came from
-# https://github.com/nolanbconaway/poisson-etest/blob/master/test_etest.py
-# I already ask permission to use the test cases. The original implementation
-# have limitation for high value of count and nobs, we also test for that
 class TestPoissonETest:
 
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
@@ -6592,29 +6588,35 @@ class TestPoissonETest:
         res = stats.poisson_means_test(c1, n1, c2, n2)
         assert_allclose(res.pvalue, p_expect, atol=1e-4)
 
-    # should return the same value
-    def test_same_results(self):
-        count1, count2 = 20, 20
-        nobs1, nobs2 = 10, 10
-        res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
-        assert_almost_equal(res.pvalue, 0.999999756892963, decimal=5)
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+        # These test cases are produced by the wrapped fortran code from the
+        # original authors. This wrapper is available here:
+        # https://github.com/nolanbconaway/poisson-etest. An additional
+        # matlab wrapper is also available that confirms the [0, 100, 3, 100]
+        # test case from the paper: https://github.com/leiferlab/testPoisson.
+        [20, 10, 20, 10, 0.99999975689296305],
+        [10, 10, 10, 10, 0.99999984032412026]
+    ))
+    def test_fortran_authors(self, c1, n1, c2, n2, p_expect):
+        res = stats.poisson_means_test(c1, n1, c2, n2)
+        assert_allclose(res.pvalue, p_expect, atol=1e-5)
 
-    # should return different value, this implementation is free of
-    # limitation in original code
     def test_different_results(self):
+        # The implementation in Fortran is known to break down at higher
+        # counts and observations, so we expect different results.
         count1, count2 = 10000, 10000
         nobs1, nobs2 = 10000, 10000
         res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         with assert_raises(AssertionError):
-            assert_almost_equal(res.pvalue, 0.24866994128694545, decimal=5)
+            assert_allclose(res.pvalue, 0.248669941286945455)
 
-    # # the original code by author does not implement what they said in the paper
+    # the original code by author does not implement what they said in the paper
     def test_less_than_zero_lambda_hat2(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
         res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
-        # with assert_raises(AssertionError):
-        assert_almost_equal(res.pvalue, 0.0)
+        with assert_raises(AssertionError):
+            assert_almost_equal(res.pvalue, 0.0)
 
     def test_non_int_args_error(self):
         count1, count2 = 0, 0
@@ -6629,14 +6631,14 @@ class TestPoissonETest:
             stats.poisson_means_test(count1, nobs1, count2, .7)
 
     def test_negative_count_error(self):
-        count1, count2 = -1, 1
+        count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
         with assert_raises(ValueError, match="...count2 should be greater "
                                              "than or equal to 0"):
-            stats.poisson_means_test(count1, nobs1, count2, nobs2)
+            stats.poisson_means_test(-1, nobs1, count2, nobs2)
         with assert_raises(ValueError, match="...count2 should be greater "
                                              "than or equal to 0"):
-            stats.poisson_means_test(count2, nobs1, count1, nobs2)
+            stats.poisson_means_test(count1, nobs1, -1, nobs2)
 
     def test_zero_nobs_error(self):
         count1, count2 = 0, 0
