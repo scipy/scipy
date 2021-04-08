@@ -110,9 +110,9 @@ container do not persist after you close it.
 
    as a prompt. Notice the ``(base)`` at the beginning, since we are using conda.
 
-#. Activate the ``scipydev`` conda environment::
+#. Activate the ``scipy-dev`` conda environment::
 
-      conda activate scipydev
+      conda activate scipy-dev
 
    this environment has all the dependencies you'll need to start using/building SciPy.
 
