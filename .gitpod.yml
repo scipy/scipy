@@ -7,23 +7,18 @@
 # With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
-image:
-  file: ./tools/docker_dev/.gitpod.Dockerfile
+image: trallard/scipy-gitpod:latest
 tasks:
-  - name: Prebuild Scipy & docs
-    prebuild: |
-      conda activate scipydev
-      python setup.py build_ext --inplace
+  - name: Prepare development
+    before: conda develop .
+    init: |
+      mkdir -p /workspace/scipy/.vscode 
+      cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.vscode/settings.json
+  - name: Prebuild docs
+    init: |
       git submodule update --init
       cd doc 
       make html-scipyorg
-      pip install sphinx-autobuild
-    command: |
-      conda activate scipydev
-      conda develop .
-  - name: Develop here
-    init: mkdir -p /workspace/scipy/.theia &&  cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
-    command: conda activate scipydev
 
 # --------------------------------------------------------
 # exposing ports for liveserve
@@ -39,6 +34,7 @@ vscode:
     - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
     - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
     - ritwickdey.liveserver@5.6.1:5Mhl1RgVVDcIym163x8r+w==
+    - ms-python.python@2020.10.332292344:5ctthQ25Qni5/aAuOIUTYQ==
 
 # --------------------------------------------------------
 # using prebuilds for the container 
