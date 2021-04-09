@@ -4089,12 +4089,12 @@ class invgauss_gen(rv_continuous):
         return np.exp(self._logpdf(x, mu))
 
     def _logpdf(self, x, mu):
-        a = -0.5 * np.log(2 * np.pi) - 1.5 * np.log(x)
+        a = -0.5 * np.log(2 * np.pi)
         out = _lazywhere(
-            mu == np.inf,
-            (x, mu, a),
-            lambda x, mu, a: invgamma.logpdf(x, 0.5, scale=0.5),
-            f2=lambda x, mu, a: a - 0.5 * x / mu ** 2 + 1.0 / mu - 0.5 / x,
+            np.isposinf(mu),
+            (x, mu),
+            lambda x, mu: invgamma.logpdf(x, 0.5, scale=0.5),
+            f2=lambda x, mu: a - 1.5*np.log(x) - 0.5 * (x - mu)**2 / (x * mu**2)
         )
         return out
 
@@ -4171,34 +4171,35 @@ class invgauss_gen(rv_continuous):
             """computes (x0 - norm_cdf) / pdf"""
             return b * np.exp(-d) - np.exp(e - d)
 
-        def f_small_q(q, mu, k):
-            """select the start values for the newton using the quantiles of
+        def x_init_tiny(q, mu, k):
+            """select the start values for Newton's Method using a quantile of
             the gamma (if right tail is required) or normal distribution"""
             if upper:
                 mu3 = mu ** 3
                 return sc.gammainccinv(1 / mu3, q) / mu3
             return mu / (_norm_ppf(q) ** 2),
 
-        k = 1.5 * mu
-        # get starting points
-        x0 = _lazywhere(
-            q < 1e-5,
-            (q, mu, k),
-            f_small_q,
-            f2=lambda q, mu, k: _lazywhere(
+        def x_init(q, mu, k):
+            """when q is not very small the initial value for Newton's method is
+            the mode of the distribution. If `k` is large, then we use equation 3
+            of Giner & Smyth (2016). Note that the threshold of 100 picked here
+            is arbitrary, a much bigger value could be chosen if necessary."""
+            return _lazywhere(
                 mu > 100,
                 (mu, k),
                 lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6)),
                 f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
             )
-        )
 
         lq = np.log(q)
-        iterations = 0
-        lx_func = self._logsf if upper else self._logcdf
+        logF = self._logsf if upper else self._logcdf
         sign = -1 if upper else 1
-        while iterations < 100:
-            lx = lx_func(x0, mu)
+
+        # get starting values to use with Newton's Method
+        k = 1.5 * mu
+        x0 = _lazywhere(q < 1e-5, (q, mu, k), x_init_tiny, f2=x_init)
+        for _ in range(100):
+            lx = logF(x0, mu)
             d = lq - lx
             lp = self._logpdf(x0, mu)
             delta = _lazywhere(np.abs(d) < 1e-5, (d, q, lq, lp, lx), f, f2=f2)
@@ -4206,7 +4207,6 @@ class invgauss_gen(rv_continuous):
             if np.allclose(x, x0, atol=1e-08):
                 break
             x0 = x
-            iterations += 1
 
         return x
 
