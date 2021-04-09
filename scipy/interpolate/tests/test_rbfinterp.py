@@ -12,10 +12,6 @@ from scipy.interpolate._rbfinterp import (
 from scipy.interpolate import _rbfinterp_pythran
 
 
-def _get_kernel(name):
-    return vars(_rbfinterp_pythran)['_' + name]
-
-
 def _vandermonde(x, degree):
     # Returns a matrix of monomials that span polynomials with the specified
     # degree evaluated at x
@@ -53,10 +49,10 @@ def _is_conditionally_positive_definite(kernel, m):
     for ndim in [1, 2, 3, 4, 5]:
         for _ in range(ntests):
             x = np.random.normal(0.0, 1.0, (nx, ndim))
-            dist = _rbfinterp_pythran._distance_matrix(x)
+            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
             # add a small value to the diagonals in case the kernel _should_ be
             # c.p.d. but it is not due to numerical precision.
-            A = kernel(dist) + 1e-12*np.eye(nx)
+            A += 1e-12*np.eye(nx)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
@@ -80,9 +76,8 @@ def test_conditionally_positive_definite(kernel):
     # Test if each kernel in _AVAILABLE is conditionally positive definite of
     # order m, where m comes from _NAME_TO_MIN_DEGREE. This is a necessary
     # condition for the smoothed RBF interpolant to be well-posed in general
-    kernel_func = _get_kernel(kernel)
     m = _NAME_TO_MIN_DEGREE.get(kernel, -1) + 1
-    assert _is_conditionally_positive_definite(kernel_func, m)
+    assert _is_conditionally_positive_definite(kernel, m)
 
 
 class _TestRBFInterpolator:
