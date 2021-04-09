@@ -105,8 +105,8 @@ RUN apt-get update && \
 # ---- Copy needed files ----
 # Copy multiple scripts - fix directory permissions and 
 # basic workspace configurations
-COPY ./workspace_config /usr/local/bin/workspace_config
-COPY ./fix_permissions /usr/local/bin/fix_permissions
+COPY ./tools/docker_dev/workspace_config /usr/local/bin/workspace_config
+COPY ./tools/docker_dev/fix_permissions /usr/local/bin/fix_permissions
 
 RUN chmod a+rx /usr/local/bin/workspace_config && \
     chmod a+rx /usr/local/bin/fix_permissions 
@@ -148,17 +148,17 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
 # ---- Create conda environment ----
 # Install SciPy dependencies - since using miniforge no need to add 
 # conda-forge channel
-COPY ./environment.yml /tmp/environment.yml
+COPY environment.yml /tmp/environment.yml
 
 RUN conda env create -f /tmp/environment.yml && \
     conda activate ${CONDA_ENV} && \
     # needed for docs rendering later on
     python -m pip install --no-cache-dir sphinx-autobuild && \
-    # need to use sudo to remove tml files
+    # need to use sudo to remove tmp files
     sudo rm -rf /tmp/* && \
+    conda clean --all -f -y && \
     # for good measure after installing things
-    fix_permissions ${CONDA_DIR} && \
-    conda clean --all -f -y 
+    fix_permissions ${CONDA_DIR} 
 
 # -----------------------------------------------------------------------------
 USER ${GP_USER}
