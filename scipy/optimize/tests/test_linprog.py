@@ -10,6 +10,7 @@ from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+import scipy.sparse
 import pytest
 
 has_umfpack = True
@@ -198,6 +199,41 @@ def nontrivial_problem():
     return c, A_ub, b_ub, A_eq, b_eq, x_star, f_star
 
 
+def l1_regression_prob(seed=0, m=8, d=9, n=100):
+    '''
+    Training data is {(x0, y0), (x1, y2), ..., (xn-1, yn-1)}
+        x in R^d
+        y in R
+    n: number of training samples
+    d: dimension of x, i.e. x in R^d
+    phi: feature map R^d -> R^m
+    m: dimension of feature space
+    '''
+    np.random.seed(seed)
+    phi = np.random.normal(0, 1, size=(m, d))  # random feature mapping
+    w_true = np.random.randn(m)
+    x = np.random.normal(0, 1, size=(d, n))  # features
+    y = w_true @ (phi @ x) + np.random.normal(0, 1e-5, size=n)  # measurements
+
+    # construct the problem
+    c = np.ones(m+n)
+    c[:m] = 0
+    A_ub = scipy.sparse.lil_matrix((2*n, n+m))
+    idx = 0
+    for ii in range(n):
+        A_ub[idx, :m] = phi @ x[:, ii]
+        A_ub[idx, m+ii] = -1
+        A_ub[idx+1, :m] = -1*phi @ x[:, ii]
+        A_ub[idx+1, m+ii] = -1
+        idx += 2
+    A_ub = A_ub.tocsc()
+    b_ub = np.zeros(2*n)
+    b_ub[0::2] = y
+    b_ub[1::2] = -y
+    bnds = [(None, None)]*m + [(0, None)]*n
+    return c, A_ub, b_ub, bnds
+
+
 def generic_callback_test(self):
     # Check that callback is as advertised
     last_cb = {}
@@ -241,7 +277,7 @@ def test_unknown_solvers_and_options():
     assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
                   options={"rr_method": 'ekki-ekki-ekki'})
 
-    
+
 def test_choose_solver():
     # 'highs' chooses 'dual'
     c = np.array([-3, -2])
@@ -251,7 +287,7 @@ def test_choose_solver():
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-    
+
 A_ub = None
 b_ub = None
 A_eq = None
@@ -263,7 +299,7 @@ bounds = None
 ################
 
 
-class LinprogCommonTests(object):
+class LinprogCommonTests:
     """
     Base class for `linprog` tests. Generally, each test will be performed
     once for every derived class of LinprogCommonTests, each of which will
@@ -387,6 +423,39 @@ class LinprogCommonTests(object):
             # there aren't 3-D sparse matrices
 
         assert_raises(ValueError, f, [1, 2], A_ub=np.zeros((1, 1, 3)), b_eq=1)
+
+    def test_sparse_constraints(self):
+        # gh-13559: improve error message for sparse inputs when unsupported
+        def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
+            linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                    method=self.method, options=self.options)
+
+        np.random.seed(0)
+        m = 100
+        n = 150
+        A_eq = scipy.sparse.rand(m, n, 0.5)
+        x_valid = np.random.randn((n))
+        c = np.random.randn((n))
+        ub = x_valid + np.random.rand((n))
+        lb = x_valid - np.random.rand((n))
+        bounds = np.column_stack((lb, ub))
+        b_eq = A_eq * x_valid
+
+        if self.method in {'simplex', 'revised simplex'}:
+            # simplex and revised simplex should raise error
+            with assert_raises(ValueError, match=f"Method '{self.method}' "
+                               "does not support sparse constraint matrices."):
+                linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                        method=self.method, options=self.options)
+        else:
+            # other methods should succeed
+            options = {**self.options}
+            if self.method in {'interior-point'}:
+                options['sparse'] = True
+
+            res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                          method=self.method, options=options)
+            assert res.success
 
     def test_maxiter(self):
         # test iteration limit w/ Enzo example
@@ -1604,6 +1673,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
+
 ################################
 # Simplex Option-Specific Tests#
 ################################
@@ -1777,7 +1847,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
         super(TestLinprogIPSparsePresolve, self).test_bug_6690()
 
 
-class TestLinprogIPSpecific(object):
+class TestLinprogIPSpecific:
     method = "interior-point"
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense
@@ -1921,6 +1991,19 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     method = "highs-ds"
     options = {}
 
+    def test_lad_regression(self):
+        '''The scaled model should be optimal but unscaled model infeasible.'''
+        c, A_ub, b_ub, bnds = l1_regression_prob()
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
+                      method=self.method, options=self.options)
+        assert_equal(res.status, 4)
+        assert_('An optimal solution to the scaled '
+                'model was found but' in res.message)
+        assert_(res.x is not None)
+        assert_(np.all(res.slack > -1e-6))
+        assert_(np.all(res.x <= [np.inf if u is None else u for l, u in bnds]))
+        assert_(np.all(res.x >= [-np.inf if l is None else l for l, u in bnds]))
+
 
 ###################################
 # HiGHS-IPM Option-Specific Tests #
@@ -1937,7 +2020,7 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 ###########################
 
 
-class AutoscaleTests(object):
+class AutoscaleTests:
     options = {"autoscale": True}
 
     test_bug_6139 = LinprogCommonTests.test_bug_6139
@@ -1980,7 +2063,7 @@ class TestAutoscaleRS(AutoscaleTests):
 ###########################
 
 
-class RRTests(object):
+class RRTests:
     method = "interior-point"
     LCT = LinprogCommonTests
     # these are a few of the existing tests that have redundancy

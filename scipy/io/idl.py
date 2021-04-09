@@ -143,7 +143,7 @@ def _read_float64(f):
     return np.float64(struct.unpack('>d', f.read(8))[0])
 
 
-class Pointer(object):
+class Pointer:
     '''Class used to define pointers'''
 
     def __init__(self, index):

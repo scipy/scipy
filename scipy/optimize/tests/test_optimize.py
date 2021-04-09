@@ -51,7 +51,7 @@ def test_check_grad():
     assert_(r > 1e-7)
 
 
-class CheckOptimize(object):
+class CheckOptimize:
     """ Base test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -794,7 +794,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_l_bfgs_b_maxiter(self):
         # gh7854
         # Ensure that not more than maxiters are ever run.
-        class Callback(object):
+        class Callback:
             def __init__(self):
                 self.nit = 0
                 self.fun = None
@@ -1300,7 +1300,7 @@ class TestOptimizeSimple(CheckOptimize):
                     "Duplicate evaluations made by {}".format(method))
 
 
-class TestLBFGSBBounds(object):
+class TestLBFGSBBounds:
     def setup_method(self):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
@@ -1361,7 +1361,7 @@ class TestLBFGSBBounds(object):
             assert_allclose(res.x, self.solution, atol=1e-6)
 
 
-class TestOptimizeScalar(object):
+class TestOptimizeScalar:
     def setup_method(self):
         self.solution = 1.5
 
@@ -1560,7 +1560,7 @@ def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
 
 
-class TestNewtonCg(object):
+class TestNewtonCg:
     def test_rosenbrock(self):
         x0 = np.array([-1.2, 1.0])
         sol = optimize.minimize(optimize.rosen, x0,
@@ -1808,7 +1808,7 @@ def test_linesearch_powell_bounded():
         assert_allclose(direction, l * xi, atol=1e-6)
 
 
-class TestRosen(object):
+class TestRosen:
 
     def test_hess(self):
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
@@ -1868,7 +1868,7 @@ def test_minimize_multiple_constraints():
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
 
 
-class TestOptimizeResultAttributes(object):
+class TestOptimizeResultAttributes:
     # Test that all minimizers return an OptimizeResult containing
     # all the OptimizeResult attributes
     def setup_method(self):
@@ -2015,7 +2015,7 @@ def test_cobyla_threadsafe():
             res = t.result()
    
    
-class TestIterationLimits(object):
+class TestIterationLimits:
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
     # by exceeding the limits.
@@ -2106,7 +2106,7 @@ def test_result_x_shape_when_len_x_is_one():
         assert res.x.shape == (1,)
 
 
-class FunctionWithGradient(object):
+class FunctionWithGradient:
     def __init__(self):
         self.number_of_calls = 0
 
@@ -2203,9 +2203,55 @@ def test_show_options():
     unknown_solver_method = {
         'minimize': "ekki",  # unknown method
         'maximize': "cg",  # unknown solver
-        'maximize': "ekki",  # unknown solver and method
+        'maximize_scalar': "ekki",  # unknown solver and method
     }
     for solver, method in unknown_solver_method.items():
         # testing that `show_options` raises ValueError
         assert_raises(ValueError, show_options, solver, method)
         
+
+def test_bounds_with_list():
+    # gh13501. Bounds created with lists weren't working for Powell.
+    bounds = optimize.Bounds(lb=[5., 5.], ub=[10., 10.])
+    optimize.minimize(
+        optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
+    )
+
+
+def test_x_overwritten_user_function():
+    # if the user overwrites the x-array in the user function it's likely
+    # that the minimizer stops working properly.
+    # gh13740
+    def fquad(x):
+        a = np.arange(np.size(x))
+        x -= a
+        x *= x
+        return np.sum(x)
+
+    def fquad_jac(x):
+        a = np.arange(np.size(x))
+        x *= 2
+        x -= 2 * a
+        return x
+
+    fquad_hess = lambda x: np.eye(np.size(x)) * 2.0
+
+    meth_jac = [
+        'newton-cg', 'dogleg', 'trust-ncg', 'trust-exact',
+        'trust-krylov', 'trust-constr'
+    ]
+    meth_hess = [
+        'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov', 'trust-constr'
+    ]
+
+    x0 = np.ones(5) * 1.5
+
+    for meth in MINIMIZE_METHODS:
+        jac = None
+        hess = None
+        if meth in meth_jac:
+            jac = fquad_jac
+        if meth in meth_hess:
+            hess = fquad_hess
+        res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
+        assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)

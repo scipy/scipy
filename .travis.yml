@@ -14,6 +14,7 @@ addons:
     - ccache
     - swig
     - libmpc-dev
+    - g++
 
 env:
   global:
@@ -80,6 +81,10 @@ before_install:
       echo "library_dirs = $target/lib" >> site.cfg
       echo "include_dirs = $target/include" >> site.cfg
       echo "runtime_library_dirs = $target/lib" >> site.cfg
+      # pythran setup
+      echo '[compiler]' > ~/.pythranrc
+      echo 'CXX=g++-7' >> ~/.pythranrc
+      echo 'CC=gcc-7' >> ~/.pythranrc
     fi
   - export CCACHE_COMPRESS=1
   - if [ -n "$CC" ]; then ln -s `which ccache` "/usr/lib/ccache/$CC" || true; fi
@@ -100,7 +105,7 @@ before_install:
     fi
   - python --version
   - python -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11
+  - travis_retry pip install --upgrade pip==20.2.4 setuptools wheel $OTHERSPEC cython pytest pytest-xdist mpmath argparse gmpy2 pybind11 pythran
   - travis_retry pip install --upgrade $NUMPYSPEC
   - |
     if [ -z "${USE_DEBUG}" -a "${TRAVIS_CPU_ARCH}" == "amd64" -a "${TRAVIS_PYTHON_VERSION}" != "3.8" ]; then

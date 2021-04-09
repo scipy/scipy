@@ -34,6 +34,7 @@ import numpy as np
 from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
+import math
 
 import itertools
 import warnings
@@ -533,6 +534,42 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         return SpearmanrResult(rs, prob)
 
 
+def _kendall_p_exact(n, c):
+    # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+    if n <= 0:
+        raise ValueError(f'n ({n}) must be positive')
+    elif c < 0 or 4*c > n*(n-1):
+        raise ValueError(f'c ({c}) must satisfy 0 <= 4c <= n(n-1) = {n*(n-1)}.')
+    elif n == 1:
+        prob = 1.0
+    elif n == 2:
+        prob = 1.0
+    elif c == 0:
+        prob = 2.0/math.factorial(n) if n < 171 else 0.0
+    elif c == 1:
+        prob = 2.0/math.factorial(n-1) if n < 172 else 0.0
+    elif 4*c == n*(n-1):
+        prob = 1.0
+    elif n < 171:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3,n+1):
+            new = np.cumsum(new)
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = 2.0*np.sum(new)/math.factorial(n)
+    else:
+        new = np.zeros(c+1)
+        new[0:2] = 1.0
+        for j in range(3, n+1):
+            new = np.cumsum(new)/j
+            if j <= c:
+                new[j:] -= new[:c+1-j]
+        prob = np.sum(new)
+
+    return np.clip(prob, 0, 1)
+
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -555,7 +592,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
-        are present. 'auto' is the default and selects the appropriate
+        are present. As the sample size increases, the 'exact' computation
+        time may grow and the result may lose some precision.
+        'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -613,35 +652,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
             method = 'asymptotic'
 
     if not xties and not yties and method == 'exact':
-        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods"
-        # (4th Edition), Charles Griffin & Co., 1970.
-        c = int(min(C, (n*(n-1))/2-C))
-        if n <= 0:
-            raise ValueError
-        elif c < 0 or 2*c > n*(n-1):
-            raise ValueError
-        elif n == 1:
-            prob = 1.0
-        elif n == 2:
-            prob = 1.0
-        elif c == 0:
-            prob = 2.0/float_factorial(n)
-        elif c == 1:
-            prob = 2.0/float_factorial(n-1)
-        elif 2*c == (n*(n-1))//2:
-            prob = 1.0
-        else:
-            old = [0.0]*(c+1)
-            new = [0.0]*(c+1)
-            new[0] = 1.0
-            new[1] = 1.0
-            for j in range(3,n+1):
-                old = new[:]
-                for k in range(1,min(j,c+1)):
-                    new[k] += new[k-1]
-                for k in range(j,c+1):
-                    new[k] += new[k-1] - old[k-j]
-            prob = 2.0*sum(new)/float_factorial(n)
+        prob = _kendall_p_exact(n, int(min(C, (n*(n-1))//2-C)))
+
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
@@ -2172,6 +2184,10 @@ def moment(a, moment=1, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+    return _moment(a, moment, axis)
+
+# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
+def _moment(a, moment, axis, *, mean=None):
     if moment == 1:
         # By definition the first moment about the mean is 0.
         shape = list(a.shape)
@@ -2194,7 +2210,8 @@ def moment(a, moment=1, axis=0):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - ma.expand_dims(a.mean(axis), axis)
+        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        a_zero_mean = a - mean
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -2208,10 +2225,18 @@ def moment(a, moment=1, axis=0):
         return s.mean(axis)
 
 
-def variation(a, axis=0):
+def variation(a, axis=0, ddof=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Compute the coefficient of variation.
+
+    The coefficient of variation is the standard deviation divided by the
+    mean.  This function is equivalent to::
+
+        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
+
+    The default for ``ddof`` is 0, but many definitions of the coefficient
+    of variation use the square root of the unbiased sample variance
+    for the sample standard deviation, which corresponds to ``ddof=1``.
 
     Parameters
     ----------
@@ -2220,16 +2245,18 @@ def variation(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 0.
 
     Returns
     -------
     variation : ndarray
         The calculated variation along the requested axis.
-    
+
     Notes
     -----
     For more details about `variation`, see `stats.variation`.
-    
+
     Examples
     --------
     >>> from scipy.stats.mstats import variation
@@ -2242,12 +2269,12 @@ def variation(a, axis=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked 
+    `stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
     a, axis = _chk_asarray(a, axis)
-    return a.std(axis)/a.mean(axis)
+    return a.std(axis, ddof=ddof)/a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
@@ -2276,14 +2303,16 @@ def skew(a, axis=0, bias=True):
 
     """
     a, axis = _chk_asarray(a,axis)
-    n = a.count(axis)
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m3 = _moment(a, 3, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+        vals = ma.where(zero, 0, m3 / m2**1.5)
 
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
+        n = a.count(axis)
+        can_correct = ~zero & (n > 2)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -2330,14 +2359,16 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    mean = a.mean(axis, keepdims=True)
+    m2 = _moment(a, 2, axis, mean=mean)
+    m4 = _moment(a, 4, axis, mean=mean)
+    zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
     with np.errstate(all='ignore'):
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(zero, 0, m4 / m2**2.0)
 
-    if not bias:
+    if not bias and zero is not ma.masked and m2 is not ma.masked:
         n = a.count(axis)
-        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
+        can_correct = ~zero & (n > 3)
         if can_correct.any():
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
@@ -2409,7 +2440,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis)
-    mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
+    mm = (ma.minimum.reduce(a, axis=axis), ma.maximum.reduce(a, axis=axis))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
@@ -2991,7 +3022,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
-    -------
+    -----
     For more details on `brunnermunzel`, see `stats.brunnermunzel`.
 
     """

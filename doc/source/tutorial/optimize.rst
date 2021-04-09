@@ -1541,6 +1541,102 @@ If we need greater accuracy, typically at the expense of speed, we can solve usi
     success: True
           x: array([ 9.41025641,  5.17948718, -0.25641026,  1.64102564])  # may vary
 
+Assignment problems
+-------------------
+
+Linear sum assignment problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Consider the problem of selecting students for a swimming medley relay team.
+We have a table showing times for each swimming style of five students:
+
+==========  ===========  ============  ===========  ===============================
+ Student    backstroke   breaststroke  butterfly    freestyle
+==========  ===========  ============  ===========  ===============================
+ A          43.5           47.1         48.4        38.2
+ B          45.5           42.1         49.6        36.8
+ C          43.4           39.1         42.1        43.2
+ D          46.5           44.1         44.5        41.2
+ E          46.3           47.8         50.4        37.2
+==========  ===========  ============  ===========  ===============================
+
+We need to choose a student for each of the four swimming styles such that 
+the total relay time is minimized.
+This is a typical linear sum assignment problem. We can use :func:`linear_sum_assignment` to solve it.
+
+The linear sum assignment problem is one of the most famous combinatorial optimization problems.
+Given a "cost matrix" :math:`C`, the problem is to choose
+
+- exactly one element from each row 
+- without choosing more than one element from any column 
+- such that the sum of the chosen elements is minimized
+
+In other words, we need to assign each row to one column such that the sum of 
+the corresponding entries is minimized.
+
+Formally, let :math:`X` be a boolean matrix where :math:`X[i,j] = 1` iff row  :math:`i` is assigned to column :math:`j`.
+Then the optimal assignment has cost
+
+.. math::
+
+    \min \sum_i \sum_j C_{i,j} X_{i,j}
+
+The first step is to define the cost matrix.
+In this example, we want to assign each swimming style to a student.
+:func:`linear_sum_assignment` is able to assign each row of a cost matrix to a column.
+Therefore, to form the cost matrix, the table above needs to be transposed so that the rows
+correspond with swimming styles and the columns correspond with students:
+
+::
+
+    >>> import numpy as np
+    >>> cost = np.array([[43.5, 45.5, 43.4, 46.5, 46.3],
+    ...                  [47.1, 42.1, 39.1, 44.1, 47.8],
+    ...                  [48.4, 49.6, 42.1, 44.5, 50.4],
+    ...                  [38.2, 36.8, 43.2, 41.2, 37.2]])
+
+We can solve the assignment problem with :func:`linear_sum_assignment`:
+
+::
+
+    >>> from scipy.optimize import linear_sum_assignment
+    >>> row_ind, col_ind = linear_sum_assignment(cost)
+
+The ``row_ind`` and ``col_ind`` are optimal assigned matrix indexes of the cost matrix:
+
+::
+
+    >>> row_ind
+    array([0, 1, 2, 3])
+    >>> col_ind
+    array([0, 2, 3, 1])
+
+The optimal assignment is:
+
+::
+
+    >>> styles = np.array(["backstroke", "breaststroke", "butterfly", "freestyle"])[row_ind]
+    >>> students = np.array(["A", "B", "C", "D", "E"])[col_ind]
+    >>> dict(zip(styles, students))
+    {'backstroke': 'A', 'breaststroke': 'C', 'butterfly': 'D', 'freestyle': 'B'}
+
+The optimal total medley time is:
+
+::
+
+    >>> cost[row_ind, col_ind].sum()
+    163.89999999999998
+
+Note that this result is not the same as the sum of the minimum times for each swimming style:
+
+::
+
+    >>> np.min(cost, axis=1).sum()
+    161.39999999999998
+
+because student "C" is the best swimmer in both "breaststroke" and "butterfly" style.
+We cannot assign student "C" to both styles, so we assigned student C to the "breaststroke" style
+and D to the "butterfly" style to minimize the total time.
 
 .. rubric:: References
 

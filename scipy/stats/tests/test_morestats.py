@@ -15,6 +15,7 @@ from pytest import raises as assert_raises
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
+from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -41,7 +42,7 @@ g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
-class TestBayes_mvs(object):
+class TestBayes_mvs:
     def test_basic(self):
         # Expected values in this test simply taken from the function.  For
         # some checks regarding correctness of implementation, see review in
@@ -72,7 +73,7 @@ class TestBayes_mvs(object):
             check_named_results(i, attributes)
 
 
-class TestMvsdist(object):
+class TestMvsdist:
     def test_basic(self):
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.mvsdist(data)
@@ -105,7 +106,7 @@ class TestMvsdist(object):
             [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
 
 
-class TestShapiro(object):
+class TestShapiro:
     def test_basic(self):
         x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
@@ -195,7 +196,7 @@ class TestShapiro(object):
         assert_almost_equal(shapiro_test.pvalue, 1.0)
 
 
-class TestAnderson(object):
+class TestAnderson:
     def test_normal(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
@@ -281,7 +282,7 @@ class TestAnderson(object):
         assert_(A2 > crit2[-1])
 
 
-class TestAndersonKSamp(object):
+class TestAndersonKSamp:
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
@@ -479,7 +480,7 @@ class TestAndersonKSamp(object):
         check_named_results(res, attributes)
 
 
-class TestAnsari(object):
+class TestAnsari:
 
     def test_small(self):
         x = [1, 2, 3, 3, 4]
@@ -523,7 +524,7 @@ class TestAnsari(object):
         check_named_results(res, attributes)
 
 
-class TestBartlett(object):
+class TestBartlett:
 
     def test_data(self):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -552,7 +553,7 @@ class TestBartlett(object):
         assert_raises(ValueError, stats.bartlett, g1, x)
 
 
-class TestLevene(object):
+class TestLevene:
 
     def test_data(self):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
@@ -621,42 +622,278 @@ class TestLevene(object):
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP(object):
+class TestBinomP:
+    """Tests for stats.binom_test."""
+
+    binom_test_func = staticmethod(stats.binom_test)
 
     def test_data(self):
-        pval = stats.binom_test(100, 250)
+        pval = self.binom_test_func(100, 250)
         assert_almost_equal(pval, 0.0018833009350757682, 11)
-        pval = stats.binom_test(201, 405)
+        pval = self.binom_test_func(201, 405)
         assert_almost_equal(pval, 0.92085205962670713, 11)
-        pval = stats.binom_test([682, 243], p=3.0/4)
+        pval = self.binom_test_func([682, 243], p=3/4)
         assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
         # Length of x must be 1 or 2.
-        assert_raises(ValueError, stats.binom_test, [1, 2, 3])
+        assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
         # Missing n
-        assert_raises(ValueError, stats.binom_test, [100])
+        assert_raises(ValueError, self.binom_test_func, [100])
         # n less than x[0]
-        assert_raises(ValueError, stats.binom_test, [100], n=50)
+        assert_raises(ValueError, self.binom_test_func, [100], n=50)
 
     def test_bad_p(self):
-        assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
+        assert_raises(ValueError,
+                      self.binom_test_func, [50, 50], p=2.0)
 
     def test_alternatives(self):
-        res = stats.binom_test(51, 235, p=1./6, alternative='less')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='less')
         assert_almost_equal(res, 0.982022657605858)
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='greater')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
         assert_almost_equal(res, 0.02654424571169085)
 
-        res = stats.binom_test(51, 235, p=1./6, alternative='two-sided')
+        res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
 
 
-class TestFligner(object):
+class TestBinomTestP(TestBinomP):
+    """
+    Tests for stats.binomtest as a replacement for stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
+
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
+
+
+class TestBinomTest:
+    """Tests for stats.binomtest."""
+
+    # Expected results here are from old binom_test function.
+    # The alternative will be left unspecified which defaults
+    # it to two-sided.
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_two_sided_pvalues1(self):
+        # These tests work on all OS's but fail on
+        # Linux_Python_37_32bit_full due to numerical issues caused
+        # by large inputs.
+        res = stats.binomtest(10079999, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.979042561004596, rtol=1e-15)
+        res = stats.binomtest(10079990, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9785298857599378, rtol=1e-15)
+        res = stats.binomtest(10080009, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9786038762958954, rtol=1e-15)
+        res = stats.binomtest(10080017, 21000000, 0.48)
+        assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-15)
+
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_two_sided_pvalues2(self):
+        res = stats.binomtest(9, n=21, p=0.48)
+        assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-15)
+        res = stats.binomtest(4, 21, 0.48)
+        assert_allclose(res.pvalue, 0.008139563452105921, rtol=1e-15)
+        res = stats.binomtest(11, 21, 0.48)
+        assert_allclose(res.pvalue, 0.8278629664608201, rtol=1e-15)
+        res = stats.binomtest(7, 21, 0.48)
+        assert_allclose(res.pvalue, 0.19667729017182273, rtol=1e-15)
+        res = stats.binomtest(3, 10, .5)
+        assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-15)
+        res = stats.binomtest(2, 2, .4)
+        assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-15)
+        res = stats.binomtest(2, 4, .3)
+        assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-15)
+
+    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
+                                "sensitive to machine epsilon level")
+    def test_edge_cases(self):
+        res = stats.binomtest(484, 967, 0.5)
+        assert_allclose(res.pvalue, 0.999999999998212, rtol=1e-15)
+        res = stats.binomtest(3, 47, 3/47)
+        assert_allclose(res.pvalue, 0.9999999999999998, rtol=1e-15)
+        res = stats.binomtest(13, 46, 13/46)
+        assert_allclose(res.pvalue, 0.9999999999999987, rtol=1e-15)
+        res = stats.binomtest(15, 44, 15/44)
+        assert_allclose(res.pvalue, 0.9999999999999989, rtol=1e-15)
+        res = stats.binomtest(7, 13, 0.5)
+        assert_allclose(res.pvalue, 0.9999999999999999, rtol=1e-15)
+        res = stats.binomtest(6, 11, 0.5)
+        assert_allclose(res.pvalue, 0.9999999999999997, rtol=1e-15)
+
+    def test_binary_srch_for_binom_tst(self):
+        # Test that old behavior of binomtest is maintained
+        # by the new binary search method in cases where d
+        # exactly equals the input on one side.
+        n = 10
+        p = 0.5
+        k = 3
+        # First test for the case where k > mode of PMF
+        i = np.arange(np.ceil(p * n), n+1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y, probably consistent with R.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        ix = _binary_search_for_binom_tst(lambda x1:
+                                          -stats.binom.pmf(x1, n, p),
+                                          -d, np.ceil(p * n), n)
+        y2 = n - ix + int(d == stats.binom.pmf(ix, n, p))
+        assert_allclose(y1, y2, rtol=1e-9)
+        # Now test for the other side.
+        k = 7
+        i = np.arange(np.floor(p * n) + 1)
+        d = stats.binom.pmf(k, n, p)
+        # Old way of calculating y.
+        y1 = np.sum(stats.binom.pmf(i, n, p) <= d, axis=0)
+        # New way with binary search.
+        ix = _binary_search_for_binom_tst(lambda x1:
+                                          stats.binom.pmf(x1, n, p),
+                                          d, 0, np.floor(p * n))
+        y2 = ix + 1
+        assert_allclose(y1, y2, rtol=1e-9)
+
+    # Expected results here are from R 3.6.2 binom.test
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less', 0.1488311, 0.0, 0.2772002),
+                              ('greater', 0.9004696, 0.1366613, 1.0),
+                              ('two-sided', 0.2983721, 0.1266556, 0.2918427)])
+    def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.2)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
+                             [('less',
+                               0.005656361, 0.0, 0.1872093),
+                              ('greater',
+                               0.9987146, 0.008860761, 1.0),
+                              ('two-sided',
+                               0.01191714, 0.006872485, 0.202706269)])
+    def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
+        res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        assert_equal(res.proportion_estimate, 0.06)
+        ci = res.proportion_ci(confidence_level=0.99)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_high',
+                             [('less', 0.05631351, 0.2588656),
+                              ('greater', 1.0, 1.0),
+                              ('two-sided', 0.07604122, 0.3084971)])
+    def test_confidence_interval_exact_k0(self, alternative, pval, ci_high):
+        # Test with k=0, n = 10.
+        res = stats.binomtest(0, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.low, 0.0)
+        assert_allclose(ci.high, ci_high, rtol=1e-6)
+
+    # Expected results here are from R 3.6.2 binom.test.
+    @pytest.mark.parametrize('alternative, pval, ci_low',
+                             [('less', 1.0, 0.0),
+                              ('greater', 9.536743e-07, 0.7411344),
+                              ('two-sided', 9.536743e-07, 0.6915029)])
+    def test_confidence_interval_exact_k_is_n(self, alternative, pval, ci_low):
+        # Test with k = n = 10.
+        res = stats.binomtest(10, 10, p=0.25, alternative=alternative)
+        assert_allclose(res.pvalue, pval, rtol=1e-6)
+        ci = res.proportion_ci(confidence_level=0.95)
+        assert_equal(ci.high, 1.0)
+        assert_allclose(ci.low, ci_low, rtol=1e-6)
+
+    # Expected results are from the prop.test function in R 3.6.2.
+    @pytest.mark.parametrize(
+        'k, alternative, corr, conf, ci_low, ci_high',
+        [[3, 'two-sided', True, 0.95, 0.08094782, 0.64632928],
+         [3, 'two-sided', True, 0.99, 0.0586329, 0.7169416],
+         [3, 'two-sided', False, 0.95, 0.1077913, 0.6032219],
+         [3, 'two-sided', False, 0.99, 0.07956632, 0.6799753],
+         [3, 'less', True, 0.95, 0.0, 0.6043476],
+         [3, 'less', True, 0.99, 0.0, 0.6901811],
+         [3, 'less', False, 0.95, 0.0, 0.5583002],
+         [3, 'less', False, 0.99, 0.0, 0.6507187],
+         [3, 'greater', True, 0.95, 0.09644904, 1.0],
+         [3, 'greater', True, 0.99, 0.06659141, 1.0],
+         [3, 'greater', False, 0.95, 0.1268766, 1.0],
+         [3, 'greater', False, 0.99, 0.08974147, 1.0],
+
+         [0, 'two-sided', True, 0.95, 0.0, 0.3445372],
+         [0, 'two-sided', False, 0.95, 0.0, 0.2775328],
+         [0, 'less', True, 0.95, 0.0, 0.2847374],
+         [0, 'less', False, 0.95, 0.0, 0.212942],
+         [0, 'greater', True, 0.95, 0.0, 1.0],
+         [0, 'greater', False, 0.95, 0.0, 1.0],
+
+         [10, 'two-sided', True, 0.95, 0.6554628, 1.0],
+         [10, 'two-sided', False, 0.95, 0.7224672, 1.0],
+         [10, 'less', True, 0.95, 0.0, 1.0],
+         [10, 'less', False, 0.95, 0.0, 1.0],
+         [10, 'greater', True, 0.95, 0.7152626, 1.0],
+         [10, 'greater', False, 0.95, 0.787058, 1.0]]
+    )
+    def test_ci_wilson_method(self, k, alternative, corr, conf,
+                              ci_low, ci_high):
+        res = stats.binomtest(k, n=10, p=0.1, alternative=alternative)
+        if corr:
+            method = 'wilsoncc'
+        else:
+            method = 'wilson'
+        ci = res.proportion_ci(confidence_level=conf, method=method)
+        assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
+
+    def test_estimate_equals_hypothesized_prop(self):
+        # Test the special case where the estimated proportion equals
+        # the hypothesized proportion.  When alternative is 'two-sided',
+        # the p-value is 1.
+        res = stats.binomtest(4, 16, 0.25)
+        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.pvalue, 1.0)
+
+    @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
+    def test_invalid_k_n(self, k, n):
+        with pytest.raises(ValueError,
+                           match="must be an integer not less than"):
+            stats.binomtest(k, n)
+
+    def test_invalid_k_too_big(self):
+        with pytest.raises(ValueError,
+                           match="k must not be greater than n"):
+            stats.binomtest(11, 10, 0.25)
+
+    def test_invalid_confidence_level(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="must be in the interval"):
+            res.proportion_ci(confidence_level=-1)
+
+    def test_invalid_ci_method(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        with pytest.raises(ValueError, match="method must be"):
+            res.proportion_ci(method="plate of shrimp")
+
+
+class TestFligner:
 
     def test_data(self):
         # numbers from R: fligner.test in package stats
@@ -724,7 +961,7 @@ class TestFligner(object):
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
-class TestMood(object):
+class TestMood:
     def test_mood(self):
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
@@ -827,7 +1064,7 @@ class TestMood(object):
         assert_raises(ValueError, stats.mood, [1], [])
 
 
-class TestProbplot(object):
+class TestProbplot:
 
     def test_basic(self):
         x = stats.norm.rvs(size=20, random_state=12345)
@@ -868,7 +1105,7 @@ class TestProbplot(object):
         assert_raises(ValueError, stats.probplot, x, dist='wrong-dist-name')
         assert_raises(AttributeError, stats.probplot, x, dist=[])
 
-        class custom_dist(object):
+        class custom_dist:
             """Some class that looks just enough like a distribution."""
             def ppf(self, q):
                 return stats.norm.ppf(q, loc=2)
@@ -921,7 +1158,7 @@ class TestProbplot(object):
                           (np.nan, np.nan, 0.0)))
 
 
-class TestWilcoxon(object):
+class TestWilcoxon:
     def test_wilcoxon_bad_arg(self):
         # Raise ValueError when two args of different lengths are given or
         # zero_method is unknown.
@@ -1119,7 +1356,7 @@ class TestWilcoxon(object):
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 
-class TestKstat(object):
+class TestKstat:
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
         data = np.random.randn(12345)
@@ -1150,7 +1387,7 @@ class TestKstat(object):
             assert_raises(ValueError, stats.kstat, data, n=n)
 
 
-class TestKstatVar(object):
+class TestKstatVar:
     def test_empty_input(self):
         assert_raises(ValueError, stats.kstatvar, [])
 
@@ -1167,7 +1404,7 @@ class TestKstatVar(object):
         assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
-class TestPpccPlot(object):
+class TestPpccPlot:
     def setup_method(self):
         self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
@@ -1221,7 +1458,7 @@ class TestPpccPlot(object):
         assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
-class TestPpccMax(object):
+class TestPpccMax:
     def test_ppcc_max_bad_arg(self):
         # Raise ValueError when given an invalid distribution.
         data = [1]
@@ -1258,7 +1495,7 @@ class TestPpccMax(object):
                             -0.71215366521264145, decimal=7)
 
 
-class TestBoxcox_llf(object):
+class TestBoxcox_llf:
 
     def test_basic(self):
         x = stats.norm.rvs(size=10000, loc=10, random_state=54321)
@@ -1348,7 +1585,7 @@ _boxcox_data = [
     1891609
 ]
 
-class TestBoxcox(object):
+class TestBoxcox:
 
     def test_fixed_lmbda(self):
         x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
@@ -1412,7 +1649,7 @@ class TestBoxcox(object):
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
 
-class TestBoxcoxNormmax(object):
+class TestBoxcoxNormmax:
     def setup_method(self):
         self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
@@ -1433,7 +1670,7 @@ class TestBoxcoxNormmax(object):
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
 
-class TestBoxcoxNormplot(object):
+class TestBoxcoxNormplot:
     def setup_method(self):
         self.x = stats.loggamma.rvs(5, size=500, random_state=7654321) + 5
 
@@ -1468,7 +1705,7 @@ class TestBoxcoxNormplot(object):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
-class TestYeojohnson_llf(object):
+class TestYeojohnson_llf:
 
     def test_array_like(self):
         x = stats.norm.rvs(size=100, loc=0, random_state=54321)
@@ -1488,7 +1725,7 @@ class TestYeojohnson_llf(object):
         assert_(np.isnan(stats.yeojohnson_llf(1, [])))
 
 
-class TestYeojohnson(object):
+class TestYeojohnson:
 
     def test_fixed_lmbda(self):
         rng = np.random.RandomState(12345)
@@ -1601,7 +1838,7 @@ class TestYeojohnson(object):
         assert_allclose(lmbda_int, lmbda_float, rtol=1e-7)
 
 
-class TestYeojohnsonNormmax(object):
+class TestYeojohnsonNormmax:
     def setup_method(self):
         self.x = stats.loggamma.rvs(5, size=50, random_state=12345) + 5
 
@@ -1618,7 +1855,7 @@ class TestYeojohnsonNormmax(object):
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
-class TestCircFuncs(object):
+class TestCircFuncs:
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
                               (stats.circvar, 42.51955609),
@@ -1834,7 +2071,7 @@ class TestCircFuncs(object):
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 
-class TestMedianTest(object):
+class TestMedianTest:
 
     def test_bad_n_samples(self):
         # median_test requires at least two samples.

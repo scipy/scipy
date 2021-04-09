@@ -108,7 +108,7 @@ def test_inherit_docstring_from():
     with suppress_warnings() as sup:
         sup.filter(category=DeprecationWarning)
 
-        class Foo(object):
+        class Foo:
             def func(self):
                 '''Do something useful.'''
                 return

@@ -1,5 +1,5 @@
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 

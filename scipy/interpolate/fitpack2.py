@@ -68,7 +68,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
-class UnivariateSpline(object):
+class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
@@ -822,7 +822,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 # ############### Bivariate spline ####################
 
-class _BivariateSplineBase(object):
+class _BivariateSplineBase:
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
@@ -899,6 +899,11 @@ class _BivariateSplineBase(object):
         if grid:
             if x.size == 0 or y.size == 0:
                 return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
+
+            if (x.size >= 2) and (not np.all(np.diff(x) >= 0.0)):
+                raise ValueError("x must be strictly increasing when `grid` is True")
+            if (y.size >= 2) and (not np.all(np.diff(y) >= 0.0)):
+                raise ValueError("y must be strictly increasing when `grid` is True")
 
             if dx or dy:
                 z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
@@ -1233,17 +1238,24 @@ class LSQBivariateSpline(BivariateSpline):
 
         nx = 2*kx+2+len(tx)
         ny = 2*ky+2+len(ty)
-        tx1 = zeros((nx,), float)
-        ty1 = zeros((ny,), float)
+        # The Fortran subroutine "surfit" (called as dfitpack.surfit_lsq)
+        # requires that the knot arrays passed as input should be "real
+        # array(s) of dimension nmax" where "nmax" refers to the greater of nx
+        # and ny. We pad the tx1/ty1 arrays here so that this is satisfied, and
+        # slice them to the desired sizes upon return.
+        nmax = max(nx, ny)
+        tx1 = zeros((nmax,), float)
+        ty1 = zeros((nmax,), float)
         tx1[kx+1:nx-kx-1] = tx
         ty1[ky+1:ny-ky-1] = ty
 
         xb, xe, yb, ye = bbox
-        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
-                                                   xb, xe, yb, ye,
+        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, nx, tx1, ny, ty1,
+                                                   w, xb, xe, yb, ye,
                                                    kx, ky, eps, lwrk2=1)
         if ier > 10:
-            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, tx1, ty1, w,
+            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z,
+                                                       nx, tx1, ny, ty1, w,
                                                        xb, xe, yb, ye,
                                                        kx, ky, eps, lwrk2=ier)
         if ier in [0, -1, -2]:  # normal return
@@ -1256,7 +1268,7 @@ class LSQBivariateSpline(BivariateSpline):
                 message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tx1, ty1, c
+        self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky
 
 
@@ -1378,8 +1390,8 @@ class SphereBivariateSpline(_BivariateSplineBase):
         a function to evaluate a bivariate B-spline and its derivatives
     UnivariateSpline :
         a smooth univariate spline to fit a given set of data points.
-    SmoothUnivariateSpline :
-        a smooth univariate spline through the given points
+    SmoothBivariateSpline :
+        a smoothing bivariate spline through the given points
     LSQUnivariateSpline :
         a univariate spline using weighted least-squares fitting
     """
@@ -1420,8 +1432,6 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         if theta.size > 0 and (theta.min() < 0. or theta.max() > np.pi):
             raise ValueError("requested theta out of bounds.")
-        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
-            raise ValueError("requested phi out of bounds.")
 
         return _BivariateSplineBase.__call__(self, theta, phi,
                                              dx=dtheta, dy=dphi, grid=grid)
@@ -1579,6 +1589,17 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
 
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
+
 
 class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
@@ -1723,6 +1744,17 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
 
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        if phi.size > 0 and (phi.min() < 0. or phi.max() > 2. * np.pi):
+            raise ValueError("requested phi out of bounds.")
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)
+
 
 _spfit_messages = _surfit_messages.copy()
 _spfit_messages[10] = """
@@ -1765,8 +1797,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     ----------
     u : array_like
         1-D array of colatitude coordinates in strictly ascending order.
-        Coordinates must be given in radians and lie within the interval
-        ``[0, pi]``.
+        Coordinates must be given in radians and lie within the open interval
+        ``(0, pi)``.
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians. First element (``v[0]``) must lie
@@ -1934,8 +1966,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         u, v = np.ravel(u), np.ravel(v)
         r = np.asarray(r)
 
-        if not ((0.0 <= u).all() and (u <= np.pi).all()):
-            raise ValueError('u should be between [0, pi]')
+        if not (0.0 < u[0] and u[-1] < np.pi):
+            raise ValueError('u should be between (0, pi)')
         if not -np.pi <= v[0] < np.pi:
             raise ValueError('v[0] should be between [-pi, pi)')
         if not v[-1] <= v[0] + 2*np.pi:
@@ -1977,3 +2009,12 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = (3, 3)
+        self.v0 = v[0]
+
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
+
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+
+        return SphereBivariateSpline.__call__(self, theta, phi, dtheta=dtheta,
+                                              dphi=dphi, grid=grid)

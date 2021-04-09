@@ -1,7 +1,6 @@
 """
 Test functions for stats module
 """
-
 import warnings
 import re
 import sys
@@ -21,18 +20,24 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad
+from scipy.integrate import IntegrationWarning, quad, trapezoid
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
-from scipy.special import xlogy
-from .test_continuous_basic import distcont
+from scipy.special import xlogy, polygamma, entr
+from .test_continuous_basic import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
-from scipy.optimize import root
+from scipy.optimize import root, fmin
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
+
+# distributions to skip while testing the fix for the support method
+# introduced in gh-13294. These distributions are skipped as they
+# always return a non-nan support for every parametrization.
+skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -54,6 +59,21 @@ def check_vonmises_pdf_periodic(k, L, s, x):
 def check_vonmises_cdf_periodic(k, L, s, x):
     vm = stats.vonmises(k, loc=L, scale=s)
     assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
+
+
+def test_distributions_submodule():
+    actual = set(scipy.stats.distributions.__all__)
+    continuous = [dist[0] for dist in distcont]    # continuous dist names
+    discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
+    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+             'entropy', 'trapz']
+    expected = continuous + discrete + other
+
+    # need to remove, e.g.,
+    # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
+    expected = set(filter(lambda s: not str(s).startswith('<'), expected))
+
+    assert actual == expected
 
 
 def test_vonmises_pdf_periodic():
@@ -157,7 +177,7 @@ def test_support(dist):
     assert_equal(dist.logpdf(dist.b, *args), -np.inf)
 
 
-class TestRandInt(object):
+class TestRandInt:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -188,7 +208,7 @@ class TestRandInt(object):
         assert_array_almost_equal(vals, out, decimal=12)
 
 
-class TestBinom(object):
+class TestBinom:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -234,7 +254,16 @@ class TestBinom(object):
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
 
-class TestBernoulli(object):
+class TestArcsine:
+
+    def test_endpoints(self):
+        # Regression test for gh-13697.  The following calculation
+        # should not generate a warning.
+        p = stats.arcsine.pdf([0, 1])
+        assert_equal(p, [np.inf, np.inf])
+
+
+class TestBernoulli:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -265,7 +294,7 @@ class TestBernoulli(object):
         assert_equal(h, 0.0)
 
 
-class TestBradford(object):
+class TestBradford:
     # gh-6216
     def test_cdf_ppf(self):
         c = 0.1
@@ -275,7 +304,22 @@ class TestBradford(object):
         assert_allclose(x, xx)
 
 
-class TestNBinom(object):
+class TestChi:
+
+    # "Exact" value of chi.sf(10, 4), as computed by Wolfram Alpha with
+    #     1 - CDF[ChiDistribution[4], 10]
+    CHI_SF_10_4 = 9.83662422461598e-21
+
+    def test_sf(self):
+        s = stats.chi.sf(10, 4)
+        assert_allclose(s, self.CHI_SF_10_4, rtol=1e-15)
+
+    def test_isf(self):
+        x = stats.chi.isf(self.CHI_SF_10_4, 4)
+        assert_allclose(x, 10, rtol=1e-15)
+
+
+class TestNBinom:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -299,7 +343,7 @@ class TestNBinom(object):
         assert_equal(val, 0)
 
 
-class TestGenInvGauss(object):
+class TestGenInvGauss:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -371,7 +415,7 @@ class TestGenInvGauss(object):
         assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
 
 
-class TestNormInvGauss(object):
+class TestNormInvGauss:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -409,7 +453,7 @@ class TestNormInvGauss(object):
         assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
 
 
-class TestGeom(object):
+class TestGeom:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -462,7 +506,7 @@ class TestGeom(object):
         assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
 
 
-class TestPlanck(object):
+class TestPlanck:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -479,7 +523,7 @@ class TestPlanck(object):
         assert_array_almost_equal(vals, expected)
 
 
-class TestGennorm(object):
+class TestGennorm:
     def test_laplace(self):
         # test against Laplace (special case for beta=1)
         points = [1, 2, 3]
@@ -495,7 +539,7 @@ class TestGennorm(object):
         assert_almost_equal(pdf1, pdf2)
 
 
-class TestHalfgennorm(object):
+class TestHalfgennorm:
     def test_expon(self):
         # test against exponential (special case for beta=1)
         points = [1, 2, 3]
@@ -518,7 +562,7 @@ class TestHalfgennorm(object):
         assert_almost_equal(pdf1, 2*pdf2)
 
 
-class TestLaplaceasymmetric(object):
+class TestLaplaceasymmetric:
     def test_laplace(self):
         # test against Laplace (special case for kappa=1)
         points = np.array([1, 2, 3])
@@ -553,7 +597,7 @@ class TestLaplaceasymmetric(object):
                         np.concatenate((pdf2, cdf2, sf2, ppf2, isf2)))
 
 
-class TestTruncnorm(object):
+class TestTruncnorm:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -786,7 +830,7 @@ class TestGenLogistic:
         assert_allclose(logp, expected, rtol=1e-13)
 
 
-class TestHypergeom(object):
+class TestHypergeom:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -927,7 +971,28 @@ class TestHypergeom(object):
         assert_almost_equal(result, expected, decimal=15)
 
 
-class TestLoggamma(object):
+class TestLoggamma:
+
+    # Expected sf values were computed with mpmath. For given x and c,
+    #     x = mpmath.mpf(x)
+    #     c = mpmath.mpf(c)
+    #     sf = mpmath.gammainc(c, mpmath.exp(x), mpmath.inf,
+    #                          regularized=True)
+    @pytest.mark.parametrize('x, c, sf', [(4, 1.5, 1.6341528919488565e-23),
+                                          (6, 100, 8.23836829202024e-74)])
+    def test_sf_isf(self, x, c, sf):
+        s = stats.loggamma.sf(x, c)
+        assert_allclose(s, sf, rtol=1e-12)
+        y = stats.loggamma.isf(s, c)
+        assert_allclose(y, x, rtol=1e-12)
+
+    def test_logpdf(self):
+        # Test logpdf with x=-500, c=2.  ln(gamma(2)) = 0, and
+        # exp(-500) ~= 7e-218, which is far smaller than the ULP
+        # of c*x=-1000, so logpdf(-500, 2) = c*x - exp(x) - ln(gamma(2))
+        # should give -1000.0.
+        lp = stats.loggamma.logpdf(-500, 2)
+        assert_allclose(lp, -1000.0, rtol=1e-14)
 
     def test_stats(self):
         # The following precomputed values are from the table in section 2.2
@@ -945,7 +1010,7 @@ class TestLoggamma(object):
                                       decimal=4)
 
 
-class TestLogistic(object):
+class TestLogistic:
     # gh-6226
     def test_cdf_ppf(self):
         x = np.linspace(-20, 20)
@@ -1014,7 +1079,7 @@ class TestLogistic(object):
         _assert_less_or_close_loglike(stats.logistic, data, func)
 
 
-class TestLogser(object):
+class TestLogser:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1081,7 +1146,7 @@ class TestGumbel_r_l:
         assert_allclose(scale, 1.2495222465145514e-09, rtol=1e-6)
 
 
-class TestPareto(object):
+class TestPareto:
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
         # that the calculations do not trigger RuntimeWarnings.
@@ -1213,7 +1278,7 @@ class TestPareto(object):
                       fscale=3)
 
 
-class TestGenpareto(object):
+class TestGenpareto:
     def test_ab(self):
         # c >= 0: a, b = [0, inf]
         for c in [1., 0.]:
@@ -1332,7 +1397,7 @@ class TestGenpareto(object):
         assert_allclose(v, 1.000000040000001, rtol=1e-13)
 
 
-class TestPearson3(object):
+class TestPearson3:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1390,7 +1455,7 @@ class TestPearson3(object):
         assert_equal(type(moment), float)
 
 
-class TestKappa4(object):
+class TestKappa4:
     def test_cdf_genpareto(self):
         # h = 1 and k != 0 is generalized Pareto
         x = [0.0, 0.1, 0.2, 0.5]
@@ -1453,7 +1518,7 @@ class TestKappa4(object):
         stats.kappa4(1, 2)
 
 
-class TestPoisson(object):
+class TestPoisson:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1495,7 +1560,7 @@ class TestPoisson(object):
         assert_allclose(result, expected)
 
 
-class TestKSTwo(object):
+class TestKSTwo:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1641,7 +1706,7 @@ class TestKSTwo(object):
             assert_allclose(vals_cdf, expected[idx], rtol=1e-5)
 
 
-class TestZipf(object):
+class TestZipf:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1666,7 +1731,7 @@ class TestZipf(object):
         assert_(not np.isfinite([s, k]).all())
 
 
-class TestDLaplace(object):
+class TestDLaplace:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1702,7 +1767,7 @@ class TestDLaplace(object):
         assert_allclose((v, k), (4., 3.25))
 
 
-class TestInvgauss(object):
+class TestInvgauss:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -1783,8 +1848,61 @@ class TestInvgauss(object):
         with pytest.raises(FitDataError):
             stats.invgauss.fit([1, 2, 3], floc=2)
 
+    def test_cdf_sf(self):
+        # Regression tests for gh-13614.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # mu = c(4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+        #        3.02332573e-03, 1.46755891e-03)
+        # print(pinvgauss(5, mu, 1))
 
-class TestLaplace(object):
+        # make sure a finite value is returned when mu is very small. see
+        # GH-13614
+        mu = [4.17022005e-04, 7.20324493e-03, 1.14374817e-06,
+              3.02332573e-03, 1.46755891e-03]
+        expected = [1, 1, 1, 1, 1]
+        actual = stats.invgauss.cdf(0.4, mu=mu)
+        assert_equal(expected, actual)
+
+        # test if the function can distinguish small left/right tail
+        # probabilities from zero.
+        cdf_actual = stats.invgauss.cdf(0.001, mu=1.05)
+        assert_allclose(cdf_actual, 4.65246506892667e-219)
+        sf_actual = stats.invgauss.sf(110, mu=1.05)
+        assert_allclose(sf_actual, 4.12851625944048e-25)
+
+        # test if x does not cause numerical issues when mu is very small
+        # and x is close to mu in value.
+
+        # slightly smaller than mu
+        actual = stats.invgauss.cdf(0.00009, 0.0001)
+        assert_allclose(actual, 2.9458022894924e-26)
+
+        # slightly bigger than mu
+        actual = stats.invgauss.cdf(0.000102, 0.0001)
+        assert_allclose(actual, 0.976445540507925)
+
+    def test_logcdf_logsf(self):
+        # Regression tests for improvements made in gh-13616.
+        # Ground truth from R's statmod library (pinvgauss), e.g.
+        # library(statmod)
+        # options(digits=15)
+        # print(pinvgauss(0.001, 1.05, 1, log.p=TRUE, lower.tail=FALSE))
+
+        # test if logcdf and logsf can compute values too small to
+        # be represented on the unlogged scale. See: gh-13616
+        logcdf = stats.invgauss.logcdf(0.0001, mu=1.05)
+        assert_allclose(logcdf, -5003.87872590367)
+        logcdf = stats.invgauss.logcdf(110, 1.05)
+        assert_allclose(logcdf, -4.12851625944087e-25)
+        logsf = stats.invgauss.logsf(0.001, mu=1.05)
+        assert_allclose(logsf, -4.65246506892676e-219)
+        logsf = stats.invgauss.logsf(110, 1.05)
+        assert_allclose(logsf, -56.1467092416426)
+
+
+class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
     def test_fit(self, rvs_loc, rvs_scale):
@@ -1860,8 +1978,39 @@ class TestLaplace(object):
         loc, scale = stats.laplace.fit(data, fscale=6)
         assert_allclose(loc, 4, atol=1e-15, rtol=1e-15)
 
+    def test_sf_cdf_extremes(self):
+        # These calculations should not generate warnings.
+        x = 1000
+        p0 = stats.laplace.cdf(-x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point representation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.cdf(x)
+        assert p1 == 1.0
 
-class TestInvGamma(object):
+        p0 = stats.laplace.sf(x)
+        # The exact value is smaller than can be represented with
+        # 64 bit floating point, so the exected result is 0.
+        assert p0 == 0.0
+        # The closest 64 bit floating point representation of the
+        # exact value is 1.0.
+        p1 = stats.laplace.sf(-x)
+        assert p1 == 1.0
+
+    def test_sf(self):
+        x = 200
+        p = stats.laplace.sf(x)
+        assert_allclose(p, np.exp(-x)/2, rtol=1e-13)
+
+    def test_isf(self):
+        p = 1e-25
+        x = stats.laplace.isf(p)
+        assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
+
+class TestInvGamma:
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -1902,7 +2051,7 @@ class TestInvGamma(object):
         assert_allclose(x, xx, rtol=1.0)
 
 
-class TestF(object):
+class TestF:
     def test_endpoints(self):
         # Compute the pdf at the left endpoint dst.a.
         data = [[stats.f, (2, 1), 1.0]]
@@ -1966,7 +2115,15 @@ def test_moments_t():
     assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
 
 
-class TestRvDiscrete(object):
+def test_t_entropy():
+    df = [1, 2, 25, 100]
+    # Expected values were computed with mpmath.
+    expected = [2.5310242469692907, 1.9602792291600821,
+                1.459327578078393, 1.4289633653182439]
+    assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
+
+
+class TestRvDiscrete:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -2126,7 +2283,52 @@ class TestRvDiscrete(object):
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
 
 
-class TestSkewNorm(object):
+class TestSkewCauchy:
+    def test_cauchy(self):
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewcauchy.pdf(x, a=0),
+                                  stats.cauchy.pdf(x))
+        assert_array_almost_equal(stats.skewcauchy.cdf(x, a=0),
+                                  stats.cauchy.cdf(x))
+        assert_array_almost_equal(stats.skewcauchy.ppf(x, a=0),
+                                  stats.cauchy.ppf(x))
+
+    def test_skewcauchy_R(self):
+        # options(digits=16)
+        # library(sgt)
+        # # lmbda, x contain the values generated for a, x below
+        # lmbda <- c(0.0976270078546495, 0.430378732744839, 0.2055267521432877,
+        #            0.0897663659937937, -0.15269040132219, 0.2917882261333122,
+        #            -0.12482557747462, 0.7835460015641595, 0.9273255210020589,
+        #            -0.2331169623484446)
+        # x <- c(2.917250380826646, 0.2889491975290444, 0.6804456109393229,
+        #        4.25596638292661, -4.289639418021131, -4.1287070029845925,
+        #        -4.797816025596743, 3.32619845547938, 2.7815675094985046,
+        #        3.700121482468191)
+        # pdf = dsgt(x, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #            var.adj = sqrt(2))
+        # cdf = psgt(x, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #            var.adj = sqrt(2))
+        # qsgt(cdf, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
+        #      var.adj = sqrt(2))
+
+        np.random.seed(0)
+        a = np.random.rand(10) * 2 - 1
+        x = np.random.rand(10) * 10 - 5
+        pdf = [0.039473975217333909, 0.305829714049903223, 0.24140158118994162,
+               0.019585772402693054, 0.021436553695989482, 0.00909817103867518,
+               0.01658423410016873, 0.071083288030394126, 0.103250045941454524,
+               0.013110230778426242]
+        cdf = [0.87426677718213752, 0.37556468910780882, 0.59442096496538066,
+               0.91304659850890202, 0.09631964100300605, 0.03829624330921733,
+               0.08245240578402535, 0.72057062945510386, 0.62826415852515449,
+               0.95011308463898292]
+        assert_allclose(stats.skewcauchy.pdf(x, a), pdf)
+        assert_allclose(stats.skewcauchy.cdf(x, a), cdf)
+        assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
+
+
+class TestSkewNorm:
     def setup_method(self):
         self.rng = check_random_state(1234)
 
@@ -2184,7 +2386,7 @@ class TestSkewNorm(object):
             assert_allclose(p, cdfval, rtol=1e-8)
 
 
-class TestExpon(object):
+class TestExpon:
     def test_zero(self):
         assert_equal(stats.expon.pdf(0), 1)
 
@@ -2203,7 +2405,7 @@ class TestExpon(object):
         assert_raises(RuntimeError, stats.expon.fit, x)
 
 
-class TestNorm(object):
+class TestNorm:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
@@ -2219,7 +2421,7 @@ class TestNorm(object):
         assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
 
 
-class TestUniform(object):
+class TestUniform:
     """gh-10300"""
     def test_nan_raises_error(self):
         # see gh-issue 10300
@@ -2232,7 +2434,7 @@ class TestUniform(object):
         assert_raises(RuntimeError, stats.uniform.fit, x)
 
 
-class TestExponNorm(object):
+class TestExponNorm:
     def test_moments(self):
         # Some moment test cases based on non-loc/scaled formula
         def get_moms(lam, sig, mu):
@@ -2298,8 +2500,59 @@ class TestExponNorm(object):
     def test_std_pdf(self, x, K, expected):
         assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
 
+    # Expected values for the CDF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_cdf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(z)
+    #               - mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[0, 0.01, 1, 0.4960109760186432],
+                              [-5, 0.005, 1, 2.7939945412195734e-07],
+                              [-1e4, 0.01, 100, 0.0],
+                              [-1e4, 0.01, 1000, 6.920401854427357e-24],
+                              [5, 0.001, 1, 0.9999997118542392]])
+    def test_cdf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.cdf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=1e-13)
 
-class TestGenExpon(object):
+    # Expected values for the SF were computed with mpmath using
+    # the following function and with mpmath.mp.dps = 60:
+    #
+    #   def mp_exponnorm_sf(x, K, loc=0, scale=1):
+    #       x = mpmath.mpf(x)
+    #       K = mpmath.mpf(K)
+    #       loc = mpmath.mpf(loc)
+    #       scale = mpmath.mpf(scale)
+    #       z = (x - loc)/scale
+    #       return (mpmath.ncdf(-z)
+    #               + mpmath.exp((1/(2*K) - z)/K)*mpmath.ncdf(z - 1/K))
+    #
+    @pytest.mark.parametrize('x, K, scale, expected',
+                             [[10, 0.01, 1, 8.474702916146657e-24],
+                              [2, 0.005, 1, 0.02302280664231312],
+                              [5, 0.005, 0.5, 8.024820681931086e-24],
+                              [10, 0.005, 0.5, 3.0603340062892486e-89],
+                              [20, 0.005, 0.5, 0.0],
+                              [-3, 0.001, 1, 0.9986545205566117]])
+    def test_sf_small_K(self, x, K, scale, expected):
+        p = stats.exponnorm.sf(x, K, scale=scale)
+        if expected == 0.0:
+            assert p == 0.0
+        else:
+            assert_allclose(p, expected, rtol=5e-13)
+
+
+class TestGenExpon:
     def test_pdf_unity_area(self):
         from scipy.integrate import simps
         # PDF should integrate to one
@@ -2311,15 +2564,29 @@ class TestGenExpon(object):
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
 
+    def test_sf_tail(self):
+        # Expected value computed with mpmath. This script
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf('15.0')
+        #     a = mpmath.mpf('1.0')
+        #     b = mpmath.mpf('2.0')
+        #     c = mpmath.mpf('1.5')
+        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
+        # prints
+        #     1.0859444834514553e-19
+        s = stats.genexpon.sf(15, 1, 2, 1.5)
+        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
 
-class TestExponpow(object):
+
+class TestExponpow:
     def test_tail(self):
         assert_almost_equal(stats.exponpow.cdf(1e-10, 2.), 1e-20)
         assert_almost_equal(stats.exponpow.isf(stats.exponpow.sf(5, .8), .8),
                             5)
 
 
-class TestSkellam(object):
+class TestSkellam:
     def test_pmf(self):
         # comparison to R
         k = numpy.arange(-10, 15)
@@ -2363,7 +2630,7 @@ class TestSkellam(object):
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
 
-class TestLognorm(object):
+class TestLognorm:
     def test_pdf(self):
         # Regression test for Ticket #1471: avoid nan with 0/0 situation
         # Also make sure there are no warnings at x=0, cf gh-5202
@@ -2381,7 +2648,7 @@ class TestLognorm(object):
                         stats.norm.logsf(np.log(x2-mu)/sigma))
 
 
-class TestBeta(object):
+class TestBeta:
     def test_logpdf(self):
         # Regression test for Ticket #1326: avoid nan with 0*log(0) situation
         logpdf = stats.beta.logpdf(0, 1, 0.5)
@@ -2408,7 +2675,7 @@ class TestBeta(object):
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
 
 
-class TestBetaPrime(object):
+class TestBetaPrime:
     def test_logpdf(self):
         alpha, beta = 267, 1472
         x = np.array([0.2, 0.5, 0.6])
@@ -2433,7 +2700,7 @@ class TestBetaPrime(object):
         assert_allclose(cdfs, cdfs_g, atol=0, rtol=2e-12)
 
 
-class TestGamma(object):
+class TestGamma:
     def test_pdf(self):
         # a few test cases to compare with R
         pdf = stats.gamma.pdf(90, 394, scale=1./5)
@@ -2452,8 +2719,30 @@ class TestGamma(object):
         x = [0.1, 0.5, 0.6]
         assert_raises(TypeError, stats.gamma.fit, x, floc=0, plate="shrimp")
 
+    def test_isf(self):
+        # Test cases for when the probability is very small. See gh-13664.
+        # The expected values can be checked with mpmath.  With mpmath,
+        # the survival function sf(x, k) can be computed as
+        #
+        #     mpmath.gammainc(k, x, mpmath.inf, regularized=True)
+        #
+        # Here we have:
+        #
+        # >>> mpmath.mp.dps = 60
+        # >>> float(mpmath.gammainc(1, 39.14394658089878, mpmath.inf,
+        # ...                       regularized=True))
+        # 9.99999999999999e-18
+        # >>> float(mpmath.gammainc(100, 330.6557590436547, mpmath.inf,
+        #                           regularized=True))
+        # 1.000000000000028e-50
+        #
+        assert np.isclose(stats.gamma.isf(1e-17, 1),
+                          39.14394658089878, atol=1e-14)
+        assert np.isclose(stats.gamma.isf(1e-50, 100),
+                          330.6557590436547, atol=1e-13)
 
-class TestChi2(object):
+
+class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
         assert_almost_equal(stats.chi2.pdf(1000, 1000), 8.919133934753128e-003,
@@ -2476,7 +2765,7 @@ class TestChi2(object):
         assert_allclose(x, 7.041504580095461859307179763, rtol=1e-10)
 
 
-class TestGumbelL(object):
+class TestGumbelL:
     # gh-6228
     def test_cdf_ppf(self):
         x = np.linspace(-100, -4)
@@ -2520,7 +2809,7 @@ class TestGumbelR:
                         rtol=1e-14)
 
 
-class TestLevyStable(object):
+class TestLevyStable:
 
     def test_fit(self):
         # construct data to have percentiles that match
@@ -2720,7 +3009,7 @@ class TestLevyStable(object):
             assert_almost_equal(calc_stats, exp_stats)
 
 
-class TestArrayArgument(object):  # test for ticket:992
+class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
         np.random.seed(1234)
 
@@ -2730,7 +3019,7 @@ class TestArrayArgument(object):  # test for ticket:992
         assert_equal(rvs.shape, (10, 5))
 
 
-class TestDocstring(object):
+class TestDocstring:
     def test_docstrings(self):
         # See ticket #761
         if stats.rayleigh.__doc__ is not None:
@@ -2744,7 +3033,7 @@ class TestDocstring(object):
         stats.rv_discrete()
 
 
-class TestEntropy(object):
+class TestEntropy:
     def test_entropy_positive(self):
         # See ticket #497
         pk = [0.5, 0.2, 0.3]
@@ -2824,6 +3113,114 @@ class TestEntropy(object):
         assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
                                   stats.entropy(pk, qk, axis=1))
 
+    def test_entropy_broadcasting(self):
+        np.random.rand(0)
+        x = np.random.rand(3)
+        y = np.random.rand(2, 1)
+        res = stats.entropy(x, y, axis=-1)
+        assert_equal(res[0], stats.entropy(x, y[0]))
+        assert_equal(res[1], stats.entropy(x, y[1]))
+
+    def test_entropy_shape_mismatch(self):
+        x = np.random.rand(10, 1, 12)
+        y = np.random.rand(11, 2)
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, y)
+
+
+class TestDifferentialEntropy(object):
+    """
+    Results are compared with the R package vsgoftest.
+
+    # library(vsgoftest)
+    #
+    # samp <- c(<values>)
+    # entropy.estimate(x = samp, window = <window_length>)
+
+    """
+
+    def test_differential_entropy_base(self):
+
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal(100)
+
+        entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, 1.342551, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=1)
+        assert_allclose(entropy, 1.122044, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=8)
+        assert_allclose(entropy, 1.349401, rtol=1e-6)
+
+    def test_differential_entropy_base_2d_nondefault_axis(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        entropy = stats.differential_entropy(values, axis=1)
+        assert_allclose(
+            entropy,
+            [1.342551, 1.341826, 1.293775],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=1)
+        assert_allclose(
+            entropy,
+            [1.122044, 1.102944, 1.129616],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=8)
+        assert_allclose(
+            entropy,
+            [1.349401, 1.338514, 1.292332],
+            rtol=1e-6,
+        )
+
+    def test_differential_entropy_raises_value_error(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        error_str = (
+            r"Window length \({window_length}\) must be positive and less "
+            r"than half the sample size \({sample_size}\)."
+        )
+
+        sample_size = values.shape[1]
+
+        for window_length in {-1, 0, sample_size//2, sample_size}:
+
+            formatted_error_str = error_str.format(
+                window_length=window_length,
+                sample_size=sample_size,
+            )
+
+            with assert_raises(ValueError, match=formatted_error_str):
+                stats.differential_entropy(
+                    values,
+                    window_length=window_length,
+                    axis=1,
+                )
+
+    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((100, 3))
+
+        entropy = stats.differential_entropy(values, axis=0)
+        default_entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, default_entropy)
+
+    def test_base_differential_entropy_transposed(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        assert_allclose(
+            stats.differential_entropy(values.T).T,
+            stats.differential_entropy(values, axis=1),
+        )
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
@@ -2841,7 +3238,7 @@ def TestArgsreduce():
     assert_array_equal(c, [2] * numpy.size(a))
 
 
-class TestFitMethod(object):
+class TestFitMethod:
     skip = ['ncf', 'ksone', 'kstwo']
 
     def setup_method(self):
@@ -3031,53 +3428,55 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
-    def test_fshapes(self):
+    @pytest.mark.parametrize("method", ["MLE", "MM"])
+    def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
         # fa is equivalent to f0, and fb is equivalent to f1
         a, b = 3., 4.
         x = stats.beta.rvs(a, b, size=100, random_state=1234)
-        res_1 = stats.beta.fit(x, f0=3.)
-        res_2 = stats.beta.fit(x, fa=3.)
+        res_1 = stats.beta.fit(x, f0=3., method=method)
+        res_2 = stats.beta.fit(x, fa=3., method=method)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
-        res_2 = stats.beta.fit(x, fix_a=3.)
+        res_2 = stats.beta.fit(x, fix_a=3., method=method)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
-        res_3 = stats.beta.fit(x, f1=4.)
-        res_4 = stats.beta.fit(x, fb=4.)
+        res_3 = stats.beta.fit(x, f1=4., method=method)
+        res_4 = stats.beta.fit(x, fb=4., method=method)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
-        res_4 = stats.beta.fit(x, fix_b=4.)
+        res_4 = stats.beta.fit(x, fix_b=4., method=method)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
         # cannot specify both positional and named args at the same time
-        assert_raises(ValueError, stats.beta.fit, x, fa=1, f0=2)
+        assert_raises(ValueError, stats.beta.fit, x, fa=1, f0=2, method=method)
 
         # check that attempting to fix all parameters raises a ValueError
         assert_raises(ValueError, stats.beta.fit, x, fa=0, f1=1,
-                      floc=2, fscale=3)
+                      floc=2, fscale=3, method=method)
 
         # check that specifying floc, fscale and fshapes works for
         # beta and gamma which override the generic fit method
-        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1)
+        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1, method=method)
         aa, bb, ll, ss = res_5
         assert_equal([aa, ll, ss], [3., 0, 1])
 
         # gamma distribution
         a = 3.
         data = stats.gamma.rvs(a, size=100)
-        aa, ll, ss = stats.gamma.fit(data, fa=a)
+        aa, ll, ss = stats.gamma.fit(data, fa=a, method=method)
         assert_equal(aa, a)
 
-    def test_extra_params(self):
+    @pytest.mark.parametrize("method", ["MLE", "MM"])
+    def test_extra_params(self, method):
         # unknown parameters should raise rather than be silently ignored
         dist = stats.exponnorm
         data = dist.rvs(K=2, size=100)
         dct = dict(enikibeniki=-101)
-        assert_raises(TypeError, dist.fit, data, **dct)
+        assert_raises(TypeError, dist.fit, data, **dct, method=method)
 
 
-class TestFrozen(object):
+class TestFrozen:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -3308,7 +3707,7 @@ class TestFrozen(object):
         assert_allclose(p_val, poisson_val)
 
 
-class TestExpect(object):
+class TestExpect:
     # Test for expect method.
     #
     # Uses normal distribution and beta distribution for finite bounds, and
@@ -3464,7 +3863,7 @@ class TestExpect(object):
             assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
 
 
-class TestNct(object):
+class TestNct:
     def test_nc_parameter(self):
         # Parameter values c<=0 were not enabled (gh-2402).
         # For negative values c and for c=0 results of rv.cdf(0) below were nan
@@ -3525,7 +3924,7 @@ class TestNct(object):
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
 
-class TestRice(object):
+class TestRice:
     def test_rice_zero_b(self):
         # rice distribution should work with b=0, cf gh-2164
         x = [0.2, 1., 5.]
@@ -3552,8 +3951,49 @@ class TestRice(object):
         assert_equal(rvs(b=3.).size, 1)
         assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
 
+    def test_rice_gh9836(self):
+        # test that gh-9836 is resolved; previously jumped to 1 at the end
 
-class TestErlang(object):
+        cdf = stats.rice.cdf(np.arange(10, 160, 10), np.arange(10, 160, 10))
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # x = seq(10, 150, 10)
+        # print(price(x, sigma=1, vee=x))
+        cdf_exp = [0.4800278103504522, 0.4900233218590353, 0.4933500379379548,
+                   0.4950128317658719, 0.4960103776798502, 0.4966753655438764,
+                   0.4971503395812474, 0.4975065620443196, 0.4977836197921638,
+                   0.4980052636649550, 0.4981866072661382, 0.4983377260666599,
+                   0.4984655952615694, 0.4985751970541413, 0.4986701850071265]
+        assert_allclose(cdf, cdf_exp)
+
+        probabilities = np.arange(0.1, 1, 0.1)
+        ppf = stats.rice.ppf(probabilities, 500/4, scale=4)
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # p = seq(0.1, .9, by = .1)
+        # print(qrice(p, vee = 500, sigma = 4))
+        ppf_exp = [494.8898762347361, 496.6495690858350, 497.9184315188069,
+                   499.0026277378915, 500.0159999146250, 501.0293721352668,
+                   502.1135684981884, 503.3824312270405, 505.1421247157822]
+        assert_allclose(ppf, ppf_exp)
+
+        ppf = scipy.stats.rice.ppf(0.5, np.arange(10, 150, 10))
+        # Generated in R
+        # library(VGAM)
+        # options(digits=16)
+        # b <- seq(10, 140, 10)
+        # print(qrice(0.5, vee = b, sigma = 1))
+        ppf_exp = [10.04995862522287, 20.02499480078302, 30.01666512465732,
+                   40.01249934924363, 50.00999966676032, 60.00833314046875,
+                   70.00714273568241, 80.00624991862573, 90.00555549840364,
+                   100.00499995833597, 110.00454542324384, 120.00416664255323,
+                   130.00384613488120, 140.00357141338748]
+        assert_allclose(ppf, ppf_exp)
+
+
+class TestErlang:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -3581,7 +4021,7 @@ class TestErlang(object):
                      stats.gamma.pdf(0.5, a=[1, -1]))
 
 
-class TestRayleigh(object):
+class TestRayleigh:
     def setup_method(self):
         np.random.seed(987654321)
 
@@ -3635,7 +4075,7 @@ class TestRayleigh(object):
         assert_fit_warnings(stats.rayleigh)
 
 
-class TestExponWeib(object):
+class TestExponWeib:
 
     def test_pdf_logpdf(self):
         # Regression test for gh-3508.
@@ -3679,7 +4119,30 @@ class TestExponWeib(object):
         assert_allclose(logp, expected)
 
 
-class TestWeibull(object):
+class TestFatigueLife:
+
+    def test_sf_tail(self):
+        # Expected value computed with mpmath:
+        #     import mpmath
+        #     mpmath.mp.dps = 80
+        #     x = mpmath.mpf(800.0)
+        #     c = mpmath.mpf(2.5)
+        #     s = float(1 - mpmath.ncdf(1/c * (mpmath.sqrt(x)
+        #                                      - 1/mpmath.sqrt(x))))
+        #     print(s)
+        # Output:
+        #     6.593376447038406e-30
+        s = stats.fatiguelife.sf(800.0, 2.5)
+        assert_allclose(s, 6.593376447038406e-30, rtol=1e-13)
+
+    def test_isf_tail(self):
+        # See test_sf_tail for the mpmath code.
+        p = 6.593376447038406e-30
+        q = stats.fatiguelife.isf(p, 2.5)
+        assert_allclose(q, 800.0, rtol=1e-13)
+
+
+class TestWeibull:
 
     def test_logpdf(self):
         # gh-6217
@@ -3771,7 +4234,7 @@ class TestWeibull(object):
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
 
-class TestRdist(object):
+class TestRdist:
     def test_rdist_cdf_gh1285(self):
         # check workaround in rdist._cdf for issue gh-1285.
         distfn = stats.rdist
@@ -3787,7 +4250,7 @@ class TestRdist(object):
                             stats.rdist(c).pdf(x))
 
 
-class TestTrapezoid(object):
+class TestTrapezoid:
     def test_reduces_to_triang(self):
         modes = [0, 0.3, 0.5, 1]
         for mode in modes:
@@ -3881,7 +4344,7 @@ class TestTrapezoid(object):
         assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
 
 
-class TestTriang(object):
+class TestTriang:
     def test_edge_cases(self):
         with np.errstate(all='raise'):
             assert_equal(stats.triang.pdf(0, 0), 2.)
@@ -3901,7 +4364,7 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(1., 1.), 1)
 
 
-class TestMielke(object):
+class TestMielke:
     def test_moments(self):
         k, s = 4.642, 0.597
         # n-th moment exists only if n < s
@@ -3915,7 +4378,7 @@ class TestMielke(object):
         assert_allclose(stats.burr.pdf(x, s, k/s), stats.mielke.pdf(x, k, s))
 
 
-class TestBurr(object):
+class TestBurr:
     def test_endpoints_7491(self):
         # gh-7491
         # Compute the pdf at the left endpoint dst.a.
@@ -4414,6 +4877,39 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
+def test_ncx2_gh12731():
+    # test that gh-12731 is resolved; previously these were all 0.5
+    nc = 10**np.arange(5, 10)
+    assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
+
+
+def test_ncx2_gh8665():
+    # test that gh-8665 is resolved; previously this tended to nonzero value
+    x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
+                  4.99515382e+01, 1.07617327e+02, 2.31854502e+02,
+                  4.99515382e+02, 1.07617327e+03, 2.31854502e+03,
+                  4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+                  4.99515382e+04])
+    nu, lam = 20, 499.51538166556196
+
+    sf = stats.ncx2.sf(x, df=nu, nc=lam)
+    # computed in R. Couldn't find a survival function implementation
+    # options(digits=16)
+    # x <- c(4.99515382e+00, 1.07617327e+01, 2.31854502e+01, 4.99515382e+01,
+    #        1.07617327e+02, 2.31854502e+02, 4.99515382e+02, 1.07617327e+03,
+    #        2.31854502e+03, 4.99515382e+03, 1.07617327e+04, 2.31854502e+04,
+    #        4.99515382e+04)
+    # nu <- 20
+    # lam <- 499.51538166556196
+    # 1 - pchisq(x, df = nu, ncp = lam)
+    sf_expected = [1.0000000000000000, 1.0000000000000000, 1.0000000000000000,
+                   1.0000000000000000, 1.0000000000000000, 0.9999999999999888,
+                   0.6646525582135460, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
+                   0.0000000000000000]
+    assert_allclose(sf, sf_expected, atol=1e-12)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
@@ -4470,7 +4966,7 @@ class _distr6_gen(stats.rv_continuous):
         return 42 * a + x
 
 
-class TestSubclassingExplicitShapes(object):
+class TestSubclassingExplicitShapes:
     # Construct a distribution w/ explicit shapes parameter and test it.
 
     def test_correct_shapes(self):
@@ -4590,7 +5086,7 @@ class TestSubclassingExplicitShapes(object):
         assert_equal(dist.pdf(0.5), stats.norm.pdf(0.5))
 
 
-class TestSubclassingNoShapes(object):
+class TestSubclassingNoShapes:
     # Construct a distribution w/o explicit shapes parameter and test it.
 
     def test_only__pdf(self):
@@ -4900,6 +5396,50 @@ def test_crystalball_function_moments():
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
+def test_crystalball_entropy():
+    # regression test for gh-13602
+    cb = stats.crystalball(2, 3)
+    res1 = cb.entropy()
+    # -20000 and 30 are negative and positive infinity, respectively
+    lo, hi, N = -20000, 30, 200000
+    x = np.linspace(lo, hi, N)
+    res2 = trapezoid(entr(cb.pdf(x)), x)
+    assert_allclose(res1, res2, rtol=1e-7)
+
+
+def test_invweibull():
+    """
+    Test fitting invweibull to data.
+
+    Here is a the same calculation in R:
+
+    > library(evd)
+    > library(fitdistrplus)
+    > x = c(1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99)
+    > result = fitdist(x, 'frechet', control=list(reltol=1e-13),
+    +                  fix.arg=list(loc=0), start=list(shape=2, scale=3))
+    > result
+    Fitting of the distribution ' frechet ' by maximum likelihood
+    Parameters:
+          estimate Std. Error
+    shape 1.048482  0.2261815
+    scale 3.099456  0.8292887
+    Fixed parameters:
+        value
+    loc     0
+
+    """
+
+    def optimizer(func, x0, args=(), disp=0):
+        return fmin(func, x0, args=args, disp=disp, xtol=1e-12, ftol=1e-12)
+
+    x = np.array([1, 1.25, 2, 2.5, 2.8,  3, 3.8, 4, 5, 8, 10, 12, 64, 99])
+    c, loc, scale = stats.invweibull.fit(x, floc=0, optimizer=optimizer)
+    assert_allclose(c, 1.048482, rtol=5e-6)
+    assert loc == 0
+    assert_allclose(scale, 3.099456, rtol=5e-6)
+
+
 @pytest.mark.parametrize(
     'df1,df2,x',
     [(2, 2, [-0.5, 0.2, 1.0, 2.3]),
@@ -4933,7 +5473,7 @@ def test_ncf_variance():
     assert_allclose(v, 42.75, rtol=1e-14)
 
 
-class TestHistogram(object):
+class TestHistogram:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -5039,7 +5579,7 @@ def test_loguniform():
     assert np.abs(np.median(vals) - 1000) <= 10
 
 
-class TestArgus(object):
+class TestArgus:
     def test_argus_rvs_large_chi(self):
         # test that the algorithm can handle large values of chi
         x = stats.argus.rvs(50, size=500, random_state=325)
@@ -5112,6 +5652,84 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
+    @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit(self, nu, loc, scale):
+        # Regression test for gh-13396 (21/27 cases failed previously)
+        # The first tuple of the parameters' values is discussed in gh-10908
+        N = 100
+        samples = stats.nakagami.rvs(size=N, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
+        assert_allclose(nu_est, nu, rtol=0.2)
+        assert_allclose(loc_est, loc, rtol=0.2)
+        assert_allclose(scale_est, scale, rtol=0.2)
+
+        def dlogl_dnu(nu, loc, scale):
+            return ((-2*nu + 1) * np.sum(1/(samples - loc))
+                    + 2*nu/scale**2 * np.sum(samples - loc))
+
+        def dlogl_dloc(nu, loc, scale):
+            return (N * (1 + np.log(nu) - polygamma(0, nu)) +
+                    2 * np.sum(np.log((samples - loc) / scale))
+                    - np.sum(((samples - loc) / scale)**2))
+
+        def dlogl_dscale(nu, loc, scale):
+            return (- 2 * N * nu / scale
+                    + 2 * nu / scale ** 3 * np.sum((samples - loc) ** 2))
+
+        assert_allclose(dlogl_dnu(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dloc(nu_est, loc_est, scale_est), 0, atol=1e-3)
+        assert_allclose(dlogl_dscale(nu_est, loc_est, scale_est), 0, atol=1e-3)
+
+    @pytest.mark.parametrize('loc', [25.0, 10, 35])
+    @pytest.mark.parametrize('scale', [13, 5, 20])
+    def test_fit_nu(self, loc, scale):
+        # For nu = 0.5, we have analytical values for
+        # the MLE of the loc and the scale
+        nu = 0.5
+        n = 100
+        samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
+                                     scale=scale, random_state=1337)
+        nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=nu)
+
+        # Analytical values
+        loc_theo = np.min(samples)
+        scale_theo = np.sqrt(np.mean((samples - loc_est) ** 2))
+
+        assert_allclose(nu_est, nu, rtol=1e-7)
+        assert_allclose(loc_est, loc_theo, rtol=1e-7)
+        assert_allclose(scale_est, scale_theo, rtol=1e-7)
+
+
+class TestWrapCauchy:
+
+    def test_cdf_shape_broadcasting(self):
+        # Regression test for gh-13791.
+        # Check that wrapcauchy.cdf broadcasts the shape parameter
+        # correctly.
+        c = np.array([[0.03, 0.25], [0.5, 0.75]])
+        x = np.array([[1.0], [4.0]])
+        p = stats.wrapcauchy.cdf(x, c)
+        assert p.shape == (2, 2)
+        scalar_values = [stats.wrapcauchy.cdf(x1, c1)
+                         for (x1, c1) in np.nditer((x, c))]
+        assert_allclose(p.ravel(), scalar_values, rtol=1e-13)
+
+    def test_cdf_center(self):
+        p = stats.wrapcauchy.cdf(np.pi, 0.03)
+        assert_allclose(p, 0.5, rtol=1e-14)
+
+    def test_cdf(self):
+        x1 = 1.0  # less than pi
+        x2 = 4.0  # greater than pi
+        c = 0.75
+        p = stats.wrapcauchy.cdf([x1, x2], c)
+        cr = (1 + c)/(1 - c)
+        assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
+        assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
+
 
 def test_rvs_no_size_warning():
     class rvs_no_size_gen(stats.rv_continuous):
@@ -5122,3 +5740,89 @@ def test_rvs_no_size_warning():
 
     with assert_warns(np.VisibleDeprecationWarning):
         rvs_no_size.rvs()
+
+
+@pytest.mark.parametrize('distname, args', invdistdiscrete + invdistcont)
+def test_support_gh13294_regression(distname, args):
+    if distname in skip_test_support_gh13294_regression:
+        pytest.skip(f"skipping test for the support method for "
+                    f"distribution {distname}.")
+    dist = getattr(stats, distname)
+    # test support method with invalid arguents
+    if isinstance(dist, stats.rv_continuous):
+        # test with valid scale
+        if len(args) != 0:
+            a0, b0 = dist.support(*args)
+            assert_equal(a0, np.nan)
+            assert_equal(b0, np.nan)
+        # test with invalid scale
+        # For some distributions, that take no parameters,
+        # the case of only invalid scale occurs and hence,
+        # it is implicitly tested in this test case.
+        loc1, scale1 = 0, -1
+        a1, b1 = dist.support(*args, loc1, scale1)
+        assert_equal(a1, np.nan)
+        assert_equal(b1, np.nan)
+    else:
+        a, b = dist.support(*args)
+        assert_equal(a, np.nan)
+        assert_equal(b, np.nan)
+
+
+def test_support_broadcasting_gh13294_regression():
+    a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])
+    ex_a0 = np.array([-np.inf, -np.inf, -np.inf, np.nan])
+    ex_b0 = np.array([np.inf, np.inf, np.inf, np.nan])
+    assert_equal(a0, ex_a0)
+    assert_equal(b0, ex_b0)
+    assert a0.shape == ex_a0.shape
+    assert b0.shape == ex_b0.shape
+
+    a1, b1 = stats.norm.support([], [])
+    ex_a1, ex_b1 = np.array([]), np.array([])
+    assert_equal(a1, ex_a1)
+    assert_equal(b1, ex_b1)
+    assert a1.shape == ex_a1.shape
+    assert b1.shape == ex_b1.shape
+
+    a2, b2 = stats.norm.support([0, 0, 0, 1], [-1])
+    ex_a2 = np.array(4*[np.nan])
+    ex_b2 = np.array(4*[np.nan])
+    assert_equal(a2, ex_a2)
+    assert_equal(b2, ex_b2)
+    assert a2.shape == ex_a2.shape
+    assert b2.shape == ex_b2.shape
+
+
+# Check a few values of the cosine distribution's cdf, sf, ppf and
+# isf methods.  Expected values were computed with mpmath.
+
+@pytest.mark.parametrize('x, expected',
+                         [(-3.14159, 4.956444476505336e-19),
+                          (3.14, 0.9999999998928399)])
+def test_cosine_cdf_sf(x, expected):
+    assert_allclose(stats.cosine.cdf(x), expected)
+    assert_allclose(stats.cosine.sf(-x), expected)
+
+
+@pytest.mark.parametrize('p, expected',
+                         [(1e-6, -3.1080612413765905),
+                          (1e-17, -3.141585429601399),
+                          (0.975, 2.1447547020964923)])
+def test_cosine_ppf_isf(p, expected):
+    assert_allclose(stats.cosine.ppf(p), expected)
+    assert_allclose(stats.cosine.isf(p), -expected)
+
+
+def test_distr_params_lists():
+    # distribution objects are extra distributions added in
+    # test_discrete_basic. All other distributions are strings (names)
+    # and so we only choose those to compare whether both lists match.
+    discrete_distnames = {name for name, _ in distdiscrete
+                          if isinstance(name, str)}
+    invdiscrete_distnames = {name for name, _ in invdistdiscrete}
+    assert discrete_distnames == invdiscrete_distnames
+
+    cont_distnames = {name for name, _ in distcont}
+    invcont_distnames = {name for name, _ in invdistcont}
+    assert cont_distnames == invcont_distnames

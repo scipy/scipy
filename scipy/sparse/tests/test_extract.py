@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse import extract
 
 
-class TestExtract(object):
+class TestExtract:
     def setup_method(self):
         self.cases = [
             csr_matrix([[1,2]]),

@@ -96,7 +96,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
         the fixed parameters. If `jac` is a Boolean and is True, `fun` is
-        assumed to return and objective and gradient as and ``(f, g)`` tuple.
+        assumed to return and objective and gradient as an ``(f, g)`` tuple.
         Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
         'trust-krylov' require that either a callable be supplied, or that
         `fun` return the objective and gradient.
@@ -177,7 +177,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
     tol : float, optional
-        Tolerance for termination. For detailed control, use solver-specific
+        Tolerance for termination. When `tol` is specified, the selected
+        minimization algorithm sets some relevant solver-specific tolerance(s)
+        equal to `tol`. For detailed control, use solver-specific
         options.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
@@ -557,8 +559,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         fun = MemoizeJac(fun)
         jac = fun.derivative
     elif (jac in FD_METHODS and
-          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc']):
-        # finite differences
+          meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc', 'slsqp']):
+        # finite differences with relative step
         pass
     elif meth in ['trust-constr']:
         # default jac calculation for this method
