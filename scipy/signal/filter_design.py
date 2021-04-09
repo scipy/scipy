@@ -4298,6 +4298,11 @@ def _ellipdeg(n, m1):
     return 16 * q * (num / den) ** 4
 
 
+# Maximum number of iterations in Landen transformation recursion
+# sequence.  10 is conservative; unit tests pass with 4, Orfanidis
+# (see _arc_jac_cn [1]) suggests 5.
+_ARC_JAC_SN_MAXITER = 10
+
 def _arc_jac_sn(w, m):
     """Inverse Jacobian elliptic sn
 
@@ -4335,10 +4340,14 @@ def _arc_jac_sn(w, m):
         return np.arctanh(w)
 
     ks = [k]
+    niter = 0
     while ks[-1] != 0:
         k_ = ks[-1]
         k_p = _complement(k_)
         ks.append((1 - k_p) / (1 + k_p))
+        niter += 1
+        if niter > _ARC_JAC_SN_MAXITER:
+            raise ValueError('Landen transformation not converging')
 
     K = np.product(1 + np.array(ks[1:])) * np.pi/2
 
