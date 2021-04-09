@@ -8,7 +8,7 @@ from scipy._lib._util import check_random_state
 from .common_tests import check_named_results
 
 
-class TestBinnedStatistic(object):
+class TestBinnedStatistic:
 
     @classmethod
     def setup_class(cls):
@@ -487,7 +487,7 @@ class TestBinnedStatistic(object):
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
-    
+
     def test_dd_range_errors(self):
         # Test that descriptive exceptions are raised as appropriate for bad
         # values of the `range` argument. (See gh-12996)

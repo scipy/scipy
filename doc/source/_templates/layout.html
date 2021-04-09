@@ -1,14 +1,8 @@
 {% extends "!layout.html" %}
 
-{% block sidebarsearch %}
-{%- if sourcename %}
-<ul class="this-page-menu">
-{%- if 'generated/' in sourcename %}
-  <li><a href="/scipy/docs/{{ sourcename.replace('generated/', '').replace('.txt', '') |e }}">{{_('Edit page')}}</a></li>
-{%- else %}
-  <li><a href="/scipy/docs/scipy-docs/{{ sourcename.replace('.txt', '.rst') |e }}">{{_('Edit page')}}</a></li>
-{%- endif %}
-</ul>
-{%- endif %}
+{%- block extrahead %}
 {{ super() }}
+
+    <!-- link rel="canonical" href="https://docs.scipy.org/doc/scipy/reference/{{ pagename }}{{ file_suffix }}" / -->
+
 {% endblock %}

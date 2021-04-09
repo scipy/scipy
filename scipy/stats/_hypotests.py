@@ -146,6 +146,7 @@ class CramerVonMisesResult:
         return (f"{self.__class__.__name__}(statistic={self.statistic}, "
                 f"pvalue={self.pvalue})")
 
+
 def _psi1_mod(x):
     """
     psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
