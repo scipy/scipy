@@ -84,6 +84,7 @@ SHELL ["/bin/bash", "--login", "-o", "pipefail", "-c"]
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
     ca-certificates \
+    ccache \
     dirmngr \
     gnupg \
     gpg-agent \
@@ -154,6 +155,7 @@ RUN conda env create -f /tmp/environment.yml && \
     conda activate ${CONDA_ENV} && \
     # needed for docs rendering later on
     python -m pip install --no-cache-dir sphinx-autobuild && \
+    conda install ccache -y && \
     # need to use sudo to remove tmp files
     sudo rm -rf /tmp/* && \
     conda clean --all -f -y && \

@@ -1,8 +1,6 @@
-# On prebuild - running long standing processes:
-# build SciPy and the docs
-# command: every time a workspace is started, ensure the
-# conda env is activated
-# Note each task opens a new terminal see 
+# Rebuilding SciPy on init - rather than on prebuild: this ensures
+# that even forks do have a usable freshly built SciPy
+# Might delegate this later to prebuild with Q2 improvements on gitpod
 # https://www.gitpod.io/docs/config-start-tasks/#configuring-the-terminal
 # With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
@@ -13,14 +11,15 @@ tasks:
     init: |
       python setup.py build_ext --inplace
       conda develop .
-  - name: Prebuild docs
-    prebuild: |
-      conda develop .
       git submodule update --init
       cd doc 
       make html-scipyorg
+  - name: Reuse settings
     openMode: split-right
-
+    command: |
+      ln -s tools/docker_dev/settings.json .vscode/settings.json
+      echo "🎉 Your development environment is ready! You can close this terminal now"
+  
 # --------------------------------------------------------
 # exposing ports for liveserve
 ports:

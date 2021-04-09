@@ -34,3 +34,16 @@ echo "conda activate scipy-dev" >>~/.bashrc
 # Enable prompt color in the skeleton .bashrc
 # hadolint ignore=SC2016
 sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc
+
+# Set up ccache for compilers for this Dockerfile and interactino sessions
+# Using `conda env config vars set` does not work with Docker
+# REF: https://github.com/conda-forge/compilers-feedstock/issues/31
+echo "conda activate scipy-dev" >>~/.startuprc
+echo "export CC=\"ccache \$CC\"" >>~/.startuprc
+echo "export CXX=\"ccache \$CXX\"" >>~/.startuprc
+echo "export F77=\"ccache \$F77\"" >>~/.startuprc
+echo "export F90=\"ccache \$F90\"" >>~/.startuprc
+echo "export GFORTRAN=\"ccache \$GFORTRAN\"" >>~/.startuprc
+echo "export FC=\"ccache \$FC\"" >>~/.startuprc
+echo "source ~/.startuprc" >>~/.profile
+echo "source ~/.startuprc" >>~/.bashrc

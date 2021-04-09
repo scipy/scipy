@@ -11,7 +11,6 @@ USER root
 # ---- ENV variables ----
 # ---- Directories needed ----
 ENV WORKSPACE=/workspace/scipy/ \
-    BUILD_DIR=/opt/conda/envs/scipy-dev/lib/python3.8/site-packages \
     CONDA_ENV=scipy-dev
 
 # -----------------------------------------------------------------------------
@@ -25,12 +24,11 @@ SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
 # Ensure the following happens in the workspace
 USER gitpod
 
+WORKDIR ${WORKSPACE}
+
 RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . && \
     conda activate ${CONDA_ENV} && \
-    # passing a custom install directory - this ensures the built version 
-    # is present when launching gitpod
-    python setup.py build --build-base=${BUILD_DIR}/scipy 
+    python setup.py build_ext --inplace && \
+    ccache -s 
 
-
-
-
+RUN sudo rm -rf ${WORKSPACE}

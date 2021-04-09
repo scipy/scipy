@@ -1,13 +1,8 @@
 name: Build Gitpod Docker image
 
 on:
-  push: 
-    branches:
-    - master
-    - feature/*
-    tags:
-      - '*'
-  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   build:
@@ -53,6 +48,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
-            trallard/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, trallard/scipy-gitpod:latest
+            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-gitpod:latest
       - name: Image digest 
         run: echo ${{ steps.docker_build.outputs.digest }}

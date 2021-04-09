@@ -4,13 +4,11 @@ on:
   push: 
     branches:
     - master
-    - feature/*
     paths:
-    - './tools/docker_dev/environment.yml'
+    - './environment.yml'
     tags:
       - '*'
-  workflow_dispatch:
-
+      
 jobs: 
   build:
     name: Build base Docker image 
