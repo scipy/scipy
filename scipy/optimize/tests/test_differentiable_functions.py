@@ -326,6 +326,20 @@ class TestScalarFunction(TestCase):
         assert_equal(f2, 14.0)
         assert x is not sf.x
 
+        # gh13740 x is changed in user function
+        def ff(x):
+            x *= x    # overwrite x
+            return np.sum(x)
+
+        x = np.array([1., 2., 3.])
+        sf = ScalarFunction(
+            ff, x, (), '3-point', lambda x: x, None, (-np.inf, np.inf)
+        )
+        assert x is not sf.x
+        assert_equal(sf.fun(x), 14.0)
+        assert_equal(sf.x, np.array([1., 2., 3.]))
+        assert x is not sf.x
+
 
 class ExVectorialFunction:
 

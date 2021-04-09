@@ -11,7 +11,7 @@ from scipy import optimize
 from scipy.sparse.sputils import matrix
 
 
-class TestTnc(object):
+class TestTnc:
     """TNC non-linear optimization.
 
     These tests are taken from Prof. K. Schittkowski's test examples

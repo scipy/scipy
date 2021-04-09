@@ -719,7 +719,7 @@ def test_to_writeable():
     assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
 
-    class klass(object):
+    class klass:
         pass
 
     c = klass
@@ -748,7 +748,7 @@ def test_to_writeable():
     assert_(to_writeable(object()) is None)
     # Custom object does have empty __dict__, returns EmptyStructMarker
 
-    class C(object):
+    class C:
         pass
 
     assert_(to_writeable(c()) is EmptyStructMarker)
@@ -792,7 +792,7 @@ def test_recarray():
 
 
 def test_save_object():
-    class C(object):
+    class C:
         pass
     c = C()
     c.field1 = 1
@@ -948,6 +948,13 @@ def test_logical_out_type():
     assert_equal(var.dtype.type, np.uint8)
 
 
+def test_roundtrip_zero_dimensions():
+    stream = BytesIO()
+    savemat(stream, {'d':np.empty((10, 0))})
+    d = loadmat(stream)
+    assert d['d'].shape == (10, 0)
+
+
 def test_mat4_3d():
     # test behavior when writing 3-D arrays to matlab 4 files
     stream = BytesIO()
@@ -1095,7 +1102,7 @@ def test_varmats_from_mat():
                   ('mynum', mlarr(10)))
 
     # Dict like thing to give variables in defined order
-    class C(object):
+    class C:
         def items(self):
             return names_vars
     stream = BytesIO()

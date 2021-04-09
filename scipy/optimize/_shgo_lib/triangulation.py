@@ -451,7 +451,7 @@ class Complex:
         return
 
 
-class VertexGroup(object):
+class VertexGroup:
     def __init__(self, p_gen, p_hgr):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank

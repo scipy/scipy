@@ -12,7 +12,7 @@ def _isscalar(x):
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
 
 
-class _Interpolator1D(object):
+class _Interpolator1D:
     """
     Common features in univariate interpolation
 

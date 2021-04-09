@@ -12,7 +12,7 @@ import numpy as np
 from scipy.special._mptestutils import mpf2float
 
 try:
-    import mpmath as mp # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 

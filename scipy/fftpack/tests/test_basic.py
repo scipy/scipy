@@ -114,7 +114,7 @@ def direct_irdft(x):
     return direct_idft(x1).real
 
 
-class _TestFFTBase(object):
+class _TestFFTBase:
     def setup_method(self):
         self.cdt = None
         self.rdt = None
@@ -168,7 +168,7 @@ class TestSingleFFT(_TestFFTBase):
         pass
 
 
-class TestFloat16FFT(object):
+class TestFloat16FFT:
 
     def test_1_argument_real(self):
         x1 = np.array([1, 2, 3, 4], dtype=np.float16)
@@ -187,7 +187,7 @@ class TestFloat16FFT(object):
         assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
-class _TestIFFTBase(object):
+class _TestIFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -271,7 +271,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.rdt = np.float32
 
 
-class _TestRFFTBase(object):
+class _TestRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -288,7 +288,7 @@ class _TestRFFTBase(object):
         assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
 
     # See gh-5790
-    class MockSeries(object):
+    class MockSeries:
         def __init__(self, data):
             self.data = np.asarray(data)
 
@@ -327,7 +327,7 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 
-class _TestIRFFTBase(object):
+class _TestIRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -399,7 +399,7 @@ class TestIRFFTSingle(_TestIRFFTBase):
         self.ndec = 5
 
 
-class Testfft2(object):
+class Testfft2:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -417,7 +417,7 @@ class Testfft2(object):
         assert_raises(ValueError, fft2, [[1, 1], [2, 2]], (4, -3))
 
 
-class TestFftnSingle(object):
+class TestFftnSingle:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -478,7 +478,7 @@ class TestFftnSingle(object):
         assert_array_almost_equal_nulp(y1, y2, 2e6)
 
 
-class TestFftn(object):
+class TestFftn:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -694,7 +694,7 @@ class TestFftn(object):
             fftn([[1, 1], [2, 2]], (4, -3))
 
 
-class TestIfftn(object):
+class TestIfftn:
     dtype = None
     cdtype = None
 
@@ -737,13 +737,13 @@ class TestIfftn(object):
             ifftn([[1, 1], [2, 2]], (4, -3))
 
 
-class FakeArray(object):
+class FakeArray:
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
 
-class FakeArray2(object):
+class FakeArray2:
     def __init__(self, data):
         self._data = data
 
@@ -751,7 +751,7 @@ class FakeArray2(object):
         return self._data
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior of the FFT functions."""
 
     real_dtypes = (np.float32, np.float64)

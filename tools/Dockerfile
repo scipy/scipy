@@ -22,7 +22,7 @@
 # The image does not come bundled with cython/numpy/pytest/pybind11, those need to
 # be installed with pip before trying to build/run scipy.
 #
-# pip3 install cython numpy pytest pybind11
+# pip3 install cython numpy pytest pybind11 pythran matplotlib sphinx asv
 #
 # You can find the detailed guide in:
 # Development environment quickstart guide (Docker)

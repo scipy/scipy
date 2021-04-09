@@ -80,7 +80,7 @@ def minkowski_distance(x, y, p=2):
         return minkowski_distance_p(x, y, p)**(1./p)
 
 
-class Rectangle(object):
+class Rectangle:
     """Hyperrectangle class.
 
     Represents a Cartesian product of intervals.

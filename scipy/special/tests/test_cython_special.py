@@ -283,7 +283,7 @@ IDS = [x[0].__name__ for x in PARAMS]
 
 
 def _generate_test_points(typecodes):
-    axes = tuple(map(lambda x: TEST_POINTS[x], typecodes))
+    axes = tuple(TEST_POINTS[x] for x in typecodes)
     pts = list(product(*axes))
     return pts
 
@@ -297,7 +297,7 @@ def test_cython_api_completeness():
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
