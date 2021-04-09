@@ -116,7 +116,7 @@ Thumbs.db
 # Documentation generated files #
 #################################
 doc/frontpage/build
-doc/source/generated
+doc/source/reference/generated
 
 # Things specific to this project #
 ###################################
@@ -277,6 +277,7 @@ scipy/stats/_stats.c
 scipy/stats/biasedurn.cxx
 scipy/stats/biasedurn.pyx
 scipy/stats/_sobol.c
+scipy/stats/_qmc_cy.cxx
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

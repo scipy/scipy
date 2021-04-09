@@ -61,6 +61,21 @@ def check_vonmises_cdf_periodic(k, L, s, x):
     assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
 
 
+def test_distributions_submodule():
+    actual = set(scipy.stats.distributions.__all__)
+    continuous = [dist[0] for dist in distcont]    # continuous dist names
+    discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
+    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+             'entropy', 'trapz']
+    expected = continuous + discrete + other
+
+    # need to remove, e.g.,
+    # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
+    expected = set(filter(lambda s: not str(s).startswith('<'), expected))
+
+    assert actual == expected
+
+
 def test_vonmises_pdf_periodic():
     for k in [0.1, 1, 101]:
         for x in [0, 1, numpy.pi, 10, 100]:
@@ -3098,6 +3113,114 @@ class TestEntropy:
         assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
                                   stats.entropy(pk, qk, axis=1))
 
+    def test_entropy_broadcasting(self):
+        np.random.rand(0)
+        x = np.random.rand(3)
+        y = np.random.rand(2, 1)
+        res = stats.entropy(x, y, axis=-1)
+        assert_equal(res[0], stats.entropy(x, y[0]))
+        assert_equal(res[1], stats.entropy(x, y[1]))
+
+    def test_entropy_shape_mismatch(self):
+        x = np.random.rand(10, 1, 12)
+        y = np.random.rand(11, 2)
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, y)
+
+
+class TestDifferentialEntropy(object):
+    """
+    Results are compared with the R package vsgoftest.
+
+    # library(vsgoftest)
+    #
+    # samp <- c(<values>)
+    # entropy.estimate(x = samp, window = <window_length>)
+
+    """
+
+    def test_differential_entropy_base(self):
+
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal(100)
+
+        entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, 1.342551, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=1)
+        assert_allclose(entropy, 1.122044, rtol=1e-6)
+
+        entropy = stats.differential_entropy(values, window_length=8)
+        assert_allclose(entropy, 1.349401, rtol=1e-6)
+
+    def test_differential_entropy_base_2d_nondefault_axis(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        entropy = stats.differential_entropy(values, axis=1)
+        assert_allclose(
+            entropy,
+            [1.342551, 1.341826, 1.293775],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=1)
+        assert_allclose(
+            entropy,
+            [1.122044, 1.102944, 1.129616],
+            rtol=1e-6,
+        )
+
+        entropy = stats.differential_entropy(values, axis=1, window_length=8)
+        assert_allclose(
+            entropy,
+            [1.349401, 1.338514, 1.292332],
+            rtol=1e-6,
+        )
+
+    def test_differential_entropy_raises_value_error(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        error_str = (
+            r"Window length \({window_length}\) must be positive and less "
+            r"than half the sample size \({sample_size}\)."
+        )
+
+        sample_size = values.shape[1]
+
+        for window_length in {-1, 0, sample_size//2, sample_size}:
+
+            formatted_error_str = error_str.format(
+                window_length=window_length,
+                sample_size=sample_size,
+            )
+
+            with assert_raises(ValueError, match=formatted_error_str):
+                stats.differential_entropy(
+                    values,
+                    window_length=window_length,
+                    axis=1,
+                )
+
+    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((100, 3))
+
+        entropy = stats.differential_entropy(values, axis=0)
+        default_entropy = stats.differential_entropy(values)
+        assert_allclose(entropy, default_entropy)
+
+    def test_base_differential_entropy_transposed(self):
+        random_state = np.random.RandomState(0)
+        values = random_state.standard_normal((3, 100))
+
+        assert_allclose(
+            stats.differential_entropy(values.T).T,
+            stats.differential_entropy(values, axis=1),
+        )
+
 
 def TestArgsreduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
@@ -5578,6 +5701,34 @@ class TestNakagami:
         assert_allclose(nu_est, nu, rtol=1e-7)
         assert_allclose(loc_est, loc_theo, rtol=1e-7)
         assert_allclose(scale_est, scale_theo, rtol=1e-7)
+
+
+class TestWrapCauchy:
+
+    def test_cdf_shape_broadcasting(self):
+        # Regression test for gh-13791.
+        # Check that wrapcauchy.cdf broadcasts the shape parameter
+        # correctly.
+        c = np.array([[0.03, 0.25], [0.5, 0.75]])
+        x = np.array([[1.0], [4.0]])
+        p = stats.wrapcauchy.cdf(x, c)
+        assert p.shape == (2, 2)
+        scalar_values = [stats.wrapcauchy.cdf(x1, c1)
+                         for (x1, c1) in np.nditer((x, c))]
+        assert_allclose(p.ravel(), scalar_values, rtol=1e-13)
+
+    def test_cdf_center(self):
+        p = stats.wrapcauchy.cdf(np.pi, 0.03)
+        assert_allclose(p, 0.5, rtol=1e-14)
+
+    def test_cdf(self):
+        x1 = 1.0  # less than pi
+        x2 = 4.0  # greater than pi
+        c = 0.75
+        p = stats.wrapcauchy.cdf([x1, x2], c)
+        cr = (1 + c)/(1 - c)
+        assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
+        assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
 
 def test_rvs_no_size_warning():

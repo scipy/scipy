@@ -1296,7 +1296,11 @@ def yule(u, v, w=None):
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-    return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
+    half_R = ntf * nft
+    if half_R == 0:
+        return 0.0
+    else:
+        return float(2.0 * half_R / (ntt * nff + half_R))
 
 
 @np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
