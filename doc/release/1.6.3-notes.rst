@@ -10,11 +10,22 @@ compared to 1.6.2.
 Authors
 =======
 
+* Peter Bell
+* Tyler Reddy
+* 刘星雨 +
+
+A total of 3 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 Issues closed for 1.6.3
 -----------------------
+
+* `#13772 <https://github.com/scipy/scipy/issues/13772>`__: Divide by zero in distance.yule
 
 
 Pull requests for 1.6.3
 -----------------------
 
+* `#13773 <https://github.com/scipy/scipy/pull/13773>`__: BUG: Divide by zero in yule dissimilarity of constant vectors
+* `#13819 <https://github.com/scipy/scipy/pull/13819>`__: substitute np.math.factorial with math.factorial
