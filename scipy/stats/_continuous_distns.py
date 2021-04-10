@@ -4162,47 +4162,49 @@ class invgauss_gen(rv_continuous):
         based on Gyner & Smyth (2016) and uses newton's method with carefully
         selected starting points that guarantee convergence regardless of the
         probability."""
+        x0 = np.empty(np.broadcast(q, mu).shape)
+        q = np.broadcast_to(q, x0.shape)
+        mu = np.broadcast_to(mu, x0.shape)
 
-        def f(a, b, c, d, e):
-            """approximates (x0 - norm_cdf) / pdf when abs(x0 - norm_cdf) < 1e-5"""
-            return a * np.exp(c + np.log1p(-0.5 * a) - d)
+        # Select the start values for Newton's Method using a quantile of
+        # the gamma (if right tail is required) or normal distribution
+        # when `q` is very small.
+        mask = q < 1e-05
+        if upper:
+            mu3 = mu[mask] ** 3
+            x0[mask] = sc.gammainccinv(1 / mu3, q[mask]) / mu3
+        else:
+            x0[mask] = mu[mask] / (_norm_ppf(q[mask]) ** 2)
 
-        def f2(a, b, c, d, e):
-            """computes (x0 - norm_cdf) / pdf"""
-            return b * np.exp(-d) - np.exp(e - d)
+        # when `q` is not very small the initial value for Newton's method is
+        # the mode of the distribution. If `k` is large, then we use equation 3
+        # of Giner & Smyth (2016) to prevent subtractive cancellation.
+        # Note that the threshold of 100 picked here is arbitrary, a much
+        # bigger value could be chosen if necessary.
+        k = 1.5 * mu[~mask]
+        x0[~mask] = _lazywhere(
+            mu[~mask] > 100,
+            (mu[~mask], k),
+            lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6)),
+            f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
+        )
 
-        def x_init_tiny(q, mu, k):
-            """select the start values for Newton's Method using a quantile of
-            the gamma (if right tail is required) or normal distribution"""
-            if upper:
-                mu3 = mu ** 3
-                return sc.gammainccinv(1 / mu3, q) / mu3
-            return mu / (_norm_ppf(q) ** 2),
-
-        def x_init(q, mu, k):
-            """when q is not very small the initial value for Newton's method is
-            the mode of the distribution. If `k` is large, then we use equation 3
-            of Giner & Smyth (2016). Note that the threshold of 100 picked here
-            is arbitrary, a much bigger value could be chosen if necessary."""
-            return _lazywhere(
-                mu > 100,
-                (mu, k),
-                lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6)),
-                f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
-            )
-
-        lq = np.log(q)
         logF = self._logsf if upper else self._logcdf
         sign = -1 if upper else 1
+        delta = np.empty_like(x0)
+        lq = np.log(q)
 
-        # get starting values to use with Newton's Method
-        k = 1.5 * mu
-        x0 = _lazywhere(q < 1e-5, (q, mu, k), x_init_tiny, f2=x_init)
         for _ in range(100):
             lx = logF(x0, mu)
-            d = lq - lx
             lp = self._logpdf(x0, mu)
-            delta = _lazywhere(np.abs(d) < 1e-5, (d, q, lq, lp, lx), f, f2=f2)
+            # to avoid subtractive cancellation when `d` is very small we use a
+            # taylor series expansion to approximate (p - p(xn)) as shown in
+            # page 8 of Giner & Smyth (2016)
+            d = lq - lx
+            mask = np.abs(d) < 1e-05
+            delta[mask] = d[mask] * np.exp(lq[mask] + np.log1p(-0.5 * d[mask]) - lp[mask])
+            delta[~mask] = q[~mask] * np.exp(-lp[~mask]) - np.exp(lx[~mask] - lp[~mask])
+
             x = x0 + sign * delta
             if np.allclose(x, x0, atol=1e-08):
                 break
