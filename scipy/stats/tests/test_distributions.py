@@ -3008,6 +3008,19 @@ class TestLevyStable:
                                                  moments='mvsk')
             assert_almost_equal(calc_stats, exp_stats)
 
+    @pytest.mark.slow
+    @pytest.mark.parametrize('beta', [0.5, 1])
+    def test_rvs_alpha1(self, beta):
+        np.random.seed(987654321)
+        alpha = 1.0
+        loc = 0.5
+        scale = 1.5
+        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
+                                  size=5000)
+        stat, p = stats.kstest(x, 'levy_stable',
+                               args=(alpha, beta, loc, scale))
+        assert p > 0.01
+
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):

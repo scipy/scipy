@@ -4518,12 +4518,12 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, beta, size=None, random_state=None):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (2/np.pi*(np.pi/2 + bTH)*tanTH -
-                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
+            return 2/np.pi*((np.pi/2 + bTH)*tanTH
+                            - beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
 
         def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return (W/(cosTH/np.tan(aTH) + np.sin(TH)) *
-                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1.0/alpha))
+                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1/alpha))
 
         def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             # alpha is not 1 and beta is not 0
@@ -4531,7 +4531,7 @@ class levy_stable_gen(rv_continuous):
             th0 = np.arctan(val0)/alpha
             val3 = W/(cosTH/np.tan(alpha*(th0 + TH)) + np.sin(TH))
             res3 = val3*((np.cos(aTH) + np.sin(aTH)*tanTH -
-                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1.0/alpha)
+                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1/alpha)
             return res3
 
         def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
