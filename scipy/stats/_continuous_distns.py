@@ -3012,7 +3012,7 @@ class genhyperbolic_gen(rv_continuous):
     For the distributions that are a special case such as Student's t,
     it is not recommended to rely on the implementation of genhyperbolic.
     To avoid potential numerical problems and for performance reasons,
-    the methods of the specific distributions should be used. 
+    the methods of the specific distributions should be used.
 
     References
     ----------
@@ -3109,10 +3109,14 @@ class genhyperbolic_gen(rv_continuous):
         # https://mpra.ub.uni-muenchen.de/19081/1/MPRA_paper_19081.pdf
         # https://freidok.uni-freiburg.de/fedora/objects/freidok:7974/datastreams/FILE1/content
         # standardized moments
+        p, a, b = np.broadcast_arrays(p, a, b)
         t1 = np.float_power(a, 2) - np.float_power(b, 2)
         t1 = np.float_power(t1, 0.5)
         t2 = np.float_power(1, 2) * np.float_power(t1, - 1)
-        b0, b1, b2, b3, b4 = sc.kv(p + np.linspace(0, 4, 5)[:, None], t1)
+        integers = np.linspace(0, 4, 5)
+        # make integers perpendicular to existing dimensions
+        integers = integers.reshape(integers.shape + (1,) * p.ndim)
+        b0, b1, b2, b3, b4 = sc.kv(p + integers, t1)
         r1, r2, r3, r4 = [b / b0 for b in (b1, b2, b3, b4)]
 
         m = b * t2 * r1
