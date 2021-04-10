@@ -3008,6 +3008,7 @@ class TestLevyStable:
                                                  moments='mvsk')
             assert_almost_equal(calc_stats, exp_stats)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         np.random.seed(987654321)
