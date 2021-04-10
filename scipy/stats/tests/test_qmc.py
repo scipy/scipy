@@ -1,3 +1,4 @@
+import os
 from collections import Counter
 
 import pytest
@@ -10,8 +11,7 @@ from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy,
-                              QMCEngine, check_random_state)
+                              update_discrepancy, QMCEngine)
 
 
 class TestUtils:
@@ -130,16 +130,52 @@ class TestUtils:
     def test_discrepancy_errors(self):
         sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
 
-        with pytest.raises(ValueError, match=r"Sample is not in unit "
-                                             r"hypercube"):
+        with pytest.raises(
+            ValueError, match=r"Sample is not in unit hypercube"
+        ):
             qmc.discrepancy(sample)
 
         with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
             qmc.discrepancy([1, 3])
 
         sample = [[0, 0], [1, 1], [0.5, 0.5]]
-        with pytest.raises(ValueError, match=r"toto is not a valid method."):
-            qmc.discrepancy(sample, method='toto')
+        with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
+            qmc.discrepancy(sample, method="toto")
+
+    def test_discrepancy_parallel(self, monkeypatch):
+        sample = np.array([[2, 1, 1, 2, 2, 2],
+                           [1, 2, 2, 2, 2, 2],
+                           [2, 1, 1, 1, 1, 1],
+                           [1, 1, 1, 1, 2, 2],
+                           [1, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 2, 1, 1],
+                           [2, 2, 2, 1, 2, 2]])
+        sample = (2.0 * sample - 1.0) / (2.0 * 2.0)
+
+        assert_allclose(qmc.discrepancy(sample, method='MD', workers=8),
+                        2.5000,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='WD', workers=8),
+                        1.3680,
+                        atol=1e-4)
+        assert_allclose(qmc.discrepancy(sample, method='CD', workers=8),
+                        0.3172,
+                        atol=1e-4)
+
+        # From Tim P. et al. Minimizing the L2 and Linf star discrepancies
+        # of a single point in the unit hypercube. JCAM, 2005
+        # Table 1 on Page 283
+        for dim in [2, 4, 8, 16, 32, 64]:
+            ref = np.sqrt(3 ** (-dim))
+            assert_allclose(qmc.discrepancy(np.array([[1] * dim]),
+                                            method='L2-star', workers=-1), ref)
+
+        monkeypatch.setattr(os, 'cpu_count', lambda: None)
+        with pytest.raises(NotImplementedError, match="Cannot determine the"):
+            qmc.discrepancy(sample, workers=-1)
+
+        with pytest.raises(ValueError, match="Invalid number of workers..."):
+            qmc.discrepancy(sample, workers=-2)
 
     def test_update_discrepancy(self):
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
@@ -168,6 +204,11 @@ class TestUtils:
         with pytest.raises(ValueError, match=r"x_new is not a 1D array"):
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
+        x_new = [0.3, 0.1, 0]
+        with pytest.raises(ValueError, match=r"x_new and sample must be "
+                                             r"broadcastable"):
+            update_discrepancy(x_new, space_1[:-1], disc_init)
+
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
         def disc_c2(x):
@@ -181,7 +222,7 @@ class TestUtils:
             disc2 = np.sum(np.sum(np.prod(1
                                           + 1/2*np.abs(xij - 0.5)
                                           + 1/2*np.abs(xkj - 0.5)
-                                          - 1/2*np.abs(xij - xkj), axis = 2),
+                                          - 1/2*np.abs(xij - xkj), axis=2),
                                   axis=0))
             return (13/12)**s - 2/n * disc1 + 1/n**2*disc2
 
@@ -191,7 +232,7 @@ class TestUtils:
             xkj = x[:, None, :]
             disc = np.sum(np.sum(np.prod(3/2
                                          - np.abs(xij - xkj)
-                                         + np.abs(xij - xkj)**2, axis = 2),
+                                         + np.abs(xij - xkj)**2, axis=2),
                                  axis=0))
             return -(4/3)**s + 1/n**2 * disc
 
@@ -208,7 +249,7 @@ class TestUtils:
                                           - 1/4*np.abs(xkj - 0.5)
                                           - 3/4*np.abs(xij - xkj)
                                           + 1/2*np.abs(xij - xkj)**2,
-                                          axis = 2), axis=0))
+                                          axis=2), axis=0))
             return (19/12)**s - 2/n * disc1 + 1/n**2*disc2
 
         def disc_star_l2(x):
@@ -463,7 +504,8 @@ class TestLHS(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is implementation dependent.")
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
 
     def test_sample_stratified(self):
         d, n = 4, 20

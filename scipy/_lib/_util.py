@@ -189,15 +189,27 @@ class DeprecatedImport:
 
 
 # copy-pasted from scikit-learn utils/validation.py
+# change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
 def check_random_state(seed):
-    """Turn seed into a np.random.RandomState instance
+    """Turn `seed` into a `np.random.RandomState` instance.
 
-    If seed is None (or np.random), return the RandomState singleton used
-    by np.random.
-    If seed is an int, return a new RandomState instance seeded with seed.
-    If seed is already a RandomState instance, return it.
-    If seed is a new-style np.random.Generator, return it.
-    Otherwise, raise ValueError.
+    Parameters
+    ----------
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
+    Returns
+    -------
+    seed : {`numpy.random.Generator`, `numpy.random.RandomState`}
+        Random number generator.
+
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand

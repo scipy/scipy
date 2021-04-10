@@ -1,6 +1,8 @@
-**************
-SciPy Tutorial
-**************
+.. _user_guide:
+
+****************
+SciPy User Guide
+****************
 
 .. sectionauthor:: Travis E. Oliphant
 

@@ -146,6 +146,7 @@ class CramerVonMisesResult:
         return (f"{self.__class__.__name__}(statistic={self.statistic}, "
                 f"pvalue={self.pvalue})")
 
+
 def _psi1_mod(x):
     """
     psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
@@ -1033,7 +1034,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
     for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.    
+    all possible combinations. nx and ny are the sizes of the samples.
     """
     z = np.arange(1, nx+ny+1)
     rangex = np.arange(1, nx+1)
@@ -1045,7 +1046,7 @@ def _pval_cvm_2samp_exact(s, nx, ny):
     # note that the acutal values of the samples are irrelevant
     # once the ranks of the elements of x are fixed, the
     # ranks of the elements in the second sample
-    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all 
+    # that z = 1, ..., nx+ny contains all possible ranks for a loop over all
     for c in combinations(z, nx):
         x = np.array(c)
         # the ranks of the second sample y are given by the set z - x
@@ -1152,7 +1153,7 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     The p-value based on the asymptotic distribution is a good approximation
     even though the sample size is small.
-    
+
     >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
     >>> res.statistic, res.pvalue
     (0.2655677655677655, 0.17974247316290415)
