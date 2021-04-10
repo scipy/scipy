@@ -10,7 +10,7 @@ dependencies:
   - mypy=0.800
   - python=3.8
   - sphinx=3.5.3
-  - pydata-sphinx-theme=0.5.2
+  - pydata-sphinx-theme=0.6.0
   - sphinx-panels=0.5.2
   - cython=0.29.21
   - pythran=0.9.8.post2

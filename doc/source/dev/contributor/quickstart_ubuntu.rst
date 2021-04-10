@@ -53,7 +53,7 @@ Building SciPy
 
    * ``pytest`` is needed for running the test suite.
 
-   * ``sphinx``, ``pydata-sphinx-theme`` and ``matplotlib`` are required to render the SciPy documentation.
+   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-panels`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
 
