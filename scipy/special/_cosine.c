@@ -19,6 +19,9 @@
 
 #include "cephes/polevl.h"
 
+#if !defined(M_PI)
+#define M_PI 3.1415926535897932384626433832795028841971
+#endif
 
 //
 // p and q (below) are the coefficients in the numerator and denominator
