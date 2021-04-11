@@ -4224,12 +4224,7 @@ class Test_ttest_trim:
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
 
-        # suppress a warning from ttest_finish, as a result of some results in
-        # the output being NaN. Warning unrelated to trimming.
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in less_equal")
-            res = stats.ttest_ind(a, b, trim=.2, axis=-1)
+        res = stats.ttest_ind(a, b, trim=.2, axis=-1)
         expected = np.asarray([[False, False, True],
                                [False, False, False],
                                [True, False, False],
