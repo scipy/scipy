@@ -23,10 +23,10 @@ from numpy.linalg import norm
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
-from .lsqr import _sym_ortho
+from scipy.sparse.linalg.isolve.lsqr import _sym_ortho
 
 
-def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
+def lsmr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
          maxiter=None, show=False, x0=None):
     """Iterative solver for least-squares problems.
 
@@ -53,7 +53,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
              ||(0)   (damp*I) ||_2
 
         where damp is a scalar.  If damp is None or 0, the system
-        is solved without regularization.
+        is solved without regularization. Default is 0.
     atol, btol : float, optional
         Stopping tolerances. `lsmr` continues iterations until a
         certain backward error estimate is smaller than some quantity
@@ -62,11 +62,11 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         If ``Ax = b`` seems to be consistent, ``lsmr`` terminates
         when ``norm(r) <= atol * norm(A) * norm(x) + btol * norm(b)``.
         Otherwise, lsmr terminates when ``norm(A^H r) <=
-        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-6 (say),
-        the final ``norm(r)`` should be accurate to about 6
+        atol * norm(A) * norm(r)``.  If both tolerances are 1.0e-8 (default),
+        the final ``norm(r)`` should be accurate to about 8
         digits. (The final ``x`` will usually have fewer correct digits,
         depending on ``cond(A)`` and the size of LAMBDA.)  If `atol`
-        or `btol` is None, a default value of 1.0e-6 will be used.
+        or `btol` is None, a default value of 1.0e-8 will be used.
         Ideally, they should be estimates of the relative error in the
         entries of ``A`` and ``b`` respectively.  For example, if the entries
         of ``A`` have 7 correct digits, set ``atol = 1e-7``. This prevents
@@ -79,16 +79,16 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         `conlim` should be less than 1.0e+8. If `conlim` is None, the
         default value is 1e+8.  Maximum precision can be obtained by
         setting ``atol = btol = conlim = 0``, but the number of
-        iterations may then be excessive.
+        iterations may then be excessive. Default is 1e8.
     maxiter : int, optional
         `lsmr` terminates if the number of iterations reaches
         `maxiter`.  The default is ``maxiter = min(m, n)``.  For
         ill-conditioned systems, a larger value of `maxiter` may be
-        needed.
+        needed. Default is False.
     show : bool, optional
-        Print iterations logs if ``show=True``.
+        Print iterations logs if ``show=True``. Default is False.
     x0 : array_like, shape (n,), optional
-        Initial guess of ``x``, if None zeros are used.
+        Initial guess of ``x``, if None zeros are used. Default is None.
 
         .. versionadded:: 1.0.0
         
@@ -141,6 +141,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import lsmr
     >>> A = csc_matrix([[1., 0.], [1., 1.], [0., 1.]], dtype=float)
@@ -152,7 +153,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     >>> istop
     0
     >>> x
-    array([ 0.,  0.])
+    array([0., 0.])
 
     The stopping code `istop=0` returned indicates that a vector of zeros was
     found as a solution. The returned solution `x` indeed contains `[0., 0.]`.
@@ -199,13 +200,13 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         b = b.squeeze()
 
     msg = ('The exact solution is x = 0, or x = x0, if x0 was given  ',
-         'Ax - b is small enough, given atol, btol                  ',
-         'The least-squares solution is good enough, given atol     ',
-         'The estimate of cond(Abar) has exceeded conlim            ',
-         'Ax - b is small enough for this machine                   ',
-         'The least-squares solution is good enough for this machine',
-         'Cond(Abar) seems to be too large for this machine         ',
-         'The iteration limit has been reached                      ')
+           'Ax - b is small enough, given atol, btol                  ',
+           'The least-squares solution is good enough, given atol     ',
+           'The estimate of cond(Abar) has exceeded conlim            ',
+           'Ax - b is small enough for this machine                   ',
+           'The least-squares solution is good enough for this machine',
+           'Cond(Abar) seems to be too large for this machine         ',
+           'The iteration limit has been reached                      ')
 
     hdg1 = '   itn      x(1)       norm r    norm Ar'
     hdg2 = ' compatible   LS      norm A   cond A'
