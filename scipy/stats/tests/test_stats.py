@@ -4046,7 +4046,7 @@ class Test_ttest_ind_common:
     # permutations and trimming
     @pytest.mark.slow()
     @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
-                                      {'trim': .2},  {}],
+                                      {'trim': .2}, {}],
                              ids=["permutations", "trim", "basic"])
     @pytest.mark.parametrize('equal_var', [True, False],
                              ids=['equal_var', 'unequal_var'])
@@ -4138,9 +4138,9 @@ class Test_ttest_trim:
         trimmed mean of x trimmed mean of y
         2.000000000000000 2.73333333333333
         '''
-        t, p = stats.ttest_ind(a, b, trim=trim, equal_var=False)
-        assert_allclose(t, tr, atol=1e-15)
-        assert_allclose(p, pr, atol=1e-15)
+        statistic, pvalue = stats.ttest_ind(a, b, trim=trim, equal_var=False)
+        assert_allclose(statistic, tr, atol=1e-15)
+        assert_allclose(pvalue, pr, atol=1e-15)
 
     def test_compare_SAS(self):
         # Source of the data used in this test:
@@ -4153,13 +4153,13 @@ class Test_ttest_trim:
         # `scipy.stats.trimmed_mean`, this test truncates to the lower
         # whole number. In this example, the paper notes that 1 value is
         # trimmed off of each side. 9% replicates this amount of trimming.
-        t, p = stats.ttest_ind(a, b, trim=.09, equal_var=False)
-        assert_allclose(p, 0.514522, atol=1e-6)
-        assert_allclose(t, 0.669169, atol=1e-6)
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.09, equal_var=False)
+        assert_allclose(pvalue, 0.514522, atol=1e-6)
+        assert_allclose(statistic, 0.669169, atol=1e-6)
 
     def test_equal_var(self):
         '''
-        The PairedData library only supports unequal varainces. To compare
+        The PairedData library only supports unequal variances. To compare
         samples with equal variances, the multicon library is used.
         > library(multicon)
         > a <- c(2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9)
@@ -4179,37 +4179,12 @@ class Test_ttest_trim:
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
         # `equal_var=True` is default
-        t, p = stats.ttest_ind(a, b, trim=.2)
-        assert_allclose(p, 0.00113508833897713, atol=1e-10)
-        assert_allclose(t, -4.246116897032513, atol=1e-10)
-
-    def test_axis_simple(self):
-        np.random.seed(123)
-        # these arrays are shaped such that the columns are the samples. The
-        # samples in group `a` are of length 5 and the samples in group `b`
-        # are of size 8.
-        a = np.random.randint(10, size=(5, 3))
-        b = np.random.randint(10, size=(8, 3))
-        # obtain vectorized result with axis indicating that samples are by
-        # column
-        res_vec = stats.ttest_ind(a, b, trim=.20, equal_var=False, axis=0)
-        res_vec_list = [[s, p] for (s, p) in
-                        zip(res_vec.statistic, res_vec.pvalue)]
-
-        # move axis so that samples are 1 per row for easy comparison
-        # individually
-        a_split = np.moveaxis(a, 0, 1)
-        b_split = np.moveaxis(b, 0, 1)
-        # compute the results individually comparing sample 1 from `a` to
-        # sample 1 in `b` and so on.
-        res_individual = [(stats.ttest_ind(a, b, trim=.20, equal_var=False))
-                          for (a, b) in zip(a_split, b_split)]
-
-        for (i, v) in zip(res_individual, res_vec_list):
-            assert_array_equal(i, v)
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.2)
+        assert_allclose(pvalue, 0.00113508833897713, atol=1e-10)
+        assert_allclose(statistic, -4.246116897032513, atol=1e-10)
 
     @pytest.mark.parametrize('alt,pr,tr',
-                             (('greater', 0.9985605452443,  -4.2461168970325),
+                             (('greater', 0.9985605452443, -4.2461168970325),
                               ('less', 0.001439454755672, -4.2461168970325),),
                              )
     def test_alternatives(self, alt, pr, tr):
@@ -4223,9 +4198,10 @@ class Test_ttest_trim:
         a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
 
-        t, p = stats.ttest_ind(a, b, trim=.2, equal_var=False, alternative=alt)
-        assert_allclose(p, pr, atol=1e-10)
-        assert_allclose(t, tr, atol=1e-10)
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.2, equal_var=False,
+                                  alternative=alt)
+        assert_allclose(pvalue, pr, atol=1e-10)
+        assert_allclose(statistic, tr, atol=1e-10)
 
     def test_errors_unsupported(self):
         # confirm that attempting to trim with NaNs or permutations raises an
@@ -4262,11 +4238,11 @@ class Test_ttest_trim:
         assert_array_equal(np.isnan(res.pvalue), expected)
         assert_array_equal(np.isnan(res.statistic), expected)
 
-    @pytest.mark.parametrize("pct", [-.2, .5, 1])
-    def test_trim_bounds_error(self, pct):
+    @pytest.mark.parametrize("trim", [-.2, .5, 1])
+    def test_trim_bounds_error(self, trim):
         with assert_raises(ValueError, match="Trimming percentage should be "
-                                             "0 <= pct < .5."):
-            stats.ttest_ind([1, 2], [2, 1], trim=pct)
+                                             "0 <= `trim` < .5."):
+            stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 
 def test__broadcast_concatenate():

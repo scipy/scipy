@@ -5986,9 +5986,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         Defines the percentage of trimming off of each end of the input
         samples. If 0 (default), no elements will be trimmed from either
         side. The number of trimmed elements from each tail is the floor
-        of the trim times the number of elements. Should be within [0, .5).
+        of the trim times the number of elements. Valid range is [0, .5).
 
-        .. versionadded:: ?
+        .. versionadded:: 1.7
 
     Returns
     -------
@@ -6031,7 +6031,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     assumptions about the shape of the underlying distribution.
 
     Use of trimming is commonly referred to as the trimmed t-test. At times
-    called Yuen's t-test, this is an extention of Welch t-test, with the
+    called Yuen's t-test, this is an extension of Welch's t-test, with the
     difference being the use of winsorized means in calculation of the variance
     and the trimmed sample size in calculation of the statistic. Trimming is
     reccomended if the underlying distribution is long-tailed or contaminated
@@ -6106,7 +6106,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     >>> b = (1.1, 2.9, 4.2)
 
-
     Use the `trim` keyword to trim the input samples. Using 20% trimming,
     `trim=.2`, the test will trim 1 element off of each tail for sample `a`,
     which is of length 7, and no elements off of sample `b`, because it is
@@ -6117,7 +6116,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                     pvalue=0.01369338726499547)
     """
     if not (0 <= trim < .5):
-        raise ValueError("Trimming percentage should be 0 <= pct < .5.")
+        raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
     a, b, axis = _chk2_asarray(a, b, axis)
 
