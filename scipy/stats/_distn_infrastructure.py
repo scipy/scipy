@@ -3021,10 +3021,10 @@ class rv_discrete(rv_generic):
 
         if values is not None:
             # dispatch to a subclass
-            return super().__new__(rv_sample)
+            return super(rv_discrete, cls).__new__(rv_sample)
         else:
             # business as usual
-            return super().__new__(cls)
+            return super(rv_discrete, cls).__new__(cls)
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,

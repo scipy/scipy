@@ -142,9 +142,9 @@ class LinearOperator(object):
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return super().__new__(_CustomLinearOperator)
+            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
         else:
-            obj = super().__new__(cls)
+            obj = super(LinearOperator, cls).__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):

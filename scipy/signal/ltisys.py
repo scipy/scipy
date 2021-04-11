@@ -51,7 +51,7 @@ class LinearTimeInvariant(object):
             raise NotImplementedError('The LinearTimeInvariant class is not '
                                       'meant to be used directly, use `lti` '
                                       'or `dlti` instead.')
-        return super().__new__(cls)
+        return super(LinearTimeInvariant, cls).__new__(cls)
 
     def __init__(self):
         """
@@ -219,7 +219,7 @@ class lti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `lti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super().__new__(cls)
+        return super(lti, cls).__new__(cls)
 
     def __init__(self, *system):
         """
@@ -403,7 +403,7 @@ class dlti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super().__new__(cls)
+        return super(dlti, cls).__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """
@@ -583,7 +583,7 @@ class TransferFunction(LinearTimeInvariant):
                     **kwargs)
 
         # No special conversion needed
-        return super().__new__(cls)
+        return super(TransferFunction, cls).__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space LTI system."""
@@ -965,7 +965,7 @@ class ZerosPolesGain(LinearTimeInvariant):
                     )
 
         # No special conversion needed
-        return super().__new__(cls)
+        return super(ZerosPolesGain, cls).__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the zeros, poles, gain system."""
@@ -1328,7 +1328,7 @@ class StateSpace(LinearTimeInvariant):
                                                   *system, **kwargs)
 
         # No special conversion needed
-        return super().__new__(cls)
+        return super(StateSpace, cls).__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space lti/dlti system."""
