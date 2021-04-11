@@ -696,48 +696,51 @@ class TestBinomTest:
         # These tests work on all OS's but fail on
         # Linux_Python_37_32bit_full due to numerical issues caused
         # by large inputs.
+        rtol = 5e-13  # aarch64 observed rtol: 3.5e-13
         res = stats.binomtest(10079999, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.979042561004596, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.979042561004596, rtol=rtol)
         res = stats.binomtest(10079990, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9785298857599378, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9785298857599378, rtol=rtol)
         res = stats.binomtest(10080009, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9786038762958954, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9786038762958954, rtol=rtol)
         res = stats.binomtest(10080017, 21000000, 0.48)
-        assert_allclose(res.pvalue, 0.9778567637538729, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9778567637538729, rtol=rtol)
 
     @pytest.mark.xfail_on_32bit("The large inputs make these tests "
                                 "sensitive to machine epsilon level")
     def test_two_sided_pvalues2(self):
+        rtol = 1e-14  # no aarch64 failure with 1e-15, preemptive bump
         res = stats.binomtest(9, n=21, p=0.48)
-        assert_allclose(res.pvalue, 0.6689672431938848, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.6689672431938848, rtol=rtol)
         res = stats.binomtest(4, 21, 0.48)
-        assert_allclose(res.pvalue, 0.008139563452105921, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.008139563452105921, rtol=rtol)
         res = stats.binomtest(11, 21, 0.48)
-        assert_allclose(res.pvalue, 0.8278629664608201, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.8278629664608201, rtol=rtol)
         res = stats.binomtest(7, 21, 0.48)
-        assert_allclose(res.pvalue, 0.19667729017182273, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.19667729017182273, rtol=rtol)
         res = stats.binomtest(3, 10, .5)
-        assert_allclose(res.pvalue, 0.3437499999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.3437499999999999, rtol=rtol)
         res = stats.binomtest(2, 2, .4)
-        assert_allclose(res.pvalue, 0.16000000000000003, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.16000000000000003, rtol=rtol)
         res = stats.binomtest(2, 4, .3)
-        assert_allclose(res.pvalue, 0.5883999999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.5883999999999999, rtol=rtol)
 
     @pytest.mark.xfail_on_32bit("The large inputs make these tests "
                                 "sensitive to machine epsilon level")
     def test_edge_cases(self):
+        rtol = 1e-14  # aarch64 observed rtol: 1.33e-15
         res = stats.binomtest(484, 967, 0.5)
-        assert_allclose(res.pvalue, 0.999999999998212, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.999999999998212, rtol=rtol)
         res = stats.binomtest(3, 47, 3/47)
-        assert_allclose(res.pvalue, 0.9999999999999998, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9999999999999998, rtol=rtol)
         res = stats.binomtest(13, 46, 13/46)
-        assert_allclose(res.pvalue, 0.9999999999999987, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9999999999999987, rtol=rtol)
         res = stats.binomtest(15, 44, 15/44)
-        assert_allclose(res.pvalue, 0.9999999999999989, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9999999999999989, rtol=rtol)
         res = stats.binomtest(7, 13, 0.5)
-        assert_allclose(res.pvalue, 0.9999999999999999, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9999999999999999, rtol=rtol)
         res = stats.binomtest(6, 11, 0.5)
-        assert_allclose(res.pvalue, 0.9999999999999997, rtol=1e-15)
+        assert_allclose(res.pvalue, 0.9999999999999997, rtol=rtol)
 
     def test_binary_srch_for_binom_tst(self):
         # Test that old behavior of binomtest is maintained
