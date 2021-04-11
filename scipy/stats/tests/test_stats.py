@@ -4046,9 +4046,10 @@ class Test_ttest_ind_common:
     # permutations and trimming
     @pytest.mark.slow()
     @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
-                                      {'trim': .2},
-                                      {}])
-    @pytest.mark.parametrize('equal_var', [True, False])
+                                      {'trim': .2},  {}],
+                             ids=["permutations", "trim", "basic"])
+    @pytest.mark.parametrize('equal_var', [True, False],
+                             ids=['equal_var', 'unequal_var'])
     def test_ttest_many_dims(self, kwds, equal_var):
         # Test that test works on many-dimensional arrays
         np.random.seed(0)
@@ -4208,8 +4209,9 @@ class Test_ttest_trim:
             assert_array_equal(i, v)
 
     @pytest.mark.parametrize('alt,pr,tr',
-                             [['greater', 0.9985605452443, -4.2461168970325],
-                              ['less', 0.001439454755672, -4.2461168970325]])
+                             (('greater', 0.9985605452443,  -4.2461168970325),
+                              ('less', 0.001439454755672, -4.2461168970325),),
+                             )
     def test_alternatives(self, alt, pr, tr):
         '''
         > library(PairedData)
@@ -4232,12 +4234,9 @@ class Test_ttest_trim:
                                              "supported with trimming."):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
 
-        with assert_raises(ValueError, match="nan-containing/masked inputs "
-                                             "with nan_policy='omit' are "
-                                             "currently not supported by "
-                                             "permutation tests, one-sided "
-                                             "asymptotic tests, or trimmed "
-                                             "tests."):
+        with assert_raises(ValueError, match="not supported by permutation "
+                                             "tests, one-sided asymptotic "
+                                             "tests, or trimmed tests."):
             stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
     def test_nans_on_axis(self):
@@ -4263,8 +4262,8 @@ class Test_ttest_trim:
         assert_array_equal(np.isnan(res.pvalue), expected)
         assert_array_equal(np.isnan(res.statistic), expected)
 
-    @pytest.mark.parametrize("pct", ([-.2, .5, .55]))
-    def test_trim_bounds(self, pct):
+    @pytest.mark.parametrize("pct", [-.2, .5, 1])
+    def test_trim_bounds_error(self, pct):
         with assert_raises(ValueError, match="Trimming percentage should be "
                                              "0 <= pct < .5."):
             stats.ttest_ind([1, 2], [2, 1], trim=pct)
