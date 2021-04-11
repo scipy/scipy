@@ -125,10 +125,10 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     b : array_like, shape (m,)
         Right-hand side vector ``b``.
     damp : float
-        Damping coefficient.
+        Damping coefficient. Default is 0.
     atol, btol : float, optional
-        Stopping tolerances. If both are 1.0e-9 (say), the final
-        residual norm should be accurate to about 9 digits.  (The
+        Stopping tolerances. If both are 1.0e-8 (default), the final
+        residual norm should be accurate to about 8 digits.  (The
         final x will usually have fewer correct digits, depending on
         cond(A) and the size of damp.)
     conlim : float, optional
@@ -138,15 +138,15 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         least-squares problems, conlim should be less than 1.0e+8.
         Maximum precision can be obtained by setting ``atol = btol =
         conlim = zero``, but the number of iterations may then be
-        excessive.
+        excessive. Default is 1e8.
     iter_lim : int, optional
         Explicit limitation on number of iterations (for safety).
     show : bool, optional
-        Display an iteration log.
+        Display an iteration log. Default is False.
     calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
     x0 : array_like, shape (n,), optional
-        Initial guess of x, if None zeros are used.
+        Initial guess of x, if None zeros are used. Default is None.
 
         .. versionadded:: 1.0.0
 
