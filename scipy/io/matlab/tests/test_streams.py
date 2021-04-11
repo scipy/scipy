@@ -85,7 +85,7 @@ def test_read():
             assert_raises(IOError, _read_string, st, 2)
 
 
-class TestZlibInputStream(object):
+class TestZlibInputStream:
     def _get_data(self, size):
         data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)

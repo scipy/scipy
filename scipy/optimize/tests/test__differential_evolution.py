@@ -21,7 +21,7 @@ from pytest import raises as assert_raises, warns
 import pytest
 
 
-class TestDifferentialEvolutionSolver(object):
+class TestDifferentialEvolutionSolver:
 
     def setup_method(self):
         self.old_seterr = np.seterr(invalid='raise')

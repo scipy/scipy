@@ -150,6 +150,32 @@ change is made.
   - `scipy.stats.mstats`
   - `scipy.stats.qmc`
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   cluster
+   constants
+   fft
+   fftpack
+   integrate
+   interpolate
+   io
+   linalg
+   misc
+   ndimage
+   odr
+   optimize
+   signal
+   sparse
+   sparse.linalg
+   sparse.csgraph
+   spatial
+   special
+   stats
+   stats.mstats
+   stats.qmc
+   ccallback
 
 SciPy structure
 ---------------
