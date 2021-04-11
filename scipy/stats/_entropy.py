@@ -86,17 +86,21 @@ def differential_entropy(
     window_length: Optional[int] = None,
     base: Optional[float] = None,
     axis: int = 0,
+    method: str = "vasicek",
 ) -> Union[np.number, np.ndarray]:
     r"""Given a sample of a distribution, calculate the differential entropy.
 
-    This routine uses the Vasicek estimator of the differential entropy. Given
-    a sorted random sample :math:`X_1, \ldots X_n` this is defined as:
+    By default, this routine uses the Vasicek estimator of the differential
+    entropy. Given a sorted random sample :math:`X_1, \ldots X_n`, this is
+    defined as:
 
     .. math::
         \frac{1}{n}\sum_1^n \log\left[ \frac{n}{2m} (X_{i+m} - X_{i-m}) \right]
 
     where :math:`m` is the window length parameter, :math:`X_{i} = X_1` if
     :math:`i < 1` and :math:`X_{i} = X_n` if :math:`i > n`.
+
+    Other estimation methods are available using the `method` parameter.
 
     Parameters
     ----------
@@ -117,6 +121,16 @@ def differential_entropy(
     axis : int, optional
         The axis along which the differential entropy is calculated.
         Default is 0.
+    method : str, optional
+        The method used to estimate the differential entropy from the sample.
+        Options are:
+
+        * ``'vasicek'`` for the estimator presented in [1] (default)
+        * ``'van eps'`` for the estimator presented in [3]
+        * ``'ebrahimi'`` for the estimator presented in [4]
+        * ``'correa'`` for the estimator presented in [5]
+
+        All estimators are implemented as described in [6].
 
     Returns
     -------
@@ -163,7 +177,7 @@ def differential_entropy(
 
     """
     values = np.asarray(values)
-    values = np.moveaxis(values, axis, 0)
+    values = np.moveaxis(values, axis, -1)
 
     if window_length is None:
         window_length = math.floor(math.sqrt(len(values)) + 0.5)
@@ -174,7 +188,26 @@ def differential_entropy(
             f"than half the sample size ({len(values)}).",
         )
 
-    sorted_data = np.sort(values, axis=0)
+    sorted_data = np.sort(values, axis=-1)
+
+    methods = {"vasicek": _vasicek_entropy,
+               "van es": _van_es_entropy,
+               "correa": _correa_entropy,
+               "ebrahimi" : _ebrahimi_entropy}
+    method = method.lower()
+    if method not in methods.keys():
+        message = f"`method` must be one of {methods.keys()}"
+        raise ValueError(message)
+
+    res = methods[method](sorted_data, window_length)
+
+    if base is not None:
+        res /= np.log(base)
+
+    return res
+
+def _vasicek_entropy(sorted_data, window_length):
+    sorted_data = np.moveaxis(sorted_data, -1, 0)
 
     repeats = np.array(
         (window_length + 1,)
@@ -196,7 +229,47 @@ def differential_entropy(
     logs = np.log(
         len(differences) * differences / (2 * window_length),
     )
-    if base is not None:
-        logs /= np.log(base)
 
     return np.mean(logs, axis=0)
+
+def _pad_along_last_axis(X, m):
+    # scales better than method in _vasicek_like_entropy
+    shape = np.array(X.shape)
+    shape[-1] = m
+    Xl = np.broadcast_to(X[..., [0]], shape)
+    Xr = np.broadcast_to(X[..., [-1]], shape)
+    return np.concatenate((Xl, X, Xr), axis=-1)
+
+def _van_es_entropy(X, m):
+    n = len(X)
+    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * (X[m:] - X[:-m])), axis=0)
+    k = np.arange(m, n+1)
+    return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
+
+def _ebrahimi_entropy(X, m):
+    n = len(X)
+    X = _pad_along_last_axis(X, m)
+
+    differences = X[..., 2 * m:] - X[..., : -2 * m:]
+
+    i = np.arange(1, n+1).astype(float)
+    ci = np.ones_like(i)*2
+    ci[i <= m] = 1 + (i[i <= m] - 1)/m
+    ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
+
+    logs = np.log(n * differences / (ci * m))
+    return np.mean(logs, axis=-1)
+
+def _correa_entropy(X, m):
+    n = len(X)
+    X = _pad_along_last_axis(X, m)
+
+    i = np.arange(1, n+1)
+    dj = np.arange(-m, m+1)[:, None]
+    j = i + dj
+    j0 = j + m - 1  # 0-indexed version of j
+
+    Xibar = np.mean(X[..., j0], axis=-2, keepdims=True)
+    num = np.sum((X[..., j0] - Xibar)*(j-i), axis=-2)
+    den = n*np.sum((X[..., j0] - Xibar)**2, axis=-2)
+    return -np.mean(np.log(num/den), axis=-1)
