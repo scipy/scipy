@@ -187,7 +187,7 @@ class multi_rv_generic:
     distributions.
     """
     def __init__(self, seed=None):
-        super(multi_rv_generic, self).__init__()
+        super().__init__()
         self._random_state = check_random_state(seed)
 
     @property
@@ -349,7 +349,7 @@ class multivariate_normal_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(multivariate_normal_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
     def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
@@ -918,7 +918,7 @@ class matrix_normal_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(matrix_normal_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, matnorm_docdict_params)
 
     def __call__(self, mean=None, rowcov=1, colcov=1, seed=None):
@@ -1400,7 +1400,7 @@ class dirichlet_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(dirichlet_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
 
     def __call__(self, alpha, seed=None):
@@ -1723,7 +1723,7 @@ class wishart_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(wishart_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
     def __call__(self, df=None, scale=None, seed=None):
@@ -2457,7 +2457,7 @@ class invwishart_gen(wishart_gen):
     """
 
     def __init__(self, seed=None):
-        super(invwishart_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
     def __call__(self, df=None, scale=None, seed=None):
@@ -2704,8 +2704,7 @@ class invwishart_gen(wishart_gen):
         """
         random_state = self._get_random_state(random_state)
         # Get random draws A such that A ~ W(df, I)
-        A = super(invwishart_gen, self)._standard_rvs(n, shape, dim,
-                                                      df, random_state)
+        A = super()._standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
         eye = np.eye(dim)
@@ -2985,7 +2984,7 @@ class multinomial_gen(multi_rv_generic):
     """  # noqa: E501
 
     def __init__(self, seed=None):
-        super(multinomial_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = \
             doccer.docformat(self.__doc__, multinomial_docdict_params)
 
@@ -3328,7 +3327,7 @@ class special_ortho_group_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(special_ortho_group_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def __call__(self, dim=None, seed=None):
@@ -3472,7 +3471,7 @@ class ortho_group_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(ortho_group_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def _process_parameters(self, dim):
@@ -3577,7 +3576,7 @@ class random_correlation_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(random_correlation_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def _process_parameters(self, eigs, tol):
@@ -3757,7 +3756,7 @@ class unitary_group_gen(multi_rv_generic):
     """
 
     def __init__(self, seed=None):
-        super(unitary_group_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
 
     def _process_parameters(self, dim):
@@ -3912,7 +3911,7 @@ class multivariate_t_gen(multi_rv_generic):
         seed : Random state.
 
         """
-        super(multivariate_t_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvt_docdict_params)
         self._random_state = check_random_state(seed)
 
@@ -4370,7 +4369,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
     """
     def __init__(self, seed=None):
-        super(multivariate_hypergeom_gen, self).__init__(seed)
+        super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mhg_docdict_params)
 
     def __call__(self, m, n, seed=None):

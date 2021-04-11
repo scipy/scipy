@@ -4532,7 +4532,7 @@ class _NonCanonicalMixin:
     def spmatrix(self, D, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
-        construct = super(_NonCanonicalMixin, self).spmatrix
+        construct = super().spmatrix
         M = construct(D, **kwargs)
 
         zero_pos = (M.A == 0).nonzero()

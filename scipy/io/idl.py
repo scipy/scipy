@@ -650,10 +650,10 @@ class AttrDict(dict):
         dict.__init__(self, init)
 
     def __getitem__(self, name):
-        return super(AttrDict, self).__getitem__(name.lower())
+        return super().__getitem__(name.lower())
 
     def __setitem__(self, key, value):
-        return super(AttrDict, self).__setitem__(key.lower(), value)
+        return super().__setitem__(key.lower(), value)
 
     __getattr__ = __getitem__
     __setattr__ = __setitem__

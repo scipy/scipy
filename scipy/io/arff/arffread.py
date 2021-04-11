@@ -333,7 +333,7 @@ class DateAttribute(Attribute):
                 "datetime64[%s]" % self.datetime_unit)
 
     def __str__(self):
-        return super(DateAttribute, self).__str__() + ',' + self.date_format
+        return super().__str__() + ',' + self.date_format
 
 
 class RelationalAttribute(Attribute):
@@ -380,7 +380,7 @@ class RelationalAttribute(Attribute):
                         [(a.name, a.dtype) for a in self.attributes])
 
     def __str__(self):
-        return (super(RelationalAttribute, self).__str__() + '\n\t' +
+        return (super().__str__() + '\n\t' +
                 '\n\t'.join(str(a) for a in self.attributes))
 
 
