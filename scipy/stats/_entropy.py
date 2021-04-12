@@ -121,16 +121,10 @@ def differential_entropy(
     axis : int, optional
         The axis along which the differential entropy is calculated.
         Default is 0.
-    method : str, optional
+    method : str in {'vasicek', 'van es', 'ebrahimi', 'correa'}, optional
         The method used to estimate the differential entropy from the sample.
-        Options are:
+        See Notes for more information.
 
-        * ``'vasicek'`` for the estimator presented in [1] (default)
-        * ``'van eps'`` for the estimator presented in [3]
-        * ``'ebrahimi'`` for the estimator presented in [4]
-        * ``'correa'`` for the estimator presented in [5]
-
-        All estimators are implemented as described in [6].
 
     Returns
     -------
@@ -149,6 +143,22 @@ def differential_entropy(
     the (unknown) distribution. In general, the smoother the density of the
     distribution, the larger is such optimal value of ``window_length`` [1]_.
 
+    The following options are available for the `method` parameter.
+
+    * ``'vasicek'`` uses the estimator presented in [1] (default). This is
+      one of the first and most influential estimators of differential entropy.
+    * ``'van es'`` uses the bias-corrected estimator presented in [3], which is
+      not only consistent but, under some conditions, asymptotically normal.
+    * ``'ebrahimi'`` uses an estimator presented in [4], which was shown
+      in simulation to have smaller bias and mean squared error than
+      the Vasicek estimator.
+    * ``'correa'`` uses the estimator presented in [5] based on local linear
+      regression. In a simulation study, it had consistently smaller mean
+      square error than the Vasiceck estimator, but it is more expensive to
+      compute.
+
+    All estimators are implemented as described in [6].
+
     References
     ----------
     .. [1] Vasicek, O. (1976). A test for normality based on sample entropy.
@@ -157,6 +167,16 @@ def differential_entropy(
     .. [2] Crzcgorzewski, P., & Wirczorkowski, R. (1999). Entropy-based
            goodness-of-fit test for exponentiality. Communications in
            Statistics-Theory and Methods, 28(5), 1183-1202.
+    .. [3] Van Es, B. (1992). Estimating functionals related to a density by a
+           class of statistics based on spacings. Scandinavian Journal of
+           Statistics, 61-72.
+    .. [4] Ebrahimi, N., Pflughoeft, K., & Soofi, E. S. (1994). Two measures
+           of sample entropy. Statistics & Probability Letters, 20(3), 225-234.
+    .. [5] Correa, J. C. (1995). A new estimator of entropy. Communications
+           in Statistics-Theory and Methods, 24(10), 2439-2449.
+    .. [6] Noughabi, H. A. (2015). Entropy Estimation Using Numerical Methods.
+           Annals of Data Science, 2(2), 231-241.
+           https://link.springer.com/article/10.1007/s40745-015-0045-9
 
     Examples
     --------
@@ -193,10 +213,10 @@ def differential_entropy(
     methods = {"vasicek": _vasicek_entropy,
                "van es": _van_es_entropy,
                "correa": _correa_entropy,
-               "ebrahimi" : _ebrahimi_entropy}
+               "ebrahimi": _ebrahimi_entropy}
     method = method.lower()
     if method not in methods.keys():
-        message = f"`method` must be one of {methods.keys()}"
+        message = f"`method` must be one of {set(methods.keys())}"
         raise ValueError(message)
 
     res = methods[method](sorted_data, window_length)
@@ -205,6 +225,7 @@ def differential_entropy(
         res /= np.log(base)
 
     return res
+
 
 def _vasicek_entropy(sorted_data, window_length):
     sorted_data = np.moveaxis(sorted_data, -1, 0)
@@ -232,21 +253,30 @@ def _vasicek_entropy(sorted_data, window_length):
 
     return np.mean(logs, axis=0)
 
+
 def _pad_along_last_axis(X, m):
-    # scales better than method in _vasicek_like_entropy
+    """Pad the data for computing the rolling window difference"""
+    # scales a  bit better than method in _vasicek_like_entropy
     shape = np.array(X.shape)
     shape[-1] = m
-    Xl = np.broadcast_to(X[..., [0]], shape)
+    Xl = np.broadcast_to(X[..., [0]], shape)  # [0] vs 0 to maintain shape
     Xr = np.broadcast_to(X[..., [-1]], shape)
     return np.concatenate((Xl, X, Xr), axis=-1)
 
+
 def _van_es_entropy(X, m):
+    """Compute the van Es estimator as described in [6]"""
+    # No equation number, but referred to as HVE_mn.
+    # Typo: there should be a log within the summation.
     n = len(X)
     term1 = 1/(n-m) * np.sum(np.log((n+1)/m * (X[m:] - X[:-m])), axis=0)
     k = np.arange(m, n+1)
     return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
 
+
 def _ebrahimi_entropy(X, m):
+    """Compute the Ebrahimi estimator as described in [6]"""
+    # No equation number, but referred to as HE_mn
     n = len(X)
     X = _pad_along_last_axis(X, m)
 
@@ -260,7 +290,10 @@ def _ebrahimi_entropy(X, m):
     logs = np.log(n * differences / (ci * m))
     return np.mean(logs, axis=-1)
 
+
 def _correa_entropy(X, m):
+    """Compute the Correa estimator as described in [6]"""
+    # No equation number, but referred to as HC_mn
     n = len(X)
     X = _pad_along_last_axis(X, m)
 
