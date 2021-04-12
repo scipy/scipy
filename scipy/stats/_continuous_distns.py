@@ -9279,7 +9279,7 @@ class studentized_range_gen(rv_continuous):
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
             else:
-                cython_symbol = '_genstudentized_range_cdf_asymptopic'
+                cython_symbol = '_genstudentized_range_cdf_asymptotic'
 
                 arg = [q, k]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)

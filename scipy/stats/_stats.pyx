@@ -549,7 +549,7 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
-cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogil:
+cdef double _genstudentized_range_cdf_asymptotic(double z, void *user_data) nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
     q = (<double *>user_data)[0]
