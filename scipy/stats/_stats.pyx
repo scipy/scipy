@@ -533,11 +533,15 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     s = x[1]
     z = x[0]
 
+    # harcoded constants to avoid useless log evals
+    cdef double log_2 = 0.6931471805599453
+    cdef double log_inv_sqrt_2pi = -0.9189385332046727
+
     # terms are evaluated within logarithms when possible to avoid overflows
-    log_terms = math.log(k) + (df / 2) * math.log(df) \
-               - (math.lgamma(df / 2) + (df / 2 - 1) * math.log(2)) \
-               + (df - 1) * math.log(s) - (df * s * s / 2) \
-               + math.log(0.3989422804014327) - 0.5 * z * z  # phi estimation.
+    log_terms = (math.log(k) + (df / 2) * math.log(df)
+                 - (math.lgamma(df / 2) + (df / 2 - 1) * log_2)
+                 + (df - 1) * math.log(s) - (df * s * s / 2)
+                 + log_inv_sqrt_2pi - 0.5 * z * z)  # phi estimation.
 
     # this term is excluded from the logarithm as it results in zero division
     t4 = math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
@@ -563,18 +567,23 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
 
     z = x[0]
     s = x[1]
-    # terms are evaluated within logarithms when possible to avoid overflows
-    const_log = (df / 2) * math.log(df) \
-                - math.lgamma(df / 2) \
-                - (df / 2 - 1) * math.log(2) \
-                + (df - 1) * math.log(s) \
-                - df * s * s / 2
 
-    r_log = math.log(k) \
-        + math.log(k - 1) \
-        + math.log(s) \
-        + math.log(0.3989422804014327) - 0.5 * z * z \
-        + math.log(0.3989422804014327) - 0.5 * (s * q + z) * (s * q + z)
+    # harcoded constants to avoid useless log evals
+    cdef double log_2 = 0.6931471805599453
+    cdef double log_inv_sqrt_2pi = -0.9189385332046727
+
+    # terms are evaluated within logarithms when possible to avoid overflows
+    const_log = ((df / 2) * math.log(df)
+                 - math.lgamma(df / 2)
+                 - (df / 2 - 1) * log_2
+                 + (df - 1) * math.log(s)
+                 - df * s * s / 2)
+
+    r_log = (math.log(k)
+             + math.log(k - 1)
+             + math.log(s)
+             + log_inv_sqrt_2pi - 0.5 * z * z
+             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z))
 
     # this term is excluded from the logarithm as it results in zero division
     r_nolog = math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
