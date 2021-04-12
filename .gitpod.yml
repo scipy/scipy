@@ -9,6 +9,7 @@ image: trallard/scipy-gitpod:latest
 tasks:
   - name: Prepare development
     init: |
+      conda activate scipy-dev
       python setup.py build_ext --inplace
       conda develop .
       git submodule update --init
@@ -17,7 +18,8 @@ tasks:
   - name: Reuse settings
     openMode: split-right
     command: |
-      ln -s tools/docker_dev/settings.json .vscode/settings.json
+      if [[ ! ".vscode" ]]; then mkdir.vscode fi
+      cp tools/docker_dev/settings.json .vscode/settings.json
       echo "🎉 Your development environment is ready! You can close this terminal now"
   
 # --------------------------------------------------------
@@ -36,7 +38,7 @@ vscode:
     - ritwickdey.liveserver
     - ms-python.python
     - yzhang.markdown-all-in-one
-    - bungcip.better-tom
+    - bungcip.better-toml
 
 # --------------------------------------------------------
 # using prebuilds for the container 

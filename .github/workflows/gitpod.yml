@@ -2,7 +2,7 @@ name: Build Gitpod Docker image
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # nightly
 
 jobs:
   build:
