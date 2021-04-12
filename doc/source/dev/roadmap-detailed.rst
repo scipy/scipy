@@ -50,8 +50,15 @@ particular) is necessary.
 
 Documentation
 `````````````
-The documentation is in good shape.  Expanding of current docstrings and
-putting them in the standard NumPy format should continue, so the number of
+The main website, scipy.org, needs to be rewritten. As discussed in the `mail
+list
+<https://mail.python.org/pipermail/scipy-dev/2019-September/023731.html>`_, the
+SciPy stack is not relevant anymore and this website should be made about
+SciPy only following the example of numpy.org. There is a lot of new content
+to write
+
+Otherwise, the documentation is in good shape. Expanding of current docstrings
+and putting them in the standard NumPy format should continue, so the number of
 reST errors and glitches in the html docs decreases.  Most modules also have a
 tutorial in the reference guide that is a good introduction, however there are
 a few missing or incomplete tutorials - this should be fixed.
@@ -401,8 +408,6 @@ The following improvements will help SciPy better serve this role.
 
 - Add fundamental and widely used hypothesis tests:
 
-  - Alexander-Govern test
-  - Somers' D
   - Kendall's tau-c
   - Page's L-test
   - Tukey-Kramer test
