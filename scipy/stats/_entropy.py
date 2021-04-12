@@ -65,6 +65,9 @@ def entropy(pk, qk=None, base=None, axis=0):
     0.5108256237659907
 
     """
+    if base is not None and base <= 0:
+        raise ValueError("`base` must be a positive number or `None`.")
+
     pk = np.asarray(pk)
     pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
@@ -208,6 +211,9 @@ def differential_entropy(
             f"Window length ({window_length}) must be positive and less "
             f"than half the sample size ({n}).",
         )
+
+    if base is not None and base <= 0:
+        raise ValueError("`base` must be a positive number or `None`.")
 
     sorted_data = np.sort(values, axis=-1)
 

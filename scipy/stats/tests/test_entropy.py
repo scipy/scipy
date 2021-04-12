@@ -106,6 +106,12 @@ class TestEntropy:
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, y)
 
+    def test_input_validation(self):
+        x = np.random.rand(10)
+        message = "`base` must be a positive number."
+        with pytest.raises(ValueError, match=message):
+            stats.entropy(x, base=-2)
+
 
 class TestDifferentialEntropy(object):
     """
@@ -198,3 +204,14 @@ class TestDifferentialEntropy(object):
             stats.differential_entropy(values.T).T,
             stats.differential_entropy(values, axis=1),
         )
+
+    def test_input_validation(self):
+        x = np.random.rand(10)
+
+        message = "`base` must be a positive number or `None`."
+        with pytest.raises(ValueError, match=message):
+            stats.differential_entropy(x, base=-2)
+
+        message = "`method` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.differential_entropy(x, method='ekki-ekki')
