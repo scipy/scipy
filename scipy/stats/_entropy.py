@@ -198,14 +198,15 @@ def differential_entropy(
     """
     values = np.asarray(values)
     values = np.moveaxis(values, axis, -1)
+    n = values.shape[-1]  # number of observations
 
     if window_length is None:
-        window_length = math.floor(math.sqrt(len(values)) + 0.5)
+        window_length = math.floor(math.sqrt(n) + 0.5)
 
-    if not 2 <= 2 * window_length < len(values):
+    if not 2 <= 2 * window_length < n:
         raise ValueError(
             f"Window length ({window_length}) must be positive and less "
-            f"than half the sample size ({len(values)}).",
+            f"than half the sample size ({n}).",
         )
 
     sorted_data = np.sort(values, axis=-1)
