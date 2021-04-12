@@ -514,11 +514,13 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
 
 
 cdef double _phi(double z) nogil:
+    """estimates the normal PDF. Used in `studentized range`"""
     cdef double inv_sqrt_2pi = 0.3989422804014327
     return inv_sqrt_2pi * math.exp(-0.5 * z * z)
 
 
 cdef double _Phi(double z) nogil:
+    """estimates the normal CDF. Used in `studentized range`"""
     cdef double m_sqrt1_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * m_sqrt1_2)
 
