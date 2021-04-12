@@ -215,3 +215,61 @@ class TestDifferentialEntropy(object):
         message = "`method` must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.differential_entropy(x, method='ekki-ekki')
+
+    @pytest.mark.parametrize('method', ['vasicek', 'van es',
+                                        'ebrahimi', 'correa'])
+    def test_consistency(self, method):
+        # test that method is a consistent estimator
+        n = 10000 if method == 'correa' else 1000000
+        rvs = stats.norm.rvs(size=n, random_state=0)
+        expected = stats.norm.entropy()
+        res = stats.differential_entropy(rvs, method=method)
+        assert_allclose(res, expected, rtol=0.005)
+
+    # values from differential_entropy reference [6], table 1, n=50, m=7
+    norm_rmse_std_cases = {  # method: (RMSE, STD)
+                           'vasicek': (0.198, 0.109),
+                           'van es': (0.212, 0.110),
+                           'correa': (0.135, 0.112),
+                           'ebrahimi': (0.128, 0.109)
+                           }
+
+    @pytest.mark.parametrize('method, expected',
+                             list(norm_rmse_std_cases.items()))
+    def test_norm_rmse_std(self, method, expected):
+        # test that RMSE and standard deviation of estimators matches values
+        # given in differential_entropy reference [6]. Incidentally, also
+        # tests vectorization.
+        reps, n, m = 10000, 50, 7
+        rmse_expected, std_expected = expected
+        rvs = stats.norm.rvs(size=(reps, n), random_state=0)
+        true_entropy = stats.norm.entropy()
+        res = stats.differential_entropy(rvs, window_length=m,
+                                         method=method, axis=-1)
+        assert_allclose(np.sqrt(np.mean((res - true_entropy)**2)),
+                        rmse_expected, atol=0.005)
+        assert_allclose(np.std(res), std_expected, atol=0.002)
+
+    # values from differential_entropy reference [6], table 2, n=50, m=7
+    expon_rmse_std_cases = {  # method: (RMSE, STD)
+                            'vasicek': (0.194, 0.148),
+                            'van es': (0.179, 0.149),
+                            'correa': (0.155, 0.152),
+                            'ebrahimi': (0.151, 0.148)
+                            }
+
+    @pytest.mark.parametrize('method, expected',
+                             list(expon_rmse_std_cases.items()))
+    def test_expon_rmse_std(self, method, expected):
+        # test that RMSE and standard deviation of estimators matches values
+        # given in differential_entropy reference [6]. Incidentally, also
+        # tests vectorization.
+        reps, n, m = 10000, 50, 7
+        rmse_expected, std_expected = expected
+        rvs = stats.expon.rvs(size=(reps, n), random_state=0)
+        true_entropy = stats.expon.entropy()
+        res = stats.differential_entropy(rvs, window_length=m,
+                                         method=method, axis=-1)
+        assert_allclose(np.sqrt(np.mean((res - true_entropy)**2)),
+                        rmse_expected, atol=0.005)
+        assert_allclose(np.std(res), std_expected, atol=0.002)

@@ -275,8 +275,9 @@ def _van_es_entropy(X, m):
     """Compute the van Es estimator as described in [6]"""
     # No equation number, but referred to as HVE_mn.
     # Typo: there should be a log within the summation.
-    n = len(X)
-    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * (X[m:] - X[:-m])), axis=0)
+    n = X.shape[-1]
+    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * (X[..., m:] - X[..., :-m])),
+                             axis=-1)
     k = np.arange(m, n+1)
     return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
 
@@ -284,7 +285,7 @@ def _van_es_entropy(X, m):
 def _ebrahimi_entropy(X, m):
     """Compute the Ebrahimi estimator as described in [6]"""
     # No equation number, but referred to as HE_mn
-    n = len(X)
+    n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
 
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
@@ -301,7 +302,7 @@ def _ebrahimi_entropy(X, m):
 def _correa_entropy(X, m):
     """Compute the Correa estimator as described in [6]"""
     # No equation number, but referred to as HC_mn
-    n = len(X)
+    n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
 
     i = np.arange(1, n+1)
