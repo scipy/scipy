@@ -4085,6 +4085,29 @@ class Test_ttest_ind_common:
         assert_allclose(statistics, res.statistic)
         assert_allclose(pvalues, res.pvalue)
 
+    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
+                                      {'trim': .2}, {}],
+                             ids=["trim", "permutations", "basic"])
+    @pytest.mark.parametrize("axis", [-1, 0])
+    def test_nans_on_axis(self, kwds, axis):
+        # confirm that with `nan_policy='propagate'`, NaN results are returned
+        # on the correct location
+        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        # set some indices in `a` and `b` to be `np.nan`.
+        a[0][2][3] = np.nan
+        b[2][0][6] = np.nan
+
+        # arbitrarily use `np.mean` as a baseline for which indices should be
+        # NaNs
+        expected = np.isnan(np.mean(a + b, axis=axis))
+
+        res = stats.ttest_ind(a, b, axis=axis, **kwds)
+        p_nans = np.isnan(res.pvalue)
+        assert_array_equal(p_nans, expected)
+        statistic_nans = np.isnan(res.statistic)
+        assert_array_equal(statistic_nans, expected)
+
 
 class Test_ttest_trim:
     params = [
@@ -4199,7 +4222,7 @@ class Test_ttest_trim:
         b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
 
         statistic, pvalue = stats.ttest_ind(a, b, trim=.2, equal_var=False,
-                                  alternative=alt)
+                                            alternative=alt)
         assert_allclose(pvalue, pr, atol=1e-10)
         assert_allclose(statistic, tr, atol=1e-10)
 
@@ -4214,24 +4237,6 @@ class Test_ttest_trim:
                                              "tests, one-sided asymptotic "
                                              "tests, or trimmed tests."):
             stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
-
-    def test_nans_on_axis(self):
-        # confirm that with `nan_policy='propagate'`, NaN results are returned
-        # on the correct location
-        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
-        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
-        # set some indices in `a` and `b` to be `np.nan`.
-        a[0][2][3] = np.nan
-        b[2][0][6] = np.nan
-
-        res = stats.ttest_ind(a, b, trim=.2, axis=-1)
-        expected = np.asarray([[False, False, True],
-                               [False, False, False],
-                               [True, False, False],
-                               [False, False, False],
-                               [False, False, False]])
-        assert_array_equal(np.isnan(res.pvalue), expected)
-        assert_array_equal(np.isnan(res.statistic), expected)
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
     def test_trim_bounds_error(self, trim):
