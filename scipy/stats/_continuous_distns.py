@@ -9210,7 +9210,7 @@ class studentized_range_gen(rv_continuous):
     """
 
     def _argcheck(self, k, df):
-        return np.all(k > 1) and np.all(df > 0)
+        return (k > 1) & (df > 0)
 
     def _fitstart(self, data):
         # Default is k=1, but that is not a valid value of the parameter.
