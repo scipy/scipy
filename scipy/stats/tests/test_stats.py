@@ -6588,18 +6588,19 @@ class TestPoissonETest:
         res = stats.poisson_means_test(c1, n1, c2, n2)
         assert_allclose(res.pvalue, p_expect, atol=1e-4)
 
-    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
+    @pytest.mark.parametrize("c1, n1, c2, n2, p_expect, alt, d", (
         # These test cases are produced by the wrapped fortran code from the
-        # original authors. This wrapper is available here:
-        # https://github.com/nolanbconaway/poisson-etest. An additional
-        # matlab wrapper is also available that confirms the [0, 100, 3, 100]
-        # test case from the paper: https://github.com/leiferlab/testPoisson.
-        [20, 10, 20, 10, 0.99999975689296305],
-        [10, 10, 10, 10, 0.99999984032412026]
+        # original authors. Using a slightly modified version of this fortran,
+        # found here, https://github.com/nolanbconaway/poisson-etest,
+        # I created additional tests.
+        [20, 10, 20, 10, 0.9999997568929630, 'two-sided', 0],
+        [10, 10, 10, 10, 0.9999998403241203, 'two-sided', 0],
+        [10, 10, 10, 10, 0.741441295832156, 'two-sided', .1],
+        [3, 100, 20, 300, 0.12202725450896404, 'two-sided', 0]
     ))
-    def test_fortran_authors(self, c1, n1, c2, n2, p_expect):
-        res = stats.poisson_means_test(c1, n1, c2, n2)
-        assert_allclose(res.pvalue, p_expect, atol=1e-5)
+    def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
+        res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
+        assert_allclose(res.pvalue, p_expect, atol=1e-6)
 
     def test_different_results(self):
         # The implementation in Fortran is known to break down at higher
@@ -6610,7 +6611,8 @@ class TestPoissonETest:
         with assert_raises(AssertionError):
             assert_allclose(res.pvalue, 0.248669941286945455)
 
-    # the original code by author does not implement what they said in the paper
+    # the original code by author does not implement what they said in the
+    # paper
     def test_less_than_zero_lambda_hat2(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
