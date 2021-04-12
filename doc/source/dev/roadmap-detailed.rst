@@ -408,8 +408,6 @@ The following improvements will help SciPy better serve this role.
 
 - Add fundamental and widely used hypothesis tests:
 
-  - Kendall's tau-c
-  - Page's L-test
   - Tukey-Kramer test
   - Dunnett's test
   - the various types of analysis of variance (ANOVA):
@@ -420,26 +418,20 @@ The following improvements will help SciPy better serve this role.
     - nested ANOVA
     - analysis of covariance (ANCOVA)
 
-- Where appropriate, include confidence intervals for the statistic in the
-  results of any statistical test.
 - Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
 - Enhance the `fit` method of the continuous probability distributions:
 
   - Expand the options for fitting to include:
 
-    - method of moments
     - maximal product spacings
     - method of L-moments / probability weighted moments
 
   - Include measures of goodness-of-fit in the results
-  - Handle censored data
+  - Handle censored data (e.g. merge `gh-13699 <https://github.com/scipy/scipy/pull/13699>`__)
 
 - Implement additional widely used continuous and discrete probability
   distributions:
 
-  - noncentral hypergeometric distribution (both Fisher's and Wallenius')
-  - negative hypergeometric distribution
-  - multivariate hypergeometric distribution
   - multivariate t distribution
   - mixture distributions
 
@@ -447,19 +439,15 @@ The following improvements will help SciPy better serve this role.
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
   used in scipy.special with better code, perhaps ported from the Boost C++
-  library.
+  library. (e.g. merge `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__))
 
 In addition, we should:
 
 - Continue work on making the function signatures of ``stats`` and
   ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
-- Return ``Bunch`` objects from functions that now return many values, and for
-  functions for which extra return values are desired (see
-  `gh-3665 <https://github.com/scipy/scipy/issues/3665>`__).
-- Improve statistical tests (p-value calculation, alternative hypothesis), for
-  example implement an exact two-sided KS test (see
-  `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
-  Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the
-  stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.
+- Improve statistical tests: consistently provide options for one- and
+  two-sided alternative hypotheses where applicable, return confidence
+  intervals for the test statistic, and implement exact p-value calculations -
+  considering the possibility of ties - where computationally feasible.
+- Get `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ merged.
