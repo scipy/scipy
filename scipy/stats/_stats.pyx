@@ -545,10 +545,8 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
                  + (df - 1) * math.log(s) - (df * s * s / 2)
                  + log_inv_sqrt_2pi - 0.5 * z * z)  # phi estimation.
 
-    # this term is excluded from the logarithm as it results in zero division
-    t4 = math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
-
-    return math.exp(log_terms) * t4
+    # The remaining math is excluded from the log because it can be 0
+    return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
 cdef double _genstudentized_range_cdf_asymptopic(double z, void *user_data) nogil:
@@ -587,10 +585,9 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
              + log_inv_sqrt_2pi - 0.5 * z * z
              + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z))
 
-    # this term is excluded from the logarithm as it results in zero division
-    r_nolog = math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
-
-    return math.exp(r_log + const_log) * r_nolog
+    # The remaining math is excluded from the log because it can be 0
+    return (math.exp(r_log + const_log) *
+            math.pow(_Phi(s * q + z) - _Phi(z), k - 2))
 
 
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
