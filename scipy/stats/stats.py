@@ -5983,10 +5983,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         .. versionadded:: 1.6.0
 
     trim : float, optional
-        Defines the percentage of trimming off of each end of the input
-        samples. If 0 (default), no elements will be trimmed from either
-        side. The number of trimmed elements from each tail is the floor
-        of the trim times the number of elements. Valid range is [0, .5).
+        If nonzero, performs a trimmed (Yuen's) t-test.
+        Defines the fraction of elements to be trimmed from each end of the
+        input samples. If 0 (default), no elements will be trimmed from either
+        side. The number of trimmed elements from each tail is the floor of the
+        trim times the number of elements. Valid range is [0, .5).
 
         .. versionadded:: 1.7
 
@@ -6164,19 +6165,18 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             m2 = np.mean(b, axis)
         else:
             #
-            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, n1, axis)
-            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, n2, axis)
+            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
         if equal_var:
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-
         res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     return Ttest_indResult(*res)
 
 
-def _ttest_trim_var_mean_len(a, trim, n, axis):
+def _ttest_trim_var_mean_len(a, trim, axis):
     """Variance, mean, and length of winsorized input along specified axis"""
     # for use with `ttest_ind` when trimming.
     # further calculations in this test assume that the inputs are sorted.
@@ -6185,11 +6185,12 @@ def _ttest_trim_var_mean_len(a, trim, n, axis):
 
     # `g_*` is the number of elements to be replaced on each tail, converted
     # from a percentage amount of trimming
+    n = a.shape[axis]
     g = int(n * trim)
 
     # Calculate the Winsorized variance of the input samples according to
     # specified `g`
-    v = _calculate_winsorized_variance(a, g, n, axis)
+    v = _calculate_winsorized_variance(a, g, axis)
 
     # the total number of elements in the trimmed samples
     n -= 2 * g
@@ -6199,24 +6200,28 @@ def _ttest_trim_var_mean_len(a, trim, n, axis):
     return v, m, n
 
 
-def _calculate_winsorized_variance(a, g, n, axis):
+def _calculate_winsorized_variance(a, g, axis):
     """Calculates g-times winsorized variance along specified axis"""
+    if g == 0:
+        return np.var(a, ddof=1, axis=axis)
     # it is expected that the input `a` is sorted along the correct axis
     # move the intended axis to the end that way it is easier to manipulate
-    a = np.moveaxis(a, axis, -1)
+    a_win = np.moveaxis(a, axis, -1)
 
-    # build a right and left tail to replace the trimmed values, fill new tails
-    # with the leftmost and rightmost value from the trimmed array. This can be
-    # see in effect in (1-3) in [4], where the leftmost and rightmost tails are
-    # replaced with `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}`
-    # on the right. Zero-indexing turns `g + 1` to `g`, and `n - g` to
-    # `n - g - 1` in arraying splicing.
-    left_tail = np.repeat(a[..., [g]], g, axis=-1)
-    right_tail = np.repeat(a[..., [n - g - 1]], g, axis=-1)
+    # save where NaNs are for later use.
+    contains_nans = np.any(np.isnan(a_win), axis=-1)
 
-    # Winsorization and variance calculation are done in one step in [4] (1-3),
-    # but here winsorization is done first.
-    a_win = np.concatenate((left_tail, a[..., g: n - g], right_tail), axis=-1)
+    # Winsorization and variance calculation are done in one step in [4] (
+    # 1-3), but here winsorization is done first; Iterate over `g`,
+    # replacing the left and right sides with the repeating value. This can
+    # be see in effect in (1-3) in [4], where the leftmost and rightmost
+    # tails are replaced with `(g + 1) * x_{g + 1}` on the left and
+    # `(g + 1) * x_{n - g}` on the right. Zero-indexing turns `g + 1` to
+    # `g`, and `n - g` to `n - g - 1` in array indexing.
+    if g != 0:
+        for i in range(g):
+            a_win[..., [i]] = a_win[..., [g]]
+            a_win[..., [- i - 1]] = a_win[..., [- g - 1]]
 
     # determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
@@ -6228,7 +6233,6 @@ def _calculate_winsorized_variance(a, g, n, axis):
     # with `nan_policy='propagate'`, NaNs are sorted to the end of the array,
     # and may be completely trimmed out. In these cases, replace computed
     # variances with `np.nan` if the original sample contained NaNs.
-    contains_nans = np.any(np.isnan(a), axis=-1)
     vars[contains_nans] = np.nan
     return vars
 
