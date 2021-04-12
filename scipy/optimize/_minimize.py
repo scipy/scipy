@@ -230,13 +230,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Unconstrained minimization**
 
-    Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
-    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
-    applications. However, if numerical computation of derivative can be
-    trusted, other algorithms using the first and/or second derivatives
-    information might be preferred for their better performance in
-    general.
-
     Method :ref:`CG <optimize.minimize-cg>` uses a nonlinear conjugate
     gradient algorithm by Polak and Ribiere, a variant of the
     Fletcher-Reeves method described in [5]_ pp.120-122. Only the
@@ -284,6 +277,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
+
+    Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
+    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
+    applications. However, if numerical computation of derivative can be
+    trusted, other algorithms using the first and/or second derivatives
+    information might be preferred for their better performance in
+    general.
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
