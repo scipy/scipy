@@ -30,5 +30,3 @@ RUN git clone https://github.com/scipy/scipy.git  --depth 1 --single-branch . &&
     conda activate ${CONDA_ENV} && \
     python setup.py build_ext --inplace && \
     ccache -s
-
-RUN sudo rm -rf ${WORKSPACE}

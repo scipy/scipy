@@ -11,14 +11,16 @@ tasks:
     init: |
       conda activate scipy-dev
       python setup.py build_ext --inplace
+      echo "🛠 Completed rebuilding SciPy!! \n\n"
       conda develop .
+      echo "📖 Building docs \n\n "
       git submodule update --init
       cd doc 
       make html-scipyorg
   - name: Reuse settings
     openMode: split-right
     command: |
-      if [[ ! ".vscode" ]]; then mkdir.vscode fi
+      mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
       echo "🎉 Your development environment is ready! You can close this terminal now"
   
