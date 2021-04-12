@@ -6218,10 +6218,9 @@ def _calculate_winsorized_variance(a, g, axis):
     # tails are replaced with `(g + 1) * x_{g + 1}` on the left and
     # `(g + 1) * x_{n - g}` on the right. Zero-indexing turns `g + 1` to
     # `g`, and `n - g` to `n - g - 1` in array indexing.
-    if g != 0:
-        for i in range(g):
-            a_win[..., [i]] = a_win[..., [g]]
-            a_win[..., [- i - 1]] = a_win[..., [- g - 1]]
+    for i in range(g):
+        a_win[..., [i]] = a_win[..., [g]]
+        a_win[..., [- i - 1]] = a_win[..., [- g - 1]]
 
     # determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
