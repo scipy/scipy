@@ -284,7 +284,16 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 def _validate_vector(u, dtype=None):
     # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c').squeeze()
+    # dtype is used to valudate weights.
+    # Preserves float dtypes, but convert everything else to np.float64
+    # for stability.
+    utype = None
+    if dtype is None:
+        if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
+            utype = np.float64
+    else:
+        utype = dtype
+    u = np.asarray(u, dtype=utype, order='c').squeeze()
     # Ensure values such as u=1 and u=[1] still return 1-D arrays.
     u = np.atleast_1d(u)
     if u.ndim > 1:
@@ -292,8 +301,9 @@ def _validate_vector(u, dtype=None):
     return u
 
 
-def _validate_weights(w, dtype=np.double):
-    w = _validate_vector(w, dtype=dtype)
+def _validate_weights(w):
+    # XXX Should it be np.float64?
+    w = _validate_vector(w, dtype=np.double)
     if np.any(w < 0):
         raise ValueError("Input weights should be all non-negative")
     return w
@@ -613,16 +623,9 @@ def sqeuclidean(u, v, w=None):
     1.0
 
     """
-    # Preserve float dtypes, but convert everything else to np.float64
-    # for stability.
-    utype, vtype = None, None
-    if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
-        utype = np.float64
-    if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
-        vtype = np.float64
 
-    u = _validate_vector(u, dtype=utype)
-    v = _validate_vector(v, dtype=vtype)
+    u = _validate_vector(u)
+    v = _validate_vector(v)
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
@@ -945,7 +948,7 @@ def seuclidean(u, v, V):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    V = _validate_vector(V, dtype=np.float64)
+    V = _validate_vector(V)
     if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D array of the same dimension '
                         'as u and v.')
@@ -1128,7 +1131,7 @@ def braycurtis(u, v, w=None):
 
     """
     u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
+    v = _validate_vector(v)
     l1_diff = abs(u - v)
     l1_sum = abs(u + v)
     if w is not None:
@@ -1179,7 +1182,7 @@ def canberra(u, v, w=None):
 
     """
     u = _validate_vector(u)
-    v = _validate_vector(v, dtype=np.float64)
+    v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
     with np.errstate(invalid='ignore'):
