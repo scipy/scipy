@@ -445,6 +445,9 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._entropy import *
+from ._hypotests import *
+from ._rvs_sampling import rvs_ratio_uniforms
+from ._page_trend_test import page_trend_test
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

@@ -17,149 +17,7 @@
 # such damage.
 
 """
-A collection of basic statistical functions for Python.  The function
-names appear below.
-
- Some scalar functions defined here are also available in the scipy.special
- package where they work on arbitrary sized arrays.
-
-Disclaimers:  The function list is obviously incomplete and, worse, the
-functions are not optimized.  All functions have been tested (some more
-so than others), but they are far from bulletproof.  Thus, as with any
-free software, no warranty or guarantee is expressed or implied. :-)  A
-few extra functions that don't appear in the list below can be found by
-interested treasure-hunters.  These functions don't necessarily have
-both list and array versions but were deemed useful.
-
-Central Tendency
-----------------
-.. autosummary::
-   :toctree: generated/
-
-    gmean
-    hmean
-    mode
-
-Moments
--------
-.. autosummary::
-   :toctree: generated/
-
-    moment
-    variation
-    skew
-    kurtosis
-    normaltest
-
-Altered Versions
-----------------
-.. autosummary::
-   :toctree: generated/
-
-    tmean
-    tvar
-    tstd
-    tsem
-    describe
-
-Frequency Stats
----------------
-.. autosummary::
-   :toctree: generated/
-
-    itemfreq
-    scoreatpercentile
-    percentileofscore
-    cumfreq
-    relfreq
-
-Variability
------------
-.. autosummary::
-   :toctree: generated/
-
-    obrientransform
-    sem
-    zmap
-    zscore
-    gstd
-    iqr
-    median_abs_deviation
-
-Trimming Functions
-------------------
-.. autosummary::
-   :toctree: generated/
-
-   trimboth
-   trim1
-
-Correlation Functions
----------------------
-.. autosummary::
-   :toctree: generated/
-
-   pearsonr
-   fisher_exact
-   barnard_exact
-   spearmanr
-   pointbiserialr
-   kendalltau
-   weightedtau
-   somersd
-   linregress
-   theilslopes
-   multiscale_graphcorr
-
-Inferential Stats
------------------
-.. autosummary::
-   :toctree: generated/
-
-   ttest_1samp
-   ttest_ind
-   ttest_ind_from_stats
-   ttest_rel
-   chisquare
-   power_divergence
-   kstest
-   ks_1samp
-   ks_2samp
-   cramervonmises
-   cramervonmises_2samp
-   epps_singleton_2samp
-   mannwhitneyu
-   ranksums
-   wilcoxon
-   kruskal
-   friedmanchisquare
-   brunnermunzel
-   combine_pvalues
-   page_trend_test
-
-Statistical Distances
----------------------
-.. autosummary::
-   :toctree: generated/
-
-   wasserstein_distance
-   energy_distance
-
-ANOVA Functions
----------------
-.. autosummary::
-   :toctree: generated/
-
-   f_oneway
-   alexandergovern
-
-Support Functions
------------------
-.. autosummary::
-   :toctree: generated/
-
-   rankdata
-   rvs_ratio_uniforms
+A collection of basic statistical functions for Python.
 
 References
 ----------
@@ -189,13 +47,10 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from ._rvs_sampling import rvs_ratio_uniforms
-from ._page_trend_test import page_trend_test
 from dataclasses import make_dataclass
-from ._hypotests import (epps_singleton_2samp, somersd, cramervonmises,
-                         cramervonmises_2samp, barnard_exact)
 
 
+# Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
@@ -208,7 +63,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact', 'barnard_exact',
+           'pearsonr', 'fisher_exact',
            'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
@@ -216,11 +71,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata', 'rvs_ratio_uniforms',
+           'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
-           'cramervonmises_2samp', 'alexandergovern', 'page_trend_test',
-           'somersd']
+           'brunnermunzel', 'alexandergovern']
 
 
 def _contains_nan(a, nan_policy='propagate'):
