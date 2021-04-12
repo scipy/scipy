@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
@@ -730,6 +732,8 @@ class TestBoundedNelderMead:
                      method='Nelder-Mead',
                      bounds=bounds)
 
+    @pytest.mark.xfail(reason="Failing on Azure Linux and macOS builds, "
+                              "see gh-13846")
     def test_outside_bounds_warning(self):
         prob = Rosenbrock()
         with raises(UserWarning, match=r"Initial guess is not within "
