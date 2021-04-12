@@ -1101,9 +1101,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             Use all optimization methods available, and return all results.
             Useful to compare different methods.
     optimizer : callable, optional
-        If `lmbda` is None, `optimizer` is the scalar optimizer used to find
-        the value of `lmbda` that minimizes the negative log-likelihood
-        function. `optimizer` is a callable that accepts one argument:
+        `optimizer` is a callable that accepts one argument:
 
         fun : callable
             The objective function, which evaluates the negative
@@ -1115,8 +1113,6 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
-
-        If `lmbda` is not None, `optimizer` is ignored.
 
     Returns
     -------
