@@ -1104,8 +1104,10 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         `optimizer` is a callable that accepts one argument:
 
         fun : callable
-            The objective function, which evaluates the negative
-            log-likelihood function at a provided value of `lmbda`
+            The objective function to be optimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the negative
+            log-likelihood function at the provided value. The job of `optimizer`
+            is to find the value of `lmbda` that minimizes `fun`.
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
