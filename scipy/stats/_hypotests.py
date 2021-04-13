@@ -10,6 +10,9 @@ from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from . import _wilcoxon_data
 
+__all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
+           'barnard_exact', 'cramervonmises_2samp']
+
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 

@@ -950,14 +950,15 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         *Deprecated by ``driver=gvd`` option*. Has no significant effect for
         eigenvalue computations since no eigenvectors are requested.
 
-        ..Deprecated in v1.5.0
+        .. deprecated:: 1.5.0
+
     eigvals : tuple (lo, hi), optional
         *Deprecated by ``subset_by_index`` keyword*. Indexes of the smallest
         and largest (in ascending order) eigenvalues and corresponding
         eigenvectors to be returned: 0 <= lo <= hi <= M-1. If omitted, all
         eigenvalues and eigenvectors are returned.
 
-        .. Deprecated in v1.5.0
+        .. deprecated:: 1.5.0
 
     Returns
     -------

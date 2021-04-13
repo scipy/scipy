@@ -1,0 +1,37 @@
+# To use:
+#   $ conda env create -f environment.yml  # `mamba` works too for this command
+#   $ conda activate scipy-dev
+name: scipy-dev
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - cython
+  - compilers
+  - numpy
+  - openblas
+  - libblas=*=*openblas  # helps avoid pulling in MKL
+  - pybind11
+  - pythran
+  - conda-build  # to allow `conda develop .`
+  # For testing and benchmarking
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - asv
+  # For type annotations
+  - mypy
+  - typing_extensions
+  # For building docs
+  - sphinx
+  - numpydoc=1.1.0
+  - ipython
+  - matplotlib
+  - pydata-sphinx-theme
+  # For linting
+  - pycodestyle
+  - flake8
+  # Some optional test dependencies
+  - mpmath
+  - gmpy2
+  - scikit-umfpack
