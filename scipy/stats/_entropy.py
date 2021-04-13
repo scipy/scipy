@@ -248,33 +248,6 @@ def differential_entropy(
     return res
 
 
-def _vasicek_entropy(sorted_data, window_length):
-    sorted_data = np.moveaxis(sorted_data, -1, 0)
-
-    repeats = np.array(
-        (window_length + 1,)
-        + ((1,) * (len(sorted_data) - 2))
-        + (window_length + 1,),
-    )
-
-    padded_data = np.repeat(
-        sorted_data,
-        repeats=repeats,
-        axis=0,
-    )
-
-    differences = (
-        padded_data[2 * window_length:] -
-        padded_data[:-2 * window_length]
-    )
-
-    logs = np.log(
-        len(differences) * differences / (2 * window_length),
-    )
-
-    return np.mean(logs, axis=0)
-
-
 def _pad_along_last_axis(X, m):
     """Pad the data for computing the rolling window difference."""
     # scales a  bit better than method in _vasicek_like_entropy
@@ -283,6 +256,15 @@ def _pad_along_last_axis(X, m):
     Xl = np.broadcast_to(X[..., [0]], shape)  # [0] vs 0 to maintain shape
     Xr = np.broadcast_to(X[..., [-1]], shape)
     return np.concatenate((Xl, X, Xr), axis=-1)
+
+
+def _vasicek_entropy(X, m):
+    """Compute the Vasicek estimator as described in [6] Eq. 1.3."""
+    n = X.shape[-1]
+    X = _pad_along_last_axis(X, m)
+    differences = X[..., 2 * m:] - X[..., : -2 * m:]
+    logs = np.log(n/(2*m) * differences)
+    return np.mean(logs, axis=-1)
 
 
 def _van_es_entropy(X, m):
