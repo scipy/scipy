@@ -262,7 +262,7 @@ def _vasicek_entropy(sorted_data, window_length):
 
 
 def _pad_along_last_axis(X, m):
-    """Pad the data for computing the rolling window difference"""
+    """Pad the data for computing the rolling window difference."""
     # scales a  bit better than method in _vasicek_like_entropy
     shape = np.array(X.shape)
     shape[-1] = m
@@ -272,18 +272,18 @@ def _pad_along_last_axis(X, m):
 
 
 def _van_es_entropy(X, m):
-    """Compute the van Es estimator as described in [6]"""
+    """Compute the van Es estimator as described in [6]."""
     # No equation number, but referred to as HVE_mn.
     # Typo: there should be a log within the summation.
     n = X.shape[-1]
-    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * (X[..., m:] - X[..., :-m])),
-                             axis=-1)
+    difference = X[..., m:] - X[..., :-m]
+    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * difference), axis=-1)
     k = np.arange(m, n+1)
     return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
 
 
 def _ebrahimi_entropy(X, m):
-    """Compute the Ebrahimi estimator as described in [6]"""
+    """Compute the Ebrahimi estimator as described in [6]."""
     # No equation number, but referred to as HE_mn
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
@@ -300,7 +300,7 @@ def _ebrahimi_entropy(X, m):
 
 
 def _correa_entropy(X, m):
-    """Compute the Correa estimator as described in [6]"""
+    """Compute the Correa estimator as described in [6]."""
     # No equation number, but referred to as HC_mn
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m)
@@ -311,6 +311,7 @@ def _correa_entropy(X, m):
     j0 = j + m - 1  # 0-indexed version of j
 
     Xibar = np.mean(X[..., j0], axis=-2, keepdims=True)
-    num = np.sum((X[..., j0] - Xibar)*(j-i), axis=-2)
-    den = n*np.sum((X[..., j0] - Xibar)**2, axis=-2)
+    difference = X[..., j0] - Xibar
+    num = np.sum(difference*dj, axis=-2)  # dj is d-i
+    den = n*np.sum(difference**2, axis=-2)
     return -np.mean(np.log(num/den), axis=-1)
