@@ -403,7 +403,6 @@ The following improvements will help SciPy better serve this role.
 
   - Alexander-Govern test
   - Somers' D
-  - Kendall's tau-c
   - Page's L-test
   - Tukey-Kramer test
   - Dunnett's test
