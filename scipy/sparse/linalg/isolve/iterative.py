@@ -151,7 +151,8 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                )
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -191,7 +192,6 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
         Ap = A.matvec(p)
         phattAp = np.inner(p_hat.conjugate(), Ap)
         if phattAp == 0.:
-            print("Warning: divide by zero (in step {})".format(iter+1))
             return (postprocess(x), -1)
         alpha = d_old / phattAp
         x += alpha * p
@@ -208,7 +208,6 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
         z = M.matvec(r)
         d = np.inner(rhat.conjugate(), z)
         if d == 0.:
-            print("Warning: divide by zero in the next iteration")
             return (postprocess(x), -1)
         beta = d / d_old
         d_old = d.copy()
@@ -226,7 +225,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -265,7 +265,6 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
         v = A.matvec(p_hat)
         rhattv = np.inner(rhat.conjugate(), v)
         if rhattv == 0.:
-            print("Warning: divide by zero (in step {})".format(iter+1))
             return (postprocess(x), -1)
         alpha = rho1 / rhattv
         s = r - alpha * v
@@ -298,7 +297,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -330,7 +330,6 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
         q = A.matvec(p)
         ptq = np.inner(p.conjugate(), q)
         if ptq == 0.:
-            print("Warning: divide by zero (in step {})".format(iter+1))
             return (postprocess(x), -1)
         alpha = rho0 / ptq
         x += alpha * p
@@ -358,7 +357,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -395,7 +395,6 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
         Az = A.matvec(z)
         rhattAz = np.inner(rhat.conjugate(), Az)
         if rhattAz == 0.:
-            print("Warning: divide by zero (in step {})".format(iter+1))
             return (postprocess(x), -1)
         alpha = d_old / rhattAz
         q = w - alpha * Az
@@ -412,7 +411,6 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
             return (postprocess(x), maxiter)
         d = np.inner(rhat.conjugate(), r)
         if d == 0.:
-            print("Warning: divide by zero in the next iteration")
             return (postprocess(x), -1)
         beta = d / d_old
         d_old = d
@@ -830,7 +828,8 @@ def cgne(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
     [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
     [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
     """
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -889,7 +888,8 @@ def cgnr(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
     [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
     [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
     """
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -943,7 +943,8 @@ def cgnr(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def icgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
-    assert A.shape[0] == A.shape[1] and A.shape[0] == len(b), "The size of the matrix and the right-hand side does not match."
+    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
+        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -977,7 +978,6 @@ def icgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
         z = M.matvec(Ap)
         d = np.inner(rhat.conjugate(), z)
         if d == 0.:
-            print("Warning: divide by zero (in step {})".format(iter+1))
             return (postprocess(x), -1)
         alpha = d_old / d
         q = w - alpha * z
@@ -994,7 +994,6 @@ def icgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
         z = M.matvec(r)
         d = np.inner(rhat.conjugate(), z)
         if d == 0.:
-            print("Warning: divide by zero in the next iteration")
             return (postprocess(x), -1)
         beta = d / d_old
         d_old = d
