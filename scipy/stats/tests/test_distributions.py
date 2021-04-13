@@ -61,6 +61,21 @@ def check_vonmises_cdf_periodic(k, L, s, x):
     assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
 
 
+def test_distributions_submodule():
+    actual = set(scipy.stats.distributions.__all__)
+    continuous = [dist[0] for dist in distcont]    # continuous dist names
+    discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
+    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+             'entropy', 'trapz']
+    expected = continuous + discrete + other
+
+    # need to remove, e.g.,
+    # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
+    expected = set(filter(lambda s: not str(s).startswith('<'), expected))
+
+    assert actual == expected
+
+
 def test_vonmises_pdf_periodic():
     for k in [0.1, 1, 101]:
         for x in [0, 1, numpy.pi, 10, 100]:
@@ -2993,6 +3008,19 @@ class TestLevyStable:
                                                  moments='mvsk')
             assert_almost_equal(calc_stats, exp_stats)
 
+    @pytest.mark.slow
+    @pytest.mark.parametrize('beta', [0.5, 1])
+    def test_rvs_alpha1(self, beta):
+        np.random.seed(987654321)
+        alpha = 1.0
+        loc = 0.5
+        scale = 1.5
+        x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
+                                  size=5000)
+        stat, p = stats.kstest(x, 'levy_stable',
+                               args=(alpha, beta, loc, scale))
+        assert p > 0.01
+
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
@@ -5686,6 +5714,34 @@ class TestNakagami:
         assert_allclose(nu_est, nu, rtol=1e-7)
         assert_allclose(loc_est, loc_theo, rtol=1e-7)
         assert_allclose(scale_est, scale_theo, rtol=1e-7)
+
+
+class TestWrapCauchy:
+
+    def test_cdf_shape_broadcasting(self):
+        # Regression test for gh-13791.
+        # Check that wrapcauchy.cdf broadcasts the shape parameter
+        # correctly.
+        c = np.array([[0.03, 0.25], [0.5, 0.75]])
+        x = np.array([[1.0], [4.0]])
+        p = stats.wrapcauchy.cdf(x, c)
+        assert p.shape == (2, 2)
+        scalar_values = [stats.wrapcauchy.cdf(x1, c1)
+                         for (x1, c1) in np.nditer((x, c))]
+        assert_allclose(p.ravel(), scalar_values, rtol=1e-13)
+
+    def test_cdf_center(self):
+        p = stats.wrapcauchy.cdf(np.pi, 0.03)
+        assert_allclose(p, 0.5, rtol=1e-14)
+
+    def test_cdf(self):
+        x1 = 1.0  # less than pi
+        x2 = 4.0  # greater than pi
+        c = 0.75
+        p = stats.wrapcauchy.cdf([x1, x2], c)
+        cr = (1 + c)/(1 - c)
+        assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
+        assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
 
 def test_rvs_no_size_warning():

@@ -1554,6 +1554,8 @@ class LinprogCommonTests:
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
 
+    @pytest.mark.skip(sys.platform == 'darwin',
+                      reason="Failing on some local macOS builds, see gh-13846")
     def test_bug_10466(self):
         """
         Test that autoscale fixes poorly-scaled problem
@@ -1697,7 +1699,7 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexDefault, self).test_bug_8174()
+            super().test_bug_8174()
 
 
 class TestLinprogSimplexBland(LinprogSimplexTests):
@@ -1714,7 +1716,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError):
             with pytest.warns(OptimizeWarning):
-                super(TestLinprogSimplexBland, self).test_bug_8174()
+                super().test_bug_8174()
 
 
 class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
@@ -1729,7 +1731,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         condition=is_32_bit and is_linux,
         reason='Fails with warning on 32-bit linux')
     def test_bug_5400(self):
-        super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
+        super().test_bug_5400()
 
     def test_bug_6139_low_tol(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
@@ -1738,7 +1740,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         # Without ``presolve`` eliminating such rows the result is incorrect.
         self.options.update({'tol': 1e-12})
         with pytest.raises(AssertionError, match='linprog status 4'):
-            return super(TestLinprogSimplexNoPresolve, self).test_bug_6139()
+            return super().test_bug_6139()
 
     def test_bug_7237_low_tol(self):
         pytest.skip("Simplex fails on this problem.")
@@ -1748,7 +1750,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})
         with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplexNoPresolve, self).test_bug_8174()
+            super().test_bug_8174()
 
     def test_unbounded_no_nontrivial_constraints_1(self):
         pytest.skip("Tests behavior specific to presolve")
@@ -1786,12 +1788,12 @@ class TestLinprogIPSparse(LinprogIPTests):
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
     def test_bug_6139(self):
-        super(TestLinprogIPSparse, self).test_bug_6139()
+        super().test_bug_6139()
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
-        super(TestLinprogIPSparse, self).test_bug_6690()
+        super().test_bug_6690()
 
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
@@ -1836,7 +1838,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
     def test_bug_6139(self):
-        super(TestLinprogIPSparsePresolve, self).test_bug_6139()
+        super().test_bug_6139()
 
     def test_enzo_example_c_with_infeasibility(self):
         pytest.skip('_sparse_presolve=True incompatible with presolve=False')
@@ -1844,7 +1846,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
-        super(TestLinprogIPSparsePresolve, self).test_bug_6690()
+        super().test_bug_6690()
 
 
 class TestLinprogIPSpecific:

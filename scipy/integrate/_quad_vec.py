@@ -15,7 +15,7 @@ class LRUDict(collections.OrderedDict):
 
     def __setitem__(self, key, value):
         existing_key = (key in self)
-        super(LRUDict, self).__setitem__(key, value)
+        super().__setitem__(key, value)
         if existing_key:
             self.move_to_end(key)
         elif len(self) > self.__max_size:

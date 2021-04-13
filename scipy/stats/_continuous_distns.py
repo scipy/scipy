@@ -48,6 +48,7 @@ def _remove_optimizer_parameters(kwds):
     if kwds:
         raise TypeError("Unknown arguments: %s." % kwds)
 
+
 def _call_super_mom(fun):
     # if fit method is overridden only for MLE and doesn't specify what to do
     # if method == 'mm', this decorator calls generic implementation
@@ -58,6 +59,7 @@ def _call_super_mom(fun):
         else:
             return fun(self, *args, **kwds)
     return wrapper
+
 
 class ksone_gen(rv_continuous):
     r"""Kolmogorov-Smirnov one-sided test statistic distribution.
@@ -633,7 +635,7 @@ class beta_gen(rv_continuous):
             ku *= 6
             return [sk-g1, ku-g2]
         a, b = optimize.fsolve(func, (1.0, 1.0))
-        return super(beta_gen, self)._fitstart(data, args=(a, b))
+        return super()._fitstart(data, args=(a, b))
 
     @_call_super_mom
     @extend_notes_in_docstring(rv_continuous, notes="""\
@@ -650,7 +652,7 @@ class beta_gen(rv_continuous):
 
         if floc is None or fscale is None:
             # do general fit
-            return super(beta_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         # We already got these from kwds, so just pop them.
         kwds.pop('floc', None)
@@ -2542,7 +2544,7 @@ class genextreme_gen(rv_continuous):
             a = 0.5
         else:
             a = -0.5
-        return super(genextreme_gen, self)._fitstart(data, args=(a,))
+        return super()._fitstart(data, args=(a,))
 
     def _munp(self, n, c):
         k = np.arange(0, n+1)
@@ -2675,7 +2677,7 @@ class gamma_gen(rv_continuous):
         # denominator to allow for degenerate data where the skewness
         # is close to 0.
         a = 4 / (1e-8 + _skew(data)**2)
-        return super(gamma_gen, self)._fitstart(data, args=(a,))
+        return super()._fitstart(data, args=(a,))
 
     @extend_notes_in_docstring(rv_continuous, notes="""\
         When the location is fixed by using the argument `floc`
@@ -2690,7 +2692,7 @@ class gamma_gen(rv_continuous):
 
         if floc is None or method.lower() == 'mm':
             # loc is not fixed.  Use the default fit method.
-            return super(gamma_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         # We already have this value, so just pop it from kwds.
         kwds.pop('floc', None)
@@ -2804,7 +2806,7 @@ class erlang_gen(gamma_gen):
     # Trivial override of the fit method, so we can monkey-patch its
     # docstring.
     def fit(self, data, *args, **kwds):
-        return super(erlang_gen, self).fit(data, *args, **kwds)
+        return super().fit(data, *args, **kwds)
 
     if fit.__doc__:
         fit.__doc__ = (rv_continuous.fit.__doc__ +
@@ -3069,7 +3071,7 @@ class gumbel_r_gen(rv_continuous):
         # method. This scenario is not suitable for solving a system of
         # equations
         if floc is not None or fscale is not None:
-            return super(gumbel_r_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
@@ -3544,7 +3546,7 @@ class invgauss_gen(rv_continuous):
         method = kwds.get('method', 'mle')
 
         if type(self) == wald_gen or method.lower() == 'mm':
-            return super(invgauss_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         data, fshape_s, floc, fscale = _check_fit_input_parameters(self, data,
                                                                    args, kwds)
@@ -3561,7 +3563,7 @@ class invgauss_gen(rv_continuous):
           a `FitDataError`.
         '''
         if floc is None or fshape_s is not None:
-            return super(invgauss_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
         elif np.any(data - floc < 0):
             raise FitDataError("invgauss", lower=0, upper=np.inf)
         else:
@@ -4516,12 +4518,12 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, beta, size=None, random_state=None):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (2/np.pi*(np.pi/2 + bTH)*tanTH -
-                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
+            return 2/np.pi*((np.pi/2 + bTH)*tanTH
+                            - beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
 
         def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             return (W/(cosTH/np.tan(aTH) + np.sin(TH)) *
-                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1.0/alpha))
+                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1/alpha))
 
         def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
             # alpha is not 1 and beta is not 0
@@ -4529,7 +4531,7 @@ class levy_stable_gen(rv_continuous):
             th0 = np.arctan(val0)/alpha
             val3 = W/(cosTH/np.tan(alpha*(th0 + TH)) + np.sin(TH))
             res3 = val3*((np.cos(aTH) + np.sin(aTH)*tanTH -
-                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1.0/alpha)
+                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1/alpha)
             return res3
 
         def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
@@ -4971,7 +4973,7 @@ class logistic_gen(rv_continuous):
         # method. This scenario is not suitable for solving a system of
         # equations
         if floc is not None or fscale is not None:
-            return super(logistic_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         # rv_continuous provided guesses
         loc, scale = self._fitstart(data)
@@ -5193,7 +5195,7 @@ class lognorm_gen(rv_continuous):
         floc = kwds.get('floc', None)
         if floc is None:
             # fall back on the default fit method.
-            return super(lognorm_gen, self).fit(data, *args, **kwds)
+            return super().fit(data, *args, **kwds)
 
         f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
               kwds.get('fix_s', None))
@@ -6303,7 +6305,7 @@ class pareto_gen(rv_continuous):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
         if floc is None:
-            return super(pareto_gen, self).fit(data, **kwds)
+            return super().fit(data, **kwds)
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=1, upper=np.inf)
         data = data - floc
@@ -8483,24 +8485,17 @@ class wrapcauchy_gen(rv_continuous):
         return (1.0-c*c)/(2*np.pi*(1+c*c-2*c*np.cos(x)))
 
     def _cdf(self, x, c):
-        output = np.zeros(x.shape, dtype=x.dtype)
-        val = (1.0+c)/(1.0-c)
-        c1 = x < np.pi
-        c2 = 1-c1
-        xp = np.extract(c1, x)
-        xn = np.extract(c2, x)
-        if np.any(xn):
-            valn = np.extract(c2, np.ones_like(x)*val)
-            xn = 2*np.pi - xn
-            yn = np.tan(xn/2.0)
-            on = 1.0-1.0/np.pi*np.arctan(valn*yn)
-            np.place(output, c2, on)
-        if np.any(xp):
-            valp = np.extract(c1, np.ones_like(x)*val)
-            yp = np.tan(xp/2.0)
-            op = 1.0/np.pi*np.arctan(valp*yp)
-            np.place(output, c1, op)
-        return output
+
+        def f1(x, cr):
+            # CDF for 0 <= x < pi
+            return 1/np.pi * np.arctan(cr*np.tan(x/2))
+
+        def f2(x, cr):
+            # CDF for pi <= x <= 2*pi
+            return 1 - 1/np.pi * np.arctan(cr*np.tan((2*np.pi - x)/2))
+
+        cr = (1 + c)/(1 - c)
+        return _lazywhere(x < np.pi, (x, cr), f=f1, f2=f2)
 
     def _ppf(self, q, c):
         val = (1.0-c)/(1.0+c)
@@ -9063,7 +9058,7 @@ class rv_histogram(rv_continuous):
         # Set support
         kwargs['a'] = self.a = self._hbins[0]
         kwargs['b'] = self.b = self._hbins[-1]
-        super(rv_histogram, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _pdf(self, x):
         """
@@ -9100,7 +9095,7 @@ class rv_histogram(rv_continuous):
         """
         Set the histogram as additional constructor argument
         """
-        dct = super(rv_histogram, self)._updated_ctor_param()
+        dct = super()._updated_ctor_param()
         dct['histogram'] = self._histogram
         return dct
 
