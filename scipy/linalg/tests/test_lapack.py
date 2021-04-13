@@ -3010,7 +3010,7 @@ def test_gges_tgexc(dtype):
     assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
     assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
 
-    result = tgexc(s, t, q, z, 6, 0)
+    result = tgexc(s, t, q, z, 7, 1)
     assert_equal(result[-1], 0)
 
     s = result[0]

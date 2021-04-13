@@ -46,7 +46,7 @@ subroutine <prefix2>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,work,l
     ! Reorder the generalized Schur decomposition of a real matrix
     ! pair using an orthogonal or unitary equivalence transformation.
 
-    callstatement { ifst++; ilst++; (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,work,&lwork,&info); }
+    callstatement (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,work,&lwork,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
@@ -72,7 +72,7 @@ subroutine <prefix2c>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,info)
     ! Reorder the generalized Schur decomposition of a complex matrix
     ! pair using an orthogonal or unitary equivalence transformation.
 
-    callstatement { ifst++; ilst++; (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,&info); }
+    callstatement (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,&info)
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,F_INT*,F_INT*
 
     integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
