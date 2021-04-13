@@ -49,20 +49,20 @@ subroutine <prefix2>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,work,l
     callstatement { ifst++; ilst++; (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,work,&lwork,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
-    integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
-    integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+    integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
+    integer optional,intent(in),check(wantz==0||wantz==1) :: wantz=1
     integer intent(hide),depend(a) :: n=shape(a,1)
     <ftype2> intent(in,out,copy),dimension(lda,n) :: a
-    integer intent(hide),depend(a) :: lda=shape(a,0)
+    integer intent(hide),depend(a) :: lda=MAX(1,shape(a,0))
     <ftype2> intent(in,out,copy),dimension(ldb,n) :: b
-    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: ldb=MAX(1,shape(b,0))
     <ftype2> intent(in,out,copy),dimension(ldq,n) :: q
-    integer intent(hide),depend(q) :: ldq=shape(q,0)
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
     <ftype2> intent(in,out,copy),dimension(ldz,n) :: z
-    integer intent(hide),depend(z) :: ldz=shape(z,0)
+    integer intent(hide),depend(z) :: ldz=MAX(1,shape(z,0))
     integer intent(in) :: ifst
     integer intent(in) :: ilst
-    <ftype2> intent(out),dimension(MAX(lwork,1)) :: work
+    <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
     integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 4*n+16) :: lwork=max(4*n+16,1)
     integer intent(out) :: info
 
@@ -75,17 +75,17 @@ subroutine <prefix2c>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,info)
     callstatement { ifst++; ilst++; (*f2py_func)(&wantq,&wantz,&n,a,&lda,b,&ldb,q,&ldq,z,&ldz,&ifst,&ilst,&info); }
     callprotoargument F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*,F_INT*,F_INT*
 
-    integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
-    integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+    integer optional,intent(in),check(wantq==0||wantq==1) :: wantq=1
+    integer optional,intent(in),check(wantz==0||wantz==1) :: wantz=1
     integer intent(hide),depend(a) :: n=shape(a,1)
     <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
-    integer intent(hide),depend(a) :: lda=shape(a,0)
+    integer intent(hide),depend(a) :: lda=MAX(1,shape(a,0))
     <ftype2c> intent(in,out,copy),dimension(ldb,n) :: b
-    integer intent(hide),depend(b) :: ldb=shape(b,0)
+    integer intent(hide),depend(b) :: ldb=MAX(1,shape(b,0))
     <ftype2c> intent(in,out,copy),dimension(ldq,n) :: q
-    integer intent(hide),depend(q) :: ldq=shape(q,0)
+    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
     <ftype2c> intent(in,out,copy),dimension(ldz,n) :: z
-    integer intent(hide),depend(z) :: ldz=shape(z,0)
+    integer intent(hide),depend(z) :: ldz=MAX(1,shape(z,0))
     integer intent(in) :: ifst
     integer intent(in) :: ilst
     integer intent(out) :: info
