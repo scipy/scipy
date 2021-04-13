@@ -151,8 +151,6 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                )
 @non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -225,8 +223,6 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -297,8 +293,6 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -357,8 +351,6 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -653,7 +645,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
 
 #======================
-#   QMR (Original)
+#   QMR
 #======================
 @non_reentrant()
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
@@ -828,8 +820,6 @@ def cgne(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
     [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
     [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
     """
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -888,8 +878,6 @@ def cgnr(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
     [1] Yousef Saad, Iterative Methods for Sparse Linear Systems, Second Edition, SIAM, 2003
     [2] H.Elman, Iterative methods for large, sparse, nonsymmetric systems of linear equations, R        esearch Report 229, Yale University (1982)
     """
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
@@ -943,8 +931,6 @@ def cgnr(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
                '``scipy.sparse.linalg.LinearOperator``.')
 @non_reentrant()
 def icgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
-    if not (A.shape[0] == A.shape[1] and A.shape[0] == len(b)):
-        raise ValueError("The size of the matrix and the right-hand side does not match.")
     if maxiter is None:
         maxiter = 10000
     # type judgment and conversion
