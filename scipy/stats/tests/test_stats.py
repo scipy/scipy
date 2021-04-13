@@ -3994,14 +3994,13 @@ class Test_ttest_ind_permutations():
         assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
         assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
 
-    @pytest.mark.xfail_on_32bit("Uses too much memory")
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
         np.random.seed(0)
         N = 50
         a = np.random.rand(N, 4)
         b = np.random.rand(N, 4)
-        options_p = {'permutations': 500000, "random_state":0}
+        options_p = {'permutations': 20000, "random_state":0}
 
         options_p.update(alternative="greater")
         res_g_ab = stats.ttest_ind(a, b, **options_p)
@@ -4020,13 +4019,13 @@ class Test_ttest_ind_permutations():
         # symmetric, so these identities should be approximately satisfied
         mask = res_g_ab.pvalue <= 0.5
         assert_allclose(2 * res_g_ab.pvalue[mask],
-                        res_2_ab.pvalue[mask], atol=5e-3)
+                        res_2_ab.pvalue[mask], atol=2e-2)
         assert_allclose(2 * (1-res_g_ab.pvalue[~mask]),
-                        res_2_ab.pvalue[~mask], atol=5e-3)
+                        res_2_ab.pvalue[~mask], atol=2e-2)
         assert_allclose(2 * res_l_ab.pvalue[~mask],
-                        res_2_ab.pvalue[~mask], atol=5e-3)
+                        res_2_ab.pvalue[~mask], atol=2e-2)
         assert_allclose(2 * (1-res_l_ab.pvalue[mask]),
-                        res_2_ab.pvalue[mask], atol=5e-3)
+                        res_2_ab.pvalue[mask], atol=2e-2)
 
     def test_ttest_ind_permutation_nanpolicy(self):
         np.random.seed(0)
