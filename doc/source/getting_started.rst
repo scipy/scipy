@@ -1,4 +1,4 @@
-.. _getting_started:
+.. _getting_started_ref:
 
 ***************
 Getting started

@@ -35,7 +35,7 @@ science, and engineering.
 
     +++
 
-    .. link-button:: getting_started
+    .. link-button:: getting_started_ref
             :type: ref
             :text: To the getting started guides
             :classes: btn-block btn-secondary stretched-link
