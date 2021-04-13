@@ -114,7 +114,7 @@ class TestEntropy:
 
 class TestDifferentialEntropy(object):
     """
-    Results are compared with the R package vsgoftest.
+    Vasicek results are compared with the R package vsgoftest.
 
     # library(vsgoftest)
     #
@@ -123,39 +123,43 @@ class TestDifferentialEntropy(object):
 
     """
 
-    def test_differential_entropy_base(self):
+    def test_differential_entropy_vasicek(self):
 
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal(100)
 
-        entropy = stats.differential_entropy(values)
+        entropy = stats.differential_entropy(values, method='vasicek')
         assert_allclose(entropy, 1.342551, rtol=1e-6)
 
-        entropy = stats.differential_entropy(values, window_length=1)
+        entropy = stats.differential_entropy(values, window_length=1,
+                                             method='vasicek')
         assert_allclose(entropy, 1.122044, rtol=1e-6)
 
-        entropy = stats.differential_entropy(values, window_length=8)
+        entropy = stats.differential_entropy(values, window_length=8,
+                                             method='vasicek')
         assert_allclose(entropy, 1.349401, rtol=1e-6)
 
-    def test_differential_entropy_base_2d_nondefault_axis(self):
+    def test_differential_entropy_vasicek_2d_nondefault_axis(self):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
 
-        entropy = stats.differential_entropy(values, axis=1)
+        entropy = stats.differential_entropy(values, axis=1, method='vasicek')
         assert_allclose(
             entropy,
             [1.342551, 1.341826, 1.293775],
             rtol=1e-6,
         )
 
-        entropy = stats.differential_entropy(values, axis=1, window_length=1)
+        entropy = stats.differential_entropy(values, axis=1, window_length=1,
+                                             method='vasicek')
         assert_allclose(
             entropy,
             [1.122044, 1.102944, 1.129616],
             rtol=1e-6,
         )
 
-        entropy = stats.differential_entropy(values, axis=1, window_length=8)
+        entropy = stats.differential_entropy(values, axis=1, window_length=8,
+                                             method='vasicek')
         assert_allclose(
             entropy,
             [1.349401, 1.338514, 1.292332],
@@ -272,3 +276,12 @@ class TestDifferentialEntropy(object):
         assert_allclose(np.sqrt(np.mean((res - true_entropy)**2)),
                         rmse_expected, atol=0.005)
         assert_allclose(np.std(res), std_expected, atol=0.002)
+
+    @pytest.mark.parametrize('n, method', [(8, 'van es'),
+                                           (12, 'ebrahimi'),
+                                           (1001, 'vasicek')])
+    def test_method_auto(self, n, method):
+        rvs = stats.norm.rvs(size=(n,), random_state=0)
+        res1 = stats.differential_entropy(rvs)
+        res2 = stats.differential_entropy(rvs, method=method)
+        assert res1 == res2

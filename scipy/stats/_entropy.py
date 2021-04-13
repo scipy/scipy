@@ -89,7 +89,7 @@ def differential_entropy(
     window_length: Optional[int] = None,
     base: Optional[float] = None,
     axis: int = 0,
-    method: str = "vasicek",
+    method: str = "auto",
 ) -> Union[np.number, np.ndarray]:
     r"""Given a sample of a distribution, calculate the differential entropy.
 
@@ -124,7 +124,8 @@ def differential_entropy(
     axis : int, optional
         The axis along which the differential entropy is calculated.
         Default is 0.
-    method : str in {'vasicek', 'van es', 'ebrahimi', 'correa'}, optional
+    method : str in {'vasicek', 'van es', 'ebrahimi', 'correa', 'auto'},
+    optional
         The method used to estimate the differential entropy from the sample.
         See Notes for more information.
 
@@ -148,7 +149,7 @@ def differential_entropy(
 
     The following options are available for the `method` parameter.
 
-    * ``'vasicek'`` uses the estimator presented in [1] (default). This is
+    * ``'vasicek'`` uses the estimator presented in [1]. This is
       one of the first and most influential estimators of differential entropy.
     * ``'van es'`` uses the bias-corrected estimator presented in [3], which is
       not only consistent but, under some conditions, asymptotically normal.
@@ -159,6 +160,10 @@ def differential_entropy(
       regression. In a simulation study, it had consistently smaller mean
       square error than the Vasiceck estimator, but it is more expensive to
       compute.
+    * ``'auto'`` selects the method automatically (default). Currently,
+      this selects ``'van es'`` for very small samples (<10), ``'ebrahimi'``
+      for moderate sample sizes (11-1000), and ``'vasicek'`` for larger
+      samples, but this behavior is subject to change in future versions.
 
     All estimators are implemented as described in [6].
 
@@ -220,11 +225,20 @@ def differential_entropy(
     methods = {"vasicek": _vasicek_entropy,
                "van es": _van_es_entropy,
                "correa": _correa_entropy,
-               "ebrahimi": _ebrahimi_entropy}
+               "ebrahimi": _ebrahimi_entropy,
+               "auto": None}
     method = method.lower()
     if method not in methods.keys():
         message = f"`method` must be one of {set(methods.keys())}"
         raise ValueError(message)
+
+    if method == "auto":
+        if n <= 10:
+            method = 'van es'
+        elif n <= 1000:
+            method = 'ebrahimi'
+        else:
+            method = 'vasicek'
 
     res = methods[method](sorted_data, window_length)
 
