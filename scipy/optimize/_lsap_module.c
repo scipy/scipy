@@ -58,16 +58,6 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     npy_intp num_rows = PyArray_DIM(obj_cont, 0);
     npy_intp num_cols = PyArray_DIM(obj_cont, 1);
-
-    // test for NaN and -inf entries
-    for (npy_intp i = 0; i < num_rows*num_cols; i++) {
-        if (cost_matrix[i] != cost_matrix[i] || cost_matrix[i] == -INFINITY) {
-            PyErr_SetString(PyExc_ValueError,
-                            "matrix contains invalid numeric entries");
-            goto cleanup;
-        }
-    }
-
     npy_intp dim[1] = { num_rows };
     a = PyArray_SimpleNew(1, dim, NPY_INT64);
     if (!a)
@@ -83,8 +73,13 @@ calculate_assignment(PyObject* self, PyObject* args)
 
     int ret = solve_rectangular_linear_sum_assignment(
       num_rows, num_cols, cost_matrix, PyArray_DATA((PyArrayObject*)b));
-    if (ret != 0) {
+    if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
+        goto cleanup;
+    }
+    else if (ret == RECTANGULAR_LSAP_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "matrix contains invalid numeric entries");
         goto cleanup;
     }
 
