@@ -1102,6 +1102,11 @@ class TestMood:
         res = stats.mood(x, y, alternative=alternative)
         assert_allclose(res, expected)
 
+def test_mood_invalid_alternative(self):
+    match="alternative must be 'less'..."
+    with pytest.raises(ValueError, match=match):
+        res = stats.mood([1, 2, 3], [1, 2, 3], alternative='ekki-ekki')
+
 
 class TestProbplot:
 
