@@ -23,7 +23,7 @@ class ReportBase:
         # trust-constr typically provides a length 1 array. We have to coerce
         # it to a float, otherwise the string format doesn't work.
         args = list(args)
-        args[3] = float(args[3])
+        args[3] = args[3][0]
 
         iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
