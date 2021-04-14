@@ -11,7 +11,7 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-
+from scipy import optimize
 from scipy import stats
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
@@ -1651,6 +1651,55 @@ class TestBoxcox:
         # to only about five significant digits.
         assert_allclose(lam, -0.051654, rtol=1e-5)
 
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
+    def test_bounded_optimizer_within_bounds(self, bounds):
+        # Define custom optimizer with bounds.
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded")
+
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+        assert bounds[0] < lmbda < bounds[1]
+
+    def test_bounded_optimizer_against_unbounded_optimizer(self):
+        # Test whether setting bounds on optimizer excludes solution from
+        # unbounded optimizer.
+
+        # Get unbounded solution.
+        _, lmbda = stats.boxcox(_boxcox_data, lmbda=None)
+
+        # Set tolerance and bounds around solution.
+        bounds = (lmbda + 0.1, lmbda + 1)
+        options = {'xatol': 1e-12}
+
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded", options=options)
+
+        # Check bounded solution. Lower bound should be active.
+        _, lmbda_bounded = stats.boxcox(_boxcox_data, lmbda=None,
+                                        optimizer=optimizer)
+        assert lmbda_bounded != lmbda
+        assert_allclose(lmbda_bounded, bounds[0])
+
+    @pytest.mark.parametrize("optimizer", ["str", (1, 2), 0.1])
+    def test_bad_optimizer_type_raises_error(self, optimizer):
+        # Check if error is raised if string, tuple or float is passed
+        with pytest.raises(ValueError, match="`optimizer` must be a callable"):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    def test_bad_optimizer_value_raises_error(self):
+        # Check if error is raised if `optimizer` function does not return
+        # `OptimizeResult` object
+
+        # Define test function that always returns 1
+        def optimizer(fun):
+            return 1
+
+        message = "`optimizer` must return an object containing the optimal..."
+        with pytest.raises(ValueError, match=message):
+            stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
 
 class TestBoxcoxNormmax:
     def setup_method(self):
@@ -1671,6 +1720,57 @@ class TestBoxcoxNormmax:
     def test_all(self):
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
+
+    @pytest.mark.parametrize("method", ["mle", "pearsonr", "all"])
+    @pytest.mark.parametrize("bounds", [(-1, 1), (1.1, 2), (-2, -1.1)])
+    def test_bounded_optimizer_within_bounds(self, method, bounds):
+
+        def optimizer(fun):
+            return optimize.minimize_scalar(fun, bounds=bounds,
+                                            method="bounded")
+
+        maxlog = stats.boxcox_normmax(self.x, method=method,
+                                      optimizer=optimizer)
+        assert np.all(bounds[0] < maxlog)
+        assert np.all(maxlog < bounds[1])
+
+    def test_user_defined_optimizer(self):
+        # tests an optimizer that is not based on scipy.optimize.minimize
+        lmbda = stats.boxcox_normmax(self.x)
+        lmbda_rounded = np.round(lmbda, 5)
+        lmbda_range = np.linspace(lmbda_rounded-0.01, lmbda_rounded+0.01, 1001)
+
+        class MyResult:
+            pass
+
+        def optimizer(fun):
+            # brute force minimum over the range
+            objs = []
+            for lmbda in lmbda_range:
+                objs.append(fun(lmbda))
+            res = MyResult()
+            res.x = lmbda_range[np.argmin(objs)]
+            return res
+
+        lmbda2 = stats.boxcox_normmax(self.x, optimizer=optimizer)
+        assert lmbda2 != lmbda                 # not identical
+        assert_allclose(lmbda2, lmbda, 1e-5)   # but as close as it should be
+
+    def test_user_defined_optimizer_and_brack_raises_error(self):
+        optimizer = optimize.minimize_scalar
+
+        # Using default `brack=None` with user-defined `optimizer` works as
+        # expected.
+        stats.boxcox_normmax(self.x, brack=None, optimizer=optimizer)
+
+        # Using user-defined `brack` with user-defined `optimizer` is expected
+        # to throw an error. Instead, users should specify
+        # optimizer-specific parameters in the optimizer function itself.
+        with pytest.raises(ValueError, match="`brack` must be None if "
+                                             "`optimizer` is given"):
+
+            stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
+                                 optimizer=optimizer)
 
 
 class TestBoxcoxNormplot:
