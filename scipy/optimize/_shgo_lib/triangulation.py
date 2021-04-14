@@ -510,7 +510,7 @@ class Cell(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, origin, supremum):
-        super(Cell, self).__init__(p_gen, p_hgr)
+        super().__init__(p_gen, p_hgr)
 
         self.origin = origin
         self.supremum = supremum
@@ -525,7 +525,7 @@ class Simplex(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, generation_cycle, dim):
-        super(Simplex, self).__init__(p_gen, p_hgr)
+        super().__init__(p_gen, p_hgr)
 
         self.generation_cycle = (generation_cycle + 1) % (dim - 1)
 

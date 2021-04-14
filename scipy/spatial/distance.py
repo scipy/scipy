@@ -284,11 +284,18 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
 
 def _validate_vector(u, dtype=None):
     # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c').squeeze()
+    u = np.asarray(u, dtype=dtype, order='c')
+    if u.ndim == 1:
+        return u
+
     # Ensure values such as u=1 and u=[1] still return 1-D arrays.
-    u = np.atleast_1d(u)
+    u = np.atleast_1d(u.squeeze())
     if u.ndim > 1:
         raise ValueError("Input vector should be 1-D.")
+    warnings.warn(
+        "scipy.spatial.distance metrics ignoring length-1 dimensions is "
+        "deprecated in SciPy 1.7 and will raise an error in SciPy 1.9.",
+        DeprecationWarning)
     return u
 
 

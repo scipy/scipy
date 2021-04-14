@@ -185,9 +185,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     r'''Perform the Mann-Whitney U rank test on two independent samples.
 
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
-    that the underlying distribution of sample `x` is neither stochastically
-    greater nor stochastically less than the uderlying distribution of sample
-    `y`.
+    that the distribution underlying sample `x` is the same as the
+    distribution underlying sample `y`. It is often used as a test of
+    of difference in location between distributions.
 
     Parameters
     ----------
@@ -200,15 +200,20 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             otherwise.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
-        The following options are available:
+        Let *F(u)* and *G(u)* be the cumulative distribution functions of the
+        distributions underlying `x` and `y`, respectively. Then the following
+        alternative hypotheses are available:
 
-        * 'two-sided': one of the distributions (underlying `x` or `y`) is
-          stochastically greater than the other.
+        * 'two-sided': the distributions are not equal, i.e. *F(u) ≠ G(u)* for
+          at least one *u*.
         * 'less': the distribution underlying `x` is stochastically less
-          than the distribution underlying `y`.
+          than the distribution underlying `y`, i.e. *F(u) > G(u)* for all *u*.
         * 'greater': the distribution underlying `x` is stochastically greater
-          than the distribution underlying `y`.
+          than the distribution underlying `y`, i.e. *F(u) < G(u)* for all *u*.
 
+        Under a more restrictive set of assumptions, the alternative hypotheses
+        can be expressed in terms of the locations of the distributions;
+        see [5] section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
     method : {'auto', 'asymptotic', 'exact'}, optional
@@ -271,6 +276,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
            Inference, Vol. 79, pp. 349-364, 1999.
     .. [4] Rosie Shier, "Statistics: 2.3 The Mann-Whitney U Test", Mathematics
            Learning Support Centre, 2004.
+    .. [5] Michael P. Fay and Michael A. Proschan. "Wilcoxon-Mann-Whitney
+           or t-test? On assumptions for hypothesis tests and multiple \
+           interpretations of decision rules." Statistics surveys, Vol. 4, pp.
+           1-39, 2010. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2857732/
 
     Examples
     --------
@@ -281,17 +290,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     >>> females = [20, 11, 17, 12]
 
     We use the Mann-Whitney U test to assess whether there is a statistically
-    significant difference in the age of diagnosis of males and females.
-    The null hypothesis is that the probability of a male diagnosis age being
-    greater than a female diagnosis age is equal to the probability of a
-    female diagnosis age being greater than a male diagnosis age. We decide
+    significant difference in the diagnosis age of males and females.
+    The null hypothesis is that the distribution of male diagnosis ages is
+    the same as the distribution of female diagnosis ages. We decide
     that a confidence level of 95% is required to reject the null hypothesis
-    in favor of the alternative: that either the diagnosis age of males is
-    stochastically greater than the diagnosis age of females or the diagnosis
-    age of females is stochastically greater than the diagnosis age of males.
+    in favor of the alternative that that the distributions are different.
     Since the number of samples is very small and there are no ties in the
-    data, we can compare the test statistic against the *exact* distribution
-    of the test statistic under the null hypothesis.
+    data, we can compare the observed test statistic against the *exact*
+    distribution of the test statistic under the null hypothesis.
 
     >>> from scipy.stats import mannwhitneyu
     >>> U1, p = mannwhitneyu(males, females, method="exact")
