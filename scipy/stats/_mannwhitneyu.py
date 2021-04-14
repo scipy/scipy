@@ -351,14 +351,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     that agrees with that reported in [4]_.
 
     >>> _, pnorm = mannwhitneyu(males, females, use_continuity=False,
-    ...                          method="asymptotic")
+    ...                         method="asymptotic")
     >>> print(pnorm)
     0.0864107329737
 
     Regardless of whether we perform an exact or asymptotic test, the
     probability of the test statistic being as extreme or more extreme by
     chance exceeds 5%, so we do not consider the results statistically
-    significant
+    significant.
 
     Suppose that, before seeing the data, we had hypothesized that females
     would tend to be diagnosed at a younger age than males.
