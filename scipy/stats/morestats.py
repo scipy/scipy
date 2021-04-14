@@ -2811,15 +2811,19 @@ def mood(x, y, axis=0):
     M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
     print(f"M: {M.item():.2f} {'equal to' if np.allclose(M, T) else 'not equal to'} T:{T.item():.2f}")
     
+    abc = 0
+    for j in range(1, k ):
+        abc += t[j] * (t[j]**2 - 1) * (t[j]**2 - 4 + (15 * (N - S_i[j] - S_i_m1[j]) ** 2))
+  
     
-    varM = (m * n * (N + 1.0) * (N + 2) * (N - 2) / 180 -
-            m * n / (180 * N * (N - 1)) * np.sum(
-                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S_i - S_i_m1) ** 2))
-            ))
+    
+    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
+            m * n / (180 * N * (N - 1)) * abc)
     # print(T - E_0_T)
     # print(varM)
-
-    z = (T - E_0_T) / np.sqrt(varM)
+    numerator = (T - E_0_T)
+    print(numerator)
+    z = numerator / np.sqrt(varM)
     
     # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
     z_pos = z > 0
