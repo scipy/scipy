@@ -2774,17 +2774,14 @@ def mood(x, y, axis=0):
     t = np.concatenate(([0], t))
     S_i = np.cumsum(t)
     S_i_m1 = np.concatenate(([0], S_i[:-1]))
-
+    
     psi = lambda I: (I - (N + 1)/2)**2
     
     # the last eq on pg 213
     def phi(j):
         phi_var = 0
-        for I in range(S_i[j], S_i[j+1]):
+        for I in range(S_i[j - 1]+1, S_i[j] + 1):
             phi_var += psi(I)
-            
-        if t[j] == 0:
-            return 0
         return phi_var / t[j]
     
     a = [0] * (len(uniques) + 1)
@@ -2795,21 +2792,13 @@ def mood(x, y, axis=0):
     # k is the number of unique samples, minus the 0 on the front.
     k = len(uniques)
     # penultimate eq on pg 213
-    for j in range(k):
+    for j in range(1, k + 1):
         phi_temp = phi(j)
         a_temp = a[j]
         T += a_temp * phi_temp
 
     # Approx stat.
     E_0_T = n * (N * N - 1) / 12
-    
-    # let's check to make sure computation is the same without ties, or different 
-    # if there are ties.
-    if len(xy) == len(uniques):
-        print("There are not ties. Original computation (M) should be the same"
-              " as new (T)")
-    else:
-        print("There are ties. Original computation (M) should differ from new (T)")
         
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
