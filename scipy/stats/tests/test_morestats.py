@@ -1103,7 +1103,7 @@ class TestMood:
         assert_allclose(res, expected)
 
     def test_mood_invalid_alternative(self):
-        match="alternative must be 'less'..."
+        match = "alternative must be 'less'..."
         with pytest.raises(ValueError, match=match):
             res = stats.mood([1, 2, 3], [1, 2, 3], alternative='ekki-ekki')
 
