@@ -131,7 +131,7 @@ class FortranFile:
         elif len(b) < n:
             raise FortranFormattingError(
                 "End of file in the middle of the record size")
-        return int(np.frombuffer(b, dtype=self._header_dtype, count=1))
+        return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
 
     def write_record(self, *items):
         """
