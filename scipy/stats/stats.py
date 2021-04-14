@@ -6164,7 +6164,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
-            #
             v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
             v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
@@ -6183,7 +6182,7 @@ def _ttest_trim_var_mean_len(a, trim, axis):
     # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
     a = np.sort(a, axis=axis)
 
-    # `g_*` is the number of elements to be replaced on each tail, converted
+    # `g` is the number of elements to be replaced on each tail, converted
     # from a percentage amount of trimming
     n = a.shape[axis]
     g = int(n * trim)
@@ -6202,38 +6201,37 @@ def _ttest_trim_var_mean_len(a, trim, axis):
 
 def _calculate_winsorized_variance(a, g, axis):
     """Calculates g-times winsorized variance along specified axis"""
+    # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
         return np.var(a, ddof=1, axis=axis)
-    # it is expected that the input `a` is sorted along the correct axis
     # move the intended axis to the end that way it is easier to manipulate
     a_win = np.moveaxis(a, axis, -1)
 
     # save where NaNs are for later use.
-    contains_nans = np.any(np.isnan(a_win), axis=-1)
+    nans_indices = np.any(np.isnan(a_win), axis=-1)
 
-    # Winsorization and variance calculation are done in one step in [4] (
-    # 1-3), but here winsorization is done first; Iterate over `g`,
-    # replacing the left and right sides with the repeating value. This can
-    # be see in effect in (1-3) in [4], where the leftmost and rightmost
-    # tails are replaced with `(g + 1) * x_{g + 1}` on the left and
-    # `(g + 1) * x_{n - g}` on the right. Zero-indexing turns `g + 1` to
-    # `g`, and `n - g` to `n - g - 1` in array indexing.
-    for i in range(g):
-        a_win[..., [i]] = a_win[..., [g]]
-        a_win[..., [- i - 1]] = a_win[..., [- g - 1]]
-
-    # determine the variance. In [4], the degrees of freedom is expressed as
+    # Winsorization and variance calculation are done in one step in [4]
+    # (1-3), but here winsorization is done first; replace the left and
+    # right sides with the repeating value. This can be see in effect in (
+    # 1-3) in [4], where the leftmost and rightmost tails are replaced with
+    # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
+    # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
+    # array indexing.
+    a_win[..., :g] = a_win[..., [g]]
+    a_win[..., - g - 1:] = a_win[..., [- g - 1]]
+    
+    # Determine the variance. In [4], the degrees of freedom is expressed as
     # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
     # page 369, beginning of page 370). This is converted to NumPy's format,
-    # `n - ddof` for use with with `np.var`. The results are converted to array
-    # to accommodate later array indexing.
-    vars = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # array to accommodate indexing later.
+    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
 
-    # with `nan_policy='propagate'`, NaNs are sorted to the end of the array,
-    # and may be completely trimmed out. In these cases, replace computed
-    # variances with `np.nan` if the original sample contained NaNs.
-    vars[contains_nans] = np.nan
-    return vars
+    # with `nan_policy='propagate'`, NaNs may be completely trimmed out
+    # because they were sorted into the tail of the array. In these cases,
+    # replace computed variances with `np.nan`.
+    var_win[nans_indices] = np.nan
+    return var_win
 
 
 def _broadcast_concatenate(xs, axis):
