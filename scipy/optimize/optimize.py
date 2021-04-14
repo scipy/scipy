@@ -744,10 +744,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
-    fsim = np.empty((N + 1,), float)
 
-    for k in range(N + 1):
-        fsim[k] = func(sim[k])
+    fsim = np.array([func(sim[k]) for k in range(N + 1)], dtype=float)
+    if fsim.size != N + 1:
+        raise ValueError("Objective function must return a scalar")
+    # Ideally, we'd like to a have a true scalar returned from f(x). For
+    # backwards-compatility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+    fsim = fsim.reshape(N + 1)
 
     ind = np.argsort(fsim)
     fsim = np.take(fsim, ind, 0)
@@ -772,7 +775,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
             if bounds is not None:
                 xe = np.clip(xe, lower_bound, upper_bound)
-            fxe = func(xe)
+
+            fxe = np.asarray(func(xe))
+            if fxe.size != 1:
+                raise ValueError("Objective function must return a scalar")
+            fxe = fxe.flat[0]
 
             if fxe < fxr:
                 sim[-1] = xe
