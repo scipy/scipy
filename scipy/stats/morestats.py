@@ -2767,6 +2767,50 @@ def mood(x, y, axis=0):
 
     xy = xy.reshape(xy.shape[0], -1)
 
+    # obtain the unique values and the counts of each
+    uniques, t = np.unique(np.sort(xy), return_counts=1)
+
+    # the paper begins at t_1 = ...., and specifies that t_0 = 0.
+    t = np.concatenate(([0], t))
+    S_i = np.cumsum(t)
+    S_i_m1 = np.concatenate(([0], S_i[:-1]))
+
+    psi = lambda I: (I - (N + 1)/2)**2
+    
+    # the last eq on pg 213
+    def phi(j):
+        phi_var = 0
+        for I in range(S_i[j], S_i[j+1]):
+            phi_var += psi(I)
+            
+        if t[j] == 0:
+            return 0
+        return phi_var / t[j]
+    
+    a = [0] * (len(uniques) + 1)
+    for i, u in enumerate(uniques):
+        a[i + 1] = np.count_nonzero(x == u)
+
+    T = 0    
+    # k is the number of unique samples, minus the 0 on the front.
+    k = len(uniques)
+    # penultimate eq on pg 213
+    for j in range(k):
+        phi_temp = phi(j)
+        a_temp = a[j]
+        T += a_temp * phi_temp
+
+    # Approx stat.
+    E_0_T = n * (N * N - 1) / 12
+    
+    # let's check to make sure computation is the same without ties, or different 
+    # if there are ties.
+    if len(xy) == len(uniques):
+        print("There are not ties. Original computation (M) should be the same"
+              " as new (T)")
+    else:
+        print("There are ties. Original computation (M) should differ from new (T)")
+        
     # Generalized to the n-dimensional case by adding the axis argument, and
     # using for loops, since rankdata is not vectorized.  For improving
     # performance consider vectorizing rankdata function.
@@ -2776,19 +2820,18 @@ def mood(x, y, axis=0):
 
     Ri = all_ranks[:n]
     M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
-
-    # Approx stat.
-    mnM = n * (N * N - 1.0) / 12
+    print(f"M: {M.item():.2f} {'equal to' if np.allclose(M, T) else 'not equal to'} T:{T.item():.2f}")
     
-    _, t = np.unique(np.sort(xy), return_counts=1)
-    S = np.cumsum(t)
-    S_m1 = np.concatenate(([0], S[:-1]))
+    
     varM = (m * n * (N + 1.0) * (N + 2) * (N - 2) / 180 -
             m * n / (180 * N * (N - 1)) * np.sum(
-                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_m1) ** 2))
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S_i - S_i_m1) ** 2))
             ))
-    z = (M - mnM) / np.sqrt(varM)
+    # print(T - E_0_T)
+    # print(varM)
 
+    z = (T - E_0_T) / np.sqrt(varM)
+    
     # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
     z_pos = z > 0
     pval = np.zeros_like(z)
@@ -2797,8 +2840,8 @@ def mood(x, y, axis=0):
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
-        z = z[0]
-        pval = pval[0]
+        z = z.item()
+        pval = pval.item()
     else:
         z.shape = res_shape
         pval.shape = res_shape
