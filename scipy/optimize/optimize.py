@@ -749,7 +749,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if fsim.size != N + 1:
         raise ValueError("Objective function must return a scalar")
     # Ideally, we'd like to a have a true scalar returned from f(x). For
-    # backwards-compatility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+    # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
     fsim = fsim.reshape(N + 1)
 
     ind = np.argsort(fsim)
