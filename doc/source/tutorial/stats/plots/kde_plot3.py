@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 
-np.random.seed(12456)
-x1 = np.random.normal(size=200)  # random data, normal distribution
+rng = np.random.default_rng()
+x1 = rng.normal(size=200)  # random data, normal distribution
 xs = np.linspace(x1.min()-1, x1.max()+1, 200)
 
 kde1 = stats.gaussian_kde(x1)

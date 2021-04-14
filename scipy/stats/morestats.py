@@ -11,13 +11,13 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
 
 from scipy import optimize
 from scipy import special
-from . import statlib
-from . import stats
-from .stats import find_repeats, _contains_nan
-from .contingency import chi2_contingency
-from . import distributions
-from ._distn_infrastructure import rv_generic
-from ._hypotests import _get_wilcoxon_distr
+from scipy.stats import statlib
+from scipy.stats import stats
+from scipy.stats.stats import find_repeats, _contains_nan
+from scipy.stats.contingency import chi2_contingency
+from scipy.stats import distributions
+from scipy.stats._distn_infrastructure import rv_generic
+from scipy.stats._hypotests import _get_wilcoxon_distr
 
 
 __all__ = ['mvsdist',
@@ -389,9 +389,9 @@ def _calc_uniform_order_statistic_medians(n):
     >>> a = k
     >>> b = n-k+1
     >>> beta.mean(a, b)
-    array([ 0.2,  0.4,  0.6,  0.8])
+    array([0.2, 0.4, 0.6, 0.8])
     >>> beta.median(a, b)
-    array([ 0.15910358,  0.38572757,  0.61427243,  0.84089642])
+    array([0.15910358, 0.38572757, 0.61427243, 0.84089642])
 
     The Filliben approximation uses the exact medians of the smallest
     and greatest order statistics, and the remaining medians are approximated
@@ -399,7 +399,7 @@ def _calc_uniform_order_statistic_medians(n):
 
     >>> from scipy.morestats import _calc_uniform_order_statistic_medians
     >>> _calc_uniform_order_statistic_medians(n)
-    array([ 0.15910358,  0.38545246,  0.61454754,  0.84089642])
+    array([0.15910358, 0.38545246, 0.61454754, 0.84089642])
 
     This plot shows the skewed distributions of the order statistics
     of a sample of size four from a uniform distribution on the unit interval:
@@ -540,7 +540,6 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
-    >>> np.random.seed(7654321)
 
     A t distribution with small degrees of freedom:
 
@@ -775,7 +774,6 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234567)
     >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
 
     Now we explore this data with a PPCC plot as well as the related
@@ -850,7 +848,6 @@ def boxcox_llf(lmb, data):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    >>> np.random.seed(1245)
 
     Generate some random variates and calculate Box-Cox log-likelihood values
     for them for a range of ``lmbda`` values:
@@ -1100,7 +1097,6 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     --------
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)  # make this example reproducible
 
     Generate some data and determine optimal ``lmbda`` in various ways:
 
@@ -1109,11 +1105,11 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    7.177...
+    7.177...  # random
     >>> lmax_pearsonr
-    7.916...
+    7.916...  # random
     >>> stats.boxcox_normmax(x, method='all')
-    array([ 7.91667384,  7.17718692])
+    array([ 7.91667384,  7.17718692])  # random
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1425,7 +1421,6 @@ def yeojohnson_llf(lmb, data):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    >>> np.random.seed(1245)
 
     Generate some random variates and calculate Yeo-Johnson log-likelihood
     values for them for a range of ``lmbda`` values:
@@ -1512,7 +1507,6 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     --------
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)  # make this example reproducible
 
     Generate some data and determine optimal ``lmbda``
 
@@ -1651,15 +1645,14 @@ def shapiro(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(12345678)
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
-    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)  # random
     >>> shapiro_test.statistic
-    0.9772805571556091
+    0.9772805571556091  # random
     >>> shapiro_test.pvalue
-    0.08144091814756393
+    0.08144091814756393  # random
 
     """
     x = np.ravel(x)
@@ -1984,7 +1977,7 @@ def anderson_ksamp(samples, midrank=True):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(314159)
+    >>> rng = np.random.default_rng()
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
@@ -1992,9 +1985,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.2%:
 
-    >>> stats.anderson_ksamp([np.random.normal(size=50),
-    ... np.random.normal(loc=0.5, size=30)])
-    (2.4615796189876105,
+    >>> stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    (2.4615796189876105,  # random
       array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
       0.03176687568842282)
 
@@ -2004,9 +1997,9 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.731):
 
-    >>> stats.anderson_ksamp([np.random.normal(size=50),
-    ... np.random.normal(size=30), np.random.normal(size=20)])
-    (-0.73091722665244196,
+    >>> stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    (-0.73091722665244196,  # random
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
       4.07210043, 5.56419101]),
       0.25)
@@ -2115,16 +2108,16 @@ def ansari(x, y):
     Examples
     --------
     >>> from scipy.stats import ansari
+    >>> rng = np.random.default_rng()
 
     For these examples, we'll create three random data sets.  The first
     two, with sizes 35 and 25, are drawn from a normal distribution with
     mean 0 and standard deviation 2.  The third data set has size 25 and
     is drawn from a normal distribution with standard deviation 1.25.
 
-    >>> np.random.seed(1234567890)
-    >>> x1 = np.random.normal(loc=0, scale=2, size=35)
-    >>> x2 = np.random.normal(loc=0, scale=2, size=25)
-    >>> x3 = np.random.normal(loc=0, scale=1.25, size=25)
+    >>> x1 = rng.normal(loc=0, scale=2, size=35)
+    >>> x2 = rng.normal(loc=0, scale=2, size=25)
+    >>> x3 = rng.normal(loc=0, scale=1.25, size=25)
 
     First we apply `ansari` to `x1` and `x2`.  These samples are drawn
     from the same distribution, so we expect the Ansari-Bradley test
@@ -2132,7 +2125,7 @@ def ansari(x, y):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)  # random
 
     With a p-value of 0.355, we cannot conclude that there is a
     significant difference in the scales (as expected).
@@ -2140,7 +2133,7 @@ def ansari(x, y):
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)  # random
 
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
@@ -2722,9 +2715,9 @@ def mood(x, y, axis=0):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(1234)
-    >>> x2 = np.random.randn(2, 45, 6, 7)
-    >>> x1 = np.random.randn(2, 30, 6, 7)
+    >>> rng = np.random.default_rng()
+    >>> x2 = rng.standard_normal((2, 45, 6, 7))
+    >>> x1 = rng.standard_normal((2, 30, 6, 7))
     >>> z, p = stats.mood(x1, x2, axis=1)
     >>> p.shape
     (2, 6, 7)
@@ -2732,14 +2725,14 @@ def mood(x, y, axis=0):
     Find the number of points where the difference in scale is not significant:
 
     >>> (p > 0.1).sum()
-    74
+    74  # random
 
     Perform the test with different scales:
 
-    >>> x1 = np.random.randn(2, 30)
-    >>> x2 = np.random.randn(2, 35) * 10.0
+    >>> x1 = rng.standard_normal((2, 30))
+    >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))
+    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))  # random
 
     """
     x = np.asarray(x, dtype=float)

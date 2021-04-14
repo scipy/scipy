@@ -18,8 +18,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 
 
 class NearestNDInterpolator(NDInterpolatorBase):
-    """
-    NearestNDInterpolator(x, y)
+    """NearestNDInterpolator(x, y).
 
     Nearest-neighbor interpolation in N > 1 dimensions.
 
@@ -57,9 +56,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import NearestNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))

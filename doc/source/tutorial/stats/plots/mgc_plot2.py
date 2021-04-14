@@ -39,7 +39,6 @@ def mgc_plot(x, y, mgc_dict):
     ax.set_ylim(0, 100)
 
 
-np.random.seed(12345678)
 x = np.linspace(-1, 1, num=100)
 y = x + 0.3 * np.random.random(x.size)
 

@@ -39,7 +39,6 @@ def mgc_plot(x, y, mgc_dict):
     ax.set_ylim(0, 100)
 
 
-np.random.seed(12345678)
 unif = np.array(np.random.uniform(0, 5, size=100))
 x = unif * np.cos(np.pi * unif)
 y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)

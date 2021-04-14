@@ -587,13 +587,14 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     the first coordinate to take larger steps than the rest of the coordinates.
     This can be implemented like so:
 
+    >>> rng = np.random.default_rng()
     >>> class MyTakeStep:
     ...    def __init__(self, stepsize=0.5):
     ...        self.stepsize = stepsize
     ...    def __call__(self, x):
     ...        s = self.stepsize
-    ...        x[0] += np.random.uniform(-2.*s, 2.*s)
-    ...        x[1:] += np.random.uniform(-s, s, x[1:].shape)
+    ...        x[0] += rng.uniform(-2.*s, 2.*s)
+    ...        x[1:] += rng.uniform(-s, s, x[1:].shape)
     ...        return x
 
     Since ``MyTakeStep.stepsize`` exists basinhopping will adjust the magnitude
@@ -617,10 +618,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     We'll run it for only 10 basinhopping steps this time.
 
-    >>> np.random.seed(1)
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=10, callback=print_fun)
-    at minimum 0.4159 accepted 1
+    at minimum 0.4159 accepted 1  # random
     at minimum 0.4159 accepted 1
     at minimum -0.9073 accepted 1
     at minimum -0.1021 accepted 1

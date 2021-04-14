@@ -414,8 +414,6 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     (array([[ 2.3110306 ,  2.86287398],    # random
            [ 0.93218041,  1.24398691]]), 0.85684700941625547)
 
-    >>> from numpy import random
-    >>> random.seed((1000,2000))
     >>> codes = 3
     >>> kmeans(whitened,codes)
     (array([[ 2.3110306 ,  2.86287398],    # random
@@ -437,6 +435,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     >>> plt.scatter(whitened[:, 0], whitened[:, 1])
     >>> plt.scatter(codebook[:, 0], codebook[:, 1], c='r')
     >>> plt.show()
+
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if iter < 1:
@@ -675,10 +674,10 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     Create z, an array with shape (100, 2) containing a mixture of samples
     from three multivariate normal distributions.
 
-    >>> np.random.seed(12345678)
-    >>> a = np.random.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
-    >>> b = np.random.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
-    >>> c = np.random.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
+    >>> b = rng.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
+    >>> c = rng.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
     >>> z = np.concatenate((a, b, c))
     >>> np.random.shuffle(z)
 
@@ -686,7 +685,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     >>> centroid, label = kmeans2(z, 3, minit='points')
     >>> centroid
-    array([[-0.35770296,  5.31342524],
+    array([[-0.35770296,  5.31342524],  # random
            [ 2.32210289, -0.50551972],
            [ 6.17653859,  4.16719247]])
 
@@ -694,7 +693,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     >>> counts = np.bincount(label)
     >>> counts
-    array([52, 27, 21])
+    array([52, 27, 21])  # random
 
     Plot the clusters.
 

@@ -376,12 +376,13 @@ linear least squares.
    >>> import numpy as np
    >>> from scipy import linalg
    >>> import matplotlib.pyplot as plt
+   >>> rng = np.random.default_rng()
 
    >>> c1, c2 = 5.0, 2.0
    >>> i = np.r_[1:11]
    >>> xi = 0.1*i
    >>> yi = c1*np.exp(-xi) + c2*xi
-   >>> zi = yi + 0.05 * np.max(yi) * np.random.randn(len(yi))
+   >>> zi = yi + 0.05 * np.max(yi) * rng.standard_normal(len(yi))
 
    >>> A = np.c_[np.exp(-xi)[:, np.newaxis], xi[:, np.newaxis]]
    >>> c, resid, rank, sigma = linalg.lstsq(A, zi)
@@ -886,24 +887,24 @@ needs to accept complex numbers* as input in order to work with this
 algorithm. For example, the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
-    >>> from scipy import special, random, linalg
-    >>> np.random.seed(1234)
-    >>> A = random.rand(3, 3)
+    >>> from scipy import special, linalg
+    >>> rng = np.random.default_rng()
+    >>> A = rng.random((3, 3))
     >>> B = linalg.funm(A, lambda x: special.jv(0, x))
     >>> A
-    array([[ 0.19151945,  0.62210877,  0.43772774],
+    array([[ 0.19151945,  0.62210877,  0.43772774],  # random
            [ 0.78535858,  0.77997581,  0.27259261],
            [ 0.27646426,  0.80187218,  0.95813935]])
     >>> B
-    array([[ 0.86511146, -0.19676526, -0.13856748],
+    array([[ 0.86511146, -0.19676526, -0.13856748],  # random
            [-0.17479869,  0.7259118 , -0.16606258],
            [-0.19212044, -0.32052767,  0.73590704]])
     >>> linalg.eigvals(A)
-    array([ 1.73881510+0.j, -0.20270676+0.j,  0.39352627+0.j])
+    array([ 1.73881510+0.j, -0.20270676+0.j,  0.39352627+0.j])  # random
     >>> special.jv(0, linalg.eigvals(A))
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])  # random
     >>> linalg.eigvals(B)
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])  # random
 
 Note how, by virtue of how matrix analytic functions are defined,
 the Bessel function has acted on the matrix eigenvalues.

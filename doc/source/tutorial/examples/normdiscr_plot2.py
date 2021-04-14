@@ -18,7 +18,6 @@ normdiscrete = stats.rv_discrete(
                         name='normdiscrete')
 
 n_sample = 500
-np.random.seed(87655678)  # fix the seed for replicability
 rvs = normdiscrete.rvs(size=n_sample)
 f, l = np.histogram(rvs,bins=gridlimits)
 sfreq = np.vstack([gridint,f,probs*n_sample]).T
