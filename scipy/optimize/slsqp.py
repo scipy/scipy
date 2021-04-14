@@ -413,11 +413,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
     # ScalarFunction
-    fx = wrapped_fun(x)
-    try:
-        fx = float(np.asarray(fx))
-    except (TypeError, ValueError) as e:
-        raise ValueError("Objective function must return a scalar") from e
+    fx = np.asarray(wrapped_fun(x))
+    # Ideally, we'd like to a have a true scalar returned from f(x). For
+    # backwards-compatility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+    if fx.size != 1:
+        raise ValueError("Objective function must return a scalar")
+    fx = fx.flat[0]
+
     g = append(wrapped_grad(x), 0.0)
     c = _eval_constraint(x, cons)
     a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
