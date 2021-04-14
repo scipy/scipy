@@ -4098,11 +4098,15 @@ class Test_ttest_ind_common:
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
 
-        # arbitrarily use `np.mean` as a baseline for which indices should be
+        # arbitrarily use `np.sum` as a baseline for which indices should be
         # NaNs
-        expected = np.isnan(np.mean(a + b, axis=axis))
-
-        res = stats.ttest_ind(a, b, axis=axis, **kwds)
+        expected = np.isnan(np.sum(a + b, axis=axis))
+        # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
+        # indices throws an warning
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in less_equal")
+            res = stats.ttest_ind(a, b, axis=axis, **kwds)
         p_nans = np.isnan(res.pvalue)
         assert_array_equal(p_nans, expected)
         statistic_nans = np.isnan(res.statistic)
