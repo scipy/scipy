@@ -10,12 +10,11 @@ Development environment quickstart guide (gitpod)
 =======================================================
 
 This quickstart guide covers:
+
 * using GitPod for your SciPy development environment
 * creating a personal fork of the SciPy repository on GitHub
 * a quick tour of Gitpod and VSCode
-* building and updating the SciPy documentation in gitpod
-* using Gitpod and git to make contributions to SciPy
-
+* working on the SciPy documentation in SciPy
 
 Gitpod
 -------
@@ -69,10 +68,32 @@ Some important parts of the editor have been marked in the image:
 4. Marketplace extensions - we have added some basic extensions to the SciPy Gitpod but you can also install other extensions or syntax highlighting themes for your user and these will be preserved
 5. Your workspace directory - by default is is ``/workspace/scipy`` **do not change this** as this is the only directory that is preserved in Gitpod.
 
+Some tools and extensions installed in your workspace are:
 
+*  `GitHub CLI <https://cli.github.com/>`_
+*  vim
+*  `VSCode rst extension <https://marketplace.visualstudio.com/items?itemName=lextudio.restructuredtext>`_
+*  `VSCode Liveserver extension <https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer>`_
+*  `VSCode Gitlens extension <https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens>`_
+*  `VSCode autodocstrings extension <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ set to "numpy" by default
 
+Development workflow
+-----------------------
+:ref:`development-workflow` goes in detail into the SciPy development workflow.
 
-.. note:: The first time you run a new cont
+.. note:: You do not need to configure your git username and email as this should be done for you as you authenticated through GitHub. You can check the git configuration with the command ``git config --list`` in your terminal
+
+Also, since you started your workspace from your own SciPy fork your workspace will also have ``upstream`` and ``origin`` added as remotes. You can verify this by typing ``git remote`` on your terminal or by clicking on the "branch name" on the status bar (see image below).
+
+..image:: _static/gitpod/scipy-gitpod-branches.png 
+    :alt: Gitpod workspace with branches menu screenshot
+    :figclass: align-center
+
+From here on you can follow the workflow described in :ref:`development-workflow`. 
+
+Rendering the documentation
+----------------------------
+
 
 .. _Gitpod: https://www.gitpod.io/
 .. _Scipy repository on GitHub: https://github.com/scipy/scipy
