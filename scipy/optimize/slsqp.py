@@ -418,7 +418,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # backwards-compatility, also allow np.array([1.3]), np.array([[1.3]]) etc.
     if fx.size != 1:
         raise ValueError("Objective function must return a scalar")
-    fx = fx.flat[0]
+    fx = fx.item()
 
     g = append(wrapped_grad(x), 0.0)
     c = _eval_constraint(x, cons)

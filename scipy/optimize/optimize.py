@@ -779,7 +779,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fxe = np.asarray(func(xe))
             if fxe.size != 1:
                 raise ValueError("Objective function must return a scalar")
-            fxe = fxe.flat[0]
+            fxe = fxe.item()
 
             if fxe < fxr:
                 sim[-1] = xe
