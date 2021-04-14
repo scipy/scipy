@@ -1081,9 +1081,9 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         Input array.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
-         `optimize.brent` solver.  Note that this is in most cases not
+         `optimize.brent` solver. Note that this is in most cases not
          critical; the final result is allowed to be outside this bracket.
-         This will be ignored if `optimizer` is not None.
+         If `optimizer` is passed, `brack` must be None.
     method : str, optional
         The method to determine the optimal transform parameter (`boxcox`
         ``lmbda`` parameter). Options are:

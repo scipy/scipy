@@ -1753,6 +1753,22 @@ class TestBoxcoxNormmax:
         assert lmbda2 != lmbda                 # not identical
         assert_allclose(lmbda2, lmbda, 1e-5)   # but as close as it should be
 
+    def test_user_defined_optimizer_and_brack_raises_error(self):
+        optimizer = optimize.minimize_scalar
+
+        # Using default `brack=None` with user-defined `optimizer` works as
+        # expected.
+        stats.boxcox_normmax(self.x, brack=None, optimizer=optimizer)
+
+        # Using user-defined `brack` with user-defined `optimizer` is expected
+        # to throw an error. Instead, users should specify
+        # optimizer-specific parameters in the optimizer function itself.
+        with pytest.raises(ValueError, match="`brack` must be None if "
+                                             "`optimizer` is given"):
+
+            stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
+                                 optimizer=optimizer)
+
 
 class TestBoxcoxNormplot:
     def setup_method(self):
