@@ -4351,10 +4351,13 @@ class TestBurr:
 class TestStudentizedRange:
     # Critical Q values were selected from this table:
     # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
-    # For alpha=.05, .01, and .001, and for each value of v=[1, 3, 10, 20],
-    # a Q was picked from each table for k=[2, 8, 14, 20, 120, inf].
-    ks = [2, 8, 14, 20]
+    # For alpha=.05, .01, and .001, and for each value of
+    # v=[1, 3, 10, 20, 120, inf], a Q was picked from each table for
+    # k=[2, 8, 14, 20].
+
     vs = [1, 3, 10, 20, 120, np.inf]
+    ks = [2, 8, 14, 20]
+
     # these arrays are written with `k` as column, and `v` as rows, but they
     # must be reshaped with a new order to be in the proper order to compare
     # with the product.
