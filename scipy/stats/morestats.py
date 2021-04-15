@@ -2075,18 +2075,21 @@ AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
 class _ABW:
-    '''Distribution of Ansari-Bradley W-statistic under the null hypothesis'''
+    """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
     # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
     # but inititally it doesn't seem worth the extra complexity
 
     def __init__(self):
-        '''Minimal initializer'''
+        """Minimal initializer."""
         self.m = None
         self.n = None
+        self.astart = None
+        self.total = None
+        self.freqs = None
 
     def _recalc(self, n, m):
-        '''When necessary, recalculate exact distribution'''
+        """When necessary, recalculate exact distribution."""
         if n != self.n or m != self.m:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
@@ -2101,7 +2104,7 @@ class _ABW:
             # probability mass is self.freqs / self.total;
 
     def pmf(self, k, n, m):
-        '''Probability mass function'''
+        """Probability mass function."""
         self._recalc(n, m)
         # The convention here is that PMF at k = 12.5 is the same as at k = 12,
         # -> use `floor` in case of ties.
@@ -2109,7 +2112,7 @@ class _ABW:
         return self.freqs[ind] / self.total
 
     def cdf(self, k, n, m):
-        '''Cumulative distribution function'''
+        """Cumulative distribution function."""
         self._recalc(n, m)
         # This is a bit subtle; easiest to think through an example:
         # the CDF at k = 12.5 should be the same as at k = 12 -> `floor`
@@ -2119,7 +2122,7 @@ class _ABW:
         return self.freqs[:ind+1].sum() / self.total
 
     def sf(self, k, n, m):
-        '''Survival function'''
+        """Survival function."""
         self._recalc(n, m)
         # This is a bit subtle; easiest to think through an example:
         # the SF at k = 12.5 should be the same at k = 13 -> `ceil`.
@@ -2202,7 +2205,7 @@ def ansari(x, y, alternative='two-sided'):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.3550608509212331)
+    AnsariResult(statistic=511.0, pvalue=0.3550608509212331)  # random
 
     With a p-value of 0.355, we cannot conclude that there is a
     significant difference in the scales (as expected).
@@ -2210,26 +2213,26 @@ def ansari(x, y, alternative='two-sided'):
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280279118023228)
+    AnsariResult(statistic=452.0, pvalue=0.006280279118023228)  # random
 
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
     are not equal.
 
-    We can use the ``alternative`` parameter to perform one-tailed test.
+    We can use the `alternative` parameter to perform one-tailed test.
     In the above example, the scale of `x1` is greater than `x3` and so
     the ratio of scales of `x1` and `x3` is greater than 1. This means
     that the p-value when ``alternative='greater'`` should be near 0 and
     hence we should be able to reject the null hypothesis:
 
     >>> ansari(x1, x3, alternative='greater')
-    AnsariResult(statistic=452.0, pvalue=0.003140139559011614)
+    AnsariResult(statistic=452.0, pvalue=0.003140139559011614)  # random
 
     As we can see, the p-value is indeed quite low. Use of
     ``alternative='less'`` should thus yield a large p-value:
 
     >>> ansari(x1, x3, alternative='less')
-    AnsariResult(statistic=452.0, pvalue=0.9971491079190463)
+    AnsariResult(statistic=452.0, pvalue=0.9971491079190463)  # random
 
     """
     if alternative not in {'two-sided', 'greater', 'less'}:
