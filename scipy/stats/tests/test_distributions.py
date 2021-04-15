@@ -4455,7 +4455,19 @@ class TestStudentizedRange:
             # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
             # range causes the results to converge and pass default atol.
             assert_allclose(res_act, res_exp, atol=1e-5)
-    
+
+    @pytest.mark.slow
+    def test_moment_vectorization(self):
+        # Test moment broadcasting. Calls `_munp` directly because
+        # `rv_continuous.moment` is broken at time of writing. See gh-12192
+        
+        assert_allclose(
+            stats.studentized_range._munp([1, 2], [4, 5], [10, 11]).shape,
+            (2,))
+
+        with pytest.raises(ValueError, match="...could not be broadcast..."):
+            stats.studentized_range._munp(1, [4, 5], [10, 11, 12])
+
     @pytest.mark.slow
     def test_fitstart_valid(self):
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
