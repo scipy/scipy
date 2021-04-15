@@ -9235,7 +9235,9 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_moment, 3, 1)
-        return ufunc(K, k, df).astype("float64")
+
+        with np.errstate(divide='ignore'):
+            return ufunc(K, k, df).astype("float64")
 
     def _pdf(self, x, k, df):
         cython_symbol = '_genstudentized_range_pdf'
@@ -9254,7 +9256,9 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
-        return ufunc(x, k, df).astype("float64")
+
+        with np.errstate(divide='ignore'):
+            return ufunc(x, k, df).astype("float64")
 
     def _cdf(self, x, k, df):
         _a, _b = self._get_support()
@@ -9294,7 +9298,9 @@ class studentized_range_gen(rv_continuous):
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
-        return ufunc(x, k, df).astype("float64")
+
+        with np.errstate(divide='ignore'):
+            return ufunc(x, k, df).astype("float64")
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
