@@ -451,7 +451,7 @@ def rosen_hess_prod(x, p):
     return Hp
 
 
-def _wrap_function(function, args):
+def _wrap_scalar_function(function, args):
     # wraps a minimizer function to count number of evaluations
     # and to easily provide an args kwd.
     ncalls = [0]
@@ -464,13 +464,10 @@ def _wrap_function(function, args):
         fx = function(np.copy(x), *(wrapper_args + args))
         # Ideally, we'd like to a have a true scalar returned from f(x). For
         # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
-        print()
-        print(x, fx)
         try:
             fx = np.asarray(fx).item()
         except (TypeError, ValueError) as e:
             raise ValueError("Objective function must return a scalar") from e
-        print(fx)
         return fx
 
     return ncalls, function_wrapper
@@ -679,7 +676,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
 
     if adaptive:
         dim = float(len(x0))
@@ -2937,7 +2934,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = _wrap_function(func, args)
+    fcalls, func = _wrap_scalar_function(func, args)
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
