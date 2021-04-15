@@ -1187,14 +1187,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
-
     k = 0
     N = len(x0)
     I = np.eye(N, dtype=int)
@@ -1507,14 +1499,6 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     old_fval = f(x0)
     gfk = myfprime(x0)
-
-    if not np.isscalar(old_fval):
-        try:
-            old_fval = old_fval.item()
-        except (ValueError, AttributeError) as e:
-            raise ValueError("The user-provided "
-                             "objective function must "
-                             "return a scalar value.") from e
 
     k = 0
     xk = x0
