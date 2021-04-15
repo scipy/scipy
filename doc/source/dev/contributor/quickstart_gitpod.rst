@@ -114,6 +114,17 @@ A quick and easy way to see live changes in an `rst` as you work on it uses the 
         
 If you want to see the final output with the ``HTML`` theme you will need to rebuild the docs with ``make HTML-scipy`` and use Live Serve as described in option 1.
 
+FAQ's
+-----
+
+#. How long is my Gitpod workspace kept for?
+    Your stopped workspace will be kept for 14 days and deleted afterwards if you do not use them.
+#. Can I come back to a previous workspace?
+    Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit `www.gitpod.io/workspaces` and click on the workspace you want to spin again. All your changes will be there as you last left them.
+#. Can I install additional VSCode extensions?
+    Absolutely! Any extensions you installed will be installed in your own workspace and preserved.
+
+
 .. _Gitpod: https://www.gitpod.io/
 .. _Scipy repository on GitHub: https://github.com/scipy/scipy
 .. _create your own fork: https://help.github.com/en/articles/fork-a-repo
