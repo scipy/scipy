@@ -92,7 +92,7 @@ class VisitingDistribution:
             # Changing only one coordinate at a time based on strategy
             # chain step
             x_visit = np.copy(x)
-            visit = self.visit_fn(temperature, 1)
+            visit = self.visit_fn(temperature, 1)[0]
             if visit > self.TAIL_LIMIT:
                 visit = self.TAIL_LIMIT * self.rand_gen.uniform()
             elif visit < -self.TAIL_LIMIT:
