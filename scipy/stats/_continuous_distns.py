@@ -9234,7 +9234,8 @@ class studentized_range_gen(rv_continuous):
 
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
-        return _single_moment(K, k, df)
+        ufunc = np.frompyfunc(_single_moment, 3, 1)
+        return ufunc(K, k, df).astype("float64")
 
     def _pdf(self, x, k, df):
         cython_symbol = '_genstudentized_range_pdf'
