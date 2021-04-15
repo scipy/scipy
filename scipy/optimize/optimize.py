@@ -752,7 +752,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     one2np1 = list(range(1, N + 1))
 
-    fsim = np.array([func(sim[k]) for k in range(N + 1)], dtype=float)
+    fsim = np.empty((N + 1,), float)
+    for k in range(N + 1):
+        fsim[k] = func(sim[k])
 
     ind = np.argsort(fsim)
     fsim = np.take(fsim, ind, 0)
@@ -777,7 +779,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
             if bounds is not None:
                 xe = np.clip(xe, lower_bound, upper_bound)
-
             fxe = func(xe)
 
             if fxe < fxr:
