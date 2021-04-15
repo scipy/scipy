@@ -521,9 +521,7 @@ cdef double _phi(double z) nogil:
 
 cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized range`"""
-    cdef double m_sqrt1_2 = 0.7071067811865475
-    return 0.5 * math.erfc(-z * m_sqrt1_2)
-
+    return cs.ndtr(z)
 
 cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil:
     # evaluates the integrand of Equation (3) by Batista, et al [2]
