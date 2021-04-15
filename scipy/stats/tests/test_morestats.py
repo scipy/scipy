@@ -528,7 +528,7 @@ class TestAnsari:
         # invalid value for alternative must raise a ValueError
         x1 = [1, 2, 3, 4]
         x2 = [5, 6, 7, 8]
-        match = "alternative must be 'two-sided'..."
+        match = "'alternative' must be 'two-sided'"
         with assert_raises(ValueError, match=match):
             stats.ansari(x1, x2, alternative='foo')
 
