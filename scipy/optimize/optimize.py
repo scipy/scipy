@@ -751,8 +751,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
-
     fsim = np.empty((N + 1,), float)
+
     for k in range(N + 1):
         fsim[k] = func(sim[k])
 
