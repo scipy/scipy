@@ -9120,10 +9120,10 @@ class studentized_range_gen(rv_continuous):
         
     .. math::
 
-         f(q; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)2^{\nu/2-1}}
-                        \int_{0}^{\infty}\int_{-\infty}^{\infty}
-                        s^{\nu-1}e^{\nu s^2/2}s\phi(z)\phi(sq + z)
-                        [\Phi(sq + z) - \Phi(z)]^{k-2}\mathrm{d}z\mathrm{d}s
+         f(q; k, \nu) = f(q; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
+                        2^{\nu/2-1}} \int_{0}^{\infty} \int_{-\infty}^{\infty}
+                        s e^{\nu s^2/2} \phi(z) \phi(sq + z) [\Phi(sq + z) -
+                        \Phi(z)]^{k-2} \,dz \,ds
 
     When `df` exceeds 100,000, an asymptotic approximation (infinte degrees of
     freedom) is used to compute the cumulative distribution function. [4]_
