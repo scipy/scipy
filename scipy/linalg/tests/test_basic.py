@@ -1576,7 +1576,7 @@ class TestMatrix_Balance:
     def test_separate(self):
         _, (y, z) = matrix_balance(np.array([[1000, 1], [1000, 0]]),
                                    separate=1)
-        assert_equal(int(np.diff(np.log2(y))[0]), 5)
+        assert_equal(np.diff(np.log2(y)), [5])
         assert_allclose(z, np.arange(2))
 
     def test_permutation(self):
