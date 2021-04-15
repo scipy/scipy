@@ -4440,27 +4440,26 @@ class TestStudentizedRange:
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
 
     @pytest.mark.slow
-    def test_moment_against_pdf(self):
+    @pytest.mark.parametrize("moment", [1, 2, 3, 4])
+    def test_moment_against_pdf(self, moment):
         k, v = 3, 10
-        moments = [1, 2, 3, 4]
 
-        for moment in moments:
-            res_act = stats.studentized_range.moment(moment, k, v)
+        res_act = stats.studentized_range.moment(moment, k, v)
 
-            def wrapper(x):
-                return x ** moment * stats.studentized_range.pdf(x, k, v)
-            res_exp = quad(wrapper, 0, np.inf)[0]
+        def wrapper(x):
+            return x ** moment * stats.studentized_range.pdf(x, k, v)
+        res_exp = quad(wrapper, 0, np.inf)[0]
 
-            # Atol is large B/C of integration innacuracy with quad.
-            # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
-            # range causes the results to converge and pass default atol.
-            assert_allclose(res_act, res_exp, atol=1e-5)
+        # Atol is large B/C of integration innacuracy with quad.
+        # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
+        # range causes the results to converge and pass default atol.
+        assert_allclose(res_act, res_exp, atol=1e-5)
 
     @pytest.mark.slow
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
-        
+
         assert_allclose(
             stats.studentized_range._munp([1, 2], [4, 5], [10, 11]).shape,
             (2,))
