@@ -18,6 +18,7 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
+from .stats import _normtest_finish
 
 
 __all__ = ['mvsdist',
@@ -2753,7 +2754,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
-def mood(x, y, axis=0):
+def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
     Mood's two-sample test for scale parameters is a non-parametric
@@ -2769,6 +2770,18 @@ def mood(x, y, axis=0):
         different length along `axis`.
         If `axis` is None, `x` and `y` are flattened and the test is done on
         all values in the flattened arrays.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the scales of the distributions underlying `x` and `y`
+          are different.
+        * 'less': the scale of the distribution underlying `x` is less than
+          the scale of the distribution underlying `y`.
+        * 'greater': the scale of the distribution underlying `x` is greater
+          than the scale of the distribution underlying `y`.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -2859,12 +2872,7 @@ def mood(x, y, axis=0):
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     z = (M - mnM) / sqrt(varM)
-
-    # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
-    z_pos = z > 0
-    pval = np.zeros_like(z)
-    pval[z_pos] = 2 * distributions.norm.sf(z[z_pos])
-    pval[~z_pos] = 2 * distributions.norm.cdf(z[~z_pos])
+    z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays

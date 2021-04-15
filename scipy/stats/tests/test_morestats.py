@@ -1066,6 +1066,45 @@ class TestMood:
         # less than 3
         assert_raises(ValueError, stats.mood, [1], [])
 
+    def test_mood_alternative(self):
+
+        np.random.seed(0)
+        x = stats.norm.rvs(scale=0.75, size=100)
+        y = stats.norm.rvs(scale=1.25, size=100)
+
+        stat1, p1 = stats.mood(x, y, alternative='two-sided')
+        stat2, p2 = stats.mood(x, y, alternative='less')
+        stat3, p3 = stats.mood(x, y, alternative='greater')
+
+        assert stat1 == stat2 == stat3
+        assert_allclose(p1, 0, atol=1e-7)
+        assert_allclose(p2, p1/2)
+        assert_allclose(p3, 1 - p1/2)
+
+        with pytest.raises(ValueError, match="alternative must be..."):
+            stats.mood(x, y, alternative='ekki-ekki')
+
+    @pytest.mark.xfail(reason="SciPy needs tie correction like R (gh-13730)")
+    @pytest.mark.parametrize("alternative, expected",
+                             [('two-sided', (1.037127561496, 0.299676411857)),
+                              ('less', (1.0371275614961, 0.8501617940715)),
+                              ('greater', (1.037127561496, 0.1498382059285))])
+    def test_mood_alternative_against_R(self, alternative, expected):
+        ## Test againts R mood.test: https://rdrr.io/r/stats/mood.test.html
+        # options(digits=16)
+        # x <- c(111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+        #             101, 96, 97, 102, 107, 113, 116, 113, 110, 98)
+        # y <- c(107, 108, 106, 98, 105, 103, 110, 105, 104,
+        #             100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99)
+        # mood.test(x, y, alternative='less')
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
+             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+
+        res = stats.mood(x, y, alternative=alternative)
+        assert_allclose(res, expected)
+
 
 class TestProbplot:
 
