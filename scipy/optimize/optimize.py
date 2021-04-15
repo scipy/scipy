@@ -454,14 +454,24 @@ def rosen_hess_prod(x, p):
 def _wrap_function(function, args):
     # wraps a minimizer function to count number of evaluations
     # and to easily provide an args kwd.
-    # A copy of x is sent to the user function (gh13740)
     ncalls = [0]
     if function is None:
         return ncalls, None
 
     def function_wrapper(x, *wrapper_args):
         ncalls[0] += 1
-        return function(np.copy(x), *(wrapper_args + args))
+        # A copy of x is sent to the user function (gh13740)
+        fx = function(np.copy(x), *(wrapper_args + args))
+        # Ideally, we'd like to a have a true scalar returned from f(x). For
+        # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
+        print()
+        print(x, fx)
+        try:
+            fx = np.asarray(fx).item()
+        except (TypeError, ValueError) as e:
+            raise ValueError("Objective function must return a scalar") from e
+        print(fx)
+        return fx
 
     return ncalls, function_wrapper
 
@@ -746,11 +756,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     one2np1 = list(range(1, N + 1))
 
     fsim = np.array([func(sim[k]) for k in range(N + 1)], dtype=float)
-    if fsim.size != N + 1:
-        raise ValueError("Objective function must return a scalar")
-    # Ideally, we'd like to a have a true scalar returned from f(x). For
-    # backwards-compatibility, also allow np.array([1.3]), np.array([[1.3]]) etc.
-    fsim = fsim.reshape(N + 1)
 
     ind = np.argsort(fsim)
     fsim = np.take(fsim, ind, 0)
@@ -776,10 +781,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             if bounds is not None:
                 xe = np.clip(xe, lower_bound, upper_bound)
 
-            fxe = np.asarray(func(xe))
-            if fxe.size != 1:
-                raise ValueError("Objective function must return a scalar")
-            fxe = fxe.item()
+            fxe = func(xe)
 
             if fxe < fxr:
                 sim[-1] = xe
