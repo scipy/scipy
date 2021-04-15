@@ -1,7 +1,6 @@
 """Progress report printers."""
 
 from __future__ import annotations
-import numpy as np
 from typing import List
 
 class ReportBase:
@@ -20,12 +19,6 @@ class ReportBase:
 
     @classmethod
     def print_iteration(cls, *args):
-        # args[3] is the value of the user-defined objective function. It should really
-        # be a float, but often a length-1 array is provided. We have to coerce it to a
-        # float, otherwise the string format doesn't work.
-        args = list(args)
-        args[3] = np.asarray(args[3]).item()
-
         iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
         print(fmt.format(*args))
