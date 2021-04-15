@@ -2157,6 +2157,8 @@ def ansari(x, y, alternative='two-sided'):
         * 'less': the ratio of scales is less than 1.
         * 'greater': the ratio of scales is greater than 1.
 
+        .. versionadded:: 1.7.0
+
     Returns
     -------
     statistic : float
