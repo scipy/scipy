@@ -1566,7 +1566,7 @@ class TestMatrix_Balance:
         # Pre/post LAPACK 3.5.0 gives the same result up to an offset
         # since in each case col norm is x1000 greater and
         # 1000 / 32 ~= 1 * 32 hence balanced with 2 ** 5.
-        assert_allclose(int(np.diff(np.log2(np.diag(y)))[0]), 5)
+        assert_allclose(np.diff(np.log2(np.diag(y))), [5])
 
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4], [1, 1, 1e-2], [1e4, 1e2, 1]])
