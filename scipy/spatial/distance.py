@@ -1773,18 +1773,17 @@ _METRIC_INFOS = [
         canonical_name='chebyshev',
         aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
         dist_func=chebyshev,
-        validator=_validate_weight_with_size,
-        cdist_func=CDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
+        cdist_func=_distance_pybind.cdist_chebyshev,
+        pdist_func=_distance_pybind.pdist_chebyshev,
+        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='cityblock',
         aka={'cityblock', 'cblock', 'cb', 'c'},
         dist_func=cityblock,
-        cdist_func=CDistMetricWrapper('cityblock'),
-        pdist_func=PDistMetricWrapper('cityblock'),
+        cdist_func=_distance_pybind.cdist_cityblock,
+        pdist_func=_distance_pybind.pdist_cityblock,
+        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='correlation',
@@ -1812,8 +1811,9 @@ _METRIC_INFOS = [
         canonical_name='euclidean',
         aka={'euclidean', 'euclid', 'eu', 'e'},
         dist_func=euclidean,
-        cdist_func=CDistMetricWrapper('euclidean'),
-        pdist_func=PDistMetricWrapper('euclidean'),
+        cdist_func=_distance_pybind.cdist_euclidean,
+        pdist_func=_distance_pybind.pdist_euclidean,
+        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='hamming',
