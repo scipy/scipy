@@ -996,13 +996,13 @@ class OptimalDesign(QMCEngine):
     d : int
         Dimension of the parameter space.
     start_design : array_like (n, d), optional
-        Initial design of experiment to optimize. `OrthogonalLatinHypercube`
+        Initial design of experiment to optimize. `LatinHypercube`
         is used to generate a first design otherwise.
     niter : int, optional
         Number of iterations to perform. Default is 1.
     method : callable ``f(func, x0, bounds)``, optional
         Optimization function used to search new samples. Default to
-        *basinhopping* optimization.
+        `scipy.optimize.basinhopping` optimization.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1044,17 +1044,6 @@ class OptimalDesign(QMCEngine):
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
     0.01600398742881648
-
-    Finally, samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[8.40526909, 3.609945  ],
-           [1.54532796, 3.08795949],
-           [5.2177809 , 4.80031164],
-           [6.80338249, 2.1942472 ],
-           [2.65448791, 3.83491828]])
 
     """
 
@@ -1127,8 +1116,8 @@ class OptimalDesign(QMCEngine):
             disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
                                         self.best_disc)
             if disc < self.best_disc:
-                doe[row_1, col], doe[row_2, col] = doe[row_2, col], \
-                                                   doe[row_1, col]
+                doe[row_1, col], doe[row_2, col] = (
+                    doe[row_2, col], doe[row_1, col])
                 self.best_disc = disc
                 self.best_doe = doe
 
