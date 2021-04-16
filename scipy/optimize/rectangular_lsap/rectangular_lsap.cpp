@@ -50,7 +50,7 @@ Author: PM Larsen
 template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
 {
     std::vector<intptr_t> index(v.size());
-    iota(index.begin(), index.end(), 0);
+    std::iota(index.begin(), index.end(), 0);
     std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j)
               {return v[i] < v[j];});
     return index;
