@@ -12,7 +12,8 @@ from scipy.optimize import basinhopping
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy, QMCEngine, _perturb_discrepancy)
+                              update_discrepancy, QMCEngine,
+                              _perturb_discrepancy)  # noqa
 
 
 class TestUtils:
@@ -564,7 +565,7 @@ class TestOptimalDesign(QMCEngineTests):
         pytest.skip("Not applicable: not a sequence.")
 
     def test_discrepancy_hierarchy(self):
-        # base discrepancy as a reference for testing OptimalDesign is better
+        # base discrepancy as a reference for testing OptimalLatinHypercube is better
         seed = np.random.RandomState(123456)
         lhs = qmc.LatinHypercube(d=2, seed=seed)
         sample_ref = lhs.random(n=20)

@@ -24,7 +24,7 @@ from scipy.stats._qmc_cy import (
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton',
-           'LatinHypercube', 'OptimalDesign',
+           'LatinHypercube', 'OptimalLatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -386,28 +386,26 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
     z_ij = sample - 0.5
 
     # Eq (19)
-    c_i1j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i1, :]) +
-                                          abs(z_ij) -
-                                          abs(z_ij[i1, :] - z_ij)),
-                                   axis=1)
-    c_i2j = 1. / n ** 2. * np.prod(0.5 * (2. + abs(z_ij[i2, :]) +
-                                          abs(z_ij) -
-                                          abs(z_ij[i2, :] - z_ij)),
-                                   axis=1)
+    c_i1j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i1, :])
+                              + abs(z_ij) - abs(z_ij[i1, :] - z_ij)), axis=1))
+    c_i2j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i2, :])
+                              + abs(z_ij) - abs(z_ij[i2, :] - z_ij)), axis=1))
 
     # Eq (20)
-    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :])) -
-              2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :]) -
-                               0.5 * z_ij[i1, :] ** 2))
-    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :])) -
-              2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :]) -
-                               0.5 * z_ij[i2, :] ** 2))
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :])
+                                 - 0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :])
+                                 - 0.5 * z_ij[i2, :] ** 2))
 
     # Eq (22), typo in the article in the denominator i2 -> i1
-    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k]) -
-           abs(z_ij[i2, k] - z_ij[:, k]))
-    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k]) -
-             abs(z_ij[i1, k] - z_ij[:, k]))
+    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k])
+           - abs(z_ij[i2, k] - z_ij[:, k]))
+    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k])
+             - abs(z_ij[i1, k] - z_ij[:, k]))
     gamma = num / denum
 
     # Eq (23)
@@ -940,8 +938,8 @@ class LatinHypercube(QMCEngine):
         return self
 
 
-class OptimalDesign(QMCEngine):
-    """Optimal design.
+class OptimalLatinHypercube(QMCEngine):
+    """Optimal Latin hypercube sampling (OLHS).
 
     Optimize the design by doing random permutations to lower the centered
     discrepancy [1]_.
@@ -986,10 +984,10 @@ class OptimalDesign(QMCEngine):
     Generate samples from an optimal design.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.OptimalDesign(d=2, seed=12345)
+    >>> sampler = qmc.OptimalLatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.84052691, 0.53664833],
+    array([[0.84052691, 0.53664833],  # random
            [0.1545328 , 0.36265316],
            [0.52177809, 0.93343721],
            [0.68033825, 0.06474907],
@@ -998,21 +996,21 @@ class OptimalDesign(QMCEngine):
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.01602810655510689
+    0.01602810655510689  # random
 
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
-    >>> sampler_2 = qmc.OptimalDesign(d=2, niter=5, seed=12345)
+    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2, niter=5, seed=12345)
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
-    0.01600398742881648
+    0.01600398742881648  # random
 
     """
 
     def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
         super().__init__(d=d, seed=seed)
-        self.start_design = start_design
+        self.best_doe = np.asarray(start_design)
         self.niter = niter
 
         if method is None:
@@ -1024,9 +1022,8 @@ class OptimalDesign(QMCEngine):
 
         self.method = method
 
-        self.best_doe = self.start_design
         if self.start_design is not None:
-            self.best_disc = discrepancy(self.start_design)
+            self.best_disc = discrepancy(self.best_doe)
         else:
             self.best_disc = np.inf
 
@@ -1102,7 +1099,7 @@ class OptimalDesign(QMCEngine):
 
         Returns
         -------
-        engine: OptimalDesign
+        engine: OptimalLatinHypercube
             Engine reset to its base state.
 
         """
