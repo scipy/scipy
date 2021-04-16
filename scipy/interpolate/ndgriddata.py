@@ -56,7 +56,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import NearestNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
     >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)

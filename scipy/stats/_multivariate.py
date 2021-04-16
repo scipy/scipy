@@ -3561,7 +3561,7 @@ class random_correlation_gen(multi_rv_generic):
     Examples
     --------
     >>> from scipy.stats import random_correlation
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
     >>> x
     array([[ 1.        , -0.07198934, -0.20411041, -0.24385796],

@@ -94,7 +94,7 @@ simplicity, we'll construct a symmetric, positive-definite matrix.
     >>> from scipy.linalg import eig, eigh
     >>> from scipy.sparse.linalg import eigs, eigsh
     >>> np.set_printoptions(suppress=True)
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>>
     >>> X = rng.random((100, 100)) - 0.5
     >>> X = np.dot(X, X.T)  # create a symmetric matrix
@@ -233,7 +233,7 @@ the dense matrix:
    ...         return self.diag*x
 
    >>> N = 100
-   >>> rng = np.random.default_rng(SEED)
+   >>> rng = np.random.default_rng()
    >>> d = rng.normal(0, 1, N).astype(np.float64)
    >>> D = np.diag(d)
    >>> Dop = Diagonal(d, dtype=np.float64)

@@ -99,7 +99,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     Simulate normally distributed random variables. It is easy to compute the
     bounding rectangle explicitly in that case. For simplicity, we drop the

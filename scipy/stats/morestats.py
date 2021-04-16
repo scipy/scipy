@@ -1134,7 +1134,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     We can generate some data and determine the optimal ``lmbda`` in various
     ways:
 
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = stats.loggamma.rvs(5, size=30, random_state=rng) + 5
     >>> y, lmax_mle = stats.boxcox(x)
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
@@ -1724,7 +1724,7 @@ def shapiro(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
@@ -2057,7 +2057,7 @@ def anderson_ksamp(samples, midrank=True):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
@@ -2188,7 +2188,7 @@ def ansari(x, y):
     Examples
     --------
     >>> from scipy.stats import ansari
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     For these examples, we'll create three random data sets.  The first
     two, with sizes 35 and 25, are drawn from a normal distribution with
@@ -2807,7 +2807,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
     >>> z, p = stats.mood(x1, x2, axis=1)

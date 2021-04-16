@@ -75,7 +75,7 @@ def next_fast_len(target):
     On a particular machine, an FFT of prime length takes 133 ms:
 
     >>> from scipy import fftpack
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> min_len = 10007  # prime length is worst case for speed
     >>> a = rng.standard_normal(min_len)
     >>> b = fftpack.fft(a)

@@ -85,7 +85,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     Examples
     --------
     >>> from scipy import linalg
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
 
     >>> q, r = linalg.qr(a)
@@ -370,7 +370,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     Examples
     --------
     >>> from scipy import linalg
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((6, 9))
     >>> r, q = linalg.rq(a)
     >>> np.allclose(a, r @ q)

@@ -225,7 +225,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> A = np.arange(9).reshape((3, 3))
     >>> B = rng.standard_normal((3, 3))
 

@@ -323,7 +323,7 @@ def cramervonmises(rvs, cdf, args=()):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=500, random_state=rng)
     >>> res = stats.cramervonmises(x, 'norm')
     >>> res.statistic, res.pvalue
@@ -1131,7 +1131,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=100, random_state=rng)
     >>> y = stats.norm.rvs(size=70, random_state=rng)
     >>> res = stats.cramervonmises_2samp(x, y)

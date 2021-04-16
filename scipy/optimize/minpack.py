@@ -673,7 +673,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> xdata = np.linspace(0, 4, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> y_noise = 0.2 * rng.normal(size=xdata.size)
     >>> ydata = y + y_noise
     >>> plt.plot(xdata, ydata, 'b-', label='data')

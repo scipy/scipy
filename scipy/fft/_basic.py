@@ -254,7 +254,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Create and plot a band-limited signal with random phases:
 
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> t = np.arange(400)
     >>> n = np.zeros((400,), dtype=complex)
     >>> n[40:60] = np.exp(1j*rng.uniform(0, 2*np.pi, (20,)))
@@ -703,7 +703,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [ 0.+0.j,  0.+0.j,  0.+0.j]]])
 
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> [X, Y] = np.meshgrid(2 * np.pi * np.arange(200) / 12,
     ...                      2 * np.pi * np.arange(200) / 34)
     >>> S = np.sin(X) + np.cos(Y) + rng.uniform(0, 1, X.shape)
@@ -807,7 +807,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Create and plot an image with band-limited frequency content:
 
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> n = np.zeros((200,200), dtype=complex)
     >>> n[60:80, 20:40] = np.exp(1j*rng.uniform(0, 2*np.pi, (20, 20)))
     >>> im = scipy.fft.ifftn(n).real

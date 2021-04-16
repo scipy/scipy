@@ -2568,7 +2568,7 @@ def _digammainv(y):
     to solve `sc.digamma(x) - y = 0`.  There is probably room for
     improvement, but currently it works over a wide range of y:
 
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> y = 64*rng.standard_normal(1000000)
     >>> y.min(), y.max()
     (-311.43592651416662, 351.77388222276869)

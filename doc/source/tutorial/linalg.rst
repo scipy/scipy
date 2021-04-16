@@ -376,7 +376,7 @@ linear least squares.
    >>> import numpy as np
    >>> from scipy import linalg
    >>> import matplotlib.pyplot as plt
-   >>> rng = np.random.default_rng(SEED)
+   >>> rng = np.random.default_rng()
 
    >>> c1, c2 = 5.0, 2.0
    >>> i = np.r_[1:11]
@@ -888,7 +888,7 @@ algorithm. For example, the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
     >>> from scipy import special, linalg
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> A = rng.random((3, 3))
     >>> B = linalg.funm(A, lambda x: special.jv(0, x))
     >>> A

@@ -589,7 +589,7 @@ class KDTree(cKDTree):
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> rng = np.random.default_rng(SEED)
+        >>> rng = np.random.default_rng()
         >>> points1 = rng.random((15, 2))
         >>> points2 = rng.random((15, 2))
         >>> plt.figure(figsize=(6, 6))
@@ -641,7 +641,7 @@ class KDTree(cKDTree):
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> rng = np.random.default_rng(SEED)
+        >>> rng = np.random.default_rng()
         >>> points = rng.random((20, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
@@ -785,7 +785,7 @@ class KDTree(cKDTree):
 
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> rng = np.random.default_rng(SEED)
+        >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = KDTree(points1)
@@ -840,7 +840,7 @@ class KDTree(cKDTree):
 
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> rng = np.random.default_rng(SEED)
+        >>> rng = np.random.default_rng()
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = KDTree(points1)

@@ -1518,7 +1518,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kurtosistest(list(range(20)), alternative='greater')
     KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.9559783083373583)
 
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> s = rng.normal(0, 1, 1000)
     >>> kurtosistest(s)
     KurtosistestResult(statistic=-1.475047944490622, pvalue=0.14019965402996987)
@@ -1614,7 +1614,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> pts = 1000
     >>> a = rng.normal(0, 1, size=pts)
     >>> b = rng.normal(2, 1, size=pts)
@@ -1679,7 +1679,7 @@ def jarque_bera(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x = rng.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
@@ -2611,7 +2611,7 @@ def gstd(a, axis=0, ddof=1):
     log scale this evaluates to approximately ``exp(1)``.
 
     >>> from scipy.stats import gstd
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> sample = rng.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
     2.810010162475324
@@ -4321,7 +4321,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> from scipy import stats
     >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
     SpearmanrResult(correlation=0.82078..., pvalue=0.08858...)
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
     >>> stats.spearmanr(x2n)
@@ -4350,7 +4350,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
     SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
 
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
     SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
@@ -5504,7 +5504,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50, 2), random_state=rng)
 
     Test if mean of random sample is equal to true mean, and different mean.
@@ -5904,7 +5904,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     Test with sample with identical means:
 
@@ -6194,7 +6194,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
@@ -6731,7 +6731,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     >>> x = np.linspace(-15, 15, 9)
     >>> stats.ks_1samp(x, stats.norm.cdf)
@@ -7147,7 +7147,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Note that the alternative hypotheses describe the *CDFs* of the
     underlying distributions, not the observed values. For example,
     suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
-    x1 tend to be less than those in x2.      
+    x1 tend to be less than those in x2.
 
 
     If the KS statistic is small or the p-value is high, then we cannot
@@ -7173,7 +7173,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     >>> n1 = 200  # size of first sample
     >>> n2 = 300  # size of second sample
@@ -7373,13 +7373,13 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     Note that the alternative hypotheses describe the *CDFs* of the
     underlying distributions, not the observed values. For example,
     suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
-    x1 tend to be less than those in x2.      
+    x1 tend to be less than those in x2.
 
 
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
 
     >>> x = np.linspace(-15, 15, 9)
     >>> stats.kstest(x, 'norm')
@@ -7637,7 +7637,7 @@ def ranksums(x, y, alternative='two-sided'):
     statistic.
 
     >>> from scipy.stats import ranksums
-    >>> rng = np.random.default_rng(SEED)
+    >>> rng = np.random.default_rng()
     >>> sample1 = rng.uniform(-1, 1, 200)
     >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)
