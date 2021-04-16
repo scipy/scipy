@@ -1099,17 +1099,17 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> import matplotlib.pyplot as plt
 
     Generate some data and determine optimal ``lmbda`` in various ways:
-
-    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> rng = np.random.default_rng(SEED)
+    >>> x = stats.loggamma.rvs(5, size=30, random_state=rng) + 5
     >>> y, lmax_mle = stats.boxcox(x)
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    7.177...
+    1.4613865614008015
     >>> lmax_pearsonr
-    7.916...
+    1.6685004886804342
     >>> stats.boxcox_normmax(x, method='all')
-    array([ 7.91667384,  7.17718692])
+    array([1.66850049, 1.46138656])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1645,14 +1645,15 @@ def shapiro(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
+    >>> rng = np.random.default_rng(SEED)
+    >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
-    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
+    ShapiroResult(statistic=0.9813305735588074, pvalue=0.16855233907699585)
     >>> shapiro_test.statistic
-    0.9772805571556091
+    0.9813305735588074
     >>> shapiro_test.pvalue
-    0.08144091814756393
+    0.16855233907699585
 
     """
     x = np.ravel(x)
@@ -1987,9 +1988,9 @@ def anderson_ksamp(samples, midrank=True):
 
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(loc=0.5, size=30)])
-    (2.4615796189876105,
-      array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
-      0.03176687568842282)
+    (1.974403288713695,
+      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
+      0.04991293614572478)
 
 
     The null hypothesis cannot be rejected for three samples from an
@@ -1999,7 +2000,7 @@ def anderson_ksamp(samples, midrank=True):
 
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.73091722665244196,
+    (-0.29103725200789504,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
       4.07210043, 5.56419101]),
       0.25)
@@ -2125,7 +2126,7 @@ def ansari(x, y):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
+    AnsariResult(statistic=541.0, pvalue=0.9762531658722652)
 
     With a p-value of 0.355, we cannot conclude that there is a
     significant difference in the scales (as expected).
@@ -2133,7 +2134,7 @@ def ansari(x, y):
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
+    AnsariResult(statistic=425.0, pvalue=0.0003087020184312628)
 
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
@@ -2725,14 +2726,14 @@ def mood(x, y, axis=0):
     Find the number of points where the difference in scale is not significant:
 
     >>> (p > 0.1).sum()
-    74
+    78
 
     Perform the test with different scales:
 
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))
+    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)

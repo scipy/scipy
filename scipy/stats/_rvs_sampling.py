@@ -99,6 +99,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Examples
     --------
     >>> from scipy import stats
+    >>> rng = np.random.default_rng(SEED)
 
     Simulate normally distributed random variables. It is easy to compute the
     bounding rectangle explicitly in that case. For simplicity, we drop the
@@ -107,21 +108,23 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     >>> f = lambda x: np.exp(-x**2 / 2)
     >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
-    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500)
+    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
+    ...                                random_state=rng)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (normality is not rejected at 5% significance level):
 
     >>> stats.kstest(rvs, 'norm')[1]
-    0.33783681428365553
+    0.250634764150542
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
 
     >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
-    ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
+    ...                                vmin=0, vmax=2*np.exp(-1), size=1000,
+    ...                                random_state=rng)
     >>> stats.kstest(rvs, 'expon')[1]
-    0.928454552559516
+    0.21121052054580314
 
     """
     if vmin >= vmax:

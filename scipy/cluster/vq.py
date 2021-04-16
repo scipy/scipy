@@ -679,7 +679,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     >>> b = rng.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
     >>> c = rng.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)
     >>> z = np.concatenate((a, b, c))
-    >>> np.random.shuffle(z)
+    >>> rng.shuffle(z)
 
     Compute three clusters.
 
@@ -687,13 +687,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     >>> centroid
     array([[-0.35770296,  5.31342524],
            [ 2.32210289, -0.50551972],
-           [ 6.17653859,  4.16719247]])
+           [ 6.17653859,  4.16719247]])  # random
 
     How many points are in each cluster?
 
     >>> counts = np.bincount(label)
     >>> counts
-    array([52, 27, 21])
+    array([52, 27, 21])  # random
 
     Plot the clusters.
 

@@ -154,7 +154,7 @@ def differential_entropy(
     >>> rng = np.random.default_rng(SEED)
     >>> values = rng.standard_normal(100)
     >>> differential_entropy(values)
-    1.401904073487716
+    1.2723964230956013
 
     Compare with the true entropy:
 

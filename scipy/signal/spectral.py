@@ -243,7 +243,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     peak, we can recover the noise power on the signal.
 
     >>> np.mean(Pxx_den[25000:])
-    0.00099728892368242854
+    0.000985320699252543
 
     Now compute and plot the power spectrum.
 

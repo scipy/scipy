@@ -376,7 +376,7 @@ linear least squares.
    >>> import numpy as np
    >>> from scipy import linalg
    >>> import matplotlib.pyplot as plt
-   >>> rng = np.random.default_rng()
+   >>> rng = np.random.default_rng(SEED)
 
    >>> c1, c2 = 5.0, 2.0
    >>> i = np.r_[1:11]
@@ -888,23 +888,23 @@ algorithm. For example, the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
     >>> from scipy import special, linalg
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> A = rng.random((3, 3))
     >>> B = linalg.funm(A, lambda x: special.jv(0, x))
     >>> A
-    array([[ 0.19151945,  0.62210877,  0.43772774],
-           [ 0.78535858,  0.77997581,  0.27259261],
-           [ 0.27646426,  0.80187218,  0.95813935]])
+    array([[0.06369197, 0.90647174, 0.98024544],
+           [0.68752227, 0.5604377 , 0.49142032],
+           [0.86754578, 0.9746787 , 0.37932682]])
     >>> B
-    array([[ 0.86511146, -0.19676526, -0.13856748],
-           [-0.17479869,  0.7259118 , -0.16606258],
-           [-0.19212044, -0.32052767,  0.73590704]])
+    array([[ 0.6929219 , -0.29728805, -0.15930896],
+           [-0.16226043,  0.71967826, -0.22709386],
+           [-0.19945564, -0.33379957,  0.70259022]])
     >>> linalg.eigvals(A)
-    array([ 1.73881510+0.j, -0.20270676+0.j,  0.39352627+0.j])
+    array([ 1.94835336+0.j, -0.72219681+0.j, -0.22270006+0.j])
     >>> special.jv(0, linalg.eigvals(A))
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([0.25375345+0.j, 0.87379738+0.j, 0.98763955+0.j])
     >>> linalg.eigvals(B)
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([0.25375345+0.j, 0.87379738+0.j, 0.98763955+0.j])
 
 Note how, by virtue of how matrix analytic functions are defined,
 the Bessel function has acted on the matrix eigenvalues.

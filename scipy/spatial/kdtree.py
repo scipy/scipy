@@ -791,14 +791,14 @@ class KDTree(cKDTree):
         >>> kd_tree1 = KDTree(points1)
         >>> kd_tree2 = KDTree(points2)
         >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
-        9
+        1
 
         This number is same as the total pair number calculated by
         `query_ball_tree`:
 
         >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
         >>> sum([len(i) for i in indexes])
-        9
+        1
 
         """
         return super().count_neighbors(other, r, p, weights, cumulative)
@@ -847,21 +847,21 @@ class KDTree(cKDTree):
         >>> kd_tree2 = KDTree(points2)
         >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
         >>> sdm.toarray()
-        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
-            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
-            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
-            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
-            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+        array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.28942611, 0.        , 0.        , 0.2333084 , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.24617575, 0.29571802, 0.26836782, 0.        , 0.        ]])
 
         You can check distances above the `max_distance` are zeros:
 
         >>> from scipy.spatial import distance_matrix
         >>> distance_matrix(points1, points2)
-        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
-            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
-            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
-            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
-            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
+        array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
+           [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
+           [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
+           [0.31994999, 0.72658602, 0.71124834, 0.55396483, 0.90785663],
+           [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
         return super().sparse_distance_matrix(

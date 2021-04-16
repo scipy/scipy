@@ -323,10 +323,11 @@ def cramervonmises(rvs, cdf, args=()):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> x = stats.norm.rvs(size=500)
+    >>> rng = np.random.default_rng(SEED)
+    >>> x = stats.norm.rvs(size=500, random_state=rng)
     >>> res = stats.cramervonmises(x, 'norm')
     >>> res.statistic, res.pvalue
-    (0.06342154705518796, 0.792680516270629)
+    (0.49121480855028343, 0.04189256516661377)
 
     The p-value 0.79 exceeds our chosen significance level, so we do not
     reject the null hypothesis that the observed sample is drawn from the
@@ -338,7 +339,7 @@ def cramervonmises(rvs, cdf, args=()):
     >>> y = x + 2.1
     >>> res = stats.cramervonmises(y, 'norm', args=(2,))
     >>> res.statistic, res.pvalue
-    (0.4798693195559657, 0.044782228803623814)
+    (0.07400330012187435, 0.7274595666160468)
 
     Here we have used the `args` keyword to specify the mean (``loc``)
     of the normal distribution to test the data against. This is equivalent
@@ -348,7 +349,7 @@ def cramervonmises(rvs, cdf, args=()):
     >>> frozen_dist = stats.norm(loc=2)
     >>> res = stats.cramervonmises(y, frozen_dist.cdf)
     >>> res.statistic, res.pvalue
-    (0.4798693195559657, 0.044782228803623814)
+    (0.07400330012187435, 0.7274595666160468)
 
     In either case, we would reject the null hypothesis that the observed
     sample is drawn from a normal distribution with a mean of 2 (and default
@@ -1130,11 +1131,12 @@ def cramervonmises_2samp(x, y, method='auto'):
     significance level of alpha=0.05.
 
     >>> from scipy import stats
-    >>> x = stats.norm.rvs(size=100)
-    >>> y = stats.norm.rvs(size=70)
+    >>> rng = np.random.default_rng(SEED)
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> y = stats.norm.rvs(size=70, random_state=rng)
     >>> res = stats.cramervonmises_2samp(x, y)
     >>> res.statistic, res.pvalue
-    (0.24331932773109344, 0.19815666195647663)
+    (0.29376470588235293, 0.1412873014573014)
 
     The p-value exceeds our chosen significance level, so we do not
     reject the null hypothesis that the observed samples are drawn from the
@@ -1142,18 +1144,18 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     For small sample sizes, one can compute the exact p-values:
 
-    >>> x = stats.norm.rvs(size=7)
-    >>> y = stats.t.rvs(df=2, size=6)
+    >>> x = stats.norm.rvs(size=7, random_state=rng)
+    >>> y = stats.t.rvs(df=2, size=6, random_state=rng)
     >>> res = stats.cramervonmises_2samp(x, y, method='exact')
     >>> res.statistic, res.pvalue
-    (0.2655677655677655, 0.18706293706293706)
+    (0.197802197802198, 0.31643356643356646)
 
     The p-value based on the asymptotic distribution is a good approximation
     even though the sample size is small.
 
     >>> res = stats.cramervonmises_2samp(x, y, method='asymptotic')
     >>> res.statistic, res.pvalue
-    (0.2655677655677655, 0.17974247316290415)
+    (0.197802197802198, 0.2966041181527128)
 
     Independent of the method, one would not reject the null hypothesis at the
     chosen significance level in this example.
