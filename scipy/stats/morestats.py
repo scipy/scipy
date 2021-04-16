@@ -541,30 +541,31 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
+    >>> rng = np.random.default_rng()
 
     A t distribution with small degrees of freedom:
 
     >>> ax1 = plt.subplot(221)
-    >>> x = stats.t.rvs(3, size=nsample)
+    >>> x = stats.t.rvs(3, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     A t distribution with larger degrees of freedom:
 
     >>> ax2 = plt.subplot(222)
-    >>> x = stats.t.rvs(25, size=nsample)
+    >>> x = stats.t.rvs(25, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     A mixture of two normal distributions with broadcasting:
 
     >>> ax3 = plt.subplot(223)
     >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
-    ...                    size=(nsample//2,2)).ravel()
+    ...                    size=(nsample//2,2), random_state=rng).ravel()
     >>> res = stats.probplot(x, plot=plt)
 
     A standard normal distribution:
 
     >>> ax4 = plt.subplot(224)
-    >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample)
+    >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample, random_state=rng)
     >>> res = stats.probplot(x, plot=plt)
 
     Produce a new figure with a loggamma distribution, using the ``dist`` and
@@ -572,7 +573,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> x = stats.loggamma.rvs(c=2.5, size=500)
+    >>> x = stats.loggamma.rvs(c=2.5, size=500, random_state=rng)
     >>> res = stats.probplot(x, dist=stats.loggamma, sparams=(2.5,), plot=ax)
     >>> ax.set_title("Probplot for loggamma dist with shape parameter 2.5")
 
@@ -775,7 +776,9 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
-    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+    >>> rng = np.random.default_rng()
+    >>> x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5,
+    ...                           size=10000, random_state=rng) + 1e4
 
     Now we explore this data with a PPCC plot as well as the related
     probability plot and Box-Cox normplot.  A red line is drawn where we
@@ -853,7 +856,8 @@ def boxcox_llf(lmb, data):
     Generate some random variates and calculate Box-Cox log-likelihood values
     for them for a range of ``lmbda`` values:
 
-    >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
+    >>> rng = np.random.default_rng()
+    >>> x = stats.loggamma.rvs(5, loc=10, size=1000, random_state=rng)
     >>> lmbdas = np.linspace(-2, 10)
     >>> llf = np.zeros(lmbdas.shape, dtype=float)
     >>> for ii, lmbda in enumerate(lmbdas):
@@ -1589,7 +1593,8 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     Generate some data and determine optimal ``lmbda``
 
-    >>> x = stats.loggamma.rvs(5, size=30) + 5
+    >>> rng = np.random.default_rng()
+    >>> x = stats.loggamma.rvs(5, size=30, random_state=rng) + 5
     >>> lmax = stats.yeojohnson_normmax(x)
 
     >>> fig = plt.figure()

@@ -467,9 +467,6 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-# SEED is generated with
-# from numpy.random import SeedSequence
-# print(SeedSequence().entropy)
 DEFAULT_NAMESPACE = {'np': np}
 
 # the namespace to do checks in

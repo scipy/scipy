@@ -18,7 +18,8 @@ normdiscrete = stats.rv_discrete(
                         name='normdiscrete')
 
 n_sample = 500
-rvs = normdiscrete.rvs(size=n_sample)
+rng = np.random.default_rng()
+rvs = normdiscrete.rvs(size=n_sample, random_state=rng)
 f, l = np.histogram(rvs, bins=gridlimits)
 sfreq = np.vstack([gridint, f, probs*n_sample]).T
 fs = sfreq[:,1] / float(n_sample)

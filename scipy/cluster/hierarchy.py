@@ -1444,7 +1444,8 @@ def to_tree(Z, rd=False):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
-    >>> x = np.random.rand(10).reshape(5, 2)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random((5, 2))
     >>> Z = hierarchy.linkage(x)
     >>> hierarchy.to_tree(Z)
     <scipy.cluster.hierarchy.ClusterNode object at ...

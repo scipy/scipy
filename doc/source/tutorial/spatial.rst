@@ -135,7 +135,8 @@ follows:
 .. plot::
 
    >>> from scipy.spatial import ConvexHull
-   >>> points = np.random.rand(30, 2)   # 30 random points in 2-D
+   >>> rng = np.random.default_rng()
+   >>> points = rng.random((30, 2))   # 30 random points in 2-D
    >>> hull = ConvexHull(points)
 
    The convex hull is represented as a set of N 1-D simplices,

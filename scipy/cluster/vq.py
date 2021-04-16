@@ -422,10 +422,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     >>> # Create 50 datapoints in two clusters a and b
     >>> pts = 50
-    >>> a = np.random.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
-    >>> b = np.random.multivariate_normal([30, 10],
-    ...                                   [[10, 2], [2, 1]],
-    ...                                   size=pts)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
+    >>> b = rng.multivariate_normal([30, 10],
+    ...                             [[10, 2], [2, 1]],
+    ...                             size=pts)
     >>> features = np.concatenate((a, b))
     >>> # Whiten data
     >>> whitened = whiten(features)
@@ -685,15 +686,15 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     >>> centroid, label = kmeans2(z, 3, minit='points')
     >>> centroid
-    array([[-0.35770296,  5.31342524],
-           [ 2.32210289, -0.50551972],
-           [ 6.17653859,  4.16719247]])  # random
+    array([[ 2.22274463, -0.61666946],  # may vary
+           [ 0.54069047,  5.86541444],
+           [ 6.73846769,  4.01991898]])
 
     How many points are in each cluster?
 
     >>> counts = np.bincount(label)
     >>> counts
-    array([52, 27, 21])  # random
+    array([29, 51, 20])  # may vary
 
     Plot the clusters.
 
