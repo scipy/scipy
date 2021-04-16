@@ -3,8 +3,7 @@
 '''
 A unit test module for czt.py
 '''
-from numpy.testing import (run_module_suite, assert_allclose,
-                           assert_raises, dec)
+from numpy.testing import (assert_allclose, assert_raises, dec)
 from scipy.fft import (fft, czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
@@ -200,14 +199,3 @@ def test_invalid_size():
 
 def test_invalid_range():
     assert_raises(ValueError, ZoomFFT, 100, [1, 2, 3])
-
-
-if __name__ == '__main__':
-    np.random.seed()
-
-    old_settings = np.seterr(all='ignore')  # seterr to known value
-    np.seterr(over='raise')  # Test should fail if internal overflow occurs
-
-    run_module_suite()
-
-    np.seterr(**old_settings)  # reset to default
