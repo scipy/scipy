@@ -3,7 +3,8 @@
 '''
 A unit test module for czt.py
 '''
-from numpy.testing import (assert_allclose, assert_raises, dec)
+import pytest
+from numpy.testing import (assert_allclose, assert_raises)
 from scipy.fft import (fft, czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
@@ -117,7 +118,7 @@ def test_large_prime_lengths():
         assert_allclose(y, y1, rtol=1e-12)
 
 
-@dec.slow
+@pytest.mark.slow
 def test_czt_vs_fft():
     np.random.seed(123)
     random_lengths = np.random.exponential(100000, size=10).astype('int')
