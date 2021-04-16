@@ -1168,7 +1168,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
     ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
-    6.999...
+    6.000...
     """
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
