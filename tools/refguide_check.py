@@ -115,6 +115,7 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
+    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
