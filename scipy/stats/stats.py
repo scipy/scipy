@@ -4247,7 +4247,8 @@ class SpearmanRConstantInputWarning(RuntimeWarning):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate',
+              alternative='two-sided'):
     """Calculate a Spearman correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
@@ -4281,9 +4282,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
-          * 'raise': throws an error
-          * 'omit': performs the calculations ignoring nan values
+        * 'propagate': returns nan
+        * 'raise': throws an error
+        * 'omit': performs the calculations ignoring nan values
+
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -4293,8 +4304,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         length equal to total number of variables (columns or rows) in ``a``
         and ``b`` combined.
     pvalue : float
-        The two-sided p-value for a hypothesis test whose null hypothesis is
-        that two sets of data are uncorrelated, has same dimension as rho.
+        The p-value for a hypothesis test whose null hypotheisis
+        is that two sets of data are uncorrelated. See `alternative` above
+        for alternative hypotheses. `pvalue` has the same
+        shape as `correlation`.
 
     References
     ----------
@@ -4387,7 +4400,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
-            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy)
+            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy,
+                                          alternative=alternative)
         elif nan_policy == 'propagate':
             if a.ndim == 1 or n_vars <= 2:
                 return SpearmanrResult(np.nan, np.nan)
@@ -4406,7 +4420,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = 2 * distributions.t.sf(np.abs(t), dof)
+    t, prob = _ttest_finish(dof, t, alternative)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):

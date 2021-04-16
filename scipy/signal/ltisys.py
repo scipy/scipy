@@ -28,7 +28,6 @@ from scipy.linalg import qr as s_qr
 from scipy.linalg import pinv
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
-from scipy.optimize import curve_fit
 from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -3863,7 +3862,6 @@ def dbode(system, w=None, n=100):
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
 
     return w / dt, mag, phase
-
 
 def _integrate_continuous(vec,dt):
     """

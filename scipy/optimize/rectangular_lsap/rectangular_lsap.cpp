@@ -119,12 +119,17 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 static int
 solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
 {
-
     // build a non-negative cost matrix
     std::vector<double> cost(nr * nc);
     double minval = *std::min_element(input_cost, input_cost + nr * nc);
     for (intptr_t i = 0; i < nr * nc; i++) {
-        cost[i] = input_cost[i] - minval;
+        auto v = input_cost[i] - minval;
+        cost[i] = v;
+
+        // test for NaN and -inf entries
+        if (v != v || v == -INFINITY) {
+            return RECTANGULAR_LSAP_INVALID;
+        }
     }
 
     // initialize variables
@@ -144,7 +149,7 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
         intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
                                         shortestPathCosts, curRow, SR, SC, &minVal);
         if (sink < 0) {
-            return -1;
+            return RECTANGULAR_LSAP_INFEASIBLE;
         }
 
         // update dual variables
