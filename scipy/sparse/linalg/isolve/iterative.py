@@ -430,7 +430,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None, callback_type=None):
+          restrt=None, atol=None, callback_type=None, orth=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -492,6 +492,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
           - ``legacy`` (default): same as ``pr_norm``, but also changes the
             meaning of 'maxiter' to count inner iterations instead of restart
             cycles.
+    orth : 'mgs', optional
+        A faster implementation with restarted GMRES based on MGS
     restrt : int, optional
         DEPRECATED - use `restart` instead.
 
@@ -523,6 +525,16 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     >>> np.allclose(A.dot(x), b)
     True
     """
+
+    # Faster restarted GMRES based on modified Gram-Schmidt orthogonalization
+    if orth == 'mgs':
+        if atol is None:
+            x, info = _gmres_mgs(A, b, x0=x0, restart=restart, tol=tol, maxiter=maxiter, M=M, 
+                                 callback=callback, restrt=restrt)
+            return x, info
+        else:
+            warnings.warn("The option 'atol' was deprecated with 'orth == \'mgs\''",
+                          category=DeprecationWarning)
 
     # Change 'restrt' keyword to 'restart'
     if restrt is None:
@@ -814,3 +826,187 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
         info = iter_
 
     return postprocess(x), info
+
+
+def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None, callback=None, restrt=None):
+    """
+    Use Restarted Generalized Minimal RESidual based on modified Gram-Schmidt iteration to solve ``Ax = b``.
+
+    Parameters
+    ----------
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The real or complex N-by-N matrix of the linear system.
+        Alternatively, ``A`` can be a linear operator which can
+        produce ``Ax`` using, e.g.,
+        ``scipy.sparse.linalg.LinearOperator``.
+    b : {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+
+    Returns
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : int
+        Provides convergence information:
+          * 0  : successful exit
+          * >0 : convergence to tolerance not achieved, number of iterations
+          * <0 : illegal input or breakdown
+
+    Other parameters
+    ----------------
+    x0: {array, matrix}
+        Starting guess for the solution (a vector of zeros by default).
+    restart: int, optional
+        Number of iterations between restarts. Larger values increase
+        iteration cost, but may be necessary for convergence.
+        Default is 30.
+    tol: float, optional
+        Tolerances for convergence, ``norm(residual) <= tol*norm(b)``.
+    maxiter: int, optional
+        Maximum number of iterations (restart cycles).  Iteration will stop
+        after maxiter steps even if the specified tolerance has not been
+        achieved.
+    M : {sparse matrix, dense matrix, LinearOperator}
+        Inverse of the preconditioner of A.  M should approximate the
+        inverse of A and be easy to solve for (see Notes).  Effective
+        preconditioning dramatically improves the rate of convergence,
+        which implies that fewer iterations are needed to reach a given
+        error tolerance.  By default, no preconditioner is used.
+    callback : function
+        User-supplied function to call after each iteration.
+    restrt : int, optional
+        DEPRECATED - use `restart` instead.
+
+    See Also
+    --------
+    LinearOperator
+
+    Notes
+    -----
+    A preconditioner, P, is chosen such that P is close to A but easy to solve
+    for. The preconditioner parameter required by this routine is
+    ``M = P^-1``. The inverse should preferably not be calculated
+    explicitly.  Rather, use the following template to produce M::
+
+      # Construct a linear operator that computes P^-1 * x.
+      import scipy.sparse.linalg as spla
+      M_x = lambda x: spla.spsolve(P, x)
+      M = spla.LinearOperator((n, n), M_x)
+    """
+
+    # Change 'restrt' keyword to 'restart'
+    if restrt is None:
+        restrt = restart
+    elif restart is not None:
+        raise ValueError("Cannot specifiy both restart and restrt keywords. "
+                         "Preferably use 'restart' only.")
+
+    # Check data type
+    dtype = A.dtype
+    if dtype == int:
+        dtype = float
+        A = A.astype(dtype)
+        if b.dtype == int:
+            b = b.astype(dtype)
+
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+
+    # Check if b is a zero vector
+    if np.linalg.norm(b) == 0.:
+        x = b.copy()
+        return (postprocess(x), 0)
+
+    ndofs = A.shape[0]
+    if maxiter is None:
+        maxiter = min(10000, ndofs*10)
+    maxOuterIter = maxiter
+    if x0 is None:
+        x0 = x.copy()
+    if restrt is None:
+        restrt = 20
+    m = min(restrt, ndofs)
+
+    # Define orthonormal basis
+    V = np.zeros((m+1, ndofs), dtype=dtype)
+    # Define Hessenberg matrix
+    Hn = np.zeros((m+1, m), dtype=dtype)
+    # Define rotation matrix
+    rot = np.zeros((2, m), dtype=dtype)
+    g = np.zeros((m+1), dtype=dtype)
+    gtmp = np.zeros((m+1), dtype=dtype)
+
+    r = b - A.matvec(x)
+    z = M.matvec(r)
+    g[0] = np.linalg.norm(z)  # initial residual
+    if g[0] == 0.:
+        return (postprocess(x), 0)
+    r0norm = np.linalg.norm(r)
+    if r0norm == 0.:
+        return (postprocess(x), 0)
+
+    # Outer iterations
+    for iter in range(maxOuterIter):
+        V[0] = (1./g[0]) * z  # first basis vector
+
+        # Inner iterations
+        for k in range(m):
+            v = A.matvec(V[k])
+            w = M.matvec(v)
+            Hn[0:k+1, k] = V[0:k+1].conjugate().dot(w)
+            w -= V[0:k+1].T.dot(Hn[0:k+1, k])
+            Hn[k+1, k] = np.linalg.norm(w)
+
+            # Check if Hn[k+1, k] is zero
+            if Hn[k+1, k] == 0.:
+                # Reconstruct the solution
+                y = np.zeros((k+1), dtype=dtype)
+                gtmp[0:k+1] = g[0:k+1]
+                for i in range(k, -1, -1):
+                    gtmp[i] -= Hn[i, i+1:k+1].dot(y[i+1:k+1])
+                    if Hn[i, i] != 0:
+                        y[i] = gtmp[i] / Hn[i, i]
+                x += V[0:k+1].T.dot(y[0:k+1])
+                rres = np.linalg.norm(b - A.matvec(x)) / r0norm
+                return (postprocess(x), -1)
+            V[k+1] = (1./Hn[k+1, k]) * w
+
+            # QR decomposition of Hn
+            for i in range(k):
+                tmp0 = rot[0, i] * Hn[i, k] + rot[1, i] * Hn[i+1, k]
+                tmp1 = -rot[1, i] * Hn[i, k] + rot[0, i] * Hn[i+1, k]
+                Hn[i, k] = tmp0
+                Hn[i+1, k] = tmp1
+            sq = np.sqrt(Hn[k+1, k]**2 + Hn[k, k]**2)
+            rot[0, k] = Hn[k, k] / sq
+            rot[1, k] = Hn[k+1, k] / sq
+            Hn[k, k] = sq
+            Hn[k+1, k] = 0.
+            g[k+1] = -rot[1, k] * g[k]
+            g[k] *= rot[0, k]
+
+            # Compute relative residual
+            if k < m - 1:
+                rres = np.abs(g[k+1]) / r0norm
+                if rres < tol:
+                    break
+
+        # Reconstruct the solution
+        y = np.zeros((k+1), dtype=dtype)
+        gtmp[0:k+1] = g[0:k+1]
+        for i in range(k, -1, -1):
+            gtmp[i] -= Hn[i, i+1:k+1].dot(y[i+1:k+1])
+            y[i] = gtmp[i] / Hn[i, i]
+        x += V[0:k+1].T.dot(y[0:k+1])
+
+        # Compute relative residual
+        r = b - A.matvec(x)
+        z = M.matvec(r)
+        g[k+1] = np.linalg.norm(r)
+        g[0] = np.linalg.norm(z)
+        rres = g[k+1] / r0norm
+        if callback is not None:
+            callback(x)
+        if rres < tol:
+            return (postprocess(x), 0)
+
+    return (postprocess(x), maxiter)

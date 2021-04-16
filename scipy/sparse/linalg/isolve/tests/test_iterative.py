@@ -184,6 +184,13 @@ def check_maxiter(solver, case):
     assert_equal(len(residuals), 1)
     assert_equal(info, 1)
 
+    # test for faster GMRES
+    residuals = []
+    if solver is gmres:
+        x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback, orth='mgs')
+        assert_equal(len(residuals), 1)
+        assert_equal(info, 1)
+
 
 def test_maxiter():
     case = params.Poisson1D
@@ -223,6 +230,19 @@ def check_convergence(solver, case):
         assert_(info != 0)
         assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
+    # test for faster GMRES
+    if solver is gmres:
+        is_64bit = np.dtype(np.intp).itemsize == 8
+        if is_64bit == True or case != params.cases[20]:
+            x, info = solver(A, b, x0=x0, tol=tol, orth='mgs')
+            assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
+            if solver not in case.nonconvergence:
+                assert_equal(info,0)
+                assert_normclose(A.dot(x), b, tol=tol)
+            else:
+                assert_(info != 0)
+                assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
+
 
 def test_convergence():
     for solver in params.solvers:
@@ -258,6 +278,12 @@ def check_precond_dummy(solver, case):
     assert_equal(info,0)
     assert_normclose(A.dot(x), b, tol)
 
+    # test for faster GMRES
+    if solver is gmres:
+        x, info = solver(A, b, M=precond, x0=x0, tol=tol, orth='mgs')
+        assert_equal(info,0)
+        assert_normclose(A.dot(x), b, tol)
+
     A = aslinearoperator(A)
     A.psolve = identity
     A.rpsolve = identity
@@ -265,6 +291,12 @@ def check_precond_dummy(solver, case):
     x, info = solver(A, b, x0=x0, tol=tol)
     assert_equal(info,0)
     assert_normclose(A*x, b, tol=tol)
+
+    # test for faster GMRES
+    if solver is gmres:
+        x, info = solver(A, b, x0=x0, tol=tol, orth='mgs')
+        assert_equal(info,0)
+        assert_normclose(A*x, b, tol=tol)
 
 
 def test_precond_dummy():
@@ -320,6 +352,15 @@ def check_precond_inverse(solver, case):
     # Solution should be nearly instant
     assert_(matvec_count[0] <= 3, repr(matvec_count))
 
+    # test for faster GMRES
+    if solver is gmres:
+        matvec_count = [0]
+        x, info = solver(A, b, M=precond, x0=x0, tol=tol, orth='mgs')
+        assert_equal(info, 0)
+        assert_normclose(case.A.dot(x), b, tol)
+        # Solution should be nearly instant
+        assert_(matvec_count[0] <= 3, repr(matvec_count))
+
 
 def test_precond_inverse():
     case = params.Poisson1D
@@ -342,8 +383,10 @@ def test_gmres_basic():
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
         x_gm, err = gmres(A, b, restart=5, maxiter=1)
+        x_gm_mgs, err_mgs = gmres(A, b, restart=5, maxiter=1, orth='mgs')
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
+    assert_allclose(x_gm_mgs[0], 0.359, rtol=1e-2)
 
 
 def test_reentrancy():
@@ -371,6 +414,23 @@ def _check_reentrancy(solver, is_reentrant):
         y, info = solver(op, b)
         assert_equal(info, 0)
         assert_allclose(y, [1, 1, 1])
+
+    # test for faster GMRES
+    if solver is gmres:
+        def matvec(x):
+            A = np.array([[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]])
+            y, info = solver(A, x, orth='mgs')
+            assert_equal(info, 0)
+            return y
+        b = np.array([1, 1./2, 1./3])
+        op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
+                          dtype=b.dtype)
+        if not is_reentrant:
+            assert_raises(RuntimeError, solver, op, b)
+        else:
+            y, info = solver(op, b, orth='mgs')
+            assert_equal(info, 0)
+            assert_allclose(y, [1, 1, 1])
 
 
 @pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
@@ -428,10 +488,18 @@ def test_zero_rhs(solver):
             x, info = solver(A, b, tol=tol)
             assert_equal(info, 0)
             assert_allclose(x, 0, atol=1e-15)
+            if solver is gmres:
+                x, info = solver(A, b, tol=tol, orth='mgs')
+                assert_equal(info, 0)
+                assert_allclose(x, 0)
 
             x, info = solver(A, b, tol=tol, x0=ones(10))
             assert_equal(info, 0)
             assert_allclose(x, 0, atol=tol)
+            if solver is gmres:
+                x, info = solver(A, b, tol=tol, x0=ones(10), orth='mgs')
+                assert_equal(info, 0)
+                assert_allclose(x, 0)
 
             if solver is not minres:
                 x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
@@ -485,6 +553,26 @@ def test_maxiter_worsening(solver):
         # Check with slack
         assert_(error <= tol*best_error)
 
+    # test for faster GMRES
+    if solver is gmres:
+        best_error = np.inf
+        worst_error = 0.
+        for maxiter in range(1, 20):
+            x, info = solver(A, v, maxiter=maxiter, tol=1e-8, orth='mgs')
+
+            if info == 0:
+                assert(np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v))
+
+            error = np.linalg.norm(A.dot(x) - v)
+            best_error = min(best_error, error)
+            worst_error = max(worst_error, error)
+
+            # Check with slack
+            # Set tolerance range of the worst error fluctuation
+            if error > tol*best_error and worst_error < 2.:
+                    continue
+            assert(error <= tol*best_error)
+
 
 @pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
 def test_x0_working(solver):
@@ -508,6 +596,17 @@ def test_x0_working(solver):
     x, info = solver(A, b, x0=x0, **kw)
     assert_equal(info, 0)
     assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+    # test for faster GMRES
+    if solver is gmres:
+        kw = dict(tol=1e-6)
+        x, info = solver(A, b, **kw, orth='mgs')
+        assert_equal(info, 0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
+
+        x, info = solver(A, b, x0=x0, **kw, orth='mgs')
+        assert_equal(info, 0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-6*np.linalg.norm(b))
 
 
 #------------------------------------------------------------------------------
@@ -595,12 +694,18 @@ class TestGMRES:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             r_x, r_info = gmres(A, b)
             r_x = r_x.astype(complex)
+            r_x_mgs, r_info_mgs = gmres(A, b, orth='mgs')
+            r_x_mgs = r_x_mgs.astype(complex)
 
             x, info = gmres(A.astype(complex), b.astype(complex))
+            x_mgs, info_mgs = gmres(A.astype(complex), b.astype(complex), orth='mgs')
 
         assert_(iscomplexobj(x))
+        assert_(iscomplexobj(x_mgs))
         assert_allclose(r_x, x)
+        assert_allclose(r_x_mgs, x_mgs)
         assert_(r_info == info)
+        assert_(r_info_mgs == info_mgs)
 
     def test_atol_legacy(self):
         with suppress_warnings() as sup:
@@ -636,32 +741,40 @@ class TestGMRES:
         M[2,2] = 0
 
         b = np.array([0, 1, 1])
-        x = np.array([1, 0, 0])
+        x0 = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+        x, info = gmres(A, b, x0=x0, M=M, tol=1e-15, atol=0)
+        x_mgs, info_mgs = gmres(A, b, x0=x0, M=M, tol=1e-15, orth='mgs')
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
+        assert_(not np.isnan(x_mgs).any())
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(A.dot(x0) - b))
+            assert_(np.linalg.norm(A.dot(x_mgs) - b) <= 1e-15*np.linalg.norm(A.dot(x0) - b))
 
         # The solution should be OK outside null space of M
         assert_allclose(M.dot(A.dot(x)), M.dot(b))
+        assert_allclose(M.dot(A.dot(x_mgs)), M.dot(b))
 
     def test_defective_matrix_breakdown(self):
         # Breakdown due to defective matrix
         A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
         b = np.array([1, 0, 1])
         x, info = gmres(A, b, tol=1e-8, atol=0)
+        x_mgs, info_mgs = gmres(A, b, tol=1e-8, orth='mgs')
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
+        assert_(not np.isnan(x_mgs).any())
         if info == 0:
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+            assert_(np.linalg.norm(A.dot(x_mgs) - b) <= 1e-8*np.linalg.norm(b))
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
+        assert_allclose(A.dot(A.dot(x_mgs)), A.dot(b))
 
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
@@ -725,6 +838,15 @@ class TestGMRES:
 
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
                         callback_type='x')
+
         assert info == 20
         assert count[0] == 21
         x_cb(x)
+
+        # test for faster GMRES
+        prev_r = [np.inf]
+        count = [0]
+        x_mgs, info_mgs = gmres(A, b, tol=1e-6, callback=x_cb, maxiter=20, restart=10, orth='mgs')
+        assert info_mgs == 20
+        assert count[0] == 20
+        x_cb(x_mgs)
