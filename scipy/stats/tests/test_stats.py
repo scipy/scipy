@@ -929,6 +929,58 @@ class TestCorrSpearmanr2:
             0.0007835762419683435])
         assert_raises(ValueError, stats.spearmanr, x, y, axis=2)
 
+    def test_alternative(self):
+        # Test alternative parameter
+
+        # Simple test - Based on the above ``test_spearmanr_vs_r``
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+
+        # strong positive correlation
+        expected = (0.82078268166812329, 0.088587005313543798)
+
+        # correlation > 0 -> large "less" p-value
+        res = stats.spearmanr(x1, x2, alternative="less")
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], 1 - (expected[1] / 2))
+
+        # correlation > 0 -> small "less" p-value
+        res = stats.spearmanr(x1, x2, alternative="greater")
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1] / 2)
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.spearmanr(x1, x2, alternative="ekki-ekki")
+
+    @pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
+    def test_alternative_nan_policy(self, alternative):
+        # Test nan policies
+        x1 = [1, 2, 3, 4, 5]
+        x2 = [5, 6, 7, 8, 7]
+        x1nan = x1 + [np.nan]
+        x2nan = x2 + [np.nan]
+
+        # test nan_policy="propagate"
+        assert_array_equal(stats.spearmanr(x1nan, x2nan), (np.nan, np.nan))
+
+        # test nan_policy="omit"
+        res_actual = stats.spearmanr(x1nan, x2nan, nan_policy='omit',
+                                     alternative=alternative)
+        res_expected = stats.spearmanr(x1, x2, alternative=alternative)
+        assert_allclose(res_actual, res_expected)
+
+        # test nan_policy="raise"
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='raise',
+                            alternative=alternative)
+
+        # test invalid nan_policy
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.spearmanr(x1nan, x2nan, nan_policy='ekki-ekki',
+                            alternative=alternative)
+
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
@@ -1392,6 +1444,46 @@ class TestRegression:
         lr = stats._stats_mstats_common.LinregressResult
         assert_(isinstance(result, lr))
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
+
+    def test_regress_alternative(self):
+        # test alternative parameter
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10  # slope is greater than zero
+        y += np.sin(np.linspace(0, 20, 100))
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            stats.linregress(x, y, alternative="ekki-ekki")
+
+        res1 = stats.linregress(x, y, alternative="two-sided")
+
+        # slope is greater than zero, so "less" p-value should be large
+        res2 = stats.linregress(x, y, alternative="less")
+        assert_allclose(res2.pvalue, 1 - (res1.pvalue / 2))
+
+        # slope is greater than zero, so "greater" p-value should be small
+        res3 = stats.linregress(x, y, alternative="greater")
+        assert_allclose(res3.pvalue, res1.pvalue / 2)
+
+        assert res1.rvalue == res2.rvalue == res3.rvalue
+
+    def test_regress_against_R(self):
+        # test against R `lm`
+        # options(digits=16)
+        # x <- c(151, 174, 138, 186, 128, 136, 179, 163, 152, 131)
+        # y <- c(63, 81, 56, 91, 47, 57, 76, 72, 62, 48)
+        # relation <- lm(y~x)
+        # print(summary(relation))
+
+        x = [151, 174, 138, 186, 128, 136, 179, 163, 152, 131]
+        y = [63, 81, 56, 91, 47, 57, 76, 72, 62, 48]
+        res = stats.linregress(x, y, alternative="two-sided")
+        # expected values from R's `lm` above
+        assert_allclose(res.slope, 0.6746104491292)
+        assert_allclose(res.intercept, -38.4550870760770)
+        assert_allclose(res.rvalue, np.sqrt(0.95478224775))
+        assert_allclose(res.pvalue, 1.16440531074e-06)
+        assert_allclose(res.stderr, 0.0519051424731)
+        assert_allclose(res.intercept_stderr, 8.0490133029927)
 
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise,

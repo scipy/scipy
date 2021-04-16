@@ -407,7 +407,8 @@ def pearsonr(x, y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
+              alternative='two-sided'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -448,6 +449,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -507,7 +517,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        prob = 2 * distributions.t.sf(np.abs(t), dof)
+        t, prob = scipy.stats.stats._ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
