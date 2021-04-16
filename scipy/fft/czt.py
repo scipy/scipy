@@ -26,6 +26,7 @@ zoomfft : array
 """
 
 import cmath
+import operator
 import numpy as np
 from numpy import pi, arange
 from scipy.fft import fft, ifft, next_fast_len
@@ -38,16 +39,14 @@ def _validate_sizes(n, m):
         raise ValueError("Invalid number of CZT data "
                          "points (%d) specified." % n)
 
-    if int(n) != n:
-        raise ValueError('n must be a positive integer')
+    n = operator.index(n)
 
     if m is None:
         m = n
     elif m < 1:
         raise ValueError("Invalid number of CZT output "
                          "points (%d) specified." % n)
-    elif int(m) != m:
-        raise ValueError('m must be a positive integer')
+    m = operator.index(m)
 
     return m
 
