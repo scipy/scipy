@@ -349,7 +349,7 @@ def update_discrepancy(x_new, sample, initial_disc):
 
 
 def _perturb_discrepancy(sample, i1, i2, k, disc):
-    """Centered discrepancy after and elementary perturbation on a LHS.
+    """Centered discrepancy after an elementary perturbation of a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between
     two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
@@ -371,7 +371,7 @@ def _perturb_discrepancy(sample, i1, i2, k, disc):
     Returns
     -------
     discrepancy : float
-        Centered discrepancy.
+        Centered discrepancy of the design after permutation.
 
     References
     ----------
