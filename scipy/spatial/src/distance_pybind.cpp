@@ -531,6 +531,21 @@ PYBIND11_MODULE(_distance_pybind, m) {
         throw py::error_already_set();
     }
     using namespace pybind11::literals;
+    m.def("pdist_chebyshev",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, ChebyshevDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_cityblock",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, CityBlockDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_euclidean",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, EuclideanDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_minkowski",
           [](py::object x, py::object w, py::object out, double p) {
               if (p == 1.0) {
@@ -544,6 +559,21 @@ PYBIND11_MODULE(_distance_pybind, m) {
               }
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none(), "p"_a=2.0);
+    m.def("cdist_chebyshev",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, ChebyshevDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_cityblock",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, CityBlockDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_euclidean",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, EuclideanDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_minkowski",
           [](py::object x, py::object y, py::object w, py::object out,
              double p) {
