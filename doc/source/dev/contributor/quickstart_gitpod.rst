@@ -18,10 +18,21 @@ Gitpod
 
 `Gitpod`_  is an open-source platform for automated and ready-to-code development environments. It enables developers to describe their dev environment as code and start instant and fresh development environments for each new task directly from your browser. This reduces the need to install local development environments and deal with incompatible dependencies.
 
-To be able to use Gitpod, you will need to log in with your GitHub account, so if 
+Gitpod GitHub integration
+--------------------------
+
+To be able to use Gitpod, you will need tohave the Gitpod app installed on your GitHub account, so if 
 you do not have an account yet, you will need to create one first. 
 
-Head over to the `Gitpod`_ website and click on the **Continue with GitHub** button. You will be redirected to GitHub authentication, which will allow you to use Gitpos with your GitHub repositories.
+Head over to the `Gitpod`_ website and click on the **Continue with GitHub** button. You will be redirected to the GitHub authentication page.
+You will then be asked to install the `Gitpod GitHub app <https://github.com/marketplace/gitpod-io>`_.
+
+Make sure to select **All repositories** access option to avoid issues with permissions later on. Click on the green **Install** button
+
+.. image:: ../../_static/gitpod/installing-gitpod-io.png 
+    :alt: Gitpod repository access and installation screenshot
+
+This will install the necessary hooks for the integration. 
 
 Forking the SciPy repository
 -----------------------------
@@ -34,7 +45,10 @@ The best way to work on SciPy as a contributor is by making a fork of the reposi
 
 Starting Gitpod
 ----------------
-Once you have authenticated to Gitpod through GitHub, you will see a **Gitpod** button next to the "Code" button on the repository.
+Once you have authenticated to Gitpod through GitHub, you will see a **Gitpod** button next to the **Code** button on the repository.
+
+.. image:: ../../_static/gitpod/scipy-github.png 
+    :alt: SciPy repository with Gitpod button screenshot
 
 #. Click the "Gitpod" button. This will open a new tab on your web browser and start building your development environment. Please note this can take a few minutes.
 #. Once the build is complete, you will be directed to your workspace, including VSCode and all the dependencies you need to work on SciPy. The first time you start your workspace, you will notice that there might be some actions running. This will ensure that you have a development version of SciPy installed and that the docs are pre-built for you.
@@ -104,6 +118,7 @@ Option 2: Using the rst extension
 A quick and easy way to see live changes in an `rst` as you work on it uses the rst extension with docutils. 
 
 .. note:: This will generate a simple live preview of the document without the ``HTML`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
+
 #. Open any of the source documentation files located in ``doc/source`` in the editor.
 #. Open VSCode Command Palette with :kbd:`Cmd-Shift-P` in Mac or :kbd:`Ctrl-Shift-P` in Linux and Windows. Start typing "restructured" and choose either "Open preview" or "Open preview to the Side".
     .. image:: ../../_static/gitpod/vscode-rst.png 
@@ -123,7 +138,12 @@ FAQ's
     Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit `www.gitpod.io/workspaces` and click on the workspace you want to spin again. All your changes will be there as you last left them.
 #. Can I install additional VSCode extensions?
     Absolutely! Any extensions you installed will be installed in your own workspace and preserved.
-
+#. I registred to Gitpod but I still cannot see a **Gitpod** button in my repositories
+    Head to https://gitpod.io/integrations and make sure you are logged in. Hover over GitHub and click on the three buttons that appear on the right. Click on edit permissions and make sure you have ``user:email``, ``read:user``, and ``public_repo`` checked. 
+    Click on **Update Permissions** and confirm the changes in the GitHub application page.
+    
+    .. image:: ../../_static/gitpod/gitpod-edit-permissions-gh.png 
+        :alt: Gitpod integrations - edit GH permissions screenshot
 
 .. _Gitpod: https://www.gitpod.io/
 .. _Scipy repository on GitHub: https://github.com/scipy/scipy
