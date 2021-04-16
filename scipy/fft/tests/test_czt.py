@@ -4,7 +4,7 @@
 A unit test module for czt.py
 '''
 import pytest
-from numpy.testing import (assert_allclose, assert_raises)
+from numpy.testing import assert_allclose
 from scipy.fft import (fft, czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
@@ -128,13 +128,17 @@ def test_czt_vs_fft():
 
 
 def test_empty_input():
-    assert_raises(ValueError, czt, [])
-    assert_raises(ValueError, zoomfft, [], 0.5)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        czt([])
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        zoomfft([], 0.5)
 
 
 def test_0_rank_input():
-    assert_raises(IndexError, czt, 5)
-    assert_raises(IndexError, zoomfft, 5, 0.5)
+    with pytest.raises(IndexError, match='tuple index out of range'):
+        czt(5)
+    with pytest.raises(IndexError, match='tuple index out of range'):
+        zoomfft(5, 0.5)
 
 
 def test_czt_math():
@@ -175,28 +179,37 @@ def test_czt_points():
     assert_allclose(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
 
 
-def test_czt_points_errors():
+@pytest.mark.parametrize('m', [0, -11, 5.5])
+def test_czt_points_errors(m):
     # Invalid number of points
-    assert_raises(ValueError, czt_points, 0)
-    assert_raises(ValueError, czt_points, -11)
-    assert_raises(ValueError, czt_points, 5.5)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        czt_points(m)
 
 
-def test_invalid_size():
+@pytest.mark.parametrize('myfunc', [CZT(100), ZoomFFT(100, 0.2)])
+def test_invalid_size(myfunc):
     # Data size doesn't match function's expected size
-    for myfunc in (CZT(100), ZoomFFT(100, 0.2)):
-        assert_raises(ValueError, myfunc, np.arange(5))
+    with pytest.raises(ValueError, match='CZT defined for'):
+        myfunc(np.arange(5))
 
-    # Nonsense input and output sizes
+
+@pytest.mark.parametrize('size', [0, -5, 3.5])
+def test_nonsense_size(size):
     # Numpy and Scipy fft() give ValueError for 0 output size, so we do, too
-    for size in (0, -5, 3.5):
-        assert_raises(ValueError, CZT, size, 3)
-        assert_raises(ValueError, ZoomFFT, size, 0.2, 3)
-        assert_raises(ValueError, CZT, 3, size)
-        assert_raises(ValueError, ZoomFFT, 3, 0.2, size)
-        assert_raises(ValueError, czt, [1, 2, 3], size)
-        assert_raises(ValueError, zoomfft, [1, 2, 3], 0.2, size)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        CZT(size, 3)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        ZoomFFT(size, 0.2, 3)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        CZT(3, size)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        ZoomFFT(3, 0.2, size)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        czt([1, 2, 3], size)
+    with pytest.raises(ValueError, match='Invalid number of CZT'):
+        zoomfft([1, 2, 3], 0.2, size)
 
 
 def test_invalid_range():
-    assert_raises(ValueError, ZoomFFT, 100, [1, 2, 3])
+    with pytest.raises(ValueError, match='2-length sequence'):
+        ZoomFFT(100, [1, 2, 3])
