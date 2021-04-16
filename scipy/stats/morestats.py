@@ -2207,7 +2207,7 @@ def ansari(x, y, alternative='two-sided'):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.3550608509212331)  # random
+    AnsariResult(statistic=511.0, pvalue=0.3550608509212331)
 
     With a p-value of 0.355, we cannot conclude that there is a
     significant difference in the scales (as expected).
@@ -2215,7 +2215,7 @@ def ansari(x, y, alternative='two-sided'):
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280279118023228)  # random
+    AnsariResult(statistic=452.0, pvalue=0.006280279118023228)
 
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
@@ -2228,13 +2228,13 @@ def ansari(x, y, alternative='two-sided'):
     hence we should be able to reject the null hypothesis:
 
     >>> ansari(x1, x3, alternative='greater')
-    AnsariResult(statistic=452.0, pvalue=0.003140139559011614)  # random
+    AnsariResult(statistic=452.0, pvalue=0.003140139559011614)
 
     As we can see, the p-value is indeed quite low. Use of
     ``alternative='less'`` should thus yield a large p-value:
 
     >>> ansari(x1, x3, alternative='less')
-    AnsariResult(statistic=452.0, pvalue=0.9971491079190463)  # random
+    AnsariResult(statistic=452.0, pvalue=0.9971491079190463)
 
     """
     if alternative not in {'two-sided', 'greater', 'less'}:
