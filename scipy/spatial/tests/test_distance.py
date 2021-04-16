@@ -46,9 +46,11 @@ from numpy.testing import (verbose, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
-                                    num_obs_dm, is_valid_dm, is_valid_y,
-                                    _validate_vector, _METRICS_NAMES)
+import scipy.spatial.distance
+from scipy.spatial import _distance_pybind
+from scipy.spatial.distance import (
+    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
+    _validate_vector, _METRICS_NAMES, _METRICS)
 
 # these were missing: chebyshev cityblock kulsinski
 # jensenshannon, matching and seuclidean are referenced by string name.
@@ -106,6 +108,21 @@ _ytdist = squareform(_tdist)
 # come from a list of text files, which are read prior to testing.
 # Each test loads inputs and outputs from this dictionary.
 eo = {}
+
+
+# if enabled, equivalent to pytest.raises otherwise is a no-op
+class RaisesIf:
+    def __init__(self, enabled, *args, **kwargs):
+        self.enabled = enabled
+        self.context = pytest.raises(*args, **kwargs)
+
+    def __enter__(self):
+        if self.enabled:
+            self.context.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.enabled:
+            return self.context.__exit__(exc_type, exc_val, exc_tb)
 
 
 def load_testing_files():
@@ -606,11 +623,20 @@ class TestCdist:
                 # test for C-contiguous order
                 out3 = np.empty(
                     (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+                output_contiguous = _METRICS[metric].requires_contiguous_out
+                with RaisesIf(output_contiguous, ValueError,
+                              match="Output array must be C-contiguous"):
+                    Y3 = cdist(X1, X2, metric, out=out3, **kwargs)
+                    assert Y3 is out3
+                    _assert_within_tol(Y1, Y3, eps, verbose > 2)
+
                 out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out3, **kwargs)
-                assert_raises(ValueError,
-                              cdist, X1, X2, metric, out=out4, **kwargs)
+                with RaisesIf(output_contiguous, ValueError,
+                              match="Output array must be C-contiguous"):
+                    Y4 = cdist(X1, X2, metric, out=out4, **kwargs)
+                    assert Y4 is out4
+                    _assert_within_tol(Y1, Y4, eps, verbose > 2)
+
                 # test for incorrect dtype
                 out5 = np.empty((out_r, out_c), dtype=np.int64)
                 assert_raises(ValueError,
@@ -1489,7 +1515,13 @@ class TestPdist:
                 assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
                 # test for (C-)contiguous output
                 out3 = np.empty(2 * out_size, dtype=np.double)[::2]
-                assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+                output_contiguous = _METRICS[metric].requires_contiguous_out
+                with RaisesIf(output_contiguous, ValueError,
+                              match="Output array must be C-contiguous"):
+                    Y_test3 = pdist(X, metric, out=out3, **kwargs)
+                    assert Y_test3 is out3
+                    _assert_within_tol(Y_right, Y_test3, eps, verbose > 2)
+
                 # test for incorrect dtype
                 out5 = np.empty(out_size, dtype=np.int64)
                 assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)

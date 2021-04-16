@@ -123,6 +123,8 @@ from . import _hausdorff
 from ..linalg import norm
 from ..special import rel_entr
 
+from . import _distance_pybind
+
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -1747,6 +1749,8 @@ class MetricInfo:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
     types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    # true if out array must be C-contiguous
+    requires_contiguous_out: bool = True
 
 
 # Registry of implemented metrics:
@@ -1856,10 +1860,9 @@ _METRIC_INFOS = [
         aka={'minkowski', 'mi', 'm', 'pnorm'},
         validator=_validate_minkowski_kwargs,
         dist_func=minkowski,
-        cdist_func=CDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
+        cdist_func=_distance_pybind.cdist_minkowski,
+        pdist_func=_distance_pybind.pdist_minkowski,
+        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='rogerstanimoto',
