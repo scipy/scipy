@@ -1010,7 +1010,6 @@ class OptimalLatinHypercube(QMCEngine):
 
     def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
         super().__init__(d=d, seed=seed)
-        self.best_doe = np.asarray(start_design)
         self.niter = niter
 
         if method is None:
@@ -1022,10 +1021,11 @@ class OptimalLatinHypercube(QMCEngine):
 
         self.method = method
 
-        if self.start_design is not None:
-            self.best_disc = discrepancy(self.best_doe)
+        if start_design is not None:
+            self.best_disc = discrepancy(np.asarray(start_design))
         else:
             self.best_disc = np.inf
+            self.best_doe = None
 
         self.lhs = LatinHypercube(self.d, seed=self.rng)
 
@@ -1092,7 +1092,12 @@ class OptimalLatinHypercube(QMCEngine):
             self.method(_perturb_best_doe, x0, bounds)
 
         self.num_generated += n
-        return self.best_doe
+
+        sample = self.best_doe
+        # will force next calls to random to start from a LHS
+        self.best_doe = None
+
+        return sample
 
     def reset(self):
         """Reset the engine to base state.

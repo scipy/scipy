@@ -102,7 +102,7 @@ class LatinHypercube(QMCEngine):
     def reset(self) -> LatinHypercube: ...
 
 
-class OptimalDesign(QMCEngine):
+class OptimalLatinHypercube(QMCEngine):
     def __init__(
             self, d: _IntegerType,
             start_design: Optional[npt.ArrayLike] = ...,
@@ -114,7 +114,7 @@ class OptimalDesign(QMCEngine):
 
     def random(self, n: _IntegerType = ...) -> np.ndarray: ...
 
-    def reset(self) -> OptimalDesign: ...
+    def reset(self) -> OptimalLatinHypercube: ...
 
 
 class Sobol(QMCEngine):

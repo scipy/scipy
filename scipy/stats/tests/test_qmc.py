@@ -546,8 +546,8 @@ class TestLHS(QMCEngineTests):
         assert np.any(sample - expected > 0.5 / n)
 
 
-class TestOptimalDesign(QMCEngineTests):
-    qmce = qmc.OptimalDesign
+class TestOptimalLatinHypercube(QMCEngineTests):
+    qmce = qmc.OptimalLatinHypercube
     can_scramble = False
     unscramble_nd = np.array([[0.48412877, 0.89496811],
                               [0.3424405, 0.00416027],
