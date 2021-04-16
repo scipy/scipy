@@ -11,13 +11,13 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
 
 from scipy import optimize
 from scipy import special
-from scipy.stats import statlib
-from scipy.stats import stats
-from scipy.stats.stats import find_repeats, _contains_nan
-from scipy.stats.contingency import chi2_contingency
-from scipy.stats import distributions
-from scipy.stats._distn_infrastructure import rv_generic
-from scipy.stats._hypotests import _get_wilcoxon_distr
+from . import statlib
+from . import stats
+from .stats import find_repeats, _contains_nan
+from .contingency import chi2_contingency
+from . import distributions
+from ._distn_infrastructure import rv_generic
+from ._hypotests import _get_wilcoxon_distr
 
 
 __all__ = ['mvsdist',
@@ -1105,11 +1105,11 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> lmax_pearsonr = stats.boxcox_normmax(x)
 
     >>> lmax_mle
-    7.177...  # random
+    7.177...
     >>> lmax_pearsonr
-    7.916...  # random
+    7.916...
     >>> stats.boxcox_normmax(x, method='all')
-    array([ 7.91667384,  7.17718692])  # random
+    array([ 7.91667384,  7.17718692])
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -1648,11 +1648,11 @@ def shapiro(x):
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
     >>> shapiro_test = stats.shapiro(x)
     >>> shapiro_test
-    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)  # random
+    ShapiroResult(statistic=0.9772805571556091, pvalue=0.08144091814756393)
     >>> shapiro_test.statistic
-    0.9772805571556091  # random
+    0.9772805571556091
     >>> shapiro_test.pvalue
-    0.08144091814756393  # random
+    0.08144091814756393
 
     """
     x = np.ravel(x)
@@ -1987,7 +1987,7 @@ def anderson_ksamp(samples, midrank=True):
 
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(loc=0.5, size=30)])
-    (2.4615796189876105,  # random
+    (2.4615796189876105,
       array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
       0.03176687568842282)
 
@@ -1999,7 +1999,7 @@ def anderson_ksamp(samples, midrank=True):
 
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.73091722665244196,  # random
+    (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
       4.07210043, 5.56419101]),
       0.25)
@@ -2125,7 +2125,7 @@ def ansari(x, y):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)  # random
+    AnsariResult(statistic=511.0, pvalue=0.35506083719834347)
 
     With a p-value of 0.355, we cannot conclude that there is a
     significant difference in the scales (as expected).
@@ -2133,7 +2133,7 @@ def ansari(x, y):
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)  # random
+    AnsariResult(statistic=452.0, pvalue=0.006280278681971285)
 
     With a p-value of 0.00628, the test provides strong evidence that
     the scales of the distributions from which the samples were drawn
@@ -2725,14 +2725,14 @@ def mood(x, y, axis=0):
     Find the number of points where the difference in scale is not significant:
 
     >>> (p > 0.1).sum()
-    74  # random
+    74
 
     Perform the test with different scales:
 
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))  # random
+    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))
 
     """
     x = np.asarray(x, dtype=float)

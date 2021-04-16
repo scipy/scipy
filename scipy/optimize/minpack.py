@@ -682,7 +682,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
     >>> popt
-    array([ 2.55423706,  1.35190947,  0.47450618])  # random
+    array([ 2.55423706,  1.35190947,  0.47450618])
     >>> plt.plot(xdata, func(xdata, *popt), 'r-',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
@@ -691,7 +691,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
     >>> popt
-    array([ 2.43708906,  1.        ,  0.35015434])  # random
+    array([ 2.43708906,  1.        ,  0.35015434])
     >>> plt.plot(xdata, func(xdata, *popt), 'g--',
     ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 

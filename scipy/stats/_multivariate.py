@@ -3563,14 +3563,14 @@ class random_correlation_gen(multi_rv_generic):
     >>> from scipy.stats import random_correlation
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5))
     >>> x
-    array([[ 1.        , -0.20387311,  0.18366501, -0.04953711],  # random
+    array([[ 1.        , -0.20387311,  0.18366501, -0.04953711],
            [-0.20387311,  1.        , -0.24351129,  0.06703474],
            [ 0.18366501, -0.24351129,  1.        ,  0.38530195],
            [-0.04953711,  0.06703474,  0.38530195,  1.        ]])
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
-    array([ 0.5,  0.8,  1.2,  1.5])  # random
+    array([ 0.5,  0.8,  1.2,  1.5])
 
     """
 

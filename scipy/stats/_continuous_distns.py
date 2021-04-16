@@ -2571,10 +2571,10 @@ def _digammainv(y):
     >>> rng = np.random.default_rng(SEED)
     >>> y = 64*rng.standard_normal(1000000)
     >>> y.min(), y.max()
-    (-311.43592651416662, 351.77388222276869)  # random
+    (-311.43592651416662, 351.77388222276869)
     >>> x = [_digammainv(t) for t in y]
     >>> np.abs(sc.digamma(x) - y).max()
-    1.1368683772161603e-13  # random
+    1.1368683772161603e-13
 
     """
     _em = 0.5772156649015328606065120

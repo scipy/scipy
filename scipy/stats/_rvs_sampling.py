@@ -113,7 +113,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     distributed (normality is not rejected at 5% significance level):
 
     >>> stats.kstest(rvs, 'norm')[1]
-    0.33783681428365553  # random
+    0.33783681428365553
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
@@ -121,7 +121,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
     ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
-    0.928454552559516  # random
+    0.928454552559516
 
     """
     if vmin >= vmax:

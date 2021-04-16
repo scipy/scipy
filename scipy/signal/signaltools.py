@@ -4037,7 +4037,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
-    1.80056858312e-10  # random
+    1.80056858312e-10
 
     """
     b = np.atleast_1d(b)

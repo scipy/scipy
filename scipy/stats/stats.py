@@ -1521,8 +1521,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> rng = np.random.default_rng(SEED)
     >>> s = rng.normal(0, 1, 1000)
     >>> kurtosistest(s)
-    KurtosistestResult(statistic=1.2317590987707365,
-    pvalue=0.21803908613450895)  # random
+    KurtosistestResult(statistic=1.2317590987707365, pvalue=0.21803908613450895)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1623,7 +1622,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     >>> k2, p = stats.normaltest(x)
     >>> alpha = 1e-3
     >>> print("p = {:g}".format(p))
-    p = 3.27207e-11  # random
+    p = 3.27207e-11
     >>> if p < alpha:  # null hypothesis: x comes from a normal distribution
     ...     print("The null hypothesis can be rejected")
     ... else:
@@ -1684,11 +1683,11 @@ def jarque_bera(x):
     >>> x = rng.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
-    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)  # random
+    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
     >>> jarque_bera_test.statistic
-    4.716570798957913  # random
+    4.716570798957913
     >>> jarque_bera_test.pvalue
-    0.0945822550304295  # random
+    0.0945822550304295
 
     """
     x = np.asarray(x)
@@ -2615,7 +2614,7 @@ def gstd(a, axis=0, ddof=1):
     >>> rng = np.random.default_rng(SEED)
     >>> sample = rng.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
-    2.7217860664589946  # random
+    2.7217860664589946
 
     Compute the geometric standard deviation of a multidimensional array and
     of a given axis.
@@ -4313,35 +4312,35 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
     >>> stats.spearmanr(x2n)
-    (0.059969996999699973, 0.55338590803773591)  # random
+    (0.059969996999699973, 0.55338590803773591)
     >>> stats.spearmanr(x2n[:,0], x2n[:,1])
-    (0.059969996999699973, 0.55338590803773591)  # random
+    (0.059969996999699973, 0.55338590803773591)
     >>> rho, pval = stats.spearmanr(x2n, y2n)
     >>> rho
-    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],  # random
+    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
            [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
            [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
            [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
     >>> pval
-    array([[ 0.        ,  0.55338591,  0.06435364,  0.53617935],  # random
+    array([[ 0.        ,  0.55338591,  0.06435364,  0.53617935],
            [ 0.55338591,  0.        ,  0.27592895,  0.80234077],
            [ 0.06435364,  0.27592895,  0.        ,  0.73039992],
            [ 0.53617935,  0.80234077,  0.73039992,  0.        ]])
     >>> rho, pval = stats.spearmanr(x2n.T, y2n.T, axis=1)
     >>> rho
-    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],  # random
+    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
            [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
            [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
            [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
     >>> stats.spearmanr(x2n, y2n, axis=None)
-    (0.10816770419260482, 0.1273562188027364)  # random
+    (0.10816770419260482, 0.1273562188027364)
     >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
-    (0.10816770419260482, 0.1273562188027364)  # random
+    (0.10816770419260482, 0.1273562188027364)
 
     >>> rng = np.random.default_rng(SEED)
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
-    (0.052760927029710199, 0.60213045837062351)  # random
+    (0.052760927029710199, 0.60213045837062351)
 
     """
     if axis is not None and axis > 1:
@@ -5498,30 +5497,30 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     the first case.
 
     >>> stats.ttest_1samp(rvs,5.0)
-    (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))  # random
+    (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))
     >>> stats.ttest_1samp(rvs,0.0)
-    (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))  # random
+    (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))
 
     Examples using axis and non-scalar dimension for population mean.
 
     >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
     >>> result.statistic
-    array([-0.68014479,  4.11038784]),  # random
+    array([-0.68014479,  4.11038784]),
     >>> result.pvalue
-    array([4.99613833e-01, 1.49986458e-04])  # random
+    array([4.99613833e-01, 1.49986458e-04])
 
     >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
     >>> result.statistic
-    array([-0.68014479,  4.11038784])  # random
+    array([-0.68014479,  4.11038784])
     >>> result.pvalue
-    array([4.99613833e-01, 1.49986458e-04])  # random
+    array([4.99613833e-01, 1.49986458e-04])
 
     >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
     >>> result.statistic
-    array([[-0.68014479, -0.04323899],  # random
+    array([[-0.68014479, -0.04323899],
            [ 2.77025808,  4.11038784]])
     >>> result.pvalue
-    array([[4.99613833e-01, 9.65686743e-01],  # random
+    array([[4.99613833e-01, 9.65686743e-01],
            [7.89094663e-03, 1.49986458e-04]])
 
     """
@@ -5896,34 +5895,34 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs2)
-    (0.26833823296239279, 0.78849443369564776)  # random
+    (0.26833823296239279, 0.78849443369564776)
     >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
-    (0.26833823296239279, 0.78849452749500748)  # random
+    (0.26833823296239279, 0.78849452749500748)
 
     `ttest_ind` underestimates p for unequal variances:
 
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
-    (-0.46580283298287162, 0.64145827413436174)  # random
+    (-0.46580283298287162, 0.64145827413436174)
     >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
-    (-0.46580283298287162, 0.64149646246569292)  # random
+    (-0.46580283298287162, 0.64149646246569292)
 
     When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs4)
-    (-0.99882539442782481, 0.3182832709103896)  # random
+    (-0.99882539442782481, 0.3182832709103896)
     >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
-    (-0.69712570584654099, 0.48716927725402048)  # random
+    (-0.69712570584654099, 0.48716927725402048)
 
     T-test with different means, variance, and n:
 
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs5)
-    (-1.4679669854490653, 0.14263895620529152)  # random
+    (-1.4679669854490653, 0.14263895620529152)
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
-    (-0.94365973617132992, 0.34744170334794122)  # random
+    (-0.94365973617132992, 0.34744170334794122)
 
     When performing a permutation test, more permutations typically yields
     more accurate results. Use a ``np.random.Generator`` to ensure
@@ -5931,7 +5930,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=np.random.default_rng(12345))
-    (-1.467966985449, 0.14)  # random
+    (-1.467966985449, 0.14)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -6184,11 +6183,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     >>> rvs2 = (stats.norm.rvs(loc=5,scale=10,size=500) +
     ...         stats.norm.rvs(scale=0.2,size=500))
     >>> stats.ttest_rel(rvs1,rvs2)
-    (0.24101764965300962, 0.80964043445811562)  # random
+    (0.24101764965300962, 0.80964043445811562)
     >>> rvs3 = (stats.norm.rvs(loc=8,scale=10,size=500) +
     ...         stats.norm.rvs(scale=0.2,size=500))
     >>> stats.ttest_rel(rvs1,rvs3)
-    (-3.9995108708727933, 7.3082402191726459e-005)  # random
+    (-3.9995108708727933, 7.3082402191726459e-005)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -6721,7 +6720,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     (0.44435602715924361, 0.038850142705171065)
 
     >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
-    (0.058352892479417884, 0.8653960860778898)  # random
+    (0.058352892479417884, 0.8653960860778898)
 
     *Test against one-sided alternative hypothesis*
 
@@ -6729,17 +6728,17 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     >>> x = stats.norm.rvs(loc=0.2, size=100)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    (0.12464329735846891, 0.040989164077641749)  # random
+    (0.12464329735846891, 0.040989164077641749)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    (0.0072115233216311081, 0.98531158590396395)  # random
+    (0.0072115233216311081, 0.98531158590396395)
 
     Reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.ks_1samp(x, stats.norm.cdf)
-    (0.12464329735846891, 0.08197335233541582)  # random
+    (0.12464329735846891, 0.08197335233541582)
 
     Don't reject null hypothesis in favor of alternative hypothesis: two-sided
 
@@ -6750,14 +6749,14 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> stats.ks_1samp(stats.t.rvs(100,size=100), stats.norm.cdf)
-    (0.072018929165471257, 0.6505883498379312)  # random
+    (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at the 10% level:
 
     >>> stats.ks_1samp(stats.t.rvs(3,size=100), stats.norm.cdf)
-    (0.131016895759829, 0.058826222555312224)  # random
+    (0.131016895759829, 0.058826222555312224)
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7162,21 +7161,21 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1)
     >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5)
     >>> stats.ks_2samp(rvs1, rvs2)
-    (0.20833333333333334, 5.129279597781977e-05)  # random
+    (0.20833333333333334, 5.129279597781977e-05)
 
     For a slightly different distribution, we cannot reject the null hypothesis
     at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
 
     >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0)
     >>> stats.ks_2samp(rvs1, rvs3)
-    (0.10333333333333333, 0.14691437867433876)  # random
+    (0.10333333333333333, 0.14691437867433876)
 
     For an identical distribution, we cannot reject the null hypothesis since
     the p-value is high, 41%:
 
     >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0)
     >>> stats.ks_2samp(rvs1, rvs4)
-    (0.07999999999999996, 0.41126949729859719)  # random
+    (0.07999999999999996, 0.41126949729859719)
 
     """
     if mode not in ['auto', 'exact', 'asymp']:
@@ -7363,12 +7362,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     (0.44435602715924361, 0.038850142705171065)
 
     >>> stats.kstest(stats.norm.rvs(size=100), stats.norm.cdf)
-    (0.058352892479417884, 0.8653960860778898)  # random
+    (0.058352892479417884, 0.8653960860778898)
 
     The above lines are equivalent to:
 
     >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
-    (0.058352892479417884, 0.8653960860778898)  # random
+    (0.058352892479417884, 0.8653960860778898)
 
     *Test against one-sided alternative hypothesis*
 
@@ -7376,17 +7375,17 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     >>> x = stats.norm.rvs(loc=0.2, size=100)
     >>> stats.kstest(x, 'norm', alternative='less')
-    (0.12464329735846891, 0.040989164077641749)  # random
+    (0.12464329735846891, 0.040989164077641749)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.kstest(x, 'norm', alternative='greater')
-    (0.0072115233216311081, 0.98531158590396395)  # random
+    (0.0072115233216311081, 0.98531158590396395)
 
     Don't reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.kstest(x, 'norm')
-    (0.12464329735846891, 0.08197335233541582)  # random
+    (0.12464329735846891, 0.08197335233541582)
 
     *Testing t distributed random variables against normal distribution*
 
@@ -7395,14 +7394,14 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> stats.kstest(stats.t.rvs(100, size=100), 'norm')
-    (0.072018929165471257, 0.6505883498379312)  # random
+    (0.072018929165471257, 0.6505883498379312)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at the 10% level:
 
     >>> stats.kstest(stats.t.rvs(3, size=100), 'norm')
-    (0.131016895759829, 0.058826222555312224)  # random
+    (0.131016895759829, 0.058826222555312224)
 
     """
     # to not break compatibility with existing code

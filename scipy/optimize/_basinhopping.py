@@ -620,7 +620,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=10, callback=print_fun)
-    at minimum 0.4159 accepted 1  # random
+    at minimum 0.4159 accepted 1
     at minimum 0.4159 accepted 1
     at minimum -0.9073 accepted 1
     at minimum -0.1021 accepted 1

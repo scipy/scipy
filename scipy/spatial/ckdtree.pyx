@@ -1323,14 +1323,14 @@ cdef class cKDTree:
         >>> kd_tree1 = cKDTree(points1)
         >>> kd_tree2 = cKDTree(points2)
         >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
-        9  # random
+        9
 
         This number is same as the total pair number calculated by
         `query_ball_tree`:
 
         >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
         >>> sum([len(i) for i in indexes])
-        9  # random
+        9
 
         """
         cdef:
@@ -1496,7 +1496,7 @@ cdef class cKDTree:
         >>> kd_tree2 = cKDTree(points2)
         >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
         >>> sdm.toarray()
-        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],  # random
+        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
             [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
             [0.19262396, 0.,         0.,         0.25795122, 0.        ],
             [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
@@ -1506,7 +1506,7 @@ cdef class cKDTree:
 
         >>> from scipy.spatial import distance_matrix
         >>> distance_matrix(points1, points2)
-        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],  # random
+        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
             [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
             [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
             [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],

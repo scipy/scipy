@@ -93,7 +93,7 @@ def linregress(x, y=None):
     Coefficient of determination (R-squared):
 
     >>> print(f"R-squared: {res.rvalue**2:.6f}")
-    R-squared: 0.735498  # random
+    R-squared: 0.735498
 
     Plot the data along with the fitted line:
 
@@ -111,10 +111,10 @@ def linregress(x, y=None):
 
     >>> ts = tinv(0.05, len(x)-2)
     >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
-    slope (95%): 1.944864 +/- 0.950885  # random
+    slope (95%): 1.944864 +/- 0.950885
     >>> print(f"intercept (95%): {res.intercept:.6f}"
     ...       f" +/- {ts*res.intercept_stderr:.6f}")
-    intercept (95%): 0.268578 +/- 0.488822  # random
+    intercept (95%): 0.268578 +/- 0.488822
 
     """
     TINY = 1.0e-20

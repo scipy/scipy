@@ -6501,7 +6501,7 @@ add_newdoc("kolmogorov",
     >>> lap01 = laplace(0, 1)
     >>> x = np.sort(lap01.rvs(n))
     >>> np.mean(x), np.std(x)
-    (-0.083073685397609842, 1.3676426568399822)  # random
+    (-0.083073685397609842, 1.3676426568399822)
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -6512,12 +6512,12 @@ add_newdoc("kolmogorov",
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
-    Dn=0.058286, sqrt(n)*Dn=1.843153  # random
-    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',  # random
+    Dn=0.058286, sqrt(n)*Dn=1.843153
+    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
     For a sample of size n drawn from a N(0, 1) distribution:
-     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240  # random
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
 
     Plot the Empirical CDF against the target N(0, 1) CDF.
@@ -8785,17 +8785,17 @@ add_newdoc("smirnov",
     >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
     >>> x = np.sort(gendist.rvs(size=n))
     >>> x
-    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])  # random
+    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])  # random
+    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
     # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
     >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> np.set_printoptions(precision=3)
     >>> cols
-    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],  # random
+    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
            [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
            [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
            [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
@@ -8803,13 +8803,13 @@ add_newdoc("smirnov",
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
     >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.563278, Dn+=0.001005  # random
+    Dn-=0.563278, Dn+=0.001005
     >>> probs = smirnov(n, Dnpm)
     >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
-    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),  # random
+    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
     ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250  # random
+     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
      Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
 
     Plot the Empirical CDF against the target N(0, 1) CDF

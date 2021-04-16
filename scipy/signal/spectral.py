@@ -243,7 +243,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     peak, we can recover the noise power on the signal.
 
     >>> np.mean(Pxx_den[25000:])
-    0.00099728892368242854  # random
+    0.00099728892368242854
 
     Now compute and plot the power spectrum.
 
@@ -259,7 +259,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     amplitude.
 
     >>> np.sqrt(Pxx_spec.max())
-    2.0077340678640727  # random
+    2.0077340678640727
 
     """
     x = np.asarray(x)
@@ -411,7 +411,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     peak, we can recover the noise power on the signal.
 
     >>> np.mean(Pxx_den[256:])
-    0.0009924865443739191  # random
+    0.0009924865443739191
 
     Now compute and plot the power spectrum.
 
@@ -426,7 +426,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     amplitude.
 
     >>> np.sqrt(Pxx_spec.max())
-    2.0077340678640727  # random
+    2.0077340678640727
 
     If we now introduce a discontinuity in the signal, by increasing the
     amplitude of a small portion of the signal by 50, we can see the

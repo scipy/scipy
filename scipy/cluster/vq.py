@@ -685,7 +685,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     >>> centroid, label = kmeans2(z, 3, minit='points')
     >>> centroid
-    array([[-0.35770296,  5.31342524],  # random
+    array([[-0.35770296,  5.31342524],
            [ 2.32210289, -0.50551972],
            [ 6.17653859,  4.16719247]])
 
@@ -693,7 +693,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     >>> counts = np.bincount(label)
     >>> counts
-    array([52, 27, 21])  # random
+    array([52, 27, 21])
 
     Plot the clusters.
 
