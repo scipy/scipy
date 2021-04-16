@@ -33,7 +33,7 @@ def _as_float_array(x, check_finite=False):
     return x
 
 
-class BSpline(object):
+class BSpline:
     r"""Univariate spline in the B-spline basis.
 
     .. math::
@@ -169,7 +169,7 @@ class BSpline(object):
 
     """
     def __init__(self, t, c, k, extrapolate=True, axis=0):
-        super(BSpline, self).__init__()
+        super().__init__()
 
         self.k = operator.index(k)
         self.c = np.asarray(c)

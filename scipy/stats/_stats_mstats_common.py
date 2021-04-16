@@ -1,8 +1,8 @@
 import numpy as np
-
+import scipy.stats.stats
 from . import distributions
-
 from .._lib._bunch import _make_tuple_bunch
+
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -13,7 +13,7 @@ LinregressResult = _make_tuple_bunch('LinregressResult',
                                      extra_field_names=['intercept_stderr'])
 
 
-def linregress(x, y=None):
+def linregress(x, y=None, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -26,6 +26,15 @@ def linregress(x, y=None):
         are then found by splitting the array along the length-2 dimension. In
         the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the slope of the regression line is nonzero
+        * 'less': the slope of the regression line is less than zero
+        * 'greater':  the slope of the regression line is greater than zero
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -39,9 +48,10 @@ def linregress(x, y=None):
         rvalue : float
             Correlation coefficient.
         pvalue : float
-            Two-sided p-value for a hypothesis test whose null hypothesis is
+            The p-value for a hypothesis test whose null hypothesis is
             that the slope is zero, using Wald Test with t-distribution of
-            the test statistic.
+            the test statistic. See `alternative` above for alternative
+            hypotheses.
         stderr : float
             Standard error of the estimated slope (gradient), under the
             assumption of residual normality.
@@ -172,7 +182,8 @@ def linregress(x, y=None):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = 2 * distributions.t.sf(np.abs(t), df)
+        t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
         # Also calculate the standard error of the intercept

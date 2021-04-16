@@ -1821,7 +1821,7 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(object):
+class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]})

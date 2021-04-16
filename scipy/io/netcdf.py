@@ -97,7 +97,7 @@ REVERSE = {('b', 1): NC_BYTE,
            ('S', 1): NC_CHAR}
 
 
-class netcdf_file(object):
+class netcdf_file:
     """
     A file object for NetCDF data.
 
@@ -802,7 +802,7 @@ class netcdf_file(object):
         return s
 
 
-class netcdf_variable(object):
+class netcdf_variable:
     """
     A data object for netcdf files.
 

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from math import sqrt
 import numpy as np
 from scipy._lib._util import _validate_int
@@ -297,7 +296,6 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
-
     if alternative == 'less':
         pval = binom.cdf(k, n, p)
     elif alternative == 'greater':
@@ -310,12 +308,23 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            i = np.arange(np.ceil(p * n), n+1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
+                                              -d*rerr, np.ceil(p * n), n)
+            # y is the number of terms between mode and n that are <= d*rerr.
+            # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
+            # if the first equality doesn't hold, y=n-ix. Otherwise, we
+            # need to include ix as well as the equality holds. Note that
+            # the equality will hold in very very rare situations due to rerr.
+            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
             pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            i = np.arange(np.floor(p*n) + 1)
-            y = np.sum(binom.pmf(i, n, p) <= d*rerr, axis=0)
+            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
+                                              d*rerr, 0, np.floor(p * n))
+            # y is the number of terms between 0 and mode that are <= d*rerr.
+            # we need to add a 1 to account for the 0 index.
+            # For comparing this with old behavior, see
+            # tst_binary_srch_for_binom_tst method in test_morestats.
+            y = ix + 1
             pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
@@ -323,3 +332,45 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     result = BinomTestResult(k=k, n=n, alternative=alternative,
                              proportion_estimate=k/n, pvalue=pval)
     return result
+
+
+def _binary_search_for_binom_tst(a, d, lo, hi):
+    """
+    Conducts an implicit binary search on a function specified by `a`.
+
+    Meant to be used on the binomial PMF for the case of two-sided tests
+    to obtain the value on the other side of the mode where the tail
+    probability should be computed. The values on either side of
+    the mode are always in order, meaning binary search is applicable.
+
+    Parameters
+    ----------
+    a : callable
+      The function over which to perform binary search. Its values
+      for inputs lo and hi should be in ascending order.
+    d : float
+      The value to search.
+    lo : int
+      The lower end of range to search.
+    hi : int
+      The higher end of the range to search.
+
+    Returns
+    ----------
+    int
+      The index, i between lo and hi
+      such that a(i)<=d<a(i+1)
+    """
+    while lo < hi:
+        mid = lo + (hi-lo)//2
+        midval = a(mid)
+        if midval < d:
+            lo = mid+1
+        elif midval > d:
+            hi = mid-1
+        else:
+            return mid
+    if a(lo) <= d:
+        return lo
+    else:
+        return lo-1

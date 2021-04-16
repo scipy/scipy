@@ -32,7 +32,7 @@ def number_digits(n):
     return int(np.floor(np.log10(np.abs(n))) + 1)
 
 
-class IntFormat(object):
+class IntFormat:
     @classmethod
     def from_number(cls, n, min=None):
         """Given an integer, returns a "reasonable" IntFormat instance to represent
@@ -92,7 +92,7 @@ class IntFormat(object):
         return "%" + str(self.width) + "d"
 
 
-class ExpFormat(object):
+class ExpFormat:
     @classmethod
     def from_number(cls, n, min=None):
         """Given a float number, returns a "reasonable" ExpFormat instance to
@@ -165,7 +165,7 @@ class ExpFormat(object):
         return "%" + str(self.width-1) + "." + str(self.significand) + "E"
 
 
-class Token(object):
+class Token:
     def __init__(self, type, value, pos):
         self.type = type
         self.value = value
@@ -178,7 +178,7 @@ class Token(object):
         return self.__str__()
 
 
-class Tokenizer(object):
+class Tokenizer:
     def __init__(self):
         self.tokens = list(TOKENS.keys())
         self.res = [re.compile(TOKENS[i]) for i in self.tokens]
@@ -218,7 +218,7 @@ class Tokenizer(object):
 # ndigits           : INT
 
 # Naive fortran formatter - parser is hand-made
-class FortranFormatParser(object):
+class FortranFormatParser:
     """Parser for Fortran format strings. The parse method returns a *Format
     instance.
 
