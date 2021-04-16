@@ -6739,7 +6739,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     >>> stats.ks_1samp(stats.norm.rvs(size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.16547139179976367, pvalue=0.007331283245112391)
+    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
 
     *Test against one-sided alternative hypothesis*
 
@@ -6747,17 +6747,17 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.10020335148250797, pvalue=0.12554464444766789)
+    KstestResult(statistic=0.100203351482..., pvalue=0.125544644447...)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    KstestResult(statistic=0.018749806388535406, pvalue=0.9205818597916522)
+    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
 
     Reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.ks_1samp(x, stats.norm.cdf)
-    KstestResult(statistic=0.10020335148250797, pvalue=0.2506168797657692)
+    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
 
     Don't reject null hypothesis in favor of alternative hypothesis: two-sided
 
@@ -6769,7 +6769,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     >>> stats.ks_1samp(stats.t.rvs(100,size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.06427377654425592, pvalue=0.7787377583059183)
+    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
@@ -6777,7 +6777,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     >>> stats.ks_1samp(stats.t.rvs(3,size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.1286784874935381, pvalue=0.06656908151588069)
+    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7383,15 +7383,15 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     >>> x = np.linspace(-15, 15, 9)
     >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.4443560271592436, pvalue=0.03885014008678778)
+    KstestResult(statistic=0.444356027159..., pvalue=0.038850140086...)
 
     >>> stats.kstest(stats.norm.rvs(size=100, random_state=rng), stats.norm.cdf)
-    KstestResult(statistic=0.16547139179976367, pvalue=0.007331283245112391)
+    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
 
     The above lines are equivalent to:
 
     >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
-    KstestResult(statistic=0.11381016420065393, pvalue=0.13869005231949047)  # may vary
+    KstestResult(statistic=0.113810164200..., pvalue=0.138690052319...)  # may vary
 
     *Test against one-sided alternative hypothesis*
 
@@ -7399,17 +7399,17 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
     >>> stats.kstest(x, 'norm', alternative='less')
-    KstestResult(statistic=0.10020335148250797, pvalue=0.12554464444766789)
+    KstestResult(statistic=0.1002033514..., pvalue=0.1255446444...)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.kstest(x, 'norm', alternative='greater')
-    KstestResult(statistic=0.018749806388535406, pvalue=0.9205818597916522)
+    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
 
     Don't reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.10020335148250797, pvalue=0.2506168797657692)
+    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
 
     *Testing t distributed random variables against normal distribution*
 
@@ -7418,14 +7418,14 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     sample came from the normal distribution:
 
     >>> stats.kstest(stats.t.rvs(100, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.06427377654425592, pvalue=0.7787377583059183)
+    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at the 10% level:
 
     >>> stats.kstest(stats.t.rvs(3, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.1286784874935381, pvalue=0.06656908151588069)
+    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
     # to not break compatibility with existing code

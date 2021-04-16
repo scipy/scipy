@@ -755,7 +755,7 @@ cdef class cKDTree:
         >>> print(dd, ii)
         [[2.23606798]
          [0.90553851]] [[ 6]
-         [19]]
+         [12]]
 
         To query the first and second nearest neighbours, use
 
@@ -763,7 +763,7 @@ cdef class cKDTree:
         >>> print(dd, ii)
         [[2.         2.23606798]
          [0.14142136 0.90553851]] [[ 0  6]
-         [13 19]]
+         [13 12]]
 
         or, be more specific
 
@@ -771,7 +771,7 @@ cdef class cKDTree:
         >>> print(dd, ii)
         [[2.         2.23606798]
          [0.14142136 0.90553851]] [[ 0  6]
-         [13 19]]
+         [13 12]]
 
         """
 
