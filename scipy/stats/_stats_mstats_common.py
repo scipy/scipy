@@ -79,7 +79,7 @@ def linregress(x, y=None):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate some data:
 

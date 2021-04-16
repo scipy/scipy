@@ -1977,7 +1977,7 @@ def anderson_ksamp(samples, midrank=True):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
@@ -2108,7 +2108,7 @@ def ansari(x, y):
     Examples
     --------
     >>> from scipy.stats import ansari
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     For these examples, we'll create three random data sets.  The first
     two, with sizes 35 and 25, are drawn from a normal distribution with
@@ -2715,7 +2715,7 @@ def mood(x, y, axis=0):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
     >>> z, p = stats.mood(x1, x2, axis=1)

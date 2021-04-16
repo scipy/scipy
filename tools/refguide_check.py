@@ -466,7 +466,10 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-DEFAULT_NAMESPACE = {'np': np}
+# SEED is generated with
+# from numpy.random import SeedSequence
+# print(SeedSequence().entropy)
+DEFAULT_NAMESPACE = {'np': np, 'SEED': 1638083107694713882823079058616272161}
 
 # the namespace to do checks in
 CHECK_NAMESPACE = {

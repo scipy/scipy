@@ -1518,7 +1518,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kurtosistest(list(range(20)), alternative='greater')
     KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.9559783083373583)
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> s = rng.normal(0, 1, 1000)
     >>> kurtosistest(s)
     KurtosistestResult(statistic=1.2317590987707365,
@@ -1615,7 +1615,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> pts = 1000
     >>> a = rng.normal(0, 1, size=pts)
     >>> b = rng.normal(2, 1, size=pts)
@@ -1680,7 +1680,7 @@ def jarque_bera(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> x = rng.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
@@ -2612,7 +2612,7 @@ def gstd(a, axis=0, ddof=1):
     log scale this evaluates to approximately ``exp(1)``.
 
     >>> from scipy.stats import gstd
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sample = rng.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
     2.7217860664589946  # random
@@ -4309,7 +4309,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     >>> from scipy import stats
     >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
     (0.82078268166812329, 0.088587005313543798)
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> x2n = rng.standard_normal((100, 2))
     >>> y2n = rng.standard_normal((100, 2))
     >>> stats.spearmanr(x2n)
@@ -4338,7 +4338,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
     (0.10816770419260482, 0.1273562188027364)  # random
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
     (0.052760927029710199, 0.60213045837062351)  # random
@@ -7614,7 +7614,7 @@ def ranksums(x, y, alternative='two-sided'):
     statistic.
 
     >>> from scipy.stats import ranksums
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sample1 = rng.uniform(-1, 1, 200)
     >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)

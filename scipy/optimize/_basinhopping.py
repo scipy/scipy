@@ -587,7 +587,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     the first coordinate to take larger steps than the rest of the coordinates.
     This can be implemented like so:
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> class MyTakeStep:
     ...    def __init__(self, stepsize=0.5):
     ...        self.stepsize = stepsize

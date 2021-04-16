@@ -195,7 +195,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     ...
     >>> m = 20000
     >>> n = 10000

@@ -1523,7 +1523,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> X = rng.standard_normal((10, 10))
     >>> Z = hierarchy.ward(X)
     >>> hierarchy.leaves_list(Z)

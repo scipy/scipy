@@ -2180,7 +2180,7 @@ def tsearch(tri, xi):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     The Delaunay triangulation of a set of random points:
 
@@ -2353,7 +2353,7 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
 

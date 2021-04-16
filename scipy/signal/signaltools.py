@@ -172,7 +172,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
     >>> sig_noise = sig + rng.standard_normal(len(sig))
@@ -606,7 +606,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     Autocorrelation of white noise is an impulse.
 
     >>> from scipy import signal
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = rng.standard_normal(1000)
     >>> autocorr = signal.fftconvolve(sig, sig[::-1], mode='full')
 
@@ -835,7 +835,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     Convolve a 100,000 sample signal with a 512-sample filter.
 
     >>> from scipy import signal
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = rng.standard_normal(100000)
     >>> filt = signal.firwin(512, 0.01)
     >>> fsig = signal.oaconvolve(sig, filt)
@@ -1241,7 +1241,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> img = rng.random((32, 32))
     >>> filter = rng.random((8, 8))
     >>> method = signal.choose_conv_method(img, filter, mode='same')
@@ -1569,7 +1569,7 @@ def wiener(im, mysize=None, noise=None):
     >>> from scipy.signal.signaltools import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> img = rng.random((40, 40))    #Create a random image
     >>> filtered_img = wiener(img, (5, 5))  #Filter the image
     >>> f, (plot1, plot2) = plt.subplots(1, 2)
@@ -1761,7 +1761,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
@@ -1949,7 +1949,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> t = np.linspace(-1, 1, 201)
     >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
     ...      0.1*np.sin(2*np.pi*1.25*t + 1) +
@@ -4002,7 +4002,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     `sig` is a random input signal to be filtered.
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> n = 60
     >>> sig = rng.standard_normal(n)**3 + 3*rng.standard_normal(n).cumsum()
 
@@ -4293,7 +4293,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     --------
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Create an interesting signal to filter.
 

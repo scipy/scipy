@@ -674,7 +674,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     Create z, an array with shape (100, 2) containing a mixture of samples
     from three multivariate normal distributions.
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> a = rng.multivariate_normal([0, 6], [[2, 1], [1, 1.5]], size=45)
     >>> b = rng.multivariate_normal([2, 0], [[1, -1], [-1, 3]], size=30)
     >>> c = rng.multivariate_normal([6, 4], [[5, 0], [0, 1.2]], size=25)

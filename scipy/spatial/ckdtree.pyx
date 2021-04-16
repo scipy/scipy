@@ -1021,7 +1021,7 @@ cdef class cKDTree:
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> rng = np.random.default_rng()
+        >>> rng = np.random.default_rng(SEED)
         >>> points1 = rng.random((15, 2))
         >>> points2 = rng.random((15, 2))
         >>> plt.figure(figsize=(6, 6))
@@ -1115,7 +1115,7 @@ cdef class cKDTree:
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> rng = np.random.default_rng()
+        >>> rng = np.random.default_rng(SEED)
         >>> points = rng.random((20, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
@@ -1317,7 +1317,7 @@ cdef class cKDTree:
 
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> rng = np.random.default_rng()
+        >>> rng = np.random.default_rng(SEED)
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = cKDTree(points1)
@@ -1489,7 +1489,7 @@ cdef class cKDTree:
 
         >>> import numpy as np
         >>> from scipy.spatial import cKDTree
-        >>> rng = np.random.default_rng()
+        >>> rng = np.random.default_rng(SEED)
         >>> points1 = rng.random((5, 2))
         >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = cKDTree(points1)

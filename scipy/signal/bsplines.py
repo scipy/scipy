@@ -459,7 +459,7 @@ def cspline1d(signal, lamb=0.0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
@@ -509,7 +509,7 @@ def qspline1d(signal, lamb=0.0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
@@ -564,7 +564,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))
@@ -639,7 +639,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> sig += rng.standard_normal(len(sig))*0.05  # add noise
     >>> time = np.linspace(0, len(sig))

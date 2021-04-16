@@ -388,7 +388,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     rows of an array with shape (2, 25). For this demonstration, we'll
     use random data:
 
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> b = rng.random((2, 25))
 
     To compute the frequency response for these two filters with one call

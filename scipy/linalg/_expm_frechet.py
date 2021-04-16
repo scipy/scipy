@@ -67,7 +67,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     Examples
     --------
     >>> import scipy.linalg
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> A = rng.standard_normal((3, 3))
     >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
@@ -75,7 +75,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     ((3, 3), (3, 3))
 
     >>> import scipy.linalg
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> A = rng.standard_normal((3, 3))
     >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)

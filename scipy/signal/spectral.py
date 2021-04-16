@@ -94,7 +94,7 @@ def lombscargle(x,
     Examples
     --------
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     First define some input parameters for the signal:
 
@@ -216,7 +216,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -384,7 +384,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -552,7 +552,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate two test signals with some common features.
 
@@ -694,7 +694,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     >>> from scipy import signal
     >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
     modulated around 3kHz, corrupted by white noise of exponentially
@@ -1135,7 +1135,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
     modulated around 3kHz, corrupted by white noise of exponentially
@@ -1281,7 +1281,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate a test signal, a 2 Vrms sine wave at 50Hz corrupted by
     0.001 V**2/Hz of white noise sampled at 1024 Hz.
@@ -1532,7 +1532,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
 
     Generate two test signals with some common features.
 

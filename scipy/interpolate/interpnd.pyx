@@ -242,7 +242,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import LinearNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> x = rng.random(10) - 0.5
     >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
@@ -852,7 +852,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> x = rng.random(10) - 0.5
     >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)

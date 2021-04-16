@@ -536,7 +536,7 @@ def argsreduce(cond, *args):
 
     Examples
     --------
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(SEED)
     >>> A = rng.random((4, 5))
     >>> B = 2
     >>> C = rng.random((1, 5))
