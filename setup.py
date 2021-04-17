@@ -256,7 +256,7 @@ def get_build_ext_override():
             hooks = getattr(ext, '_pre_build_hook', ())
             _run_pre_build_hooks(hooks, (self, ext))
 
-            super(build_ext, self).build_extension(ext)
+            super().build_extension(ext)
 
         def __is_using_gnu_linker(self, ext):
             if not sys.platform.startswith('linux'):

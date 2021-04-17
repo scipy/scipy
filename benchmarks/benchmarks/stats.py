@@ -377,3 +377,18 @@ class BenchSkewKurtosis(Benchmark):
 
     def time_kurtosis(self, order, size, bias):
         stats.kurtosis(self.x, bias=bias)
+
+
+class BenchQMCDiscrepancy(Benchmark):
+    param_names = ['method']
+    params = [
+        ["CD", "WD", "MD", "L2-star",]
+    ]
+
+    def setup(self, method):
+        np.random.seed(1234)
+        sample = np.random.random_sample((1000, 10))
+        self.sample = sample
+
+    def time_discrepancy(self, method):
+        disc = stats.qmc.discrepancy(self.sample, method=method)

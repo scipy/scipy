@@ -10,6 +10,7 @@ dependencies:
   - mypy=0.800
   - python=3.8
   - sphinx=3.4.3
+  - pydata-sphinx-theme=0.5.0
   - cython=0.29.21
   - pythran=0.9.8.post2
   - ipython=7.19.0  # that version has working autocompletion it looks like

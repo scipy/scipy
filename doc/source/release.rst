@@ -2,6 +2,9 @@
 Release Notes
 *************
 
+This is the list of changes to SciPy between each release. For full details,
+see the `commit logs <https://github.com/scipy/scipy/commits/>`_.
+
 .. toctree::
    :maxdepth: 1
 

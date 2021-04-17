@@ -249,6 +249,51 @@ class TestCorr:
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    def test_spearmanr_alternative(self):
+        # check against R
+        # options(digits=16)
+        # cor.test(c(2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+        #            1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7),
+        #          c(22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+        #            0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4),
+        #          alternative='two.sided', method='spearman')
+        x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+             1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
+        y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+             0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
+
+        r_exp = 0.6887298747763864  # from cor.test
+
+        r, p = mstats.spearmanr(x, y)
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.004519192910756)
+
+        r, p = mstats.spearmanr(x, y, alternative='greater')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.002259596455378)
+
+        r, p = mstats.spearmanr(x, y, alternative='less')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.9977404035446)
+
+        # intuitive test (with obvious positive correlation)
+        n = 100
+        x = np.linspace(0, 5, n)
+        y = 0.1*x + np.random.rand(n)  # y is positively correlated w/ x
+
+        stat1, p1 = mstats.spearmanr(x, y)
+
+        stat2, p2 = mstats.spearmanr(x, y, alternative="greater")
+        assert_allclose(p2, p1 / 2)  # positive correlation -> small p
+
+        stat3, p3 = mstats.spearmanr(x, y, alternative="less")
+        assert_allclose(p3, 1 - p1 / 2)  # positive correlation -> large p
+
+        assert stat1 == stat2 == stat3
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            mstats.spearmanr(x, y, alternative="ekki-ekki")
+
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
