@@ -722,7 +722,8 @@ def test_not_needs_params():
                    'parzen',
                    'taylor',
                    'triangle']:
-        get_window(winstr, 7)  # should work without error
+        win = get_window(winstr, 7)
+        assert_equal(len(win), 7)
 
 
 def test_deprecation():
