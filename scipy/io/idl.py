@@ -31,7 +31,7 @@ __all__ = ['readsav']
 
 import struct
 import numpy as np
-
+from numpy.compat import asstr
 import tempfile
 import zlib
 import warnings
