@@ -4233,13 +4233,12 @@ class Test_ttest_trim:
     def test_errors_unsupported(self):
         # confirm that attempting to trim with NaNs or permutations raises an
         # error
-        with assert_raises(ValueError, match="Permutations are currently not "
-                                             "supported with trimming."):
+        match = "Permutations are currently not supported with trimming."
+        with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
-
-        with assert_raises(ValueError, match="not supported by permutation "
-                                             "tests, one-sided asymptotic "
-                                             "tests, or trimmed tests."):
+        match = ("not supported by permutation tests, one-sided asymptotic "
+                 "tests, or trimmed tests.")
+        with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
