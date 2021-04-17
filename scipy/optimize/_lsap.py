@@ -94,7 +94,4 @@ def linear_sum_assignment(cost_matrix, maximize=False):
         raise ValueError("expected a matrix containing numerical entries, got %s"
                          % (cost_matrix.dtype,))
 
-    if maximize:
-        cost_matrix = -cost_matrix
-
-    return _lsap_module.calculate_assignment(cost_matrix)
+    return _lsap_module.calculate_assignment(cost_matrix, maximize)
