@@ -19,7 +19,7 @@ from . cimport setlist
 from libc cimport stdlib
 from scipy._lib.messagestream cimport MessageStream
 
-from numpy.compat import asbytes
+
 import os
 import sys
 import tempfile

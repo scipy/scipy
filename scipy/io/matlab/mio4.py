@@ -4,7 +4,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
+
 
 import scipy.sparse
 

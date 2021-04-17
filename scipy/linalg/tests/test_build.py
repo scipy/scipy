@@ -4,7 +4,7 @@ import re
 
 import pytest
 from numpy.testing import assert_
-from numpy.compat import asbytes
+
 
 from scipy.linalg import _flapack as flapack
 

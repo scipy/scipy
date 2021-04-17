@@ -31,7 +31,7 @@ cdef extern from "Python.h":
 from cpython cimport PyBytes_Size, PyBytes_FromString
 
 import numpy as np
-from numpy.compat import asbytes, asstr
+
 cimport numpy as cnp
 
 cdef extern from "numpy/arrayobject.h":

@@ -5,7 +5,7 @@ of mat file.
 import os.path
 import io
 
-from numpy.compat import asstr
+
 
 from scipy.io.matlab.mio5 import MatFile5Reader
 
