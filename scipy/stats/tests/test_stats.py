@@ -4102,7 +4102,7 @@ class Test_ttest_ind_common:
         # NaNs
         expected = np.isnan(np.sum(a + b, axis=axis))
         # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
-        # indices throws an warning
+        # indices throws an warning. See issue gh-13844
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             sup.filter(RuntimeWarning,
                        "invalid value encountered in less_equal")
@@ -4244,8 +4244,8 @@ class Test_ttest_trim:
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
     def test_trim_bounds_error(self, trim):
-        with assert_raises(ValueError, match="Trimming percentage should be "
-                                             "0 <= `trim` < .5."):
+        match = "Trimming percentage should be 0 <= `trim` < .5."
+        with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 

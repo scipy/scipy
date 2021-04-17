@@ -6102,7 +6102,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     ...                 random_state=np.random.default_rng(12345))
     (-1.467966985449, 0.14)
 
-    Take these two two samples, one of which has an extreme tail.
+    Take these two samples, one of which has an extreme tail.
 
     >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     >>> b = (1.1, 2.9, 4.2)
