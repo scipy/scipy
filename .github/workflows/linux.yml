@@ -75,7 +75,7 @@ jobs:
     - name: Install packages
       run: |
         python3.9 -m pip install --user -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-        python3.9 -m pip install --user setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
+        python3.9 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
         python3.9 -m pip install -r mypy_requirements.txt
 
     - name: Mypy
