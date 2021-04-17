@@ -19,7 +19,7 @@ _IntegerType = Union[int, np.integer]
 _FloatingType = Union[float, np.floating]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'LatinHypercube', 'OptimalDesign',
+           'LatinHypercube', 'OptimalLatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -105,7 +105,7 @@ class LatinHypercube(QMCEngine):
 class OptimalLatinHypercube(QMCEngine):
     def __init__(
             self, d: _IntegerType,
-            start_design: Optional[npt.ArrayLike] = ...,
+            start_sample: Optional[npt.ArrayLike] = ...,
             niter: _IntegerType = ...,
             method: Optional[Callable[[Callable, List[int], npt.ArrayLike],
                                       None]] = ...,

@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 
-from scipy.optimize import basinhopping
+from scipy.optimize import dual_annealing
 import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
@@ -851,7 +851,7 @@ class LatinHypercube(QMCEngine):
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code",
+       of Input Variables in the Analysis of Output from a Computer Code."
        Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
@@ -941,29 +941,21 @@ class LatinHypercube(QMCEngine):
 class OptimalLatinHypercube(QMCEngine):
     """Optimal Latin hypercube sampling (OLHS).
 
-    Optimize the design by doing random permutations to lower the centered
-    discrepancy [1]_.
-
-    The specified optimization `method` is used to select a new set of
-    permutations to perform. If `method` is None, *basinhopping* optimization
-    is used. `niter` set of permutations are performed.
-
-    Centered discrepancy-based design shows better space filling robustness
-    toward 2D and 3D subprojections. Distance-based design shows better space
-    filling but less robustness to subprojections [2]_.
+    Optimize the sample by doing random permutations of coordinates to lower
+    the centered discrepancy [1]_. The resulting sample is still a LHS.
 
     Parameters
     ----------
     d : int
         Dimension of the parameter space.
-    start_design : array_like (n, d), optional
-        Initial design of experiment to optimize. `LatinHypercube`
+    start_sample : array_like (n, d), optional
+        Initial sample to optimize. `LatinHypercube`
         is used to generate a first design otherwise.
     niter : int, optional
-        Number of iterations to perform. Default is 1.
+        Number of iterations of optimization to perform. Default is 1.
     method : callable ``f(func, x0, bounds)``, optional
         Optimization function used to search new samples. Default to
-        `scipy.optimize.basinhopping` optimization.
+        `scipy.optimize.dual_annealing` optimization.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -971,12 +963,28 @@ class OptimalLatinHypercube(QMCEngine):
         If `seed` is already a ``Generator`` instance then that instance is
         used.
 
+    Notes
+    -----
+    The specified optimization `method` is used to select a new set of
+    permutations to perform. If `method` is None,
+    `~scipy.optimize.dual_annealing` optimization is used. `niter` set of
+    optimizations are performed.
+
+    During the optimization, the best design is constantly update. This is
+    known as
+    Enhanced Stochastic Evolutionary algorithm (ESE) in the literature.
+
+    Centered discrepancy-based design shows better space filling robustness
+    toward 2D and 3D subprojections. Distance-based design shows better space
+    filling but less robustness to subprojections [2]_.
+
     References
     ----------
-    .. [1] Fang et al. Design and modeling for computer experiments,
-       Computer Science and Data Analysis Series, 2006.
+    .. [1] Jin et al., "An efficient algorithm for constructing optimal design
+       of computer experiments."
+       Journal of Statistical Planning and Inference, 2005.
     .. [2] Damblin et al., "Numerical studies of space filling designs:
-       optimization of Latin Hypercube Samples and subprojection properties",
+       optimization of Latin Hypercube Samples and subprojection properties."
        Journal of Simulation, 2013.
 
     Examples
@@ -1001,28 +1009,27 @@ class OptimalLatinHypercube(QMCEngine):
     You can possibly improve the quality of the sample by performing more
     optimization iterations by using `niter`:
 
-    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2, niter=5, seed=12345)
+    >>> sampler_2 = qmc.OptimalLatinHypercube(d=2,niter=5)
     >>> sample_2 = sampler_2.random(n=5)
     >>> qmc.discrepancy(sample_2)
     0.01600398742881648  # random
 
     """
 
-    def __init__(self, d, start_design=None, niter=1, method=None, seed=None):
+    def __init__(self, d, start_sample=None, niter=1, method=None, seed=None):
         super().__init__(d=d, seed=seed)
         self.niter = niter
 
         if method is None:
             def method(func, x0, bounds):
-                """Basinhopping optimization."""
-                minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-                basinhopping(func, x0, niter=100,
-                             minimizer_kwargs=minimizer_kwargs, seed=self.rng)
+                """Dual Annealing optimization."""
+                dual_annealing(func, bounds=bounds, seed=self.rng)
 
         self.method = method
 
-        if start_design is not None:
-            self.best_disc = discrepancy(np.asarray(start_design))
+        if start_sample is not None:
+            self.best_doe = np.asarray(start_sample)
+            self.best_disc = discrepancy(self.best_doe)
         else:
             self.best_disc = np.inf
             self.best_doe = None

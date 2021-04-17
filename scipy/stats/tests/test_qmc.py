@@ -549,14 +549,14 @@ class TestLHS(QMCEngineTests):
 class TestOptimalLatinHypercube(QMCEngineTests):
     qmce = qmc.OptimalLatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.48412877, 0.89496811],
-                              [0.3424405, 0.00416027],
-                              [0.20290629, 0.26284543],
-                              [0.06857794, 0.83297228],
-                              [0.98461223, 0.43212172],
-                              [0.82837347, 0.5690004],
-                              [0.60881992, 0.14251516],
-                              [0.64745145, 0.70599331]])
+    unscramble_nd = np.array([[0.82837347, 0.83297228],
+                              [0.3424405, 0.14251516],
+                              [0.20290629, 0.89496811],
+                              [0.60881992, 0.00416027],
+                              [0.98461223, 0.26284543],
+                              [0.64745145, 0.5690004],
+                              [0.06857794, 0.43212172],
+                              [0.48412877, 0.70599331]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
@@ -573,7 +573,7 @@ class TestOptimalLatinHypercube(QMCEngineTests):
 
         # all defaults
         seed = np.random.RandomState(123456)
-        optimal_ = qmc.OptimalDesign(d=2, seed=seed)
+        optimal_ = qmc.OptimalLatinHypercube(d=2, seed=seed)
         sample_ = optimal_.random(n=20)
         disc_ = qmc.discrepancy(sample_)
 
@@ -581,31 +581,28 @@ class TestOptimalLatinHypercube(QMCEngineTests):
 
         # using an initial sample
         seed = np.random.RandomState(123456)
-        optimal_1 = qmc.OptimalDesign(d=2, start_design=sample_ref, seed=seed)
+        optimal_1 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
+                                              seed=seed)
         sample_1 = optimal_1.random(n=20)
         disc_1 = qmc.discrepancy(sample_1)
 
         assert disc_1 < disc_ref
 
         # 5 iterations is better than 1
-        seed = np.random.RandomState(123456)
-        optimal_2 = qmc.OptimalDesign(d=2, start_design=sample_ref, niter=5,
-                                      seed=seed)
+        optimal_2 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
+                                              niter=5, seed=seed)
         sample_2 = optimal_2.random(n=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1
 
         # another optimization method
         def method(func, x0, bounds):
-            seed = np.random.RandomState(123456)
             minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-            _ = basinhopping(func, x0, niter=100,
-                             minimizer_kwargs=minimizer_kwargs,
-                             seed=seed)
+            basinhopping(func, x0, niter=100,
+                         minimizer_kwargs=minimizer_kwargs, seed=seed)
 
-        seed = np.random.RandomState(123456)
-        optimal_3 = qmc.OptimalDesign(d=2, start_design=sample_ref,
-                                      method=method, seed=seed)
+        optimal_3 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
+                                              method=method, seed=seed)
         sample_3 = optimal_3.random(n=20)
         disc_3 = qmc.discrepancy(sample_3)
         assert disc_3 < disc_ref
