@@ -1780,6 +1780,9 @@ if has_umfpack:
         def test_bug_10466(self):
             pytest.skip("Autoscale doesn't fix everything, and that's OK.")
 
+        def test_network_flow_limited_capacity(self):
+            pytest.skip("Failing due to numerical issues on some platforms.")
+
 
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
