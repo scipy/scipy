@@ -1,4 +1,12 @@
 from os.path import join, dirname
+from typing import (
+    Dict,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+    Type
+ )
+from functools import partial
 
 import numpy as np
 from numpy.testing import (
@@ -194,8 +202,17 @@ def test_complex(transform, dtype):
     assert_array_almost_equal(x, y)
 
 
+if TYPE_CHECKING:
+    Numbers = Union[Type[np.double], Type[np.float32], Type[int]]
+    DecMapType = Dict[
+        Tuple[
+            partial, Numbers, int
+        ],
+        int
+    ]
+
 # map (tranform, dtype, type) -> decimal
-dec_map = {
+dec_map: DecMapType = {
     # DCT
     (dct, np.double, 1): 13,
     (dct, np.float32, 1): 6,
