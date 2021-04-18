@@ -3430,7 +3430,12 @@ class invgamma_gen(rv_continuous):
 
     `invgamma` takes ``a`` as a shape parameter for :math:`a`.
 
-    `invgamma` is a special case of `gengamma` with ``c=-1``.
+    `invgamma` is a special case of `gengamma` with ``c=-1``, and it is a
+    different parameterization of the scaled inverse chi-squared distribution.
+    Specifically, if the scaled inverse chi-squared distribution is
+    parameterized with degrees of freedom :math:`\nu` and scaling parameter
+    :math:`\tau^2`, then it can be modeled using `invgamma` with
+    ``a=`` :math:`\nu/2` and ``scale=`` :math:`\nu \tau^2/2`.
 
     %(after_notes)s
 
