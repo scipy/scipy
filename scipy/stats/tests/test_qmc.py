@@ -548,13 +548,13 @@ class TestLHS(QMCEngineTests):
 class TestOptimalLatinHypercube(QMCEngineTests):
     qmce = qmc.OptimalLatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.60881992, 0.00416027],
-                              [0.98461223, 0.26284543],
+    unscramble_nd = np.array([[0.48412877, 0.00416027],
+                              [0.06857794, 0.26284543],
                               [0.82837347, 0.83297228],
                               [0.20290629, 0.89496811],
-                              [0.06857794, 0.43212172],
-                              [0.48412877, 0.5690004 ],
-                              [0.3424405 , 0.14251516],
+                              [0.98461223, 0.43212172],
+                              [0.3424405 , 0.5690004 ],
+                              [0.60881992, 0.14251516],
                               [0.64745145, 0.70599331]])
 
     def test_continuing(self, *args):

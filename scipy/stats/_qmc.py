@@ -955,9 +955,6 @@ class OptimalLatinHypercube(QMCEngine):
         is used to generate a first design otherwise.
     niter : int, optional
         Number of iterations of optimization to perform. Default is 1.
-    method : callable ``f(func, x0, bounds)``, optional
-        Optimization function used to search new samples. Default to
-        `scipy.optimize.dual_annealing` optimization.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1018,17 +1015,9 @@ class OptimalLatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, d, start_sample=None, niter=1, method=None, seed=None):
+    def __init__(self, d, start_sample=None, niter=1, seed=None):
         super().__init__(d=d, seed=seed)
         self.niter = niter
-
-        if method is None:
-            def method(func, x0, bounds):
-                """Dual Annealing optimization."""
-                dual_annealing(func, bounds=bounds,
-                               no_local_search=True, seed=self.rng)
-
-        self.method = method
 
         if start_sample is not None:
             self.best_sample = np.asarray(start_sample).copy()
@@ -1063,47 +1052,73 @@ class OptimalLatinHypercube(QMCEngine):
         if n == 1:
             return self.best_sample
 
-        def _perturb_best_sample(x: List[int]) -> float:
-            """Perturb the sample and keep track of the best DoE.
-
-            Parameters
-            ----------
-            x : list of int
-                It is a list of:
-                    idx : int
-                        Index value of the components to compute
-
-            Returns
-            -------
-            discrepancy : float
-                Centered discrepancy.
-
-            """
-            # Perturb the sample
-            for _ in range(5):
-                col = rng_integers(self.rng, *bounds[0])
-                row_1 = rng_integers(self.rng, *bounds[1])
-                row_2 = rng_integers(self.rng, *bounds[2])
-
-                disc = _perturb_discrepancy(self.best_sample,
-                                            row_1, row_2, col,
-                                            self.best_disc)
-                if disc < self.best_disc:
-                    doe = self.best_sample
-                    doe[row_1, col], doe[row_2, col] = (
-                        doe[row_2, col], doe[row_1, col])
-                    self.best_disc = disc
-                    self.best_sample = doe
-
-            return disc  # noqa
-
-        x0 = [0, 0, 0]
         bounds = ([0, self.d - 1],
                   [0, n - 1],
                   [0, n - 1])
 
-        for _ in range(self.niter):
-            self.method(_perturb_best_sample, x0, bounds)
+        def inner_loop(sample, disc, th):
+            n_iters = 100  # M
+            n_perms = 50  # J
+            n_acpt = 0
+            n_imp = 0
+
+            for _ in range(n_iters):
+                col = rng_integers(self.rng, *bounds[0], size=n_perms)
+                row_1 = rng_integers(self.rng, *bounds[1], size=n_perms)
+                row_2 = rng_integers(self.rng, *bounds[2], size=n_perms)
+
+                best_disc = [_perturb_discrepancy(sample,
+                                                  row_1[i], row_2[i], col[i],
+                                                  disc)
+                             for i in range(n_perms)]
+
+                idx = np.argmin(best_disc)
+                best_disc = best_disc[idx]
+
+                if (best_disc - disc) < (th * self.rng.random()):
+                    col, row_1, row_2 = col[idx], row_1[idx], row_2[idx]
+                    sample[row_1, col], sample[row_2, col] = (
+                        sample[row_2, col], sample[row_1, col])
+
+                    disc = best_disc
+                    n_acpt += 1
+
+                    if disc < self.best_disc:
+                        self.best_sample = sample
+                        self.best_disc = disc
+                        n_imp += 1
+
+            r_acpt, r_imp =  n_acpt / n_iters, n_imp / n_iters
+
+            return sample, disc, r_acpt, r_imp
+
+        def outer_loop(alpha=0.8, alpha_2=0.9, alpha_3=0.7, tol=1.1):
+            th = 0.005 * self.best_disc
+
+            sample = self.best_sample
+            disc = self.best_disc
+
+            for _ in range(self.niter):
+                old_best_disc = self.best_disc
+
+                sample, disc, r_acpt, r_imp = inner_loop(sample, disc, th)
+
+                if (old_best_disc / self.best_disc) > tol:
+                    # improvement
+                    if (r_acpt > 0.1) and (r_imp < r_acpt):
+                        th *= alpha_2  # decrease
+                    elif (r_acpt > 0.1) and (r_imp == r_acpt):
+                        pass  # maintain
+                    else:
+                        th /= alpha_3  # increase
+                else:
+                    # exploration
+                    if r_acpt < 0.1:
+                        th /= alpha  # increase
+                    elif r_acpt > 0.8:
+                        th *= alpha  # decrease
+
+        outer_loop()
 
         self.num_generated += n
 
