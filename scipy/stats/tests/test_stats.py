@@ -2595,6 +2595,15 @@ class TestMoments:
     testcase_moment_accuracy = np.random.rand(42)
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
+    def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
+        expect = np.asarray(expect)
+        if shape is not None:
+            expect = np.broadcast_to(expect, shape)
+        assert_array_equal(actual, expect)
+        if dtype is None:
+            dtype = expect.dtype
+        assert actual.dtype == dtype
+
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
         y = stats.moment(self.scalar_testcase)
@@ -2623,7 +2632,15 @@ class TestMoments:
 
         # test empty input
         y = stats.moment([])
-        assert_equal(y, np.nan)
+        self._assert_equal(y, np.nan, dtype=np.float64)
+        y = stats.moment(np.array([], dtype=np.float32))
+        self._assert_equal(y, np.nan, dtype=np.float32)
+        y = stats.moment(np.zeros((1, 0)), axis=0)
+        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+        y = stats.moment([[]], axis=1)
+        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+        y = stats.moment([[]], moment=[0, 1], axis=0)
+        self._assert_equal(y, [], shape=(2, 0))
 
         x = np.arange(10.)
         x[9] = np.nan
@@ -2631,6 +2648,25 @@ class TestMoments:
         assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex128])
+    @pytest.mark.parametrize('expect, moment', [(0, 1), (1, 0)])
+    def test_constant_moments(self, dtype, expect, moment):
+        x = np.random.rand(5).astype(dtype)
+        y = stats.moment(x, moment=moment)
+        self._assert_equal(y, expect, dtype=dtype)
+
+        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, moment=moment)
+        self._assert_equal(y, expect, shape=(5,), dtype=dtype)
+
+        y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
+                         moment=moment)
+        self._assert_equal(y, expect, shape=(1, 2, 4, 5), dtype=dtype)
+
+        y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
+                         moment=moment)
+        self._assert_equal(y, expect, shape=(), dtype=dtype)
+
 
     def test_moment_propagate_nan(self):
         # Check that the shape of the result is the same for inputs

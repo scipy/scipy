@@ -898,11 +898,16 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         return mstats_basic.moment(a, moment, axis)
 
     if a.size == 0:
+        moment_shape = list(a.shape)
+        del moment_shape[axis]
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
-        if np.isscalar(moment):
-            return np.nan
+        out_shape = (moment_shape if np.isscalar(moment)
+                    else [len(moment)] + moment_shape)
+        if len(out_shape) == 0:
+            return dtype(np.nan)
         else:
-            return np.full(np.asarray(moment).shape, np.nan, dtype=np.float64)
+            return np.full(out_shape, np.nan, dtype=dtype)
 
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
@@ -918,27 +923,18 @@ def _moment(a, moment, axis, *, mean=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
-    if moment == 0:
-        # When moment equals 0, the result is 1, by definition.
+    if moment == 0 or moment == 1:
+        # By definition the zeroth moment about the mean is 1, and the first
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.ones(shape, dtype=float)
-        else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return 1.0
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
-    elif moment == 1:
-        # By definition the first moment about the mean is 0.
-        shape = list(a.shape)
-        del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float)
+        if len(shape) == 0:
+            return dtype(1.0 if moment == 0 else 0.0)
         else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(0.0)
+            return (np.ones(shape, dtype=dtype) if moment == 0
+                    else np.zeros(shape, dtype=dtype))
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]

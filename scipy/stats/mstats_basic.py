@@ -2194,20 +2194,43 @@ def moment(a, moment=1, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return _moment(a, moment, axis)
+    if a.size == 0:
+        moment_shape = list(a.shape)
+        del moment_shape[axis]
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+        # empty array, return nan(s) with shape matching `moment`
+        out_shape = (moment_shape if np.isscalar(moment)
+                    else [len(moment)] + moment_shape)
+        if len(out_shape) == 0:
+            return dtype(np.nan)
+        else:
+            return ma.array(np.full(out_shape, np.nan, dtype=dtype))
+
+    # for array_like moment input, return a value for each.
+    if not np.isscalar(moment):
+        mean = a.mean(axis, keepdims=True)
+        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        return ma.array(mmnt)
+    else:
+        return _moment(a, moment, axis)
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, moment, axis, *, mean=None):
-    if moment == 1:
-        # By definition the first moment about the mean is 0.
+    if np.abs(moment - np.round(moment)) > 0:
+        raise ValueError("All moment parameters must be integers")
+
+    if moment == 0 or moment == 1:
+        # By definition the zeroth moment about the mean is 1, and the first
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float)
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+        if len(shape) == 0:
+            return dtype(1.0 if moment == 0 else 0.0)
         else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(0.0)
+            return (ma.ones(shape, dtype=dtype) if moment == 0
+                    else ma.zeros(shape, dtype=dtype))
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]

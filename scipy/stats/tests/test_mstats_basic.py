@@ -576,6 +576,15 @@ class TestMoments:
            [True, True, True, True, True],
            [False, False, True, False, False]], dtype=bool))
 
+    def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
+        expect = np.asarray(expect)
+        if shape is not None:
+            expect = np.broadcast_to(expect, shape)
+        assert_array_equal(actual, expect)
+        if dtype is None:
+            dtype = expect.dtype
+        assert actual.dtype == dtype
+
     def test_moment(self):
         y = mstats.moment(self.testcase,1)
         assert_almost_equal(y,0.0,10)
@@ -585,6 +594,33 @@ class TestMoments:
         assert_almost_equal(y,0.0)
         y = mstats.moment(self.testcase,4)
         assert_almost_equal(y,2.5625)
+
+        # check array_like input for moment
+        y = mstats.moment(self.testcase, [1, 2, 3, 4])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # check moment input consists only of integers
+        y = mstats.moment(self.testcase, 0.0)
+        assert_allclose(y, 1.0)
+        assert_raises(ValueError, mstats.moment, self.testcase, 1.2)
+        y = mstats.moment(self.testcase, [1.0, 2, 3, 4.0])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # test empty input
+        y = mstats.moment([])
+        self._assert_equal(y, np.nan, dtype=np.float64)
+        y = mstats.moment(np.array([], dtype=np.float32))
+        self._assert_equal(y, np.nan, dtype=np.float32)
+        y = mstats.moment(np.zeros((1, 0)), axis=0)
+        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+        y = mstats.moment([[]], axis=1)
+        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+        y = mstats.moment([[]], moment=[0, 1], axis=0)
+        self._assert_equal(y, [], shape=(2, 0))
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(mstats.moment(x, 2), ma.masked) # NaN value is ignored
 
     def test_variation(self):
         y = mstats.variation(self.testcase)
