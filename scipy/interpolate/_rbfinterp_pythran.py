@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def _linear(r):
+def linear(r):
     """Linear / 1st order polyharmonic spline"""
     return -r
 
 
-def _tps(r):
+def tps(r):
     """Thin plate spline / 2nd order polyharmonic spline"""
     if r == 0:
         return 0.0
@@ -14,95 +14,93 @@ def _tps(r):
         return r**2*np.log(r)
 
 
-def _cubic(r):
+def cubic(r):
     """Cubic / 3rd order polyharmonic spline"""
     return r**3
 
 
-def _quintic(r):
+def quintic(r):
     """Quintic / 5th order polyharmonic spline"""
     return -r**5
 
 
-def _mq(r):
+def mq(r):
     """Multiquadratic"""
     return -np.sqrt(r**2 + 1)
 
 
-def _imq(r):
+def imq(r):
     """Inverse multiquadratic"""
     return 1/np.sqrt(r**2 + 1)
 
 
-def _iq(r):
+def iq(r):
     """Inverse quadratic"""
     return 1/(r**2 + 1)
 
 
-def _ga(r):
+def ga(r):
     """Gaussian"""
     return np.exp(-r**2)
 
 
-_NAME_TO_FUNC = {
-    'linear': _linear,
-    'tps': _tps,
-    'cubic': _cubic,
-    'quintic': _quintic,
-    'mq': _mq,
-    'imq': _imq,
-    'iq': _iq,
-    'ga': _ga
-    }
+NAME_TO_FUNC = {
+   'linear': linear,
+   'tps': tps,
+   'cubic': cubic,
+   'quintic': quintic,
+   'mq': mq,
+   'imq': imq,
+   'iq': iq,
+   'ga': ga
+   }
 
 
-def _kernel_func_vector(x, y, kernel_func):
+def kernel_vector(x, y, kernel_func, out):
     """
     Returns RBFs with centers at `y` evaluated at the single point `x`
     """
-    n = y.shape[0]
-    out = np.empty((n,), dtype=float)
-    for i in range(n):
+    for i in range(y.shape[0]):
         out[i] = kernel_func(np.linalg.norm(x - y[i]))
 
-    return out
 
-
-def _polynomial_vector(x, powers):
+def polynomial_vector(x, powers, out):
     """
     Returns monomials with exponents from `powers` evaluated at the single
     point `x`
     """
-    n = powers.shape[0]
-    out = np.empty((n,), dtype=float)
-    for i in range(n):
+    for i in range(powers.shape[0]):
         out[i] = np.prod(x**powers[i])
 
-    return out
 
-
-def _kernel_func_matrix(x, kernel_func):
+def kernel_matrix(x, kernel_func, out):
     """
     Returns RBFs with centers at `x` evaluated at `x`
     """
-    n = x.shape[0]
-    out = np.empty((n, n), dtype=float)
-    for i in range(n):
+    for i in range(x.shape[0]):
         for j in range(i+1):
             out[i, j] = kernel_func(np.linalg.norm(x[i] - x[j]))
             out[j, i] = out[i, j]
 
-    return out
+
+def polynomial_matrix(x, powers, out):
+    """
+    Returns monomials with exponents from `powers` evaluated at the points `x`
+    """
+    for i in range(x.shape[0]):
+        for j in range(powers.shape[0]):
+            out[i, j] = np.prod(x[i]**powers[j])
 
 
 # pythran export _kernel_matrix(float[:, :], str)
 def _kernel_matrix(x, kernel):
-    '''
-    Returns RBFs with centers at `x` evaluated at `x`. The RBF is specified as
-    a string
-    '''
-    kernel_func = _NAME_TO_FUNC[kernel]
-    return _kernel_func_matrix(x, kernel_func)
+    """
+    Returns RBFs with centers at `x` evaluated at `x`
+    """
+    out = np.empty((x.shape[0], x.shape[0]), dtype=float)
+    kernel_func = NAME_TO_FUNC[kernel]
+    kernel_matrix(x, kernel_func, out)
+    return out
 
 
 # pythran export _polynomial_matrix(float[:, :], int[:, :])
@@ -110,13 +108,8 @@ def _polynomial_matrix(x, powers):
     """
     Returns monomials with exponents from `powers` evaluated at the points `x`
     """
-    n = x.shape[0]
-    m = powers.shape[0]
-    out = np.empty((n, m), dtype=float)
-    for i in range(n):
-        for j in range(m):
-            out[i, j] = np.prod(x[i]**powers[j])
-
+    out = np.empty((x.shape[0], powers.shape[0]), dtype=float)
+    polynomial_matrix(x, powers, out)
     return out
 
 
@@ -134,7 +127,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     Parameters
     ----------
     y : (P, N) float ndarray
-        Data points coordinates
+        Data point coordinates
     d : (P, S) float or complex ndarray
         Data values at `y`
     smoothing : (P,) float ndarray
@@ -152,37 +145,40 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     rhs : (P + R, S) float or complex ndarray
     shift : (N,) float ndarray
         Domain shift used to create the polynomial matrix
-    scale : float
+    scale : (N,) float ndarray
         Domain scaling used to create the polynomial matrix
 
     """
     p = d.shape[0]
     s = d.shape[1]
     r = powers.shape[0]
+    kernel_func = NAME_TO_FUNC[kernel]
+
+    # Shift and scale the polynomial domain to the unit hypercube
+    mins = np.min(y, axis=0)
+    maxs = np.max(y, axis=0)
+    shift = (maxs + mins)/2
+    scale = (maxs - mins)/2
+    # The scale may be zero if there is a single point or all the points have
+    # the same value for some dimension. Avoid division by zero by replacing
+    # zeros with ones
+    scale[scale == 0.0] = 1.0
 
     yeps = y*epsilon
-    kernel_func = _NAME_TO_FUNC[kernel]
-    kmat = _kernel_func_matrix(yeps, kernel_func)
-
-    # shift and scale the polynomial domain for numerical stability
-    shift = np.mean(y, axis=0)
-    if p > 1:
-        scale = np.ptp(y, axis=0).max()
-    else:
-        scale = 1.0
-
     yhat = (y - shift)/scale
-    pmat = _polynomial_matrix(yhat, powers)
 
-    lhs = np.empty((p + r, p + r), dtype=float)
-    lhs[:p, :p] = kmat
-    lhs[:p, p:] = pmat
-    lhs[p:, :p] = pmat.T
+    # Transpose to make the array fortran contiguous. This is required for
+    # dgesv to not make a copy of lhs
+    lhs = np.empty((p + r, p + r), dtype=float).T
+    kernel_matrix(yeps, kernel_func, lhs[:p, :p])
+    polynomial_matrix(yhat, powers, lhs[:p, p:])
+    lhs[p:, :p] = lhs[:p, p:].T
     lhs[p:, p:] = 0.0
     for i in range(p):
         lhs[i, i] += smoothing[i]
 
-    rhs = np.empty((p + r, s), dtype=d.dtype)
+    # Transpose to make the array fortran contiguous
+    rhs = np.empty((s, p + r), dtype=d.dtype).T
     rhs[:p] = d
     rhs[p:] = 0.0
 
@@ -195,7 +191,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          float,
 #                          int[:, :],
 #                          float[:],
-#                          float,
+#                          float[:],
 #                          float[:, :] or complex[:, :])
 def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     '''
@@ -214,9 +210,9 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     powers : (R, N) int ndarray
         The exponents for each monomial in the polynomial
     shift : (N,) float ndarray
-        Shift the polynomial domain for numerical stability
-    scale : float
-        Scale the polynomial domain for numerical stability
+        Shifts the polynomial domain for numerical stability
+    scale : (N,) float ndarray
+        Scales the polynomial domain for numerical stability
     coeffs : (P + R, S) float or complex ndarray
         RBF and polynomial coefficients
 
@@ -227,20 +223,20 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     '''
     q = x.shape[0]
     p = y.shape[0]
+    r = powers.shape[0]
     s = coeffs.shape[1]
+    kernel_func = NAME_TO_FUNC[kernel]
 
     yeps = y*epsilon
-    kernel_func = _NAME_TO_FUNC[kernel]
+    xeps = x*epsilon
+    xhat = (x - shift)/scale
+
     out = np.empty((q, s), dtype=coeffs.dtype)
+    vec = np.empty((p + r,), dtype=float)
     for i in range(q):
-        xeps = x[i]*epsilon
-        kvec = _kernel_func_vector(xeps, yeps, kernel_func)
-
-        xhat = (x[i] - shift)/scale
-        pvec = _polynomial_vector(xhat, powers)
-
+        kernel_vector(xeps[i], yeps, kernel_func, vec[:p])
+        polynomial_vector(xhat[i], powers, vec[p:])
         for j in range(s):
-            out[i, j] = np.sum(coeffs[:p, j]*kvec)
-            out[i, j] += np.sum(coeffs[p:, j]*pvec)
+            out[i, j] = np.dot(coeffs[:, j], vec)
 
     return out
