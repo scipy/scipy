@@ -5,9 +5,11 @@ import numbers
 from abc import ABC, abstractmethod
 import math
 import warnings
+from typing import List
 
 import numpy as np
 
+from scipy._lib._util import rng_integers
 from scipy.optimize import dual_annealing
 import scipy.stats as stats
 from scipy.stats._sobol import (
@@ -1023,16 +1025,17 @@ class OptimalLatinHypercube(QMCEngine):
         if method is None:
             def method(func, x0, bounds):
                 """Dual Annealing optimization."""
-                dual_annealing(func, bounds=bounds, seed=self.rng)
+                dual_annealing(func, bounds=bounds,
+                               no_local_search=True, seed=self.rng)
 
         self.method = method
 
         if start_sample is not None:
-            self.best_doe = np.asarray(start_sample)
-            self.best_disc = discrepancy(self.best_doe)
+            self.best_sample = np.asarray(start_sample).copy()
+            self.best_disc = discrepancy(self.best_sample)
         else:
             self.best_disc = np.inf
-            self.best_doe = None
+            self.best_sample = None
 
         self.lhs = LatinHypercube(self.d, seed=self.rng)
 
@@ -1053,15 +1056,15 @@ class OptimalLatinHypercube(QMCEngine):
         if self.d == 0 or n == 0:
             return np.empty((n, self.d))
 
-        if self.best_doe is None:
-            self.best_doe = self.lhs.random(n)
-            self.best_disc = discrepancy(self.best_doe)
+        if self.best_sample is None:
+            self.best_sample = self.lhs.random(n)
+            self.best_disc = discrepancy(self.best_sample)
 
         if n == 1:
-            return self.best_doe
+            return self.best_sample
 
-        def _perturb_best_doe(x: np.ndarray) -> float:
-            """Perturb the DoE and keep track of the best DoE.
+        def _perturb_best_sample(x: List[int]) -> float:
+            """Perturb the sample and keep track of the best DoE.
 
             Parameters
             ----------
@@ -1076,19 +1079,23 @@ class OptimalLatinHypercube(QMCEngine):
                 Centered discrepancy.
 
             """
-            # Perturb the DoE
-            doe = self.best_doe.copy()
-            col, row_1, row_2 = np.round(x).astype(int)
+            # Perturb the sample
+            for _ in range(5):
+                col = rng_integers(self.rng, *bounds[0])
+                row_1 = rng_integers(self.rng, *bounds[1])
+                row_2 = rng_integers(self.rng, *bounds[2])
 
-            disc = _perturb_discrepancy(self.best_doe, row_1, row_2, col,
-                                        self.best_disc)
-            if disc < self.best_disc:
-                doe[row_1, col], doe[row_2, col] = (
-                    doe[row_2, col], doe[row_1, col])
-                self.best_disc = disc
-                self.best_doe = doe
+                disc = _perturb_discrepancy(self.best_sample,
+                                            row_1, row_2, col,
+                                            self.best_disc)
+                if disc < self.best_disc:
+                    doe = self.best_sample
+                    doe[row_1, col], doe[row_2, col] = (
+                        doe[row_2, col], doe[row_1, col])
+                    self.best_disc = disc
+                    self.best_sample = doe
 
-            return disc
+            return disc  # noqa
 
         x0 = [0, 0, 0]
         bounds = ([0, self.d - 1],
@@ -1096,13 +1103,13 @@ class OptimalLatinHypercube(QMCEngine):
                   [0, n - 1])
 
         for _ in range(self.niter):
-            self.method(_perturb_best_doe, x0, bounds)
+            self.method(_perturb_best_sample, x0, bounds)
 
         self.num_generated += n
 
-        sample = self.best_doe
+        sample = self.best_sample
         # will force next calls to random to start from a LHS
-        self.best_doe = None
+        self.best_sample = None
 
         return sample
 

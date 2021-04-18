@@ -549,14 +549,14 @@ class TestLHS(QMCEngineTests):
 class TestOptimalLatinHypercube(QMCEngineTests):
     qmce = qmc.OptimalLatinHypercube
     can_scramble = False
-    unscramble_nd = np.array([[0.82837347, 0.83297228],
-                              [0.3424405, 0.14251516],
-                              [0.20290629, 0.89496811],
-                              [0.60881992, 0.00416027],
+    unscramble_nd = np.array([[0.60881992, 0.00416027],
                               [0.98461223, 0.26284543],
-                              [0.64745145, 0.5690004],
+                              [0.82837347, 0.83297228],
+                              [0.20290629, 0.89496811],
                               [0.06857794, 0.43212172],
-                              [0.48412877, 0.70599331]])
+                              [0.48412877, 0.5690004 ],
+                              [0.3424405 , 0.14251516],
+                              [0.64745145, 0.70599331]])
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")
@@ -594,18 +594,6 @@ class TestOptimalLatinHypercube(QMCEngineTests):
         sample_2 = optimal_2.random(n=20)
         disc_2 = qmc.discrepancy(sample_2)
         assert disc_2 < disc_1
-
-        # another optimization method
-        def method(func, x0, bounds):
-            minimizer_kwargs = {"method": "L-BFGS-B", "bounds": bounds}
-            basinhopping(func, x0, niter=100,
-                         minimizer_kwargs=minimizer_kwargs, seed=seed)
-
-        optimal_3 = qmc.OptimalLatinHypercube(d=2, start_sample=sample_ref,
-                                              method=method, seed=seed)
-        sample_3 = optimal_3.random(n=20)
-        disc_3 = qmc.discrepancy(sample_3)
-        assert disc_3 < disc_ref
 
 
 class TestSobol(QMCEngineTests):
