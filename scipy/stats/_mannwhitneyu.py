@@ -117,7 +117,7 @@ def _get_mwu_z(U, n1, n2, ranks, axis=0, continuity=True):
     # Continuity correction.
     # Because SF is always used to calculate the p-value, we can always
     # _subtract_ 0.5 for the continuity correction. This always increases the
-    # p-value to accounts for the rest of the probability mass _at_ q = U.
+    # p-value to account for the rest of the probability mass _at_ q = U.
     if continuity:
         numerator -= 0.5
 
