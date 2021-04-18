@@ -4,9 +4,10 @@ from functools import lru_cache
 from itertools import combinations_with_replacement
 
 import numpy as np
+from numpy.linalg import LinAlgError
 from scipy.spatial import KDTree
 from scipy.special import binom
-from scipy.linalg.lapack import get_lapack_funcs
+from scipy.linalg.lapack import dgesv
 
 from ._rbfinterp_pythran import _build_system, _evaluate
 
@@ -31,6 +32,20 @@ def _monomial_powers(ndim, degree):
         out = np.array(out)
 
     return out
+
+
+def _solve(lhs, rhs):
+    """
+    Solve the system in place using dgesv
+    """
+    _, _, soln, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
+    if info < 0:
+        raise ValueError('The %d-th argument had an illegal value' % -info)
+    elif info > 0:
+        raise LinAlgError('Singular matrix')
+
+    # `soln` and `rhs` should be the same array if `rhs` is fortran contiguous
+    return soln
 
 
 # The RBFs that are implemented
@@ -274,14 +289,18 @@ class RBFInterpolator:
 
         ny, ndim = y.shape
         data_shape = d.shape[1:]
+        data_type = d.dtype
         d = d.reshape((ny, -1))
+        # If `d` is complex, convert it to a float array with twice as many
+        # columns. Otherwise, the lhs matrix would need to be converted to
+        # complex and take up 2x more memory than necessary
+        d = d.view(float)
         powers = _monomial_powers(ndim, degree)
         lhs, rhs, shift, scale = _build_system(
             y, d, smoothing, kernel, epsilon, powers
             )
 
-        solve_func = get_lapack_funcs('gesv', dtype=d.dtype)
-        coeffs = solve_func(lhs, rhs)[2]
+        coeffs = _solve(lhs, rhs)
 
         self.y = y
         self.kernel = kernel
@@ -291,6 +310,7 @@ class RBFInterpolator:
         self.scale = scale
         self.coeffs = coeffs
         self.data_shape = data_shape
+        self.data_type = data_type
 
     def __call__(self, x):
         """
@@ -322,6 +342,7 @@ class RBFInterpolator:
             x, self.y, self.kernel, self.epsilon, self.powers, self.shift,
             self.scale, self.coeffs
             )
+        out = out.view(self.data_type)
         out = out.reshape((nx,) + self.data_shape)
         return out
 
@@ -390,7 +411,9 @@ class KNearestRBFInterpolator:
 
         ny, ndim = y.shape
         data_shape = d.shape[1:]
+        data_type = d.dtype
         d = d.reshape((ny, -1))
+        d = d.view(float)
         powers = _monomial_powers(ndim, degree)
         tree = KDTree(y)
 
@@ -403,6 +426,7 @@ class KNearestRBFInterpolator:
         self.powers = powers
         self.tree = tree
         self.data_shape = data_shape
+        self.data_type = data_type
 
     def __call__(self, x):
         """
@@ -430,7 +454,7 @@ class KNearestRBFInterpolator:
                 self.y.shape[1]
                 )
 
-        out = np.zeros((nx,) + self.data_shape, dtype=self.d.dtype)
+        out = np.zeros((nx,) + self.data_shape, dtype=self.data_type)
 
         # get the indices of the k nearest observation points to each
         # interpolation point
@@ -451,12 +475,11 @@ class KNearestRBFInterpolator:
         for i, j in enumerate(inv):
             xindices[j].append(i)
 
-        solve_func = get_lapack_funcs('gesv', dtype=self.d.dtype)
         for xidx, yidx in zip(xindices, yindices):
             # `yidx` are the indices of the observations in this neighborhood.
             # `xidx` are the indices of the interpolation points that are using
             # this neighborhood
-            xnbr = x[xidx]
+            xi = x[xidx]
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
             snbr = self.smoothing[yidx]
@@ -464,11 +487,14 @@ class KNearestRBFInterpolator:
                 ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
                 )
 
-            coeffs = solve_func(lhs, rhs)[2]
+            coeffs = _solve(lhs, rhs)
 
-            out[xidx] = _evaluate(
-                xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
-                scale, coeffs
-                ).reshape((-1,) + self.data_shape)
+            outi = _evaluate(
+                xi, ynbr, self.kernel, self.epsilon, self.powers, shift, scale,
+                coeffs
+                )
+            outi = outi.view(self.data_type)
+            outi = outi.reshape((-1,) + self.data_shape)
+            out[xidx] = outi
 
         return out

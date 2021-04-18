@@ -114,7 +114,7 @@ def _polynomial_matrix(x, powers):
 
 
 # pythran export _build_system(float[:, :],
-#                              float[:, :] or complex[:, :],
+#                              float[:, :],
 #                              float[:],
 #                              str,
 #                              float,
@@ -128,7 +128,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     ----------
     y : (P, N) float ndarray
         Data point coordinates
-    d : (P, S) float or complex ndarray
+    d : (P, S) float ndarray
         Data values at `y`
     smoothing : (P,) float ndarray
         Smoothing parameter for each data point
@@ -142,7 +142,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     Returns
     -------
     lhs : (P + R, P + R) float ndarray
-    rhs : (P + R, S) float or complex ndarray
+    rhs : (P + R, S) float ndarray
     shift : (N,) float ndarray
         Domain shift used to create the polynomial matrix
     scale : (N,) float ndarray
@@ -192,7 +192,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          int[:, :],
 #                          float[:],
 #                          float[:],
-#                          float[:, :] or complex[:, :])
+#                          float[:, :])
 def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     '''
     Evaluates the RBF interpolant at `x`
@@ -213,12 +213,12 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
         Shifts the polynomial domain for numerical stability
     scale : (N,) float ndarray
         Scales the polynomial domain for numerical stability
-    coeffs : (P + R, S) float or complex ndarray
+    coeffs : (P + R, S) float ndarray
         RBF and polynomial coefficients
 
     Returns
     -------
-    (Q, S) float or complex ndarray
+    (Q, S) float ndarray
 
     '''
     q = x.shape[0]
