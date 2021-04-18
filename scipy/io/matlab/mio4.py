@@ -4,7 +4,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
+
 
 import scipy.sparse
 
@@ -14,6 +14,7 @@ from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
 from .mio_utils import squeeze_element, chars_to_strings
 from functools import reduce
 
+from scipy._lib._util import asbytes,asstr
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
 

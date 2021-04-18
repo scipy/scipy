@@ -81,7 +81,7 @@ from io import BytesIO
 import warnings
 
 import numpy as np
-from numpy.compat import asbytes, asstr
+from scipy._lib._util import asbytes,asstr
 
 import scipy.sparse
 

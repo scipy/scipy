@@ -43,7 +43,7 @@ from platform import python_implementation
 import mmap as mm
 
 import numpy as np
-from numpy.compat import asbytes, asstr
+from scipy._lib._util import asstr,asbytes
 from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce

@@ -15,7 +15,7 @@ import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
-from numpy.compat import asbytes, asstr
+from scipy._lib._util import asstr,asbytes
 
 from scipy.sparse import coo_matrix, isspmatrix
 
