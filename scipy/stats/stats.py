@@ -37,7 +37,7 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 import scipy.special as special
 from scipy import linalg
@@ -173,7 +173,7 @@ def _broadcast_shapes(shape1, shape2):
     if d <= 0:
         shp1 = (1,)*(-d) + shape1
         shp2 = shape2
-    elif d > 0:
+    else:
         shp1 = shape1
         shp2 = (1,)*d + shape2
     shape = []
