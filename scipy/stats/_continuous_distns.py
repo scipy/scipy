@@ -3393,7 +3393,7 @@ class invgamma_gen(rv_continuous):
     Specifically, if the scaled inverse chi-squared distribution is
     parameterized with degrees of freedom :math:`\nu` and scaling parameter
     :math:`\tau^2`, then it can be modeled using `invgamma` with
-    ``a=`` :math:`\frac{\nu}{2}` and ``scale=`` :math:`\frac{\nu \tau^2}{2}`.
+    ``a=`` :math:`\nu/2` and ``scale=`` :math:`\nu \tau^2/2`.
 
     %(after_notes)s
 
