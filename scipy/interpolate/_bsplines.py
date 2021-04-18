@@ -906,8 +906,9 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     --------
     Generate some noisy data:
 
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
 
     Now fit a smoothing cubic spline with a pre-defined internal knots.
     Here we make the knot vector (k+1)-regular by adding boundary knots:

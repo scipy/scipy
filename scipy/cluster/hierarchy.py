@@ -1444,7 +1444,8 @@ def to_tree(Z, rd=False):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
-    >>> x = np.random.rand(10).reshape(5, 2)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random((5, 2))
     >>> Z = hierarchy.linkage(x)
     >>> hierarchy.to_tree(Z)
     <scipy.cluster.hierarchy.ClusterNode object at ...
@@ -1523,13 +1524,13 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
-    >>> np.random.seed(23)
-    >>> X = np.random.randn(10,10)
+    >>> rng = np.random.default_rng()
+    >>> X = rng.standard_normal((10, 10))
     >>> Z = hierarchy.ward(X)
     >>> hierarchy.leaves_list(Z)
-    array([0, 5, 3, 9, 6, 8, 1, 4, 2, 7], dtype=int32)
+    array([0, 3, 1, 9, 2, 5, 7, 4, 6, 8], dtype=int32)
     >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
-    array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
+    array([3, 0, 2, 5, 7, 4, 8, 6, 9, 1], dtype=int32)
 
     """
     Z = np.asarray(Z, order='c')

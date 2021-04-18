@@ -2561,18 +2561,22 @@ genextreme = genextreme_gen(name='genextreme')
 
 
 def _digammainv(y):
-    # Inverse of the digamma function (real positive arguments only).
-    # This function is used in the `fit` method of `gamma_gen`.
-    # The function uses either optimize.fsolve or optimize.newton
-    # to solve `sc.digamma(x) - y = 0`.  There is probably room for
-    # improvement, but currently it works over a wide range of y:
-    #    >>> y = 64*np.random.randn(1000000)
-    #    >>> y.min(), y.max()
-    #    (-311.43592651416662, 351.77388222276869)
-    #    x = [_digammainv(t) for t in y]
-    #    np.abs(sc.digamma(x) - y).max()
-    #    1.1368683772161603e-13
-    #
+    """Inverse of the digamma function (real positive arguments only).
+
+    This function is used in the `fit` method of `gamma_gen`.
+    The function uses either optimize.fsolve or optimize.newton
+    to solve `sc.digamma(x) - y = 0`.  There is probably room for
+    improvement, but currently it works over a wide range of y:
+
+    >>> rng = np.random.default_rng()
+    >>> y = 64*rng.standard_normal(1000000)
+    >>> y.min(), y.max()
+    (-311.43592651416662, 351.77388222276869)
+    >>> x = [_digammainv(t) for t in y]
+    >>> np.abs(sc.digamma(x) - y).max()
+    1.1368683772161603e-13
+
+    """
     _em = 0.5772156649015328606065120
     func = lambda x: sc.digamma(x) - y
     if y > -0.125:

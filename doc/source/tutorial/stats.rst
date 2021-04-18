@@ -1141,8 +1141,9 @@ Let's use a custom plotting function to plot the data relationship:
 
 Let's look at some linear data first:
 
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-1, 1, num=100)
-    >>> y = x + 0.3 * np.random.random(x.size)
+    >>> y = x + 0.3 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1176,9 +1177,9 @@ case is **equivalent to the global scale**, marked by a red spot on the map.
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
 
-    >>> unif = np.array(np.random.uniform(0, 5, size=100))
+    >>> unif = np.array(rng.uniform(0, 5, size=100))
     >>> x = unif * np.cos(np.pi * unif)
-    >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+    >>> y = unif * np.sin(np.pi * unif) + 0.4 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
