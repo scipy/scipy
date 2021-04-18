@@ -186,9 +186,10 @@ def test_czt_points_errors(m):
         czt_points(m)
 
 
-@pytest.mark.parametrize('myfunc', [CZT(100), ZoomFFT(100, 0.2)])
-def test_invalid_size(myfunc):
+@pytest.mark.parametrize('cls, args', [(CZT, (100,)), (ZoomFFT, (100, 0.2))])
+def test_invalid_size(cls, args):
     # Data size doesn't match function's expected size
+    myfunc = cls(*args)
     with pytest.raises(ValueError, match='CZT defined for'):
         myfunc(np.arange(5))
 
