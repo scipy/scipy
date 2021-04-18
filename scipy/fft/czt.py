@@ -26,7 +26,7 @@ zoomfft : array
 """
 
 import cmath
-import operator
+import numbers
 import numpy as np
 from numpy import pi, arange
 from scipy.fft import fft, ifft, next_fast_len
@@ -35,18 +35,17 @@ __all__ = ['czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
 
 
 def _validate_sizes(n, m):
-    if n < 1:
-        raise ValueError("Invalid number of CZT data "
-                         "points (%d) specified." % n)
-
-    n = operator.index(n)
+    if n < 1 or not isinstance(n, numbers.Integral):
+        raise ValueError('Invalid number of CZT data '
+                         f'points ({n}) specified. '
+                         'n must be positive and integer type.')
 
     if m is None:
         m = n
-    elif m < 1:
-        raise ValueError("Invalid number of CZT output "
-                         "points (%d) specified." % n)
-    m = operator.index(m)
+    elif m < 1 or not isinstance(m, numbers.Integral):
+        raise ValueError('Invalid number of CZT output '
+                         f'points ({m}) specified. '
+                         'm must be positive and integer type.')
 
     return m
 
@@ -247,8 +246,8 @@ class CZT:
         """
         x = np.asarray(x)
         if x.shape[axis] != self.n:
-            raise ValueError("CZT defined for length %d, not %d" %
-                             (self.n, x.shape[axis]))
+            raise ValueError(f"CZT defined for length {self.n}, not "
+                             f"{x.shape[axis]}")
         # Calculate transpose coordinates, to allow operation on any given axis
         trnsp = np.arange(x.ndim)
         trnsp[[axis, -1]] = [-1, axis]

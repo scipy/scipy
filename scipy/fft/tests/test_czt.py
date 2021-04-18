@@ -179,7 +179,7 @@ def test_czt_points():
     assert_allclose(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
 
 
-@pytest.mark.parametrize('m', [0, -11, 5.5])
+@pytest.mark.parametrize('m', [0, -11, 5.5, 4.0])
 def test_czt_points_errors(m):
     # Invalid number of points
     with pytest.raises(ValueError, match='Invalid number of CZT'):
@@ -194,7 +194,7 @@ def test_invalid_size(cls, args):
         myfunc(np.arange(5))
 
 
-@pytest.mark.parametrize('size', [0, -5, 3.5])
+@pytest.mark.parametrize('size', [0, -5, 3.5, 4.0])
 def test_nonsense_size(size):
     # Numpy and Scipy fft() give ValueError for 0 output size, so we do, too
     with pytest.raises(ValueError, match='Invalid number of CZT'):
