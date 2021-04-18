@@ -91,19 +91,10 @@ def differential_entropy(
     axis: int = 0,
     method: str = "auto",
 ) -> Union[np.number, np.ndarray]:
-    r"""Given a sample of a distribution, calculate the differential entropy.
+    r"""Given a sample of a distribution, estimate the differential entropy.
 
-    By default, this routine uses the Vasicek estimator of the differential
-    entropy. Given a sorted random sample :math:`X_1, \ldots X_n`, this is
-    defined as:
-
-    .. math::
-        \frac{1}{n}\sum_1^n \log\left[ \frac{n}{2m} (X_{i+m} - X_{i-m}) \right]
-
-    where :math:`m` is the window length parameter, :math:`X_{i} = X_1` if
-    :math:`i < 1` and :math:`X_{i} = X_n` if :math:`i > n`.
-
-    Other estimation methods are available using the `method` parameter.
+    Several estimation methods are available using the `method` parameter. By
+    default, a method is selected based the size of the sample.
 
     Parameters
     ----------
@@ -196,12 +187,47 @@ def differential_entropy(
     >>> rng = np.random.default_rng(seed=148632)
     >>> values = rng.standard_normal(100)
     >>> differential_entropy(values)
-    1.401904073487716
+    1.4702893940561537
 
     Compare with the true entropy:
 
     >>> float(norm.entropy())
     1.4189385332046727
+
+    For several sample sizes between 5 and 1000, compare the accuracy of
+    the ``'vasicek'``, ``'van es'``, and ``'ebrahimi'`` methods. Specifically,
+    compare the root mean squared error (over 1000 trials) between the estimate
+    and the true differential entropy of the distribution.
+
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>>
+    >>>
+    >>> def rmse(res, expected):
+    ...     '''Root mean squared error'''
+    ...     return np.sqrt(np.mean((res - expected)**2))
+    >>>
+    >>>
+    >>> a, b = np.log10(5), np.log10(1000)
+    >>> ns = np.round(np.logspace(a, b, 10)).astype(int)
+    >>> reps = 1000  # number of repetitions for each sample size
+    >>> expected = stats.expon.entropy()
+    >>>
+    >>> method_errors = {'vasicek': [], 'van es': [], 'ebrahimi': []}
+    >>> for method in method_errors:
+    ...     for n in ns:
+    ...        rvs = stats.expon.rvs(size=(reps, n), random_state=0)
+    ...        res = stats.differential_entropy(rvs, method=method, axis=-1)
+    ...        error = rmse(res, expected)
+    ...        method_errors[method].append(error)
+    >>>
+    >>> for method, errors in method_errors.items():
+    ...     plt.loglog(ns, errors, label=method)
+    >>>
+    >>> plt.legend()
+    >>> plt.xlabel('sample size')
+    >>> plt.ylabel('RMSE (1000 trials)')
+    >>> plt.title('Entropy Estimator Error (Exponential Distribution)')
 
     """
     values = np.asarray(values)
@@ -226,10 +252,10 @@ def differential_entropy(
                "van es": _van_es_entropy,
                "correa": _correa_entropy,
                "ebrahimi": _ebrahimi_entropy,
-               "auto": None}
+               "auto": _vasicek_entropy}
     method = method.lower()
-    if method not in methods.keys():
-        message = f"`method` must be one of {set(methods.keys())}"
+    if method not in methods:
+        message = f"`method` must be one of {set(methods)}"
         raise ValueError(message)
 
     if method == "auto":
