@@ -212,21 +212,20 @@ class TestUtils:
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
     def test_perm_discrepancy(self):
-        doe_init = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-        doe_init = (2.0 * doe_init - 1.0) / (2.0 * 6.0)
+        qmc_gen = qmc.LatinHypercube(5)
+        sample = qmc_gen.random(10)
+        disc = qmc.discrepancy(sample)
 
-        disc_init = qmc.discrepancy(doe_init)
+        for i in range(100):
+            row_1 = np.random.randint(10)
+            row_2 = np.random.randint(10)
+            col = np.random.randint(5)
 
-        row_1, row_2, col = 5, 2, 1
-
-        doe = doe_init.copy()
-        doe[row_1, col], doe[row_2, col] = doe[row_2, col], doe[row_1, col]
-
-        disc_valid = qmc.discrepancy(doe)
-        disc_perm = _perturb_discrepancy(doe_init, row_1, row_2, col,
-                                         disc_init)
-
-        assert_allclose(disc_valid, disc_perm)
+            disc = _perturb_discrepancy(sample, row_1, row_2, col, disc)
+            sample[row_1, col], sample[row_2, col] = (
+                sample[row_2, col], sample[row_1, col])
+            disc_reference = qmc.discrepancy(sample)
+            assert_allclose(disc, disc_reference)
 
     def test_discrepancy_alternative_implementation(self):
         """Alternative definitions from Matt Haberland."""
