@@ -179,19 +179,24 @@ def test_czt_points():
     assert_allclose(func.points(), 1/(2**np.arange(11)), rtol=1e-30)
 
 
+@pytest.mark.parametrize('cls, args', [(CZT, (100,)), (ZoomFFT, (100, 0.2))])
+def test_CZT_size_mismatch(cls, args):
+    # Data size doesn't match function's expected size
+    myfunc = cls(*args)
+    with pytest.raises(ValueError, match='CZT defined for'):
+        myfunc(np.arange(5))
+
+
+def test_invalid_range():
+    with pytest.raises(ValueError, match='2-length sequence'):
+        ZoomFFT(100, [1, 2, 3])
+
+
 @pytest.mark.parametrize('m', [0, -11, 5.5, 4.0])
 def test_czt_points_errors(m):
     # Invalid number of points
     with pytest.raises(ValueError, match='Invalid number of CZT'):
         czt_points(m)
-
-
-@pytest.mark.parametrize('cls, args', [(CZT, (100,)), (ZoomFFT, (100, 0.2))])
-def test_invalid_size(cls, args):
-    # Data size doesn't match function's expected size
-    myfunc = cls(*args)
-    with pytest.raises(ValueError, match='CZT defined for'):
-        myfunc(np.arange(5))
 
 
 @pytest.mark.parametrize('size', [0, -5, 3.5, 4.0])
@@ -209,8 +214,3 @@ def test_nonsense_size(size):
         czt([1, 2, 3], size)
     with pytest.raises(ValueError, match='Invalid number of CZT'):
         zoomfft([1, 2, 3], 0.2, size)
-
-
-def test_invalid_range():
-    with pytest.raises(ValueError, match='2-length sequence'):
-        ZoomFFT(100, [1, 2, 3])
