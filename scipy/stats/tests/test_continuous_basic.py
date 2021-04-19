@@ -35,7 +35,7 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss']
+            'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -62,8 +62,8 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull']
-                     + ['ksone', 'kstwo', 'nct', 'pareto', 'powernorm',
-                        'powerlognorm', 'johnsonsu']
+                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                        'nct', 'pareto', 'powernorm', 'powerlognorm']
                      + ['pearson3'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
@@ -84,8 +84,8 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
                          'invweibull']
-                         + ['ksone', 'kstwo', 'pareto', 'powernorm',
-                            'powerlognorm', 'johnsonsu']
+                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                            'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
@@ -94,9 +94,10 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
+
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'cosine', 'dgamma',
                    'dweibull', 'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
-                   'geninvgauss', 'gennorm', 'genpareto',
+                   'genhyperbolic', 'geninvgauss', 'gennorm', 'genpareto',
                    'halfgennorm', 'invgamma',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
@@ -300,8 +301,9 @@ def test_rvs_broadcast(dist, shape_args):
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
-                          'exponnorm', 'geninvgauss', 'levy_stable', 'nct',
-                          'norminvgauss', 'rice', 'skewnorm', 'semicircular']
+                          'exponnorm', 'genhyperbolic', 'geninvgauss',
+                          'levy_stable', 'nct', 'norminvgauss', 'rice',
+                          'skewnorm', 'semicircular']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

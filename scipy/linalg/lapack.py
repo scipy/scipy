@@ -941,7 +941,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     flavor.
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
@@ -956,8 +957,9 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(1000,1000)
-    >>> b = np.random.rand(1000,1)*1j
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((1000, 1000))
+    >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
     ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
     >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix

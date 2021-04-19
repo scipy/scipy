@@ -10,8 +10,7 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
 
 
 def minkowski_distance_p(x, y, p=2):
-    """
-    Compute the pth power of the L**p distance between two arrays.
+    """Compute the pth power of the L**p distance between two arrays.
 
     For efficiency, this function computes the L**p distance but does
     not extract the pth root. If `p` is 1 or infinity, this is equal to
@@ -53,8 +52,7 @@ def minkowski_distance_p(x, y, p=2):
 
 
 def minkowski_distance(x, y, p=2):
-    """
-    Compute the L**p distance between two arrays.
+    """Compute the L**p distance between two arrays.
 
     Parameters
     ----------
@@ -99,8 +97,7 @@ class Rectangle:
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
-        """
-        Produce two hyperrectangles by splitting.
+        """Produce two hyperrectangles by splitting.
 
         In general, if you need to compute maximum and minimum
         distances to the children, it can be done more efficiently
@@ -124,7 +121,8 @@ class Rectangle:
 
     def min_distance_point(self, x, p=2.):
         """
-        Return the minimum distance between input and points in the hyperrectangle.
+        Return the minimum distance between input and points in the
+        hyperrectangle.
 
         Parameters
         ----------
@@ -134,7 +132,10 @@ class Rectangle:
             Input.
 
         """
-        return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-x,x-self.maxes)),p)
+        return minkowski_distance(
+            0, np.maximum(0, np.maximum(self.mins-x, x-self.maxes)),
+            p
+        )
 
     def max_distance_point(self, x, p=2.):
         """
@@ -148,7 +149,7 @@ class Rectangle:
             Input.
 
         """
-        return minkowski_distance(0, np.maximum(self.maxes-x,x-self.mins),p)
+        return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
     def min_distance_rectangle(self, other, p=2.):
         """
@@ -162,7 +163,12 @@ class Rectangle:
             Input.
 
         """
-        return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-other.maxes,other.mins-self.maxes)),p)
+        return minkowski_distance(
+            0,
+            np.maximum(0, np.maximum(self.mins-other.maxes,
+                                     other.mins-self.maxes)),
+            p
+        )
 
     def max_distance_rectangle(self, other, p=2.):
         """
@@ -176,12 +182,12 @@ class Rectangle:
             Input.
 
         """
-        return minkowski_distance(0, np.maximum(self.maxes-other.mins,other.maxes-self.mins),p)
+        return minkowski_distance(
+            0, np.maximum(self.maxes-other.mins, other.maxes-self.mins), p)
 
 
 class KDTree(cKDTree):
-    """
-    kd-tree for quick nearest-neighbor lookup
+    """kd-tree for quick nearest-neighbor lookup.
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any
@@ -339,7 +345,7 @@ class KDTree(cKDTree):
 
     def query(
             self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
-        """Query the kd-tree for nearest neighbors
+        """Query the kd-tree for nearest neighbors.
 
         Parameters
         ----------
@@ -552,7 +558,8 @@ class KDTree(cKDTree):
 
     def query_ball_tree(self, other, r, p=2., eps=0):
         """
-        Find all pairs of points between `self` and `other` whose distance is at most r
+        Find all pairs of points between `self` and `other` whose distance is
+        at most r.
 
         Parameters
         ----------
@@ -582,9 +589,9 @@ class KDTree(cKDTree):
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((15, 2))
-        >>> points2 = np.random.random((15, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((15, 2))
+        >>> points2 = rng.random((15, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points1[:, 0], points1[:, 1], "xk", markersize=14)
         >>> plt.plot(points2[:, 0], points2[:, 1], "og", markersize=14)
@@ -601,8 +608,7 @@ class KDTree(cKDTree):
         return super().query_ball_tree(other, r, p, eps)
 
     def query_pairs(self, r, p=2., eps=0, output_type='set'):
-        """
-        Find all pairs of points in `self` whose distance is at most r.
+        """Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
         ----------
@@ -635,8 +641,8 @@ class KDTree(cKDTree):
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> np.random.seed(21701)
-        >>> points = np.random.random((20, 2))
+        >>> rng = np.random.default_rng()
+        >>> points = rng.random((20, 2))
         >>> plt.figure(figsize=(6, 6))
         >>> plt.plot(points[:, 0], points[:, 1], "xk", markersize=14)
         >>> kd_tree = KDTree(points)
@@ -779,28 +785,27 @@ class KDTree(cKDTree):
 
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((5, 2))
-        >>> points2 = np.random.random((5, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((5, 2))
+        >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = KDTree(points1)
         >>> kd_tree2 = KDTree(points2)
         >>> kd_tree1.count_neighbors(kd_tree2, 0.2)
-        9
+        1
 
         This number is same as the total pair number calculated by
         `query_ball_tree`:
 
         >>> indexes = kd_tree1.query_ball_tree(kd_tree2, r=0.2)
         >>> sum([len(i) for i in indexes])
-        9
+        1
 
         """
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
             self, other, max_distance, p=2., output_type='dok_matrix'):
-        """
-        Compute a sparse distance matrix
+        """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
         any distance greater than max_distance.
@@ -835,28 +840,28 @@ class KDTree(cKDTree):
 
         >>> import numpy as np
         >>> from scipy.spatial import KDTree
-        >>> np.random.seed(21701)
-        >>> points1 = np.random.random((5, 2))
-        >>> points2 = np.random.random((5, 2))
+        >>> rng = np.random.default_rng()
+        >>> points1 = rng.random((5, 2))
+        >>> points2 = rng.random((5, 2))
         >>> kd_tree1 = KDTree(points1)
         >>> kd_tree2 = KDTree(points2)
         >>> sdm = kd_tree1.sparse_distance_matrix(kd_tree2, 0.3)
         >>> sdm.toarray()
-        array([[0.20220215, 0.14538496, 0.,         0.10257199, 0.        ],
-            [0.13491385, 0.27251306, 0.,         0.18793787, 0.        ],
-            [0.19262396, 0.,         0.,         0.25795122, 0.        ],
-            [0.14859639, 0.07076002, 0.,         0.04065851, 0.        ],
-            [0.17308768, 0.,         0.,         0.24823138, 0.        ]])
+        array([[0.        , 0.        , 0.12295571, 0.        , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.28942611, 0.        , 0.        , 0.2333084 , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.        ],
+           [0.24617575, 0.29571802, 0.26836782, 0.        , 0.        ]])
 
         You can check distances above the `max_distance` are zeros:
 
         >>> from scipy.spatial import distance_matrix
         >>> distance_matrix(points1, points2)
-        array([[0.20220215, 0.14538496, 0.43588092, 0.10257199, 0.4555495 ],
-            [0.13491385, 0.27251306, 0.65944131, 0.18793787, 0.68184154],
-            [0.19262396, 0.34121593, 0.72176889, 0.25795122, 0.74538858],
-            [0.14859639, 0.07076002, 0.48505773, 0.04065851, 0.50043591],
-            [0.17308768, 0.32837991, 0.72760803, 0.24823138, 0.75017239]])
+        array([[0.56906522, 0.39923701, 0.12295571, 0.8658745 , 0.79428925],
+           [0.37327919, 0.7225693 , 0.87665969, 0.32580855, 0.75679479],
+           [0.28942611, 0.30088013, 0.6395831 , 0.2333084 , 0.33630734],
+           [0.31994999, 0.72658602, 0.71124834, 0.55396483, 0.90785663],
+           [0.24617575, 0.29571802, 0.26836782, 0.57714465, 0.6473269 ]])
 
         """
         return super().sparse_distance_matrix(
@@ -864,8 +869,7 @@ class KDTree(cKDTree):
 
 
 def distance_matrix(x, y, p=2, threshold=1000000):
-    """
-    Compute the distance matrix.
+    """Compute the distance matrix.
 
     Returns the matrix of all pair-wise distances.
 

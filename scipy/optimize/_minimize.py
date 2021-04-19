@@ -108,16 +108,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         obey any specified `bounds`.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
-        callable, it should return the  Hessian matrix:
+        trust-ncg, trust-krylov, trust-exact and trust-constr. If it is
+        callable, it should return the Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
         where x is a (n,) ndarray and `args` is a tuple with the fixed
-        parameters. LinearOperator and sparse matrix returns are
-        allowed only for 'trust-constr' method. Alternatively, the keywords
+        parameters. LinearOperator and sparse matrix returns are only allowed
+        for 'trust-constr' method. Alternatively, the keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation. Or, objects implementing
+        for numerical estimation. Or, objects implementing the
         `HessianUpdateStrategy` interface can be used to approximate
         the Hessian. Available quasi-Newton methods implementing
         this interface are:
@@ -129,8 +129,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         the Hessian cannot be estimated with options
         {'2-point', '3-point', 'cs'} and needs to be
         estimated using one of the quasi-Newton strategies.
-        Finite-difference options {'2-point', '3-point', 'cs'} and
-        `HessianUpdateStrategy` are available only for 'trust-constr' method.
+        'trust-exact' cannot use a finite-difference scheme, and must be used
+        with a callable returning an (n, n) array.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
@@ -144,7 +144,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         dimension (n,) and `args` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
-        Bounds on variables for L-BFGS-B, TNC, SLSQP, Powell, and
+        Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
         trust-constr methods. There are two ways to specify the bounds:
 
             1. Instance of `Bounds` class.
@@ -230,13 +230,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Unconstrained minimization**
 
-    Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
-    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
-    applications. However, if numerical computation of derivative can be
-    trusted, other algorithms using the first and/or second derivatives
-    information might be preferred for their better performance in
-    general.
-
     Method :ref:`CG <optimize.minimize-cg>` uses a nonlinear conjugate
     gradient algorithm by Polak and Ribiere, a variant of the
     Fletcher-Reeves method described in [5]_ pp.120-122. Only the
@@ -284,6 +277,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
+
+    Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
+    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
+    applications. However, if numerical computation of derivative can be
+    trusted, other algorithms using the first and/or second derivatives
+    information might be preferred for their better performance in
+    general.
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
@@ -532,11 +532,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ('nelder-mead', 'cg', 'bfgs', 'newton-cg', 'dogleg',
-                 'trust-ncg') and (bounds is not None or np.any(constraints))):
+    if (meth in ('cg', 'bfgs', 'newton-cg', 'dogleg', 'trust-ncg')
+            and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth in ('l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
+    if meth in ('nelder-mead', 'l-bfgs-b', 'tnc', 'powell') and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:
@@ -607,7 +607,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         constraints = standardize_constraints(constraints, x0, meth)
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, callback, **options)
+        return _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
+                                    **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':
@@ -808,7 +809,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)

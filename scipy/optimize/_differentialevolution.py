@@ -41,7 +41,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
+    bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
@@ -331,7 +331,7 @@ class DifferentialEvolutionSolver:
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds : sequence or `Bounds`, optional
+    bounds : sequence or `Bounds`
         Bounds for variables.  There are two ways to specify the bounds:
         1. Instance of `Bounds` class.
         2. ``(min, max)`` pairs for each element in ``x``, defining the finite
