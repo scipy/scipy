@@ -97,12 +97,4 @@ def linear_sum_assignment(cost_matrix, maximize=False):
     if maximize:
         cost_matrix = -cost_matrix
 
-    cost_matrix = cost_matrix.astype(np.double)
-
-    # The algorithm expects more columns than rows in the cost matrix.
-    if cost_matrix.shape[1] < cost_matrix.shape[0]:
-        a, b = _lsap_module.calculate_assignment(cost_matrix.T)
-        indices = np.argsort(b)
-        return (b[indices], a[indices])
-    else:
-        return _lsap_module.calculate_assignment(cost_matrix)
+    return _lsap_module.calculate_assignment(cost_matrix)

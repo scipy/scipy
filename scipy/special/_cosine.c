@@ -207,7 +207,6 @@ double _poly_approx(double s)
 {
     double s2;
     double p;
-    double px;
     double coeffs[] = {1.1911667949082915e-08,
                        1.683039183039183e-07,
                        43.0/17248000,

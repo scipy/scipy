@@ -590,10 +590,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> class MyTakeStep:
     ...    def __init__(self, stepsize=0.5):
     ...        self.stepsize = stepsize
+    ...        self.rng = np.random.default_rng()
     ...    def __call__(self, x):
     ...        s = self.stepsize
-    ...        x[0] += np.random.uniform(-2.*s, 2.*s)
-    ...        x[1:] += np.random.uniform(-s, s, x[1:].shape)
+    ...        x[0] += self.rng.uniform(-2.*s, 2.*s)
+    ...        x[1:] += self.rng.uniform(-s, s, x[1:].shape)
     ...        return x
 
     Since ``MyTakeStep.stepsize`` exists basinhopping will adjust the magnitude
@@ -617,20 +618,20 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     We'll run it for only 10 basinhopping steps this time.
 
-    >>> np.random.seed(1)
+    >>> rng = np.random.default_rng()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=10, callback=print_fun)
+    ...                    niter=10, callback=print_fun, seed=rng)
     at minimum 0.4159 accepted 1
-    at minimum 0.4159 accepted 1
+    at minimum -0.4317 accepted 1
+    at minimum -1.0109 accepted 1
     at minimum -0.9073 accepted 1
+    at minimum -0.4317 accepted 0
     at minimum -0.1021 accepted 1
-    at minimum -0.1021 accepted 1
-    at minimum 0.9102 accepted 1
-    at minimum 0.9102 accepted 1
-    at minimum 2.2945 accepted 0
-    at minimum -0.1021 accepted 1
-    at minimum -1.0109 accepted 1
-    at minimum -1.0109 accepted 1
+    at minimum -0.7425 accepted 1
+    at minimum -0.9073 accepted 1
+    at minimum -0.4317 accepted 0
+    at minimum -0.7425 accepted 1
+    at minimum -0.9073 accepted 1
 
 
     The minimum at -1.0109 is actually the global minimum, found already on the

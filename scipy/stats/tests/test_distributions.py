@@ -415,6 +415,169 @@ class TestGenInvGauss:
         assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
 
 
+class TestGenHyperbolic:
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_pdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # x <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::dghyp(
+        #    x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            2.94895678275316e-13, 1.75746848647696e-10, 9.48149804073045e-08,
+            4.17862521692026e-05, 0.0103947630463822, 0.240864958986839,
+            0.162833527161649, 0.0374609592899472, 0.00634894847327781,
+            0.000941920705790324
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.pdf(x), vals_R, atol=0, rtol=1e-13)
+
+    def test_cdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # q <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::pghyp(
+        #   q = q, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            1.01881590921421e-13, 6.13697274983578e-11, 3.37504977637992e-08,
+            1.55258698166181e-05, 0.00447005453832497, 0.228935323956347,
+            0.755759458895243, 0.953061062884484, 0.992598013917513,
+            0.998942646586662
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
+
+    def test_moments_r(self):
+        # test against R package GeneralizedHyperbolic
+        # sapply(1:4,
+        #    function(x) GeneralizedHyperbolic::ghypMom(
+        #        order = x, lambda = 2, alpha = 2,
+        #        beta = 1, delta = 1.5, mu = 0.5,
+        #        momType = 'raw')
+        # )
+
+        vals_R = [2.36848366948115, 8.4739346779246,
+                  37.8870502710066, 205.76608511485]
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        vals_us = [
+            stats.genhyperbolic(*args, loc=mu, scale=delta).moment(i)
+            for i in range(1, 5)
+            ]
+
+        assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
+
+    def test_rvs(self):
+        # Kolmogorov-Smirnov test to ensure alignemnt
+        # of analytical and empirical cdfs
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
+
+        assert_equal(p > 0.05, True)
+
+    def test_pdf_t(self):
+        # Test Against T-Student with 1 - 30 df
+        df = np.linspace(1, 30, 10)
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        alpha, beta = np.float_power(df, 2)*np.finfo(np.float32).eps, 0
+        mu, delta = 0, np.sqrt(df)
+        args = (-df/2, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.t.pdf(x, df),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_cauchy(self):
+        # Test Against Cauchy distribution
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        lmbda, alpha, beta = -0.5, np.finfo(np.float32).eps, 0
+        mu, delta = 0, 1
+        args = (lmbda, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.cauchy.pdf(x),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_laplace(self):
+        # Test Against Laplace with location param [-10, 10]
+        loc = np.linspace(-10, 10, 10)
+
+        # in principle delta should be zero in practice for big loc delta
+        # cannot be too small else pdf does not integrate
+        delta = np.finfo(np.float32).eps
+
+        lmbda, alpha, beta = 1, 1, 0
+        args = (lmbda, alpha*delta, beta*delta)
+
+        # ppf does not integrate for scale < 5e-4
+        # therefore using simple linspace to define the support
+        gh = stats.genhyperbolic(*args, loc=loc, scale=delta)
+        x = np.linspace(-20, 20, 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
+            atol=0, rtol=1e-11
+            )
+
+    def test_pdf_norminvgauss(self):
+        # Test Against NIG with varying alpha/beta/delta/mu
+
+        alpha, beta, delta, mu = (
+                np.linspace(1, 20, 10),
+                np.linspace(0, 19, 10)*np.float_power(-1, range(10)),
+                np.linspace(1, 1, 10),
+                np.linspace(-100, 100, 10)
+                )
+
+        lmbda = - 0.5
+        args = (lmbda, alpha * delta, beta * delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.norminvgauss.pdf(
+                x, a=alpha, b=beta, loc=mu, scale=delta),
+            atol=0, rtol=1e-13
+            )
+
+
 class TestNormInvGauss:
     def setup_method(self):
         np.random.seed(1234)
