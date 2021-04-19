@@ -1441,6 +1441,7 @@ class rv_generic:
             location parameter, Default is 0.
         scale : array_like, optional
             scale parameter, Default is 1.
+
         Returns
         -------
         a, b : array_like
@@ -3683,6 +3684,7 @@ class rv_sample(rv_discrete):
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
+
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)
