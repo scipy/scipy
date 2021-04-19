@@ -2976,22 +2976,21 @@ class genhyperbolic_gen(rv_continuous):
 
     .. math::
 
-        f(x, p, a, b) =
-            \frac{(a^2 - b^2)^{p/2}}
-            {\sqrt{2\pi}a^{p-0.5}
-            K_p\Big(\sqrt{a^2 - b^2}\Big)}
-            e^{bx} \times \frac{K_{p - 1/2}
-            (a \sqrt{1 + x^2})}
-            {(\sqrt{1 + x^2})^{1/2 - p}}
+        f(x, p, a, b) = g^p / (\sqrt{2\pi} a^k K_p(g))
+                        e^{bx} K_k (a h) h^k
 
-    for :math:`x, p \in ( - \infty; \infty)`,
-    :math:`|b| < a` if :math:`p \ge 0`,
-    :math:`|b| \le a` if :math:`p < 0`.
+    for :math:`x, p \in (-\infty; \infty)`,
+    :math:`|b| < a` if :math:`p \ge 0`, and
+    :math:`|b| \le a` if :math:`p < 0`, where
     :math:`K_{p}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`p` (`scipy.special.kn`)
+    kind and order :math:`p` (`scipy.special.kn`),
+    :math:`g = \sqrt{a^2 - b^2}`,
+    :math:`h = \sqrt{1 + x^2}`, and
+    :math:`k = p - 1/2`.
 
-    `genhyperbolic` takes ``p`` as a tail parameter,
-    ``a`` as a shape parameter,
+    `genhyperbolic` takes
+    ``p`` as a tail parameter,
+    ``a`` as a shape parameter, and
     ``b`` as a skewness parameter.
 
     %(after_notes)s
