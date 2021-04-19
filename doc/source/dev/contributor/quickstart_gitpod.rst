@@ -11,7 +11,7 @@ This quick start guide covers:
 *  using GitPod for your SciPy development environment
 *  creating a personal fork of the SciPy repository on GitHub
 *  a quick tour of Gitpod and VSCode
-*  working on the SciPy documentation in SciPy
+*  working on the SciPy documentation in Gitpod
 
 Gitpod
 -------
@@ -45,27 +45,34 @@ The best way to work on SciPy as a contributor is by making a fork of the reposi
 
 Starting Gitpod
 ----------------
-Once you have authenticated to Gitpod through GitHub, you will see a **Gitpod** button next to the **Code** button on the repository.
+Once you have authenticated to Gitpod through GitHub, you can install the `Gitpod browser extension <https://www.gitpod.io/docs/browser-extension>`_  which will add a **Gitpod** button next to the **Code** button in the repository:
 
 .. image:: ../../_static/gitpod/scipy-github.png 
     :alt: SciPy repository with Gitpod button screenshot
 
-#. Click the "Gitpod" button. This will open a new tab on your web browser and start building your development environment. Please note this can take a few minutes.
-#. Once the build is complete, you will be directed to your workspace, including VSCode and all the dependencies you need to work on SciPy. The first time you start your workspace, you will notice that there might be some actions running. This will ensure that you have a development version of SciPy installed and that the docs are pre-built for you.
+#. If you install the extension - you can click the **Gitpod** button to start a new workspace.
+#. Alternatively, if you do not want to install the browser extension you can visit https://gitpod.io/#https://github.com/USERNAME/scipy replacing ``USERNAME`` with your GitHub username. 
+
+#. In both cases, this will open a new tab on your web browser and start building your development environment. Please note this can take a few minutes.
+
+#. Once the build is complete, you will be directed to your workspace, including VSCode and all the dependencies you need to work on SciPy. The first time you start your workspace, you will notice that there might be some actions running. This will ensure that you have a development version of SciPy installed and that the docs are being pre-built for you.
+
 #. Once the build is complete, you can test the build by entering::
 
         python runtests.py -v
 
-    "runtests.py "is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and "-v "activates the "–verbose "option to show all the test output.
+``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``–verbose`` option to show all the test output.
 
 Quick workspace tour
 ---------------------
-Gitpod uses VSCode as the editor. If you have not used this editor before, you can check the Getting started `VSCode docs` to familiarise yourself with it.
+Gitpod uses VSCode as the editor. If you have not used this editor before, you can check the Getting started `VSCode docs`_ to familiarise yourself with it.
 
 Your workspace will look similar to the image below:
 
 .. image:: ../../_static/gitpod/gitpod-workspace.png 
     :alt: Gitpod workspace screenshot
+
+.. note::  By default VSCode initialises with a light theme, you can change to a dark theme by with the keyboard shortcut :kbd:`Cmd-K Cmd-T` in Mac or :kbd:`Ctrl-K Ctrl-T` in Linux and Windows.
 
 We have marked some important sections in the editor:
 
@@ -82,7 +89,6 @@ We have also pre-installed a few tools and VSCode extensions to help with the de
 *  `VSCode Live server extension <https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer>`_
 *  `VSCode Gitlens extension <https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens>`_
 *  `VSCode autodocstrings extension <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ 
-*  vim
 
 Development workflow
 -----------------------
@@ -96,7 +102,7 @@ When using Gitpod, note these main differences with the setup described in :ref:
 .. image:: ../../_static/gitpod/scipy-gitpod-branches.png 
     :alt: Gitpod workspace branches plugin screenshot
 
-Rendering the Scipy documentation
+Rendering the SciPy documentation
 ----------------------------------
 You can find the detailed documentation on how rendering the documentation with Sphinx works in the :ref:`rendering-documentation` section.
 
@@ -117,36 +123,45 @@ Option 2: Using the rst extension
 
 A quick and easy way to see live changes in an `rst` as you work on it uses the rst extension with docutils. 
 
-.. note:: This will generate a simple live preview of the document without the ``HTML`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
+.. note:: This will generate a simple live preview of the document without the ``html`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
 
 #. Open any of the source documentation files located in ``doc/source`` in the editor.
 #. Open VSCode Command Palette with :kbd:`Cmd-Shift-P` in Mac or :kbd:`Ctrl-Shift-P` in Linux and Windows. Start typing "restructured" and choose either "Open preview" or "Open preview to the Side".
+
     .. image:: ../../_static/gitpod/vscode-rst.png 
         :alt: Gitpod workspace VSCode open rst screenshot
+
 #. As you work on the document, you will see a live rendering of it on the editor.
+
     .. image:: ../../_static/gitpod/rst-rendering.png 
         :alt: Gitpod workspace VSCode rst rendering screenshot
         
-If you want to see the final output with the ``HTML`` theme you will need to rebuild the docs with ``make HTML-scipy`` and use Live Serve as described in option 1.
+If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html-scipy`` and use Live Serve as described in option 1.
 
 FAQ's
 -----
 
 #. How long is my Gitpod workspace kept for?
     Your stopped workspace will be kept for 14 days and deleted afterwards if you do not use them.
+
 #. Can I come back to a previous workspace?
-    Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit `www.gitpod.io/workspaces` and click on the workspace you want to spin again. All your changes will be there as you last left them.
+    Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit `www.gitpod.io/workspaces` and click on the workspace you want to spin up again. All your changes will be there as you last left them.
+    
 #. Can I install additional VSCode extensions?
     Absolutely! Any extensions you installed will be installed in your own workspace and preserved.
-#. I registred to Gitpod but I still cannot see a **Gitpod** button in my repositories
+
+#. I registred on Gitpod but I still cannot see a **Gitpod** button in my repositories
     Head to https://gitpod.io/integrations and make sure you are logged in. Hover over GitHub and click on the three buttons that appear on the right. Click on edit permissions and make sure you have ``user:email``, ``read:user``, and ``public_repo`` checked. 
     Click on **Update Permissions** and confirm the changes in the GitHub application page.
     
     .. image:: ../../_static/gitpod/gitpod-edit-permissions-gh.png 
         :alt: Gitpod integrations - edit GH permissions screenshot
 
+#. How long does my workspace stay active if I'm not using it?
+    If you keep your workspace open in a browser tab but don't interact with it, it will shut down after 30 minutes. If you close the browser tab, it will shut down after 3 minutes.
+
 .. _Gitpod: https://www.gitpod.io/
-.. _Scipy repository on GitHub: https://github.com/scipy/scipy
+.. _SciPy repository on GitHub: https://github.com/scipy/scipy
 .. _create your own fork: https://help.github.com/en/articles/fork-a-repo
 .. _VSCode docs: https://code.visualstudio.com/docs/getstarted/tips-and-tricks
 
