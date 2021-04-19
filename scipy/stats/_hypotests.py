@@ -697,10 +697,11 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     n : int, optional
         Number of sampling points used in the construction of the sampling
-        method. Note that this argument must be a power of two since we are
-        using `scipy.stats.qmc.Sobol`.
-        Default is 32. Must be positive. In most cases, 32 points is
-        enough to reach good precision. More points comes at performance cost.
+        method. Note that this argument will automatically be converted to
+        the next higher power of 2 since `scipy.stats.qmc.Sobol` is used to
+        select sample points. Default is 32. Must be positive. In most cases,
+        32 points is enough to reach good precision. More points comes at
+        performance cost.
 
     Returns
     -------
@@ -929,7 +930,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
         _get_binomial_log_p_value_with_nuisance_param,
         args=(x1_sum_x2, x1_sum_x2_log_comb, index_arr),
         bounds=((0, 1),),
-        n=n,  # Need to be a power of two since it is used by sobol
+        n=n,
         sampling_method="sobol",
     )
 

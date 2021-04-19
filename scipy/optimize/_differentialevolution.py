@@ -13,8 +13,8 @@ from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
 from scipy.sparse import issparse
 
-
 __all__ = ['differential_evolution']
+
 
 _MACHEPS = np.finfo(np.float64).eps
 
@@ -74,8 +74,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -125,6 +127,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
               shape ``(M, len(x))``, where M is the total population size and
@@ -132,10 +136,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population subset could be used,
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
         for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
@@ -365,8 +376,10 @@ class DifferentialEvolutionSolver:
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * len(x)`` individuals (unless the initial population is
-        supplied via the `init` keyword).
+        ``popsize * len(x)`` individuals. This keyword is overridden if an
+        initial population is supplied via the `init` keyword. When using
+        ``init='sobol'`` the population size is calculated as the next power
+        of 2 after ``popsize * len(x)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -419,6 +432,8 @@ class DifferentialEvolutionSolver:
         one of:
 
             - 'latinhypercube'
+            - 'sobol'
+            - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
               shape ``(M, len(x))``, where M is the total population size and
@@ -426,11 +441,18 @@ class DifferentialEvolutionSolver:
               `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random'
-        initializes the population randomly - this has the drawback that
-        clustering can occur, preventing the whole of parameter space being
-        covered. Use of an array to specify a population could be used, for
-        example, to create a tight bunch of initial guesses in an location
+        maximize coverage of the available parameter space.
+
+        'sobol' and 'halton' are superior alternatives and maximize even more
+        the parameter space. 'sobol' will enforce an initial population
+        size which is calculated as the next power of 2 after
+        ``popsize * len(x)``. 'halton' has no requirements but is a bit less
+        efficient. See `scipy.stats.qmc` for more details.
+
+        'random' initializes the population randomly - this has the drawback
+        that clustering can occur, preventing the whole of parameter space
+        being covered. Use of an array to specify a population could be used,
+        for example, to create a tight bunch of initial guesses in an location
         where the solution is known to exist, thereby reducing time for
         convergence.
     atol : float, optional
@@ -581,14 +603,23 @@ class DifferentialEvolutionSolver:
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
         self.num_population_members = max(5, popsize * self.parameter_count)
-
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
+        # check first str otherwise will fail to compare str with array
         if isinstance(init, str):
             if init == 'latinhypercube':
                 self.init_population_lhs()
+            elif init == 'sobol':
+                # must be Ns = 2**m for Sobol'
+                n_s = int(2 ** np.ceil(np.log2(self.num_population_members)))
+                self.num_population_members = n_s
+                self.population_shape = (self.num_population_members,
+                                         self.parameter_count)
+                self.init_population_qmc(qmc_engine='sobol')
+            elif init == 'halton':
+                self.init_population_qmc(qmc_engine='halton')
             elif init == 'random':
                 self.init_population_random()
             else:
@@ -657,6 +688,42 @@ class DifferentialEvolutionSolver:
         for j in range(self.parameter_count):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
+
+        # reset population energies
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
+    def init_population_qmc(self, qmc_engine):
+        """Initializes the population with a QMC method.
+
+        QMC methods ensures that each parameter is uniformly
+        sampled over its range.
+
+        Parameters
+        ----------
+        qmc_engine : str
+            The QMC method to use for initialization. Can be one of
+            ``latinhypercube``, ``sobol`` or ``halton``.
+
+        """
+        from scipy.stats import qmc
+
+        rng = self.random_number_generator
+
+        # Create an array for population of candidate solutions.
+        if qmc_engine == 'latinhypercube':
+            sampler = qmc.LatinHypercube(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'sobol':
+            sampler = qmc.Sobol(d=self.parameter_count, seed=rng)
+        elif qmc_engine == 'halton':
+            sampler = qmc.Halton(d=self.parameter_count, seed=rng)
+        else:
+            raise ValueError(self.__init_error_msg)
+
+        self.population = sampler.random(n=self.num_population_members)
 
         # reset population energies
         self.population_energies = np.full(self.num_population_members,

@@ -276,7 +276,7 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        )
 
 
-def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
+def run_test(test, args=(), test_atol=1e-5, n=128, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol'):
     res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
@@ -351,16 +351,16 @@ class TestShgoSobolTestFunctions:
         # run_test(test4_1, n=500)
         # run_test(test4_1, n=800)
         options = {'infty_constraints': False}
-        run_test(test4_1, n=990, options=options)
+        run_test(test4_1, n=2048, options=options)
 
     def test_f5_1_sobol(self):
         """NLP: Eggholder, multimodal"""
-        run_test(test5_1, n=30)
+        run_test(test5_1, n=64)
 
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
         # run_test(test5_1, n=60, iters=5)
-        run_test(test5_1, n=60, iters=5)
+        run_test(test5_1, n=128, iters=5)
 
         # def test_t911(self):
         #    """1-D tabletop function"""
@@ -504,7 +504,7 @@ class TestShgoArguments:
             'local_iter': 1,
             'infty_constraints': False}
 
-        run_test(test4_1, n=300, test_atol=1e-5, options=options,
+        run_test(test4_1, n=1024, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
@@ -564,7 +564,7 @@ class TestShgoArguments:
                                 'constraints': test3_1.cons}
             print("Solver = {}".format(solver))
             print("=" * 100)
-            run_test(test3_1, n=100, test_atol=1e-3,
+            run_test(test3_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
     def test_7_2_minkwargs(self):
@@ -590,7 +590,7 @@ class TestShgoArguments:
                                 'hess': hess}
             logging.info("Solver = {}".format(solver))
             logging.info("=" * 100)
-            run_test(test1_1, n=100, test_atol=1e-3,
+            run_test(test1_1, n=128, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
     def test_8_homology_group_diff(self):
@@ -624,20 +624,10 @@ class TestShgoArguments:
         shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
              options=options, sampling_method='sobol')
 
-    def test_13_high_sobol(self):
-        """Test init of high-dimensional sobol sequences"""
-
-        def f(x):
-            return 0
-
-        bounds = [(None, None), ] * 41
-        SHGOc = SHGO(f, bounds)
-        SHGOc.sobol_points(2, 50)
-
     def test_14_local_iter(self):
         """Test limited local iterations for a pseudo-global mode"""
         options = {'local_iter': 4}
-        run_test(test5_1, n=30, options=options)
+        run_test(test5_1, n=64, options=options)
 
     def test_15_min_every_iter(self):
         """Test minimize every iter options and cover function cache"""
@@ -664,7 +654,7 @@ class TestShgoFailures:
     def test_1_maxiter(self):
         """Test failure on insufficient iterations"""
         options = {'maxiter': 2}
-        res = shgo(test4_1.f, test4_1.bounds, n=2, iters=None,
+        res = shgo(test4_1.f, test4_1.bounds, n=4, iters=None,
                    options=options, sampling_method='sobol')
 
         numpy.testing.assert_equal(False, res.success)
@@ -680,11 +670,11 @@ class TestShgoFailures:
            after maximum specified function evaluations"""
         options = {'maxfev': 10,
                    'disp': True}
-        res = shgo(test_table.f, test_table.bounds, n=3, options=options,
+        res = shgo(test_table.f, test_table.bounds, n=4, options=options,
                    sampling_method='sobol')
         numpy.testing.assert_equal(False, res.success)
-        # numpy.testing.assert_equal(9, res.nfev)
-        numpy.testing.assert_equal(12, res.nfev)
+
+        numpy.testing.assert_equal(16, res.nfev)
 
     def test_3_2_no_min_pool_simplicial(self):
         """Check that the routine stops when no minimiser is found
@@ -708,11 +698,11 @@ class TestShgoFailures:
     def test_5_1_1_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
            after maxev is exceeded. Use infty constraints option"""
-        options = {'maxev': 100,
+        options = {'maxev': 64,
                    'disp': True}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
-                   constraints=test_infeasible.cons, n=100, options=options,
+                   constraints=test_infeasible.cons, n=64, options=options,
                    sampling_method='sobol')
 
         numpy.testing.assert_equal(False, res.success)
@@ -720,12 +710,12 @@ class TestShgoFailures:
     def test_5_1_2_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
            after maxev is exceeded. Do not use infty constraints option"""
-        options = {'maxev': 100,
+        options = {'maxev': 64,
                    'disp': True,
                    'infty_constraints': False}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
-                   constraints=test_infeasible.cons, n=100, options=options,
+                   constraints=test_infeasible.cons, n=64, options=options,
                    sampling_method='sobol')
 
         numpy.testing.assert_equal(False, res.success)
