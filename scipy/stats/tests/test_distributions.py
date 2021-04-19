@@ -4735,6 +4735,7 @@ class TestStudentizedRange:
 
         def wrapper(x):
             return x ** moment * stats.studentized_range.pdf(x, k, v)
+
         res_exp = quad(wrapper, 0, np.inf)[0]
 
         # Atol is large B/C of integration innacuracy with quad.

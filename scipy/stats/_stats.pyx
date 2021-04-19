@@ -526,9 +526,9 @@ cdef double _Phi(double z) nogil:
 cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil:
     # evaluates the integrand of Equation (3) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
-    q = (<double *>user_data)[0]
-    k = (<double *>user_data)[1]
-    df = (<double *>user_data)[2]
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+    df = (<double *> user_data)[2]
 
     s = x[1]
     z = x[0]
@@ -550,8 +550,8 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
 cdef double _genstudentized_range_cdf_asymptotic(double z, void *user_data) nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
-    q = (<double *>user_data)[0]
-    k = (<double *>user_data)[1]
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
 
     return k * _phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
 
@@ -559,9 +559,9 @@ cdef double _genstudentized_range_cdf_asymptotic(double z, void *user_data) nogi
 cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil:
     # evaluates the integrand of equation (4) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
-    q = (<double *>user_data)[0]
-    k = (<double *>user_data)[1]
-    df = (<double *>user_data)[2]
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+    df = (<double *> user_data)[2]
 
     z = x[0]
     s = x[1]
@@ -580,8 +580,8 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     r_log = (math.log(k)
              + math.log(k - 1)
              + math.log(s)
-             + log_inv_sqrt_2pi - 0.5 * z * z # Normal PDF
-             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z)) # Normal PDF
+             + log_inv_sqrt_2pi - 0.5 * z * z  # Normal PDF
+             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z))  # Normal PDF
 
     # multiply remaining term outside of log because it can be 0
     return math.exp(r_log + const_log) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
@@ -589,9 +589,9 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
 
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
     # destined to be used in a LowLevelCallable
-    K = (<double *>user_data)[0] # the Kth moment to calc.
-    k = (<double *>user_data)[1]
-    df = (<double *>user_data)[2]
+    K = (<double *> user_data)[0]  # the Kth moment to calc.
+    k = (<double *> user_data)[1]
+    df = (<double *> user_data)[2]
 
     z = x_arg[0]
     s = x_arg[1]
@@ -599,11 +599,11 @@ cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data
 
     # https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
     cdef double pdf_data[3]
-    pdf_data[0] = x # Q is integrated over by the third integral
+    pdf_data[0] = x  # Q is integrated over by the third integral
     pdf_data[1] = k
     pdf_data[2] = df
 
-    return  math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
+    return math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
 
   
 cpdef double genhyperbolic_pdf(double x, double p, double a, double b) nogil:
