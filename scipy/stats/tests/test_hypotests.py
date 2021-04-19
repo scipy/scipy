@@ -8,7 +8,8 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
-                                    _pval_cvm_2samp_exact, barnard_exact)
+                                    _pval_cvm_2samp_exact, barnard_exact,
+                                    permutation_test)
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
@@ -644,3 +645,65 @@ class TestCvm_2samp:
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+
+
+class TestPermutationTest:
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('permutations', (30, 1e9))
+    @pytest.mark.parametrize('axis', (0, 1, 2))
+    def test_basic(self, alternative, permutations, axis):
+
+        if permutations == 30:
+            message = 'ttest_ind uses different sample ordering'
+            x = np.arange(4)
+            y = np.arange(5)
+            if axis != 0:
+                pytest.skip(message)
+        else:
+            x = np.arange(3*4*5).reshape(3, 4, 5)
+            y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
+
+        rng1 = np.random.default_rng(0)
+        res1 = stats.ttest_ind(x, y, permutations=permutations, axis=axis,
+                               random_state=rng1, alternative=alternative)
+
+        def statistic(x, y, axis):
+            return stats.ttest_ind(x, y, axis=axis).statistic
+
+        rng2 = np.random.default_rng(0)
+        res2 = permutation_test(x, y, statistic, permutations=permutations,
+                                alternative=alternative, axis=axis,
+                                random_state=rng2)
+
+        assert_allclose(res1.statistic, res2.statistic)
+        assert_allclose(res1.pvalue, res2.pvalue)
+
+
+def test_permutation_test_iv():
+
+    def stat(x, y, axis):
+        return stats.ttest_ind(x, y, axis).statistic
+
+    message = "each sample in `data` must contain two or more observations..."
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1], stat)
+
+    message = "`axis` must be an integer."
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1, 2, 3], stat, axis=1.5)
+
+    message = "`permutations` must be a positive integer."
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=-1000)
+
+    message = "`permutations` must be a positive integer."
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=1000.5)
+
+    message = "`alternative` must be in..."
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1, 2, 3], stat, alternative='ekki')
+
+    message = "'herring' cannot be used to seed a"
+    with pytest.raises(ValueError, match=message):
+        permutation_test([1, 2, 3], [1, 2, 3], stat, random_state='herring')

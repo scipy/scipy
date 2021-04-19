@@ -7,11 +7,14 @@ import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._continuous_distns import chi2, norm
-from scipy.special import gamma, kv, gammaln
+from scipy.special import gamma, kv, gammaln, comb
 from . import _wilcoxon_data
+from scipy.stats.stats import _broadcast_concatenate
+from scipy._lib._util import check_random_state
+
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'cramervonmises_2samp', 'permutation_test']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -1216,3 +1219,242 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
+
+
+attributes = ('statistic', 'pvalue', 'null_distribution')
+PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
+
+
+# TODO: replace with _all_partitions in _hypotests when gh-13661 merges
+def _all_partitions(nx, ny):
+    """
+    Partition a set of indices into two fixed-length sets in all possible ways
+
+    Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
+    ny in all possible ways (ignoring order of elements).
+    """
+    z = set(range(nx+ny))
+    for c in combinations(z, nx):
+        x = np.array(c)
+        y = np.array(tuple(z.difference(c)))
+        yield x, y
+
+
+# TODO: combine with scipy.stats.stats _data_permutations when gh-13661 merges
+def _data_permutations(data, n, ma, random_state=None):
+    """
+    Vectorized permutation of data, assumes `random_state` is already checked.
+    """
+    axis = data.ndim -1
+
+    # prepare permutation indices
+    m = data.shape[axis]
+    # number of distinct combinations
+    n_max = comb(m, ma)
+
+    if n < n_max:
+        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    else:
+        n = n_max
+        indices = np.array([np.concatenate(z)
+                            for z in _all_partitions(ma, m-ma)]).T
+
+    data = data[..., indices]        # generate permutations
+    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
+    return data, n
+
+
+def _permutation_test_iv(data, statistic, permutations=np.inf,
+                         alternative="two-sided", axis=0, random_state=None):
+    """Input validation for permutation_test"""
+
+    axis_int = int(axis)
+    if axis != axis_int:
+        raise ValueError("`axis` must be an integer.")
+
+    data_iv = []
+    for sample in data:
+        sample = np.atleast_1d(sample)
+        if sample.shape[axis] <= 1:
+            raise ValueError("each sample in `data` must contain two or more "
+                             "observations along `axis`.")
+        sample = np.moveaxis(sample, axis_int, -1)
+        data_iv.append(sample)
+
+    # should we try: statistic(data, axis=axis) here?
+
+    permutations_int = (int(permutations) if not np.isinf(permutations)
+                        else np.inf)
+    if permutations != permutations_int or permutations_int <= 0:
+        raise ValueError("`permutations` must be a positive integer.")
+
+    alternatives = {'two-sided', 'greater', 'less'}
+    alternative = alternative.lower()
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be in {alternatives}")
+
+    random_state = check_random_state(random_state)
+
+    return (data_iv, statistic, permutations_int, alternative, axis_int,
+            random_state)
+
+
+def permutation_test(a, b, statistic, permutations=np.inf,
+                     alternative="two-sided", axis=0, random_state=None):
+    """Performs a permutation test of a given statistic on provided data
+
+    Performs a two-sample permutation test under the null hypothesis that
+    the data are randomly sampled from the same distribution.
+
+    When ``1 < permutations < binom(n, k)``, where
+
+    * ``k`` is the number of observations in `a`,
+    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are pooled (concatenated), randomly assigned to either group `a`
+    or `b`, and the statistic is calculated. This process is performed
+    repeatedly (`permutation` times), generating a distribution of the
+    statistic under the null hypothesis. The statistic of the observed
+    data is compared to this distribution to determine the p-value. When
+    ``permutations == np.inf`` or ``permutations >= binom(n, k)``, an exact
+    test is performed: the data are partitioned between the groups in each
+    distinct way exactly once.
+
+
+    Parameters
+    ----------
+    data : sequence of array-like
+         Each element of data is a sample from an underlying distribution.
+    statistic : callable
+        Statistic for which the p-value of the observed data is to be
+        calculated. `statistic` must be a callable that accepts ``len(data)``
+        samples as separate arguments and returns the resulting statistic.
+        `statistic` must also accept a keyword argument `axis` and be
+        vectorized to compute the statistic along the provided `axis`.
+    permutations: int, optional (default: np.inf)
+        Number of permutations used to calculate p-value. If greater than or
+        equal to the number of distinct permutations, perform an exact test.
+    alternative: str in {'two-sided', 'less', 'greater'} (default:'two-sided')
+        The alternative hypothesis for which the p-value is calculated. The
+        following options are available:
+
+        ``'two-sided'`` : the percentage of the null distribution that is as
+        far or farther from the mean of the null distribution as the observed
+        value of the test statistic.
+
+        ``'greater'`` : the percentage of of the null distribution that is
+        greater than or equal to the observed value of the test statistic.
+
+        ``'less'`` : the percentage of of the null distribution that is
+        less than or equal to the observed value of the test statistic.
+
+    axis : int, optional (default: 0)
+        The axis of samples over which to calculate the statistict.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
+        Pseudorandom number generator state used for generating random
+        permutations.
+
+    Returns
+    -------
+    statistic : float or array
+        The observed test statistic of the data.
+    pvalue : float or array
+        The p-value for the given alternative.
+    null : array
+        The values of the test statistic generated under the null hypothesis.
+
+    Examples
+    --------
+
+    Suppose we wish to test whether two samples are drawn from the same
+    distribution. We hypothesize that the mean of the first sample is less
+    than that of the second sample, and we will consider a p-value of 0.05
+    to be statistically significant.
+
+    >>> from scipy.stats import norm
+    >>> x = norm.rvs(size=5)
+    >>> y = norm.rvs(size=6, loc = 3)
+
+    As a statistic, we will use the difference between the sample means.
+
+    >>> def statistic(x, y, axis):
+    ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+    >>> print(statistic(x, y, axis=0))
+    -1.5951996795511183
+
+    Indeed, the test statistic is negative, suggesting that the true mean of
+    the distribution underlying ``x`` is less than that of the distribution
+    underlying ``y``. To determine the probability of this occuring by chance
+    if the two samples were drawn from the same distribution, we perform
+    a permutation test.
+
+    >>> from scipy.stats import permutation_test
+    >>> res = permutation_test(x, y, statistic, alternative='less')
+    >>> print(res.statistic)
+    -1.5951996795511183
+    >>> print(res.pvalue)
+    0.004329004329004329
+
+    The probability of obtaining a test statistic less than or equal to the
+    observed value under the null hypothesis is 0.4329% (less than our chosen
+    threshold of 5%), so we have significant evidence to reject the null
+    hypothesis in favor of the alternative.
+
+    Because the size of the samples above was small, `permutation_test` could
+    perform an exact test. For larger samples, we resort to a randomized
+    permutation test.
+
+    >>> x = norm.rvs(size=100)
+    >>> y = norm.rvs(size=120, loc=0.3)
+    >>> res = permutation_test(x, y, statistic, permutations=10000,
+    ...                        alternative='less')
+    >>> print(res.statistic)
+    -0.27108159496595335
+    >>> print(res.pvalue)
+    0.0225
+
+    The approximate probability of obtaining a test statistic less than or
+    equal to the observed value under the null hypothesis is 0.0225%. This is
+    again less than our chosen threshold of 5%, so again we have significant
+    evidence to reject the null hypothesis in favor of the alternative.
+
+    """
+    data = a, b
+    args = _permutation_test_iv(data, statistic, permutations, alternative,
+                                axis, random_state)
+    data, statistic, permutations,  = args[:3]
+    alternative, axis, random_state = args[3:]
+
+    observed = statistic(*data, axis=-1)
+
+    # TODO: generalize to n-samples
+    nx = data[0].shape[-1]
+    mat = _broadcast_concatenate(data, axis=-1)
+
+    mat_perm, permutations = _data_permutations(mat, permutations, nx,
+                                                random_state=random_state)
+    x = mat_perm[..., :nx]
+    y = mat_perm[..., nx:]
+    null_distribution = statistic(x, y, axis=-1)
+
+    def two_sided_comparison(null_distribution, observed):
+        # TODO: other definitions for asymmetric null distribution
+        mean = np.mean(null_distribution, axis=0)
+        null_distribution = np.abs(null_distribution - mean)
+        observed = np.abs(observed - mean)
+        return null_distribution >= observed
+
+    compare = {"less": np.less_equal,
+               "greater": np.greater_equal,
+               "two-sided": two_sided_comparison}
+
+    cmps = compare[alternative](null_distribution, observed)
+    pvalues = cmps.sum(axis=0) / permutations
+
+    return PermutationTestResult(observed, pvalues, null_distribution)
