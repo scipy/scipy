@@ -541,10 +541,10 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     log_terms = (math.log(k) + (df / 2) * math.log(df)
                  - (math.lgamma(df / 2) + (df / 2 - 1) * log_2)
                  + (df - 1) * math.log(s) - (df * s * s / 2)
-                 + log_inv_sqrt_2pi - 0.5 * z * z # Normal PDF
-                 + (k - 1) * math.log(_Phi(z + q * s) - _Phi(z)))
+                 + log_inv_sqrt_2pi - 0.5 * z * z)  # Normal PDF
 
-    return math.exp(log_terms)
+    # multiply remaining term outside of log because it can be 0
+    return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
 cdef double _genstudentized_range_cdf_asymptotic(double z, void *user_data) nogil:
@@ -581,10 +581,10 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
              + math.log(k - 1)
              + math.log(s)
              + log_inv_sqrt_2pi - 0.5 * z * z # Normal PDF
-             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z) # Normal PDF
-             + (k - 2) * math.log(_Phi(s * q + z) - _Phi(z)))
+             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z)) # Normal PDF
 
-    return math.exp(r_log + const_log)
+    # multiply remaining term outside of log because it can be 0
+    return math.exp(r_log + const_log) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
 
 
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
