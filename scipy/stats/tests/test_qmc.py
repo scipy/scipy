@@ -212,7 +212,8 @@ class TestUtils:
             update_discrepancy(x_new, space_1[:-1], disc_init)
 
     def test_perm_discrepancy(self):
-        qmc_gen = qmc.LatinHypercube(5)
+        seed = np.random.RandomState(123456)
+        qmc_gen = qmc.LatinHypercube(5, seed=seed)
         sample = qmc_gen.random(10)
         disc = qmc.discrepancy(sample)
 
