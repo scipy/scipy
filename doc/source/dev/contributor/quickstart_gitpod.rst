@@ -21,23 +21,23 @@ Gitpod
 Gitpod GitHub integration
 --------------------------
 
-To be able to use Gitpod, you will need tohave the Gitpod app installed on your GitHub account, so if 
-you do not have an account yet, you will need to create one first. 
+To be able to use Gitpod, you will need tohave the Gitpod app installed on your GitHub account, so if
+you do not have an account yet, you will need to create one first.
 
 Head over to the `Gitpod`_ website and click on the **Continue with GitHub** button. You will be redirected to the GitHub authentication page.
 You will then be asked to install the `Gitpod GitHub app <https://github.com/marketplace/gitpod-io>`_.
 
 Make sure to select **All repositories** access option to avoid issues with permissions later on. Click on the green **Install** button
 
-.. image:: ../../_static/gitpod/installing-gitpod-io.png 
+.. image:: ../../_static/gitpod/installing-gitpod-io.png
     :alt: Gitpod repository access and installation screenshot
 
-This will install the necessary hooks for the integration. 
+This will install the necessary hooks for the integration.
 
 Forking the SciPy repository
 -----------------------------
 
-The best way to work on SciPy as a contributor is by making a fork of the repository first. 
+The best way to work on SciPy as a contributor is by making a fork of the repository first.
 
 #. Browse to the `SciPy repository on GitHub`_ and `create your own fork`_.
 
@@ -47,11 +47,11 @@ Starting Gitpod
 ----------------
 Once you have authenticated to Gitpod through GitHub, you can install the `Gitpod browser extension <https://www.gitpod.io/docs/browser-extension>`_  which will add a **Gitpod** button next to the **Code** button in the repository:
 
-.. image:: ../../_static/gitpod/scipy-github.png 
+.. image:: ../../_static/gitpod/scipy-github.png
     :alt: SciPy repository with Gitpod button screenshot
 
 #. If you install the extension - you can click the **Gitpod** button to start a new workspace.
-#. Alternatively, if you do not want to install the browser extension you can visit https://gitpod.io/#https://github.com/USERNAME/scipy replacing ``USERNAME`` with your GitHub username. 
+#. Alternatively, if you do not want to install the browser extension you can visit https://gitpod.io/#https://github.com/USERNAME/scipy replacing ``USERNAME`` with your GitHub username.
 
 #. In both cases, this will open a new tab on your web browser and start building your development environment. Please note this can take a few minutes.
 
@@ -61,7 +61,7 @@ Once you have authenticated to Gitpod through GitHub, you can install the `Gitpo
 
         python runtests.py -v
 
-``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``–verbose`` option to show all the test output.
+``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output.
 
 Quick workspace tour
 ---------------------
@@ -69,7 +69,7 @@ Gitpod uses VSCode as the editor. If you have not used this editor before, you c
 
 Your workspace will look similar to the image below:
 
-.. image:: ../../_static/gitpod/gitpod-workspace.png 
+.. image:: ../../_static/gitpod/gitpod-workspace.png
     :alt: Gitpod workspace screenshot
 
 .. note::  By default VSCode initialises with a light theme, you can change to a dark theme by with the keyboard shortcut :kbd:`Cmd-K Cmd-T` in Mac or :kbd:`Ctrl-K Ctrl-T` in Linux and Windows.
@@ -88,7 +88,7 @@ We have also pre-installed a few tools and VSCode extensions to help with the de
 *  `VSCode rst extension <https://marketplace.visualstudio.com/items?itemName=lextudio.restructuredtext>`_
 *  `VSCode Live server extension <https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer>`_
 *  `VSCode Gitlens extension <https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens>`_
-*  `VSCode autodocstrings extension <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ 
+*  `VSCode autodocstrings extension <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
 
 Development workflow
 -----------------------
@@ -99,7 +99,7 @@ When using Gitpod, note these main differences with the setup described in :ref:
 #. You do not need to configure your git username, and email as this should be done for you as you authenticated through GitHub. You can check the git configuration with the command ``git config --list`` in your terminal.
 #. As you started your workspace from your own SciPy fork, you will by default have both "upstream "and "origin "added as remotes. You can verify this by typing ``git remote`` on your terminal or by clicking on the **branch name** on the status bar (see image below).
 
-.. image:: ../../_static/gitpod/scipy-gitpod-branches.png 
+.. image:: ../../_static/gitpod/scipy-gitpod-branches.png
     :alt: Gitpod workspace branches plugin screenshot
 
 Rendering the SciPy documentation
@@ -108,35 +108,37 @@ You can find the detailed documentation on how rendering the documentation with 
 
 The documentation is pre-built during your workspace initialization. So once this task is completed, you have two main options to render the documentation in Gitpod.
 
-Option 1: Using Liveserve 
+Option 1: Using Liveserve
 ***************************
 
 #. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with "index.html "and browse, or you can jump straight to the file you're interested in.
 #. To see the rendered version of a page, you can right-click on the ``.html`` file and click on **Open with Live Serve**. Alternatively, you can open the file in the editor and click on the **Go live** button on the status bar.
-    .. image:: ../../_static/gitpod/vscode-statusbar.png 
+
+    .. image:: ../../_static/gitpod/vscode-statusbar.png
         :alt: Gitpod workspace VSCode start live serve screenshot
+
 #. A simple browser will open to the right-hand side of the editor. We recommend closing it and click on the **Open in browser** button in the pop-up.
 #. To stop the server click on the **Port: 5500** button on the status bar.
 
 Option 2: Using the rst extension
 ***********************************
 
-A quick and easy way to see live changes in an `rst` as you work on it uses the rst extension with docutils. 
+A quick and easy way to see live changes in a ``.rst`` file as you work on it uses the rst extension with docutils.
 
 .. note:: This will generate a simple live preview of the document without the ``html`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
 
 #. Open any of the source documentation files located in ``doc/source`` in the editor.
 #. Open VSCode Command Palette with :kbd:`Cmd-Shift-P` in Mac or :kbd:`Ctrl-Shift-P` in Linux and Windows. Start typing "restructured" and choose either "Open preview" or "Open preview to the Side".
 
-    .. image:: ../../_static/gitpod/vscode-rst.png 
+    .. image:: ../../_static/gitpod/vscode-rst.png
         :alt: Gitpod workspace VSCode open rst screenshot
 
 #. As you work on the document, you will see a live rendering of it on the editor.
 
-    .. image:: ../../_static/gitpod/rst-rendering.png 
+    .. image:: ../../_static/gitpod/rst-rendering.png
         :alt: Gitpod workspace VSCode rst rendering screenshot
-        
-If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html-scipy`` and use Live Serve as described in option 1.
+
+If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html-scipyorg`` and use Live Serve as described in option 1.
 
 FAQ's
 -----
@@ -145,16 +147,16 @@ FAQ's
     Your stopped workspace will be kept for 14 days and deleted afterwards if you do not use them.
 
 #. Can I come back to a previous workspace?
-    Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit `www.gitpod.io/workspaces` and click on the workspace you want to spin up again. All your changes will be there as you last left them.
-    
+    Yes, let's say you stepped away for a while and you want to carry on working on your SciPy contributions. You need to visit https://gitpod.io/workspaces and click on the workspace you want to spin up again. All your changes will be there as you last left them.
+
 #. Can I install additional VSCode extensions?
     Absolutely! Any extensions you installed will be installed in your own workspace and preserved.
 
-#. I registred on Gitpod but I still cannot see a **Gitpod** button in my repositories
-    Head to https://gitpod.io/integrations and make sure you are logged in. Hover over GitHub and click on the three buttons that appear on the right. Click on edit permissions and make sure you have ``user:email``, ``read:user``, and ``public_repo`` checked. 
+#. I registered on Gitpod but I still cannot see a **Gitpod** button in my repositories
+    Head to https://gitpod.io/integrations and make sure you are logged in. Hover over GitHub and click on the three buttons that appear on the right. Click on edit permissions and make sure you have ``user:email``, ``read:user``, and ``public_repo`` checked.
     Click on **Update Permissions** and confirm the changes in the GitHub application page.
-    
-    .. image:: ../../_static/gitpod/gitpod-edit-permissions-gh.png 
+
+    .. image:: ../../_static/gitpod/gitpod-edit-permissions-gh.png
         :alt: Gitpod integrations - edit GH permissions screenshot
 
 #. How long does my workspace stay active if I'm not using it?
