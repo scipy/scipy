@@ -542,9 +542,8 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
                  - (math.lgamma(df / 2) + (df / 2 - 1) * log_2)
                  + (df - 1) * math.log(s) - (df * s * s / 2)
                  + log_inv_sqrt_2pi - 0.5 * z * z # Normal PDF
-                 + (k - 1) * math.log(_Phi(z + q * s) - _Phi(z)))  # phi estimation.
+                 + (k - 1) * math.log(_Phi(z + q * s) - _Phi(z)))
 
-    # The remaining math is excluded from the log because it can be 0
     return math.exp(log_terms)
 
 
@@ -585,7 +584,6 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
              + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z) # Normal PDF
              + (k - 2) * math.log(_Phi(s * q + z) - _Phi(z)))
 
-    # The remaining math is excluded from the log because it can be 0
     return math.exp(r_log + const_log)
 
 
