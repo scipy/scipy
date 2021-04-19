@@ -1075,7 +1075,7 @@ class OptimalLatinHypercube(QMCEngine):
                 idx = np.argmin(best_disc)
                 best_disc = best_disc[idx]
 
-                if (best_disc - disc) < (th * self.rng.random()):
+                if (best_disc - disc) < (th * self.rng.uniform()):
                     col, row_1, row_2 = col[idx], row_1[idx], row_2[idx]
                     sample[row_1, col], sample[row_2, col] = (
                         sample[row_2, col], sample[row_1, col])
