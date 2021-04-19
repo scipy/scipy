@@ -5,6 +5,5 @@
     "restructuredtext.updateOnTextChanged": "true",
     "restructuredtext.updateDelay": 300,
     "restructuredtext.linter.disabled": true,
-    "python.pythonPath": "/opt/conda/envs/scipy-dev/bin/python",
-    "terminal.integrated.inheritEnv": false
+    "python.pythonPath": "/opt/conda/envs/scipy-dev/bin/python"
 }

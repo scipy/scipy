@@ -5,7 +5,7 @@
 # With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
-image: scipy/scipy-gitpod:latest
+image: trallard/trallard-gitpod:latest
 tasks:
   - name: Prepare development
     init: |
