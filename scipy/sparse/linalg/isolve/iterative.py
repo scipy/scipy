@@ -854,15 +854,15 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None, call
 
     Other parameters
     ----------------
-    x0: {array, matrix}
+    x0 : {array, matrix}
         Starting guess for the solution (a vector of zeros by default).
-    restart: int, optional
+    restart : int, optional
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
         Default is 30.
-    tol: float, optional
+    tol : float, optional
         Tolerances for convergence, ``norm(residual) <= tol*norm(b)``.
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved.
