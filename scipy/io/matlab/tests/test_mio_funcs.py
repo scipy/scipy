@@ -5,7 +5,6 @@ of mat file.
 import os.path
 import io
 
-from scipy._lib._util import asstr,asbytes
 
 from scipy.io.matlab.mio5 import MatFile5Reader
 
@@ -18,7 +17,7 @@ def read_minimat_vars(rdr):
     i = 0
     while not rdr.end_of_stream():
         hdr, next_position = rdr.read_var_header()
-        name = asstr(hdr.name)
+        name = (hdr.name).decode('latin1')
         if name == '':
             name = 'var_%d' % i
             i += 1

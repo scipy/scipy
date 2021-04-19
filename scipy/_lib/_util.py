@@ -14,14 +14,6 @@ try:
 except ImportError:
     class Generator():  # type: ignore[no-redef]
         pass
-def asstr(s):
-    if isinstance(s, bytes):
-        return s.decode('latin1')
-    return str(s)
-def asbytes(s):
-    if isinstance(s, bytes):
-        return s
-    return str(s).encode('latin1')
 
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """

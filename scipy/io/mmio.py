@@ -15,7 +15,7 @@ import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
-from scipy._lib._util import asstr,asbytes
+
 
 from scipy.sparse import coo_matrix, isspmatrix
 
@@ -227,7 +227,7 @@ class MMFile:
             # read and validate header line
             line = stream.readline()
             mmid, matrix, format, field, symmetry = \
-                [asstr(part.strip()) for part in line.split()]
+                [(part.strip()).decode('latin1') for part in line.split()]
             if not mmid.startswith('%%MatrixMarket'):
                 raise ValueError('source is not in Matrix Market format')
             if not matrix.lower() == 'matrix':
@@ -734,34 +734,34 @@ class MMFile:
         self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        stream.write(asbytes('%%MatrixMarket matrix {0} {1} {2}\n'.format(rep,
-            field, symmetry)))
+        stream.write(('%%MatrixMarket matrix {0} {1} {2}\n'.format(rep,
+            field, symmetry).encode('latin1'))
 
         # write comments
         for line in comment.split('\n'):
-            stream.write(asbytes('%%%s\n' % (line)))
+            stream.write(('%%%s\n' % (line)).encode('latin1'))
 
         template = self._field_template(field, precision)
         # write dense format
         if rep == self.FORMAT_ARRAY:
             # write shape spec
-            stream.write(asbytes('%i %i\n' % (rows, cols)))
+            stream.write(('%i %i\n' % (rows, cols)).encode('latin1'))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            stream.write((template % a[i, j]).encode('latin1'))
 
                 elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
                     for j in range(cols):
                         for i in range(j + 1, rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            stream.write(template % a[i, j]).encode('latin1'))
 
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
-                            stream.write(asbytes(template % a[i, j]))
+                            stream.write((template % a[i, j]).encode('latin1'))
 
             elif field == self.FIELD_COMPLEX:
 
@@ -769,14 +769,14 @@ class MMFile:
                     for j in range(cols):
                         for i in range(rows):
                             aij = a[i, j]
-                            stream.write(asbytes(template % (real(aij),
-                                                             imag(aij))))
+                            stream.write((template % (real(aij),
+                                                             imag(aij).encode('latin1'))
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
                             aij = a[i, j]
-                            stream.write(asbytes(template % (real(aij),
-                                                             imag(aij))))
+                            stream.write((template % (real(aij),
+                                                             imag(aij))).encode('latin1')
 
             elif field == self.FIELD_PATTERN:
                 raise ValueError('pattern type inconsisted with dense format')
@@ -797,21 +797,21 @@ class MMFile:
                                  shape=coo.shape)
 
             # write shape spec
-            stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
+            stream.write(('%i %i %i\n' % (rows, cols, coo.nnz).encode('latin1'))
 
             template = self._field_template(field, precision-1)
 
             if field == self.FIELD_PATTERN:
                 for r, c in zip(coo.row+1, coo.col+1):
-                    stream.write(asbytes("%i %i\n" % (r, c)))
+                    stream.write(("%i %i\n" % (r, c)).encode('latin1'))
             elif field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    stream.write(asbytes(("%i %i " % (r, c)) +
-                                         (template % d)))
+                    stream.write((("%i %i " % (r, c)) +
+                                         (template % d)).encode('latin1'))
             elif field == self.FIELD_COMPLEX:
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    stream.write(asbytes(("%i %i " % (r, c)) +
-                                         (template % (d.real, d.imag))))
+                    stream.write((("%i %i " % (r, c)) +
+                                         (template % (d.real, d.imag))).encode('latin1'))
             else:
                 raise TypeError('Unknown field type %s' % field)
 

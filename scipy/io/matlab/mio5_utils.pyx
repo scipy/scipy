@@ -1,5 +1,4 @@
 ''' Cython mio5 utility routines (-*- python -*- like)
-
 '''
 
 '''
@@ -31,7 +30,6 @@ cdef extern from "Python.h":
 from cpython cimport PyBytes_Size, PyBytes_FromString
 
 import numpy as np
-from scipy._lib._util import asbytes,asstr
 cimport numpy as cnp
 
 cdef extern from "numpy/arrayobject.h":
@@ -718,7 +716,7 @@ cdef class VarReader5:
         elif mc == mxSTRUCT_CLASS:
             arr = self.read_struct(header)
         elif mc == mxOBJECT_CLASS: # like structs, but with classname
-            classname = asstr(self.read_int8_string())
+            classname = (self.read_int8_string()).decode('latin1')
             arr = self.read_struct(header)
             arr = mio5p.MatlabObject(arr, classname)
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
@@ -918,7 +916,7 @@ cdef class VarReader5:
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
-            name = asstr(PyBytes_FromString(n_ptr))
+            name = PyBytes_FromString(n_ptr).decode('latin1')
             # Check if this is a duplicate field, rename if so
             dup_no = 0
             for j in range(i):
