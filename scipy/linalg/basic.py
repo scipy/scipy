@@ -1277,7 +1277,8 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.standard_normal((9, 6))
     >>> B = linalg.pinv(a)
     >>> np.allclose(a, np.dot(a, np.dot(B, a)))
     True
@@ -1349,7 +1350,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.standard_normal((9, 6))
     >>> B = linalg.pinv2(a)
     >>> np.allclose(a, np.dot(a, np.dot(B, a)))
     True
@@ -1426,7 +1428,8 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     Examples
     --------
     >>> from scipy.linalg import pinvh
-    >>> a = np.random.randn(9, 6)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.standard_normal((9, 6))
     >>> a = np.dot(a, a.T)
     >>> B = pinvh(a)
     >>> np.allclose(a, np.dot(a, np.dot(B, a)))

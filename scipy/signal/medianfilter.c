@@ -82,6 +82,8 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
     totN = Nwin[0] * Nwin[1];                                           \
     myvals = (TYPE *) check_malloc( totN * sizeof(TYPE));               \
                                                                         \
+    Py_BEGIN_ALLOW_THREADS                                              \
+                                                                        \
     hN[0] = Nwin[0] >> 1;                                               \
     hN[1] = Nwin[1] >> 1;                                               \
     ptr1 = in;                                                          \
@@ -112,6 +114,9 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
             /*      *fptr1++ = median(myvals,totN); */                  \
             *fptr1++ = SELECT(myvals,totN);                             \
         }                                                               \
+                                                                        \
+    Py_END_ALLOW_THREADS                                                \
+                                                                        \
     free(myvals);                                                       \
 }
 

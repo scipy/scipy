@@ -5,8 +5,6 @@
     "restructuredtext.updateOnTextChanged": "true",
     "restructuredtext.updateDelay": 300,
     "restructuredtext.linter.disabled": true,
-    // pythonPath is now deprecated so using python.defaultInterpreterPath 
-    "python.defaultInterpreterPath": "/opt/conda/envs/scipydev/bin/python",
-    "python.terminal.activateEnvironment": true,
-    "python.terminal.activateEnvInCurrentTerminal": true
+    "python.pythonPath": "/opt/conda/envs/scipy-dev/bin/python",
+    "terminal.integrated.inheritEnv": false
 }

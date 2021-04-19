@@ -1,17 +1,12 @@
-name: Build Base Docker Image
+name: Build Gitpod Docker image
 
 on:
-  push: 
-    branches:
-    - master
-    paths:
-    - './environment.yml'
-    tags:
-      - '*'
-      
-jobs: 
+  schedule:
+    - cron: "0 0 * * *" # nightly
+
+jobs:
   build:
-    name: Build base Docker image 
+    name: Build Gitpod Docker image 
     runs-on: ubuntu-latest
     environment: scipy-dev
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
@@ -21,7 +16,7 @@ jobs:
       - name: Lint Docker 
         uses: brpaz/hadolint-action@v1.2.1
         with: 
-          dockerfile: ./tools/docker_dev/Dockerfile
+          dockerfile: ./tools/docker_dev/.gitpod.Dockerfile
       - name: Get refs
         shell: bash
         run: |
@@ -48,11 +43,11 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: "."
-          file: "./tools/docker_dev/Dockerfile"
+          file: "./tools/docker_dev/.gitpod.Dockerfile"
           push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
-            scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-dev:latest
+            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-gitpod:latest
       - name: Image digest 
         run: echo ${{ steps.docker_build.outputs.digest }}
