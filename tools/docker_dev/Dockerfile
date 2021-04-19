@@ -15,23 +15,22 @@
 #
 # docker run --rm -it -v $(pwd):/home/scipy scipy:<image-tag>
 # 
-# Once the container is running, you'll need to activate the conda environment
-# conda activate scipydev
+# By default the container will activate the conda environment scipy-dev
+# which contains all the dependencies needed for SciPy development
 # 
-# And run the tests with
-# python runtests.py
+# To build Scipy run: python setup.py build_ext --inplace
+# Followed by conda develop . if you need to build the docs
+#
+# To run the tests use: python runtests.py
 # 
-# Ubuntu 20.04 (focal)
+# This image is based on: Ubuntu 20.04 (focal)
 # https://hub.docker.com/_/ubuntu/?tab=tags&name=focal
 # OS/ARCH: linux/amd64
-ARG ROOT_CONTAINER=ubuntu:focal-20201106@sha256:4e4bc990609ed865e07afc8427c30ffdddca5153fd4e82c20d8f0783a291e241
+ARG ROOT_CONTAINER=gitpod/workspace-base:latest
 ARG BASE_CONTAINER=${ROOT_CONTAINER}
 
-# hadolint ignore=DL3006 as base container is tagged
+# hadolint ignore=DL3006
 FROM ${BASE_CONTAINER}
-
-# Change default shell - this avoids issues with Conda later
-SHELL ["/bin/bash","--login", "-o", "pipefail", "-c"]
 
 # -----------------------------------------------------------------------------
 # ---- Miniforge installer ----
@@ -62,49 +61,67 @@ ARG PYTHON_VERSION=default
 
 # ---- Configure environment ----
 ENV CONDA_DIR=/opt/conda \
-    SHELL=/bin/bash 
+    SHELL=/bin/bash  \
+    GP_USER=gitpod \
+    GP_GROUP=gitpod \
+    GP_UID=33333 
 
-ENV PATH=$CONDA_DIR/bin:$PATH \
-    CONDA_VERSION="${conda_version}" \
+ENV CONDA_VERSION="${conda_version}" \
     MINIFORGE_VERSION="${miniforge_version}" \
-    CONDA_ENV=scipydev \
-    PROJECT_DIR=/home/scipy
+    CONDA_ENV=scipy-dev \
+    PATH=${CONDA_DIR}/bin:$PATH 
 
 # -----------------------------------------------------------------------------
 # ---- OS dependencies ----
 ENV DEBIAN_FRONTEND noninteractive
 
+USER root
+
+# Change default shell - this avoids issues with Conda later
+SHELL ["/bin/bash", "--login", "-o", "pipefail", "-c"]
+
 # hadolint ignore=DL3008
 RUN apt-get update && \ 
     apt-get install -yq --no-install-recommends \
-    build-essential \
     ca-certificates \
-    git \
+    ccache \
+    dirmngr \
+    gnupg \
+    gpg-agent \
     libatlas-base-dev \
-    software-properties-common \
     vim \
     wget && \
+    # this needs to be done after installing dirmngr
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && \ 
+    apt-add-repository https://cli.github.com/packages && \ 
+    apt-get install -yq --no-install-recommends \
+    gh && \ 
+    locale-gen en_US.UTF-8 && \
     apt-get clean && \
-    rm -rf /tmp/* && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /var/cache/apt/* && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/cache/apt/* &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    rm -rf /tmp/*
 
 # -----------------------------------------------------------------------------
+# ---- Copy needed files ----
+# Copy multiple scripts - fix directory permissions and 
+# basic workspace configurations
+COPY ./tools/docker_dev/workspace_config /usr/local/bin/workspace_config
+COPY ./tools/docker_dev/fix_permissions /usr/local/bin/fix_permissions
 
-# Enable prompt color in the skeleton .bashrc
-# hadolint ignore=SC2016
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
-    # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-    echo 'eval "$(command conda shell.bash hook 2> /dev/null)"' >> /etc/skel/.bashrc 
+RUN chmod a+rx /usr/local/bin/workspace_config && \
+    chmod a+rx /usr/local/bin/fix_permissions 
 
 # -----------------------------------------------------------------------------
+RUN mkdir -p "${CONDA_DIR}" && \
+    # transfer conda path ownership and ensure it is user writable
+    chown -R ${GP_USER}:${GP_GROUP} ${CONDA_DIR} && \
+    fix_permissions ${CONDA_DIR} && \
+    workspace_config
 
-# Enable basic vim defaults in ~/.vimrc
-RUN echo "filetype plugin indent on" >> ~/.vimrc && \
-    echo "set colorcolumn=80" >> ~/.vimrc && \
-    echo "set number" >> ~/.vimrc && \
-    echo "syntax enable" >> ~/.vimrc
+USER ${GP_USER}
+
+WORKDIR /tmp
 
 # -----------------------------------------------------------------------------
 # ---- Installing conda  ----
@@ -124,25 +141,28 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
     "conda=${CONDA_VERSION}" \
     'pip' && \
     conda update --all --quiet --yes && \
-    conda clean --all -f -y 
+    conda clean --all -f -y && \
+    fix_permissions ${CONDA_DIR}
 
-# make conda activate command available from /bin/bash (login and interactive)
-RUN echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.profile && \ 
-    conda init bash
 
 # -----------------------------------------------------------------------------
 # ---- Create conda environment ----
 # Install SciPy dependencies - since using miniforge no need to add 
 # conda-forge channel
-# Clean up temporary files 
-COPY ./environment.yml /tmp/environment.yml
+COPY environment.yml /tmp/environment.yml
 
 RUN conda env create -f /tmp/environment.yml && \
-    conda activate "${CONDA_ENV}" && \
-    conda clean --all -f -y 
+    conda activate ${CONDA_ENV} && \
+    # needed for docs rendering later on
+    python -m pip install --no-cache-dir sphinx-autobuild && \
+    conda install ccache -y && \
+    # need to use sudo to remove tmp files
+    sudo rm -rf /tmp/* && \
+    conda clean --all -f -y && \
+    # for good measure after installing things
+    fix_permissions ${CONDA_DIR} 
 
 # -----------------------------------------------------------------------------
-# Create a Scipy directory inside /home/ 
-# this will be used to mount the local volume
-RUN mkdir $PROJECT_DIR
-WORKDIR $PROJECT_DIR
+USER ${GP_USER}
+
+WORKDIR $HOME/scipy

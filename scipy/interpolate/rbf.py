@@ -127,7 +127,8 @@ class Rbf:
     Examples
     --------
     >>> from scipy.interpolate import Rbf
-    >>> x, y, z, d = np.random.rand(4, 50)
+    >>> rng = np.random.default_rng()
+    >>> x, y, z, d = rng.random((4, 50))
     >>> rbfi = Rbf(x, y, z, d)  # radial basis function interpolator instance
     >>> xi = yi = zi = np.linspace(0, 1, 20)
     >>> di = rbfi(xi, yi, zi)   # interpolated values

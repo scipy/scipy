@@ -5,7 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.signal import lfilter, firwin, decimate, butter, sosfilt
+    from scipy.signal import (lfilter, firwin, decimate, butter, sosfilt,
+                              medfilt2d)
 
 
 class Decimate(Benchmark):
@@ -82,3 +83,22 @@ class Sosfilt(Benchmark):
 
     def time_sosfilt_basic(self, n_samples, order):
         sosfilt(self.sos, self.y)
+
+
+class MedFilt2D(Benchmark):
+    param_names = ['threads']
+    params = [[1, 2, 4]]
+
+    def setup(self, threads):
+        np.random.seed(8176)
+        self.chunks = np.array_split(np.random.randn(250, 349), threads)
+
+    def _medfilt2d(self, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            wait({pool.submit(medfilt2d, chunk, 5) for chunk in self.chunks})
+
+    def time_medfilt2d(self, threads):
+        self._medfilt2d(threads)
+
+    def peakmem_medfilt2d(self, threads):
+        self._medfilt2d(threads)

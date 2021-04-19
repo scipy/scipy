@@ -675,7 +675,7 @@ class Ufunc(Func):
 
     """
     def __init__(self, name, signatures):
-        super(Ufunc, self).__init__(name, signatures)
+        super().__init__(name, signatures)
         self.doc = add_newdocs.get(name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
@@ -786,7 +786,7 @@ class FusedFunc(Func):
 
     """
     def __init__(self, name, signatures):
-        super(FusedFunc, self).__init__(name, signatures)
+        super().__init__(name, signatures)
         self.doc = "See the documentation for scipy.special." + self.name
         # "codes" are the keys for CY_TYPES
         self.incodes, self.outcodes = self._get_codes()

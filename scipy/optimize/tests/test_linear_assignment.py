@@ -32,15 +32,18 @@ def test_linear_sum_assignment_input_validation():
     assert_raises(ValueError, linear_sum_assignment, I.astype(str))
 
     I[0][0] = np.nan
-    assert_raises(ValueError, linear_sum_assignment, I)
+    with pytest.raises(ValueError, match="contains invalid numeric entries"):
+        linear_sum_assignment(I)
 
     I = np.identity(3)
     I[1][1] = -np.inf
-    assert_raises(ValueError, linear_sum_assignment, I)
+    with pytest.raises(ValueError, match="contains invalid numeric entries"):
+        linear_sum_assignment(I)
 
     I = np.identity(3)
     I[:, 0] = np.inf
-    assert_raises(ValueError, linear_sum_assignment, I)
+    with pytest.raises(ValueError, match="cost matrix is infeasible"):
+        linear_sum_assignment(I)
 
 
 def test_constant_cost_matrix():
