@@ -1725,6 +1725,19 @@ class LinprogHiGHSTests(LinprogCommonTests):
 
         assert_allclose(res.marginals.upper, dfdub)
 
+    def test_complementary_slackness(self):
+        # Ensure that the complementary slackness condition is satisfied.
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=42)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+
+        resid = (-c + A_ub.T @ res.marginals.ineqlin +
+                 A_eq.T @ res.marginals.eqlin +
+                 res.marginals.upper +
+                 res.marginals.lower)
+        # assert_allclose has trouble at 0, so add 1
+        assert_allclose(resid + 1, 1)
+
 
 ################################
 # Simplex Option-Specific Tests#
