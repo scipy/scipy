@@ -15,7 +15,7 @@ References
 
 import inspect
 import numpy as np
-from .optimize import _check_unknown_options, OptimizeWarning
+from .optimize import _check_unknown_options, OptimizeWarning, OptimizeResult
 from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
@@ -195,6 +195,25 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 The number of primal/dual pushes performed during the
                 crossover routine for ``solver='ipm'``.  This is ``0``
                 for ``solver='simplex'``.
+            marginals : OptimizeResult
+                The sensitivity (partial derivative) of the objective function
+                with respect to the right-hand side of each constraint.
+                A dictionary consisting of the fields:
+
+                ineqlin : np.ndarray
+                    The sensitivity with respect to the right-hand side
+                    of the inequality constraints, `b_ub`.
+
+                eqlin : np.ndarray
+                    The sensitivity with respect to the right-hand side
+                    of the equality constraints, `b_eq`.
+
+                lower, upper : np.ndarray
+                    The sensitivity with respect to the lower and upper
+                    `bounds`.
+
+                These partial derivatives are also referred to as
+                "Lagrange multipliers", "dual values", and "shadow prices".
 
     References
     ----------
@@ -334,6 +353,17 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     else:
         slack, con = None, None
 
+    # lagrange multipliers for equalities/inequalities and upper/lower bounds
+    if 'lambda' in res:
+        lamda = res['lambda']
+        marg_ineqlin = np.array(lamda[:len(b_ub)])
+        marg_eqlin = np.array(lamda[len(b_ub):])
+        marg_upper = res['marg_bnds'][1, :]
+        marg_lower = res['marg_bnds'][0, :]
+    else:
+        marg_ineqlin, marg_eqlin = None, None
+        marg_upper, marg_lower = None, None
+
     # this needs to be updated if we start choosing the solver intelligently
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
@@ -352,6 +382,12 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     sol = {'x': np.array(res['x']) if 'x' in res else None,
            'slack': slack,
+           'marginals': OptimizeResult({
+               'ineqlin': marg_ineqlin,
+               'eqlin': marg_eqlin,
+               'upper': marg_upper,
+               'lower': marg_lower,
+           }),
            'fun': res.get('fun'),
            'con': con,
            'status': status,
