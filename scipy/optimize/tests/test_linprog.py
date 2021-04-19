@@ -8,6 +8,7 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_less, assert_warns, suppress_warnings)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 import scipy.sparse
@@ -1674,6 +1675,55 @@ class LinprogHiGHSTests(LinprogCommonTests):
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
+
+    def test_marginals(self):
+        # Ensure lagrange multipliers are correct by comparing the derivative
+        # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=0)
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method, options=self.options)
+        lb, ub = bounds.T
+
+        # sensitivity w.r.t. b_ub
+        def f_bub(x):
+            return linprog(c, A_ub, x, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        dfdbub = approx_derivative(f_bub, b_ub, method='3-point', f0=res.fun)
+        assert_allclose(res.marginals.ineqlin, dfdbub)
+
+        # sensitivity w.r.t. b_eq
+        def f_beq(x):
+            return linprog(c, A_ub, b_ub, A_eq, x, bounds,
+                           method=self.method).fun
+
+        dfdbeq = approx_derivative(f_beq, b_eq, method='3-point', f0=res.fun)
+        assert_allclose(res.marginals.eqlin, dfdbeq)
+
+        # sensitivity w.r.t. lb
+        def f_lb(x):
+            bounds = np.array([x, ub]).T
+            return linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        with np.errstate(invalid='ignore'):
+            # approx_derivative has trouble where lb is infinite
+            dfdlb = approx_derivative(f_lb, lb, method='3-point', f0=res.fun)
+            dfdlb[~np.isfinite(lb)] = 0
+
+        assert_allclose(res.marginals.lower, dfdlb)
+
+        # sensitivity w.r.t. ub
+        def f_ub(x):
+            bounds = np.array([lb, x]).T
+            return linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                           method=self.method).fun
+
+        with np.errstate(invalid='ignore'):
+            dfdub = approx_derivative(f_ub, ub, method='3-point', f0=res.fun)
+            dfdub[~np.isfinite(ub)] = 0
+
+        assert_allclose(res.marginals.upper, dfdub)
 
 
 ################################
