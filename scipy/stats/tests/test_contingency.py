@@ -166,6 +166,25 @@ def test_chi2_contingency_R():
     assert_approx_equal(p, 0.6442, significant=4)
     assert_equal(dof, 11)
 
+    # test Yates' correction (unbalanced case)
+    # > X <- matrix(c(1000, 10, 1, 0), ncol=2, nrow=2)
+    # > X
+    #     [,1] [,2]
+    # [1,] 1000    1
+    # [2,]   10    0
+    # > chisq.test(X)
+    #         Pearson's Chi-squared test with Yates' continuity correction
+    # data:  X
+    # X-squared = 5.163e-28, df = 1, p-value = 1
+
+    obs = np.array(
+        [[1000, 1],
+         [10, 0]]
+    )
+    chi2, p, dof, expected = chi2_contingency(obs, correction=True)
+    assert_approx_equal(p, 1.0, significant=2)
+    assert_allclose(chi2, 0.0)
+
 
 def test_chi2_contingency_g():
     c = np.array([[15, 60], [15, 90]])
