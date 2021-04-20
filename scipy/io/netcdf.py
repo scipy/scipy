@@ -486,7 +486,7 @@ class netcdf_file:
         self._write_att_array(var._attributes)
 
         nc_type = REVERSE[var.typecode(), var.itemsize()]
-        self.fp.write((nc_type).encode('latin1'))
+        self.fp.write(nc_type.encode('latin1'))
 
         if not var.isrec:
             vsize = var.data.size * var.data.itemsize
@@ -579,7 +579,7 @@ class netcdf_file:
 
         values = asarray(values, dtype=dtype_)
 
-        self.fp.write((nc_type).encode('latin1'))
+        self.fp.write(nc_type.encode('latin1'))
 
         if values.dtype.char == 'S':
             nelems = values.itemsize
@@ -618,7 +618,7 @@ class netcdf_file:
         count = self._unpack_int()
 
         for dim in range(count):
-            name = (self._unpack_string()).decode('latin1')
+            name = self._unpack_string().decode('latin1')
             length = self._unpack_int() or None  # None for record dimension
             self.dimensions[name] = length
             self._dims.append(name)  # preserve order
@@ -635,7 +635,7 @@ class netcdf_file:
 
         attributes = OrderedDict()
         for attr in range(count):
-            name = (self._unpack_string()).decode('latin1')
+            name = self._unpack_string().decode('latin1')
             attributes[name] = self._read_att_values()
         return attributes
 
@@ -726,7 +726,7 @@ class netcdf_file:
                 self.variables[var].__dict__['data'] = rec_array[var]
 
     def _read_var(self):
-        name = (self._unpack_string()).decode('latin1')
+        name = self._unpack_string().decode('latin1')
         dimensions = []
         shape = []
         dims = self._unpack_int()
@@ -791,7 +791,7 @@ class netcdf_file:
     def _pack_string(self, s):
         count = len(s)
         self._pack_int(count)
-        self.fp.write((s).encode('latin1'))
+        self.fp.write(s.encode('latin1'))
         self.fp.write(b'\x00' * (-count % 4))  # pad
 
     def _unpack_string(self):

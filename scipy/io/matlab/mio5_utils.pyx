@@ -716,7 +716,8 @@ cdef class VarReader5:
         elif mc == mxSTRUCT_CLASS:
             arr = self.read_struct(header)
         elif mc == mxOBJECT_CLASS: # like structs, but with classname
-            classname = (self.read_int8_string()).decode('latin1')
+		    string = self.read_int8_string()
+            classname = string.decode('latin1')
             arr = self.read_struct(header)
             arr = mio5p.MatlabObject(arr, classname)
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
@@ -916,7 +917,7 @@ cdef class VarReader5:
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
-            name = PyBytes_FromString(n_ptr).decode('latin1')
+            name = PyUnicode_FromString(n_ptr)
             # Check if this is a duplicate field, rename if so
             dup_no = 0
             for j in range(i):

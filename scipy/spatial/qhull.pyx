@@ -1833,7 +1833,7 @@ class Delaunay(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = (qhull_options).encode('latin1')
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
@@ -2426,7 +2426,7 @@ class ConvexHull(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b"Qx"
         else:
-            qhull_options = (qhull_options).encode('latin1')
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"i", points, qhull_options, required_options=b"Qt",
@@ -2605,7 +2605,7 @@ class Voronoi(_QhullUser):
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
-            qhull_options = (qhull_options).encode('latin1')
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site,
@@ -2802,7 +2802,7 @@ class HalfspaceIntersection(_QhullUser):
             if halfspaces.shape[1] >= 6:
                 qhull_options += b"Qx"
         else:
-            qhull_options = (qhull_options).encode('latin1')
+            qhull_options = qhull_options.encode('latin1')
 
         # Run qhull
         mode_option = "H"
