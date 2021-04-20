@@ -287,7 +287,10 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     else:
         if dof == 1 and correction:
             # Adjust `observed` according to Yates' correction for continuity.
-            observed = observed + 0.5 * np.sign(expected - observed)
+            # Implementation is compliant with R's one
+            # https://github.com/wch/r-source/blob/trunk/src/library/stats/R/chisq.test.R
+            yates = np.minimum(0.5, np.abs(expected - observed))
+            observed = observed + yates * np.sign(expected - observed)
 
         chi2, p = power_divergence(observed, expected,
                                    ddof=observed.size - 1 - dof, axis=None,
