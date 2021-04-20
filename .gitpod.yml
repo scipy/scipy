@@ -2,7 +2,6 @@
 # that even forks do have a usable freshly built SciPy
 # Might delegate this later to prebuild with Q2 improvements on gitpod
 # https://www.gitpod.io/docs/config-start-tasks/#configuring-the-terminal
-# With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
 image: scipy/scipy-gitpod:latest
@@ -12,12 +11,13 @@ tasks:
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
       python setup.py build_ext --inplace
-      echo "🛠 Completed rebuilding SciPy!! \n\n"
+      echo "🛠 \e[35m\e[1m Completed rebuilding SciPy!! 🛠 "
       conda develop .
-      echo "📖 Building docs \n\n "
+      echo "📖 \e[35m\e[1m Building docs 📖 "
       git submodule update --init
       cd doc 
       make html-scipyorg
+      echo "✨ \e[35m\e[1m pre-build complete! You can close this terminal ✨ "
   
 # --------------------------------------------------------
 # exposing ports for liveserve
@@ -36,9 +36,12 @@ vscode:
     - ms-python.python
     - yzhang.markdown-all-in-one
     - bungcip.better-toml
+    - mhutchie.git-graph
 
 # --------------------------------------------------------
-# using prebuilds for the container 
+# using prebuilds for the container - note: atm this only
+# works for the SciPy repo
+# With this configuration the prebuild will happen on push to master 
 github:
   prebuilds:
     # enable for master branch
