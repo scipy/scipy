@@ -1314,30 +1314,29 @@ def permutation_test(a, b, statistic, permutations=np.inf,
 
     the data are pooled (concatenated), randomly assigned to either group `a`
     or `b`, and the statistic is calculated. This process is performed
-    repeatedly (`permutation` times), generating a distribution of the
+    repeatedly,`permutation` times, generating a distribution of the
     statistic under the null hypothesis. The statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations == np.inf`` or ``permutations >= binom(n, k)``, an exact
-    test is performed: the data are partitioned between the groups in each
-    distinct way exactly once.
-
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
 
     Parameters
     ----------
-    data : sequence of array-like
-         Each element of data is a sample from an underlying distribution.
+    a, b : array-like
+        Independent samples from underlying distributions. Dimensions of arrays
+        must be compatible for broadcasting except along `axis`.
     statistic : callable
-        Statistic for which the p-value of the observed data is to be
-        calculated. `statistic` must be a callable that accepts ``len(data)``
-        samples as separate arguments and returns the resulting statistic.
+        Statistic for which the p-value of the hypothesis test is to be
+        calculated. `statistic` must be a callable that accepts `a` and `b`
+        as separate arguments and returns the resulting statistic.
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
     permutations: int, optional (default: np.inf)
-        Number of permutations used to calculate p-value. If greater than or
+        Number of permutations used to estimate the p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
     alternative: str in {'two-sided', 'less', 'greater'} (default:'two-sided')
-        The alternative hypothesis for which the p-value is calculated. The
-        following options are available:
+        The alternative hypothesis for which the p-value is calculated.
+        For each alternative, the p-value is defined as follows.
 
         ``'two-sided'`` : the percentage of the null distribution that is as
         far or farther from the mean of the null distribution as the observed
@@ -1350,15 +1349,17 @@ def permutation_test(a, b, statistic, permutations=np.inf,
         less than or equal to the observed value of the test statistic.
 
     axis : int, optional (default: 0)
-        The axis of samples over which to calculate the statistict.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
+        The axis of samples over which to calculate the statistic.
+    random_state : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+        Pseudorandom number generator state used to generate permutations.
+
+        If `seed` is ``None`, the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an ``int``, a new ``RandomState`` instance is used,
         seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-        Pseudorandom number generator state used for generating random
-        permutations.
+        If `seed` is already a ``numpy.random.Generator`` or ``RandomState``
+        instance, then that instance is used.
 
     Returns
     -------
@@ -1373,19 +1374,27 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     --------
 
     Suppose we wish to test whether two samples are drawn from the same
-    distribution. We hypothesize that the mean of the first sample is less
-    than that of the second sample, and we will consider a p-value of 0.05
-    to be statistically significant.
+    distribution. Assume that the underlying distributions are unknown to us,
+    and that before observing the data, we hypothesized that the mean of the
+    first sample would be less than that of the second sample. We decide that
+    we will use the difference between the sample means as a test statistic,
+    and we will consider a p-value of 0.05 to be statistically significant.
 
-    >>> from scipy.stats import norm
-    >>> x = norm.rvs(size=5)
-    >>> y = norm.rvs(size=6, loc = 3)
-
-    As a statistic, we will use the difference between the sample means.
+    We write the function defining the test statistic in a vectorized fashion:
+    the samples `x` and `y` can be n-d arrays, and the statistic will be
+    calculated for each axis-slice along `axis`.
 
     >>> def statistic(x, y, axis):
     ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
-    >>> print(statistic(x, y, axis=0))
+
+    After collecting our data, we calculate the observed value of the test
+    statistic.
+
+    >>> from scipy.stats import norm
+    >>> rng = np.random.default_rng()
+    >>> x = norm.rvs(size=5, random_state=rng)
+    >>> y = norm.rvs(size=6, loc = 3, random_state=rng)
+    >>> statistic(x, y, axis)
     -1.5951996795511183
 
     Indeed, the test statistic is negative, suggesting that the true mean of
@@ -1402,18 +1411,18 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     0.004329004329004329
 
     The probability of obtaining a test statistic less than or equal to the
-    observed value under the null hypothesis is 0.4329% (less than our chosen
-    threshold of 5%), so we have significant evidence to reject the null
-    hypothesis in favor of the alternative.
+    observed value under the null hypothesis is 0.4329%. This is less than our
+    chosen threshold of 5%, so we consider this to to be significant evidence
+    against the null hypothesis in favor of the alternative.
 
     Because the size of the samples above was small, `permutation_test` could
     perform an exact test. For larger samples, we resort to a randomized
     permutation test.
 
-    >>> x = norm.rvs(size=100)
-    >>> y = norm.rvs(size=120, loc=0.3)
+    >>> x = norm.rvs(size=100, random_state=rng)
+    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
     >>> res = permutation_test(x, y, statistic, permutations=10000,
-    ...                        alternative='less')
+    ...                        alternative='less', random_state=rng)
     >>> print(res.statistic)
     -0.27108159496595335
     >>> print(res.pvalue)

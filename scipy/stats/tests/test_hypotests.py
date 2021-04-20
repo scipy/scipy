@@ -655,25 +655,23 @@ class TestPermutationTest:
 
         if permutations == 30:
             message = 'ttest_ind uses different sample ordering'
-            x = np.arange(4)
-            y = np.arange(5)
+            x = np.arange(5)
+            y = np.arange(4)
             if axis != 0:
                 pytest.skip(message)
         else:
             x = np.arange(3*4*5).reshape(3, 4, 5)
             y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
 
-        rng1 = np.random.default_rng(0)
         res1 = stats.ttest_ind(x, y, permutations=permutations, axis=axis,
-                               random_state=rng1, alternative=alternative)
+                               random_state=0, alternative=alternative)
 
         def statistic(x, y, axis):
             return stats.ttest_ind(x, y, axis=axis).statistic
 
-        rng2 = np.random.default_rng(0)
         res2 = permutation_test(x, y, statistic, permutations=permutations,
                                 alternative=alternative, axis=axis,
-                                random_state=rng2)
+                                random_state=0)
 
         assert_allclose(res1.statistic, res2.statistic)
         assert_allclose(res1.pvalue, res2.pvalue)
