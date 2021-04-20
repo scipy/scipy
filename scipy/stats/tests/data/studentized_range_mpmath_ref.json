@@ -136,10 +136,152 @@
         "q": 10,
         "k": 3,
         "v": 1000,
-        "expected_atol": 1e-11,
+        "expected_atol": 1e-10,
         "expected_rtol": 1e-11
       },
       "mp_result": 0.999999999991348
+    }
+  ],
+  "pdf_data": [
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.05494947290360002
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.398772020275752
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 7.728665739003835e-05
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 2.564099684606509e-10
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.009782573637596617
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 10,
+        "v": 10,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.0006784051704217357
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.05497690690332341
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.4157583991350054
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 2.159522630228393e-09
+    },
+    {
+      "src_case": {
+        "q": 0.1,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 8.442593793786411e-11
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.0047089182958790715
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 10,
+        "v": 100,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 3.215093171597309e-08
+    },
+    {
+      "src_case": {
+        "q": 1,
+        "k": 3,
+        "v": 1000,
+        "expected_atol": 1e-11,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 0.41754151596262973
+    },
+    {
+      "src_case": {
+        "q": 10,
+        "k": 3,
+        "v": 1000,
+        "expected_atol": 1e-10,
+        "expected_rtol": 1e-11
+      },
+      "mp_result": 1.4993650577943627e-29
     }
   ]
 }

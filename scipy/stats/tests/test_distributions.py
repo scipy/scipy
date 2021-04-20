@@ -4676,13 +4676,23 @@ class TestStudentizedRange:
 
     @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
     def test_cdf_against_mp(self, case_result):
-        print(case_result)
         src_case = case_result["src_case"]
-
         mp_result = case_result["mp_result"]
-        print(src_case)
 
         res = stats.studentized_range.cdf(src_case["q"],
+                                          src_case["k"],
+                                          src_case["v"])
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["pdf_data"])
+    def test_pdf_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+
+        res = stats.studentized_range.pdf(src_case["q"],
                                           src_case["k"],
                                           src_case["v"])
 
