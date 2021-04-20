@@ -3,9 +3,6 @@ name: Build Gitpod Docker image
 on:
   schedule:
     - cron: "0 0 * * *" # nightly
-  push:
-    branches:
-      - feature/**
 
 jobs:
   build:
