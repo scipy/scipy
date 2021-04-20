@@ -140,14 +140,14 @@ def differential_entropy(
 
     The following options are available for the `method` parameter.
 
-    * ``'vasicek'`` uses the estimator presented in [1]. This is
+    * ``'vasicek'`` uses the estimator presented in [1]_. This is
       one of the first and most influential estimators of differential entropy.
-    * ``'van es'`` uses the bias-corrected estimator presented in [3], which is
+    * ``'van es'`` uses the bias-corrected estimator presented in [3]_, which is
       not only consistent but, under some conditions, asymptotically normal.
-    * ``'ebrahimi'`` uses an estimator presented in [4], which was shown
+    * ``'ebrahimi'`` uses an estimator presented in [4]_, which was shown
       in simulation to have smaller bias and mean squared error than
       the Vasicek estimator.
-    * ``'correa'`` uses the estimator presented in [5] based on local linear
+    * ``'correa'`` uses the estimator presented in [5]_ based on local linear
       regression. In a simulation study, it had consistently smaller mean
       square error than the Vasiceck estimator, but it is more expensive to
       compute.
@@ -156,7 +156,7 @@ def differential_entropy(
       for moderate sample sizes (11-1000), and ``'vasicek'`` for larger
       samples, but this behavior is subject to change in future versions.
 
-    All estimators are implemented as described in [6].
+    All estimators are implemented as described in [6]_.
 
     References
     ----------
