@@ -1,8 +1,8 @@
+.. image:: doc/source/_static/scipyshiny_small.png
+  :target: https://docs.scipy.org/doc/scipy/reference/
+
 SciPy
 =====
-
-.. image:: https://img.shields.io/travis/scipy/scipy/master.svg?label=Travis%20CI
-   :target: https://travis-ci.org/scipy/scipy/
 
 .. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
   :target: https://circleci.com/gh/scipy/scipy
@@ -22,18 +22,23 @@ SciPy
 .. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/scipy/scipy
 
-SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
+.. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg
+  :target: https://stackoverflow.com/questions/tagged/scipy
+
+SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
-- **Website:** https://www.scipy.org/
+- **Website:** https://docs.scipy.org/doc/scipy/reference/
 - **Documentation:** https://docs.scipy.org/
 - **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
 - **Source code:** https://github.com/scipy/scipy
+- **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
+- **Citing in your work:** https://www.scipy.org/citing.html
 
 SciPy depends on NumPy, which provides convenient and fast
 N-dimensional array manipulation. SciPy is built to work with
@@ -47,9 +52,41 @@ SciPy a try!
 
 For the installation instructions, see INSTALL.rst.txt_.
 
-We appreciate and welcome contributions. If you would like to take part in
-SciPy development, take a look at the file CONTRIBUTING.rst_.
+
+Call for Contributions
+----------------------
+
+The SciPy project welcomes your expertise and enthusiasm!
+
+Small improvements or fixes are always appreciated; issues labeled as "good
+first issue" may be a good starting point. If you are considering larger
+contributions to the source code, please contact us through the [mailing
+list](https://scipy.org/scipylib/mailing-lists.html) first.
+Have a look at our contributing guide CONTRIBUTING.rst_.
+
+Writing code isn’t the only way to contribute to SciPy. You can also:
+- review pull requests
+- triage issues
+- develop tutorials, presentations, and other educational materials
+- maintain and improve [our website](https://github.com/scipy/scipy.org)
+- develop graphic design for our brand assets and promotional materials
+- translate website content
+- help with outreach and onboard new contributors
+- write grant proposals and help with other fundraising efforts
+
+If you’re unsure where to start or how your skills fit in, reach out! You can
+ask on the mailing list or here, on GitHub, by opening a new issue or leaving a
+comment on a relevant issue that is already open.
+
+Our preferred channels of communication are all public.
+
+If you are new to contributing to open source, [this
+guide](https://opensource.guide/how-to-contribute/) helps explain why, what,
+and how to successfully get involved.
 
 
 .. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
 .. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt
+
+.. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
+  :target: https://numfocus.org
