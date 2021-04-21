@@ -438,7 +438,8 @@ py::dtype promote_type_real(const py::dtype& dtype) {
     }
 }
 
-#define DISPATCH_DTYPE(dtype, func)                                     \
+// From a NumPy dtype, run "expression" with scalar_t aliasing the C++ type
+#define DISPATCH_DTYPE(dtype, expression)                               \
     do {                                                                \
         const py::dtype& type_obj = dtype;                              \
         switch (dtype_num(type_obj)) {                                  \
@@ -446,12 +447,12 @@ py::dtype promote_type_real(const py::dtype& dtype) {
         case NPY_FLOAT: /* TODO: Enable scalar_t=float dispatch */      \
         case NPY_DOUBLE: {                                              \
             using scalar_t = double;                                    \
-            func();                                                     \
+            expression();                                               \
             break;                                                      \
         }                                                               \
         case NPY_LONGDOUBLE: {                                          \
             using scalar_t = long double;                               \
-            func();                                                     \
+            expression();                                               \
             break;                                                      \
         }                                                               \
         default: {                                                      \
