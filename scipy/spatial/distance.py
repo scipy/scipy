@@ -1794,7 +1794,6 @@ _METRIC_INFOS = [
         dist_func=chebyshev,
         cdist_func=_distance_pybind.cdist_chebyshev,
         pdist_func=_distance_pybind.pdist_chebyshev,
-        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='cityblock',
@@ -1802,7 +1801,6 @@ _METRIC_INFOS = [
         dist_func=cityblock,
         cdist_func=_distance_pybind.cdist_cityblock,
         pdist_func=_distance_pybind.pdist_cityblock,
-        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='correlation',
@@ -1832,7 +1830,6 @@ _METRIC_INFOS = [
         dist_func=euclidean,
         cdist_func=_distance_pybind.cdist_euclidean,
         pdist_func=_distance_pybind.pdist_euclidean,
-        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='hamming',
@@ -1881,7 +1878,6 @@ _METRIC_INFOS = [
         dist_func=minkowski,
         cdist_func=_distance_pybind.cdist_minkowski,
         pdist_func=_distance_pybind.pdist_minkowski,
-        requires_contiguous_out=False,
     ),
     MetricInfo(
         canonical_name='rogerstanimoto',

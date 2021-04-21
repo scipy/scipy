@@ -366,17 +366,20 @@ py::array prepare_out_argument(const py::object& obj, const py::dtype& dtype,
     py::array out = py::cast<py::array>(obj);
     const auto ndim = out.ndim();
     const auto shape = out.shape();
+    auto pao = reinterpret_cast<PyArrayObject*>(out.ptr());
 
     if (ndim != out_shape.size() ||
         !std::equal(shape, shape + ndim, out_shape.begin())) {
         throw std::invalid_argument("Output array has incorrect shape.");
+    }
+    if (!PyArray_ISCONTIGUOUS(pao)) {
+        throw std::invalid_argument("Output array must be C-contiguous");
     }
     if (out.dtype().not_equal(dtype)) {
         const py::handle& handle = dtype;
         throw std::invalid_argument("wrong out dtype, expected " +
                                     std::string(py::str(handle)));
     }
-    auto pao = reinterpret_cast<PyArrayObject*>(out.ptr());
     if (!PyArray_ISBEHAVED(pao)) {
         throw std::invalid_argument(
             "out array must be aligned, writable and native byte order");
