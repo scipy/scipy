@@ -655,9 +655,11 @@ def _stat_wrapper(statistic):
         y = np.moveaxis(y, axis, -1)
         nx = x.shape[-1]
         z = _broadcast_concatenate((x, y), -1)
+
         def stat_1d(z):
             x, y = z[:nx], z[nx:]
             return statistic(x, y)
+
         return np.apply_along_axis(stat_1d, axis, z)
     return stat_nd
 
@@ -694,13 +696,12 @@ class TestPermutationTest:
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
         assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
-
     def test_permutation_test_iv(self):
 
         def stat(x, y, axis):
             return stats.ttest_ind(x, y, axis).statistic
 
-        message = "each sample in `data` must contain two or more observations..."
+        message = "each sample in `data` must contain two or more ..."
         with pytest.raises(ValueError, match=message):
             permutation_test([1, 2, 3], [1], stat)
 
@@ -722,12 +723,13 @@ class TestPermutationTest:
 
         message = "'herring' cannot be used to seed a"
         with pytest.raises(ValueError, match=message):
-            permutation_test([1, 2, 3], [1, 2, 3], stat, random_state='herring')
+            permutation_test([1, 2, 3], [1, 2, 3], stat,
+                             random_state='herring')
 
     def test_permutation_test_against_kstest(self):
         np.random.seed(0)
-        x = stats.norm.rvs(size=4, scale = 1)
-        y = stats.norm.rvs(size=5, scale = 3) + 3
+        x = stats.norm.rvs(size=4, scale=1)
+        y = stats.norm.rvs(size=5, loc=3, scale=3)
 
         alternative = 'greater'
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
@@ -744,8 +746,8 @@ class TestPermutationTest:
 
     def test_permutation_test_against_ansari(self):
         np.random.seed(0)
-        x = stats.norm.rvs(size=4, scale = 1)
-        y = stats.norm.rvs(size=5, scale = 3)
+        x = stats.norm.rvs(size=4, scale=1)
+        y = stats.norm.rvs(size=5, scale=3)
 
         expected = stats.ansari(x, y)
 
@@ -761,8 +763,8 @@ class TestPermutationTest:
 
     def test_permutation_test_against_cvm(self):
         np.random.seed(0)
-        x = stats.norm.rvs(size=4, scale = 1)
-        y = stats.norm.rvs(size=5, scale = 3) + 3
+        x = stats.norm.rvs(size=4, scale=1)
+        y = stats.norm.rvs(size=5, loc=3, scale=3)
 
         expected = stats.cramervonmises_2samp(x, y, method='exact')
 
@@ -777,14 +779,51 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    def test_permutation_test_with_ties(self):
-        x = [1, 2, 3, 4]
-        y = [1.5, 2, 2.5]
+    tie_case_1 = {'x': [1, 2, 3, 4], 'y': [1.5, 2, 2.5],
+                  'expected_less': 0.2000000000,
+                  'expected_2sided': 0.3428571429,
+                  'expected_statistic': 7.5,
+                  'expected_avg': 9.142857, 'expected_std': 1.40698}
+    tie_case_2 = {'x': [111, 107, 100, 99, 102, 106, 109, 108],
+                  'y': [107, 108, 106, 98, 105, 103, 110, 105, 104],
+                  'expected_less': 0.1555738379,
+                  'expected_2sided': 0.2969971205,
+                  'expected_statistic': 32.5,
+                  'expected_avg': 38.117647, 'expected_std': 5.172124}
 
-        # results from SAS PROC NPAR1WAY
-        expected_statistic = 7.5
-        expected_less = 0.2
-        expected_2sided = 0.3429
+    @pytest.mark.slow()  # only the second case is slow, really
+    @pytest.mark.parametrize('case', (tie_case_1, tie_case_2))
+    def test_permutation_test_with_ties(self, case):
+        """
+        Results above from SAS PROC NPAR1WAY, e.g.
+
+        DATA myData;
+        INPUT X Y;
+        CARDS;
+        1 1
+        1 2
+        1 3
+        1 4
+        2 1.5
+        2 2
+        2 2.5
+        ods graphics on;
+        proc npar1way AB data=myData;
+            class X;
+            EXACT;
+        run;
+        ods graphics off;
+
+        """
+
+        x = case['x']
+        y = case['y']
+
+        expected_statistic = case['expected_statistic']
+        expected_less = case['expected_less']
+        expected_2sided = case['expected_2sided']
+        expected_avg = case['expected_avg']
+        expected_std = case['expected_std']
 
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
@@ -797,5 +836,35 @@ class TestPermutationTest:
             res2 = permutation_test(x, y, ansari_nd, alternative='two-sided')
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_less, rtol=self.rtol)
-        assert_allclose(res2.pvalue, expected_2sided, atol=1e-4)
+        assert_allclose(res.pvalue, expected_less, atol=1e-10)
+        assert_allclose(res2.pvalue, expected_2sided, atol=1e-10)
+        assert_allclose(res2.null_distribution.mean(), expected_avg, rtol=1e-6)
+        assert_allclose(res2.null_distribution.std(), expected_std, rtol=1e-6)
+
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('rng', (0, None, 'Generator',
+                                     np.random.RandomState(0)))
+    def test_randomized_test_against_exact(self, alternative, rng):
+
+        if rng == 'Generator':
+            try:
+                rng = np.random.default_rng(0)
+            except AttributeError:
+                pytest.mark.skip("Old numpy doesn't have Generator")
+
+        def statistic(x, y, axis):
+            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+
+        np.random.seed(0)
+        x = stats.norm.rvs(size=8)
+        y = stats.norm.rvs(size=9)
+
+        res = permutation_test(x, y, statistic, permutations=24000,
+                               alternative=alternative, random_state=rng)
+        res2 = permutation_test(x, y, statistic, alternative=alternative)
+
+        assert res.statistic == res2.statistic
+        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+
+        ks = stats.ks_2samp(res.null_distribution, res2.null_distribution)
+        assert ks.pvalue > 0.5  # null distributions are similar

@@ -1331,7 +1331,7 @@ def permutation_test(a, b, statistic, permutations=np.inf,
         as separate arguments and returns the resulting statistic.
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
-    permutations: int, optional (default: np.inf)
+    permutations: int, optional (default: ``np.inf``)
         Number of permutations used to estimate the p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
     alternative: str in {'two-sided', 'less', 'greater'} (default:'two-sided')
@@ -1352,6 +1352,7 @@ def permutation_test(a, b, statistic, permutations=np.inf,
         The axis of samples over which to calculate the statistic.
     random_state : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         Pseudorandom number generator state used to generate permutations.
 
         If `seed` is ``None``, the `numpy.random.RandomState`
@@ -1372,7 +1373,6 @@ def permutation_test(a, b, statistic, permutations=np.inf,
 
     Examples
     --------
-
     Suppose we wish to test whether two samples are drawn from the same
     distribution. Assume that the underlying distributions are unknown to us,
     and that before observing the data, we hypothesized that the mean of the
