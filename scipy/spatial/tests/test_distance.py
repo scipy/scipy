@@ -110,21 +110,6 @@ _ytdist = squareform(_tdist)
 eo = {}
 
 
-# if enabled, equivalent to pytest.raises otherwise is a no-op
-class RaisesIf:
-    def __init__(self, enabled, *args, **kwargs):
-        self.enabled = enabled
-        self.context = pytest.raises(*args, **kwargs)
-
-    def __enter__(self):
-        if self.enabled:
-            self.context.__enter__()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.enabled:
-            return self.context.__exit__(exc_type, exc_val, exc_tb)
-
-
 def load_testing_files():
     for fn in _filenames:
         name = fn.replace(".txt", "").replace("-ml", "")
@@ -623,19 +608,11 @@ class TestCdist:
                 # test for C-contiguous order
                 out3 = np.empty(
                     (2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
-                output_contiguous = _METRICS[metric].requires_contiguous_out
-                with RaisesIf(output_contiguous, ValueError,
-                              match="Output array must be C-contiguous"):
-                    Y3 = cdist(X1, X2, metric, out=out3, **kwargs)
-                    assert Y3 is out3
-                    _assert_within_tol(Y1, Y3, eps, verbose > 2)
-
                 out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
-                with RaisesIf(output_contiguous, ValueError,
-                              match="Output array must be C-contiguous"):
-                    Y4 = cdist(X1, X2, metric, out=out4, **kwargs)
-                    assert Y4 is out4
-                    _assert_within_tol(Y1, Y4, eps, verbose > 2)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out3, **kwargs)
+                assert_raises(ValueError,
+                              cdist, X1, X2, metric, out=out4, **kwargs)
 
                 # test for incorrect dtype
                 out5 = np.empty((out_r, out_c), dtype=np.int64)
@@ -1515,13 +1492,7 @@ class TestPdist:
                 assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
                 # test for (C-)contiguous output
                 out3 = np.empty(2 * out_size, dtype=np.double)[::2]
-                output_contiguous = _METRICS[metric].requires_contiguous_out
-                with RaisesIf(output_contiguous, ValueError,
-                              match="Output array must be C-contiguous"):
-                    Y_test3 = pdist(X, metric, out=out3, **kwargs)
-                    assert Y_test3 is out3
-                    _assert_within_tol(Y_right, Y_test3, eps, verbose > 2)
-
+                assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
                 # test for incorrect dtype
                 out5 = np.empty(out_size, dtype=np.int64)
                 assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
