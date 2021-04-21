@@ -1,5 +1,7 @@
 .. image:: doc/source/_static/scipyshiny_small.png
   :target: https://docs.scipy.org/doc/scipy/reference/
+  :width: 50
+  :align: left
 
 SciPy
 =====
@@ -53,7 +55,8 @@ upon by some of the world's leading scientists and engineers. If you need to
 manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
-For the installation instructions, see INSTALL.rst.txt_.
+For the installation instructions, see `our install
+guide <https://scipy.github.io/devdocs/getting_started.html#installation>`__.
 
 
 Call for Contributions
@@ -62,16 +65,14 @@ Call for Contributions
 The SciPy project welcomes your expertise and enthusiasm!
 
 Small improvements or fixes are always appreciated; issues labeled as "good
-first issue" may be a good starting point. If you are considering larger
-contributions to the source code, please contact us through the [mailing
-list](https://scipy.org/scipylib/mailing-lists.html) first.
-Have a look at our contributing guide CONTRIBUTING.rst_.
+first issue" may be a good starting point.Have a look at `our contributing
+guide <http://scipy.github.io/devdocs/dev/hacking.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
 - review pull requests
 - triage issues
 - develop tutorials, presentations, and other educational materials
-- maintain and improve [our website](https://github.com/scipy/scipy.org)
+- maintain and improve `our website <https://github.com/scipy/scipy.org>`__
 - develop graphic design for our brand assets and promotional materials
 - translate website content
 - help with outreach and onboard new contributors
@@ -83,13 +84,9 @@ comment on a relevant issue that is already open.
 
 Our preferred channels of communication are all public.
 
-If you are new to contributing to open source, [this
-guide](https://opensource.guide/how-to-contribute/) helps explain why, what,
+If you are new to contributing to open source, `this
+guide <https://opensource.guide/how-to-contribute/>`__ helps explain why, what,
 and how to successfully get involved.
-
-
-.. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
-.. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
