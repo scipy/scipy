@@ -111,3 +111,26 @@ h3 {
   margin-left: auto;
   margin-right: auto;
 }
+
+.custom-button {
+  background-color:#DCDCDC;
+  border: none;
+  color: #484848;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  max-width: 120px;
+  padding: 0.5rem 0rem;
+}
+
+.custom-button a {
+  color: #484848;
+}
+
+.custom-button p {
+  margin-top: 0;
+  margin-bottom: 0rem;
+  color: #484848;
+}
