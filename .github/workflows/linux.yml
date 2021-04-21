@@ -34,8 +34,9 @@ jobs:
         run: |      
           python3.7-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.7-dbg -m pip install --upgrade pip setuptools wheel
-          python3.7-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
+          python3.7-dbg -m pip install --upgrade cython pytest pytest-xdist pybind11
           python3.7-dbg -m pip install --upgrade mpmath gmpy2 pythran
+          python3.7-dbg -m pip install --upgrade --no-cache-dir numpy
           python3.7-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -74,8 +75,7 @@ jobs:
 
     - name: Install packages
       run: |
-        python3.9 -m pip install --user -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-        python3.9 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
+        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
         python3.9 -m pip install -r mypy_requirements.txt
 
     - name: Mypy
