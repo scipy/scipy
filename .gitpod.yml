@@ -1,30 +1,24 @@
-# On prebuild - running long standing processes:
-# build SciPy and the docs
-# command: every time a workspace is started, ensure the
-# conda env is activated
-# Note each task opens a new terminal see 
+# Rebuilding SciPy on init - rather than on prebuild: this ensures
+# that even forks do have a usable freshly built SciPy
+# Might delegate this later to prebuild with Q2 improvements on gitpod
 # https://www.gitpod.io/docs/config-start-tasks/#configuring-the-terminal
-# With this configuration the prebuild will happen on push to master 
 # -------------------------------------------------------------------------
 
-image:
-  file: ./tools/docker_dev/.gitpod.Dockerfile
+image: scipy/scipy-gitpod:latest
 tasks:
-  - name: Prebuild Scipy & docs
-    prebuild: |
-      conda activate scipydev
+  - name: Prepare development
+    init: |
+      mkdir -p .vscode
+      cp tools/docker_dev/settings.json .vscode/settings.json
       python setup.py build_ext --inplace
+      echo "🛠 \e[35m\e[1m Completed rebuilding SciPy!! 🛠 "
+      conda develop .
+      echo "📖 \e[35m\e[1m Building docs 📖 "
       git submodule update --init
       cd doc 
       make html-scipyorg
-      pip install sphinx-autobuild
-    command: |
-      conda activate scipydev
-      conda develop .
-  - name: Develop here
-    init: mkdir -p /workspace/scipy/.theia &&  cp /workspace/scipy/tools/docker_dev/settings.json /workspace/scipy/.theia/settings.json
-    command: conda activate scipydev
-
+      echo "✨ \e[35m\e[1m pre-build complete! You can close this terminal ✨ "
+  
 # --------------------------------------------------------
 # exposing ports for liveserve
 ports:
@@ -35,13 +29,19 @@ ports:
 # some useful extensions to have
 vscode:
   extensions:
-    - eamodio.gitlens@10.2.3:CRhSs/nkGIS3K5yCBlhVTg==
-    - njpwerner.autodocstring@0.5.4:TKRAH5+nBrBnq+ysTYA86Q==
-    - lextudio.restructuredtext@141.0.0:JobzqAU1ylF4bDdKqnrpOg==
-    - ritwickdey.liveserver@5.6.1:5Mhl1RgVVDcIym163x8r+w==
+    - eamodio.gitlens
+    - njpwerner.autodocstring
+    - lextudio.restructuredtext
+    - ritwickdey.liveserver
+    - ms-python.python
+    - yzhang.markdown-all-in-one
+    - bungcip.better-toml
+    - mhutchie.git-graph
 
 # --------------------------------------------------------
-# using prebuilds for the container 
+# using prebuilds for the container - note: atm this only
+# works for the SciPy repo
+# With this configuration the prebuild will happen on push to master 
 github:
   prebuilds:
     # enable for master branch

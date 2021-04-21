@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
-from numpy.testing import assert_allclose, assert_array_less
+from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
@@ -725,7 +725,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quat(np.random.normal(size=(1, 4)))
+    x = Rotation.from_quat(rnd.normal(size=(1, 4)))
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -753,7 +753,7 @@ def test_single_identity_magnitude():
 
 def test_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity(n)
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -764,7 +764,7 @@ def test_identity_invariance():
 
 def test_single_identity_invariance():
     n = 10
-    p = Rotation.random(n)
+    p = Rotation.random(n, random_state=0)
 
     result = p * Rotation.identity()
     assert_array_almost_equal(p.as_quat(), result.as_quat())
@@ -1008,7 +1008,7 @@ def test_align_vectors_no_rotation():
 def test_align_vectors_no_noise():
     rnd = np.random.RandomState(0)
     c = Rotation.from_quat(rnd.normal(size=4))
-    b = np.random.normal(size=(5, 3))
+    b = rnd.normal(size=(5, 3))
     a = c.apply(b)
 
     est, rmsd = Rotation.align_vectors(a, b)
@@ -1046,14 +1046,14 @@ def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
     rot = Rotation.from_euler('xyz', rnd.normal(size=3))
-    vectors = np.random.normal(size=(n_vectors, 3))
+    vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
     # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
-        np.random.normal(
+        rnd.normal(
             size=(n_vectors, 3),
             scale=sigma
         )
@@ -1108,11 +1108,12 @@ def test_align_vectors_invalid_input():
 
 
 def test_random_rotation_shape():
-    assert_equal(Rotation.random().as_quat().shape, (4,))
-    assert_equal(Rotation.random(None).as_quat().shape, (4,))
+    rnd = np.random.RandomState(0)
+    assert_equal(Rotation.random(random_state=rnd).as_quat().shape, (4,))
+    assert_equal(Rotation.random(None, random_state=rnd).as_quat().shape, (4,))
 
-    assert_equal(Rotation.random(1).as_quat().shape, (1, 4))
-    assert_equal(Rotation.random(5).as_quat().shape, (5, 4))
+    assert_equal(Rotation.random(1, random_state=rnd).as_quat().shape, (1, 4))
+    assert_equal(Rotation.random(5, random_state=rnd).as_quat().shape, (5, 4))
 
 
 def test_slerp():
@@ -1246,8 +1247,8 @@ def test_multiplication_stability():
 
 
 def test_rotation_within_numpy_array():
-    single = Rotation.random()
-    multiple = Rotation.random(2)
+    single = Rotation.random(random_state=0)
+    multiple = Rotation.random(2, random_state=1)
 
     array = np.array(single)
     assert_equal(array.shape, ())

@@ -3561,13 +3561,13 @@ class random_correlation_gen(multi_rv_generic):
     Examples
     --------
     >>> from scipy.stats import random_correlation
-    >>> np.random.seed(514)
-    >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5))
+    >>> rng = np.random.default_rng()
+    >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
     >>> x
-    array([[ 1.        , -0.20387311,  0.18366501, -0.04953711],
-           [-0.20387311,  1.        , -0.24351129,  0.06703474],
-           [ 0.18366501, -0.24351129,  1.        ,  0.38530195],
-           [-0.04953711,  0.06703474,  0.38530195,  1.        ]])
+    array([[ 1.        , -0.07198934, -0.20411041, -0.24385796],
+           [-0.07198934,  1.        ,  0.12968613, -0.29471382],
+           [-0.20411041,  0.12968613,  1.        ,  0.2828693 ],
+           [-0.24385796, -0.29471382,  0.2828693 ,  1.        ]])
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e

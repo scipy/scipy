@@ -40,10 +40,21 @@ pseudocode described in pages 1685-1686 of:
 Author: PM Larsen
 */
 
-#include <algorithm>
 #include <cmath>
-#include "rectangular_lsap.h"
 #include <vector>
+#include <numeric>
+#include <algorithm>
+#include "rectangular_lsap.h"
+
+
+template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
+{
+    std::vector<intptr_t> index(v.size());
+    std::iota(index.begin(), index.end(), 0);
+    std::sort(index.begin(), index.end(), [&v](intptr_t i, intptr_t j)
+              {return v[i] < v[j];});
+    return index;
+}
 
 static intptr_t
 augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
@@ -117,13 +128,31 @@ augmenting_path(intptr_t nc, std::vector<double>& cost, std::vector<double>& u,
 }
 
 static int
-solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
+solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* a, int64_t* b)
 {
+    // handle trivial inputs
+    if (nr == 0 || nc == 0) {
+        return 0;
+    }
+
+    std::vector<double> cost(input_cost, input_cost + nr * nc);
+
+    // tall rectangular cost matrix must be transposed
+    bool transpose = nc < nr;
+    if (transpose) {
+        for (intptr_t i = 0; i < nr; i++) {
+            for (intptr_t j = 0; j < nc; j++) {
+                cost[j * nr + i] = input_cost[i * nc + j];
+            }
+        }
+
+        std::swap(nr, nc);
+    }
+
     // build a non-negative cost matrix
-    std::vector<double> cost(nr * nc);
-    double minval = *std::min_element(input_cost, input_cost + nr * nc);
+    double minval = *std::min_element(cost.begin(), cost.end());
     for (intptr_t i = 0; i < nr * nc; i++) {
-        auto v = input_cost[i] - minval;
+        auto v = cost[i] - minval;
         cost[i] = v;
 
         // test for NaN and -inf entries
@@ -178,8 +207,19 @@ solve(intptr_t nr, intptr_t nc, double* input_cost, int64_t* output_col4row)
         }
     }
 
-    for (intptr_t i = 0; i < nr; i++) {
-        output_col4row[i] = col4row[i];
+    if (transpose) {
+        intptr_t i = 0;
+        for (auto v: argsort_iter(col4row)) {
+            a[i] = col4row[v];
+            b[i] = v;
+            i++;
+        }
+    }
+    else {
+        for (intptr_t i = 0; i < nr; i++) {
+            a[i] = i;
+            b[i] = col4row[i];
+        }
     }
 
     return 0;
@@ -191,9 +231,9 @@ extern "C" {
 
 int
 solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
-                                        int64_t* col4row)
+                                        int64_t* a, int64_t* b)
 {
-    return solve(nr, nc, input_cost, col4row);
+    return solve(nr, nc, input_cost, a, b);
 }
 
 #ifdef __cplusplus

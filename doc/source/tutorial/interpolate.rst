@@ -111,7 +111,8 @@ that do not form a regular grid.
 
     but we only know its values at 1000 data points:
 
-    >>> points = np.random.rand(1000, 2)
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((1000, 2))
     >>> values = func(points[:,0], points[:,1])
 
     This can be done with `griddata` -- below, we try out all of the
@@ -507,8 +508,9 @@ This example shows how to interpolate scattered 2-D data:
     >>> from matplotlib import cm
 
     >>> # 2-d tests - setup scattered data
-    >>> x = np.random.rand(100)*4.0-2.0
-    >>> y = np.random.rand(100)*4.0-2.0
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(100)*4.0-2.0
+    >>> y = rng.random(100)*4.0-2.0
     >>> z = x*np.exp(-x**2-y**2)
     >>> edges = np.linspace(-2.0, 2.0, 101)
     >>> centers = edges[:-1] + np.diff(edges[:2])[0] / 2.

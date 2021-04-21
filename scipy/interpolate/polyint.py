@@ -274,8 +274,9 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     For another example, given xi, yi, and a derivative ypi for each
     point, appropriate arrays can be constructed as:
 
+    >>> rng = np.random.default_rng()
     >>> xi = np.linspace(0, 1, 5)
-    >>> yi, ypi = np.random.rand(2, 5)
+    >>> yi, ypi = rng.random((2, 5))
     >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
     >>> KroghInterpolator(xi_k, yi_k)
 

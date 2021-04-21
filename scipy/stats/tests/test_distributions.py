@@ -415,6 +415,169 @@ class TestGenInvGauss:
         assert_equal(stats.geninvgauss.pdf(2e6, 50, 2), 0)
 
 
+class TestGenHyperbolic:
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_pdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # x <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::dghyp(
+        #    x = x, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            2.94895678275316e-13, 1.75746848647696e-10, 9.48149804073045e-08,
+            4.17862521692026e-05, 0.0103947630463822, 0.240864958986839,
+            0.162833527161649, 0.0374609592899472, 0.00634894847327781,
+            0.000941920705790324
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.pdf(x), vals_R, atol=0, rtol=1e-13)
+
+    def test_cdf_r(self):
+        # test against R package GeneralizedHyperbolic
+        # q <- seq(-10, 10, length.out = 10)
+        # GeneralizedHyperbolic::pghyp(
+        #   q = q, lambda = 2, alpha = 2, beta = 1, delta = 1.5, mu = 0.5
+        # )
+        vals_R = np.array([
+            1.01881590921421e-13, 6.13697274983578e-11, 3.37504977637992e-08,
+            1.55258698166181e-05, 0.00447005453832497, 0.228935323956347,
+            0.755759458895243, 0.953061062884484, 0.992598013917513,
+            0.998942646586662
+            ])
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(-10, 10, 10)
+
+        assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
+
+    def test_moments_r(self):
+        # test against R package GeneralizedHyperbolic
+        # sapply(1:4,
+        #    function(x) GeneralizedHyperbolic::ghypMom(
+        #        order = x, lambda = 2, alpha = 2,
+        #        beta = 1, delta = 1.5, mu = 0.5,
+        #        momType = 'raw')
+        # )
+
+        vals_R = [2.36848366948115, 8.4739346779246,
+                  37.8870502710066, 205.76608511485]
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        vals_us = [
+            stats.genhyperbolic(*args, loc=mu, scale=delta).moment(i)
+            for i in range(1, 5)
+            ]
+
+        assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
+
+    def test_rvs(self):
+        # Kolmogorov-Smirnov test to ensure alignemnt
+        # of analytical and empirical cdfs
+
+        lmbda, alpha, beta = 2, 2, 1
+        mu, delta = 0.5, 1.5
+        args = (lmbda, alpha*delta, beta*delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        _, p = stats.kstest(gh.rvs(size=1500, random_state=1234), gh.cdf)
+
+        assert_equal(p > 0.05, True)
+
+    def test_pdf_t(self):
+        # Test Against T-Student with 1 - 30 df
+        df = np.linspace(1, 30, 10)
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        alpha, beta = np.float_power(df, 2)*np.finfo(np.float32).eps, 0
+        mu, delta = 0, np.sqrt(df)
+        args = (-df/2, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.t.pdf(x, df),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_cauchy(self):
+        # Test Against Cauchy distribution
+
+        # in principle alpha should be zero in practice for big lmbdas
+        # alpha cannot be too small else pdf does not integrate
+        lmbda, alpha, beta = -0.5, np.finfo(np.float32).eps, 0
+        mu, delta = 0, 1
+        args = (lmbda, alpha, beta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.cauchy.pdf(x),
+            atol=0, rtol=1e-6
+            )
+
+    def test_pdf_laplace(self):
+        # Test Against Laplace with location param [-10, 10]
+        loc = np.linspace(-10, 10, 10)
+
+        # in principle delta should be zero in practice for big loc delta
+        # cannot be too small else pdf does not integrate
+        delta = np.finfo(np.float32).eps
+
+        lmbda, alpha, beta = 1, 1, 0
+        args = (lmbda, alpha*delta, beta*delta)
+
+        # ppf does not integrate for scale < 5e-4
+        # therefore using simple linspace to define the support
+        gh = stats.genhyperbolic(*args, loc=loc, scale=delta)
+        x = np.linspace(-20, 20, 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.laplace.pdf(x, loc=loc, scale=1),
+            atol=0, rtol=1e-11
+            )
+
+    def test_pdf_norminvgauss(self):
+        # Test Against NIG with varying alpha/beta/delta/mu
+
+        alpha, beta, delta, mu = (
+                np.linspace(1, 20, 10),
+                np.linspace(0, 19, 10)*np.float_power(-1, range(10)),
+                np.linspace(1, 1, 10),
+                np.linspace(-100, 100, 10)
+                )
+
+        lmbda = - 0.5
+        args = (lmbda, alpha * delta, beta * delta)
+
+        gh = stats.genhyperbolic(*args, loc=mu, scale=delta)
+        x = np.linspace(gh.ppf(0.01), gh.ppf(0.99), 50)[:, np.newaxis]
+
+        assert_allclose(
+            gh.pdf(x), stats.norminvgauss.pdf(
+                x, a=alpha, b=beta, loc=mu, scale=delta),
+            atol=0, rtol=1e-13
+            )
+
+
 class TestNormInvGauss:
     def setup_method(self):
         np.random.seed(1234)
@@ -3044,195 +3207,6 @@ class TestDocstring:
         # If name is not given, construction shouldn't fail.  See #1508.
         stats.rv_continuous()
         stats.rv_discrete()
-
-
-class TestEntropy:
-    def test_entropy_positive(self):
-        # See ticket #497
-        pk = [0.5, 0.2, 0.3]
-        qk = [0.1, 0.25, 0.65]
-        eself = stats.entropy(pk, pk)
-        edouble = stats.entropy(pk, qk)
-        assert_(0.0 == eself)
-        assert_(edouble >= 0.0)
-
-    def test_entropy_base(self):
-        pk = np.ones(16, float)
-        S = stats.entropy(pk, base=2.)
-        assert_(abs(S - 4.) < 1.e-5)
-
-        qk = np.ones(16, float)
-        qk[:8] = 2.
-        S = stats.entropy(pk, qk)
-        S2 = stats.entropy(pk, qk, base=2.)
-        assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
-
-    def test_entropy_zero(self):
-        # Test for PR-479
-        assert_almost_equal(stats.entropy([0, 1, 2]), 0.63651416829481278,
-                            decimal=12)
-
-    def test_entropy_2d(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.1933259, 0.18609809])
-
-    def test_entropy_2d_zero(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [np.inf, 0.18609809])
-
-        pk[0][0] = 0.0
-        assert_array_almost_equal(stats.entropy(pk, qk),
-                                  [0.17403988, 0.18609809])
-
-    def test_entropy_base_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=1),
-                                  [0.63651417, 0.63651417, 0.66156324])
-
-    def test_entropy_2d_nondefault_axis(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=1),
-                                  [0.231049, 0.231049, 0.127706])
-
-    def test_entropy_raises_value_error(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.1, 0.2], [0.6, 0.3]]
-        assert_raises(ValueError, stats.entropy, pk, qk)
-
-    def test_base_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        assert_array_almost_equal(stats.entropy(pk, axis=0),
-                                  stats.entropy(pk))
-
-    def test_entropy_with_axis_0_is_equal_to_default(self):
-        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
-        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
-        assert_array_almost_equal(stats.entropy(pk, qk, axis=0),
-                                  stats.entropy(pk, qk))
-
-    def test_base_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        assert_array_almost_equal(stats.entropy(pk.T).T,
-                                  stats.entropy(pk, axis=1))
-
-    def test_entropy_transposed(self):
-        pk = np.array([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
-        qk = np.array([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
-        assert_array_almost_equal(stats.entropy(pk.T, qk.T).T,
-                                  stats.entropy(pk, qk, axis=1))
-
-    def test_entropy_broadcasting(self):
-        np.random.rand(0)
-        x = np.random.rand(3)
-        y = np.random.rand(2, 1)
-        res = stats.entropy(x, y, axis=-1)
-        assert_equal(res[0], stats.entropy(x, y[0]))
-        assert_equal(res[1], stats.entropy(x, y[1]))
-
-    def test_entropy_shape_mismatch(self):
-        x = np.random.rand(10, 1, 12)
-        y = np.random.rand(11, 2)
-        message = "shape mismatch: objects cannot be broadcast"
-        with pytest.raises(ValueError, match=message):
-            stats.entropy(x, y)
-
-
-class TestDifferentialEntropy(object):
-    """
-    Results are compared with the R package vsgoftest.
-
-    # library(vsgoftest)
-    #
-    # samp <- c(<values>)
-    # entropy.estimate(x = samp, window = <window_length>)
-
-    """
-
-    def test_differential_entropy_base(self):
-
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal(100)
-
-        entropy = stats.differential_entropy(values)
-        assert_allclose(entropy, 1.342551, rtol=1e-6)
-
-        entropy = stats.differential_entropy(values, window_length=1)
-        assert_allclose(entropy, 1.122044, rtol=1e-6)
-
-        entropy = stats.differential_entropy(values, window_length=8)
-        assert_allclose(entropy, 1.349401, rtol=1e-6)
-
-    def test_differential_entropy_base_2d_nondefault_axis(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        entropy = stats.differential_entropy(values, axis=1)
-        assert_allclose(
-            entropy,
-            [1.342551, 1.341826, 1.293775],
-            rtol=1e-6,
-        )
-
-        entropy = stats.differential_entropy(values, axis=1, window_length=1)
-        assert_allclose(
-            entropy,
-            [1.122044, 1.102944, 1.129616],
-            rtol=1e-6,
-        )
-
-        entropy = stats.differential_entropy(values, axis=1, window_length=8)
-        assert_allclose(
-            entropy,
-            [1.349401, 1.338514, 1.292332],
-            rtol=1e-6,
-        )
-
-    def test_differential_entropy_raises_value_error(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        error_str = (
-            r"Window length \({window_length}\) must be positive and less "
-            r"than half the sample size \({sample_size}\)."
-        )
-
-        sample_size = values.shape[1]
-
-        for window_length in {-1, 0, sample_size//2, sample_size}:
-
-            formatted_error_str = error_str.format(
-                window_length=window_length,
-                sample_size=sample_size,
-            )
-
-            with assert_raises(ValueError, match=formatted_error_str):
-                stats.differential_entropy(
-                    values,
-                    window_length=window_length,
-                    axis=1,
-                )
-
-    def test_base_differential_entropy_with_axis_0_is_equal_to_default(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((100, 3))
-
-        entropy = stats.differential_entropy(values, axis=0)
-        default_entropy = stats.differential_entropy(values)
-        assert_allclose(entropy, default_entropy)
-
-    def test_base_differential_entropy_transposed(self):
-        random_state = np.random.RandomState(0)
-        values = random_state.standard_normal((3, 100))
-
-        assert_allclose(
-            stats.differential_entropy(values.T).T,
-            stats.differential_entropy(values, axis=1),
-        )
 
 
 def TestArgsreduce():
