@@ -1,7 +1,6 @@
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 import re
 import datetime
-from collections import OrderedDict
 
 import numpy as np
 
@@ -682,9 +681,7 @@ class MetaData:
     """
     def __init__(self, rel, attr):
         self.name = rel
-
-        # We need the dictionary to be ordered
-        self._attributes = OrderedDict((a.name, a) for a in attr)
+        self._attributes = {a.name: a for a in attr}
 
     def __repr__(self):
         msg = ""
