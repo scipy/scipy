@@ -2,12 +2,12 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
-from itertools import combinations
+from itertools import combinations, permutations
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._continuous_distns import chi2, norm
-from scipy.special import gamma, kv, gammaln, comb
+from scipy.special import gamma, kv, gammaln, comb, factorial
 from . import _wilcoxon_data
 from scipy.stats.stats import _broadcast_concatenate
 from scipy._lib._util import check_random_state
@@ -1241,16 +1241,22 @@ def _all_partitions(nx, ny):
 
 
 # TODO: combine with scipy.stats.stats _data_permutations when gh-13661 merges
-def _data_permutations(data, n, ma, random_state=None):
+def _data_permutations(data, n, random_state=None):
     """
-    Vectorized permutation of data, assumes `random_state` is already checked.
+    Vectorized permutation of data, unpaired samples.
     """
-    axis = data.ndim -1
 
-    # prepare permutation indices
-    m = data.shape[axis]
+    ma = data[0].shape[-1]  # number of observations in first sample
+    data = _broadcast_concatenate(data, axis=-1)
+    m = data.shape[-1]  # total number of observations
+
     # number of distinct combinations
     n_max = comb(m, ma)
+
+    # TODO: add paired version by permuting the first m indices
+    # these are not as efficient as they can be, but I'm not going
+    # to mess with them right now because they will be replaced with
+    # Pythran versions
 
     if n < n_max:
         indices = np.array([random_state.permutation(m) for i in range(n)]).T
@@ -1261,16 +1267,41 @@ def _data_permutations(data, n, ma, random_state=None):
 
     data = data[..., indices]        # generate permutations
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, n
+    x = data[..., :ma]
+    y = data[..., ma:]
+    return x, y, n
 
 
-def _permutation_test_iv(data, statistic, permutations=np.inf,
+def _data_permutations_paired(data, n, random_state=None):
+    """
+    Vectorized permutation of data, paired samples. Two-sample only for now.
+    """
+    a, b = data
+    ma = len(a)
+    n_max = factorial(ma)
+    if n < n_max:
+        indices = np.array([random_state.permutation(ma) for i in range(n)]).T
+    else:
+        n = n_max
+        indices = np.array([permutation for permutation
+                            in permutations(range(ma))]).T
+    x = a[..., indices]
+    x = np.moveaxis(x, -1, 0)
+    y = b
+    x, y = np.broadcast_arrays(x, y)
+    return x, y, n
+
+
+def _permutation_test_iv(data, statistic, paired=False, permutations=np.inf,
                          alternative="two-sided", axis=0, random_state=None):
     """Input validation for permutation_test"""
 
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
+
+    if paired not in {True, False}:
+        raise ValueError("`paired` must be `True` or `False`.")
 
     data_iv = []
     for sample in data:
@@ -1295,30 +1326,18 @@ def _permutation_test_iv(data, statistic, permutations=np.inf,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, permutations_int, alternative, axis_int,
-            random_state)
+    return (data_iv, statistic, paired, permutations_int, alternative,
+            axis_int, random_state)
 
 
-def permutation_test(a, b, statistic, permutations=np.inf,
+def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
                      alternative="two-sided", axis=0, random_state=None):
     """Performs a permutation test of a given statistic on provided data
 
-    Performs a two-sample permutation test under the null hypothesis that
-    the data are randomly sampled from the same distribution.
-
-    When ``1 < permutations < binom(n, k)``, where
-
-    * ``k`` is the number of observations in `a`,
-    * ``n`` is the total number of observations in `a` and `b`, and
-    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
-
-    the data are pooled (concatenated), randomly assigned to either group `a`
-    or `b`, and the statistic is calculated. This process is performed
-    repeatedly,`permutation` times, generating a distribution of the
-    statistic under the null hypothesis. The statistic of the observed
-    data is compared to this distribution to determine the p-value. When
-    ``permutations >= binom(n, k)``, an exact test is performed: the data are
-    partitioned between the groups in each distinct way exactly once.
+    Performs a two-sample permutation test. For unpaired statistics,
+    the null hypothesis is that the data are randomly sampled from the same
+    distribution. For paired statistics, the null hypothesis is that the data
+    are paired at random.
 
     Parameters
     ----------
@@ -1331,6 +1350,9 @@ def permutation_test(a, b, statistic, permutations=np.inf,
         as separate arguments and returns the resulting statistic.
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
+    paired : bool, optional (default: ``False``)
+        Whether the statistic treats corresponding elements of `a` and `b`
+        as paired.
     permutations: int, optional (default: ``np.inf``)
         Number of permutations used to estimate the p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
@@ -1370,6 +1392,33 @@ def permutation_test(a, b, statistic, permutations=np.inf,
         The p-value for the given alternative.
     null : array
         The values of the test statistic generated under the null hypothesis.
+
+    Notes
+    -----
+    *Unpaired statistics*
+    When ``1 < permutations < binom(n, k)``, where
+
+    * ``k`` is the number of observations in `a`,
+    * ``n`` is the total number of observations in `a` and `b`, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are pooled (concatenated), randomly assigned to either group `a`
+    or `b`, and the statistic is calculated. This process is performed
+    repeatedly, `permutation` times, generating a distribution of the
+    statistic under the null hypothesis. The statistic of the observed
+    data is compared to this distribution to determine the p-value. When
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
+
+    *Paired statistics*
+    When ``1 < permutations < factorial(k)``, where ``k`` is the number of
+    observations in `a`, the elements of `a` are randomly paired with elements
+    of `b`, and the statistic is calculated. This process is performed
+    repeatedly, `permutation` times, generating a distribution of the
+    statistic under the null hypothesis. The statistic of the observed
+    data is compared to this distribution to determine the p-value. When
+    ``permutations >= factorial(k)``, an exact test is performed: the data are
+    paired in each distinct way exactly once.
 
     Examples
     --------
@@ -1435,21 +1484,22 @@ def permutation_test(a, b, statistic, permutations=np.inf,
 
     """
     data = a, b
-    args = _permutation_test_iv(data, statistic, permutations, alternative,
-                                axis, random_state)
-    data, statistic, permutations,  = args[:3]
-    alternative, axis, random_state = args[3:]
+    args = _permutation_test_iv(data, statistic, paired, permutations,
+                                alternative, axis, random_state)
+    data, statistic, paired, permutations = args[:4]
+    alternative, axis, random_state = args[4:]
 
     observed = statistic(*data, axis=-1)
 
     # TODO: generalize to n-samples
-    nx = data[0].shape[-1]
-    mat = _broadcast_concatenate(data, axis=-1)
+    if paired:
+        tmp = _data_permutations_paired(data, permutations,
+                                        random_state=random_state)
+    else:
+        tmp = _data_permutations(data, permutations,
+                                 random_state=random_state)
+    x, y, permutations = tmp
 
-    mat_perm, permutations = _data_permutations(mat, permutations, nx,
-                                                random_state=random_state)
-    x = mat_perm[..., :nx]
-    y = mat_perm[..., nx:]
     null_distribution = statistic(x, y, axis=-1)
 
     def two_sided_comparison(null_distribution, observed):

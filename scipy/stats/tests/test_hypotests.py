@@ -709,6 +709,10 @@ class TestPermutationTest:
         with pytest.raises(ValueError, match=message):
             permutation_test([1, 2, 3], [1, 2, 3], stat, axis=1.5)
 
+        message = "`paired` must be `True` or `False`."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, paired=1.5)
+
         message = "`permutations` must be a positive integer."
         with pytest.raises(ValueError, match=message):
             permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=-1000)
@@ -779,6 +783,23 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
+    def test_permutation_test_against_kendalltau(self):
+        np.random.seed(0)
+        x = stats.norm.rvs(size=6)
+        y = x + stats.norm.rvs(size=6)
+
+        expected = stats.kendalltau(x, y, method='exact')
+
+        def statistic1d(x, y):
+            return stats.kendalltau(x, y, method='asymptotic').correlation
+
+        kendalltau_nd = _stat_wrapper(statistic1d)
+        # kendalltau has only one alternative, two-sided
+        res = permutation_test(x, y, kendalltau_nd, paired=True)
+
+        assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
     tie_case_1 = {'x': [1, 2, 3, 4], 'y': [1.5, 2, 2.5],
                   'expected_less': 0.2000000000,
                   'expected_2sided': 0.3428571429,
@@ -841,6 +862,28 @@ class TestPermutationTest:
         assert_allclose(res2.null_distribution.mean(), expected_avg, rtol=1e-6)
         assert_allclose(res2.null_distribution.std(), expected_std, rtol=1e-6)
 
+    @pytest.mark.parametrize('alternative, expected_pvalue',
+                             (('less', 0.9708333333333),
+                              ('greater', 0.05138888888889),
+                              ('two-sided', 0.1027777777778)))
+    def test_permutation_test_against_spearmanr_in_R(self, alternative,
+                                                     expected_pvalue):
+        np.random.seed(0)
+        x = stats.norm.rvs(size=6)
+        y = x + stats.norm.rvs(size=6)
+
+        expected_statistic = 0.7714285714285715
+
+        def statistic1d(x, y):
+            return stats.spearmanr(x, y).correlation
+
+        spearmanr_nd = _stat_wrapper(statistic1d)
+        res = permutation_test(x, y, spearmanr_nd, paired=True,
+                               alternative=alternative)
+
+        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected_pvalue, atol=1e-13)
+
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('rng', (0, None, 'Generator',
                                      np.random.RandomState(0)))
@@ -850,7 +893,7 @@ class TestPermutationTest:
             try:
                 rng = np.random.default_rng(0)
             except AttributeError:
-                pytest.mark.skip("Old numpy doesn't have Generator")
+                pytest.skip("Old numpy doesn't have Generator")
 
         def statistic(x, y, axis):
             return np.mean(x, axis=axis) - np.mean(y, axis=axis)
@@ -868,3 +911,30 @@ class TestPermutationTest:
 
         ks = stats.ks_2samp(res.null_distribution, res2.null_distribution)
         assert ks.pvalue > 0.5  # null distributions are similar
+
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('rng', (0, None, 'Generator',
+                                     np.random.RandomState(0)))
+    def test_randomized_test_against_spearmanr(self, alternative, rng):
+
+        if rng == 'Generator':
+            try:
+                rng = np.random.default_rng(0)
+            except AttributeError:
+                pytest.skip("Old numpy doesn't have Generator")
+
+        def statistic1d(x, y):
+            return stats.spearmanr(x, y).correlation
+
+        statistic = _stat_wrapper(statistic1d)
+
+        np.random.seed(0)
+        x = stats.norm.rvs(size=500)
+        y = stats.norm.rvs(size=500)
+
+        res = permutation_test(x, y, statistic, paired=True, permutations=5000,
+                               alternative=alternative, random_state=rng)
+        res2 = stats.spearmanr(x, y, alternative=alternative)
+
+        assert res.statistic == res2.correlation
+        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
