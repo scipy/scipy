@@ -69,6 +69,7 @@ first issue" may be a good starting point.Have a look at `our contributing
 guide <http://scipy.github.io/devdocs/dev/hacking.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
+
 - review pull requests
 - triage issues
 - develop tutorials, presentations, and other educational materials
