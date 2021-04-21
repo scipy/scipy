@@ -86,8 +86,10 @@ h3 {
 }
 
 .intro-card .card-img-top {
-  margin: 10px;
   height: 52px;
+  width: 52px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .intro-card .card-header {
