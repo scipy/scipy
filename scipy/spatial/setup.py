@@ -11,6 +11,7 @@ def pre_build_hook(build_ext, ext):
     set_cxx_flags_hook(build_ext, ext)
 
     if cc.compiler_type == 'msvc':
+        # Ignore "structured exceptions" which are non-standard MSVC extensions
         args.append('/EHsc')
     else:
         # Don't export library symbols
