@@ -25,7 +25,7 @@ science, and engineering.
     :column: col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex
 
     ---
-    :img-top: _static/index_getting_started.svg
+    :img-top: _static/index_getting_started.png
 
     Getting started
     ^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@ science, and engineering.
             :classes: btn-block btn-secondary stretched-link
 
     ---
-    :img-top: _static/index_user_guide.svg
+    :img-top: _static/index_user_guide.png
 
     User guide
     ^^^^^^^^^^
@@ -57,7 +57,7 @@ science, and engineering.
             :classes: btn-block btn-secondary stretched-link
 
     ---
-    :img-top: _static/index_api.svg
+    :img-top: _static/index_api.png
 
     API reference
     ^^^^^^^^^^^^^
@@ -74,7 +74,7 @@ science, and engineering.
             :classes: btn-block btn-secondary stretched-link
 
     ---
-    :img-top: _static/index_contribute.svg
+    :img-top: _static/index_contribute.png
 
     Developer guide
     ^^^^^^^^^^^^^^^
