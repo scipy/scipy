@@ -1354,7 +1354,7 @@ def permutation_test(a, b, statistic, permutations=np.inf,
             `numpy.random.RandomState`}, optional
         Pseudorandom number generator state used to generate permutations.
 
-        If `seed` is ``None`, the `numpy.random.RandomState`
+        If `seed` is ``None``, the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an ``int``, a new ``RandomState`` instance is used,
         seeded with `seed`.
@@ -1394,8 +1394,8 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> rng = np.random.default_rng()
     >>> x = norm.rvs(size=5, random_state=rng)
     >>> y = norm.rvs(size=6, loc = 3, random_state=rng)
-    >>> statistic(x, y, axis)
-    -3.0220502098867925
+    >>> statistic(x, y, 0)
+    -3.5411688580987266
 
     Indeed, the test statistic is negative, suggesting that the true mean of
     the distribution underlying ``x`` is less than that of the distribution
@@ -1406,9 +1406,9 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> from scipy.stats import permutation_test
     >>> res = permutation_test(x, y, statistic, alternative='less')
     >>> print(res.statistic)
-    -3.0220502098867925
+    -3.5411688580987266
     >>> print(res.pvalue)
-    0.0021645021645021645
+    0.004329004329004329
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is 0.4329%. This is less than our
@@ -1424,9 +1424,9 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> res = permutation_test(x, y, statistic, permutations=10000,
     ...                        alternative='less', random_state=rng)
     >>> print(res.statistic)
-    -0.37924771077875763
+    -0.5230459671240913
     >>> print(res.pvalue)
-    0.0012
+    0.0002
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
