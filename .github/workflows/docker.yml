@@ -55,4 +55,5 @@ jobs:
           tags: |
             scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-dev:latest
       - name: Image digest 
+        # Return details of the image build: sha and shell
         run: echo ${{ steps.docker_build.outputs.digest }}
