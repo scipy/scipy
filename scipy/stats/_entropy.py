@@ -212,7 +212,7 @@ def differential_entropy(
     >>> method_errors = {'vasicek': [], 'van es': [], 'ebrahimi': []}
     >>> for method in method_errors:
     ...     for n in ns:
-    ...        rvs = stats.expon.rvs(size=(reps, n), random_state=0)
+    ...        rvs = stats.expon.rvs(size=(reps, n), random_state=rng)
     ...        res = stats.differential_entropy(rvs, method=method, axis=-1)
     ...        error = rmse(res, expected)
     ...        method_errors[method].append(error)
