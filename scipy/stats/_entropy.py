@@ -99,10 +99,10 @@ def differential_entropy(
     Parameters
     ----------
     values : sequence
-        Samples of the (continuous) distribution.
+        Sample from a continuous distribution.
     window_length : int, optional
         Window length for computing Vasicek estimate. Must be an integer
-        between 1 and half of the sample size. If ``None`` (the default) it
+        between 1 and half of the sample size. If ``None`` (the default), it
         uses the heuristic value
 
         .. math::
@@ -115,11 +115,9 @@ def differential_entropy(
     axis : int, optional
         The axis along which the differential entropy is calculated.
         Default is 0.
-    method : str in {'vasicek', 'van es', 'ebrahimi', 'correa', 'auto'},
-    optional
+    method : {'vasicek', 'van es', 'ebrahimi', 'correa', 'auto'}, optional
         The method used to estimate the differential entropy from the sample.
-        See Notes for more information.
-
+        Default is ``'auto'``.  See Notes for more information.
 
     Returns
     -------
@@ -129,21 +127,20 @@ def differential_entropy(
     Notes
     -----
     This function will converge to the true differential entropy in the limit
-    when
 
     .. math::
         n \to \infty, \quad m \to \infty, \quad \frac{m}{n} \to 0
 
-    The optimal choice of ``window_length`` for a given sample size, depends on
-    the (unknown) distribution. In general, the smoother the density of the
-    distribution, the larger is such optimal value of ``window_length`` [1]_.
+    The optimal choice of ``window_length`` for a given sample size depends on
+    the (unknown) distribution. Typically, the smoother the density of the
+    distribution, the larger the optimal value of ``window_length`` [1]_.
 
     The following options are available for the `method` parameter.
 
     * ``'vasicek'`` uses the estimator presented in [1]_. This is
       one of the first and most influential estimators of differential entropy.
-    * ``'van es'`` uses the bias-corrected estimator presented in [3]_, which is
-      not only consistent but, under some conditions, asymptotically normal.
+    * ``'van es'`` uses the bias-corrected estimator presented in [3]_, which
+      is not only consistent but, under some conditions, asymptotically normal.
     * ``'ebrahimi'`` uses an estimator presented in [4]_, which was shown
       in simulation to have smaller bias and mean squared error than
       the Vasicek estimator.
