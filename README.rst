@@ -46,8 +46,7 @@ ODE solvers, and more.
 - **Report a security vulnerability:** https://tidelift.com/docs/security
 - **Citing in your work:** https://www.scipy.org/citing.html
 
-SciPy depends on NumPy, which provides convenient and fast
-N-dimensional array manipulation. SciPy is built to work with
+SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines,
 such as routines for numerical integration and optimization. Together, they
 run on all popular operating systems, are quick to install, and are free of
@@ -63,9 +62,7 @@ guide <https://scipy.github.io/devdocs/getting_started.html#installation>`__.
 Call for Contributions
 ----------------------
 
-The SciPy project welcomes your expertise and enthusiasm!
-
-Small improvements or fixes are always appreciated; issues labeled as "good
+We appreciate and welcome contributions. Small improvements or fixes are always appreciated; issues labeled as "good
 first issue" may be a good starting point. Have a look at `our contributing
 guide <http://scipy.github.io/devdocs/dev/hacking.html>`__.
 
@@ -76,19 +73,16 @@ Writing code isn’t the only way to contribute to SciPy. You can also:
 - develop tutorials, presentations, and other educational materials
 - maintain and improve `our website <https://github.com/scipy/scipy.org>`__
 - develop graphic design for our brand assets and promotional materials
-- translate website content
 - help with outreach and onboard new contributors
 - write grant proposals and help with other fundraising efforts
 
 If you’re unsure where to start or how your skills fit in, reach out! You can
-ask on the mailing list or here, on GitHub, by opening a new issue or leaving a
+ask on the mailing list or here, on GitHub, by leaving a
 comment on a relevant issue that is already open.
-
-Our preferred channels of communication are all public.
 
 If you are new to contributing to open source, `this
 guide <https://opensource.guide/how-to-contribute/>`__ helps explain why, what,
-and how to successfully get involved.
+and how to get involved.
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
