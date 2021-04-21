@@ -1,10 +1,11 @@
-.. image:: doc/source/_static/scipyshiny_small.png
-  :target: https://docs.scipy.org/doc/scipy/reference/
-  :width: 50
-  :align: left
+.. raw:: html
 
-SciPy
-=====
+    <p>
+      <h1>
+        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/scipyshiny_small.png" height="50" height="50" alt="SciPy logo"/></a>
+        SciPy
+      </h1>
+    </p>
 
 .. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
   :target: https://circleci.com/gh/scipy/scipy
@@ -65,7 +66,7 @@ Call for Contributions
 The SciPy project welcomes your expertise and enthusiasm!
 
 Small improvements or fixes are always appreciated; issues labeled as "good
-first issue" may be a good starting point.Have a look at `our contributing
+first issue" may be a good starting point. Have a look at `our contributing
 guide <http://scipy.github.io/devdocs/dev/hacking.html>`__.
 
 Writing code isn’t the only way to contribute to SciPy. You can also:
