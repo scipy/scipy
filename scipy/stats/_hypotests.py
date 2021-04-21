@@ -20,6 +20,22 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+def _stat_wrapper(statistic):
+    """Vectorize a 2-sample statistic; see gh-13312 for more general wrapper"""
+    def stat_nd(x, y, axis=0):
+        x = np.moveaxis(x, axis, -1)
+        y = np.moveaxis(y, axis, -1)
+        nx = x.shape[-1]
+        z = _broadcast_concatenate((x, y), -1)
+
+        def stat_1d(z):
+            x, y = z[:nx], z[nx:]
+            return statistic(x, y)
+
+        return np.apply_along_axis(stat_1d, axis, z)[()]
+    return stat_nd
+
+
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -1292,8 +1308,9 @@ def _data_permutations_paired(data, n, random_state=None):
     return x, y, n
 
 
-def _permutation_test_iv(data, statistic, paired=False, permutations=np.inf,
-                         alternative="two-sided", axis=0, random_state=None):
+def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
+                         permutations=np.inf, alternative="two-sided", axis=0,
+                         random_state=None):
     """Input validation for permutation_test"""
 
     axis_int = int(axis)
@@ -1302,6 +1319,9 @@ def _permutation_test_iv(data, statistic, paired=False, permutations=np.inf,
 
     if paired not in {True, False}:
         raise ValueError("`paired` must be `True` or `False`.")
+
+    if vectorized not in {True, False}:
+        raise ValueError("`vectorized` must be `True` or `False`.")
 
     data_iv = []
     for sample in data:
@@ -1326,12 +1346,13 @@ def _permutation_test_iv(data, statistic, paired=False, permutations=np.inf,
 
     random_state = check_random_state(random_state)
 
-    return (data_iv, statistic, paired, permutations_int, alternative,
-            axis_int, random_state)
+    return (data_iv, statistic, paired, vectorized, permutations_int,
+            alternative, axis_int, random_state)
 
 
-def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
-                     alternative="two-sided", axis=0, random_state=None):
+def permutation_test(a, b, statistic, paired=False, vectorized=False,
+                     permutations=np.inf, alternative="two-sided", axis=0,
+                     random_state=None):
     """Performs a permutation test of a given statistic on provided data
 
     Performs a two-sample permutation test. For unpaired statistics,
@@ -1348,11 +1369,17 @@ def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
         Statistic for which the p-value of the hypothesis test is to be
         calculated. `statistic` must be a callable that accepts `a` and `b`
         as separate arguments and returns the resulting statistic.
-        `statistic` must also accept a keyword argument `axis` and be
-        vectorized to compute the statistic along the provided `axis`.
+        If `vectorized` is set ``True``, `statistic` must also accept a keyword
+        argument `axis` and be vectorized to compute the statistic along the
+        provided `axis` of ND arrays `a` and `b`.
     paired : bool, optional (default: ``False``)
         Whether the statistic treats corresponding elements of `a` and `b`
         as paired.
+    vectorized : bool, optional (default: ``False``)
+        By default, `statistic` is assumed to calculate the statistic only for
+        1D arrays `a` and `b. If `vectorized` is set ``True``, `statistic` must
+        also accept a keyword argument `axis` and be vectorized to compute the
+        statistic along the provided `axis` of ND arrays `a` and `b`.
     permutations: int, optional (default: ``np.inf``)
         Number of permutations used to estimate the p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
@@ -1396,6 +1423,7 @@ def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
     Notes
     -----
     *Unpaired statistics*
+
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
@@ -1411,6 +1439,7 @@ def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
     partitioned between the groups in each distinct way exactly once.
 
     *Paired statistics*
+
     When ``1 < permutations < factorial(k)``, where ``k`` is the number of
     observations in `a`, the elements of `a` are randomly paired with elements
     of `b`, and the statistic is calculated. This process is performed
@@ -1484,12 +1513,17 @@ def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
 
     """
     data = a, b
-    args = _permutation_test_iv(data, statistic, paired, permutations,
-                                alternative, axis, random_state)
-    data, statistic, paired, permutations = args[:4]
-    alternative, axis, random_state = args[4:]
+    args = _permutation_test_iv(data, statistic, paired, vectorized,
+                                permutations, alternative, axis, random_state)
+    data, statistic, paired, vectorized = args[:4]
+    permutations, alternative, axis, random_state = args[4:]
 
-    observed = statistic(*data, axis=-1)
+    if not vectorized:
+        statistic_vectorized = _stat_wrapper(lambda x, y: statistic(x, y))
+    else:
+        statistic_vectorized = statistic
+
+    observed = statistic_vectorized(*data, axis=-1)
 
     # TODO: generalize to n-samples
     if paired:
@@ -1500,7 +1534,7 @@ def permutation_test(a, b, statistic, paired=False, permutations=np.inf,
                                  random_state=random_state)
     x, y, permutations = tmp
 
-    null_distribution = statistic(x, y, axis=-1)
+    null_distribution = statistic_vectorized(x, y, axis=-1)
 
     def two_sided_comparison(null_distribution, observed):
         # TODO: other definitions for asymmetric null distribution

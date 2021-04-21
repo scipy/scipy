@@ -648,22 +648,6 @@ class TestCvm_2samp:
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
 
 
-def _stat_wrapper(statistic):
-    """Vectorize a 2-sample statistic; see gh-13312"""
-    def stat_nd(x, y, axis):
-        x = np.moveaxis(x, axis, -1)
-        y = np.moveaxis(y, axis, -1)
-        nx = x.shape[-1]
-        z = _broadcast_concatenate((x, y), -1)
-
-        def stat_1d(z):
-            x, y = z[:nx], z[nx:]
-            return statistic(x, y)
-
-        return np.apply_along_axis(stat_1d, axis, z)
-    return stat_nd
-
-
 class TestPermutationTest:
 
     rtol = 1e-14
@@ -689,7 +673,8 @@ class TestPermutationTest:
         def statistic(x, y, axis):
             return stats.ttest_ind(x, y, axis=axis).statistic
 
-        res2 = permutation_test(x, y, statistic, permutations=permutations,
+        res2 = permutation_test(x, y, statistic, vectorized=True,
+                                permutations=permutations,
                                 alternative=alternative, axis=axis,
                                 random_state=0)
 
@@ -712,6 +697,10 @@ class TestPermutationTest:
         message = "`paired` must be `True` or `False`."
         with pytest.raises(ValueError, match=message):
             permutation_test([1, 2, 3], [1, 2, 3], stat, paired=1.5)
+
+        message = "`vectorized` must be `True` or `False`."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, vectorized=1.5)
 
         message = "`permutations` must be a positive integer."
         with pytest.raises(ValueError, match=message):
@@ -742,8 +731,7 @@ class TestPermutationTest:
             return stats.ks_2samp(x, y, mode='asymp',
                                   alternative=alternative).statistic
 
-        ks_2samp_nd = _stat_wrapper(statistic1d)
-        res = permutation_test(x, y, ks_2samp_nd, alternative=alternative)
+        res = permutation_test(x, y, statistic1d, alternative=alternative)
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -758,9 +746,8 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
 
-        ansari_nd = _stat_wrapper(statistic1d)
         # ansari's two-sided is the twice the smaller of the two p-values
-        res = permutation_test(x, y, ansari_nd, alternative='greater')
+        res = permutation_test(x, y, statistic1d, alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue*2, expected.pvalue, rtol=self.rtol)
@@ -776,9 +763,8 @@ class TestPermutationTest:
             return stats.cramervonmises_2samp(x, y,
                                               method='asymptotic').statistic
 
-        cvm_2samp_nd = _stat_wrapper(statistic1d)
         # cramervonmises_2samp has only one alternative, greater
-        res = permutation_test(x, y, cvm_2samp_nd, alternative='greater')
+        res = permutation_test(x, y, statistic1d, alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -793,9 +779,8 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.kendalltau(x, y, method='asymptotic').correlation
 
-        kendalltau_nd = _stat_wrapper(statistic1d)
         # kendalltau has only one alternative, two-sided
-        res = permutation_test(x, y, kendalltau_nd, paired=True)
+        res = permutation_test(x, y, statistic1d, paired=True)
 
         assert_allclose(res.statistic, expected.correlation, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -849,12 +834,10 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
 
-        ansari_nd = _stat_wrapper(statistic1d)
-
         with np.testing.suppress_warnings() as sup:
             sup.filter(UserWarning, "Ties preclude use of exact statistic")
-            res = permutation_test(x, y, ansari_nd, alternative='less')
-            res2 = permutation_test(x, y, ansari_nd, alternative='two-sided')
+            res = permutation_test(x, y, statistic1d, alternative='less')
+            res2 = permutation_test(x, y, statistic1d, alternative='two-sided')
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected_less, atol=1e-10)
@@ -877,8 +860,7 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.spearmanr(x, y).correlation
 
-        spearmanr_nd = _stat_wrapper(statistic1d)
-        res = permutation_test(x, y, spearmanr_nd, paired=True,
+        res = permutation_test(x, y, statistic1d, paired=True,
                                alternative=alternative)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
@@ -902,9 +884,11 @@ class TestPermutationTest:
         x = stats.norm.rvs(size=8)
         y = stats.norm.rvs(size=9)
 
-        res = permutation_test(x, y, statistic, permutations=24000,
-                               alternative=alternative, random_state=rng)
-        res2 = permutation_test(x, y, statistic, alternative=alternative)
+        res = permutation_test(x, y, statistic, vectorized=True,
+                               permutations=24000, alternative=alternative,
+                               random_state=rng)
+        res2 = permutation_test(x, y, statistic, vectorized=True,
+                                alternative=alternative)
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
@@ -923,10 +907,8 @@ class TestPermutationTest:
             except AttributeError:
                 pytest.skip("Old numpy doesn't have Generator")
 
-        def statistic1d(x, y):
+        def statistic(x, y):
             return stats.spearmanr(x, y).correlation
-
-        statistic = _stat_wrapper(statistic1d)
 
         np.random.seed(0)
         x = stats.norm.rvs(size=500)
