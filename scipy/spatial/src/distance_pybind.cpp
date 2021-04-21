@@ -343,13 +343,13 @@ py::array cdist_weighted(
 }
 
 py::dtype npy_promote_types(const py::dtype& type1, const py::dtype& type2) {
-    // TODO: Casts away const, but think NumPy API should allow const here?
-    PyArray_Descr* descr = PyArray_PromoteTypes((PyArray_Descr*)type1.ptr(),
-                                                (PyArray_Descr*)type2.ptr());
+    PyArray_Descr* descr = PyArray_PromoteTypes(
+        reinterpret_cast<PyArray_Descr*>(type1.ptr()),
+        reinterpret_cast<PyArray_Descr*>(type2.ptr()));
     if (descr == nullptr) {
         throw py::error_already_set();
     }
-    return py::reinterpret_borrow<py::dtype>((PyObject*) descr);
+    return py::reinterpret_steal<py::dtype>(reinterpret_cast<PyObject*>(descr));
 }
 
 template <typename Container>
