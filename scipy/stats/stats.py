@@ -5908,7 +5908,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     difference being the use of winsorized means in calculation of the variance
     and the trimmed sample size in calculation of the statistic. Trimming is
     reccomended if the underlying distribution is long-tailed or contaminated
-    with outliers. [4]_
+    with outliers [4]_.
 
     References
     ----------
@@ -5979,10 +5979,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
     >>> b = (1.1, 2.9, 4.2)
 
-    Use the `trim` keyword to trim the input samples. Using 20% trimming,
-    `trim=.2`, the test will trim 1 element off of each tail for sample `a`,
-    which is of length 7, and no elements off of sample `b`, because it is
-    of length 3.
+    Use the `trim` keyword to perform a trimmed (Yuen) t-test. For example,
+    using 20% trimming, ``trim=.2``, the test will reduce the impact of one
+    (``np.floor(trim*len(a))``) element from each tail of sample `a`. It will
+    have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
 
     >>> stats.ttest_ind(a, b, trim=.2)
     Ttest_indResult(statistic=3.4463884028073513,
