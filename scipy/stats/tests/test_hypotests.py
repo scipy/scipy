@@ -13,6 +13,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
+from scipy.stats.stats import _broadcast_concatenate
 
 
 class TestEppsSingleton:
@@ -647,7 +648,24 @@ class TestCvm_2samp:
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
 
 
+def _stat_wrapper(statistic):
+    """Vectorize a 2-sample statistic; see gh-13312"""
+    def stat_nd(x, y, axis):
+        x = np.moveaxis(x, axis, -1)
+        y = np.moveaxis(y, axis, -1)
+        nx = x.shape[-1]
+        z = _broadcast_concatenate((x, y), -1)
+        def stat_1d(z):
+            x, y = z[:nx], z[nx:]
+            return statistic(x, y)
+        return np.apply_along_axis(stat_1d, axis, z)
+    return stat_nd
+
+
 class TestPermutationTest:
+
+    rtol = 1e-14
+
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('permutations', (30, 1e9))
     @pytest.mark.parametrize('axis', (0, 1, 2))
@@ -673,35 +691,111 @@ class TestPermutationTest:
                                 alternative=alternative, axis=axis,
                                 random_state=0)
 
-        assert_allclose(res1.statistic, res2.statistic)
-        assert_allclose(res1.pvalue, res2.pvalue)
+        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
+        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
 
-def test_permutation_test_iv():
+    def test_permutation_test_iv(self):
 
-    def stat(x, y, axis):
-        return stats.ttest_ind(x, y, axis).statistic
+        def stat(x, y, axis):
+            return stats.ttest_ind(x, y, axis).statistic
 
-    message = "each sample in `data` must contain two or more observations..."
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1], stat)
+        message = "each sample in `data` must contain two or more observations..."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1], stat)
 
-    message = "`axis` must be an integer."
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1, 2, 3], stat, axis=1.5)
+        message = "`axis` must be an integer."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, axis=1.5)
 
-    message = "`permutations` must be a positive integer."
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=-1000)
+        message = "`permutations` must be a positive integer."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=-1000)
 
-    message = "`permutations` must be a positive integer."
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=1000.5)
+        message = "`permutations` must be a positive integer."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, permutations=1000.5)
 
-    message = "`alternative` must be in..."
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1, 2, 3], stat, alternative='ekki')
+        message = "`alternative` must be in..."
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, alternative='ekki')
 
-    message = "'herring' cannot be used to seed a"
-    with pytest.raises(ValueError, match=message):
-        permutation_test([1, 2, 3], [1, 2, 3], stat, random_state='herring')
+        message = "'herring' cannot be used to seed a"
+        with pytest.raises(ValueError, match=message):
+            permutation_test([1, 2, 3], [1, 2, 3], stat, random_state='herring')
+
+    def test_permutation_test_against_kstest(self):
+        np.random.seed(0)
+        x = stats.norm.rvs(size=4, scale = 1)
+        y = stats.norm.rvs(size=5, scale = 3) + 3
+
+        alternative = 'greater'
+        expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
+
+        def statistic1d(x, y):
+            return stats.ks_2samp(x, y, mode='asymp',
+                                  alternative=alternative).statistic
+
+        ks_2samp_nd = _stat_wrapper(statistic1d)
+        res = permutation_test(x, y, ks_2samp_nd, alternative=alternative)
+
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
+    def test_permutation_test_against_ansari(self):
+        np.random.seed(0)
+        x = stats.norm.rvs(size=4, scale = 1)
+        y = stats.norm.rvs(size=5, scale = 3)
+
+        expected = stats.ansari(x, y)
+
+        def statistic1d(x, y):
+            return stats.ansari(x, y).statistic
+
+        ansari_nd = _stat_wrapper(statistic1d)
+        # ansari's two-sided is the twice the smaller of the two p-values
+        res = permutation_test(x, y, ansari_nd, alternative='greater')
+
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue*2, expected.pvalue, rtol=self.rtol)
+
+    def test_permutation_test_against_cvm(self):
+        np.random.seed(0)
+        x = stats.norm.rvs(size=4, scale = 1)
+        y = stats.norm.rvs(size=5, scale = 3) + 3
+
+        expected = stats.cramervonmises_2samp(x, y, method='exact')
+
+        def statistic1d(x, y):
+            return stats.cramervonmises_2samp(x, y,
+                                              method='asymptotic').statistic
+
+        cvm_2samp_nd = _stat_wrapper(statistic1d)
+        # cramervonmises_2samp has only one alternative, greater
+        res = permutation_test(x, y, cvm_2samp_nd, alternative='greater')
+
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
+    def test_permutation_test_with_ties(self):
+        x = [1, 2, 3, 4]
+        y = [1.5, 2, 2.5]
+
+        # results from SAS PROC NPAR1WAY
+        expected_statistic = 7.5
+        expected_less = 0.2
+        expected_2sided = 0.3429
+
+        def statistic1d(x, y):
+            return stats.ansari(x, y).statistic
+
+        ansari_nd = _stat_wrapper(statistic1d)
+
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic")
+            res = permutation_test(x, y, ansari_nd, alternative='less')
+            res2 = permutation_test(x, y, ansari_nd, alternative='two-sided')
+
+        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected_less, rtol=self.rtol)
+        assert_allclose(res2.pvalue, expected_2sided, atol=1e-4)

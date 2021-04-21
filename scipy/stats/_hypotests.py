@@ -1395,7 +1395,7 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> x = norm.rvs(size=5, random_state=rng)
     >>> y = norm.rvs(size=6, loc = 3, random_state=rng)
     >>> statistic(x, y, axis)
-    -1.5951996795511183
+    -3.0220502098867925
 
     Indeed, the test statistic is negative, suggesting that the true mean of
     the distribution underlying ``x`` is less than that of the distribution
@@ -1406,9 +1406,9 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> from scipy.stats import permutation_test
     >>> res = permutation_test(x, y, statistic, alternative='less')
     >>> print(res.statistic)
-    -1.5951996795511183
+    -3.0220502098867925
     >>> print(res.pvalue)
-    0.004329004329004329
+    0.0021645021645021645
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is 0.4329%. This is less than our
@@ -1424,9 +1424,9 @@ def permutation_test(a, b, statistic, permutations=np.inf,
     >>> res = permutation_test(x, y, statistic, permutations=10000,
     ...                        alternative='less', random_state=rng)
     >>> print(res.statistic)
-    -0.27108159496595335
+    -0.37924771077875763
     >>> print(res.pvalue)
-    0.0225
+    0.0012
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
