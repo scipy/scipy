@@ -2281,34 +2281,36 @@ def ansari(x, y, alternative='two-sided'):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=541.0, pvalue=0.9762531658722652)
+    AnsariResult(statistic=541.0, pvalue=0.9762532927399098)
 
-    With a p-value of 0.355, we cannot conclude that there is a
+    With a p-value close to 1, we cannot conclude that there is a
     significant difference in the scales (as expected).
 
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=425.0, pvalue=0.0003087020184312628)
+    AnsariResult(statistic=425.0, pvalue=0.0003087020407974518)
 
-    With a p-value of 0.0003087, the test provides strong evidence that
+    The probability of observing such an extreme value of the statistic
+    under the null hypothesis of equal scales is only 0.03087%. We take this
+    as evidence against the null hypothesis in favor of the alternative:
     the scales of the distributions from which the samples were drawn
     are not equal.
 
-    We can use the `alternative` parameter to perform one-tailed test.
+    We can use the `alternative` parameter to perform a one-tailed test.
     In the above example, the scale of `x1` is greater than `x3` and so
     the ratio of scales of `x1` and `x3` is greater than 1. This means
     that the p-value when ``alternative='greater'`` should be near 0 and
     hence we should be able to reject the null hypothesis:
 
     >>> ansari(x1, x3, alternative='greater')
-    AnsariResult(statistic=452.0, pvalue=0.003140139559011614)
+    AnsariResult(statistic=452.0, pvalue=0.0001543510203987259)
 
     As we can see, the p-value is indeed quite low. Use of
     ``alternative='less'`` should thus yield a large p-value:
 
     >>> ansari(x1, x3, alternative='less')
-    AnsariResult(statistic=452.0, pvalue=0.9971491079190463)
+    AnsariResult(statistic=452.0, pvalue=0.9998643258449039)
 
     """
     if alternative not in {'two-sided', 'greater', 'less'}:
