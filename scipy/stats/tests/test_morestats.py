@@ -969,6 +969,75 @@ class TestMood:
                                   (-1.3830857299399906, 0.16663858066771478),
                                   11)
 
+    def test_ties_against_SAS(self):
+        """
+        Code used to generate SAS output:
+        DATA myData;
+        INPUT X Y;
+        CARDS;
+
+        1 111
+        1 107
+        1 100
+        1 99
+        1 102
+        1 106
+        1 109
+        1 108
+        1 104
+        1 99
+        1 101
+        1 96
+        1 97
+        1 102
+        1 107
+        1 113
+        1 116
+        1 113
+        1 110
+        1 98
+        2 107
+        2 108
+        2 106
+        2 98
+        2 105
+        2 103
+        2 110
+        2 105
+        2 104
+        2 100
+        2 96
+        2 108
+        2 103
+        2 104
+        2 114
+        2 114
+        2 113
+        2 108
+        2 106
+        2 99
+
+        ods graphics on;
+        proc npar1way mood data=myData ;
+            class X;
+            EXACT;
+            ods output  MoodTest=mt
+
+        proc print data=mt;
+            format  Prob1 12.10 Prob2 12.10 Statistic 12.10 Z 12.10 ;
+        title “Mood Two-Sample Test”;
+        run;
+        """
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99, 101, 96, 97, 102,
+             107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100, 96, 108, 103,
+             104, 114, 114, 113, 108, 106, 99]
+        stat_expect, p_expect = 1.019938533549930, .3077576129778760
+        statistic, pvalue = stats.mood(x, y)
+        assert_allclose(stat_expect, statistic, atol=1e-16)
+        assert_allclose(p_expect, pvalue, atol=1e-16)
+
+
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
