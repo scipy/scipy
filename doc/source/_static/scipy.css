@@ -70,6 +70,7 @@ h3 {
 :root {
   /* Use softer blue from bootstrap's default info color */
   --pst-color-info: 23, 162, 184;
+  --pst-color-active-navigation: 1, 50, 67;
 }
 
 /* Main index page overview cards */
