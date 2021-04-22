@@ -98,7 +98,8 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g -j2 --doc html-scipyorg --doc latex
+            python setup.py install
+            python -u runtests.py -g -n -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
