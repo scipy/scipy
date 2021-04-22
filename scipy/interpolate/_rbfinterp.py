@@ -329,7 +329,7 @@ class RBFInterpolator:
         """
         x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
-            raise ValueError('Expected `x` to be a 2-dimensional array')
+            raise ValueError('`x` must be a 2-dimensional array')
 
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
@@ -445,7 +445,7 @@ class KNearestRBFInterpolator:
         """
         x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
-            raise ValueError('Expected `x` to be a 2-dimensional array')
+            raise ValueError('`x` must be a 2-dimensional array')
 
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
