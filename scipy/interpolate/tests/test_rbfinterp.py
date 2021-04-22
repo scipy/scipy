@@ -51,7 +51,7 @@ def _is_conditionally_positive_definite(kernel, m):
         # are too close to eachother, which can make the matrix singular
         seq = Halton(ndim, scramble=False)
         for _ in range(ntests):
-            x = seq.random(nx)
+            x = 2*seq.random(nx) - 1
             A = _rbfinterp_pythran._kernel_matrix(x, kernel)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
