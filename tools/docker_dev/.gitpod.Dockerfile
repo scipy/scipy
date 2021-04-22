@@ -1,5 +1,5 @@
 # Doing a local shallow clone - keeps the container secure
-# and much slimmer than usins COPY directly
+# and much slimmer than using COPY directly or doing a remote clone
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as clone
 
@@ -43,5 +43,6 @@ RUN conda activate ${CONDA_ENV} && \
 # directoy from the image to prevent conflicts
 RUN sudo rm -rf /workspace/scipy
 
+# -----------------------------------------------------------------------------
 # Always return to non privileged user
 USER gitpod
