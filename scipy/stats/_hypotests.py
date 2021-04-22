@@ -1458,9 +1458,9 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
     we will use the difference between the sample means as a test statistic,
     and we will consider a p-value of 0.05 to be statistically significant.
 
-    We write the function defining the test statistic in a vectorized fashion:
-    the samples `x` and `y` can be n-d arrays, and the statistic will be
-    calculated for each axis-slice along `axis`.
+    For efficiency, we write the function defining the test statistic in a
+    vectorized fashion: the samples `x` and `y` can be ND arrays, and the
+    statistic will be calculated for each axis-slice along `axis`.
 
     >>> def statistic(x, y, axis):
     ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
@@ -1482,7 +1482,9 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
     a permutation test.
 
     >>> from scipy.stats import permutation_test
-    >>> res = permutation_test(x, y, statistic, alternative='less')
+    >>> # because our statistic is vectorized, we pass `vectorized=True`
+    >>> res = permutation_test(x, y, statistic, vectorized=True,
+    ...                        alternative='less')
     >>> print(res.statistic)
     -3.5411688580987266
     >>> print(res.pvalue)
