@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import (
     assert_allclose, assert_raises, assert_array_equal, assert_warns
     )
+from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE,
@@ -43,16 +44,15 @@ def _is_conditionally_positive_definite(kernel, m):
     # Tests whether the kernel is conditionally positive definite of order m.
     # See chapter 8 of Fasshauer's "Meshfree Approximation Methods with
     # MATLAB".
-    np.random.seed(0)
     nx = 10
     ntests = 100
     for ndim in [1, 2, 3, 4, 5]:
+        # generate sample points with a Halton sequence to avoid samples that
+        # are too close to eachother, which can make the matrix singular
+        seq = Halton(ndim, scramble=False)
         for _ in range(ntests):
-            x = np.random.normal(0.0, 1.0, (nx, ndim))
+            x = seq.random(nx)
             A = _rbfinterp_pythran._kernel_matrix(x, kernel)
-            # add a small value to the diagonals in case the kernel _should_ be
-            # c.p.d. but it is not due to numerical precision.
-            A += 1e-12*np.eye(nx)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
@@ -85,10 +85,10 @@ class _TestRBFInterpolator:
     def test_scale_invariance_1d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 1d
-        np.random.seed(0)
-        x = np.random.uniform(0.0, 3.0, (50, 1))
+        seq = Halton(1, scramble=False)
+        x = 3*seq.random(50)
         y = _1d_test_function(x)
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+        xitp = 3*seq.random(50)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         assert_allclose(yitp1, yitp2, atol=1e-8)
@@ -97,10 +97,10 @@ class _TestRBFInterpolator:
     def test_scale_invariance_2d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 2d
-        np.random.seed(0)
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        seq = Halton(2, scramble=False)
+        x = seq.random(100)
         y = _2d_test_function(x)
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
+        xitp = seq.random(100)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         assert_allclose(yitp1, yitp2, atol=1e-8)
@@ -109,13 +109,13 @@ class _TestRBFInterpolator:
     def test_extreme_domains(self, kernel):
         # Make sure the interpolant remains numerically stable for very
         # large/small domains
-        np.random.seed(0)
+        seq = Halton(2, scramble=False)
         scale = 1e50
         shift = 1e55
 
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        x = seq.random(100)
         y = _2d_test_function(x)
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
+        xitp = seq.random(100)
 
         if kernel in _SCALE_INVARIANT:
             yitp1 = self.build(x, y, kernel=kernel)(xitp)
@@ -138,11 +138,11 @@ class _TestRBFInterpolator:
         # should be able to reproduce the polynomial exactly, provided that
         # `degree` is sufficiently high
         np.random.seed(0)
-        ndim = 2
+        seq = Halton(2, scramble=False)
         degree = 3
 
-        x = np.random.normal(0.0, 1.0, (50, ndim))
-        xitp = np.random.uniform(0.0, 1.0, (50, ndim))
+        x = seq.random(50)
+        xitp = seq.random(50)
 
         P = _vandermonde(x, degree)
         Pitp = _vandermonde(xitp, degree)
@@ -158,29 +158,35 @@ class _TestRBFInterpolator:
     def test_vector_data(self):
         # Make sure interpolating a vector field is the same as interpolating
         # each component separately
-        np.random.seed(0)
+        seq = Halton(2, scramble=False)
 
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
         y = np.array([_2d_test_function(x),
                       _2d_test_function(x[:, ::-1])]).T
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
+
         yitp1 = self.build(x, y)(xitp)
         yitp2 = self.build(x, y[:, 0])(xitp)
         yitp3 = self.build(x, y[:, 1])(xitp)
+
         assert_allclose(yitp1[:, 0], yitp2)
         assert_allclose(yitp1[:, 1], yitp3)
 
     def test_complex_data(self):
         # Interpolating complex input should be the same as interpolating the
         # real and complex components
-        np.random.seed(0)
+        seq = Halton(2, scramble=False)
 
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
         y = _2d_test_function(x) + 1j*_2d_test_function(x[:, ::-1])
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
+
         yitp1 = self.build(x, y)(xitp)
         yitp2 = self.build(x, y.real)(xitp)
         yitp3 = self.build(x, y.imag)(xitp)
+
         assert_allclose(yitp1.real, yitp2)
         assert_allclose(yitp1.imag, yitp3)
 
@@ -188,16 +194,15 @@ class _TestRBFInterpolator:
     def test_interpolation_misfit_1d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 1d
-        np.random.seed(0)
+        seq = Halton(1, scramble=False)
 
-        x = np.random.uniform(0.0, 3.0, (50, 1))
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+
         y = _1d_test_function(x)
-
-        # use min/max of x so we dont extrapolate
-        xitp = np.random.uniform(np.min(x), np.max(x), (50, 1))
         ytrue = _1d_test_function(xitp)
-
         yitp = self.build(x, y, epsilon=0.6, kernel=kernel)(xitp)
+
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
 
@@ -205,15 +210,15 @@ class _TestRBFInterpolator:
     def test_interpolation_misfit_2d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 2d
-        np.random.seed(0)
+        seq = Halton(2, scramble=False)
 
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
         y = _2d_test_function(x)
-
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
         ytrue = _2d_test_function(xitp)
-
         yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
+
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 2.0e-4
 
@@ -222,12 +227,13 @@ class _TestRBFInterpolator:
         # Make sure we can find a smoothing parameter for each kernel that
         # removes a sufficient amount of noise
         np.random.seed(0)
+        seq = Halton(1, scramble=False)
 
         noise = 0.2
         rmse_tol = 0.1
         smoothing_range = 10**np.linspace(-4, 1, 20)
 
-        x = np.random.uniform(0.0, 3.0, (100, 1))
+        x = 3*seq.random(100)
         y = _1d_test_function(x) + np.random.normal(0.0, noise, (100,))
         ytrue = _1d_test_function(x)
         rmse_within_tol = False
@@ -248,10 +254,10 @@ class _TestRBFInterpolator:
         # test using an array for `smoothing` to give less weight to a known
         # outlier
         np.random.seed(0)
-        ndim = 1
+        seq = Halton(1, scramble=False)
         degree = 2
 
-        x = np.random.normal(0.0, 1.0, (50, ndim))
+        x = seq.random(50)
         P = _vandermonde(x, degree)
         poly_coeffs = np.random.normal(0.0, 1.0, P.shape[1])
         y = P.dot(poly_coeffs)
@@ -261,15 +267,14 @@ class _TestRBFInterpolator:
         smoothing[10] = 1000.0
         yitp = self.build(x, y_with_outlier, smoothing=smoothing)(x)
         # should be able to reproduce the uncorrupted data almost exactly
-        assert_allclose(yitp, y, atol=1e-5)
+        assert_allclose(yitp, y, atol=1e-4)
 
     def test_inconsistent_x_dimensions_error(self):
         # ValueError should be raised if the observations points and
         # interpolation points have a different number of dimensions
-        np.random.seed(0)
-        y = np.random.uniform(0.0, 1.0, (10, 2))
+        y = Halton(2, scramble=False).random(10)
         d = _2d_test_function(y)
-        x = np.random.uniform(0.0, 1.0, (10, 1))
+        x = Halton(1, scramble=False).random(10)
         with assert_raises(ValueError):
             self.build(y, d)(x)
 
@@ -340,12 +345,18 @@ class _TestRBFInterpolator:
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior
-        x = np.random.uniform(0.0, 3.0, (50, 1))
+        seq = Halton(1, scramble=False)
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+
         y = _1d_test_function(x)
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+
         interp = self.build(x, y)
+
         yitp1 = interp(xitp)
         yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
+
         assert_array_equal(yitp1, yitp2)
 
 
@@ -356,15 +367,16 @@ class TestRBFInterpolator(_TestRBFInterpolator):
     def test_smoothing_limit_1d(self):
         # For large smoothing parameters, the interpolant should approach a
         # least squares fit of a polynomial with the specified degree
-        np.random.seed(0)
+        seq = Halton(1, scramble=False)
 
         degree = 3
         smoothing = 1e8
 
-        x = np.random.uniform(0.0, 3.0, (50, 1))
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+
         y = _1d_test_function(x)
 
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
         yitp1 = self.build(
             x, y,
             degree=degree,
@@ -374,20 +386,22 @@ class TestRBFInterpolator(_TestRBFInterpolator):
         P = _vandermonde(x, degree)
         Pitp = _vandermonde(xitp, degree)
         yitp2 = Pitp.dot(np.linalg.lstsq(P, y, rcond=None)[0])
+
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
     def test_smoothing_limit_2d(self):
         # For large smoothing parameters, the interpolant should approach a
         # least squares fit of a polynomial with the specified degree
-        np.random.seed(0)
+        seq = Halton(2, scramble=False)
 
         degree = 3
         smoothing = 1e8
 
-        x = np.random.uniform(0.0, 1.0, (100, 2))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
         y = _2d_test_function(x)
 
-        xitp = np.random.uniform(0.0, 1.0, (100, 2))
         yitp1 = self.build(
             x, y,
             degree=degree,
@@ -409,10 +423,13 @@ class TestKNearestRBFInterpolator20(_TestRBFInterpolator):
     def test_equivalent_to_rbf_interpolator(self):
         # Make sure this is equivalent to using RBFInterpolator with the 20
         # nearest observations
-        np.random.seed(0)
-        x = np.random.uniform(0.0, 3.0, (50, 1))
-        y = _1d_test_function(x)
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
+        seq = Halton(2, scramble=False)
+
+        x = seq.random(100)
+        xitp = seq.random(100)
+
+        y = _2d_test_function(x)
+
         yitp1 = self.build(x, y)(xitp)
 
         yitp2 = []
@@ -431,10 +448,13 @@ class TestKNearestRBFInterpolatorInf(TestRBFInterpolator):
         return KNearestRBFInterpolator(*args, **kwargs, k=np.inf)
 
     def test_equivalent_to_rbf_interpolator(self):
-        np.random.seed(0)
-        x = np.random.uniform(0.0, 3.0, (50, 1))
+        seq = Halton(1, scramble=False)
+
+        x = 3*seq.random(50)
+        xitp = 3*seq.random(50)
+
         y = _1d_test_function(x)
-        xitp = np.random.uniform(0.0, 3.0, (50, 1))
         yitp1 = self.build(x, y)(xitp)
         yitp2 = RBFInterpolator(x, y)(xitp)
+
         assert_allclose(yitp1, yitp2, atol=1e-8)
