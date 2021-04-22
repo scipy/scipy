@@ -2192,21 +2192,17 @@ class _ABW:
     def cdf(self, k, n, m):
         """Cumulative distribution function."""
         self._recalc(n, m)
-        # This is a bit subtle; easiest to think through an example:
-        # the CDF at k = 12.5 should be the same as at k = 12 -> `floor`
-        # The convention is for CDF at k = 12 to included the probability mass
-        # at k = 12 -> slice `:ind+1`.
-        ind = np.floor(k - self.astart).astype(int)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.ceil(k - self.astart).astype(int)
         return self.freqs[:ind+1].sum() / self.total
 
     def sf(self, k, n, m):
         """Survival function."""
         self._recalc(n, m)
-        # This is a bit subtle; easiest to think through an example:
-        # the SF at k = 12.5 should be the same at k = 13 -> `ceil`.
-        # The convention is for  SF at k = 13 to included the probability mass
-        # at k = 13 -> slice `ind:`.
-        ind = np.ceil(k - self.astart).astype(int)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.floor(k - self.astart).astype(int)
         return self.freqs[ind:].sum() / self.total
 
 
