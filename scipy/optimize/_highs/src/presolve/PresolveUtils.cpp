@@ -55,6 +55,7 @@ void printRow(const int row, const int numRow, const int numCol,
   for (int k = ARstart[row]; k < ARstart[row + 1]; k++) {
     const int col = ARindex[k];
     assert(col >= 0 && col <= numCol);
+    (void)col;
   }
 
   for (int k = ARstart[row]; k < ARstart[row + 1]; k++)

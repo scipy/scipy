@@ -42,7 +42,7 @@ __all__ = [
 # BEGIN packaging/_structures.py
 
 
-class Infinity(object):
+class Infinity:
     def __repr__(self):
         return "Infinity"
 
@@ -74,7 +74,7 @@ class Infinity(object):
 Infinity = Infinity()
 
 
-class NegativeInfinity(object):
+class NegativeInfinity:
     def __repr__(self):
         return "-Infinity"
 
@@ -132,7 +132,7 @@ class InvalidVersion(ValueError):
     """
 
 
-class _BaseVersion(object):
+class _BaseVersion:
 
     def __hash__(self):
         return hash(self._key)

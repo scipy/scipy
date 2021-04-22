@@ -38,7 +38,7 @@ window_funcs = [
     ]
 
 
-class TestBartHann(object):
+class TestBartHann:
 
     def test_basic(self):
         assert_allclose(windows.barthann(6, sym=True),
@@ -50,7 +50,7 @@ class TestBartHann(object):
                         [0, 0.27, 0.73, 1.0, 0.73, 0.27])
 
 
-class TestBartlett(object):
+class TestBartlett:
 
     def test_basic(self):
         assert_allclose(windows.bartlett(6), [0, 0.4, 0.8, 0.8, 0.4, 0])
@@ -59,7 +59,7 @@ class TestBartlett(object):
                         [0, 1/3, 2/3, 1.0, 2/3, 1/3])
 
 
-class TestBlackman(object):
+class TestBlackman:
 
     def test_basic(self):
         assert_allclose(windows.blackman(6, sym=False),
@@ -76,7 +76,7 @@ class TestBlackman(object):
                         [0, 0.13, 0.63, 1.0, 0.63, 0.13, 0], atol=1e-14)
 
 
-class TestBlackmanHarris(object):
+class TestBlackmanHarris:
 
     def test_basic(self):
         assert_allclose(windows.blackmanharris(6, False),
@@ -93,7 +93,7 @@ class TestBlackmanHarris(object):
                          6.0e-05])
 
 
-class TestTaylor(object):
+class TestTaylor:
 
     def test_normalized(self):
         """Tests windows of small length that are normalized to 1. See the
@@ -167,7 +167,7 @@ class TestTaylor(object):
         assert_allclose(BW_18dB, 2.6112, atol=0.1)
 
 
-class TestBohman(object):
+class TestBohman:
 
     def test_basic(self):
         assert_allclose(windows.bohman(6),
@@ -181,7 +181,7 @@ class TestBohman(object):
                          0.6089977810442295, 0.1089977810442293])
 
 
-class TestBoxcar(object):
+class TestBoxcar:
 
     def test_basic(self):
         assert_allclose(windows.boxcar(6), [1, 1, 1, 1, 1, 1])
@@ -224,7 +224,7 @@ cheb_even_true = array([0.203894, 0.107279, 0.133904,
                         0.133904, 0.107279, 0.203894])
 
 
-class TestChebWin(object):
+class TestChebWin:
 
     def test_basic(self):
         with suppress_warnings() as sup:
@@ -317,7 +317,7 @@ def test_exponential():
             assert_allclose(win, v, rtol=1e-14)
 
 
-class TestFlatTop(object):
+class TestFlatTop:
 
     def test_basic(self):
         assert_allclose(windows.flattop(6, sym=False),
@@ -337,7 +337,7 @@ class TestFlatTop(object):
                          0.19821053, -0.051263156, -0.000421051])
 
 
-class TestGaussian(object):
+class TestGaussian:
 
     def test_basic(self):
         assert_allclose(windows.gaussian(6, 1.0),
@@ -358,7 +358,7 @@ class TestGaussian(object):
                          0.8007374029168081])
 
 
-class TestGeneralCosine(object):
+class TestGeneralCosine:
 
     def test_basic(self):
         assert_allclose(windows.general_cosine(5, [0.5, 0.3, 0.2]),
@@ -367,7 +367,7 @@ class TestGeneralCosine(object):
                         [0.4, 0.3, 1, 0.3])
 
 
-class TestGeneralHamming(object):
+class TestGeneralHamming:
 
     def test_basic(self):
         assert_allclose(windows.general_hamming(5, 0.7),
@@ -380,7 +380,7 @@ class TestGeneralHamming(object):
                         0.9522542486, 0.6727457514, 0.5])
 
 
-class TestHamming(object):
+class TestHamming:
 
     def test_basic(self):
         assert_allclose(windows.hamming(6, False),
@@ -396,7 +396,7 @@ class TestHamming(object):
                         [0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08])
 
 
-class TestHann(object):
+class TestHann:
 
     def test_basic(self):
         assert_allclose(windows.hann(6, sym=False),
@@ -412,7 +412,7 @@ class TestHann(object):
                         [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
 
 
-class TestKaiser(object):
+class TestKaiser:
 
     def test_basic(self):
         assert_allclose(windows.kaiser(6, 0.5),
@@ -437,7 +437,7 @@ class TestKaiser(object):
                          0.5985765418119844])
 
 
-class TestNuttall(object):
+class TestNuttall:
 
     def test_basic(self):
         assert_allclose(windows.nuttall(6, sym=False),
@@ -455,7 +455,7 @@ class TestNuttall(object):
                          0.0613345, 0.0003628])
 
 
-class TestParzen(object):
+class TestParzen:
 
     def test_basic(self):
         assert_allclose(windows.parzen(6),
@@ -471,7 +471,7 @@ class TestParzen(object):
                          0.1574344023323616])
 
 
-class TestTriang(object):
+class TestTriang:
 
     def test_basic(self):
 
@@ -512,7 +512,7 @@ tukey_data = {
 }
 
 
-class TestTukey(object):
+class TestTukey:
 
     def test_basic(self):
         # Test against hardcoded data
@@ -545,7 +545,7 @@ dpss_data = {
 }
 
 
-class TestDPSS(object):
+class TestDPSS:
 
     def test_basic(self):
         # Test against hardcoded data
@@ -595,7 +595,7 @@ class TestDPSS(object):
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
 
-class TestGetWindow(object):
+class TestGetWindow:
 
     def test_boxcar(self):
         w = windows.get_window('boxcar', 12)
@@ -616,6 +616,11 @@ class TestGetWindow(object):
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', 40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
+
+    def test_dpss(self):
+        win1 = windows.get_window(('dpss', 3), 64, fftbins=False)
+        win2 = windows.dpss(64, 3)
+        assert_array_almost_equal(win1, win2, decimal=4)
 
     def test_kaiser_float(self):
         win1 = windows.get_window(7.2, 64)

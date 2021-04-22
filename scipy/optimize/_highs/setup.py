@@ -6,6 +6,7 @@ Some CMake files are used to create source lists for compilation
 
 import pathlib
 from datetime import datetime
+import os
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -104,9 +105,12 @@ def configuration(parent_package='', top_path=None):
     # highs_wrapper:
     ipx_sources = _get_sources('src/CMakeLists.txt', 'set(ipx_sources\n', ')')
     highs_sources = _get_sources('src/CMakeLists.txt', 'set(sources\n', ')')
+    # filter out MIP sources until MIP is officially supported
+    highs_sources = [s for s in highs_sources
+                     if pathlib.Path(s).parent.name != 'mip']
     ext = config.add_extension(
-        'highs_wrapper',
-        sources=['cython/src/highs_wrapper.cxx'] + highs_sources + ipx_sources,
+        '_highs_wrapper',
+        sources=['cython/src/_highs_wrapper.cxx'] + highs_sources + ipx_sources,
         include_dirs=[
 
             # highs_wrapper
@@ -131,36 +135,10 @@ def configuration(parent_package='', top_path=None):
     # Add c++11/14 support:
     ext._pre_build_hook = pre_build_hook
 
-    # wrapper around HiGHS writeMPS:
-    ext = config.add_extension(
-        'mpswriter',
-        sources=[
-            # we should be using using highs shared library;
-            # next best thing is compiling minimal set of sources
-            'cython/src/mpswriter.cxx',
-            'src/util/HighsUtils.cpp',
-            'src/io/HighsIO.cpp',
-            'src/io/HMPSIO.cpp',
-            'src/lp_data/HighsModelUtils.cpp',
-            'src/util/stringutil.cpp',
-        ],
-        include_dirs=[
-            'cython/src/',
-            'src/',
-            'src/io/',
-            'src/lp_data/',
-        ],
-        language='c++',
-        libraries=['basiclu'],
-        define_macros=DEFINE_MACROS,
-        undef_macros=UNDEF_MACROS,
-    )
-    ext._pre_build_hook = pre_build_hook
-
     # Export constants and enums from HiGHS:
     ext = config.add_extension(
-        'constants',
-        sources=['cython/src/constants.cxx'],
+        '_highs_constants',
+        sources=['cython/src/_highs_constants.cxx'],
         include_dirs=[
             'cython/src/',
             'src/',
@@ -171,6 +149,8 @@ def configuration(parent_package='', top_path=None):
         language='c++',
     )
     ext._pre_build_hook = pre_build_hook
+
+    config.add_data_files(os.path.join('cython', 'src', '*.pxd'))
 
     return config
 

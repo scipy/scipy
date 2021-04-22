@@ -132,7 +132,7 @@ def _complex_symrand(dim, dtype):
     return a.astype(dtype)
 
 
-class TestEigVals(object):
+class TestEigVals:
 
     def test_simple(self):
         a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
@@ -163,7 +163,7 @@ class TestEigVals(object):
         assert_array_almost_equal(w, exact_w)
 
 
-class TestEig(object):
+class TestEig:
 
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
@@ -381,7 +381,7 @@ class TestEig(object):
         assert_raises(ValueError, eig, B, A)
 
 
-class TestEigBanded(object):
+class TestEigBanded:
     def setup_method(self):
         self.create_bandmat()
 
@@ -661,7 +661,7 @@ class TestEigBanded(object):
         assert_array_almost_equal(y, y_lin)
 
 
-class TestEigTridiagonal(object):
+class TestEigTridiagonal:
     def setup_method(self):
         self.create_trimat()
 
@@ -908,7 +908,7 @@ class TestEigh:
         assert_allclose(w3, np.array([1.2, 1.3]))
 
 
-class TestLU(object):
+class TestLU:
     def setup_method(self):
         self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
@@ -1008,7 +1008,7 @@ class TestLUSingle(TestLU):
         self.cmed = self.vrect.astype(complex64)
 
 
-class TestLUSolve(object):
+class TestLUSolve:
     def setup_method(self):
         seed(1234)
 
@@ -1032,7 +1032,7 @@ class TestLUSolve(object):
         assert_array_almost_equal(x1, x2)
 
 
-class TestSVD_GESDD(object):
+class TestSVD_GESDD:
     def setup_method(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
@@ -1187,7 +1187,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
         seed(1234)
 
 
-class TestSVDVals(object):
+class TestSVDVals:
 
     def test_empty(self):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
@@ -1244,14 +1244,14 @@ class TestSVDVals(object):
         svdvals(a)
 
 
-class TestDiagSVD(object):
+class TestDiagSVD:
 
     def test_simple(self):
         assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
                                   [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
 
 
-class TestQR(object):
+class TestQR:
 
     def setup_method(self):
         seed(1234)
@@ -1793,7 +1793,7 @@ class TestQR(object):
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
 
-class TestRQ(object):
+class TestRQ:
 
     def setup_method(self):
         seed(1234)
@@ -1897,7 +1897,7 @@ class TestRQ(object):
         assert_array_almost_equal(r @ q, a)
 
 
-class TestSchur(object):
+class TestSchur:
 
     def test_simple(self):
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
@@ -1993,7 +1993,7 @@ class TestSchur(object):
         assert_array_almost_equal(z @ t @ z.conj().T, a)
 
 
-class TestHessenberg(object):
+class TestHessenberg:
 
     def test_simple(self):
         a = [[-149, -50, -154],
@@ -2068,7 +2068,7 @@ class TestHessenberg(object):
         assert_array_almost_equal(h2, b)
 
 
-class TestQZ(object):
+class TestQZ:
     def setup_method(self):
         seed(12345)
 
@@ -2249,7 +2249,7 @@ def _make_pos(X):
     return np.sign(X)*X
 
 
-class TestOrdQZ(object):
+class TestOrdQZ:
     @classmethod
     def setup_class(cls):
         # https://www.nag.com/lapack-ex/node119.html
@@ -2451,7 +2451,7 @@ class TestOrdQZ(object):
                 assert_allclose(expected_eigvals, x)
 
 
-class TestOrdQZWorkspaceSize(object):
+class TestOrdQZWorkspaceSize:
 
     def setup_method(self):
         seed(12345)
@@ -2486,7 +2486,7 @@ class TestOrdQZWorkspaceSize(object):
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')
 
 
-class TestDatacopied(object):
+class TestDatacopied:
 
     def test_datacopied(self):
         from scipy.linalg.decomp import _datacopied
@@ -2607,7 +2607,7 @@ def test_lapack_misaligned():
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     def test_eig(self):
         assert_no_overwrite(eig, [(3, 3)])
         assert_no_overwrite(eig, [(3, 3), (3, 3)])
@@ -2810,7 +2810,7 @@ def test_subspace_angles():
     assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
 
 
-class TestCDF2RDF(object):
+class TestCDF2RDF:
 
     def matmul(self, a, b):
         return np.einsum('...ij,...jk->...ik', a, b)

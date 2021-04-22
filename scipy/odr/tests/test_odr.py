@@ -14,7 +14,7 @@ from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
                        polynomial)
 
 
-class TestODR(object):
+class TestODR:
 
     # Bad Data for 'x'
 
