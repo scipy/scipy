@@ -1,7 +1,6 @@
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
-import collections
 from scipy.cluster.hierarchy import DisjointSet
 import string
 
@@ -24,8 +23,8 @@ def generate_random_token():
 
 
 def get_elements(n):
-    # OrderedDict is deterministic without difficulty of comparing numpy ints
-    elements = collections.OrderedDict()
+    # dict is deterministic without difficulty of comparing numpy ints
+    elements = {}
     for element in generate_random_token():
         if element not in elements:
             elements[element] = len(elements)

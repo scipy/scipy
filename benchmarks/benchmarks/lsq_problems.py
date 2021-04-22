@@ -1,6 +1,5 @@
 """Benchmark problems for nonlinear least squares."""
 
-from collections import OrderedDict
 import inspect
 import sys
 import numpy as np
@@ -469,11 +468,11 @@ def extract_lsq_problems():
 
     Returns
     -------
-    OrderedDict, str -> LSQBenchmarkProblem
+    dict, str -> LSQBenchmarkProblem
         The key is a problem name.
         The value is an instance of LSQBenchmarkProblem.
     """
-    problems = OrderedDict()
+    problems = {}
     for name, problem_class in inspect.getmembers(sys.modules[__name__],
                                                   inspect.isclass):
         if (name != "LSQBenchmarkProblem" and
