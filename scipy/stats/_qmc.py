@@ -43,6 +43,7 @@ from ._qmc_cy import (
     _cy_van_der_corput_scrambled,
     _cy_van_der_corput,
 )
+from scipy.special import gammainc
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
@@ -1592,6 +1593,120 @@ class Sobol(QMCEngine):
                 sv=self._sv, quasi=self._quasi
             )
         self.num_generated += n
+        return self
+
+
+class PoissonDisc(QMCEngine):
+
+    # Uniform sampling in a hypersphere
+    # Based on Matlab implementation by Roger Stafford
+    # Can be optimized for Bridson algorithm by excluding all points within the r/2 sphere
+    def __hypersphere_volume_sample(center,radius,k=1):
+        ndim = center.size
+        x = np.random.normal(size=(k, ndim))
+        ssq = np.sum(x**2,axis=1)
+        fr = radius*gammainc(ndim/2,ssq/2)**(1/ndim)/np.sqrt(ssq)
+        frtiled = np.tile(fr.reshape(k,1),(1,ndim))
+        p = center + np.multiply(x,frtiled)
+        return p
+
+    # Uniform sampling on the sphere's surface
+    def __hypersphere_surface_sample(center,radius,k=1):
+        ndim = center.size
+        vec = np.random.standard_normal(size=(k, ndim))
+        vec /= np.linalg.norm(vec, axis=1)[:,None]
+        p = center + np.multiply(vec, radius)
+        return p
+
+    def __init__(self, d, centered=False, seed=None):
+        super().__init__(d=d, seed=seed)
+        self.centered = centered
+
+    # def Bridson_sampling(dims=np.array([1.0,1.0]), radius=0.05, k=30, hypersphere_sample=hypersphere_volume_sample):
+    def random(self, n=1):
+        # References: Fast Poisson Disk Sampling in Arbitrary Dimensions
+        #             Robert Bridson, SIGGRAPH, 2007
+
+        dims=np.ones(self.d)
+        ndim=dims.size
+        numdrawn=0
+
+        # these should be parameters set e.g. when the class is declared
+        radius=0.05
+        k=30
+
+        # __hypersphere_volume_sample is the default: classic Bridson algorithm as described here:
+        # https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
+        # __hypersphere_surface_sample is an alternative sampler, results in denser points:
+        # based on the method proposed here by Martin Roberts: http://extremelearning.com.au/an-improved-version-of-bridsons-algorithm-n-for-poisson-disc-sampling/
+        hypersphere_sample=__hypersphere_volume_sample
+
+        # size of the sphere from which the samples are drawn relative to the size of a disc (radius)
+        sample_factor = 2
+        if hypersphere_sample == __hypersphere_volume_sample:
+            sample_factor = 2
+
+        # for the surface sampler, all new points are almost exactly 1 radius away from at least one existing sample
+        # eps to avoid rejection
+        if hypersphere_sample == __hypersphere_surface_sample:
+            eps = 0.001
+            sample_factor = 1 + eps
+
+        def in_limits(p):
+            return np.all(np.zeros(ndim) <= p) and np.all(p < dims)
+
+        # Check if there are samples closer than "squared_radius" to the candidate "p"
+        def in_neighborhood(p, n=2):
+            indices = (p / cellsize).astype(int)
+            indmin = np.maximum(indices - n, np.zeros(ndim, dtype=int))
+            indmax = np.minimum(indices + n + 1, gridsize)
+
+            # Check if the center cell is empty
+            if not np.isnan(P[tuple(indices)][0]):
+                return True
+            a = []
+            for i in range(ndim):
+                a.append(slice(indmin[i], indmax[i]))
+            with np.errstate(invalid='ignore'):
+                if np.any(np.sum(np.square(p - P[tuple(a)]), axis=ndim) < squared_radius):
+                    return True
+
+        def add_point(p):
+            points.append(p)
+            indices = (p/cellsize).astype(int)
+            P[tuple(indices)] = p
+            numdrawn = numdrawn + 1
+
+        cellsize = radius/np.sqrt(ndim)
+        gridsize = (np.ceil(dims/cellsize)).astype(int)
+
+        # Squared radius because we'll compare squared distance
+        squared_radius = radius*radius
+
+        # Positions of cells
+        P = np.empty(np.append(gridsize, ndim), dtype=np.float32) #n-dim value for each grid cell
+        # Initialise empty cells with NaNs
+        P.fill(np.nan)
+
+        points = []
+        add_point(np.random.uniform(np.zeros(ndim), dims))
+        # if len(points) becomes 0, we can draw no more samples
+        while len(points) and numdrawn < n:
+            i = np.random.randint(len(points))
+            p = points[i]
+            del points[i]
+            Q = hypersphere_sample(np.array(p), radius * sample_factor, k)
+            for q in Q:
+                if in_limits(q) and not in_neighborhood(q):
+                    add_point(q)
+        return P[~np.isnan(P).any(axis=ndim)]
+
+    def reset(self):
+        """Reset the engine to base state.
+
+        """
+        self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
+        self.num_generated = 0
         return self
 
 
