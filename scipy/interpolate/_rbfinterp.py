@@ -454,8 +454,6 @@ class KNearestRBFInterpolator:
                 self.y.shape[1]
                 )
 
-        out = np.zeros((nx,) + self.data_shape, dtype=self.data_type)
-
         # get the indices of the k nearest observation points to each
         # interpolation point
         _, yindices = self.tree.query(x, self.k)
@@ -475,11 +473,12 @@ class KNearestRBFInterpolator:
         for i, j in enumerate(inv):
             xindices[j].append(i)
 
+        out = np.empty((nx, self.d.shape[1]), dtype=float)
         for xidx, yidx in zip(xindices, yindices):
             # `yidx` are the indices of the observations in this neighborhood.
             # `xidx` are the indices of the interpolation points that are using
             # this neighborhood
-            xi = x[xidx]
+            xnbr = x[xidx]
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
             snbr = self.smoothing[yidx]
@@ -489,12 +488,11 @@ class KNearestRBFInterpolator:
 
             coeffs = _solve(lhs, rhs)
 
-            outi = _evaluate(
-                xi, ynbr, self.kernel, self.epsilon, self.powers, shift, scale,
-                coeffs
+            out[xidx] = _evaluate(
+                xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
+                scale, coeffs
                 )
-            outi = outi.view(self.data_type)
-            outi = outi.reshape((-1,) + self.data_shape)
-            out[xidx] = outi
 
+        out = out.view(self.data_type)
+        out = out.reshape((nx,) + self.data_shape)
         return out
