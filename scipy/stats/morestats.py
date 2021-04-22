@@ -3563,7 +3563,8 @@ def quartile_coeff_dispersion(a, q=(0.25, 0.75), axis=0,
     Given two quartiles Q_low, Q_high from array samples such that
     Q_low < Q_high, the quartile coefficient of dispersion is calculated by
     (Q_high - Q_low)/(Q_high + Q_low).
-    By default, it is computed using 3rd and 1st quartiles.
+    By default, it is computed using the 1st and 3rd quartiles, that is,
+    the 0.25 and 0.75 _quantiles_ as calculated by `np.quantile`. 
 
     Parameters
     ----------

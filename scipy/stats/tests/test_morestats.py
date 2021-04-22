@@ -2213,6 +2213,91 @@ class TestCircFuncs:
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 
+class TestQuartileCoeffOfDispersion(object):
+
+    def test_simple(self):
+        arr = [2, 4, 6, 8, 10, 12, 14, 16]
+
+        # Q_low = 4, Q_high = 12 -> dispersion = (12-4)/(12+4) = 8/16 = 0.5
+        assert_equal(stats.quartile_coeff_dispersion(arr), 0.5)
+
+        arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
+
+        # Q_low = 2.1, Q_high = 2.9 -> dispersion = (2.9-2.1)/(2.9+2.1) = 0.8/5 ~= 0.16
+        assert_allclose(stats.quartile_coeff_dispersion(arr), 0.16)
+
+    def test_simple_many(self):
+        # Test different output shapes, axis values
+
+        ref = [2, 4, 6, 8, 10, 12, 14, 16]
+        arr = np.array([ref] * len(ref)).transpose()
+
+        # Same as test_simple_flattened but with arr as repeated columns, expecting len(arr) 0.5 dispersion values
+        assert_array_equal(stats.quartile_coeff_dispersion(arr, axis=0), [0.5] * len(ref))
+        assert_array_equal(stats.quartile_coeff_dispersion(arr, ), 0.5)
+
+        # Aggregate over row, so each row has the same value -> Q2 = 0 -> dispersion = 0
+        assert_array_equal(stats.quartile_coeff_dispersion(arr, axis=1), [0.0] * len(ref))
+
+    def test_q_values(self):
+        # Tests for different q values
+
+        arr = [2, 4, 6, 8, 10, 12, 14, 16]
+
+        # Q_low (0.25) = 4, Q_high (0.5) = 8 -> dispersion = (8-4)/(8+4) = 4/12 = 1/3
+        assert_equal(stats.quartile_coeff_dispersion(arr, q=(0.25, 0.5)), 1/3)
+
+        arr = [1.6, 2.1, 2.3, 2.4, 2.6, 2.9, 2.98, 3]
+        # Q_low (0.5) = 2.4, Q_high (0.75) = 2.9 -> dispersion = (2.9-2.4)/(2.9+2.4) ~= 0.0943
+        assert_allclose(stats.quartile_coeff_dispersion(arr, q=(0.5, 0.75)), (2.9 - 2.4) / (2.9 + 2.4))
+
+    def test_other_interpolations(self):
+        # Test different interpolation types
+
+        arr = [1, 2, 3, 4, 5, 6, 7, 8]
+
+        # Interpolation = 'midpont', Q_low (0.25) = (3+2)/2 = 2.5,
+        # Q_high (0.75) = (7+6)/2 = 6.5 => dispersion = 4/9
+        assert_equal(stats.quartile_coeff_dispersion(arr, interpolation='midpoint'), 4/9)
+        # Interpolation = 'midpont', Q_low (0.25) = 2
+        # Q_high (0.75) = 6 => dispersion = 4/8
+        assert_equal(stats.quartile_coeff_dispersion(arr), 4/8)
+
+    def test_bad_q_value(self):
+        arr = [2, 4, 6, 8, 10, 12, 14, 16]
+
+        # Quartiles are bounded by 0 < q < 1
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=(0.2, 1.5))
+        err.match("q values must be 2 floats in range \\(0.0, 1.0\\)")
+
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=(-0.01, 0.5))
+        err.match("q values must be 2 floats in range \\(0.0, 1.0\\)")
+
+        # Quartile values must differ (otherwise, it's constant zero)
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=(0.5, 0.5))
+        err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
+
+        # q[0] must be less than q[1]
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=(0.75, 0.5))
+        err.match("q values should satisfy q\\[0\\] < q\\[1\\]")
+
+    def test_bad_q_len(self):
+        arr = [2, 4, 6, 8, 10, 12, 14, 16]
+
+        # Expecting 2 quartiles
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=(0.5,))
+        err.match("Shape of q must be \\(2,\\)")
+
+        with assert_raises(ValueError) as err:
+            stats.quartile_coeff_dispersion(a=arr, q=[(0.5,), (0.5,)])
+        err.match("Shape of q must be \\(2,\\)")
+
+
 class TestMedianTest:
 
     def test_bad_n_samples(self):
