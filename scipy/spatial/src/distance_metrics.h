@@ -9,9 +9,9 @@ struct MinkowskiDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
         T p = p_;
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T p_dist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 p_dist += std::pow(diff, p);
             }
@@ -22,9 +22,9 @@ struct MinkowskiDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
         T p = p_;
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T p_dist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 p_dist += w(i, j) * std::pow(diff, p);
             }
@@ -36,9 +36,9 @@ struct MinkowskiDistance {
 struct EuclideanDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T sqdist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 sqdist += diff * diff;
             }
@@ -48,9 +48,9 @@ struct EuclideanDistance {
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T sqdist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 sqdist += w(i, j) * (diff * diff);
             }
@@ -62,9 +62,9 @@ struct EuclideanDistance {
 struct ChebyshevDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T dist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 if (diff > dist) {
                     dist = diff;
@@ -76,9 +76,9 @@ struct ChebyshevDistance {
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T dist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 if (w(i, j) > 0 && diff > dist) {
                     dist = diff;
@@ -93,20 +93,20 @@ struct CityBlockDistance {
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
         if (x.strides[1] == 1 && y.strides[1] == 1) {
-            for (int64_t i = 0; i < x.shape[0]; ++i) {
+            for (intptr_t i = 0; i < x.shape[0]; ++i) {
                 const T* x_data = x.data + i * x.strides[0];
                 const T* y_data = y.data + i * y.strides[0];
 
                 T dist = 0;
-                for (int64_t j = 0; j < x.shape[1]; ++j) {
+                for (intptr_t j = 0; j < x.shape[1]; ++j) {
                     dist += std::abs(x_data[j] - y_data[j]);
                 }
                 out(i, 0) = dist;
             }
         } else {
-            for (int64_t i = 0; i < x.shape[0]; ++i) {
+            for (intptr_t i = 0; i < x.shape[0]; ++i) {
                 T dist = 0;
-                for (int64_t j = 0; j < x.shape[1]; ++j) {
+                for (intptr_t j = 0; j < x.shape[1]; ++j) {
                     dist += std::abs(x(i, j) - y(i, j));
                 }
                 out(i, 0) = dist;
@@ -116,9 +116,9 @@ struct CityBlockDistance {
 
     template <typename T>
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        for (int64_t i = 0; i < x.shape[0]; ++i) {
+        for (intptr_t i = 0; i < x.shape[0]; ++i) {
             T dist = 0;
-            for (int64_t j = 0; j < x.shape[1]; ++j) {
+            for (intptr_t j = 0; j < x.shape[1]; ++j) {
                 auto diff = std::abs(x(i, j) - y(i, j));
                 dist += w(i, j) * diff;
             }
