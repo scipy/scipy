@@ -45,7 +45,11 @@ jobs:
       - restore_cache:
           keys:
               - packages-{{ .Branch }}
+      - restore_cache:
+          keys:
               - build-{{ .Branch }}
+      - restore_cache:
+          keys:
               - doc-{{ .Branch }}
 
       - run:
