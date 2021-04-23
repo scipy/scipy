@@ -48,11 +48,11 @@ class MyTakeStep1(RandomDisplacement):
     make sure it's actually being used."""
     def __init__(self):
         self.been_called = False
-        super(MyTakeStep1, self).__init__()
+        super().__init__()
 
     def __call__(self, x):
         self.been_called = True
-        return super(MyTakeStep1, self).__call__(x)
+        return super().__call__(x)
 
 
 def myTakeStep2(x):

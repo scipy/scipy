@@ -54,7 +54,8 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -107,7 +108,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -161,7 +163,8 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
 
@@ -214,7 +217,8 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fftpack import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
 

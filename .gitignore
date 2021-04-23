@@ -18,6 +18,7 @@
 *.vim
 tags
 .theia/
+.vscode/
 
 # Compiled source #
 ###################

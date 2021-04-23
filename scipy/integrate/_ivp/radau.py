@@ -283,7 +283,7 @@ class Radau(OdeSolver):
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(Radau, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -537,7 +537,7 @@ class Radau(OdeSolver):
 
 class RadauDenseOutput(DenseOutput):
     def __init__(self, t_old, t, y_old, Q):
-        super(RadauDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = t - t_old
         self.Q = Q
         self.order = Q.shape[1] - 1

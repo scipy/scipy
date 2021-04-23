@@ -373,7 +373,7 @@ def test_inheritance():
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
-            super(Identity, self).__init__(dtype=None, shape=(n, n))
+            super().__init__(dtype=None, shape=(n, n))
 
         def _matvec(self, x):
             return x
@@ -384,7 +384,7 @@ def test_inheritance():
 
     class MatmatOnly(interface.LinearOperator):
         def __init__(self, A):
-            super(MatmatOnly, self).__init__(A.dtype, A.shape)
+            super().__init__(A.dtype, A.shape)
             self.A = A
 
         def _matmat(self, x):

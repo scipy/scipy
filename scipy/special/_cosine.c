@@ -19,6 +19,9 @@
 
 #include "cephes/polevl.h"
 
+#if !defined(M_PI)
+#define M_PI 0x1.921fb54442d18p+1
+#endif
 
 //
 // p and q (below) are the coefficients in the numerator and denominator
@@ -204,7 +207,6 @@ double _poly_approx(double s)
 {
     double s2;
     double p;
-    double px;
     double coeffs[] = {1.1911667949082915e-08,
                        1.683039183039183e-07,
                        43.0/17248000,

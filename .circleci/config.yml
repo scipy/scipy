@@ -50,7 +50,7 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy
             pip install -r doc_requirements.txt
-            pip install nose mpmath argparse Pillow codecov asv pythran
+            pip install nose mpmath argparse Pillow asv pythran
             pip install pybind11
 
       - run:
@@ -58,7 +58,7 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -gbj2
+            python -u runtests.py -g --build-only -j2
 
       - persist_to_workspace:
           root: ~/
@@ -77,7 +77,7 @@ jobs:
 
       - run:
           name: build docs
-          no_output_timeout: 20m
+          no_output_timeout: 25m
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)

@@ -1,7 +1,6 @@
 """
 Disjoint set data structure
 """
-import collections
 
 
 class DisjointSet:
@@ -88,9 +87,8 @@ class DisjointSet:
         self._parents = {}
         # _nbrs is a circular linked list which links connected elements.
         self._nbrs = {}
-        # _indices tracks the element insertion order - OrderedDict is used to
-        # ensure correct ordering in `__iter__`.
-        self._indices = collections.OrderedDict()
+        # _indices tracks the element insertion order in `__iter__`.
+        self._indices = {}
         if elements is not None:
             for x in elements:
                 self.add(x)
