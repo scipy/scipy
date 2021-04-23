@@ -50,13 +50,14 @@ void validate_weights(const ArrayDescriptor& w, const T* w_data) {
         }
 
         for (intptr_t ax = w.ndim - 2; ax >= 0; --ax) {
-            ++idx[ax];
-            row_ptr += w.strides[ax];
-            if (idx[ax] < w.shape[ax]) {
+            if (idx[ax] + 1 < w.shape[ax]) {
+                ++idx[ax];
+                row_ptr += w.strides[ax];
                 break;
+            } else {
+                row_ptr -= idx[ax] * w.strides[ax];
+                idx[ax] = 0;
             }
-            idx[ax] = 0;
-            row_ptr -= w.shape[ax] * w.strides[ax];
         }
         --numiter;
     }
@@ -70,7 +71,7 @@ template <typename T>
 void pdist_impl(ArrayDescriptor out, T* out_data,
                 ArrayDescriptor x, const T* in_data,
                 DistanceFunc<T> f) {
-    const int64_t num_rows = x.shape[0], num_cols = x.shape[1];
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
 
     StridedView2D<T> out_view;
     out_view.strides = {out.strides[0], 0};
@@ -87,7 +88,7 @@ void pdist_impl(ArrayDescriptor out, T* out_data,
     y_view.shape = {out_view.shape[0], num_cols};
     y_view.data = in_data;
 
-    for (int64_t i = 0; i < num_rows - 1; ++i) {
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
         f(out_view, x_view, y_view);
 
         out_view.data += out_view.shape[0] * out_view.strides[0];
@@ -107,7 +108,7 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
         throw std::invalid_argument("x must be 2-dimensional");
     }
 
-    const int64_t num_rows = x.shape[0], num_cols = x.shape[1];
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
 
     StridedView2D<T> out_view;
     out_view.strides = {out.strides[0], 0};
@@ -128,7 +129,7 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
     y_view.shape = out_view.shape;
     y_view.data = x_data;
 
-    for (int64_t i = 0; i < num_rows - 1; ++i) {
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
         f(out_view, x_view, y_view, w_view);
 
         out_view.data += out_view.shape[0] * out_view.strides[0];
@@ -164,7 +165,7 @@ void cdist_impl(ArrayDescriptor out, T* out_data,
     y_view.shape = {out_view.shape[0], num_cols};
     y_view.data = y_data;
 
-    for (int64_t i = 0; i < num_rowsX; ++i) {
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
         f(out_view, x_view, y_view);
 
         out_view.data += out.strides[0];
@@ -203,7 +204,7 @@ void cdist_weighted_impl(ArrayDescriptor out, T* out_data,
     w_view.shape = {num_rowsY, num_cols};
     w_view.data = w_data;
 
-    for (int64_t i = 0; i < num_rowsX; ++i) {
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
         f(out_view, x_view, y_view, w_view);
 
         out_view.data += out.strides[0];
@@ -211,6 +212,8 @@ void cdist_weighted_impl(ArrayDescriptor out, T* out_data,
     }
 }
 
+// Extract shape and stride information from NumPy array (requires GIL),
+// to a local C++ struct (safe to use without GIL).
 ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto ndim = arr.ndim();
     ArrayDescriptor desc(ndim);
@@ -221,7 +224,7 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     desc.element_size = arr.itemsize();
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
-    for (int64_t i = 0; i < ndim; ++i) {
+    for (intptr_t i = 0; i < ndim; ++i) {
         if (desc.strides[i] % desc.element_size != 0) {
             throw std::runtime_error("Arrays must be aligned");
         }
@@ -230,6 +233,8 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     return desc;
 }
 
+// Cast python object to NumPy array of data type T.
+// flags can be any NumPy array constructor flags.
 template <typename T>
 py::array_t<T> npy_asarray(const py::handle& obj, int flags = 0) {
     auto descr = reinterpret_cast<PyArray_Descr*>(
@@ -241,6 +246,8 @@ py::array_t<T> npy_asarray(const py::handle& obj, int flags = 0) {
     return py::reinterpret_borrow<py::array_t<T>>(arr);
 }
 
+// Cast python object to NumPy array with unspecified dtype.
+// flags can be any NumPy array constructor flags.
 py::array npy_asarray(const py::handle& obj, int flags = 0) {
     auto* arr = PyArray_FromAny(obj.ptr(), nullptr, 0, 0, flags, nullptr);
     if (arr == nullptr) {
@@ -387,7 +394,7 @@ py::array prepare_out_argument(const py::object& obj, const py::dtype& dtype,
     return out;
 }
 
-py::array prepare_single_weight(const py::object& obj, int64_t len) {
+py::array prepare_single_weight(const py::object& obj, intptr_t len) {
     py::array weight = npy_asarray(obj);
     if (weight.ndim() != 1) {
         throw std::invalid_argument("Weights must be a vector (ndim = 1)");
@@ -471,9 +478,9 @@ py::array pdist(const py::object& out_obj, const py::object& x_obj,
         throw std::invalid_argument("x must be 2-dimensional");
     }
 
-    const int64_t m = x.shape(1);
-    const int64_t n = x.shape(0);
-    std::array<int64_t, 1> out_shape{{(n * (n - 1)) / 2}};
+    const intptr_t m = x.shape(1);
+    const intptr_t n = x.shape(0);
+    std::array<intptr_t, 1> out_shape{{(n * (n - 1)) / 2}};
     if (w_obj.is_none()) {
         auto dtype = promote_type_real(x.dtype());
         auto out = prepare_out_argument(out_obj, dtype, out_shape);
@@ -503,14 +510,14 @@ py::array cdist(const py::object& out_obj, const py::object& x_obj,
     if (y.ndim() != 2) {
         throw std::invalid_argument("XB must be a 2-dimensional array.");
     }
-    const int64_t m = x.shape(1);
+    const intptr_t m = x.shape(1);
     if (m != y.shape(1)) {
         throw std::invalid_argument(
             "XA and XB must have the same number of columns "
             "(i.e. feature dimension).");
     }
 
-    std::array<int64_t, 2> out_shape{{x.shape(0), y.shape(0)}};
+    std::array<intptr_t, 2> out_shape{{x.shape(0), y.shape(0)}};
     if (w_obj.is_none()) {
         auto dtype = promote_type_real(common_type(x.dtype(), y.dtype()));
         auto out = prepare_out_argument(out_obj, dtype, out_shape);
