@@ -527,14 +527,14 @@ class CheckOptimizeParameterized(CheckOptimize):
 
 
 def test_maxfev_test():
-    def cost(X):
+    def cost(x):
         return np.random.rand(1) * 1000  # never converged problem
 
-    for ifev in [1, 10, 50]:
+    for imaxfev in [1, 10, 50]:
         for method in ['Powell']:  # TODO: extend to more methods
             result = optimize.minimize(cost, np.random.rand(10),
                                        method=method,
-                                       options={'maxfev': ifev})
+                                       options={'maxfev': imaxfev})
             assert result["nfev"] == ifev
 
 
