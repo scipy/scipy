@@ -702,8 +702,8 @@ def test_needs_params():
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
                    'dss', 'dpss',
-                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk', 'dpss']:
+                   'chebwin', 'cheb',
+                   ]:
         assert_raises(ValueError, get_window, winstr, 7)
 
 
@@ -721,6 +721,10 @@ def test_not_needs_params():
                    'nuttall',
                    'parzen',
                    'taylor',
+                   'exponential',
+                   'poisson',
+                   'tukey',
+                   'tuk',
                    'triangle']:
         win = get_window(winstr, 7)
         assert_equal(len(win), 7)
