@@ -9,7 +9,7 @@ from scipy.spatial import KDTree
 from scipy.special import binom
 from scipy.linalg.lapack import dgesv
 
-from ._rbfinterp_pythran import _build_system, _evaluate
+from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 
 
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
@@ -34,15 +34,31 @@ def _monomial_powers(ndim, degree):
     return out
 
 
-def _solve(lhs, rhs):
+def _solve(lhs, rhs, y, powers):
     """
-    Solve the system in place using dgesv
+    Solve the system in place using dgesv. If `lhs` is singular, attempt to
+    diagnose the issue by checking if the polynomial matrix evaluated at `y`
+    has full column rank.
     """
     _, _, soln, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError('The %d-th argument had an illegal value' % -info)
     elif info > 0:
-        raise LinAlgError('Singular matrix')
+        msg = 'Singular matrix'
+        nmonos = powers.shape[0]
+        if nmonos > 0:
+            pmat = _polynomial_matrix(y, powers)
+            rank = np.linalg.matrix_rank(pmat)
+            if rank < nmonos:
+                msg = (
+                    'Singular matrix. The matrix of monomials evaluated at '
+                    'the data point coordinates does not have full column '
+                    'rank (%d/%d). Consider lowering `degree` and/or setting '
+                    '`kernel` to an RBF with a lower minimum degree.' %
+                    (rank, nmonos)
+                    )
+
+        raise LinAlgError(msg)
 
     # `soln` and `rhs` should be the same array if `rhs` is fortran contiguous
     return soln
@@ -300,7 +316,7 @@ class RBFInterpolator:
             y, d, smoothing, kernel, epsilon, powers
             )
 
-        coeffs = _solve(lhs, rhs)
+        coeffs = _solve(lhs, rhs, y, powers)
 
         self.y = y
         self.kernel = kernel
@@ -486,7 +502,7 @@ class KNearestRBFInterpolator:
                 ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
                 )
 
-            coeffs = _solve(lhs, rhs)
+            coeffs = _solve(lhs, rhs, ynbr, self.powers)
 
             out[xidx] = _evaluate(
                 xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
