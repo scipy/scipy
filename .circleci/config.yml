@@ -71,7 +71,7 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --build-only -j2
+            python setup.py build_ext --inplace -j2
 
       - save_cache:
           key: build-{{ .Branch }}
@@ -104,7 +104,9 @@ jobs:
             . venv/bin/activate
             export SHELL=$(which bash)
             python setup.py install
-            python -u runtests.py -g -n -j2 --doc html-scipyorg --doc latex
+            cd doc
+            make html-scipyorg
+            make latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
