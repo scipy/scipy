@@ -4094,6 +4094,8 @@ def fisher_exact(table, alternative='two-sided'):
         contingency table.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
+    boschloo_exact : Boschloo's exact test on a 2x2 contingency table,
+        which is an uniformly more powerful alternative to Fisher's exact test.
 
     Notes
     -----

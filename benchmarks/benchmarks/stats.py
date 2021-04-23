@@ -40,6 +40,9 @@ class CorrelationFunctions(Benchmark):
     def time_barnard_exact(self, alternative):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
+    def time_boschloo_exact(self, alternative):
+        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+
 
 class Kendalltau(Benchmark):
     param_names = ['nan_policy','method','variant']

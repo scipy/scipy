@@ -399,6 +399,7 @@ Contingency table functions
    contingency.association
    fisher_exact
    barnard_exact
+   boschloo_exact
 
 Plot-tests
 ----------
