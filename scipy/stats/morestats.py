@@ -13,7 +13,7 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats, _contains_nan
+from .stats import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2152,17 +2152,86 @@ def anderson_ksamp(samples, midrank=True):
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
-def ansari(x, y):
+class _ABW:
+    """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
+    # TODO: calculate exact distribution considering ties
+    # We could avoid summing over more than half the frequencies,
+    # but inititally it doesn't seem worth the extra complexity
+
+    def __init__(self):
+        """Minimal initializer."""
+        self.m = None
+        self.n = None
+        self.astart = None
+        self.total = None
+        self.freqs = None
+
+    def _recalc(self, n, m):
+        """When necessary, recalculate exact distribution."""
+        if n != self.n or m != self.m:
+            self.n, self.m = n, m
+            # distribution is NOT symmetric when m + n is odd
+            # n is len(x), m is len(y), and ratio of scales is defined x/y
+            astart, a1, _ = statlib.gscale(n, m)
+            self.astart = astart  # minimum value of statistic
+            # Exact distribution of test statistic under null hypothesis
+            # expressed as frequencies/counts/integers to maintain precision.
+            # Stored as floats to avoid overflow of sums.
+            self.freqs = a1.astype(np.float64)
+            self.total = self.freqs.sum()  # could calculate from m and n
+            # probability mass is self.freqs / self.total;
+
+    def pmf(self, k, n, m):
+        """Probability mass function."""
+        self._recalc(n, m)
+        # The convention here is that PMF at k = 12.5 is the same as at k = 12,
+        # -> use `floor` in case of ties.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[ind] / self.total
+
+    def cdf(self, k, n, m):
+        """Cumulative distribution function."""
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.ceil(k - self.astart).astype(int)
+        return self.freqs[:ind+1].sum() / self.total
+
+    def sf(self, k, n, m):
+        """Survival function."""
+        self._recalc(n, m)
+        # Null distribution derived without considering ties is
+        # approximate. Round down to avoid Type I error.
+        ind = np.floor(k - self.astart).astype(int)
+        return self.freqs[ind:].sum() / self.total
+
+
+# Maintain state for faster repeat calls to ansari w/ method='exact'
+_abw_state = _ABW()
+
+
+def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
     for the equality of the scale parameter of the distributions
-    from which two samples were drawn.
+    from which two samples were drawn. The null hypothesis states that
+    the ratio of the scale of the distribution underlying `x` to the scale
+    of the distribution underlying `y` is 1.
 
     Parameters
     ----------
     x, y : array_like
         Arrays of sample data.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the ratio of scales is not equal to 1.
+        * 'less': the ratio of scales is less than 1.
+        * 'greater': the ratio of scales is greater than 1.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -2189,6 +2258,8 @@ def ansari(x, y):
     .. [2] Sprent, Peter and N.C. Smeeton.  Applied nonparametric
            statistical methods.  3rd ed. Chapman and Hall/CRC. 2001.
            Section 5.8.2.
+    .. [3] Nathaniel E. Helwig "Nonparametric Dispersion and Equality
+           Tests" at http://users.stat.umn.edu/~helwig/notes/npde-Notes.pdf
 
     Examples
     --------
@@ -2210,21 +2281,41 @@ def ansari(x, y):
     are different.
 
     >>> ansari(x1, x2)
-    AnsariResult(statistic=541.0, pvalue=0.9762531658722652)
+    AnsariResult(statistic=541.0, pvalue=0.9762532927399098)
 
-    With a p-value of 0.355, we cannot conclude that there is a
+    With a p-value close to 1, we cannot conclude that there is a
     significant difference in the scales (as expected).
 
     Now apply the test to `x1` and `x3`:
 
     >>> ansari(x1, x3)
-    AnsariResult(statistic=425.0, pvalue=0.0003087020184312628)
+    AnsariResult(statistic=425.0, pvalue=0.0003087020407974518)
 
-    With a p-value of 0.00628, the test provides strong evidence that
+    The probability of observing such an extreme value of the statistic
+    under the null hypothesis of equal scales is only 0.03087%. We take this
+    as evidence against the null hypothesis in favor of the alternative:
     the scales of the distributions from which the samples were drawn
     are not equal.
 
+    We can use the `alternative` parameter to perform a one-tailed test.
+    In the above example, the scale of `x1` is greater than `x3` and so
+    the ratio of scales of `x1` and `x3` is greater than 1. This means
+    that the p-value when ``alternative='greater'`` should be near 0 and
+    hence we should be able to reject the null hypothesis:
+
+    >>> ansari(x1, x3, alternative='greater')
+    AnsariResult(statistic=425.0, pvalue=0.0001543510203987259)
+
+    As we can see, the p-value is indeed quite low. Use of
+    ``alternative='less'`` should thus yield a large p-value:
+
+    >>> ansari(x1, x3, alternative='less')
+    AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
+
     """
+    if alternative not in {'two-sided', 'greater', 'less'}:
+        raise ValueError("'alternative' must be 'two-sided',"
+                         " 'greater', or 'less'.")
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2244,21 +2335,15 @@ def ansari(x, y):
     if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
-        astart, a1, ifault = statlib.gscale(n, m)
-        ind = AB - astart
-        total = np.sum(a1, axis=0)
-        if ind < len(a1)/2.0:
-            cind = int(ceil(ind))
-            if ind == cind:
-                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
-            else:
-                pval = 2.0 * np.sum(a1[:cind], axis=0) / total
+        if alternative == 'two-sided':
+            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
+                                    _abw_state.sf(AB, n, m))
+        elif alternative == 'greater':
+            # AB statistic is _smaller_ when ratio of scales is larger,
+            # so this is the opposite of the usual calculation
+            pval = _abw_state.cdf(AB, n, m)
         else:
-            find = int(floor(ind))
-            if ind == floor(ind):
-                pval = 2.0 * np.sum(a1[find:], axis=0) / total
-            else:
-                pval = 2.0 * np.sum(a1[find+1:], axis=0) / total
+            pval = _abw_state.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2276,8 +2361,11 @@ def ansari(x, y):
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
-    z = (AB - mnAB) / sqrt(varAB)
-    pval = distributions.norm.sf(abs(z)) * 2.0
+    # Small values of AB indicate larger dispersion for the x sample.
+    # Large values of AB indicate larger dispersion for the y sample.
+    # This is opposite to the way we define the ratio of scales. see [1]_.
+    z = (mnAB - AB) / sqrt(varAB)
+    z, pval = _normtest_finish(z, alternative)
     return AnsariResult(AB, pval)
 
 

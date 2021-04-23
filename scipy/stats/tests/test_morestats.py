@@ -13,6 +13,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy import optimize
 from scipy import stats
+from scipy.stats.morestats import _abw_state
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -522,6 +523,93 @@ class TestAnsari:
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_bad_alternative(self):
+        # invalid value for alternative must raise a ValueError
+        x1 = [1, 2, 3, 4]
+        x2 = [5, 6, 7, 8]
+        match = "'alternative' must be 'two-sided'"
+        with assert_raises(ValueError, match=match):
+            stats.ansari(x1, x2, alternative='foo')
+
+    def test_alternative_exact(self):
+        x1 = [-5, 1, 5, 10, 15, 20, 25] # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5] # low scale, loc=10
+        # ratio of scales is greater than 1. So, the
+        # p-value must be high when `alternative='less'`
+        # and low when `alternative='greater'`.
+        statistic, pval = stats.ansari(x1, x2)
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert pval_l > 0.95
+        assert pval_g < 0.05 # level of significance.
+        # also check if the p-values sum up to 1 plus the the probability
+        # mass under the calculated statistic.
+        prob = _abw_state.pmf(statistic, len(x1), len(x2))
+        assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1+prob-pval/2, atol=1e-12)
+        # sanity check. The result should flip if
+        # we exchange x and y.
+        pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
+        pval_g_reverse = stats.ansari(x2, x1, alternative='greater').pvalue
+        assert pval_l_reverse < 0.05
+        assert pval_g_reverse > 0.95
+
+    @pytest.mark.parametrize(
+        'x, y, alternative, expected',
+        # the tests are designed in such a way that the
+        # if else statement in ansari test for exact
+        # mode is covered.
+        [([1, 2, 3, 4], [5, 6, 7, 8], 'less', 0.6285714285714),
+         ([1, 2, 3, 4], [5, 6, 7, 8], 'greater', 0.6285714285714),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'less', 0.8928571428571),
+         ([1, 2, 3], [4, 5, 6, 7, 8], 'greater', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.2857142857143),
+         ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8928571428571)]
+    )
+    def test_alternative_exact_with_R(self, x, y, alternative, expected):
+        # testing with R on arbitrary data
+        # Sample R code used for the third test case above:
+        # ```R
+        # > options(digits=16)
+        # > x <- c(1,2,3)
+        # > y <- c(4,5,6,7,8)
+        # > ansari.test(x, y, alternative='less', exact=TRUE)
+        #
+        #     Ansari-Bradley test
+        #
+        # data:  x and y
+        # AB = 6, p-value = 0.8928571428571
+        # alternative hypothesis: true ratio of scales is less than 1
+        #
+        # ```
+        pval = stats.ansari(x, y, alternative=alternative).pvalue
+        assert_allclose(pval, expected, atol=1e-12)
+
+    def test_alternative_approx(self):
+        # intuitive tests for approximation
+        x1 = stats.norm.rvs(0, 5, size=100, random_state=123)
+        x2 = stats.norm.rvs(0, 2, size=100, random_state=123)
+        # for m > 55 or n > 55, the test should automatically
+        # switch to approximation.
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_allclose(pval_l, 1.0, atol=1e-12)
+        assert_allclose(pval_g, 0.0, atol=1e-12)
+        # also check if one of the one-sided p-value equals half the
+        # two-sided p-value and the other one-sided p-value is its
+        # compliment.
+        x1 = stats.norm.rvs(0, 2, size=60, random_state=123)
+        x2 = stats.norm.rvs(0, 1.5, size=60, random_state=123)
+        pval = stats.ansari(x1, x2).pvalue
+        pval_l = stats.ansari(x1, x2, alternative='less').pvalue
+        pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
+        assert_allclose(pval_g, pval/2, atol=1e-12)
+        assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
 class TestBartlett:
