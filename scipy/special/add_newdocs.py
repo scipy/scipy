@@ -9654,3 +9654,16 @@ add_newdoc("wright_bessel",
     .. [1] Digital Library of Mathematical Functions, 10.46.
            https://dlmf.nist.gov/10.46.E1
     """)
+
+
+add_newdoc("ndtri_exp",
+    r"""
+    ndtri_exp(y)
+
+    Inverse of logarithim of CDF of Normal Distribution
+
+    Parameters
+    ----------
+    y : array_like of float
+        a <= 0
+    """)
