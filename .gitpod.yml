@@ -2,6 +2,8 @@
 # that even forks do have a usable freshly built SciPy
 # Might delegate this later to prebuild with Q2 improvements on gitpod
 # https://www.gitpod.io/docs/config-start-tasks/#configuring-the-terminal
+# please note that the conda env *must* be activated again for ccache to
+# work, else it fails with a very cryptic message
 # -------------------------------------------------------------------------
 
 image: scipy/scipy-gitpod:latest
@@ -10,14 +12,15 @@ tasks:
     init: |
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
+      conda activate scipy-dev
       python setup.py build_ext --inplace
-      echo "🛠 \e[35m\e[1m Completed rebuilding SciPy!! 🛠 "
+      echo "🛠 Completed rebuilding SciPy!! 🛠 "
       conda develop .
-      echo "📖 \e[35m\e[1m Building docs 📖 "
+      echo "📖 Building docs 📖 "
       git submodule update --init
       cd doc 
       make html-scipyorg
-      echo "✨ \e[35m\e[1m pre-build complete! You can close this terminal ✨ "
+      echo "✨ Pre-build complete! You can close this terminal ✨ "
   
 # --------------------------------------------------------
 # exposing ports for liveserve
