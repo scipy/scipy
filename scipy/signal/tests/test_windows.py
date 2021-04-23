@@ -707,6 +707,25 @@ def test_needs_params():
         assert_raises(ValueError, get_window, winstr, 7)
 
 
+def test_not_needs_params():
+    for winstr in ['barthann',
+                   'bartlett',
+                   'blackman',
+                   'blackmanharris',
+                   'bohman',
+                   'boxcar',
+                   'cosine',
+                   'flattop',
+                   'hamming',
+                   'hanning',
+                   'nuttall',
+                   'parzen',
+                   'taylor',
+                   'triangle']:
+        win = get_window(winstr, 7)
+        assert_equal(len(win), 7)
+
+
 def test_deprecation():
     if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
         assert_('signal.hann is deprecated' in dep_hann.__doc__)
