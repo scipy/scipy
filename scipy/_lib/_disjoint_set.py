@@ -215,7 +215,7 @@ class DisjointSet:
 
         Returns
         -------
-        result : set
+        result : list
             Subsets in the disjoint set.
         """
         result = []
