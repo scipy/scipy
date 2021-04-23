@@ -2304,13 +2304,13 @@ def ansari(x, y, alternative='two-sided'):
     hence we should be able to reject the null hypothesis:
 
     >>> ansari(x1, x3, alternative='greater')
-    AnsariResult(statistic=452.0, pvalue=0.0001543510203987259)
+    AnsariResult(statistic=425.0, pvalue=0.0001543510203987259)
 
     As we can see, the p-value is indeed quite low. Use of
     ``alternative='less'`` should thus yield a large p-value:
 
     >>> ansari(x1, x3, alternative='less')
-    AnsariResult(statistic=452.0, pvalue=0.9998643258449039)
+    AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
 
     """
     if alternative not in {'two-sided', 'greater', 'less'}:
