@@ -535,7 +535,7 @@ def test_maxfev_test():
             result = optimize.minimize(cost, np.random.rand(10),
                                        method=method,
                                        options={'maxfev': imaxfev})
-            assert result["nfev"] == ifev
+            assert result["nfev"] == imaxfev
 
 
 def test_obj_func_returns_scalar():
