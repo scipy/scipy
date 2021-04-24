@@ -22,7 +22,7 @@ _MACHEPS = np.finfo(np.float64).eps
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
-                           callback=None, disp=False, polish=True,
+                           callback=None, full_population=False, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None):
     """Finds the global minimum of a multivariate function.
@@ -117,6 +117,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
+    full_population : bool, optional
+        If True, callback passes a tuple containing the full population and
+        associated energies instead of ``x0``.
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -321,6 +324,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      recombination=recombination,
                                      seed=seed, polish=polish,
                                      callback=callback,
+                                     full_population=full_population,
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
                                      workers=workers,
@@ -419,6 +423,9 @@ class DifferentialEvolutionSolver:
         value of the population convergence. When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
+    full_population : bool, optional
+        If True, callback passes a tuple containing the full population and
+        associated energies instead of ``x0``.
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -509,8 +516,9 @@ class DifferentialEvolutionSolver:
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=np.inf, callback=None, disp=False, polish=True,
-                 init='latinhypercube', atol=0, updating='immediate',
+                 maxfun=np.inf, callback=None, full_population=False,
+                 disp=False, polish=True, init='latinhypercube',
+                 atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None):
 
         if strategy in self._binomial:
@@ -522,6 +530,7 @@ class DifferentialEvolutionSolver:
         self.strategy = strategy
 
         self.callback = callback
+        self.full_population = full_population
         self.polish = polish
 
         # set the updating / parallelisation options
@@ -866,7 +875,12 @@ class DifferentialEvolutionSolver:
 
             if self.callback:
                 c = self.tol / (self.convergence + _MACHEPS)
-                warning_flag = bool(self.callback(self.x, convergence=c))
+                if self.full_population:
+                    warning_flag = bool(self.callback((self._scale_parameters(self.population),
+                                                       self.population_energies),
+                                                      convergence=c))
+                else:
+                    warning_flag = bool(self.callback(self.x, convergence=c))
                 if warning_flag:
                     status_message = ('callback function requested stop early'
                                       ' by returning True')

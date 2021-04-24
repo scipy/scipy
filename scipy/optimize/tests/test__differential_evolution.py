@@ -255,6 +255,34 @@ class TestDifferentialEvolutionSolver:
         result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
         assert result.success
 
+    def test_callback_args(self):
+        # test that callback arguments obey full_population parameter
+        bounds = [(0, 2), (0, 2), (0, 2)]
+
+        def simple_callback(xk, convergence=0.):
+            # xk should be a 1D-array and same size as bounds
+            assert isinstance(xk, np.ndarray)
+            assert xk.shape == (len(bounds),)
+
+            return
+
+        result = differential_evolution(rosen, bounds, maxiter=1, callback=simple_callback)
+
+        def full_callback(xk, convergence=0.):
+            # xk should be tuple of len 2
+            assert len(xk) == 2
+
+            # test for correct type and size of population and energies
+            population, energies = xk
+            assert isinstance(population, np.ndarray)
+            assert isinstance(energies, np.ndarray)
+            assert population.shape == (len(bounds)*5, len(bounds))  # popsize=5
+            assert energies.shape == (len(bounds)*5,)  # popsize=5
+
+            return
+
+        result = differential_evolution(rosen, bounds, maxiter=1, callback=full_callback, full_population=True, popsize=5)
+
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
         bounds = [(-10, 10)]
