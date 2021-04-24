@@ -287,26 +287,59 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             break;
         //TODO: case for extend reflect-odd
         case NI_EXTEND_REFLECT_ODD:
-            src = first;
+            // int phantom_size = size_before > size_after ? size_before : size_after;
+            // double* phantom_before = (double*) malloc(phantom_size * sizeof(double));
+            // double* phantom_after = (double*) malloc(phantom_size * sizeof(double));
+            // double* pb = phantom_before + phantom_size - 1;
+            // double* pa = phantom_after;
+            // double f = 2 * (*first), double l = 2 * (*last);
+            // src = first;
+            // while (pb >= phantom_before && src < last) {
+            //     *pb-- = f - *src++;
+            // }
+            // src = last - 1;
+            // while (pa < phantom_after + phantom_size && src >= first) {
+            //     *pa++ = l - *src--;
+            // }
+            // while (pb >= phantom_before || pa < phantom_after + phantom_size) {
+                
+            // }
+            if (first == last - 1) {
+                PyErr_SetString("buffer size 1");
+            }
+            int front_factor = 1, int back_factor = 0;
+            src = first + 1;
             dst = first - 1;
-            while (size_before && src < last) {
-                *dst-- = 2 * (*src) - *++src;
+            bool pull_right = true;
+            while (size_before) {
+                //add the appropriate amount of edge information (trust us :)
+                *dst = 2 * (*first * front_factor) - 2 * (*(last - 1) * back_factor);
+                if(pull_right)
+                {
+                    //case that iterator is moving rightward through array
+                    *dst -= *src++;
+                    if(src == last)
+                    {
+                        pull_right = false;
+                        src = last - 2; //now emulating mirrof from rightmost edge
+                        back_factor++;
+                    }
+                }
+                else
+                {
+                    *dst += *src--;
+                    if(src == first - 1)
+                    {
+                        pull_right = true;
+                        src = first + 1; //now emulating mirrof from rightmost edge
+                        front_factor++;
+                    }
+                }
+                //move head of left mirror buffer over
+                dst--;
                 --size_before;
             }
-            src = last - 1;
-            while (size_before--) {
-                *dst-- = *src--;
-            }
-            src = last - 1;
-            dst = last;
-            while (size_after && src >= first) {
-                *dst++ = *src--;
-                --size_after;
-            }
-            src = first;
-            while (size_after--) {
-                *dst++ = *src++;
-            }
+            //TODO: add code for mirror on rihgt side of array
             break;
         /* cbabcdcb|abcd|cbabcdcb */
         case NI_EXTEND_MIRROR:
