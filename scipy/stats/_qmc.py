@@ -361,7 +361,6 @@ def primes_from_2_to(n):
 
     Notes
     -----
-
     Taken from [1]_ by P.T. Roy, written consent given on 23.04.2021
     by the original author, Bruno Astrolino, for free use in SciPy under
     the 3-clause BSD.
