@@ -286,7 +286,28 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             }
             break;
         //TODO: case for extend reflect-odd
-        //2x - the other thing
+        case NI_EXTEND_REFLECT_ODD:
+            src = first;
+            dst = first - 1;
+            while (size_before && src < last) {
+                *dst-- = 2 * (*src) - *++src;
+                --size_before;
+            }
+            src = last - 1;
+            while (size_before--) {
+                *dst-- = *src--;
+            }
+            src = last - 1;
+            dst = last;
+            while (size_after && src >= first) {
+                *dst++ = *src--;
+                --size_after;
+            }
+            src = first;
+            while (size_after--) {
+                *dst++ = *src++;
+            }
+            break;
         /* cbabcdcb|abcd|cbabcdcb */
         case NI_EXTEND_MIRROR:
             src = first + 1;
@@ -626,6 +647,27 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                         }
                         break;
                     case NI_EXTEND_REFLECT:
+                        if (cc < 0) {
+                            if (len <= 1) {
+                                cc = 0;
+                            } else {
+                                int sz2 = 2 * len;
+                                if (cc < -sz2)
+                                    cc = sz2 * (int)(-cc / sz2) + cc;
+                                cc = cc < -len ? cc + sz2 : -cc - 1;
+                            }
+                        } else if (cc >= len) {
+                            if (len <= 1) {cc = 0;
+                            } else {
+                                int sz2 = 2 * len;
+                                cc -= sz2 * (int)(cc / sz2);
+                                if (cc >= len)
+                                    cc = sz2 - cc - 1;
+                            }
+                        }
+                        break;
+                    //TODO: our own version here:
+                    case NI_EXTEND_REFLECT_ODD:
                         if (cc < 0) {
                             if (len <= 1) {
                                 cc = 0;
