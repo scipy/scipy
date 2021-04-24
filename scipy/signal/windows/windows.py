@@ -2018,7 +2018,7 @@ _win_equiv_raw = {
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
     ('dpss',): (dpss, True),
-    ('exponential', 'poisson'): (exponential, True),
+    ('exponential', 'poisson'): (exponential, False),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
     ('general gaussian', 'general_gaussian',
@@ -2030,7 +2030,7 @@ _win_equiv_raw = {
     ('parzen', 'parz', 'par'): (parzen, False),
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
-    ('tukey', 'tuk'): (tukey, True),
+    ('tukey', 'tuk'): (tukey, False),
 }
 
 # Fill dict with all valid window name strings
@@ -2083,15 +2083,16 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.blackmanharris`
     - `~scipy.signal.windows.nuttall`
     - `~scipy.signal.windows.barthann`
+    - `~scipy.signal.windows.cosine`
+    - `~scipy.signal.windows.exponential`
+    - `~scipy.signal.windows.tukey`
+    - `~scipy.signal.windows.taylor`
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
-    - `~scipy.signal.windows.exponential` (needs center, decay scale)
-    - `~scipy.signal.windows.tukey` (needs taper fraction)
-    - `~scipy.signal.windows.taylor` (needs number of constant sidelobes,
-      sidelobe level)
+
 
     If the window requires no parameters, then `window` can be a string.
 
