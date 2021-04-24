@@ -84,7 +84,7 @@ Version ranges for NumPy and other dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 For dependencies it's important to set lower and upper bounds on their
 versions. For *build-time* dependencies, they are specified in
-``pyproject.toml`` and the versions will _only_ apply to the SciPy build
+``pyproject.toml`` and the versions will *only* apply to the SciPy build
 itself. It's fine to specify either a range or a specific version for a
 dependency like ``wheel`` or ``setuptools``. For NumPy we have to worry
 about ABI compatibility too, hence we specify the version with ``==``
@@ -92,16 +92,16 @@ to the lowest supported version (because NumPy's ABI is backward but not
 forward compatible).
 
 For *run-time dependencies* (currently only ``numpy``), we specify the range
-of versions in ``install_requires`` in ``setup.py``. Getting the upper bound
-right is slightly tricky.  If we don't set any bound, a too-new version
-will be pulled in a few years down the line, and NumPy may have deprecated and
-removed some API that SciPy depended on by then. On the other hand if we set
-the upper bound to the newest already-released version, then as soon as a new
-NumPy version is released there will be no matching SciPy version that works
-with it. Given that NumPy and SciPy both release in a 6-monthly cadence and
-that features that get deprecated in NumPy should stay around for another two
-releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx`` is the
-minor version of the latest already-released NumPy.
+of versions in ``pyproject.toml`` and in ``install_requires`` in ``setup.py``.
+Getting the upper bound right is slightly tricky.  If we don't set any bound, a
+too-new version will be pulled in a few years down the line, and NumPy may have
+deprecated and removed some API that SciPy depended on by then. On the other
+hand if we set the upper bound to the newest already-released version, then as
+soon as a new NumPy version is released there will be no matching SciPy version
+that works with it. Given that NumPy and SciPy both release in a 6-monthly
+cadence and that features that get deprecated in NumPy should stay around for
+another two releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx``
+is the minor version of the latest already-released NumPy.
 
 
 .. _supported-py-numpy-versions:
