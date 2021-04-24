@@ -234,14 +234,6 @@ class RBFInterpolator:
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
 
-        When `degree` is greater than 0, there are some restrictions placed on
-        where the data points can be located. For example, the data points
-        cannot be collinear (N=2), coplanar (N=3), etc. when `degree` is 1.
-        Additionally, `degree` controls how many data points are required for
-        the interpolant to be well-posed. Only 1 data point is required when
-        `degree` is 0, and N+1 data points are required when `degree` is 1. See
-        `Notes` for more information.
-
     Notes
     -----
     An RBF is a scalar valued function in N-dimensional space whose value at
@@ -270,21 +262,24 @@ class RBFInterpolator:
     .. math::
         P(y)^T a = 0,
 
-    where :math:`\\lambda` is a positive smoothing parameter that controls how
-    well we want to fit the observations. The observations are fit exactly when
-    the smoothing parameter is 0.
+    where :math:`\\lambda` is a non-negative smoothing parameter that controls
+    how well we want to fit the observations. The observations are fit exactly
+    when the smoothing parameter is 0.
 
-    For the RBFs 'ga', 'imq', and 'iq', the solution for :math:`a` and
-    :math:`b` is unique if :math:`P(y)` has full column rank. For example,
-    :math:`P(y)` would not have full column rank if the observations are
-    collinear in two-dimensional space and the degree of the added polynomial
-    is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and 'quintic', the
-    solution for  :math:`a` and :math:`b` is unique if :math:`P(y)` has full
-    column rank and the degree of the added polynomial is not lower than the
-    minimum value listed above (see Chapter 7 of [1]_ or [2]_).
+    The above system is uniquely solvable if the following requirements are
+    met:
 
-    When using an RBF that is not scale invariant ('mq', 'imq', 'iq', and
-    'ga'), an appropriate shape parameter must be chosen (e.g., through cross
+        - :math:`P(y)` must have full column rank. When `degree` is 0,
+          :math:`P(y)` always has full column rank provided that there is at
+          least 1 data point. When `degree` is 1, :math:`P(y)` has full column
+          rank if there are N+1 data points and they are not collinear (N=2),
+          coplanar (N=3), etc.
+        - If `kernel` is 'mq', 'linear', 'tps', 'cubic', or 'quintic', then
+          `degree` must not be lower than the minimum value listed above.
+        - If `smoothing` is 0, then each data point location must be distinct.
+
+    When using an RBF that is not scale invariant ('mq', 'imq', 'iq', or 'ga'),
+    an appropriate shape parameter must be chosen (e.g., through cross
     validation). Smaller values for the shape parameter correspond to wider
     RBFs. The problem can become ill-conditioned or singular when the shape
     parameter is too small.
@@ -397,6 +392,8 @@ class KNearestRBFInterpolator:
     """
     RBF interpolation using the k nearest data points
 
+    See `RBFInterpolator` for more information.
+
     Parameters
     ----------
     y : (P, N) array_like
@@ -438,14 +435,6 @@ class KNearestRBFInterpolator:
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
-
-        When `degree` is greater than 0, there are some restrictions placed on
-        where the data points can be located. For example, the data points
-        cannot be collinear (N=2), coplanar (N=3), etc. when `degree` is 1.
-        Additionally, `degree` controls how many data points are required for
-        the interpolant to be well-posed. Only 1 data point is required when
-        `degree` is 0, and N+1 data points are required when `degree` is 1. See
-        the `Notes` section for `RBFInterpolator` for more information.
 
     See Also
     --------
