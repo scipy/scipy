@@ -349,9 +349,6 @@ def update_discrepancy(x_new, sample, initial_disc):
 def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
 
-    Taken from [1]_ by P.T. Roy, licensed under
-    `CC-BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_.
-
     Parameters
     ----------
     n : int
@@ -361,6 +358,12 @@ def primes_from_2_to(n):
     -------
     primes : list(int)
         Primes in ``2 <= p < n``.
+
+    Notes
+    -----
+    Taken from [1]_ by P.T. Roy, written consent given on 23.04.2021
+    by the original author, Bruno Astrolino, for free use in SciPy under
+    the 3-clause BSD.
 
     References
     ----------
