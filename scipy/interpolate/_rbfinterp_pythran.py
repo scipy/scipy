@@ -178,7 +178,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
         lhs[i, i] += smoothing[i]
 
     # Transpose to make the array fortran contiguous
-    rhs = np.empty((s, p + r), dtype=d.dtype).T
+    rhs = np.empty((s, p + r), dtype=float).T
     rhs[:p] = d
     rhs[p:] = 0.0
 
@@ -231,7 +231,7 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     xeps = x*epsilon
     xhat = (x - shift)/scale
 
-    out = np.empty((q, s), dtype=coeffs.dtype)
+    out = np.empty((q, s), dtype=float)
     vec = np.empty((p + r,), dtype=float)
     for i in range(q):
         kernel_vector(xeps[i], yeps, kernel_func, vec[:p])
