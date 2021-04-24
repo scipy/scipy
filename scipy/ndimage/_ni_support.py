@@ -50,6 +50,10 @@ def _extend_mode_to_code(mode):
         return 5
     elif mode == 'grid-constant':
         return 6
+    #TODO here
+    elif mode == 'reflect-odd':
+        return 7
+    #maybe TOTO: ad odd for symmetric if thats an option lol
     else:
         raise RuntimeError('boundary mode not supported')
 

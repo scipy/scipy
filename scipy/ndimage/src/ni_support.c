@@ -285,6 +285,8 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
                 *dst++ = *src++;
             }
             break;
+        //TODO: case for extend reflect-odd
+        //2x - the other thing
         /* cbabcdcb|abcd|cbabcdcb */
         case NI_EXTEND_MIRROR:
             src = first + 1;
