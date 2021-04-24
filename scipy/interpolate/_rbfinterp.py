@@ -15,55 +15,6 @@ from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 __all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
 
 
-@lru_cache(maxsize=8)
-def _monomial_powers(ndim, degree):
-    """
-    Returns the powers for each monomial in a polynomial with the specified
-    number of dimensions and degree
-    """
-    out = []
-    for deg in range(degree + 1):
-        for itm in combinations_with_replacement(np.eye(ndim, dtype=int), deg):
-            out.append(sum(itm, np.zeros(ndim, dtype=int)))
-
-    if not out:
-        out = np.zeros((0, ndim), dtype=int)
-    else:
-        out = np.array(out)
-
-    return out
-
-
-def _solve(lhs, rhs, y, powers):
-    """
-    Solve the system in place using dgesv. If `lhs` is singular, attempt to
-    diagnose the issue by checking if the polynomial matrix evaluated at `y`
-    has full column rank.
-    """
-    _, _, soln, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
-    if info < 0:
-        raise ValueError('The %d-th argument had an illegal value' % -info)
-    elif info > 0:
-        msg = 'Singular matrix'
-        nmonos = powers.shape[0]
-        if nmonos > 0:
-            pmat = _polynomial_matrix(y, powers)
-            rank = np.linalg.matrix_rank(pmat)
-            if rank < nmonos:
-                msg = (
-                    'Singular matrix. The matrix of monomials evaluated at '
-                    'the data point coordinates does not have full column '
-                    'rank (%d/%d). Consider lowering `degree` and/or setting '
-                    '`kernel` to an RBF with a lower minimum degree.' %
-                    (rank, nmonos)
-                    )
-
-        raise LinAlgError(msg)
-
-    # `soln` and `rhs` should be the same array if `rhs` is fortran contiguous
-    return soln
-
-
 # The RBFs that are implemented
 _AVAILABLE = {'linear', 'tps', 'cubic', 'quintic', 'mq', 'imq', 'iq', 'ga'}
 
@@ -84,6 +35,79 @@ _NAME_TO_MIN_DEGREE = {
     'cubic': 1,
     'quintic': 2
     }
+
+
+@lru_cache(maxsize=8)
+def _monomial_powers(ndim, degree):
+    """
+    Returns the powers for each monomial in a polynomial with the specified
+    number of dimensions and degree
+    """
+    out = []
+    for deg in range(degree + 1):
+        for itm in combinations_with_replacement(np.eye(ndim, dtype=int), deg):
+            out.append(sum(itm, np.zeros(ndim, dtype=int)))
+
+    if not out:
+        out = np.zeros((0, ndim), dtype=int)
+    else:
+        out = np.array(out)
+
+    return out
+
+
+def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
+    """
+    Build and solve the RBF interpolation system of equations
+
+    Parameters
+    ----------
+    y : (P, N) float ndarray
+        Data point coordinates
+    d : (P, S) float ndarray
+        Data values at `y`
+    smoothing : (P,) float ndarray
+        Smoothing parameter for each data point
+    kernel : str
+        Name of the RBF
+    epsilon : float
+        Shape parameter
+    powers : (R, N) int ndarray
+        The exponents for each monomial in the polynomial
+
+    Returns
+    -------
+    coeffs : (P + R, S) float ndarray
+    shift : (N,) float ndarray
+        Domain shift used to create the polynomial matrix
+    scale : (N,) float ndarray
+        Domain scaling used to create the polynomial matrix
+
+    """
+    lhs, rhs, shift, scale = _build_system(
+        y, d, smoothing, kernel, epsilon, powers
+        )
+    _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
+    if info < 0:
+        raise ValueError('The %d-th argument had an illegal value' % -info)
+    elif info > 0:
+        msg = 'Singular matrix'
+        nmonos = powers.shape[0]
+        if nmonos > 0:
+            pmat = _polynomial_matrix(y, powers)
+            rank = np.linalg.matrix_rank(pmat)
+            if rank < nmonos:
+                msg = (
+                    'Singular matrix. The matrix of monomials evaluated at '
+                    'the data point coordinates does not have full column '
+                    'rank (%d/%d). Consider lowering `degree` and/or setting '
+                    '`kernel` to an RBF with a lower minimum degree.' %
+                    (rank, nmonos)
+                    )
+
+        raise LinAlgError(msg)
+
+    return shift, scale, coeffs
 
 
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
@@ -157,7 +181,9 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     if nmonos > nobs:
         raise ValueError(
             'At least %d data points are required when `degree` is %d and the '
-            'number of dimensions is %d' % (nmonos, degree, ndim)
+            'number of dimensions is %d. Consider lowering `degree` and/or '
+            'setting `kernel` to an RBF with a lower minimum degree.' %
+            (nmonos, degree, ndim)
             )
 
     return y, d, smoothing, kernel, epsilon, degree, k
@@ -195,9 +221,9 @@ class RBFInterpolator:
         the same effect as scaling the smoothing parameter. This must be
         specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
     degree : int, optional
-        Degree of the added polynomial. Some RBFs have a minimum polynomial
-        degree that is needed for the interpolant to be well-posed. Those RBFs
-        and their corresponding minimum degrees are:
+        Degree of the added polynomial. For some RBFs the interpolant may not
+        be well-posed if the polynomial degree is too small. Those RBFs and
+        their corresponding minimum degrees are:
 
             - 'mq'      : 0
             - 'linear'  : 0
@@ -205,9 +231,16 @@ class RBFInterpolator:
             - 'cubic'   : 1
             - 'quintic' : 2
 
-        The default value is the minimum degree required for `kernel` or 0 if
-        there is no minimum required degree. Set this to -1 for no added
-        polynomial.
+        The default value is the minimum degree for `kernel` or 0 if there is
+        no minimum degree. Set this to -1 for no added polynomial.
+
+        When `degree` is greater than 0, there are some restrictions placed on
+        where the data points can be located. For example, the data points
+        cannot be collinear (N=2), coplanar (N=3), etc. when `degree` is 1.
+        Additionally, `degree` controls how many data points are required for
+        the interpolant to be well-posed. Only 1 data point is required when
+        `degree` is 0, and N+1 data points are required when `degree` is 1. See
+        `Notes` for more information.
 
     Notes
     -----
@@ -239,17 +272,16 @@ class RBFInterpolator:
 
     where :math:`\\lambda` is a positive smoothing parameter that controls how
     well we want to fit the observations. The observations are fit exactly when
-    the smoothing parameter is zero.
+    the smoothing parameter is 0.
 
     For the RBFs 'ga', 'imq', and 'iq', the solution for :math:`a` and
-    :math:`b` is analytically unique if :math:`P(y)` has full column rank. As
-    an example, :math:`P(y)` would not have full column rank if the
-    observations are collinear in two-dimensional space and the degree of the
-    added polynomial is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and
-    'quintic', the solution for  :math:`a` and :math:`b` is analytically unique
-    if :math:`P(y)` has full column rank and the degree of the added polynomial
-    is not lower than the minimum value listed above (see Chapter 7 of [1]_ or
-    [2]_).
+    :math:`b` is unique if :math:`P(y)` has full column rank. For example,
+    :math:`P(y)` would not have full column rank if the observations are
+    collinear in two-dimensional space and the degree of the added polynomial
+    is 1. For the RBFs 'mq', 'linear', 'tps', 'cubic', and 'quintic', the
+    solution for  :math:`a` and :math:`b` is unique if :math:`P(y)` has full
+    column rank and the degree of the added polynomial is not lower than the
+    minimum value listed above (see Chapter 7 of [1]_ or [2]_).
 
     When using an RBF that is not scale invariant ('mq', 'imq', 'iq', and
     'ga'), an appropriate shape parameter must be chosen (e.g., through cross
@@ -312,11 +344,9 @@ class RBFInterpolator:
         # complex and take up 2x more memory than necessary
         d = d.view(float)
         powers = _monomial_powers(ndim, degree)
-        lhs, rhs, shift, scale = _build_system(
+        shift, scale, coeffs = _build_and_solve_system(
             y, d, smoothing, kernel, epsilon, powers
             )
-
-        coeffs = _solve(lhs, rhs, y, powers)
 
         self.y = y
         self.kernel = kernel
@@ -396,9 +426,9 @@ class KNearestRBFInterpolator:
         the same effect as scaling the smoothing parameter. This must be
         specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
     degree : int, optional
-        Degree of the added polynomial. Some RBFs have a minimum polynomial
-        degree that is needed for the interpolant to be well-posed. Those RBFs
-        and their corresponding minimum degrees are:
+        Degree of the added polynomial. For some RBFs the interpolant may not
+        be well-posed if the polynomial degree is too small. Those RBFs and
+        their corresponding minimum degrees are:
 
             - 'mq'      : 0
             - 'linear'  : 0
@@ -406,9 +436,16 @@ class KNearestRBFInterpolator:
             - 'cubic'   : 1
             - 'quintic' : 2
 
-        The default value is the minimum degree required for `kernel` or 0 if
-        there is no minimum required degree. Set this to -1 for no added
-        polynomial.
+        The default value is the minimum degree for `kernel` or 0 if there is
+        no minimum degree. Set this to -1 for no added polynomial.
+
+        When `degree` is greater than 0, there are some restrictions placed on
+        where the data points can be located. For example, the data points
+        cannot be collinear (N=2), coplanar (N=3), etc. when `degree` is 1.
+        Additionally, `degree` controls how many data points are required for
+        the interpolant to be well-posed. Only 1 data point is required when
+        `degree` is 0, and N+1 data points are required when `degree` is 1. See
+        the `Notes` section for `RBFInterpolator` for more information.
 
     See Also
     --------
@@ -498,11 +535,9 @@ class KNearestRBFInterpolator:
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
             snbr = self.smoothing[yidx]
-            lhs, rhs, shift, scale = _build_system(
+            shift, scale, coeffs = _build_and_solve_system(
                 ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
                 )
-
-            coeffs = _solve(lhs, rhs, ynbr, self.powers)
 
             out[xidx] = _evaluate(
                 xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
