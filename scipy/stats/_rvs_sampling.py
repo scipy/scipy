@@ -314,7 +314,7 @@ class FastNumericalInverse():
         result[~i] = np.nan
         return result
 
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size=1, random_state=None, qmc_engine=None):
         """
         Random variates of the given RV.
 
@@ -323,8 +323,7 @@ class FastNumericalInverse():
         size : int or tuple of ints, optional
             Defining number of random variates (Default is 1).
         random_state : (see below), optional
-            This parameter defines the object to use for drawing random
-            variates.
+            Defines the object to use for drawing pseudorandom variates.
             If `random_state` is `None` the `~np.random.RandomState` singleton
             is used.
             If `random_state` is an int, a new ``RandomState`` instance is
@@ -332,14 +331,19 @@ class FastNumericalInverse():
             If `random_state` is already a ``RandomState`` or ``Generator``
             instance, then that object is used.
             Default is None.
-
+        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
+            This parameter defines the object to use for drawing
+            quasi-Monte Carlo variates. Default is None.
         Returns
         -------
         rvs : ndarray or scalar
             Random variates of given `size`.
         """
-        rng = check_random_state(random_state)
-        return self.ppf(rng.random(size=size))
+        if qmc_engine is not None and random_state is not None:
+            message = "Only one of `random_state` or `qmc_engine` may be used."
+            raise ValueError(message)
+        rng = qmc_engine or check_random_state(random_state)
+        return self.ppf(rng.random(size))
 
 
 def _fni_input_validation(dist, tol, max_intervals):

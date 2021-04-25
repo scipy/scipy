@@ -6709,7 +6709,7 @@ class TestMGCStat:
 def test_FastNumericalInverse(distname, shapes):
     slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
     fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                  'norminvgauss'}
+                  'norminvgauss', 'genhyperbolic'}
 
     if distname in slow_dists:
         pytest.skip("FastNumericalInverse is not fast enough.")
@@ -6735,14 +6735,44 @@ def test_FastNumericalInverse(distname, shapes):
 
 
 def test_fni_input_validation():
-    with assert_raises(ValueError, match="could not convert string to float"):
+    match = "could not convert string to float"
+    with pytest.raises(ValueError, match=match):
         stats.FastNumericalInverse(stats.norm(), tol='ekki')
-    with assert_raises(ValueError, match="`max_intervals' must be"):
+
+    match = "`max_intervals' must be..."
+    with pytest.raises(ValueError, match=match):
         stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
-    with assert_raises(AttributeError, match="'str' object has no attribute"):
+
+    match = "'str' object has no attribute"
+    with pytest.raises(AttributeError, match=match):
         stats.FastNumericalInverse("ekki")
 
-        
+    match="Only one of `random_state` or `qmc_engine` may be used."
+    with pytest.raises(ValueError, match=match):
+        fni = stats.FastNumericalInverse(stats.norm())
+        fni.rvs(random_state=0, qmc_engine=stats.qmc.Sobol(1))
+
+
+def test_FastNumericalInverseRVS():
+
+    dist = stats.norm()
+    fni = stats.FastNumericalInverse(dist)
+
+    rngs = [0, np.random.RandomState(0)]
+    if NumpyVersion(np.__version__) >= '1.18.0':
+        rngs.append(np.random.default_rng(0))
+
+    size = (4, 5, 6)
+    for rng in rngs:
+        rvs = fni.rvs(size=size, random_state=rng)
+        assert(rvs.shape == size)
+
+    size = 8
+    qmc = stats.qmc.Sobol(1)
+    rvs = fni.rvs(size=size, qmc_engine=qmc)
+    assert(rvs.shape == (size, 1))
+
+
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at
     # https://rdrr.io/cran/cultevo/, e.g.

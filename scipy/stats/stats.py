@@ -47,7 +47,6 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from ._rvs_sampling import rvs_ratio_uniforms, FastNumericalInverse
 from dataclasses import make_dataclass
 
 
@@ -72,7 +71,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata', 'rvs_ratio_uniforms', 'FastNumericalInverse',
+           'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern']
 
