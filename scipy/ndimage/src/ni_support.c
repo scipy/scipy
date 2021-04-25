@@ -30,6 +30,7 @@
  */
 
 #include "ni_support.h"
+#include <stdio.h>
 
 /* initialize iterations over single array elements: */
 int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
@@ -285,61 +286,53 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
                 *dst++ = *src++;
             }
             break;
-        //TODO: case for extend reflect-odd
+        /* 2a-d,2a-c,2a-b|abcd|2d-c,2d-b,2d-a */
         case NI_EXTEND_REFLECT_ODD:
-            // int phantom_size = size_before > size_after ? size_before : size_after;
-            // double* phantom_before = (double*) malloc(phantom_size * sizeof(double));
-            // double* phantom_after = (double*) malloc(phantom_size * sizeof(double));
-            // double* pb = phantom_before + phantom_size - 1;
-            // double* pa = phantom_after;
-            // double f = 2 * (*first), double l = 2 * (*last);
-            // src = first;
-            // while (pb >= phantom_before && src < last) {
-            //     *pb-- = f - *src++;
-            // }
-            // src = last - 1;
-            // while (pa < phantom_after + phantom_size && src >= first) {
-            //     *pa++ = l - *src--;
-            // }
-            // while (pb >= phantom_before || pa < phantom_after + phantom_size) {
-                
-            // }
-            if (first == last - 1) {
-                PyErr_SetString("buffer size 1");
-            }
-            int front_factor = 1, int back_factor = 0;
-            src = first + 1;
+            {
+            int left_factor = 2;
+            int right_factor = 0;
+            int sign = -1;
+            int direction = 1;
             dst = first - 1;
-            bool pull_right = true;
-            while (size_before) {
-                //add the appropriate amount of edge information (trust us :)
-                *dst = 2 * (*first * front_factor) - 2 * (*(last - 1) * back_factor);
-                if(pull_right)
-                {
-                    //case that iterator is moving rightward through array
-                    *dst -= *src++;
-                    if(src == last)
-                    {
-                        pull_right = false;
-                        src = last - 2; //now emulating mirrof from rightmost edge
-                        back_factor++;
-                    }
+            double* pull = first + 1;
+            while (size_before--) {
+                *dst-- = (left_factor * (*first)) - (right_factor * (*(last - 1))) + (sign * (*pull));
+                pull += direction;
+                if (pull >= last) {
+                    pull = last - 2;
+                    direction = -1;
+                    sign = 1;
+                    right_factor += 2;
                 }
-                else
-                {
-                    *dst += *src--;
-                    if(src == first - 1)
-                    {
-                        pull_right = true;
-                        src = first + 1; //now emulating mirrof from rightmost edge
-                        front_factor++;
-                    }
+                else if (pull < first) {
+                    pull = first + 1;
+                    direction = 1;
+                    sign = -1;
+                    left_factor += 2;
                 }
-                //move head of left mirror buffer over
-                dst--;
-                --size_before;
             }
-            //TODO: add code for mirror on rihgt side of array
+            left_factor = 0;
+            right_factor = 2;
+            sign = -1;
+            direction = -1;
+            dst = last;
+            while (size_after--) {
+                *dst++ = (right_factor * (*(last - 1))) - (left_factor * (*first)) + (sign * (*pull));
+                pull += direction;
+                if (pull >= last) {
+                    pull = last - 2;
+                    direction = -1;
+                    sign = -1;
+                    right_factor += 2;
+                }
+                else if (pull < first) {
+                    pull = first + 1;
+                    direction = 1;
+                    sign = 1;
+                    left_factor += 2;
+                }
+            }
+            }
             break;
         /* cbabcdcb|abcd|cbabcdcb */
         case NI_EXTEND_MIRROR:
@@ -679,28 +672,8 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                             }
                         }
                         break;
+                    case NI_EXTEND_REFLECT_ODD: //avoid failiure on bad mode choice
                     case NI_EXTEND_REFLECT:
-                        if (cc < 0) {
-                            if (len <= 1) {
-                                cc = 0;
-                            } else {
-                                int sz2 = 2 * len;
-                                if (cc < -sz2)
-                                    cc = sz2 * (int)(-cc / sz2) + cc;
-                                cc = cc < -len ? cc + sz2 : -cc - 1;
-                            }
-                        } else if (cc >= len) {
-                            if (len <= 1) {cc = 0;
-                            } else {
-                                int sz2 = 2 * len;
-                                cc -= sz2 * (int)(cc / sz2);
-                                if (cc >= len)
-                                    cc = sz2 - cc - 1;
-                            }
-                        }
-                        break;
-                    //TODO: our own version here:
-                    case NI_EXTEND_REFLECT_ODD:
                         if (cc < 0) {
                             if (len <= 1) {
                                 cc = 0;
