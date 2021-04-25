@@ -285,6 +285,7 @@ class FastNumericalInverse():
     True
 
     """
+
     def __init__(self, dist, tol=1e-12, max_intervals=100000):
         H, eu, intervals = _fast_numerical_inverse(dist, tol, max_intervals)
         self.H = H
@@ -342,8 +343,14 @@ class FastNumericalInverse():
         if qmc_engine is not None and random_state is not None:
             message = "Only one of `random_state` or `qmc_engine` may be used."
             raise ValueError(message)
-        rng = qmc_engine or check_random_state(random_state)
-        return self.ppf(rng.random(size))
+        # Old NumPy random_state may not have `random` method,
+        # and qmc_engines don't all have `uniform`.
+        if qmc_engine:
+            uniform = qmc_engine.random(size)
+        else:
+            random_state = check_random_state(random_state)
+            uniform = random_state.uniform(size=size)
+        return self.ppf(uniform)
 
 
 def _fni_input_validation(dist, tol, max_intervals):

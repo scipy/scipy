@@ -6747,7 +6747,7 @@ def test_fni_input_validation():
     with pytest.raises(AttributeError, match=match):
         stats.FastNumericalInverse("ekki")
 
-    match="Only one of `random_state` or `qmc_engine` may be used."
+    match = "Only one of `random_state` or `qmc_engine` may be used."
     with pytest.raises(ValueError, match=match):
         fni = stats.FastNumericalInverse(stats.norm())
         fni.rvs(random_state=0, qmc_engine=stats.qmc.Sobol(1))
@@ -6758,7 +6758,7 @@ def test_FastNumericalInverseRVS():
     dist = stats.norm()
     fni = stats.FastNumericalInverse(dist)
 
-    rngs = [0, np.random.RandomState(0)]
+    rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
         rngs.append(np.random.default_rng(0))
 
