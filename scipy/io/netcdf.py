@@ -37,7 +37,6 @@ __all__ = ['netcdf_file', 'netcdf_variable']
 import warnings
 import weakref
 from operator import mul
-from collections import OrderedDict
 from platform import python_implementation
 
 import mmap as mm
@@ -97,7 +96,7 @@ REVERSE = {('b', 1): NC_BYTE,
            ('S', 1): NC_CHAR}
 
 
-class netcdf_file(object):
+class netcdf_file:
     """
     A file object for NetCDF data.
 
@@ -262,8 +261,8 @@ class netcdf_file(object):
         self.version_byte = version
         self.maskandscale = maskandscale
 
-        self.dimensions = OrderedDict()
-        self.variables = OrderedDict()
+        self.dimensions = {}
+        self.variables = {}
 
         self._dims = []
         self._recs = 0
@@ -275,7 +274,7 @@ class netcdf_file(object):
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
             self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = OrderedDict()
+        self._attributes = {}
 
         if mode in 'ra':
             self._read()
@@ -295,7 +294,7 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self.variables = OrderedDict()
+                self.variables = {}
                 if self._mm_buf is not None:
                     ref = weakref.ref(self._mm_buf)
                     self._mm_buf = None
@@ -634,7 +633,7 @@ class netcdf_file(object):
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
-        attributes = OrderedDict()
+        attributes = {}
         for attr in range(count):
             name = asstr(self._unpack_string())
             attributes[name] = self._read_att_values()
@@ -802,7 +801,7 @@ class netcdf_file(object):
         return s
 
 
-class netcdf_variable(object):
+class netcdf_variable:
     """
     A data object for netcdf files.
 
@@ -865,7 +864,7 @@ class netcdf_variable(object):
         self.dimensions = dimensions
         self.maskandscale = maskandscale
 
-        self._attributes = attributes or OrderedDict()
+        self._attributes = attributes or {}
         for k, v in self._attributes.items():
             self.__dict__[k] = v
 

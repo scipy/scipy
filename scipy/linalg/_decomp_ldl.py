@@ -16,7 +16,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     This function returns a block diagonal matrix D consisting blocks of size
     at most 2x2 and also a possibly permuted unit lower triangular matrix
     ``L`` such that the factorization ``A = L D L^H`` or ``A = L D L^T``
-    holds. If ``lower`` is False then (again possibly permuted) upper
+    holds. If `lower` is False then (again possibly permuted) upper
     triangular matrices are returned as outer factors.
 
     The permutation array can be used to triangularize the outer factors
@@ -25,24 +25,24 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     permutation matrix ``P.dot(lu)``, where ``P`` is a column-permuted
     identity matrix ``I[:, perm]``.
 
-    Depending on the value of the boolean ``lower``, only upper or lower
+    Depending on the value of the boolean `lower`, only upper or lower
     triangular part of the input array is referenced. Hence, a triangular
     matrix on entry would give the same result as if the full matrix is
     supplied.
 
     Parameters
     ----------
-    a : array_like
+    A : array_like
         Square input array
     lower : bool, optional
         This switches between the lower and upper triangular outer factors of
         the factorization. Lower triangular (``lower=True``) is the default.
     hermitian : bool, optional
-        For complex-valued arrays, this defines whether ``a = a.conj().T`` or
-        ``a = a.T`` is assumed. For real-valued arrays, this switch has no
+        For complex-valued arrays, this defines whether ``A = A.conj().T`` or
+        ``A = A.T`` is assumed. For real-valued arrays, this switch has no
         effect.
     overwrite_a : bool, optional
-        Allow overwriting data in ``a`` (may enhance performance). The default
+        Allow overwriting data in `A` (may enhance performance). The default
         is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -69,8 +69,8 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 
     Examples
     --------
-    Given an upper triangular array `a` that represents the full symmetric
-    array with its entries, obtain `l`, 'd' and the permutation vector `perm`:
+    Given an upper triangular array ``a`` that represents the full symmetric
+    array with its entries, obtain ``l``, 'd' and the permutation vector `perm`:
 
     >>> import numpy as np
     >>> from scipy.linalg import ldl
@@ -101,13 +101,13 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
     the algorithm details.
 
-    Depending on the ``lower`` keyword value, only lower or upper triangular
+    Depending on the `lower` keyword value, only lower or upper triangular
     part of the input array is referenced. Moreover, this keyword also defines
     the structure of the outer factors of the factorization.
 
     .. versionadded:: 1.1.0
 
-    See also
+    See Also
     --------
     cholesky, lu
 

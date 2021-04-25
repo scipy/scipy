@@ -57,6 +57,7 @@ MAJOR = 1
 MINOR = 7
 MICRO = 0
 ISRELEASED = False
+IS_RELEASE_BRANCH = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -78,11 +79,24 @@ def git_version():
 
     try:
         out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
-        GIT_REVISION = out.strip().decode('ascii')
+        GIT_REVISION = out.strip().decode('ascii')[:7]
+
+        # We need a version number that's regularly incrementing for newer commits,
+        # so the sort order in a wheelhouse of nightly builds is correct (see
+        # https://github.com/MacPython/scipy-wheels/issues/114). It should also be
+        # a reproducible version number, so don't rely on date/time but base it on
+        # commit history. This gives the commit count since the previous branch
+        # point from the current branch (assuming a full `git clone`, it may be
+        # less if `--depth` was used - commonly the default in CI):
+        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 1)
+        out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
+                                '--count'])
+        COMMIT_COUNT = out.strip().decode('ascii')
     except OSError:
         GIT_REVISION = "Unknown"
+        COMMIT_COUNT = "Unknown"
 
-    return GIT_REVISION
+    return GIT_REVISION, COMMIT_COUNT
 
 
 # BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
@@ -104,20 +118,22 @@ def get_version_info():
     # up the build under Python 3.
     FULLVERSION = VERSION
     if os.path.exists('.git'):
-        GIT_REVISION = git_version()
+        GIT_REVISION, COMMIT_COUNT = git_version()
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
         # load it as a separate module to not load scipy/__init__.py
         import runpy
         ns = runpy.run_path('scipy/version.py')
         GIT_REVISION = ns['git_revision']
+        COMMIT_COUNT = ns['git_revision']
     else:
         GIT_REVISION = "Unknown"
+        COMMIT_COUNT = "Unknown"
 
     if not ISRELEASED:
-        FULLVERSION += '.dev0+' + GIT_REVISION[:7]
+        FULLVERSION += '.dev0+' + COMMIT_COUNT + '.' + GIT_REVISION
 
-    return FULLVERSION, GIT_REVISION
+    return FULLVERSION, GIT_REVISION, COMMIT_COUNT
 
 
 def write_version_py(filename='scipy/version.py'):
@@ -127,37 +143,23 @@ short_version = '%(version)s'
 version = '%(version)s'
 full_version = '%(full_version)s'
 git_revision = '%(git_revision)s'
+commit_count = '%(commit_count)s'
 release = %(isrelease)s
 
 if not release:
     version = full_version
 """
-    FULLVERSION, GIT_REVISION = get_version_info()
+    FULLVERSION, GIT_REVISION, COMMIT_COUNT = get_version_info()
 
     a = open(filename, 'w')
     try:
         a.write(cnt % {'version': VERSION,
                        'full_version': FULLVERSION,
                        'git_revision': GIT_REVISION,
+                       'commit_count': COMMIT_COUNT,
                        'isrelease': str(ISRELEASED)})
     finally:
         a.close()
-
-
-try:
-    from sphinx.setup_command import BuildDoc
-    HAVE_SPHINX = True
-except Exception:
-    HAVE_SPHINX = False
-
-if HAVE_SPHINX:
-    class ScipyBuildDoc(BuildDoc):
-        """Run in-place build before Sphinx doc build"""
-        def run(self):
-            ret = subprocess.call([sys.executable, sys.argv[0], 'build_ext', '-i'])
-            if ret != 0:
-                raise RuntimeError("Building Scipy failed!")
-            BuildDoc.run(self)
 
 
 def check_submodules():
@@ -249,7 +251,7 @@ def get_build_ext_override():
             # Disable distutils parallel build, due to race conditions
             # in numpy.distutils (Numpy issue gh-15957)
             if self.parallel:
-                print("NOTE: -j build option not supportd. Set NPY_NUM_BUILD_JOBS=4 "
+                print("NOTE: -j build option not supported. Set NPY_NUM_BUILD_JOBS=4 "
                       "for parallel build.")
             self.parallel = None
 
@@ -271,7 +273,7 @@ def get_build_ext_override():
             hooks = getattr(ext, '_pre_build_hook', ())
             _run_pre_build_hooks(hooks, (self, ext))
 
-            super(build_ext, self).build_extension(ext)
+            super().build_extension(ext)
 
         def __is_using_gnu_linker(self, ext):
             if not sys.platform.startswith('linux'):
@@ -381,8 +383,7 @@ def parse_setuppy_commands():
     # below and not standalone.  Hence they're not added to good_commands.
     good_commands = ('develop', 'sdist', 'build', 'build_ext', 'build_py',
                      'build_clib', 'build_scripts', 'bdist_wheel', 'bdist_rpm',
-                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg',
-                     'build_sphinx')
+                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg')
 
     for command in good_commands:
         if command in args:
@@ -453,6 +454,7 @@ def parse_setuppy_commands():
         bdist_dumb="`setup.py bdist_dumb` is not supported",
         bdist="`setup.py bdist` is not supported",
         flake8="`setup.py flake8` is not supported, use flake8 standalone",
+        build_sphinx="`setup.py build_sphinx` is not supported, see doc/README.md",
         )
     bad_commands['nosetests'] = bad_commands['test']
     for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
@@ -530,12 +532,26 @@ def configuration(parent_package='', top_path=None):
 
 
 def setup_package():
+    # In maintenance branch, change np_maxversion to N+3 if numpy is at N
+    # Update here and in scipy/__init__.py
+    # Rationale: SciPy builds without deprecation warnings with N; deprecations
+    #            in N+1 will turn into errors in N+3
+    # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
+    np_minversion = '1.16.5'
+    np_maxversion = '9.9.99'
+    python_minversion = '3.7'
+    python_maxversion = '3.10'
+    if IS_RELEASE_BRANCH:
+        req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
+        req_py = '>={},<{}'.format(python_minversion, python_maxversion)
+    else:
+        req_np = 'numpy>={}'.format(np_minversion)
+        req_py = '>={}'.format(python_minversion)
+
     # Rewrite the version file every time
     write_version_py()
 
     cmdclass = {'sdist': sdist_checked}
-    if HAVE_SPHINX:
-        cmdclass['build_sphinx'] = ScipyBuildDoc
 
     metadata = dict(
         name='scipy',
@@ -555,10 +571,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
-        install_requires=[
-            'numpy>=1.16.5',
-        ],
-        python_requires='>=3.7',
+        install_requires=[req_np],
+        python_requires=req_py,
     )
 
     if "--force" in sys.argv:

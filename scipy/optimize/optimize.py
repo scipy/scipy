@@ -52,7 +52,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                                     'bounds.'}
 
 
-class MemoizeJac(object):
+class MemoizeJac:
     """ Decorator that caches the return values of a function returning `(fun, grad)`
         each time it is called. """
 
@@ -451,14 +451,17 @@ def rosen_hess_prod(x, p):
     return Hp
 
 
-def wrap_function(function, args):
+def _wrap_function(function, args):
+    # wraps a minimizer function to count number of evaluations
+    # and to easily provide an args kwd.
+    # A copy of x is sent to the user function (gh13740)
     ncalls = [0]
     if function is None:
         return ncalls, None
 
-    def function_wrapper(*wrapper_args):
+    def function_wrapper(x, *wrapper_args):
         ncalls[0] += 1
-        return function(*(wrapper_args + args))
+        return function(np.copy(x), *(wrapper_args + args))
 
     return ncalls, function_wrapper
 
@@ -590,7 +593,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
-                         xatol=1e-4, fatol=1e-4, adaptive=False,
+                         xatol=1e-4, fatol=1e-4, adaptive=False, bounds=None,
                          **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -623,6 +626,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     adaptive : bool, optional
         Adapt algorithm parameters to dimensionality of problem. Useful for
         high-dimensional minimization [1]_.
+    bounds : sequence or `Bounds`, optional
+        Bounds on variables. There are two ways to specify the bounds:
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+               is used to specify no bound.
+
+        Note that this just clips all vertices in simplex based on
+        the bounds.
 
     References
     ----------
@@ -657,7 +669,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = wrap_function(func, args)
+    fcalls, func = _wrap_function(func, args)
 
     if adaptive:
         dim = float(len(x0))
@@ -675,6 +687,18 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     zdelt = 0.00025
 
     x0 = asfarray(x0).flatten()
+
+    if bounds is not None:
+        lower_bound, upper_bound = bounds.lb, bounds.ub
+        # check bounds
+        if (lower_bound > upper_bound).any():
+            raise ValueError("Nelder Mead - one of the lower bounds is greater than an upper bound.")
+        if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
+            warnings.warn("Initial guess is not within the specified bounds",
+                          OptimizeWarning, 3)
+
+    if bounds is not None:
+        x0 = np.clip(x0, lower_bound, upper_bound)
 
     if initial_simplex is None:
         N = len(x0)
@@ -716,6 +740,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         else:
             maxfun = np.inf
 
+    if bounds is not None:
+        sim = np.clip(sim, lower_bound, upper_bound)
+
     one2np1 = list(range(1, N + 1))
     fsim = np.empty((N + 1,), float)
 
@@ -736,11 +763,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
         xbar = np.add.reduce(sim[:-1], 0) / N
         xr = (1 + rho) * xbar - rho * sim[-1]
+        if bounds is not None:
+            xr = np.clip(xr, lower_bound, upper_bound)
         fxr = func(xr)
         doshrink = 0
 
         if fxr < fsim[0]:
             xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            if bounds is not None:
+                xe = np.clip(xe, lower_bound, upper_bound)
             fxe = func(xe)
 
             if fxe < fxr:
@@ -757,6 +788,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 # Perform contraction
                 if fxr < fsim[-1]:
                     xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                    if bounds is not None:
+                        xc = np.clip(xc, lower_bound, upper_bound)
                     fxc = func(xc)
 
                     if fxc <= fxr:
@@ -767,6 +800,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 else:
                     # Perform an inside contraction
                     xcc = (1 - psi) * xbar + psi * sim[-1]
+                    if bounds is not None:
+                        xcc = np.clip(xcc, lower_bound, upper_bound)
                     fxcc = func(xcc)
 
                     if fxcc < fsim[-1]:
@@ -778,6 +813,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 if doshrink:
                     for j in one2np1:
                         sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                        if bounds is not None:
+                            sim[j] = np.clip(sim[j], lower_bound, upper_bound)
                         fsim[j] = func(sim[j])
 
         ind = np.argsort(fsim)
@@ -2757,7 +2794,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     direc : ndarray, optional
         Initial fitting step and parameter order set as an (N, N) array, where N
         is the number of fitting parameters in `x0`. Defaults to step size 1.0
-        fitting all parameters simultaneously (``np.ones((N, N))``). To
+        fitting all parameters simultaneously (``np.eye((N, N))``). To
         prevent initial consideration of values in a step or to change initial
         step size, set to 0 or desired step size in the Jth position in the Mth
         block, where J is the position in `x0` and M is the desired evaluation
@@ -2907,7 +2944,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
-    fcalls, func = wrap_function(func, args)
+    fcalls, func = _wrap_function(func, args)
     x = asarray(x0).flatten()
     if retall:
         allvecs = [x]
@@ -3320,7 +3357,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         return xmin
 
 
-class _Brute_Wrapper(object):
+class _Brute_Wrapper:
     """
     Object to wrap user cost function for optimize.brute, allowing picklability
     """

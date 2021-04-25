@@ -3,13 +3,14 @@ import math
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, wrap_function, _status_message,
+from .optimize import (_check_unknown_options, _wrap_function, _status_message,
                        OptimizeResult, _prepare_scalar_function)
-
+from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
+from scipy.optimize._differentiable_functions import FD_METHODS
 __all__ = []
 
 
-class BaseQuadraticSubproblem(object):
+class BaseQuadraticSubproblem:
     """
     Base/abstract class defining the quadratic model for trust-region
     minimization. Child classes must implement the ``solve`` method.
@@ -157,10 +158,27 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     sf = _prepare_scalar_function(fun, x0, jac=jac, hess=hess, args=args)
     fun = sf.fun
     jac = sf.grad
-    if hess is not None:
+    if callable(hess):
         hess = sf.hess
+    elif callable(hessp):
+        # this elif statement must come before examining whether hess
+        # is estimated by FD methods or a HessianUpdateStrategy
+        pass
+    elif (hess in FD_METHODS or isinstance(hess, HessianUpdateStrategy)):
+        # If the Hessian is being estimated by finite differences or a
+        # Hessian update strategy then ScalarFunction.hess returns a
+        # LinearOperator or a HessianUpdateStrategy. This enables the
+        # calculation/creation of a hessp. BUT you only want to do this
+        # if the user *hasn't* provided a callable(hessp) function.
+        hess = None
+        def hessp(x, p, *args):
+            return sf.hess(x).dot(p)
+    else:
+        raise ValueError('Either the Hessian or the Hessian-vector product '
+                         'is currently required for trust-region methods')
+
     # ScalarFunction doesn't represent hessp
-    nhessp, hessp = wrap_function(hessp, args)
+    nhessp, hessp = _wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:

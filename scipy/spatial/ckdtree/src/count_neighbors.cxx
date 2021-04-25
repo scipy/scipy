@@ -136,13 +136,13 @@ traverse(
                         for (l = start; l < end; ++l) {
                             if (d <= *l) {
                                 results[l - params->r] += WeightType::get_weight(&params->self, sindices[i])
-                                                        * WeightType::get_weight(&params->other, sindices[j]);
+                                                        * WeightType::get_weight(&params->other, oindices[j]);
                             }
                         }
                     } else {
                         const double *l = std::lower_bound(start, end, d);
                         results[l - params->r] += WeightType::get_weight(&params->self, sindices[i])
-                                                * WeightType::get_weight(&params->other, sindices[j]);
+                                                * WeightType::get_weight(&params->other, oindices[j]);
                     }
                 }
             }

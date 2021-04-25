@@ -44,7 +44,7 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'dfreqresp', 'dbode']
 
 
-class LinearTimeInvariant(object):
+class LinearTimeInvariant:
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
         if cls is LinearTimeInvariant:
@@ -59,7 +59,7 @@ class LinearTimeInvariant(object):
 
         The heavy lifting is done by the subclasses.
         """
-        super(LinearTimeInvariant, self).__init__()
+        super().__init__()
 
         self.inputs = None
         self.outputs = None
@@ -131,7 +131,7 @@ class LinearTimeInvariant(object):
 
 
 class lti(LinearTimeInvariant):
-    """
+    r"""
     Continuous-time linear time invariant system base class.
 
     Parameters
@@ -181,6 +181,9 @@ class lti(LinearTimeInvariant):
     dt: None
     )
 
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
+
     >>> signal.lti([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
     array([1, 2]),
@@ -188,6 +191,8 @@ class lti(LinearTimeInvariant):
     5,
     dt: None
     )
+
+    Construct the transfer function :math:`H(s) = \frac{3s + 4}{1s + 2}`:
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
@@ -222,7 +227,7 @@ class lti(LinearTimeInvariant):
 
         The heavy lifting is done by the subclasses.
         """
-        super(lti, self).__init__(*system)
+        super().__init__(*system)
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -293,7 +298,7 @@ class lti(LinearTimeInvariant):
 
 
 class dlti(LinearTimeInvariant):
-    """
+    r"""
     Discrete-time linear time invariant system base class.
 
     Parameters
@@ -358,6 +363,10 @@ class dlti(LinearTimeInvariant):
     dt: 0.1
     )
 
+    Construct the transfer function
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
+
     >>> signal.dlti([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
     array([1, 2]),
@@ -365,6 +374,9 @@ class dlti(LinearTimeInvariant):
     5,
     dt: 0.1
     )
+
+    Construct the transfer function :math:`H(z) = \frac{3z + 4}{1z + 2}` with
+    a sampling time of 0.1 seconds:
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
@@ -400,7 +412,7 @@ class dlti(LinearTimeInvariant):
         The heavy lifting is done by the subclasses.
         """
         dt = kwargs.pop('dt', True)
-        super(dlti, self).__init__(*system, **kwargs)
+        super().__init__(*system, **kwargs)
 
         self.dt = dt
 
@@ -435,7 +447,7 @@ class dlti(LinearTimeInvariant):
         return dlsim(self, u, t, x0=x0)
 
     def bode(self, w=None, n=100):
-        """
+        r"""
         Calculate Bode magnitude and phase data of a discrete-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
@@ -446,7 +458,8 @@ class dlti(LinearTimeInvariant):
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        Transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
+        Construct the transfer function :math:`H(z) = \frac{1}{z^2 + 2z + 3}`
+        with sampling time 0.5s:
 
         >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
 
@@ -524,9 +537,8 @@ class TransferFunction(LinearTimeInvariant):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+    Construct the transfer function
+    :math:`H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}`:
 
     >>> from scipy import signal
 
@@ -540,9 +552,9 @@ class TransferFunction(LinearTimeInvariant):
     dt: None
     )
 
-    Construct the transfer function with a sampling time of 0.1 seconds:
-
-    .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
+    Construct the transfer function
+    :math:`H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}` with a sampling time of
+    0.1 seconds:
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
@@ -580,7 +592,7 @@ class TransferFunction(LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(TransferFunction, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._num = None
         self._den = None
@@ -766,9 +778,8 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Examples
     --------
-    Construct the transfer function:
-
-    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+    Construct the transfer function
+    :math:`H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}`:
 
     >>> from scipy import signal
 
@@ -845,9 +856,9 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     Examples
     --------
-    Construct the transfer function with a sampling time of 0.5 seconds:
-
-    .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
+    Construct the transfer function
+    :math:`H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}` with a sampling time of
+    0.5 seconds:
 
     >>> from scipy import signal
 
@@ -908,9 +919,10 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -920,7 +932,9 @@ class ZerosPolesGain(LinearTimeInvariant):
     dt: None
     )
 
-    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Construct the transfer function
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -959,7 +973,7 @@ class ZerosPolesGain(LinearTimeInvariant):
         if isinstance(system[0], LinearTimeInvariant):
             return
 
-        super(ZerosPolesGain, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._zeros = None
         self._poles = None
@@ -1101,9 +1115,10 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function
+    :math:`H(s)=\frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -1173,9 +1188,10 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     Examples
     --------
-    >>> from scipy import signal
+    Construct the transfer function
+    :math:`H(s) = \frac{5(s - 1)(s - 2)}{(s - 3)(s - 4)}`:
 
-    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    >>> from scipy import signal
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
@@ -1185,7 +1201,9 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     dt: None
     )
 
-    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Construct the transfer function
+    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
@@ -1319,7 +1337,7 @@ class StateSpace(LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(StateSpace, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._A = None
         self._B = None
@@ -2558,7 +2576,7 @@ def bode(system, w=None, n=100):
 
 
 def freqresp(system, w=None, n=10000):
-    """Calculate the frequency response of a continuous-time system.
+    r"""Calculate the frequency response of a continuous-time system.
 
     Parameters
     ----------
@@ -2600,7 +2618,7 @@ def freqresp(system, w=None, n=10000):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(s) = 5 / (s-1)^3
+    Construct the transfer function :math:`H(s) = \frac{5}{(s-1)^3}`:
 
     >>> s1 = signal.ZerosPolesGain([], [1, 1, 1], [5])
 
@@ -3671,7 +3689,7 @@ def dstep(system, x0=None, t=None, n=None):
 
 
 def dfreqresp(system, w=None, n=10000, whole=False):
-    """
+    r"""
     Calculate the frequency response of a discrete-time system.
 
     Parameters
@@ -3720,7 +3738,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Construct the transfer function
+    :math:`H(z) = \frac{1}{z^2 + 2z + 3}` with a sampling time of 0.05
+    seconds:
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
@@ -3769,7 +3789,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
 
 def dbode(system, w=None, n=100):
-    """
+    r"""
     Calculate Bode magnitude and phase data of a discrete-time system.
 
     Parameters
@@ -3814,7 +3834,8 @@ def dbode(system, w=None, n=100):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Construct the transfer function :math:`H(z) = \frac{1}{z^2 + 2z + 3}` with
+    a sampling time of 0.05 seconds:
 
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
