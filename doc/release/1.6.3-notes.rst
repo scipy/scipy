@@ -11,13 +11,15 @@ Authors
 =======
 
 * Peter Bell
+* Ralf Gommers
+* Matt Haberland
 * Peter Mahler Larsen
 * Tirth Patel
 * Tyler Reddy
 * Pamphile ROY +
 * Xingyu Liu +
 
-A total of 6 people contributed to this release.
+A total of 8 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
