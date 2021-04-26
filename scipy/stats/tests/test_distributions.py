@@ -4700,6 +4700,20 @@ class TestStudentizedRange:
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
+    @pytest.mark.slow
+    @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
+    def test_moment_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+
+        res = stats.studentized_range.moment(src_case["m"],
+                                             src_case["k"],
+                                             src_case["v"])
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
     def test_cdf_against_tables(self):
         for pvk, q in self.data:
             p_expected, v, k = pvk
