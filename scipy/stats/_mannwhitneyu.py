@@ -67,22 +67,20 @@ class _MWU:
     def _f(self, m, n, k):
         '''Recursive implementation of function of [3] Theorem 2.5'''
 
-        fmnks = self._fmnks  # for convenience
-
         # [3] Theorem 2.5 Line 1
         if k < 0 or m < 0 or n < 0 or k > m*n:
             return 0
 
         # if already calculated, return the value
-        if fmnks[m, n, k] >= 0:
-            return fmnks[m, n, k]
+        if self._fmnks[m, n, k] >= 0:
+            return self._fmnks[m, n, k]
 
         if k == 0 and m >= 0 and n >= 0:  # [3] Theorem 2.5 Line 2
             fmnk = 1
         else:   # [3] Theorem 2.5 Line 3 / Equation 3
             fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
 
-        fmnks[m, n, k] = fmnk  # remember result
+        self._fmnks[m, n, k] = fmnk  # remember result
 
         return fmnk
 
@@ -421,10 +419,6 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     # Ensure that test statistic is not greater than 1
     # This could happen for exact test when U = m*n/2
-    # Written to avoid dealing with floats and Nd arrays separately
-    # If you prefer to branch, please suggest specific code
-    pgt1 = p > 1
-    p *= np.logical_not(pgt1)  # zero entries > 1, preserve the rest
-    p += pgt1                  # add 1 to entries > 1, preserve the rest
+    p = np.clip(p, 0, 1)
 
-    return MannwhitneyuResult(U1, p)  # temporary to integrate with tests
+    return MannwhitneyuResult(U1, p)
