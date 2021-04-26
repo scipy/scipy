@@ -3976,9 +3976,9 @@ class Test_ttest_ind_permutations():
 
     # data for bigger test
     np.random.seed(0)
-    rvs1 = stats.norm.rvs(loc=5, scale=10, # type: ignore
+    rvs1 = stats.norm.rvs(loc=5, scale=10,  # type: ignore
                           size=500).reshape(100, 5)
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100) # type: ignore
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
 
     p_d = [0, 0.676]  # desired pvalues
     p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
@@ -4048,7 +4048,7 @@ class Test_ttest_ind_permutations():
             xi = x[indices]  # use tuple to index single axis slice
             yi = y[indices]
             res3 = stats.ttest_ind(xi, yi, axis=-1, permutations=200,
-                                  random_state=0)
+                                   random_state=0)
             statistics[indices] = res3.statistic
             pvalues[indices] = res3.pvalue
 
@@ -4107,8 +4107,8 @@ class Test_ttest_ind_permutations():
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
         res3 = stats.ttest_ind(a, b, permutations=np.inf)
-        assert(res0.pvalue != res1.pvalue)
-        assert(res2.pvalue == res1.pvalue)
+        assert(res1.pvalue != res0.pvalue)
+        assert(res2.pvalue == res0.pvalue)
         assert(res3.pvalue == res1.pvalue)
 
     def test_ttest_ind_exact_distribution(self):
@@ -4120,17 +4120,17 @@ class Test_ttest_ind_permutations():
         b = np.random.rand(4)
 
         data = np.concatenate((a, b))
-        ma, mb = len(a), len(b)
+        na, nb = len(a), len(b)
 
-        n = 100000
-        mat_perm, permutations = _data_partitions(data, n, ma)
+        permutations = 100000
+        mat_perm, _ = _data_partitions(data, permutations, na)
 
-        a = mat_perm[..., :ma]
-        b = mat_perm[..., ma:]
+        a = mat_perm[..., :na]
+        b = mat_perm[..., nb:]
         t_stat = _calc_t_stat(a, b, True)
-        assert len(set(t_stat)) == binom(ma + mb, ma)
-        assert len(t_stat) == len(set(t_stat))
-
+        n_unique = len(set(t_stat))
+        assert n_unique == binom(na + nb, na)
+        assert len(t_stat) == n_unique
 
     def test_ttest_ind_randperm_alternative(self):
         np.random.seed(0)
@@ -4165,7 +4165,7 @@ class Test_ttest_ind_permutations():
         N = 50
         a = np.random.rand(N, 4)
         b = np.random.rand(N, 4)
-        options_p = {'permutations': 20000, "random_state":0}
+        options_p = {'permutations': 20000, "random_state": 0}
 
         options_p.update(alternative="greater")
         res_g_ab = stats.ttest_ind(a, b, **options_p)
@@ -4201,7 +4201,7 @@ class Test_ttest_ind_permutations():
         b[8, 2] = np.nan
         a[9, 3] = np.nan
         b[9, 3] = np.nan
-        options_p = {'permutations': 1000, "random_state":0}
+        options_p = {'permutations': 1000, "random_state": 0}
 
         # Raise
         options_p.update(nan_policy="raise")
@@ -4225,7 +4225,7 @@ class Test_ttest_ind_permutations():
 
             # Propagate 1d
             res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-            assert(np.isnan(res.pvalue)) # assert makes sure it's a scalar
+            assert(np.isnan(res.pvalue))  # assert makes sure it's a scalar
             assert(np.isnan(res.statistic))
 
         # Omit

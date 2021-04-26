@@ -5816,7 +5816,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         one-sided asympyotic tests.
 
     permutations : non-negative int, np.inf, or None (default), optional
-        If None (default), use the t-distribution to calculate p-values.
+        If 0 or None (default), use the t-distribution to calculate p-values.
         Otherwise, `permutations` is  the number of random permutations that
         will be used to estimate p-values using a permutation test. If
         `permutations` equals or exceeds the number of distinct partitions of
@@ -5887,9 +5887,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value. When
-    ``permutations == 0`` or ``permutations >= binom(n, k)``, an exact test is
-    performed: the data are partitioned between the groups in each distinct
-    way exactly once.
+    ``permutations >= binom(n, k)``, an exact test is performed: the data are
+    partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -5973,13 +5972,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if a.size == 0 or b.size == 0:
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
-    if permutations is not None:
+    if permutations is not None and permutations != 0:
         if permutations < 0 or (np.isfinite(permutations) and
                                 int(permutations) != permutations) :
             raise ValueError("Permutations must be a non-negative integer.")
-
-        if permutations == 0:
-            permutations = np.inf
 
         res = _permutation_ttest(a, b, permutations=permutations,
                                  axis=axis, equal_var=equal_var,
@@ -6017,7 +6013,7 @@ def _broadcast_concatenate(xs, axis):
     return res
 
 
-def _data_partitions(data, n, ma, axis=-1, random_state=None):
+def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
     """All partitions of data into sets of given lengths, ignoring order"""
 
     random_state = check_random_state(random_state)
@@ -6025,22 +6021,23 @@ def _data_partitions(data, n, ma, axis=-1, random_state=None):
         axis = data.ndim + axis
 
     # prepare permutation indices
-    m = data.shape[axis]
+    size = data.shape[axis]
     # number of distinct combinations
-    n_max = special.comb(m, ma)
+    n_max = special.comb(size, size_a)
 
-    if n < n_max:
-        indices = np.array([random_state.permutation(m) for i in range(n)]).T
+    if permutations < n_max:
+        indices = np.array([random_state.permutation(size)
+                            for i in range(permutations)]).T
     else:
-        n = n_max
+        permutations = n_max
         indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(ma, m-ma)]).T
+                            for z in _all_partitions(size_a, size-size_a)]).T
 
     data = data.swapaxes(axis, -1)   # so we can index along a new dimension
     data = data[..., indices]        # generate permutations
     data = data.swapaxes(-2, axis)   # restore original axis order
     data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, n
+    return data, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6109,7 +6106,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, n=permutations, ma=na,
+    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
                                               random_state=random_state)
 
     a = mat_perm[..., :na]
