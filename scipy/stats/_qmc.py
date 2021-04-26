@@ -567,7 +567,7 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(self, d, seed=None):
-        if not isinstance(d, int):
+        if not np.issubdtype(type(d), np.integer):
             raise ValueError('d must be an integer value')
 
         self.d = d
