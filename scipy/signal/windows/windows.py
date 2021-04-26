@@ -2021,8 +2021,10 @@ _win_equiv_raw = {
     ('exponential', 'poisson'): (exponential, False),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
+    ('general cosine', 'general_cosine'): (general_cosine, True),
     ('general gaussian', 'general_gaussian',
         'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
+    ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hanning', 'hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
@@ -2089,7 +2091,9 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.taylor`
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
+    - `~scipy.signal.windows.general_cosine` (needs weighting coefficients)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)
+    - `~scipy.signal.windows.general_hamming` (needs window coefficient)
     - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
     - `~scipy.signal.windows.chebwin` (needs attenuation)
 
