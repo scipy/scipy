@@ -6767,10 +6767,12 @@ def test_FastNumericalInverseRVS():
         rvs = fni.rvs(size=size, random_state=rng)
         assert(rvs.shape == size)
 
-    size = 8
-    qmc = stats.qmc.Sobol(1)
-    rvs = fni.rvs(size=size, qmc_engine=qmc)
-    assert(rvs.shape == (size, 1))
+    if NumpyVersion(np.__version__) >= '1.18.0':
+        size = 8
+        # QMCEngines currently only support generators
+        qmc = stats.qmc.Sobol(1)
+        rvs = fni.rvs(size=size, qmc_engine=qmc)
+        assert(rvs.shape == (size, 1))
 
 
 class TestPageTrendTest:

@@ -400,23 +400,31 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
 
     # [1] Section 2.3: "We then halve this interval recursively until
     # |u[i+1]-u[i]| is smaller than some threshold value, for example, 0.05."
+    u = dist.cdf(p)
     while p.size-1 <= np.ceil(max_intervals/2):
-        u = dist.cdf(p)
         i = np.nonzero(np.diff(u) > 0.05)[0]
         if not i.size:
             break
 
         p_mid = (p[i] + p[i+1])/2
-        p = np.sort(np.concatenate((p, p_mid)))
+        # Compute only the new values and insert them in the right places
+        # [1] uses a linked list; we can't do that efficiently
+        u_mid = dist.cdf(p_mid)
+        p = np.concatenate((p, p_mid))
+        u = np.concatenate((u, u_mid))
+        i_sort = np.argsort(p)
+        p = p[i_sort]
+        u = u[i_sort]
 
     # [1] Section 2.3: "Now we continue with checking the error estimate in
     # each of the intervals and continue with splitting them until [it] is
     # smaller than a given error bound."
+    u = dist.cdf(p)
+    f = dist.pdf(p)
     while p.size-1 <= max_intervals:
         # [1] Equation 4-8
-        u = dist.cdf(p)
-        f = dist.pdf(p)
         H = CubicHermiteSpline(u, p, 1/f)
+        # To improve performance, add update feature to CubicHermiteSpline
 
         # [1] Equation 12
         u_mid = (u[:-1] + u[1:])/2
@@ -427,7 +435,15 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
             break
 
         p_mid = (p[i] + p[i+1])/2
-        p = np.sort(np.concatenate((p, p_mid)))
+        u_mid = dist.cdf(p_mid)
+        f_mid = dist.pdf(p_mid)
+        p = np.concatenate((p, p_mid))
+        u = np.concatenate((u, u_mid))
+        f = np.concatenate((f, f_mid))
+        i_sort = np.argsort(p)
+        p = p[i_sort]
+        u = u[i_sort]
+        f = f[i_sort]
 
     # todo: add test for monotonicity [1] Section 2.4
     # todo: deal with vanishing density [1] Section 2.5
