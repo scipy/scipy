@@ -104,9 +104,8 @@ jobs:
             . venv/bin/activate
             export SHELL=$(which bash)
             python setup.py install
-            cd doc
-            make html-scipyorg
-            make latex
+            make -C doc html-scipyorg
+            make -C doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
