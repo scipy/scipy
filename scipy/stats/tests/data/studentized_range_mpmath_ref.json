@@ -30,116 +30,6 @@
         "expected_rtol": 1e-11
       },
       "mp_result": 0.999908236635449
-    },
-    {
-      "src_case": {
-        "q": 0.1,
-        "k": 10,
-        "v": 10,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 2.8544145010066327e-12
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 10,
-        "v": 10,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.001300816146573152
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 10,
-        "v": 10,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.9991738325963548
-    },
-    {
-      "src_case": {
-        "q": 0.1,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.0027527430186246545
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.2401356460422021
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.9999999993640496
-    },
-    {
-      "src_case": {
-        "q": 0.1,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 9.39089126131273e-13
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.0005841098057517027
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.9999999905199205
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 3,
-        "v": 1000,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.2406547688726472
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 3,
-        "v": 1000,
-        "expected_atol": 1e-10,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.999999999991348
     }
   ],
   "pdf_data": [
@@ -172,116 +62,18 @@
         "expected_rtol": 1e-11
       },
       "mp_result": 7.728665739003835e-05
-    },
+    }
+  ],
+  "moment_data": [
     {
       "src_case": {
-        "q": 0.1,
-        "k": 10,
+        "m": 1,
+        "k": 3,
         "v": 10,
         "expected_atol": 1e-11,
         "expected_rtol": 1e-11
       },
-      "mp_result": 2.564099684606509e-10
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 10,
-        "v": 10,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.009782573637596617
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 10,
-        "v": 10,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.0006784051704217357
-    },
-    {
-      "src_case": {
-        "q": 0.1,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.05497690690332341
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.4157583991350054
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 3,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 2.159522630228393e-09
-    },
-    {
-      "src_case": {
-        "q": 0.1,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 8.442593793786411e-11
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.0047089182958790715
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 10,
-        "v": 100,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 3.215093171597309e-08
-    },
-    {
-      "src_case": {
-        "q": 1,
-        "k": 3,
-        "v": 1000,
-        "expected_atol": 1e-11,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 0.41754151596262973
-    },
-    {
-      "src_case": {
-        "q": 10,
-        "k": 3,
-        "v": 1000,
-        "expected_atol": 1e-10,
-        "expected_rtol": 1e-11
-      },
-      "mp_result": 1.4993650577943627e-29
+      "mp_result": 1.8342745127927962
     }
   ]
 }
