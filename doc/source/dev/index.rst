@@ -3,30 +3,31 @@
 Developer Documentation
 -----------------------
 
-If you're interested in contributing to SciPy, start here:
+Bellow you will find general information about contributing.
+For an overview of where help or new features are desired or planned, see
+the roadmap. And for a more detailed look at how the SciPy project works, see
+the organization section.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Contributing Information
 
    conduct/code_of_conduct
    hacking
    contributor/quickerstart_conda
    contributor/contributor_toc
 
-To get an overview of where help or new features are desired or planned, see
-the roadmap:
-
 .. toctree::
    :maxdepth: 1
+   :caption: Roadmap
 
    roadmap
    roadmap-detailed
    toolchain
 
-For a more detailed look at how the SciPy project works:
-
 .. toctree::
    :maxdepth: 1
+   :caption: SciPy Organization
 
    core-dev/index
    api-dev/api-dev-toc

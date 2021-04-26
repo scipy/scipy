@@ -28,6 +28,7 @@ dependencies:
   - ipython
   - matplotlib
   - pydata-sphinx-theme
+  - sphinx-panels
   # For linting
   - pycodestyle
   - flake8

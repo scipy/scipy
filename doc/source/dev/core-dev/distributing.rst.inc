@@ -44,6 +44,7 @@ are:
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
 - `PyData Sphinx theme`_ (docs)
+- `Sphinx-Panels`_  (docs)
 - matplotlib_ (docs)
 - LaTeX (pdf docs)
 - Pillow_ (docs)
@@ -216,6 +217,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://www.sphinx-doc.org/
 .. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
+.. _Sphinx-Panels: https://sphinx-panels.readthedocs.io/en/latest/
 .. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
