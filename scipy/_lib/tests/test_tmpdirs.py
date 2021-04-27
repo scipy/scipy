@@ -19,12 +19,13 @@ def test_tempdir():
 
 
 def test_in_tempdir():
+    file_name='test.txt'
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
-        with open('test.txt', 'wt') as f:
+        with open(file_name, 'wt') as f:
             f.write('some text')
-        assert_(isfile('test.txt'))
-        assert_(isfile(pjoin(tmpdir, 'test.txt')))
+        assert_(isfile(file_name))
+        assert_(isfile(pjoin(tmpdir, file_name)))
     assert_(not exists(tmpdir))
     assert_equal(getcwd(), my_cwd)
 

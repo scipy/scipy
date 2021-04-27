@@ -6,6 +6,8 @@ import warnings
 
 import numpy as np
 
+#Setting constants
+PY_CLASS="py:class"
 # Currently required to build scipy.fft docs
 os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
@@ -123,14 +125,14 @@ nitpick_ignore = [
     # which inherit methods from `dict`. missing references to builtins get
     # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
     # but that fix doesn't work for inherited methods.
-    ("py:class", "a shallow copy of D"),
-    ("py:class", "a set-like object providing a view on D's keys"),
-    ("py:class", "a set-like object providing a view on D's items"),
-    ("py:class", "an object providing a view on D's values"),
-    ("py:class", "None.  Remove all items from D."),
-    ("py:class", "(k, v), remove and return some (key, value) pair as a"),
-    ("py:class", "None.  Update D from dict/iterable E and F."),
-    ("py:class", "v, remove specified key and return the corresponding value."),
+    (PY_CLASS, "a shallow copy of D"),
+    (PY_CLASS, "a set-like object providing a view on D's keys"),
+    (PY_CLASS, "a set-like object providing a view on D's items"),
+    (PY_CLASS, "an object providing a view on D's values"),
+    (PY_CLASS, "None.  Remove all items from D."),
+    (PY_CLASS, "(k, v), remove and return some (key, value) pair as a"),
+    (PY_CLASS, "None.  Update D from dict/iterable E and F."),
+    (PY_CLASS, "v, remove specified key and return the corresponding value."),
 ]
 
 exclude_patterns = [  # glob-style
