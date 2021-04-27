@@ -6754,10 +6754,12 @@ class TestFNI:
             fni = stats.FastNumericalInverse(stats.norm())
             fni.qrvs(qmc_engine=0)
 
-        match = "`qmc_engine` must be initialized with `d=1`."
-        with pytest.raises(ValueError, match=match):
-            fni = stats.FastNumericalInverse(stats.norm())
-            fni.qrvs(qmc_engine=stats.qmc.Sobol(2))
+        if NumpyVersion(np.__version__) >= '1.18.0':
+            # issues with QMCEngines and old NumPy
+            match = "`qmc_engine` must be initialized with `d=1`."
+            with pytest.raises(ValueError, match=match):
+                fni = stats.FastNumericalInverse(stats.norm())
+                fni.qrvs(qmc_engine=stats.qmc.Sobol(2))
 
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
