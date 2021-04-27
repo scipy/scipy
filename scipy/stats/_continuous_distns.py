@@ -9321,7 +9321,7 @@ class studentized_range_gen(rv_continuous):
     Notes
     -----
     The probability density function for `studentized_range` is:
-        
+
     .. math::
 
          f(q; k, \nu) = f(q; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
