@@ -567,6 +567,9 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(self, d, seed=None):
+        if not np.issubdtype(type(d), np.integer):
+            raise ValueError('d must be an integer value')
+
         self.d = d
         self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(seed)
@@ -968,11 +971,11 @@ class Sobol(QMCEngine):
     MAXBIT = _MAXBIT
 
     def __init__(self, d, scramble=True, seed=None):
+        super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(d=d, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()

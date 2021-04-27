@@ -354,6 +354,10 @@ def test_subclassing_QMCEngine():
     assert_equal(sample_2, sample_2_test)
     assert engine.num_generated == 12
 
+    # input validation
+    with pytest.raises(ValueError, match=r"d must be an integer value"):
+            RandomEngine((2,), seed=seed)
+
 
 class QMCEngineTests:
     """Generic tests for QMC engines."""
@@ -574,9 +578,10 @@ class TestSobol(QMCEngineTests):
             engine.random_base2(2)
 
     def test_raise(self):
+        seed = np.random.RandomState(12345)
         with pytest.raises(ValueError, match=r"Maximum supported "
                                              r"dimensionality"):
-            qmc.Sobol(qmc.Sobol.MAXDIM + 1)
+            qmc.Sobol(qmc.Sobol.MAXDIM + 1, seed=seed)
 
     def test_high_dim(self):
         seed = np.random.RandomState(12345)
