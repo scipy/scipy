@@ -1502,7 +1502,8 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
     >>> x = norm.rvs(size=100, random_state=rng)
     >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
     >>> res = permutation_test(x, y, statistic, permutations=10000,
-    ...                        alternative='less', random_state=rng)
+    ...                        vectorized=True, alternative='less',
+    ...                        random_state=rng)
     >>> print(res.statistic)
     -0.5230459671240913
     >>> print(res.pvalue)

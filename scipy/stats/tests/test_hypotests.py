@@ -920,3 +920,21 @@ class TestPermutationTest:
 
         assert res.statistic == res2.correlation
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    def test_randomized_test_against_fisher_exact(self, alternative):
+
+        def statistic(x, y):
+            return np.sum((x == 1) & (y == 1))
+
+        np.random.seed(0)
+        # x and y are binary random variables with some dependence
+        x = (np.random.rand(8) > 0.6).astype(float)
+        y = (np.random.rand(8) + 0.25*x > 0.6).astype(float)
+        tab = stats.contingency.crosstab(x, y)[1]
+
+        res = permutation_test(x, y, statistic, paired=True,
+                               alternative=alternative)
+        res2 = stats.fisher_exact(tab, alternative=alternative)
+
+        assert_allclose(res.pvalue, res2[1])
