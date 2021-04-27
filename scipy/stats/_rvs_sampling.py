@@ -2,6 +2,7 @@
 import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicHermiteSpline
+from scipy import stats
 
 
 def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
@@ -178,21 +179,21 @@ class FastNumericalInverse():
 
     The initializer of `FastNumericalInverse` accepts `dist`, a frozen instance
     of `scipy.stats.rv_continuous`, and provides an object with methods
-    that approximate `dist.ppf` and `dist.rvs`. For some distributions,
-    these methods may be much faster than those of `dist` itself.
+    that approximate `dist.ppf` and `dist.rvs`. For most distributions,
+    these methods are faster than those of `dist` itself.
 
     Parameters
     ----------
     dist : scipy.stats.rv_frozen
         Frozen distribution for which a fast numerical inverse is desired
     tol : float, optional
-        u-error tolerance. The default is 1e-12.
+        u-error tolerance (see Notes). The default is 1e-12.
     max_intervals : int, optional
-        Maximum number of intervals in the cubic Hermite Spline used to
+        Maximum number of intervals in the cubic Hermite spline used to
         approximate the percent point function. The default is 100000.
 
     Attributes
-    -------
+    ----------
     intervals : int
         The number of intervals of the interpolant
     midpoint_error : float
@@ -305,7 +306,7 @@ class FastNumericalInverse():
         Returns
         -------
         x : array_like
-            quantile corresponding to the lower tail probability q.
+            quantile corresponding to the lower tail probability `q`.
 
         '''
         q = np.asarray(q)  # no harm; self.H always returns an array
@@ -315,42 +316,80 @@ class FastNumericalInverse():
         result[~i] = np.nan
         return result
 
-    def rvs(self, size=1, random_state=None, qmc_engine=None):
+    def rvs(self, size=None, random_state=None):
         """
         Random variates of the given RV.
 
+        The `random_state` is used to draw uniform pseudo-random variates, and
+        these are converted to pseudo-random variates of the given RV using
+        inverse transform sampling.
+
         Parameters
         ----------
-        size : int or tuple of ints, optional
-            Defining number of random variates (Default is 1).
+        size : int, tuple of ints, or None; optional
+            Defines shape of array of random variates. Default is ``None``.
         random_state : (see below), optional
             Defines the object to use for drawing pseudorandom variates.
-            If `random_state` is `None` the `~np.random.RandomState` singleton
-            is used.
-            If `random_state` is an int, a new ``RandomState`` instance is
+            If `random_state` is ``None`` the `np.random.RandomState`
+            singleton is used.
+            If `random_state` is an ``int``, a new ``RandomState`` instance is
             used, seeded with `random_state`.
             If `random_state` is already a ``RandomState`` or ``Generator``
             instance, then that object is used.
             Default is None.
-        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
-            This parameter defines the object to use for drawing
-            quasi-Monte Carlo variates. Default is None.
         Returns
         -------
         rvs : ndarray or scalar
-            Random variates of given `size`.
+            Random variates of given `size`. If `size` is ``None``, a scalar
+            is returned.
         """
-        if qmc_engine is not None and random_state is not None:
-            message = "Only one of `random_state` or `qmc_engine` may be used."
-            raise ValueError(message)
-        # Old NumPy random_state may not have `random` method,
-        # and qmc_engines don't all have `uniform`.
-        if qmc_engine:
-            uniform = qmc_engine.random(size)
-        else:
-            random_state = check_random_state(random_state)
-            uniform = random_state.uniform(size=size)
+        random_state = check_random_state(random_state)
+        uniform = random_state.uniform(size=size)
         return self.ppf(uniform)
+
+    def qrvs(self, size=None, qmc_engine=None):
+        """
+        Quasi-random variates of the given RV.
+
+        The `qmc_engine` is used to draw uniform quasi-random variates, and
+        these are converted to quasi-random variates of the given RV using
+        inverse transform sampling.
+
+        Parameters
+        ----------
+        size : int, optional
+            Defines number of random variates. Default is ``None``.
+        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
+            Defines the object to use for drawing
+            quasi-random variates. Default is ``None``, which uses
+            `scipy.stats.qmc.Sobol(1)`.
+        Returns
+        -------
+        rvs : 1-D array or scalar
+            Quasi-random variates of given `size`. If `size` is ``None``, a
+            scalar is returned.
+        """
+        # we could probably use a stats.qmc.check_qrandom_state
+        if isinstance(qmc_engine, stats.qmc.QMCEngine):
+            pass
+        elif qmc_engine is None:
+            qmc_engine = stats.qmc.Sobol(1)
+        else:
+            message = ("`qmc_engine` must be an instance of "
+                       "`scipy.stats.qmc.QMCEngine(d=1)` or `None`.")
+            raise ValueError(message)
+
+        uniform = qmc_engine.random(size or 1)
+
+        if uniform.shape[1] != 1:
+            message = ("`qmc_engine` must be initialized with `d=1`.")
+            raise ValueError(message)
+
+        qrvs = self.ppf(uniform)
+        if size is None:
+            return qrvs[0, 0]
+        else:
+            return qrvs.ravel()
 
 
 def _fni_input_validation(dist, tol, max_intervals):

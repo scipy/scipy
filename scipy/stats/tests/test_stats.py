@@ -10,6 +10,7 @@ import os
 import warnings
 from collections import namedtuple
 from itertools import product
+from copy import deepcopy
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -21,6 +22,7 @@ import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
 
+from scipy._lib._util import check_random_state
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
@@ -6705,74 +6707,99 @@ class TestMGCStat:
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
 
-@pytest.mark.parametrize(("distname", "shapes"), distcont)
-def test_FastNumericalInverse(distname, shapes):
-    slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
-    fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                  'norminvgauss', 'genhyperbolic'}
+class TestFNI:
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_FastNumericalInverse(self, distname, shapes):
+        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                      'norminvgauss', 'genhyperbolic'}
 
-    if distname in slow_dists:
-        pytest.skip("FastNumericalInverse is not fast enough.")
-    if distname in fail_dists:
-        pytest.xfail("FastNumericalInverse fails; should fix.")
+        if distname in slow_dists:
+            pytest.skip("FastNumericalInverse is not fast enough.")
+        if distname in fail_dists:
+            pytest.xfail("FastNumericalInverse fails; should fix.")
 
-    np.random.seed(0)
+        np.random.seed(0)
 
-    dist = getattr(stats, distname)(*shapes)
+        dist = getattr(stats, distname)(*shapes)
 
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "overflow encountered")
-        sup.filter(RuntimeWarning, "divide by zero")
-        sup.filter(RuntimeWarning, "invalid value encountered")
-        fni = stats.FastNumericalInverse(dist)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
+            sup.filter(RuntimeWarning, "divide by zero")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            fni = stats.FastNumericalInverse(dist)
 
-    x = np.random.rand(10)
-    p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
-    u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
+        x = np.random.rand(10)
+        p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
+        u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
-    assert p_tol < 1e-8
-    assert u_tol < 1e-12
+        assert p_tol < 1e-8
+        assert u_tol < 1e-12
 
+    def test_fni_input_validation(self):
+        match = "could not convert string to float"
+        with pytest.raises(ValueError, match=match):
+            stats.FastNumericalInverse(stats.norm(), tol='ekki')
 
-def test_fni_input_validation():
-    match = "could not convert string to float"
-    with pytest.raises(ValueError, match=match):
-        stats.FastNumericalInverse(stats.norm(), tol='ekki')
+        match = "`max_intervals' must be..."
+        with pytest.raises(ValueError, match=match):
+            stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
 
-    match = "`max_intervals' must be..."
-    with pytest.raises(ValueError, match=match):
-        stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
+        match = "'str' object has no attribute"
+        with pytest.raises(AttributeError, match=match):
+            stats.FastNumericalInverse("ekki")
 
-    match = "'str' object has no attribute"
-    with pytest.raises(AttributeError, match=match):
-        stats.FastNumericalInverse("ekki")
+        match = "`qmc_engine` must be an instance of..."
+        with pytest.raises(ValueError, match=match):
+            fni = stats.FastNumericalInverse(stats.norm())
+            fni.qrvs(qmc_engine=0)
 
-    match = "Only one of `random_state` or `qmc_engine` may be used."
-    with pytest.raises(ValueError, match=match):
-        fni = stats.FastNumericalInverse(stats.norm())
-        fni.rvs(random_state=0, qmc_engine=stats.qmc.Sobol(1))
-
-
-def test_FastNumericalInverseRVS():
-
-    dist = stats.norm()
-    fni = stats.FastNumericalInverse(dist)
+        match = "`qmc_engine` must be initialized with `d=1`."
+        with pytest.raises(ValueError, match=match):
+            fni = stats.FastNumericalInverse(stats.norm())
+            fni.qrvs(qmc_engine=stats.qmc.Sobol(2))
 
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
         rngs.append(np.random.default_rng(0))
+    sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
-    size = (4, 5, 6)
-    for rng in rngs:
-        rvs = fni.rvs(size=size, random_state=rng)
-        assert(rvs.shape == size)
+    @pytest.mark.parametrize('rng', rngs)
+    @pytest.mark.parametrize('size_in, size_out', sizes)
+    def test_FastNumericalInverseRVS(self, rng, size_in, size_out):
+        dist = stats.norm()
+        fni = stats.FastNumericalInverse(dist)
+
+        rng2 = deepcopy(rng)
+        rvs = fni.rvs(size=size_in, random_state=rng)
+        assert(rvs.shape == size_out)
+
+        if rng2 is not None:
+            rng2 = check_random_state(rng2)
+            uniform = rng2.uniform(size=size_in)
+            rvs2 = stats.norm.ppf(uniform)
+            assert_allclose(rvs, rvs2)
 
     if NumpyVersion(np.__version__) >= '1.18.0':
-        size = 8
-        # QMCEngines currently only support generators
-        qmc = stats.qmc.Sobol(1)
-        rvs = fni.rvs(size=size, qmc_engine=qmc)
-        assert(rvs.shape == (size, 1))
+        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(1, seed=0)]
+    else:
+        qrngs = []
+    sizes = [(None, tuple()), (1, (1,)), (8, (8,))]
+
+    @pytest.mark.parametrize('qrng', qrngs)
+    @pytest.mark.parametrize('size_in, size_out', sizes)
+    def test_FastNumericalInverseQRVS(self, qrng, size_in, size_out):
+        dist = stats.norm()
+        fni = stats.FastNumericalInverse(dist)
+
+        qrng2 = deepcopy(qrng)
+        qrvs = fni.qrvs(size=size_in, qmc_engine=qrng)
+        assert(qrvs.shape == size_out)
+
+        if qrng2 is not None:
+            uniform = qrng2.random(size_in or 1)  # doesn't accept None
+            qrvs2 = stats.norm.ppf(uniform).flatten()[()]
+            assert_allclose(qrvs, qrvs2)
 
 
 class TestPageTrendTest:
