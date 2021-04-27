@@ -1553,7 +1553,7 @@ def sokalmichener(u, v, w=None):
         w = _validate_weights(w)
         ntt = (u * v * w).sum()
         nff = ((1.0 - u) * (1.0 - v) * w).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
+    (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
 
 

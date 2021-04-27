@@ -2063,6 +2063,28 @@ def test_sokalmichener():
     assert_equal(dist1, dist2)
 
 
+def test_sokalmichener_with_weight():
+    # from: | 1 |   | 0 |
+    # to:   | 1 |   | 1 |
+    # weight|   | 1 |   | 0.2
+    ntf = 0 * 1 + 0 * 0.2
+    nft = 0 * 1 + 1 * 0.2
+    ntt = 1 * 1 + 0 * 0.2
+    nff = 0 * 1 + 0 * 0.2
+    expected = 2 * (nft + ntf) / (ntt + nff + 2 * (nft + ntf))
+    assert_almost_equal(expected, 0.2857143)
+    actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
+    assert_almost_equal(expected, actual)
+
+    a1 = [False, False, True, True, True, False, False, True, True, True, True,
+          True, True, False, True, False, False, False, True, True]
+    a2 = [True, True, True, False, False, True, True, True, False, True,
+          True, True, True, True, False, False, False, True, True, True]
+
+    for w in [0.05, 0.1, 1.0, 20.0]:
+        assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
+
+
 def test_modifies_input():
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
