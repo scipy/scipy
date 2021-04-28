@@ -16,6 +16,7 @@ the organization section.
    hacking
    contributor/quickerstart_conda
    contributor/contributor_toc
+   missing-bits
 
 .. toctree::
    :maxdepth: 1
