@@ -1,3 +1,4 @@
 Sphinx!=3.1.0
-pydata-sphinx-theme
+pydata-sphinx-theme>=0.6.1
+sphinx-panels>=0.5.2
 matplotlib>2

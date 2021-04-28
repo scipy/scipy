@@ -349,9 +349,6 @@ def update_discrepancy(x_new, sample, initial_disc):
 def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
 
-    Taken from [1]_ by P.T. Roy, licensed under
-    `CC-BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_.
-
     Parameters
     ----------
     n : int
@@ -361,6 +358,12 @@ def primes_from_2_to(n):
     -------
     primes : list(int)
         Primes in ``2 <= p < n``.
+
+    Notes
+    -----
+    Taken from [1]_ by P.T. Roy, written consent given on 23.04.2021
+    by the original author, Bruno Astrolino, for free use in SciPy under
+    the 3-clause BSD.
 
     References
     ----------
@@ -564,6 +567,9 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(self, d, seed=None):
+        if not np.issubdtype(type(d), np.integer):
+            raise ValueError('d must be an integer value')
+
         self.d = d
         self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(seed)
@@ -965,11 +971,11 @@ class Sobol(QMCEngine):
     MAXBIT = _MAXBIT
 
     def __init__(self, d, scramble=True, seed=None):
+        super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(d=d, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()
