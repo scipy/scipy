@@ -13,10 +13,10 @@ trigger:
       - './*.txt'
       - 'site.cfg.example'
 
-pr:
-  branches:
-    include:
-    - '*'  # must quote since "*" is a YAML reserved character; we want a string
+# pr:
+#   branches:
+#     include:
+#     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
 # the version of OpenBLAS used is currently 0.3.8.dev
 # and should be updated to match scipy-wheels as appropriate
