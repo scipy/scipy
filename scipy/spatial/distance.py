@@ -1543,17 +1543,9 @@ def sokalmichener(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        nff = (~u & ~v).sum()
-    elif w is None:
-        ntt = (u * v).sum()
-        nff = ((1.0 - u) * (1.0 - v)).sum()
-    else:
+    if w is not None:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
-        nff = ((1.0 - u) * (1.0 - v) * w).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
+    nff, nft, ntf, ntt = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
 
 
