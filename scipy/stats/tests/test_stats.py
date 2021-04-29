@@ -3672,7 +3672,7 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import _count_paths_outside_method, 
+        from scipy.stats.stats import _count_paths_outside_method
         from scipy.stats._exact_2kssamp import _compute_prob_inside_method
 
         _compute_prob_inside_method(1, 1, 1, 1)
