@@ -533,8 +533,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
                                  callback=callback, restrt=restrt)
             return x, info
         else:
-            warnings.warn("The option 'atol' was deprecated with 'orth == \'mgs\''",
-                          category=DeprecationWarning)
+            raise ValueError("The option 'atol' is not used in the case of 'orth == \'mgs\''")
 
     # Change 'restrt' keyword to 'restart'
     if restrt is None:
