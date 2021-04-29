@@ -1211,7 +1211,7 @@ def canberra(u, v, w=None):
     return d
 
 
-def jensenshannon(p, q, base=None):
+def jensenshannon(p, q, base=None, axis=0):
     """
     Compute the Jensen-Shannon distance (metric) between
     two 1-D probability arrays. This is the square root
@@ -1239,6 +1239,9 @@ def jensenshannon(p, q, base=None):
         the base of the logarithm used to compute the output
         if not given, then the routine uses the default base of
         scipy.stats.entropy.
+    axis : int, optional
+        Axis along which the Jensen-Shannon distances are computed. The default
+        is 0.
 
     Returns
     -------
@@ -1256,16 +1259,20 @@ def jensenshannon(p, q, base=None):
     0.46450140402245893
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
     0.0
+    >>> jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0)
+    array([0.0, 0.0])
+    >>> jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1)
+    array([0.0649045])
 
     """
     p = np.asarray(p)
     q = np.asarray(q)
-    p = p / np.sum(p, axis=0)
-    q = q / np.sum(q, axis=0)
+    p = p / np.sum(p, axis=axis, keepdims=True)
+    q = q / np.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
     left = rel_entr(p, m)
     right = rel_entr(q, m)
-    js = np.sum(left, axis=0) + np.sum(right, axis=0)
+    js = np.sum(left, axis=axis) + np.sum(right, axis=axis)
     if base is not None:
         js /= np.log(base)
     return np.sqrt(js / 2.0)
