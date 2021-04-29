@@ -210,8 +210,8 @@ class RBFInterpolator:
             - 'tps' (thin plate spline)      : ``r**2 * log(r)``
             - 'cubic'                        : ``r**3``
             - 'quintic'                      : ``-r**5``
-            - 'mq' (multiquadratic)          : ``-sqrt(1 + r**2)``
-            - 'imq' (inverse multiquadratic) : ``1/sqrt(1 + r**2)``
+            - 'mq' (multiquadric)            : ``-sqrt(1 + r**2)``
+            - 'imq' (inverse multiquadric)   : ``1/sqrt(1 + r**2)``
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 
@@ -412,8 +412,8 @@ class KNearestRBFInterpolator:
             - 'tps' (thin plate spline)      : ``r**2 * log(r)``
             - 'cubic'                        : ``r**3``
             - 'quintic'                      : ``-r**5``
-            - 'mq' (multiquadratic)          : ``-sqrt(1 + r**2)``
-            - 'imq' (inverse multiquadratic) : ``1/sqrt(1 + r**2)``
+            - 'mq' (multiquadric)            : ``-sqrt(1 + r**2)``
+            - 'imq' (inverse multiquadric)   : ``1/sqrt(1 + r**2)``
             - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
             - 'ga' (Gaussian)                : ``exp(-r**2)``
 

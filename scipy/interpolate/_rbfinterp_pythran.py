@@ -25,12 +25,12 @@ def quintic(r):
 
 
 def mq(r):
-    """Multiquadratic"""
+    """Multiquadric"""
     return -np.sqrt(r**2 + 1)
 
 
 def imq(r):
-    """Inverse multiquadratic"""
+    """Inverse multiquadric"""
     return 1/np.sqrt(r**2 + 1)
 
 
