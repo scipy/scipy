@@ -88,7 +88,8 @@ def configuration(parent_package='', top_path=None):
         import pythran
         ext = pythran.dist.PythranExtension(
             'scipy.stats._exact_2kssamp',
-            sources=["scipy/stats/_exact_2kssamp.py"])
+            sources=["scipy/stats/_exact_2kssamp.py"],
+            config=['compiler.blas=none'])
         config.ext_modules.append(ext)
     
     return config
