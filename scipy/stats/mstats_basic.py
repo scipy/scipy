@@ -977,10 +977,30 @@ def sen_seasonal_slopes(x):
     return szn_medslopes, medslope
 
 
+def _ttest_finish(df, t, alternative):
+    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
+    cdf = 1 - 0.5 * prob
+    cdf = np.ma.where(t < 0, 1-cdf, cdf)
+
+    if alternative == 'less':
+        pval = cdf
+    elif alternative == 'greater':
+        pval = 1 - cdf
+    else:
+        pval = prob
+
+    if t.ndim == 0:
+        t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
+
+    return t, pval
+
+
 Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
 
 
-def ttest_1samp(a, popmean, axis=0):
+def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     """
     Calculates the T-test for the mean of ONE group of scores.
 
@@ -994,13 +1014,22 @@ def ttest_1samp(a, popmean, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         t-statistic
     pvalue : float or array
-        two-tailed p-value
+        The p-value
 
     Notes
     -----
@@ -1008,6 +1037,9 @@ def ttest_1samp(a, popmean, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError("`alternative` must be "
+                         "'less', 'greater' or 'two-sided'")
     if a.size == 0:
         return (np.nan, np.nan)
 
@@ -1019,9 +1051,8 @@ def ttest_1samp(a, popmean, axis=0):
     svar = ((n - 1.0) * v) / df
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
-    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
-    return Ttest_1sampResult(t, prob)
+    return Ttest_1sampResult(*_ttest_finish(df, t, alternative))
 
 
 ttest_onesamp = ttest_1samp
@@ -1030,7 +1061,7 @@ ttest_onesamp = ttest_1samp
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -1049,13 +1080,22 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         variance.
 
         .. versionadded:: 0.17.0
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
     statistic : float or array
         The calculated t-statistic.
     pvalue : float or array
-        The two-tailed p-value.
+        The p-value.
 
     Notes
     -----
@@ -1063,6 +1103,10 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError("`alternative` must be "
+                         "'less', 'greater' or 'two-sided'")
 
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
@@ -1089,15 +1133,14 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
-    return Ttest_indResult(t, probs.squeeze())
+    return Ttest_indResult(*_ttest_finish(df, t, alternative))
 
 
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
-def ttest_rel(a, b, axis=0):
+def ttest_rel(a, b, axis=0, alternative='two-sided'):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -1108,6 +1151,15 @@ def ttest_rel(a, b, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -1122,6 +1174,9 @@ def ttest_rel(a, b, axis=0):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError("`alternative` must be "
+                         "'less', 'greater' or 'two-sided'")
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
 
@@ -1137,9 +1192,7 @@ def ttest_rel(a, b, axis=0):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
-
-    return Ttest_relResult(t, probs)
+    return Ttest_relResult(*_ttest_finish(df, t, alternative))
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
