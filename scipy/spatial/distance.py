@@ -1259,9 +1259,9 @@ def jensenshannon(p, q, base=None, axis=0):
     0.46450140402245893
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
     0.0
-    >>> jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0)
+    >>> distance.jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0)
     array([0.0, 0.0])
-    >>> jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1)
+    >>> distance.jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1)
     array([0.0649045])
 
     """
