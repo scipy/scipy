@@ -2515,24 +2515,33 @@ def stde_median(data, axis=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-def skewtest(a, axis=0):
+def skewtest(a, axis=0, alternative='two-sided'):
     """
     Tests whether the skew is different from the normal distribution.
 
     Parameters
     ----------
-    a : array
+    a : array_like
         The data to be tested
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        a 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        A p-value for the hypothesis test
 
     Notes
     -----
@@ -2540,6 +2549,9 @@ def skewtest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
     if axis is None:
         a = a.ravel()
         axis = 0
@@ -2558,30 +2570,39 @@ def skewtest(a, axis=0):
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
 
-    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return SkewtestResult(*scipy.stats.stats._normtest_finish(Z, alternative))
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-def kurtosistest(a, axis=0):
+def kurtosistest(a, axis=0, alternative='two-sided'):
     """
     Tests whether a dataset has normal kurtosis
 
     Parameters
     ----------
-    a : array
+    a : array_like
         array of the sample data
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided'
+          * 'less': one-sided
+          * 'greater': one-sided
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    statistic : float
+    statistic : array_like
         The computed z-score for this test.
-    pvalue : float
-        The 2-sided p-value for the hypothesis test
+    pvalue : array_like
+        The p-value for the hypothesis test
 
     Notes
     -----
@@ -2589,6 +2610,9 @@ def kurtosistest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
     n = a.count(axis=axis)
     if np.min(n) < 5:
         raise ValueError(
@@ -2618,7 +2642,9 @@ def kurtosistest(a, axis=0):
                         -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
-    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+    return KurtosistestResult(
+        *scipy.stats.stats._normtest_finish(Z, alternative)
+    )
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))

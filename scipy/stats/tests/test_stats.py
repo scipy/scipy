@@ -4629,13 +4629,19 @@ def test_normalitytests():
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
+    # test alternative with nan_policy='omit'
+    a1[10:100] = np.nan
+    z, p = stats.skewtest(a1, nan_policy='omit')
+    zl, pl = stats.skewtest(a1, nan_policy='omit', alternative='less')
+    zg, pg = stats.skewtest(a1, nan_policy='omit', alternative='greater')
+    assert_allclose(zl, z, atol=1e-15)
+    assert_allclose(zg, z, atol=1e-15)
+    assert_allclose(pl, 1 - p/2, atol=1e-15)
+    assert_allclose(pg, p/2, atol=1e-15)
+
     with np.errstate(all='ignore'):
         assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
     assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
-    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
-                  alternative='less')
-    assert_raises(ValueError, stats.skewtest, x, nan_policy='omit',
-                  alternative='greater')
     assert_raises(ValueError, stats.skewtest, list(range(8)),
                   alternative='foobar')
 
@@ -4648,12 +4654,20 @@ def test_normalitytests():
     assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
                               expected)
 
+    # test alternative with nan_policy='omit'
+    a2[10:20] = np.nan
+    z, p = stats.kurtosistest(a2[:100], nan_policy='omit')
+    zl, pl = stats.kurtosistest(a2[:100], nan_policy='omit',
+                                alternative='less')
+    zg, pg = stats.kurtosistest(a2[:100], nan_policy='omit',
+                                alternative='greater')
+    assert_allclose(zl, z, atol=1e-15)
+    assert_allclose(zg, z, atol=1e-15)
+    assert_allclose(pl, 1 - p/2, atol=1e-15)
+    assert_allclose(pg, p/2, atol=1e-15)
+
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
-    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
-                  alternative='less')
-    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='omit',
-                  alternative='greater')
     assert_raises(ValueError, stats.kurtosistest, list(range(20)),
                   alternative='foobar')
 

@@ -961,6 +961,19 @@ class TestNormalitytests():
         x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
         assert_equal(mstats.kurtosistest(x)[1] < 0.01, True)
 
+    @pytest.mark.parametrize("test", ["skewtest", "kurtosistest"])
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, test, alternative):
+        x = stats.norm.rvs(loc=10, scale=2.5, size=20, random_state=123)
+
+        stats_test = getattr(stats, test)
+        mstats_test = getattr(mstats, test)
+
+        z_ex, p_ex = stats_test(x, alternative=alternative)
+        z, p = mstats_test(x, alternative=alternative)
+        assert_allclose(z, z_ex, atol=1e-12)
+        assert_allclose(p, p_ex, atol=1e-12)
+
 
 class TestFOneway():
     def test_result_attributes(self):
