@@ -1211,7 +1211,7 @@ def canberra(u, v, w=None):
     return d
 
 
-def jensenshannon(p, q, base=None, axis=0):
+def jensenshannon(p, q, base=None, *, axis=0, keepdim=False):
     """
     Compute the Jensen-Shannon distance (metric) between
     two 1-D probability arrays. This is the square root
