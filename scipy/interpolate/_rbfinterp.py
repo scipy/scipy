@@ -1,4 +1,4 @@
-"""Module for RBF interpolation"""
+"""Module for RBF interpolation."""
 import warnings
 from functools import lru_cache
 from itertools import combinations_with_replacement
@@ -41,7 +41,7 @@ _NAME_TO_MIN_DEGREE = {
 def _monomial_powers(ndim, degree):
     """
     Returns the powers for each monomial in a polynomial with the specified
-    number of dimensions and degree
+    number of dimensions and degree.
     """
     out = []
     for deg in range(degree + 1):
@@ -58,30 +58,30 @@ def _monomial_powers(ndim, degree):
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
     """
-    Build and solve the RBF interpolation system of equations
+    Build and solve the RBF interpolation system of equations.
 
     Parameters
     ----------
     y : (P, N) float ndarray
-        Data point coordinates
+        Data point coordinates.
     d : (P, S) float ndarray
-        Data values at `y`
+        Data values at `y`.
     smoothing : (P,) float ndarray
-        Smoothing parameter for each data point
+        Smoothing parameter for each data point.
     kernel : str
-        Name of the RBF
+        Name of the RBF.
     epsilon : float
-        Shape parameter
+        Shape parameter.
     powers : (R, N) int ndarray
-        The exponents for each monomial in the polynomial
+        The exponents for each monomial in the polynomial.
 
     Returns
     -------
     coeffs : (P + R, S) float ndarray
     shift : (N,) float ndarray
-        Domain shift used to create the polynomial matrix
+        Domain shift used to create the polynomial matrix.
     scale : (N,) float ndarray
-        Domain scaling used to create the polynomial matrix
+        Domain scaling used to create the polynomial matrix.
 
     """
     lhs, rhs, shift, scale = _build_system(
@@ -89,9 +89,9 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         )
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
-        raise ValueError('The %d-th argument had an illegal value' % -info)
+        raise ValueError('The %d-th argument had an illegal value.' % -info)
     elif info > 0:
-        msg = 'Singular matrix'
+        msg = 'Singular matrix.'
         nmonos = powers.shape[0]
         if nmonos > 0:
             pmat = _polynomial_matrix(y, powers)
@@ -112,11 +112,12 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
 
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     """
-    Sanitize __init__ arguments for RBFInterpolator and KNearestRBFInterpolator
+    Sanitize __init__ arguments for RBFInterpolator and
+    KNearestRBFInterpolator.
     """
     y = np.asarray(y, dtype=float, order='C')
     if y.ndim != 2:
-        raise ValueError('`y` must be a 2-dimensional array')
+        raise ValueError('`y` must be a 2-dimensional array.')
 
     ny, ndim = y.shape
 
@@ -124,7 +125,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     d = np.asarray(d, dtype=dtype, order='C')
     if d.shape[0] != ny:
         raise ValueError(
-            'Expected the first axis of `d` to have length %d' % ny
+            'Expected the first axis of `d` to have length %d.' % ny
             )
 
     if np.isscalar(smoothing):
@@ -133,18 +134,18 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
         smoothing = np.asarray(smoothing, dtype=float, order='C')
         if smoothing.shape != (ny,):
             raise ValueError(
-                'Expected `smoothing` to be a scalar or have shape (%d,)' % ny
+                'Expected `smoothing` to be a scalar or have shape (%d,).' % ny
                 )
 
     if kernel not in _AVAILABLE:
-        raise ValueError('`kernel` must be one of %s' % _AVAILABLE)
+        raise ValueError('`kernel` must be one of %s.' % _AVAILABLE)
 
     if epsilon is None:
         if kernel in _SCALE_INVARIANT:
             epsilon = 1.0
         else:
             raise ValueError(
-                '`epsilon` must be specified if `kernel` is not one of %s' %
+                '`epsilon` must be specified if `kernel` is not one of %s.' %
                 _SCALE_INVARIANT
                 )
     else:
@@ -156,7 +157,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     else:
         degree = int(degree)
         if degree < -1:
-            raise ValueError('`degree` must be at least -1')
+            raise ValueError('`degree` must be at least -1.')
         elif degree < min_degree:
             warnings.warn(
                 '`degree` should not be below %d when `kernel` is "%s". The '
@@ -191,14 +192,14 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
 
 class RBFInterpolator:
     """
-    Radial basis function (RBF) interpolation in N dimensions
+    Radial basis function (RBF) interpolation in N dimensions.
 
     Parameters
     ----------
     y : (P, N) array_like
-        Data point coordinates
+        Data point coordinates.
     d : (P, ...) array_like
-        Data values at `y`
+        Data values at `y`.
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
@@ -301,7 +302,7 @@ class RBFInterpolator:
 
     Examples
     --------
-    Demonstrate interpolating scattered data to a grid in 2-D
+    Demonstrate interpolating scattered data to a grid in 2-D.
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
@@ -336,7 +337,7 @@ class RBFInterpolator:
         d = d.reshape((ny, -1))
         # If `d` is complex, convert it to a float array with twice as many
         # columns. Otherwise, the lhs matrix would need to be converted to
-        # complex and take up 2x more memory than necessary
+        # complex and take up 2x more memory than necessary.
         d = d.view(float)
         powers = _monomial_powers(ndim, degree)
         shift, scale, coeffs = _build_and_solve_system(
@@ -355,27 +356,27 @@ class RBFInterpolator:
 
     def __call__(self, x):
         """
-        Evaluates the interpolant at `x`
+        Evaluates the interpolant at `x`.
 
         Parameters
         ----------
         x : (Q, N) array_like
-            Interpolation point coordinates
+            Interpolation point coordinates.
 
         Returns
         -------
         (Q, ...) ndarray
-            Values of the interpolant at `x`
+            Values of the interpolant at `x`.
 
         """
         x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
-            raise ValueError('`x` must be a 2-dimensional array')
+            raise ValueError('`x` must be a 2-dimensional array.')
 
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
             raise ValueError(
-                'Expected the second axis of `x` to have length %d' %
+                'Expected the second axis of `x` to have length %d.' %
                 self.y.shape[1]
                 )
 
@@ -390,18 +391,18 @@ class RBFInterpolator:
 
 class KNearestRBFInterpolator:
     """
-    RBF interpolation using the k nearest data points
+    RBF interpolation using the k nearest data points.
 
     See `RBFInterpolator` for more information.
 
     Parameters
     ----------
     y : (P, N) array_like
-        Data point coordinates
+        Data point coordinates.
     d : (P, ...) array_like
-        Data values at `y`
+        Data values at `y`.
     k : int, optional
-        Number of nearest data points to use for each interpolation point
+        Number of nearest data points to use for each interpolation point.
     smoothing : float or (P,) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0.
@@ -472,45 +473,45 @@ class KNearestRBFInterpolator:
 
     def __call__(self, x):
         """
-        Evaluates the interpolant at `x`
+        Evaluates the interpolant at `x`.
 
         Parameters
         ----------
         x : (Q, N) array_like
-            Interpolation point coordinates
+            Interpolation point coordinates.
 
         Returns
         -------
         (Q, ...) ndarray
-            Values of the interpolant at `x`
+            Values of the interpolant at `x`.
 
         """
         x = np.asarray(x, dtype=float, order='C')
         if x.ndim != 2:
-            raise ValueError('`x` must be a 2-dimensional array')
+            raise ValueError('`x` must be a 2-dimensional array.')
 
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
             raise ValueError(
-                'Expected the second axis of `x` to have length %d' %
+                'Expected the second axis of `x` to have length %d.' %
                 self.y.shape[1]
                 )
 
-        # get the indices of the k nearest observation points to each
-        # interpolation point
+        # Get the indices of the k nearest observation points to each
+        # interpolation point.
         _, yindices = self.tree.query(x, self.k)
         if self.k == 1:
-            # KDTree squeezes the output when k=1
+            # KDTree squeezes the output when k=1.
             yindices = yindices[:, None]
 
-        # multiple interpolation points may have the same neighborhood of
+        # Multiple interpolation points may have the same neighborhood of
         # observation points. Make the neighborhoods unique so that we only
         # compute the interpolation coefficients once for each neighborhood
         yindices = np.sort(yindices, axis=1)
         yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
         # `inv` tells us which neighborhood will be used by each interpolation
         # point. Now we find which interpolation points will be using each
-        # neighborhood
+        # neighborhood.
         xindices = [[] for _ in range(len(yindices))]
         for i, j in enumerate(inv):
             xindices[j].append(i)
@@ -519,7 +520,7 @@ class KNearestRBFInterpolator:
         for xidx, yidx in zip(xindices, yindices):
             # `yidx` are the indices of the observations in this neighborhood.
             # `xidx` are the indices of the interpolation points that are using
-            # this neighborhood
+            # this neighborhood.
             xnbr = x[xidx]
             ynbr = self.y[yidx]
             dnbr = self.d[yidx]
