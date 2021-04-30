@@ -673,34 +673,28 @@ def _woodbury_algorithm(A, ur, ll, b, k):
 
     n = A.shape[1] + 1
     U = np.zeros((n - 1, k_mod))
-    V = np.zeros((k_mod, n - 1))  # V transpose 
+    VT = np.zeros((k_mod, n - 1))  # V transpose
 
     # upper right block 
     U[:bs, :bs] = ur
-    V[np.arange(bs), np.arange(bs) - bs] = 1
+    VT[np.arange(bs), np.arange(bs) - bs] = 1
 
     # lower left block 
     U[-bs:, -bs:] = ll
-    V[np.arange(bs) - bs, np.arange(bs)] = 1
+    VT[np.arange(bs) - bs, np.arange(bs)] = 1
     
-    Z = solve_banded((bs, bs), A, U[:, 0])  # z0
-    Z = np.expand_dims(Z, axis=0)
-    
-    for i in range(1, k_mod):
-        zi = solve_banded((bs, bs), A, U[:, i])
-        zi = np.expand_dims(zi, axis=0)
-        Z = np.concatenate((Z, zi), axis=0)
+    Z = solve_banded((bs, bs), A, U)
 
-    H = solve(np.identity(k_mod) + V @ Z.T, np.identity(k_mod))
+    H = solve(np.identity(k_mod) + VT @ Z, np.identity(k_mod))
 
     y = solve_banded((bs, bs), A, b)
-    c = y - Z.T @ (H @ (V @ y))
+    c = y - Z @ (H @ (VT @ y))
 
     return c
 
 def _periodic_knots(x, k):
     '''
-    returns vector of nodes on circle
+    returns vector of knots on circle
     '''
     xc = np.copy(x)
     if k % 2 == 0:
@@ -727,7 +721,7 @@ def _make_periodic_spline(x, y, t, k, axis):
     k : int
         B-spline degree.
     t : array_like, shape (n + 2 * k,).
-        Nodes taken on a circle, ``k`` on the left and ``k`` on the right
+        Knots taken on a circle, ``k`` on the left and ``k`` on the right
         of the vector ``x``.
 
     Returns
@@ -742,10 +736,10 @@ def _make_periodic_spline(x, y, t, k, axis):
     (matching all the input points). Due to a special form of knot vector, it
     can be proved that in the original system the first and last ``k``
     coefficients of a spline function are the same, respectively. It follows
-    from the fact that all ``k-1`` derivatives are equal term by term at ends
+    from the fact that all ``k - 1`` derivatives are equal term by term at ends
     and that the matrix of the original system of linear equations is
     non-degenerate. So, we can reduce the number of equations to ``n - 1``
-    (first ``k-1`` equations could be reduced). Another trick of this 
+    (first ``k - 1`` equations could be reduced). Another trick of this
     implementation is cyclic shift of values of B-splines due to equality of
     ``k`` unknown coefficients. With this we can receive matrix of the system
     with upper right and lower left blocks, and ``k`` diagonals.  It allows
@@ -757,7 +751,7 @@ def _make_periodic_spline(x, y, t, k, axis):
     if n <= k:
         raise ValueError("Need at least k + 1 data points to fit a spline "
                          "of degree k.")
-    
+    # size of vector of coefficients
     nt = len(t) - k - 1
 
     # size of block elements
@@ -778,13 +772,13 @@ def _make_periodic_spline(x, y, t, k, axis):
     ab = ab[-k - (k + 1) % 2:, :]
     
     # The least elements in rows (except repetitions) are diagonals
-    # of block matricies. Upper right matrix is an upper triangular
+    # of block matrices. Upper right matrix is an upper triangular
     # matrix while lower left is a lower triangular one.
     for i in range(kul):
         ur += np.diag(ab[-i - 1, i: kul], k=i)
         ll += np.diag(ab[i, -kul - (k % 2): n - 1 + 2 * kul - i], k=-i)
 
-    # remove elements that occure in the last point
+    # remove elements that occur in the last point
     # (first and last points are equivalent)
     A = ab[:, kul: -k + kul]
 
@@ -795,7 +789,7 @@ def _make_periodic_spline(x, y, t, k, axis):
         cc = _woodbury_algorithm(A, ur, ll, y_new[:, i][:-1], k)
         c[:, i] = np.concatenate((cc[-kul:], cc, cc[:kul + k % 2]))
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
-    return BSpline.construct_fast(t, c, k, axis=axis)
+    return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
