@@ -5480,6 +5480,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -5644,9 +5645,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
         * 'two-sided': the mean of the distributions are unequal.
         * 'less': the mean of the first distribution is less than the
-        mean of the second distribution.
+          mean of the second distribution.
         * 'greater': the mean of the first distribution is greater than the
-        mean of the second distribution.
+          mean of the second distribution.
 
         .. versionadded:: 1.6.0
 
@@ -5845,13 +5846,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the mean of the distributions underlying the samples
-        are unequal.
+          are unequal.
         * 'less': the mean of the distribution underlying the first sample
-        is less than the mean of the distribution underlying the second
-        sample.
+          is less than the mean of the distribution underlying the second
+          sample.
         * 'greater': the mean of the distribution underlying the first
-        sample is greater than the mean of the distribution underlying
-        the second sample.
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
         .. versionadded:: 1.6.0
 
@@ -6160,15 +6161,15 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the mean of the distributions underlying the samples
-        are unequal.
+          are unequal.
         * 'less': the mean of the distribution underlying the first sample
-        is less than the mean of the distribution underlying the second
-        sample.
+          is less than the mean of the distribution underlying the second
+          sample.
         * 'greater': the mean of the distribution underlying the first
-        sample is greater than the mean of the distribution underlying
-        the second sample.
+          sample is greater than the mean of the distribution underlying
+          the second sample.
 
-          .. versionadded:: 1.6.0
+        .. versionadded:: 1.6.0
 
     Returns
     -------
