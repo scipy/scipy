@@ -537,10 +537,10 @@ def argsreduce(cond, *args):
 
     Examples
     --------
-    >>> rand = np.random.random_sample
-    >>> A = rand((4, 5))
+    >>> rng = np.random.default_rng()
+    >>> A = rng.random((4, 5))
     >>> B = 2
-    >>> C = rand((1, 5))
+    >>> C = rng.random((1, 5))
     >>> cond = np.ones(A.shape)
     >>> [A1, B1, C1] = argsreduce(cond, A, B, C)
     >>> A1.shape
@@ -557,6 +557,7 @@ def argsreduce(cond, *args):
     (1,)
     >>> C1.shape
     (15,)
+
     """
     # some distributions assume arguments are iterable.
     newargs = np.atleast_1d(*args)
@@ -628,7 +629,7 @@ class rv_generic:
 
     """
     def __init__(self, seed=None):
-        super(rv_generic, self).__init__()
+        super().__init__()
 
         # figure out if _stats signature has 'moments' keyword
         sig = _getfullargspec(self._stats)
@@ -1441,6 +1442,7 @@ class rv_generic:
             location parameter, Default is 0.
         scale : array_like, optional
             scale parameter, Default is 1.
+
         Returns
         -------
         a, b : array_like
@@ -1688,7 +1690,7 @@ class rv_continuous(rv_generic):
                  badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None, seed=None):
 
-        super(rv_continuous, self).__init__(seed)
+        super().__init__(seed)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2958,7 +2960,7 @@ class rv_discrete(rv_generic):
                  moment_tol=1e-8, values=None, inc=1, longname=None,
                  shapes=None, extradoc=None, seed=None):
 
-        super(rv_discrete, self).__init__(seed)
+        super().__init__(seed)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3112,7 +3114,7 @@ class rv_discrete(rv_generic):
 
         """
         kwargs['discrete'] = True
-        return super(rv_discrete, self).rvs(*args, **kwargs)
+        return super().rvs(*args, **kwargs)
 
     def pmf(self, k, *args, **kwds):
         """Probability mass function at k of the given RV.
@@ -3683,6 +3685,7 @@ class rv_sample(rv_discrete):
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
+
         Returns
         -------
         a, b : numeric (float, or int or +/-np.inf)

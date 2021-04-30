@@ -172,9 +172,10 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
-    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
     >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
 
     >>> clock = np.arange(64, len(sig), 128)
@@ -196,7 +197,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     >>> x = np.arange(128) / 128
     >>> sig = np.sin(2 * np.pi * x)
-    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> sig_noise = sig + rng.standard_normal(len(sig))
     >>> corr = signal.correlate(sig_noise, sig)
     >>> lags = signal.correlation_lags(len(sig), len(sig_noise))
     >>> corr /= np.max(corr)
@@ -216,6 +217,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> ax_corr.margins(0, 0.1)
     >>> fig.tight_layout()
     >>> plt.show()
+
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -604,7 +606,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     Autocorrelation of white noise is an impulse.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(1000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(1000)
     >>> autocorr = signal.fftconvolve(sig, sig[::-1], mode='full')
 
     >>> import matplotlib.pyplot as plt
@@ -639,6 +642,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> ax_blurred.set_title('Blurred')
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
+
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
@@ -831,7 +835,8 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     Convolve a 100,000 sample signal with a 512-sample filter.
 
     >>> from scipy import signal
-    >>> sig = np.random.randn(100000)
+    >>> rng = np.random.default_rng()
+    >>> sig = rng.standard_normal(100000)
     >>> filt = signal.firwin(512, 0.01)
     >>> fsig = signal.oaconvolve(sig, filt)
 
@@ -1236,16 +1241,17 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     Estimate the fastest method for a given input:
 
     >>> from scipy import signal
-    >>> img = np.random.rand(32, 32)
-    >>> filter = np.random.rand(8, 8)
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((32, 32))
+    >>> filter = rng.random((8, 8))
     >>> method = signal.choose_conv_method(img, filter, mode='same')
     >>> method
     'fft'
 
     This can then be applied to other arrays of the same dtype and shape:
 
-    >>> img2 = np.random.rand(32, 32)
-    >>> filter2 = np.random.rand(8, 8)
+    >>> img2 = rng.random((32, 32))
+    >>> filter2 = rng.random((8, 8))
     >>> corr2 = signal.correlate(img2, filter2, mode='same', method=method)
     >>> conv2 = signal.convolve(img2, filter2, mode='same', method=method)
 
@@ -1563,7 +1569,8 @@ def wiener(im, mysize=None, noise=None):
     >>> from scipy.signal.signaltools import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> img = np.random.random((40, 40))    #Create a random image
+    >>> rng = np.random.default_rng()
+    >>> img = rng.random((40, 40))    #Create a random image
     >>> filtered_img = wiener(img, (5, 5))  #Filter the image
     >>> f, (plot1, plot2) = plt.subplots(1, 2)
     >>> plot1.imshow(img)
@@ -1754,10 +1761,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
+    >>> rng = np.random.default_rng()
     >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
     >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
-    >>> face = face + np.random.randn(*face.shape) * 50  # add noise
+    >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
     >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
@@ -1941,11 +1949,12 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
     >>> t = np.linspace(-1, 1, 201)
     >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
     ...      0.1*np.sin(2*np.pi*1.25*t + 1) +
     ...      0.18*np.cos(2*np.pi*3.85*t))
-    >>> xn = x + np.random.randn(len(t)) * 0.08
+    >>> xn = x + rng.standard_normal(len(t)) * 0.08
 
     Create an order 3 lowpass butterworth filter:
 
@@ -3990,12 +3999,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     First, create a filter.
 
     >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
-    >>> np.random.seed(123456)
 
     `sig` is a random input signal to be filtered.
 
+    >>> rng = np.random.default_rng()
     >>> n = 60
-    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+    >>> sig = rng.standard_normal(n)**3 + 3*rng.standard_normal(n).cumsum()
 
     Apply `filtfilt` to `sig`, once using the Gustafsson method, and
     once using padding, and plot the results for comparison.
@@ -4024,7 +4033,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = np.random.randn(5000)
+    >>> x = rng.standard_normal(5000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
@@ -4284,13 +4293,13 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     --------
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Create an interesting signal to filter.
 
     >>> n = 201
     >>> t = np.linspace(0, 1, n)
-    >>> np.random.seed(123)
-    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*rng.standard_normal(n)
 
     Create a lowpass Butterworth filter, and use it to filter `x`.
 
