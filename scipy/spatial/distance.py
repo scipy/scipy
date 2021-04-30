@@ -1243,6 +1243,7 @@ def jensenshannon(p, q, base=None, axis=0):
         Axis along which the Jensen-Shannon distances are computed. The default
         is 0.
 
+        .. versionadded:: 1.7.0
     Returns
     -------
     js : double
