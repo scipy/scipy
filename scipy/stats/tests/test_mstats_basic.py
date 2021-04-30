@@ -1085,21 +1085,18 @@ class TestTtest_rel():
             assert_array_equal(t, np.array([np.nan, np.nan]))
             assert_array_equal(p, np.array([np.nan, np.nan]))
 
-    def test_alternative(self):
+    def test_bad_alternative(self):
         msg = r"`alternative` must be 'less', 'greater' or 'two-sided'"
         with pytest.raises(ValueError, match=msg):
             mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
 
+    @pytest.mark.parametrize("alternative", ["less", "greater"])
+    def test_alternative(self, alternative):
         x = stats.norm.rvs(loc=10, scale=2, size=100, random_state=123)
         y = stats.norm.rvs(loc=8, scale=2, size=100, random_state=123)
 
-        t_ex, p_ex = stats.ttest_rel(x, y, alternative='less')
-        t, p = mstats.ttest_rel(x, y, alternative='less')
-        assert_allclose(t, t_ex, atol=1e-12)
-        assert_allclose(p, p_ex, atol=1e-12)
-
-        t_ex, p_ex = stats.ttest_rel(x, y, alternative='greater')
-        t, p = mstats.ttest_rel(x, y, alternative='greater')
+        t_ex, p_ex = stats.ttest_rel(x, y, alternative=alternative)
+        t, p = mstats.ttest_rel(x, y, alternative=alternative)
         assert_allclose(t, t_ex, atol=1e-12)
         assert_allclose(p, p_ex, atol=1e-12)
 

@@ -5459,7 +5459,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
-    This is a two-sided test for the null hypothesis that the expected value
+    This is a test for the null hypothesis that the expected value
     (mean) of a sample of independent observations `a` is equal to the given
     population mean, `popmean`.
 
@@ -5484,9 +5484,12 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the underlying distribution of the sample
+          is different than the given population mean (`popmean`)
+        * 'less': the mean of the underlying distribution of the sample is
+          less than the given population mean (`popmean`)
+        * 'greater': the mean of the underlying distribution of the sample is
+          greater than the given population mean (`popmean`)
 
         .. versionadded:: 1.6.0
 
@@ -5613,7 +5616,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     r"""
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that two independent
+    This is a test for the null hypothesis that two independent
     samples have identical average (expected) values.
 
     Parameters
@@ -5639,9 +5642,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the distributions are unequal.
+        * 'less': the mean of the first distribution is less than the
+        mean of the second distribution.
+        * 'greater': the mean of the first distribution is greater than the
+        mean of the second distribution.
 
         .. versionadded:: 1.6.0
 
@@ -5839,9 +5844,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the distributions underlying the samples
+        are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+        is less than the mean of the distribution underlying the second
+        sample.
+        * 'greater': the mean of the distribution underlying the first
+        sample is greater than the mean of the distribution underlying
+        the second sample.
 
         .. versionadded:: 1.6.0
 
@@ -6149,9 +6159,14 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
+        * 'two-sided': the mean of the distributions underlying the samples
+        are unequal.
+        * 'less': the mean of the distribution underlying the first sample
+        is less than the mean of the distribution underlying the second
+        sample.
+        * 'greater': the mean of the distribution underlying the first
+        sample is greater than the mean of the distribution underlying
+        the second sample.
 
           .. versionadded:: 1.6.0
 
