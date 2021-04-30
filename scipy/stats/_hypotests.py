@@ -1031,7 +1031,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     .. [1] Raised conditional level of significance for the 2 × 2‐table when testing
            the equality of two probabilities. :doi:`10.1111/j.1467-9574.1970.tb00104.x`
 
-    .. [2] "Boschloo's test". *Wikipedia*.
+    .. [2] "Boschloo's test", Wikipedia,
            https://en.wikipedia.org/wiki/Boschloo%27s_test
 
     Examples
@@ -1059,7 +1059,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     becoming infected with the virus; that is, the probability :math:`p_1` of
     catching the virus with the vaccine will be *less than* the probability
     :math:`p_2` of catching the virus without the vaccine.  Therefore, we call
-    `barnard_exact` with the ``alternative="less"`` option:
+    `boschloo_exact` with the ``alternative="less"`` option:
 
     >>> import scipy.stats as stats
     >>> res = stats.boschloo_exact([[7, 12], [8, 3]], alternative="less")
@@ -1137,7 +1137,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
             index_arr = pvalues <= fisher_stat
     else:
         msg = (
-            "`alternative` should be one of {'two-sided', 'less', 'greater'},"
+            f"`alternative` should be one of {'two-sided', 'less', 'greater'},"
             f" found {alternative!r}"
         )
         raise ValueError(msg)
