@@ -11,7 +11,8 @@ import scipy.linalg as sl
 from scipy._lib import _pep440
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
-                                        _woodbury_algorithm, _periodic_knots)
+                                        _woodbury_algorithm, _periodic_knots,
+                                         _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
 
@@ -836,7 +837,8 @@ class TestInterp(object):
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
     def test_periodic_random(self, k):
-        n = 8
+        # tests for both cases (k > n and k <= n)
+        n = 5
         np.random.seed(1234)
         x = np.sort(np.random.random_sample(n) * 10)
         y = np.random.random_sample(n) * 100
@@ -860,17 +862,9 @@ class TestInterp(object):
         assert_allclose(b(x[0]), b(x[-1]), atol=1e-14)
 
     def test_periodic_points_exception(self):
-        # not enough points for interpolation
+        # first and last points should match when periodic case expected
         np.random.seed(1234)
         k = 5
-        for n in range(1, k + 1):
-            x = np.sort(np.random.random_sample(n))
-            y = np.random.random_sample(n)
-            y[0] = y[-1]
-            assert_raises(ValueError, make_interp_spline, x, y, k, None,
-            'periodic')
-
-        # first and last points should match when periodic case expected
         n = 8
         x = np.sort(np.random.random_sample(n))
         y = np.random.random_sample(n)
@@ -908,13 +902,22 @@ class TestInterp(object):
         cub = CubicSpline(self.xx, self.yy, bc_type='periodic')
         assert_allclose(b(self.xx), cub(self.xx), atol=1e-14)
 
+        # edge case: Cubic interpolation on 3 points
+        n = 3
+        x = np.sort(np.random.random_sample(n) * 10)
+        y = np.random.random_sample(n) * 100
+        y[0] = y[-1]
+        b = make_interp_spline(x, y, k=3, bc_type='periodic')
+        cub = CubicSpline(x, y, bc_type='periodic')
+        assert_allclose(b(x), cub(x), atol=1e-14)
+
     def test_periodic_full_matrix(self):
         # comparison values of cubic periodic b-spline with
         # solution of the system with full matrix
         k = 3
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         t = _periodic_knots(self.xx, k)
-        c = make_interp_per_full_matr(self.xx, self.yy, t, k)
+        c = _make_interp_per_full_matr(self.xx, self.yy, t, k)
         b1 = np.vectorize(lambda x: _naive_eval(x, t, c, k))
         assert_allclose(b(self.xx), b1(self.xx), atol=1e-14)
 
@@ -1216,47 +1219,6 @@ def make_interp_full_matr(x, y, t, k):
         # fill a row
         bb = _bspl.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
-
-    c = sl.solve(A, y)
-    return c
-
-
-### XXX: 'periodic' interp spline using full matrices
-def make_interp_per_full_matr(x, y, t, k):
-    x, y, t = map(np.asarray, (x, y, t))
-
-    n = x.size
-    nt = t.size - k - 1
-
-    # have `n` conditions for `nt` coefficients; need nt-n derivatives
-    assert nt - n == k - 1
-
-    # LHS: the collocation matrix + derivatives at edges
-    A = np.zeros((nt, nt), dtype=np.float_)
-
-    # derivatives at x[0]:
-
-    for i in range(k-1):
-        bb = _bspl.evaluate_all_bspl(t, k, x[0], k, nu=i+1)
-        A[i, :k+1] = bb
-        bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i+1)[:-1]
-        A[i, -k:] = -bb
-
-    # RHS
-    y = np.r_[[0]*(k-1), y]
-
-    # collocation matrix
-    for j in range(n):
-        xval = x[j]
-        # find interval
-        if xval == t[k]:
-            left = k
-        else:
-            left = np.searchsorted(t, xval) - 1
-
-        # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
-        A[j + k - 1, left-k:left+1] = bb
 
     c = sl.solve(A, y)
     return c
