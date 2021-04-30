@@ -2213,6 +2213,10 @@ def test_jensenshannon():
                         [0.0, 0.0])
     assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
                         [0.0649045])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0,
+                                      keepdims=True), [[0.0, 0.0]])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1,
+                                      keepdims=True), [[0.0649045]])
 
     a = np.array([[1, 2, 3, 4],
                   [5, 6, 7, 8],
