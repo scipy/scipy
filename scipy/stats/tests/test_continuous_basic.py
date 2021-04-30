@@ -15,7 +15,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
                            check_pickling, check_rvs_broadcast, check_freezing)
-from scipy.stats._distr_params import distcont, invdistcont
+from scipy.stats._distr_params import distcont
 
 """
 Test all continuous distributions.
