@@ -16,7 +16,7 @@ try:
         _nbinom_isf, _nbinom_mean, _nbinom_variance,
         _nbinom_skewness, _nbinom_kurtosis_excess,
     )
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError):
     # scipy.stats doesn't exist during cythonize
     # step of build!
     pass
