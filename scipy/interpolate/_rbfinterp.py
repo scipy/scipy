@@ -89,7 +89,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         )
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
-        raise ValueError('The %d-th argument had an illegal value.' % -info)
+        raise ValueError(f'The {-info}-th argument had an illegal value.')
     elif info > 0:
         msg = 'Singular matrix.'
         nmonos = powers.shape[0]
@@ -100,9 +100,9 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
                 msg = (
                     'Singular matrix. The matrix of monomials evaluated at '
                     'the data point coordinates does not have full column '
-                    'rank (%d/%d). Consider lowering `degree` and/or setting '
-                    '`kernel` to an RBF with a lower minimum degree.' %
-                    (rank, nmonos)
+                    f'rank ({rank}/{nmonos}). Consider lowering `degree` '
+                    'and/or setting `kernel` to an RBF with a lower minimum '
+                    'degree.'
                     )
 
         raise LinAlgError(msg)
@@ -125,7 +125,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     d = np.asarray(d, dtype=dtype, order='C')
     if d.shape[0] != ny:
         raise ValueError(
-            'Expected the first axis of `d` to have length %d.' % ny
+            f'Expected the first axis of `d` to have length {ny}.'
             )
 
     if np.isscalar(smoothing):
@@ -134,19 +134,19 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
         smoothing = np.asarray(smoothing, dtype=float, order='C')
         if smoothing.shape != (ny,):
             raise ValueError(
-                'Expected `smoothing` to be a scalar or have shape (%d,).' % ny
+                f'Expected `smoothing` to be a scalar or have shape ({ny},).'
                 )
 
     if kernel not in _AVAILABLE:
-        raise ValueError('`kernel` must be one of %s.' % _AVAILABLE)
+        raise ValueError(f'`kernel` must be one of {_AVAILABLE}.')
 
     if epsilon is None:
         if kernel in _SCALE_INVARIANT:
             epsilon = 1.0
         else:
             raise ValueError(
-                '`epsilon` must be specified if `kernel` is not one of %s.' %
-                _SCALE_INVARIANT
+                '`epsilon` must be specified if `kernel` is not one of '
+                f'{_SCALE_INVARIANT}.'
                 )
     else:
         epsilon = float(epsilon)
@@ -160,10 +160,9 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
             raise ValueError('`degree` must be at least -1.')
         elif degree < min_degree:
             warnings.warn(
-                '`degree` should not be below %d when `kernel` is "%s". The '
-                'interpolant may not be uniquely solvable, and the smoothing '
-                'parameter may have an unintuitive effect.' %
-                (min_degree, kernel),
+                f'`degree` should not be below {min_degree} when `kernel` is '
+                f'"{kernel}". The interpolant may not be uniquely solvable, '
+                'and the smoothing parameter may have an unintuitive effect.',
                 UserWarning
                 )
 
@@ -181,10 +180,10 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     nmonos = comb(degree + ndim, ndim, exact=True)
     if nmonos > nobs:
         raise ValueError(
-            'At least %d data points are required when `degree` is %d and the '
-            'number of dimensions is %d. Consider lowering `degree` and/or '
-            'setting `kernel` to an RBF with a lower minimum degree.' %
-            (nmonos, degree, ndim)
+            f'At least {nmonos} data points are required when `degree` is '
+            f'{degree} and the number of dimensions is {ndim}. Consider '
+            'lowering `degree` and/or setting `kernel` to an RBF with a lower '
+            'minimum degree.'
             )
 
     return y, d, smoothing, kernel, epsilon, degree, k
@@ -376,8 +375,8 @@ class RBFInterpolator:
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
             raise ValueError(
-                'Expected the second axis of `x` to have length %d.' %
-                self.y.shape[1]
+                'Expected the second axis of `x` to have length '
+                f'{self.y.shape[1]}.'
                 )
 
         out = _evaluate(
@@ -493,8 +492,8 @@ class KNearestRBFInterpolator:
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
             raise ValueError(
-                'Expected the second axis of `x` to have length %d.' %
-                self.y.shape[1]
+                'Expected the second axis of `x` to have length '
+                f'{self.y.shape[1]}.'
                 )
 
         # Get the indices of the k nearest observation points to each
