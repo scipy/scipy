@@ -2774,28 +2774,22 @@ def mood(x, y, axis=0):
     t = np.concatenate(([0], t))
     S_i = np.cumsum(t)
     S_i_m1 = np.concatenate(([0], S_i[:-1]))
-    
     psi = lambda I: (I - (N + 1)/2)**2
-    
-    # the last eq on pg 213
-    def phi(j):
-        phi_var = 0
-        for I in range(S_i[j - 1]+1, S_i[j] + 1):
-            phi_var += psi(I)
-        return phi_var / t[j]
-    
+
     a = [0] * (len(uniques) + 1)
     for i, u in enumerate(uniques):
         a[i + 1] = np.count_nonzero(x == u)
-
-    T = 0    
-    # k is the number of unique samples, minus the 0 on the front.
     k = len(uniques)
-    # penultimate eq on pg 213
-    for j in range(1, k + 1):
-        phi_temp = phi(j)
-        a_temp = a[j]
-        T += a_temp * phi_temp
+
+    js = np.arange(1, k + 1)
+    s_lower = S_i[js - 1] + 1
+    s_upper = S_i[js] + 1
+    # not sure how to avoid this loop
+    Is = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+    phis = [np.sum(psi(I)) for I in Is] / t[js]
+
+    a_s = np.asarray(a)[js]
+    T = np.sum(phis * a_s)
 
     # Approx stat.
     E_0_T = n * (N * N - 1) / 12
@@ -2807,23 +2801,12 @@ def mood(x, y, axis=0):
     for j in range(xy.shape[1]):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
-    Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
-    print(f"M: {M.item():.2f} {'equal to' if np.allclose(M, T) else 'not equal to'} T:{T.item():.2f}")
-    
-    abc = 0
-    for j in range(1, k ):
-        abc += t[j] * (t[j]**2 - 1) * (t[j]**2 - 4 + (15 * (N - S_i[j] - S_i_m1[j]) ** 2))
-  
-    
-    
+
     varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
-            m * n / (180 * N * (N - 1)) * abc)
-    # print(T - E_0_T)
-    # print(varM)
-    numerator = (T - E_0_T)
-    print(numerator)
-    z = numerator / np.sqrt(varM)
+            m * n / (180 * N * (N - 1)) * np.sum(
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S_i - S_i_m1) ** 2))
+            ))
+    z = (T - E_0_T) / np.sqrt(varM)
     
     # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
     z_pos = z > 0
