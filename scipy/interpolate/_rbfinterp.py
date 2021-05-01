@@ -305,9 +305,12 @@ class RBFInterpolator:
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
-    >>> np.random.seed(0)
+    >>> from scipy.stats.qmc import Halton
 
-    >>> xobs = np.random.uniform(-1, 1, (100, 2))
+    Generate quasi-random 2-D observation locations with a Halton sequence.
+
+    >>> rng = np.random.default_rng()
+    >>> xobs = 2*Halton(2, seed=rng).random(100) - 1
     >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
 
     >>> xgrid = np.mgrid[-1:1:50j, -1:1:50j]
