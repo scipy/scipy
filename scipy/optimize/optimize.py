@@ -593,7 +593,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
-                         xatol=1e-4, fatol=1e-4, adaptive=False,
+                         xatol=1e-4, fatol=1e-4, adaptive=False, bounds=None,
                          **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -626,6 +626,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     adaptive : bool, optional
         Adapt algorithm parameters to dimensionality of problem. Useful for
         high-dimensional minimization [1]_.
+    bounds : sequence or `Bounds`, optional
+        Bounds on variables. There are two ways to specify the bounds:
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+               is used to specify no bound.
+
+        Note that this just clips all vertices in simplex based on
+        the bounds.
 
     References
     ----------
@@ -679,6 +688,18 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     x0 = asfarray(x0).flatten()
 
+    if bounds is not None:
+        lower_bound, upper_bound = bounds.lb, bounds.ub
+        # check bounds
+        if (lower_bound > upper_bound).any():
+            raise ValueError("Nelder Mead - one of the lower bounds is greater than an upper bound.")
+        if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
+            warnings.warn("Initial guess is not within the specified bounds",
+                          OptimizeWarning, 3)
+
+    if bounds is not None:
+        x0 = np.clip(x0, lower_bound, upper_bound)
+
     if initial_simplex is None:
         N = len(x0)
 
@@ -719,6 +740,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         else:
             maxfun = np.inf
 
+    if bounds is not None:
+        sim = np.clip(sim, lower_bound, upper_bound)
+
     one2np1 = list(range(1, N + 1))
     fsim = np.empty((N + 1,), float)
 
@@ -739,11 +763,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
         xbar = np.add.reduce(sim[:-1], 0) / N
         xr = (1 + rho) * xbar - rho * sim[-1]
+        if bounds is not None:
+            xr = np.clip(xr, lower_bound, upper_bound)
         fxr = func(xr)
         doshrink = 0
 
         if fxr < fsim[0]:
             xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            if bounds is not None:
+                xe = np.clip(xe, lower_bound, upper_bound)
             fxe = func(xe)
 
             if fxe < fxr:
@@ -760,6 +788,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 # Perform contraction
                 if fxr < fsim[-1]:
                     xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                    if bounds is not None:
+                        xc = np.clip(xc, lower_bound, upper_bound)
                     fxc = func(xc)
 
                     if fxc <= fxr:
@@ -770,6 +800,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 else:
                     # Perform an inside contraction
                     xcc = (1 - psi) * xbar + psi * sim[-1]
+                    if bounds is not None:
+                        xcc = np.clip(xcc, lower_bound, upper_bound)
                     fxcc = func(xcc)
 
                     if fxcc < fsim[-1]:
@@ -781,6 +813,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 if doshrink:
                     for j in one2np1:
                         sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                        if bounds is not None:
+                            sim[j] = np.clip(sim[j], lower_bound, upper_bound)
                         fsim[j] = func(sim[j])
 
         ind = np.argsort(fsim)

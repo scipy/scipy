@@ -494,7 +494,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         Fit a least-squares regression (best-fit) line to the sample data if
         True (default).
     plot : object, optional
-        If given, plots the quantiles and least squares fit.
+        If given, plots the quantiles.
+        If given and `fit` is True, also plots the least squares fit.
         `plot` is an object that has to have methods "plot" and "text".
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
@@ -581,9 +582,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     """
     x = np.asarray(x)
-    _perform_fit = fit or (plot is not None)
     if x.size == 0:
-        if _perform_fit:
+        if fit:
             return (x, x), (np.nan, np.nan, 0.0)
         else:
             return x, x
@@ -599,12 +599,14 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     osm = dist.ppf(osm_uniform, *sparams)
     osr = sort(x)
-    if _perform_fit:
+    if fit:
         # perform a linear least squares fit.
         slope, intercept, r, prob, _ = stats.linregress(osm, osr)
 
     if plot is not None:
-        plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
+        plot.plot(osm, osr, 'bo')
+        if fit:
+            plot.plot(osm, slope*osm + intercept, 'r-')
         _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
                                ylabel='Ordered Values',
                                title='Probability Plot')

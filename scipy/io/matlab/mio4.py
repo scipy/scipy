@@ -306,7 +306,7 @@ class MatFile4Reader(MatFileReader):
     %(matstream_arg)s
     %(load_args)s
         '''
-        super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
+        super().__init__(mat_stream, *args, **kwargs)
         self._matrix_reader = None
 
     def guess_byte_order(self):

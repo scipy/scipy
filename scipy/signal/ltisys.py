@@ -59,7 +59,7 @@ class LinearTimeInvariant:
 
         The heavy lifting is done by the subclasses.
         """
-        super(LinearTimeInvariant, self).__init__()
+        super().__init__()
 
         self.inputs = None
         self.outputs = None
@@ -227,7 +227,7 @@ class lti(LinearTimeInvariant):
 
         The heavy lifting is done by the subclasses.
         """
-        super(lti, self).__init__(*system)
+        super().__init__(*system)
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -412,7 +412,7 @@ class dlti(LinearTimeInvariant):
         The heavy lifting is done by the subclasses.
         """
         dt = kwargs.pop('dt', True)
-        super(dlti, self).__init__(*system, **kwargs)
+        super().__init__(*system, **kwargs)
 
         self.dt = dt
 
@@ -592,7 +592,7 @@ class TransferFunction(LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(TransferFunction, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._num = None
         self._den = None
@@ -973,7 +973,7 @@ class ZerosPolesGain(LinearTimeInvariant):
         if isinstance(system[0], LinearTimeInvariant):
             return
 
-        super(ZerosPolesGain, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._zeros = None
         self._poles = None
@@ -1337,7 +1337,7 @@ class StateSpace(LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(StateSpace, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self._A = None
         self._B = None

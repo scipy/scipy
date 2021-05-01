@@ -169,7 +169,7 @@ class BSpline:
 
     """
     def __init__(self, t, c, k, extrapolate=True, axis=0):
-        super(BSpline, self).__init__()
+        super().__init__()
 
         self.k = operator.index(k)
         self.c = np.asarray(c)
