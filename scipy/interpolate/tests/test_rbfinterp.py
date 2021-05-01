@@ -1,9 +1,7 @@
 import pickle
 import pytest
 import numpy as np
-from numpy.testing import (
-    assert_allclose, assert_raises, assert_array_equal, assert_warns
-    )
+from numpy.testing import assert_allclose, assert_array_equal
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
@@ -275,32 +273,37 @@ class _TestRBFInterpolator:
         y = Halton(2, scramble=False).random(10)
         d = _2d_test_function(y)
         x = Halton(1, scramble=False).random(10)
-        with assert_raises(ValueError):
+        match = 'Expected the second axis of `x`'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d)(x)
 
     def test_inconsistent_d_length_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(1)
-        with assert_raises(ValueError):
+        match = 'Expected the first axis of `d`'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d)
 
     def test_y_not_2d_error(self):
         y = np.linspace(0, 1, 5)
         d = np.zeros(5)
-        with assert_raises(ValueError):
+        match = '`y` must be a 2-dimensional array.'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d)
 
     def test_inconsistent_smoothing_length_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
         smoothing = np.ones(1)
-        with assert_raises(ValueError):
+        match = 'Expected `smoothing` to be'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d, smoothing=smoothing)
 
     def test_invalid_kernel_name_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
-        with assert_raises(ValueError):
+        match = '`kernel` must be one of'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d, kernel='test')
 
     def test_epsilon_not_specified_error(self):
@@ -310,27 +313,31 @@ class _TestRBFInterpolator:
             if kernel in _SCALE_INVARIANT:
                 continue
 
-            with assert_raises(ValueError):
+            match = '`epsilon` must be specified'
+            with pytest.raises(ValueError, match=match):
                 self.build(y, d, kernel=kernel)
 
     def test_x_not_2d_error(self):
         y = np.linspace(0, 1, 5)[:, None]
         x = np.linspace(0, 1, 5)
         d = np.zeros(5)
-        with assert_raises(ValueError):
+        match = '`x` must be a 2-dimensional array.'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d)(x)
 
     def test_not_enough_observations_error(self):
         y = np.linspace(0, 1, 1)[:, None]
         d = np.zeros(1)
-        with assert_raises(ValueError):
+        match = 'At least 2 data points are required'
+        with pytest.raises(ValueError, match=match):
             self.build(y, d, kernel='tps')
 
     def test_degree_warning(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
         for kernel, deg in _NAME_TO_MIN_DEGREE.items():
-            with assert_warns(Warning):
+            match = f'`degree` should not be below {deg}'
+            with pytest.warns(Warning, match=match):
                 self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
 
     def test_single_point(self):
