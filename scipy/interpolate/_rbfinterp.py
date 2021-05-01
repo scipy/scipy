@@ -155,6 +155,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
                 f"Expected `smoothing` to be a scalar or have shape ({ny},)."
                 )
 
+    kernel = kernel.lower()
     if kernel not in _AVAILABLE:
         raise ValueError(f"`kernel` must be one of {_AVAILABLE}.")
 
