@@ -78,6 +78,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
     Returns
     -------
     coeffs : (P + R, S) float ndarray
+        Coefficients for each RBF and monomial.
     shift : (N,) float ndarray
         Domain shift used to create the polynomial matrix.
     scale : (N,) float ndarray
@@ -94,7 +95,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         msg = 'Singular matrix.'
         nmonos = powers.shape[0]
         if nmonos > 0:
-            pmat = _polynomial_matrix(y, powers)
+            pmat = _polynomial_matrix((y - shift)/scale, powers)
             rank = np.linalg.matrix_rank(pmat)
             if rank < nmonos:
                 msg = (

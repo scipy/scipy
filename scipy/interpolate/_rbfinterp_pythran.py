@@ -121,7 +121,7 @@ def _polynomial_matrix(x, powers):
 #                              int[:, :])
 def _build_system(y, d, smoothing, kernel, epsilon, powers):
     """
-    Create the left-hand-side and right-hand-side of the system used to solve
+    Create the left-hand side and right-hand side of the system used to solve
     for the RBF interpolant coefficients.
 
     Parameters
@@ -142,7 +142,9 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     Returns
     -------
     lhs : (P + R, P + R) float ndarray
+        Left-hand side matrix.
     rhs : (P + R, S) float ndarray
+        Right-hand side matrix.
     shift : (N,) float ndarray
         Domain shift used to create the polynomial matrix.
     scale : (N,) float ndarray
@@ -214,7 +216,7 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     scale : (N,) float ndarray
         Scales the polynomial domain for numerical stability.
     coeffs : (P + R, S) float ndarray
-        RBF and polynomial coefficients.
+        Coefficients for each RBF and monomial.
 
     Returns
     -------
