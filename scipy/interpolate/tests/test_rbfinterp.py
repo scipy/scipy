@@ -6,7 +6,7 @@ from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE,
-    _monomial_powers, RBFInterpolator, KNearestRBFInterpolator
+    _monomial_powers, RBFInterpolator, RBFLocalInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
 
@@ -422,10 +422,10 @@ class TestRBFInterpolator(_TestRBFInterpolator):
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
 
-class TestKNearestRBFInterpolator20(_TestRBFInterpolator):
-    # KNearestRBFInterpolator using 20 nearest neighbors
+class TestRBFLocalInterpolator20(_TestRBFInterpolator):
+    # RBFLocalInterpolator using 20 nearest neighbors
     def build(self, *args, **kwargs):
-        return KNearestRBFInterpolator(*args, **kwargs, k=20)
+        return RBFLocalInterpolator(*args, **kwargs, k=20)
 
     def test_equivalent_to_rbf_interpolator(self):
         # Make sure this is equivalent to using RBFInterpolator with the 20
@@ -448,11 +448,11 @@ class TestKNearestRBFInterpolator20(_TestRBFInterpolator):
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
 
-class TestKNearestRBFInterpolatorInf(TestRBFInterpolator):
-    # KNearestRBFInterpolator using all points. This should behave exactly like
+class TestRBFLocalInterpolatorInf(TestRBFInterpolator):
+    # RBFLocalInterpolator using all points. This should behave exactly like
     # RBFInterpolator
     def build(self, *args, **kwargs):
-        return KNearestRBFInterpolator(*args, **kwargs, k=np.inf)
+        return RBFLocalInterpolator(*args, **kwargs, k=np.inf)
 
     def test_equivalent_to_rbf_interpolator(self):
         seq = Halton(1, scramble=False)

@@ -11,7 +11,7 @@ from scipy.linalg.lapack import dgesv
 from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 
 
-__all__ = ['RBFInterpolator', 'KNearestRBFInterpolator']
+__all__ = ['RBFInterpolator', 'RBFLocalInterpolator']
 
 
 # The RBFs that are implemented
@@ -113,8 +113,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
 
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     """
-    Sanitize __init__ arguments for RBFInterpolator and
-    KNearestRBFInterpolator.
+    Sanitize __init__ arguments for RBFInterpolator and RBFLocalInterpolator.
     """
     y = np.asarray(y, dtype=float, order='C')
     if y.ndim != 2:
@@ -287,7 +286,7 @@ class RBFInterpolator:
 
     See Also
     --------
-    KNearestRBFInterpolator
+    RBFLocalInterpolator
 
     References
     ----------
@@ -393,7 +392,7 @@ class RBFInterpolator:
         return out
 
 
-class KNearestRBFInterpolator:
+class RBFLocalInterpolator:
     """
     RBF interpolation using the k nearest data points.
 
