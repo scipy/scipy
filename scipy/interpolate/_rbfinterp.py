@@ -46,9 +46,21 @@ _NAME_TO_MIN_DEGREE = {
 
 
 def _monomial_powers(ndim, degree):
-    """
-    Returns the powers for each monomial in a polynomial with the specified
-    number of dimensions and degree.
+    """Return the powers for each monomial in a polynomial.
+
+    Parameters
+    ----------
+    ndim : int
+        Number of variables in the polynomial.
+    degree : int
+        Degree of the polynomial.
+
+    Returns
+    -------
+    (nmonos, ndim) int ndarray
+        Array where each row contains the powers for each variable in a
+        monomial.
+
     """
     nmonos = comb(degree + ndim, ndim, exact=True)
     out = np.zeros((nmonos, ndim), dtype=int)
@@ -66,8 +78,7 @@ def _monomial_powers(ndim, degree):
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
-    """
-    Build and solve the RBF interpolation system of equations.
+    """Build and solve the RBF interpolation system of equations.
 
     Parameters
     ----------
@@ -121,9 +132,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
 
 
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
-    """
-    Sanitize __init__ arguments for RBFInterpolator and RBFLocalInterpolator.
-    """
+    """Sanitize __init__ arguments for RBF(Local)Interpolator"""
     y = np.asarray(y, dtype=float, order='C')
     if y.ndim != 2:
         raise ValueError('`y` must be a 2-dimensional array.')
@@ -199,8 +208,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
 
 
 class RBFInterpolator:
-    """
-    Radial basis function (RBF) interpolation in N dimensions.
+    """Radial basis function (RBF) interpolation in N dimensions.
 
     Parameters
     ----------
@@ -228,7 +236,7 @@ class RBFInterpolator:
         Shape parameter that scales the input to the RBF. This can be ignored
         if `kernel` is 'linear', 'thin_plate_spline', 'cubic', or 'quintic'
         because it has the same effect as scaling the smoothing parameter.
-        Otherwise, this must be specified.        
+        Otherwise, this must be specified.
     degree : int, optional
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
@@ -282,8 +290,8 @@ class RBFInterpolator:
           column rank when `degree` is -1 or 0. When `degree` is 1,
           :math:`P(y)` has full column rank if there are N+1 data points and
           they are not collinear (N=2), coplanar (N=3), etc.
-        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline', 
-          'cubic', or 'quintic', then `degree` must not be lower than the 
+        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
+          'cubic', or 'quintic', then `degree` must not be lower than the
           minimum value listed above.
         - If `smoothing` is 0, then each data point location must be distinct.
 
@@ -365,8 +373,7 @@ class RBFInterpolator:
         self.data_type = data_type
 
     def __call__(self, x):
-        """
-        Evaluates the interpolant at `x`.
+        """Evaluate the interpolant at `x`.
 
         Parameters
         ----------
@@ -400,8 +407,7 @@ class RBFInterpolator:
 
 
 class RBFLocalInterpolator:
-    """
-    RBF interpolation using the k nearest data points.
+    """RBF interpolation using the k nearest data points.
 
     See `RBFInterpolator` for more information.
 
@@ -483,8 +489,7 @@ class RBFLocalInterpolator:
         self.data_type = data_type
 
     def __call__(self, x):
-        """
-        Evaluates the interpolant at `x`.
+        """Evaluate the interpolant at `x`.
 
         Parameters
         ----------

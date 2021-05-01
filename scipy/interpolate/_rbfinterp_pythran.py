@@ -49,26 +49,19 @@ NAME_TO_FUNC = {
 
 
 def kernel_vector(x, y, kernel_func, out):
-    """
-    Returns RBFs with centers at `y` evaluated at the single point `x`.
-    """
+    """Evaluate RBFs, with centers at `y`, at the point `x`."""
     for i in range(y.shape[0]):
         out[i] = kernel_func(np.linalg.norm(x - y[i]))
 
 
 def polynomial_vector(x, powers, out):
-    """
-    Returns monomials with exponents from `powers` evaluated at the single
-    point `x`.
-    """
+    """Evaluate monomials, with exponents from `powers`, at the point `x`."""
     for i in range(powers.shape[0]):
         out[i] = np.prod(x**powers[i])
 
 
 def kernel_matrix(x, kernel_func, out):
-    """
-    Returns RBFs with centers at `x` evaluated at `x`.
-    """
+    """Evaluate RBFs, with centers at `x`, at `x`."""
     for i in range(x.shape[0]):
         for j in range(i+1):
             out[i, j] = kernel_func(np.linalg.norm(x[i] - x[j]))
@@ -76,9 +69,7 @@ def kernel_matrix(x, kernel_func, out):
 
 
 def polynomial_matrix(x, powers, out):
-    """
-    Returns monomials with exponents from `powers` evaluated at the points `x`.
-    """
+    """Evaluate monomials, with exponents from `powers`, at `x`."""
     for i in range(x.shape[0]):
         for j in range(powers.shape[0]):
             out[i, j] = np.prod(x[i]**powers[j])
@@ -86,9 +77,7 @@ def polynomial_matrix(x, powers, out):
 
 # pythran export _kernel_matrix(float[:, :], str)
 def _kernel_matrix(x, kernel):
-    """
-    Returns RBFs with centers at `x` evaluated at `x`.
-    """
+    """Return RBFs, with centers at `x`, evaluated at `x`."""
     out = np.empty((x.shape[0], x.shape[0]), dtype=float)
     kernel_func = NAME_TO_FUNC[kernel]
     kernel_matrix(x, kernel_func, out)
@@ -97,9 +86,7 @@ def _kernel_matrix(x, kernel):
 
 # pythran export _polynomial_matrix(float[:, :], int[:, :])
 def _polynomial_matrix(x, powers):
-    """
-    Returns monomials with exponents from `powers` evaluated at the points `x`.
-    """
+    """Return monomials, with exponents from `powers`, evaluated at `x`."""
     out = np.empty((x.shape[0], powers.shape[0]), dtype=float)
     polynomial_matrix(x, powers, out)
     return out
@@ -112,9 +99,7 @@ def _polynomial_matrix(x, powers):
 #                              float,
 #                              int[:, :])
 def _build_system(y, d, smoothing, kernel, epsilon, powers):
-    """
-    Create the left-hand side and right-hand side of the system used to solve
-    for the RBF interpolant coefficients.
+    """Build the system used to solve for the RBF interpolant coefficients.
 
     Parameters
     ----------
@@ -188,8 +173,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          float[:],
 #                          float[:, :])
 def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
-    """
-    Evaluates the RBF interpolant at `x`.
+    """Evaluate the RBF interpolant at `x`.
 
     Parameters
     ----------
