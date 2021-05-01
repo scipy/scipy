@@ -6787,8 +6787,10 @@ class TestFNI:
         qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
     else:
         qrngs = []
-    sizes = [(None, (1,)), (1, (1,)), (5, (5,)),
+    # `size=None` should not add anything to the shape, `size=1` should
+    sizes = [(None, tuple()), (1, (1,)), (5, (5,)),
              ((5,), (5,)), ((4, 5), (4, 5))]
+    # Neither `d=None` nor `d=1` should add anything to the shape
     ds = [(None,  tuple()), (1, tuple()), (3, (3,))]
 
     @pytest.mark.parametrize('qrng', qrngs)
@@ -6814,11 +6816,7 @@ class TestFNI:
         if d_in is None and qrng is not None and qrng.d != 1:
             d_out = (qrng.d,)
 
-        # 3. If d == 1 and size is None
-        if len(d_out) == 0 and size_in is None:
-            shape_expected = tuple()
-        else:
-            shape_expected = size_out + d_out
+        shape_expected = size_out + d_out
 
         qrng2 = deepcopy(qrng)
         qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)

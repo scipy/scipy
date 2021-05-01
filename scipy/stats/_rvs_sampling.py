@@ -429,10 +429,7 @@ class FastNumericalInverse():
 
         # Output reshaping for user convenience
         if size is None:
-            if d == 1:
-                return qrvs[0, 0]
-            else:
-                return qrvs
+            return qrvs.squeeze()[()]
         else:
             if d == 1:
                 return qrvs.reshape(tuple_size)
