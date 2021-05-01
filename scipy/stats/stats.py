@@ -6104,13 +6104,27 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     b = mat_perm[..., na:]
     t_stat = _calc_t_stat(a, b, equal_var)
 
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
+    def less(null_distribution, observed):
+        cmps = null_distribution <= observed
+        pvalues = cmps.sum(axis=0) / permutations
+        return pvalues
 
-    # Calculate the p-values
-    cmps = compare[alternative](t_stat, t_stat_observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    def greater(null_distribution, observed):
+        cmps = null_distribution >= observed
+        pvalues = cmps.sum(axis=0) / permutations
+        return pvalues
+
+    def two_sided(null_distribution, observed):
+        pvalues_less = less(null_distribution, observed)
+        pvalues_greater = greater(null_distribution, observed)
+        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        return pvalues
+
+    compare = {"less": less,
+               "greater": greater,
+               "two-sided": two_sided}
+
+    pvalues = compare[alternative](t_stat, t_stat_observed)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues

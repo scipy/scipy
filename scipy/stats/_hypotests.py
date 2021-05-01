@@ -1539,18 +1539,26 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
 
     null_distribution = statistic_vectorized(x, y, axis=-1)
 
-    def two_sided_comparison(null_distribution, observed):
-        # TODO: other definitions for asymmetric null distribution
-        mean = np.mean(null_distribution, axis=0)
-        null_distribution = np.abs(null_distribution - mean)
-        observed = np.abs(observed - mean)
-        return null_distribution >= observed
+    def less(null_distribution, observed):
+        cmps = null_distribution <= observed
+        pvalues = cmps.sum(axis=0) / permutations
+        return pvalues
 
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": two_sided_comparison}
+    def greater(null_distribution, observed):
+        cmps = null_distribution >= observed
+        pvalues = cmps.sum(axis=0) / permutations
+        return pvalues
 
-    cmps = compare[alternative](null_distribution, observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    def two_sided(null_distribution, observed):
+        pvalues_less = less(null_distribution, observed)
+        pvalues_greater = greater(null_distribution, observed)
+        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        return pvalues
+
+    compare = {"less": less,
+               "greater": greater,
+               "two-sided": two_sided}
+
+    pvalues = compare[alternative](null_distribution, observed)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
