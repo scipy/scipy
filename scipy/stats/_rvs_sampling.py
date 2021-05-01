@@ -383,13 +383,13 @@ class FastNumericalInverse():
           determined from the dimension of the `qmc_engine`.
         - If `qmc_engine` is not ``None`` and `d` is not ``None`` but the
           dimensions are inconsistent, a ``ValueError`` is raised.
-        - If `size` is ``None`` and `d` is 1 (after the logic above), a scalar
-          is returned.
-        - If `size` is not ``None`` and `d` is 1 (after the logic above),
-          an array of shape `size` (or ``(size,)``) is returned.
-        - If `size` is not ``None`` and `d` is greater than 1 (after the logic
-          above), an array of shape ``size + (d,)`` (or ``(size, d)``)
-          is returned.
+        - After `d` is determined according to the rules above, the output
+          shape is ``tuple_shape + d_shape``, where:
+              - ``tuple_shape = tuple()`` if `size` is ``None``,
+              - ``tuple_shape = (size,)`` if `size` is an ``int``,
+              - ``tuple_shape = size`` if `size` is a sequence,
+              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+              - ``d_shape = (d,)`` if `d` is greater than 1.
 
         The elements of the returned array are part of a low-discrepancy
         sequence. If `d` is 1, this means that none of the samples are truly
