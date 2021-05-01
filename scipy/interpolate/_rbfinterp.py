@@ -132,7 +132,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
 
 
 def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
-    """Sanitize __init__ arguments for RBF(Local)Interpolator"""
+    """Sanitize __init__ arguments for RBF(Local)Interpolator."""
     y = np.asarray(y, dtype=float, order="C")
     if y.ndim != 2:
         raise ValueError("`y` must be a 2-dimensional array.")
