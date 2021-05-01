@@ -1250,6 +1250,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
         the result will broadcast correctly against the input array.
 
         .. versionadded:: 1.7.0
+
     Returns
     -------
     js : double or ndarray
