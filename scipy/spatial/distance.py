@@ -1256,6 +1256,9 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     js : double or ndarray
         The Jensen-Shannon distances between `p` and `q` along the `axis`.
 
+    Notes
+    -----
+
     .. versionadded:: 1.2.0
 
     Examples
