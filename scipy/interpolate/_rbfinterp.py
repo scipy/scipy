@@ -15,11 +15,20 @@ __all__ = ['RBFInterpolator', 'RBFLocalInterpolator']
 
 
 # The RBFs that are implemented
-_AVAILABLE = {'linear', 'tps', 'cubic', 'quintic', 'mq', 'imq', 'iq', 'ga'}
+_AVAILABLE = {
+    'linear',
+    'thin_plate_spline',
+    'cubic',
+    'quintic',
+    'multiquadric',
+    'inverse_multiquadric',
+    'inverse_quadratic',
+    'gaussian'
+    }
 
 
 # The shape parameter does not need to be specified when using these RBFs
-_SCALE_INVARIANT = {'linear', 'tps', 'cubic', 'quintic'}
+_SCALE_INVARIANT = {'linear', 'thin_plate_spline', 'cubic', 'quintic'}
 
 
 # For RBFs that are conditionally positive definite of order m, the interpolant
@@ -28,9 +37,9 @@ _SCALE_INVARIANT = {'linear', 'tps', 'cubic', 'quintic'}
 # Approximation Methods with MATLAB". The RBFs that are not in this dictionary
 # are positive definite and do not need polynomial terms
 _NAME_TO_MIN_DEGREE = {
-    'mq': 0,
+    'multiquadric': 0,
     'linear': 0,
-    'tps': 1,
+    'thin_plate_spline': 1,
     'cubic': 1,
     'quintic': 2
     }
@@ -206,30 +215,30 @@ class RBFInterpolator:
     kernel : str, optional
         Type of RBF. This should be one of:
 
-            - 'linear'                       : ``-r``
-            - 'tps' (thin plate spline)      : ``r**2 * log(r)``
-            - 'cubic'                        : ``r**3``
-            - 'quintic'                      : ``-r**5``
-            - 'mq' (multiquadric)            : ``-sqrt(1 + r**2)``
-            - 'imq' (inverse multiquadric)   : ``1/sqrt(1 + r**2)``
-            - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
-            - 'ga' (Gaussian)                : ``exp(-r**2)``
+            - 'linear'               : ``-r``
+            - 'thin_plate_spline'    : ``r**2 * log(r)``
+            - 'cubic'                : ``r**3``
+            - 'quintic'              : ``-r**5``
+            - 'multiquadric'         : ``-sqrt(1 + r**2)``
+            - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
+            - 'inverse_quadratic'    : ``1/(1 + r**2)``
+            - 'gaussian'             : ``exp(-r**2)``
 
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
-        if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
-        the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
+        if `kernel` is 'linear', 'thin_plate_spline', 'cubic', or 'quintic'
+        because it has the same effect as scaling the smoothing parameter.
+        Otherwise, this must be specified.        
     degree : int, optional
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
         their corresponding minimum degrees are:
 
-            - 'mq'      : 0
-            - 'linear'  : 0
-            - 'tps'     : 1
-            - 'cubic'   : 1
-            - 'quintic' : 2
+            - 'multiquadric'      : 0
+            - 'linear'            : 0
+            - 'thin_plate_spline' : 1
+            - 'cubic'             : 1
+            - 'quintic'           : 2
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
@@ -273,15 +282,16 @@ class RBFInterpolator:
           column rank when `degree` is -1 or 0. When `degree` is 1,
           :math:`P(y)` has full column rank if there are N+1 data points and
           they are not collinear (N=2), coplanar (N=3), etc.
-        - If `kernel` is 'mq', 'linear', 'tps', 'cubic', or 'quintic', then
-          `degree` must not be lower than the minimum value listed above.
+        - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline', 
+          'cubic', or 'quintic', then `degree` must not be lower than the 
+          minimum value listed above.
         - If `smoothing` is 0, then each data point location must be distinct.
 
-    When using an RBF that is not scale invariant ('mq', 'imq', 'iq', or 'ga'),
-    an appropriate shape parameter must be chosen (e.g., through cross
-    validation). Smaller values for the shape parameter correspond to wider
-    RBFs. The problem can become ill-conditioned or singular when the shape
-    parameter is too small.
+    When using an RBF that is not scale invariant ('multiquadric',
+    'inverse_multiquadric', 'inverse_quadratic', or 'gaussian'), an appropriate
+    shape parameter must be chosen (e.g., through cross validation). Smaller
+    values for the shape parameter correspond to wider RBFs. The problem can
+    become ill-conditioned or singular when the shape parameter is too small.
 
     See Also
     --------
@@ -324,7 +334,7 @@ class RBFInterpolator:
 
     def __init__(self, y, d,
                  smoothing=0.0,
-                 kernel='tps',
+                 kernel='thin_plate_spline',
                  epsilon=None,
                  degree=None):
         y, d, smoothing, kernel, epsilon, degree, _ = _sanitize_init_args(
@@ -409,30 +419,30 @@ class RBFLocalInterpolator:
     kernel : str, optional
         Type of RBF. This should be one of:
 
-            - 'linear'                       : ``-r``
-            - 'tps' (thin plate spline)      : ``r**2 * log(r)``
-            - 'cubic'                        : ``r**3``
-            - 'quintic'                      : ``-r**5``
-            - 'mq' (multiquadric)            : ``-sqrt(1 + r**2)``
-            - 'imq' (inverse multiquadric)   : ``1/sqrt(1 + r**2)``
-            - 'iq' (inverse quadratic)       : ``1/(1 + r**2)``
-            - 'ga' (Gaussian)                : ``exp(-r**2)``
+            - 'linear'               : ``-r``
+            - 'thin_plate_spline'    : ``r**2 * log(r)``
+            - 'cubic'                : ``r**3``
+            - 'quintic'              : ``-r**5``
+            - 'multiquadric'         : ``-sqrt(1 + r**2)``
+            - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
+            - 'inverse_quadratic'    : ``1/(1 + r**2)``
+            - 'gaussian'             : ``exp(-r**2)``
 
     epsilon : float, optional
         Shape parameter that scales the input to the RBF. This can be ignored
-        if `kernel` is 'linear', 'tps', 'cubic', or 'quintic' because it has
-        the same effect as scaling the smoothing parameter. This must be
-        specified if `kernel` is 'mq', 'imq', 'iq', or 'ga'.
+        if `kernel` is 'linear', 'thin_plate_spline', 'cubic', or 'quintic'
+        because it has the same effect as scaling the smoothing parameter.
+        Otherwise, this must be specified.
     degree : int, optional
         Degree of the added polynomial. For some RBFs the interpolant may not
         be well-posed if the polynomial degree is too small. Those RBFs and
         their corresponding minimum degrees are:
 
-            - 'mq'      : 0
-            - 'linear'  : 0
-            - 'tps'     : 1
-            - 'cubic'   : 1
-            - 'quintic' : 2
+            - 'multiquadric'      : 0
+            - 'linear'            : 0
+            - 'thin_plate_spline' : 1
+            - 'cubic'             : 1
+            - 'quintic'           : 2
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
@@ -446,7 +456,7 @@ class RBFLocalInterpolator:
     def __init__(self, y, d,
                  k=50,
                  smoothing=0.0,
-                 kernel='tps',
+                 kernel='thin_plate_spline',
                  epsilon=None,
                  degree=None):
         y, d, smoothing, kernel, epsilon, degree, k = _sanitize_init_args(

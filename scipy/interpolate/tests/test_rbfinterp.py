@@ -330,7 +330,7 @@ class _TestRBFInterpolator:
         d = np.zeros(1)
         match = 'At least 2 data points are required'
         with pytest.raises(ValueError, match=match):
-            self.build(y, d, kernel='tps')
+            self.build(y, d, kernel='thin_plate_spline')
 
     def test_degree_warning(self):
         y = np.linspace(0, 1, 5)[:, None]

@@ -2,12 +2,10 @@ import numpy as np
 
 
 def linear(r):
-    """Linear / 1st order polyharmonic spline"""
     return -r
 
 
-def tps(r):
-    """Thin plate spline / 2nd order polyharmonic spline"""
+def thin_plate_spline(r):
     if r == 0:
         return 0.0
     else:
@@ -15,44 +13,38 @@ def tps(r):
 
 
 def cubic(r):
-    """Cubic / 3rd order polyharmonic spline"""
     return r**3
 
 
 def quintic(r):
-    """Quintic / 5th order polyharmonic spline"""
     return -r**5
 
 
-def mq(r):
-    """Multiquadric"""
+def multiquadric(r):
     return -np.sqrt(r**2 + 1)
 
 
-def imq(r):
-    """Inverse multiquadric"""
+def inverse_multiquadric(r):
     return 1/np.sqrt(r**2 + 1)
 
 
-def iq(r):
-    """Inverse quadratic"""
+def inverse_quadratic(r):
     return 1/(r**2 + 1)
 
 
-def ga(r):
-    """Gaussian"""
+def gaussian(r):
     return np.exp(-r**2)
 
 
 NAME_TO_FUNC = {
    'linear': linear,
-   'tps': tps,
+   'thin_plate_spline': thin_plate_spline,
    'cubic': cubic,
    'quintic': quintic,
-   'mq': mq,
-   'imq': imq,
-   'iq': iq,
-   'ga': ga
+   'multiquadric': multiquadric,
+   'inverse_multiquadric': inverse_multiquadric,
+   'inverse_quadratic': inverse_quadratic,
+   'gaussian': gaussian
    }
 
 
