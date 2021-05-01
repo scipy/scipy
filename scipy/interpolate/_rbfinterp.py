@@ -306,8 +306,6 @@ class RBFInterpolator:
     >>> from scipy.interpolate import RBFInterpolator
     >>> from scipy.stats.qmc import Halton
 
-    Generate quasi-random 2-D observation locations with a Halton sequence.
-
     >>> rng = np.random.default_rng()
     >>> xobs = 2*Halton(2, seed=rng).random(100) - 1
     >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
