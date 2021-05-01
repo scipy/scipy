@@ -129,7 +129,7 @@ class Rbf:
     See Also
     --------
     RBFInterpolator
-    KNearestRBFInterpolator
+    RBFLocalInterpolator
 
     Examples
     --------
