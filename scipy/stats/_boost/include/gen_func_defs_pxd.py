@@ -35,7 +35,8 @@ def _gen_func_defs_pxd(outfile, x_funcs, no_x_funcs, max_num_inputs=4):
             contents += (f'    RealType {fname}{ii} "{fname}" '
                          f'[{tmpl}]({template_args})\n')
 
-    # patch for boost::math::beta_distibution to handle x = 1, beta < 1
+    # patch for boost::math::beta_distibution to handle x = 0 when a < 1
+    # and x = 1 when beta < 1
     contents += ('    RealType boost_pdf_beta2 "boost_pdf_beta" '
                  '[Dist, RealType, T1, T2](RealType x, T1 a, T2 b)')
 
