@@ -166,7 +166,7 @@ class Bounds:
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
@@ -185,10 +185,12 @@ class Bounds:
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
+        start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            end = f", keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            end = ")"
+        return start + end
 
 
 class PreparedConstraint:

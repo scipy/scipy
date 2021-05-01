@@ -13,6 +13,7 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.compiler_helper import set_cxx_flags_hook
     import numpy as np
     config = Configuration('stats', parent_package, top_path)
 
@@ -40,6 +41,11 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_sobol',
                          sources=['_sobol.c'])
     config.add_data_files('_sobol_direction_numbers.npz')
+
+    # add _qmc_cy module
+    ext = config.add_extension('_qmc_cy',
+                               sources=['_qmc_cy.cxx'])
+    ext._pre_build_hook = set_cxx_flags_hook
 
     # add BiasedUrn module
     config.add_data_files('biasedurn.pxd')
@@ -73,6 +79,9 @@ def configuration(parent_package='', top_path=None):
         depends=['biasedurn/stocR.h'],
     )
     ext._pre_build_hook = pre_build_hook
+
+    # Type stubs
+    config.add_data_files('*.pyi')
 
     return config
 

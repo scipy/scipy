@@ -399,7 +399,7 @@ class TestDifferentialEvolutionSolver:
         # obtain a np.random.Generator object
         rng = np.random.default_rng()
 
-        inits = ['random', 'latinhypercube']
+        inits = ['random', 'latinhypercube', 'sobol', 'halton']
         for init in inits:
             differential_evolution(self.quadratic,
                                    [(-100, 100)],
@@ -504,6 +504,15 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(np.isinf(solver.population_energies)))
 
         solver.init_population_lhs()
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
+        solver.init_population_qmc(qmc_engine='halton')
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, init='sobol')
+        solver.init_population_qmc(qmc_engine='sobol')
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
