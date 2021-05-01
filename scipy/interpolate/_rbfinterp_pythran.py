@@ -133,7 +133,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     r = powers.shape[0]
     kernel_func = NAME_TO_FUNC[kernel]
 
-    # Shift and scale the polynomial domain to the unit hypercube.
+    # Shift and scale the polynomial domain to be between -1 and 1
     mins = np.min(y, axis=0)
     maxs = np.max(y, axis=0)
     shift = (maxs + mins)/2
