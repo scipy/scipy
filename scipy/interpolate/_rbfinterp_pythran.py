@@ -194,7 +194,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          float[:],
 #                          float[:, :])
 def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
-    '''
+    """
     Evaluates the RBF interpolant at `x`.
 
     Parameters
@@ -220,7 +220,7 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     -------
     (Q, S) float ndarray
 
-    '''
+    """
     q = x.shape[0]
     p = y.shape[0]
     r = powers.shape[0]
