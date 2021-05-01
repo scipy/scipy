@@ -327,7 +327,8 @@ class FastNumericalInverse():
         ----------
         size : int, tuple of ints, or None; optional
             Defines shape of array of random variates. Default is ``None``.
-        random_state : (see below), optional
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
             Defines the object to use for drawing pseudorandom variates.
             If `random_state` is ``None`` the `np.random.RandomState`
             singleton is used.
