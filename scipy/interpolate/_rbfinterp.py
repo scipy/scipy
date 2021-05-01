@@ -1,12 +1,11 @@
 """Module for RBF interpolation."""
 import warnings
-from functools import lru_cache
 from itertools import combinations_with_replacement
 
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.spatial import KDTree
-from scipy.special import binom
+from scipy.special import comb
 from scipy.linalg.lapack import dgesv
 
 from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
@@ -37,21 +36,22 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-@lru_cache(maxsize=8)
 def _monomial_powers(ndim, degree):
     """
     Returns the powers for each monomial in a polynomial with the specified
     number of dimensions and degree.
     """
-    out = []
+    nmonos = comb(degree + ndim, ndim, exact=True)
+    out = np.zeros((nmonos, ndim), dtype=int)
+    count = 0
     for deg in range(degree + 1):
-        for itm in combinations_with_replacement(np.eye(ndim, dtype=int), deg):
-            out.append(sum(itm, np.zeros(ndim, dtype=int)))
+        for mono in combinations_with_replacement(range(ndim), deg):
+            # `mono` is a tuple of variables in the current monomial with
+            # multiplicity indicating power (e.g., (0, 1, 1) represents x*y**2)
+            for var in mono:
+                out[count, var] += 1
 
-    if not out:
-        out = np.zeros((0, ndim), dtype=int)
-    else:
-        out = np.array(out)
+            count += 1
 
     return out
 
@@ -178,7 +178,7 @@ def _sanitize_init_args(y, d, smoothing, kernel, epsilon, degree, k):
     # The polynomial matrix must have full column rank in order for the
     # interpolant to be well-posed, which is not possible if there are fewer
     # observations than monomials
-    nmonos = int(binom(degree + ndim, ndim))
+    nmonos = comb(degree + ndim, ndim, exact=True)
     if nmonos > nobs:
         raise ValueError(
             'At least %d data points are required when `degree` is %d and the '
