@@ -246,7 +246,7 @@ class RBFInterpolator:
     written as
 
     .. math::
-        f(x) = K(x, y) a + P(x) b
+        f(x) = K(x, y) a + P(x) b,
 
     where :math:`K(x, y)` is a matrix of RBFs with centers at :math:`y`
     evaluated at the interpolation points :math:`x`, and :math:`P(x)` is a
