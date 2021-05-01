@@ -6788,8 +6788,8 @@ class TestFNI:
     else:
         qrngs = []
     # `size=None` should not add anything to the shape, `size=1` should
-    sizes = [(None, tuple()), (1, (1,)), (5, (5,)),
-             ((5,), (5,)), ((4, 5), (4, 5))]
+    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),  # type: ignore
+             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
     # Neither `d=None` nor `d=1` should add anything to the shape
     ds = [(None,  tuple()), (1, tuple()), (3, (3,))]
 
@@ -6801,18 +6801,14 @@ class TestFNI:
         dist = stats.norm()
         fni = stats.FastNumericalInverse(dist)
 
-        # Typically shape should be simply:
-        # shape_expected = size_out + d_out
-        # but there are few exceptions to handle first
-
-        # 1. d and qrng.d are inconsistent
+        # If d and qrng.d are inconsistent, an error is raised
         if d_in is not None and qrng is not None and qrng.d != d_in:
             match = "`d` must be consistent with dimension of `qmc_engine`."
             with pytest.raises(ValueError, match=match):
                 fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
             return
 
-        # 2. If d_in is None but d should not equal 1
+        # Sometimes d is really determined by qrng
         if d_in is None and qrng is not None and qrng.d != 1:
             d_out = (qrng.d,)
 

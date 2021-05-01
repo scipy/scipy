@@ -356,9 +356,9 @@ class FastNumericalInverse():
 
         Parameters
         ----------
-        size : tuple of ints, optional
+        size : int, tuple of ints, or None; optional
             Defines shape of random variates array. Default is ``None``.
-        d : int, optional
+        d : int or None, optional
             Defines dimension of uniform quasi-random variates to be
             transformed. Default is ``None``.
         qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
