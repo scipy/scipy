@@ -365,7 +365,7 @@ class TestMannWhitneyU:
     def test_asymptotic_behavior(self):
         np.random.seed(0)
 
-        # for small samples, the asyptotic test is not very accurate
+        # for small samples, the asymptotic test is not very accurate
         x = np.random.rand(5)
         y = np.random.rand(5)
         res1 = mannwhitneyu(x, y, method="exact")
@@ -493,6 +493,29 @@ class TestMannWhitneyU:
         y[4] = np.nan
         with assert_raises(ValueError, match="`x` and `y` must not contain"):
             mannwhitneyu(x, y)
+
+    cases_11355 = [([1, 2, 3, 4],
+                    [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
+                    10, 0.1297704873477),
+                   ([1, 2, 3, 4],
+                    [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
+                    8.5, 0.08735617507695),
+                   ([1, 2, np.inf, 4],
+                    [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
+                    17.5, 0.5988856695752),
+                   ([1, 2, np.inf, 4],
+                    [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
+                    16, 0.4687165824462),
+                   ([1, np.inf, np.inf, 4],
+                    [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
+                    24.5, 0.7912517950119)]
+
+    @pytest.mark.parametrize(("x", "y", "statistic", "pvalue"), cases_11355)
+    def test_gh_11355b(self, x, y, statistic, pvalue):
+        # Test for correct behavior with NaN/Inf in input
+        res = mannwhitneyu(x, y, method='asymptotic')
+        assert_allclose(res.statistic, statistic, atol=1e-12)
+        assert_allclose(res.pvalue, pvalue, atol=1e-12)
 
     cases_9184 = [[True, "less", "asymptotic", 0.900775348204],
                   [True, "greater", "asymptotic", 0.1223118025635],
