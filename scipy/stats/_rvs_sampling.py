@@ -175,7 +175,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
 class FastNumericalInverse():
     r"""
-    Object representing a Fast Numerical Inverse of a probability distribution
+    Object representing a Fast Numerical Inverse of a probability distribution.
 
     The initializer of `FastNumericalInverse` accepts `dist`, a frozen instance
     of `scipy.stats.rv_continuous`, and provides an object with methods
@@ -185,7 +185,7 @@ class FastNumericalInverse():
     Parameters
     ----------
     dist : scipy.stats.rv_frozen
-        Frozen distribution for which a fast numerical inverse is desired
+        Frozen distribution for which a fast numerical inverse is desired.
     tol : float, optional
         u-error tolerance (see Notes). The default is 1e-12.
     max_intervals : int, optional
@@ -195,9 +195,9 @@ class FastNumericalInverse():
     Attributes
     ----------
     intervals : int
-        The number of intervals of the interpolant
+        The number of intervals of the interpolant.
     midpoint_error : float
-        The maximum u-error at an interpolant interval midpoint
+        The maximum u-error at an interpolant interval midpoint.
 
     Notes
     -----
@@ -294,21 +294,20 @@ class FastNumericalInverse():
         self.intervals = intervals
 
     def ppf(self, q):
-        r'''
-        Approximate percent point function (inverse of `cdf`) at q of the
-        given RV.
+        r"""
+        Approximate percent point function (inverse `cdf`) of the given RV.
 
         Parameters
         ----------
         q : array_like
-            lower tail probability
+            lower tail probability.
 
         Returns
         -------
         x : array_like
             quantile corresponding to the lower tail probability `q`.
 
-        '''
+        """
         q = np.asarray(q)  # no harm; self.H always returns an array
         result = np.zeros_like(q, dtype=np.float64)
         i = (q >= 0) & (q <= 1)
@@ -347,7 +346,7 @@ class FastNumericalInverse():
         uniform = random_state.uniform(size=size)
         return self.ppf(uniform)
 
-    def qrvs(self, size=None, qmc_engine=None):
+    def qrvs(self, size=None, d=None, qmc_engine=None):
         """
         Quasi-random variates of the given RV.
 
@@ -357,42 +356,95 @@ class FastNumericalInverse():
 
         Parameters
         ----------
-        size : int, optional
-            Defines number of random variates. Default is ``None``.
+        size : tuple of ints, optional
+            Defines shape of random variates array. Default is ``None``.
+        d : int, optional
+            Defines dimension of uniform quasi-random variates to be
+            transformed. Default is ``None``.
         qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
             Defines the object to use for drawing
             quasi-random variates. Default is ``None``, which uses
-            `scipy.stats.qmc.Sobol(1)`.
+            `scipy.stats.qmc.Halton(1)`.
+
         Returns
         -------
-        rvs : 1-D array or scalar
-            Quasi-random variates of given `size`. If `size` is ``None``, a
-            scalar is returned.
+        rvs : ndarray or scalar
+            Quasi-random variates. See Notes for shape information.
+
+        Notes
+        -----
+        The shape of the output array depends on `size`, `d`, and `qmc_engine`.
+        The intent is for the interface to be natural, but the detailed rules
+        to achieve this are complicated.
+
+        - If `qmc_engine` is ``None``, a `scipy.stats.qmc.Halton` instance is
+          created with dimension `d`. If `d` is not provided, ``d=1``.
+        - If `qmc_engine` is not ``None`` and `d` is ``None``, `d` is
+          determined from the dimension of the `qmc_engine`.
+        - If `qmc_engine` is not ``None`` and `d` is not ``None`` but the
+          dimensions are inconsistent, a ``ValueError`` is raised.
+        - If `size` is ``None`` and `d` is 1 (after the logic above), a scalar
+          is returned.
+        - If `size` is not ``None`` and `d` is 1 (after the logic above),
+          an array of shape `size` (or ``(size,)``) is returned.
+        - If `size` is not ``None`` and `d` is greater than 1 (after the logic
+          above), an array of shape ``size + (d,)`` (or ``(size, d)``)
+          is returned.
+
+        The elements of the returned array are part of a low-discrepancy
+        sequence. If `d` is 1, this means that none of the samples are truly
+        independent. If `d` > 1, each slice ``rvs[..., i]`` will be of a
+        quasi-independent sequence; see `scipy.stats.qmc.QMCEngine` for
+        details. Note that when `d` > 1, the samples returned are still those
+        of the provided univariate distribution, not a multivariate
+        generalization of that distribution.
+
         """
+        # Input validation for `qmc_engine` and `d`
+        # Error messages for invalid `d` are raised by QMCEngine
         # we could probably use a stats.qmc.check_qrandom_state
         if isinstance(qmc_engine, stats.qmc.QMCEngine):
-            pass
+            message = "`d` must be consistent with dimension of `qmc_engine`."
+            if d is not None and qmc_engine.d != d:
+                raise ValueError(message)
+            d = qmc_engine.d if d is None else d
         elif qmc_engine is None:
-            qmc_engine = stats.qmc.Sobol(1)
+            d = 1 if d is None else d
+            qmc_engine = stats.qmc.Halton(d)
         else:
             message = ("`qmc_engine` must be an instance of "
-                       "`scipy.stats.qmc.QMCEngine(d=1)` or `None`.")
+                       "`scipy.stats.qmc.QMCEngine` or `None`.")
             raise ValueError(message)
 
-        uniform = qmc_engine.random(size or 1)
+        # `rvs` is flexible about whether `size` is an int or tuple, so this
+        # should be, too.
+        try:
+            tuple_size = tuple(size)
+        except TypeError:
+            tuple_size = (size,)
 
-        if uniform.shape[1] != 1:
-            message = ("`qmc_engine` must be initialized with `d=1`.")
-            raise ValueError(message)
-
+        # Get uniform QRVS from qmc_random and transform it
+        uniform = qmc_engine.random(np.prod(tuple_size) or 1)
         qrvs = self.ppf(uniform)
+
+        # Output reshaping for user convenience
         if size is None:
-            return qrvs[0, 0]
+            if d == 1:
+                return qrvs[0, 0]
+            else:
+                return qrvs
         else:
-            return qrvs.ravel()
+            if d == 1:
+                return qrvs.reshape(tuple_size)
+            else:
+                return qrvs.reshape(tuple_size + (d,))
 
 
 def _fni_input_validation(dist, tol, max_intervals):
+    """
+    Input validation for _fast_numerical_inverse.
+
+    """
     if int(max_intervals) != max_intervals or max_intervals <= 1:
         raise ValueError("`max_intervals' must be an integer greater than 1.")
 
@@ -403,7 +455,7 @@ def _fni_input_validation(dist, tol, max_intervals):
 
 def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     """
-    Generate a fast approximate PPF (inverse CDF) of a probability distribution
+    Generate fast, approximate PPF (inverse CDF) of probability distribution.
 
     `_fast_numerical_inverse` accepts `dist`, a frozen instance of
     `scipy.stats.rv_continuous`, and returns a object `fni` with methods
@@ -413,7 +465,7 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     Parameters
     ----------
     dist : scipy.stats.rv_frozen
-        Frozen distribution for which fast approximate PPF is desired
+        Frozen distribution for which fast approximate PPF is desired.
     tol : float, optional
         u-error tolerance. The default is 1e-12.
     max_intervals : int, optional
@@ -423,11 +475,11 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     Returns
     -------
     H: scipy.interpolate.CubicHermiteSpline
-        Interpolant of the distributions's PPF
+        Interpolant of the distributions's PPF.
     intervals : int
-        The number of intervals of the interpolant
+        The number of intervals of the interpolant.
     midpoint_error : float
-        The maximum u-error at an interpolant interval midpoint
+        The maximum u-error at an interpolant interval midpoint.
 
     """
     dist, tol, max_intervals = _fni_input_validation(dist, tol, max_intervals)

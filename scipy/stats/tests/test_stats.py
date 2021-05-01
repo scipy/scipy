@@ -6756,10 +6756,11 @@ class TestFNI:
 
         if NumpyVersion(np.__version__) >= '1.18.0':
             # issues with QMCEngines and old NumPy
-            match = "`qmc_engine` must be initialized with `d=1`."
+            fni = stats.FastNumericalInverse(stats.norm())
+
+            match = "`d` must be consistent with dimension of `qmc_engine`."
             with pytest.raises(ValueError, match=match):
-                fni = stats.FastNumericalInverse(stats.norm())
-                fni.qrvs(qmc_engine=stats.qmc.Sobol(2))
+                fni.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
 
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
@@ -6783,25 +6784,81 @@ class TestFNI:
             assert_allclose(rvs, rvs2)
 
     if NumpyVersion(np.__version__) >= '1.18.0':
-        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(1, seed=0)]
+        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
     else:
         qrngs = []
-    sizes = [(None, tuple()), (1, (1,)), (8, (8,))]
+    sizes = [(None, (1,)), (1, (1,)), (5, (5,)),
+             ((5,), (5,)), ((4, 5), (4, 5))]
+    ds = [(None,  tuple()), (1, tuple()), (3, (3,))]
 
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
-    def test_FastNumericalInverseQRVS(self, qrng, size_in, size_out):
+    @pytest.mark.parametrize('d_in, d_out', ds)
+    def test_FastNumericalInverseQRVS(self, qrng, size_in, size_out,
+                                      d_in, d_out):
         dist = stats.norm()
         fni = stats.FastNumericalInverse(dist)
 
+        # Typically shape should be simply:
+        # shape_expected = size_out + d_out
+        # but there are few exceptions to handle first
+
+        # 1. d and qrng.d are inconsistent
+        if d_in is not None and qrng is not None and qrng.d != d_in:
+            match = "`d` must be consistent with dimension of `qmc_engine`."
+            with pytest.raises(ValueError, match=match):
+                fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
+            return
+
+        # 2. If d_in is None but d should not equal 1
+        if d_in is None and qrng is not None and qrng.d != 1:
+            d_out = (qrng.d,)
+
+        # 3. If d == 1 and size is None
+        if len(d_out) == 0 and size_in is None:
+            shape_expected = tuple()
+        else:
+            shape_expected = size_out + d_out
+
         qrng2 = deepcopy(qrng)
-        qrvs = fni.qrvs(size=size_in, qmc_engine=qrng)
-        assert(qrvs.shape == size_out)
+        qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
+        assert(qrvs.shape == shape_expected)
 
         if qrng2 is not None:
-            uniform = qrng2.random(size_in or 1)  # doesn't accept None
-            qrvs2 = stats.norm.ppf(uniform).flatten()[()]
-            assert_allclose(qrvs, qrvs2)
+            uniform = qrng2.random(np.prod(size_in) or 1)
+            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
+            assert_allclose(qrvs, qrvs2, atol=1e-12)
+
+    def test_FastNumericalInverseQRVS_size_tuple(self):
+        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
+        # we set `n = prod(size)` in the call to qmc_engine.random, transform
+        # the sample, and reshape it to the final dimensions. When we reshape,
+        # we need to be careful, because the _columns_ of the sample returned
+        # by a QMCEngine are "independent"-ish, but the elements within the
+        # columns are not. We need to make sure that this doesn't get mixed up
+        # by reshaping: qrvs[..., i] should remain "independent"-ish of
+        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
+        # transformed from the same low-discrepancy sequence.
+        if NumpyVersion(np.__version__) <= '1.18.0':
+            pytest.skip("QMC doesn't play well with old NumPy")
+
+        dist = stats.norm()
+        fni = stats.FastNumericalInverse(dist)
+
+        size = (3, 4)
+        d = 5
+        qrng = stats.qmc.Halton(d, seed=0)
+        qrng2 = stats.qmc.Halton(d, seed=0)
+
+        uniform = qrng2.random(np.prod(size))
+
+        qrvs = fni.qrvs(size=size, d=d, qmc_engine=qrng)
+        qrvs2 = stats.norm.ppf(uniform)
+
+        for i in range(d):
+            sample = qrvs[..., i]
+            sample2 = qrvs2[:, i].reshape(size)
+            assert_allclose(sample, sample2, atol=1e-12)
 
 
 class TestPageTrendTest:
