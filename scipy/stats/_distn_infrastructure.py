@@ -1486,17 +1486,30 @@ class rv_generic:
         args, loc, scale = self._parse_args(*args, **kwargs)
         arrs = np.broadcast_arrays(*args, loc, scale)
         args, loc, scale = arrs[:-2], arrs[-2], arrs[-1]
-        cond = self._argcheck(*args) & (scale > 0)
+        cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
         _a, _b = self._get_support(*args)
+        # another `broadcast_arrays` call is required because
+        # `_get_support` doesn't respect the shape of input
+        # array. It can return scalars for array inputs.
+        _a, _b, cond = np.broadcast_arrays(_a, _b, cond)
         if cond.all():
-            return _a * scale + loc, _b * scale + loc
+            out_a, out_b = _a * scale + loc, _b * scale + loc
+            if out_a.ndim == 0:
+                return out_a[()], out_b[()]
         elif cond.ndim == 0:
             return self.badvalue, self.badvalue
         # promote bounds to at least float to fill in the badvalue
         _a, _b = np.asarray(_a).astype('d'), np.asarray(_b).astype('d')
-        out_a, out_b = _a * scale + loc, _b * scale + loc
-        place(out_a, 1-cond, self.badvalue)
-        place(out_b, 1-cond, self.badvalue)
+        out_a = _lazywhere(
+            cond, (_a, loc, scale),
+            lambda a, loc, scale: a * scale + loc,
+            self.badvalue
+        )
+        out_b = _lazywhere(
+            cond, (_b, loc, scale),
+            lambda b, loc, scale: b * scale + loc,
+            self.badvalue
+        )
         return out_a, out_b
 
 

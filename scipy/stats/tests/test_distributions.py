@@ -6070,29 +6070,59 @@ def test_support_gh13294_regression(distname, args):
         assert_equal(b, np.nan)
 
 
-def test_support_broadcasting_gh13294_regression():
-    a0, b0 = stats.norm.support([0, 0, 0, 1], [1, 1, 1, -1])
-    ex_a0 = np.array([-np.inf, -np.inf, -np.inf, np.nan])
-    ex_b0 = np.array([np.inf, np.inf, np.inf, np.nan])
+@pytest.mark.parametrize('distname, args', distdiscrete + distcont)
+def test_support_broadcasting_gh13294_regression(distname, args):
+    if not isinstance(distname, str):
+        pytest.skip(f"skipping test for the support method for "
+                    f"distribution {distname}.")
+    dist = getattr(stats, distname)
+    array_loc_scale = (
+        (4*[np.nan],) if isinstance(dist, stats.rv_discrete)
+        else ([np.nan, 0, 0, 1], [3, np.nan, 0, -1])
+    )
+    a0, b0 = dist.support(*args, *array_loc_scale)
+    ex_a0 = np.array(4*[np.nan])
+    ex_b0 = np.array(4*[np.nan])
     assert_equal(a0, ex_a0)
     assert_equal(b0, ex_b0)
     assert a0.shape == ex_a0.shape
     assert b0.shape == ex_b0.shape
 
-    a1, b1 = stats.norm.support([], [])
+    empty_loc_scale = (
+        ([],) if isinstance(dist, stats.rv_discrete)
+        else ([], [])
+    )
+    a1, b1 = dist.support(*args, *empty_loc_scale)
     ex_a1, ex_b1 = np.array([]), np.array([])
     assert_equal(a1, ex_a1)
     assert_equal(b1, ex_b1)
     assert a1.shape == ex_a1.shape
     assert b1.shape == ex_b1.shape
 
-    a2, b2 = stats.norm.support([0, 0, 0, 1], [-1])
-    ex_a2 = np.array(4*[np.nan])
-    ex_b2 = np.array(4*[np.nan])
-    assert_equal(a2, ex_a2)
-    assert_equal(b2, ex_b2)
-    assert a2.shape == ex_a2.shape
-    assert b2.shape == ex_b2.shape
+    if isinstance(dist, stats.rv_continuous):
+        broadcast_loc_scale = (
+            [[0.], [np.nan], [0.], [np.nan]],
+            [-1., 1., 1., 0.]
+        )
+        ex_a2_scalar, ex_b2_scalar = dist.support(*args)
+        ex_a2 = np.array(
+            [[np.nan, ex_a2_scalar, ex_a2_scalar, np.nan],
+             4*[np.nan],
+             [np.nan, ex_a2_scalar, ex_a2_scalar, np.nan],
+             4*[np.nan]]
+        )
+        ex_b2 = np.array(
+            [[np.nan, ex_b2_scalar, ex_b2_scalar, np.nan],
+             4*[np.nan],
+             [np.nan, ex_b2_scalar, ex_b2_scalar, np.nan],
+             4*[np.nan]]
+        )
+
+        a2, b2 = dist.support(*args, *broadcast_loc_scale)
+        assert_equal(a2, ex_a2)
+        assert_equal(b2, ex_b2)
+        assert a2.shape == ex_a2.shape
+        assert b2.shape == ex_b2.shape
 
 
 def test_stats_broadcasting_gh14953_regression():
