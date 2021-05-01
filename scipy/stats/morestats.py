@@ -2762,10 +2762,7 @@ def mood(x, y, axis=0):
         raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
-    if axis != 0:
-        xy = np.rollaxis(xy, axis)
-
-    xy = xy.reshape(xy.shape[0], -1)
+    xy = np.moveaxis(xy, axis, -1)
 
     # obtain the unique values and the counts of each.
     # "a_i, + b_i, = t_i, for j = 1, ... k", where `k` is the number of unique
@@ -2780,17 +2777,15 @@ def mood(x, y, axis=0):
     # calculation of `t`, so we do not need to calculate it separately. Here
     # we calculate `a`. In plain language, `a[i]` is the number of values in
     # `x` that equal `uniques[i]`.
-    uniques.sort()
-    idx = np.searchsorted(uniques, x)
-    idx[idx == len(uniques)] = 0
-    mask = uniques[idx] == x
-    a = np.bincount(idx[mask])
+    _, xyx_counts = np.unique(np.sort(np.concatenate((xy, x))),
+                              return_counts=1, axis=-1)
+    a = xyx_counts - t
 
     # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
     # and `t` arrays over 1 to allow a first element of 0 to accommodate this
     # indexing.
-    t = np.concatenate(([0], t))
-    a = np.concatenate(([0], a))
+    t = np.concatenate(([0], t), axis=-1)
+    a = np.concatenate(([0], a), axis=-1)
 
     # S is built from `t`, so it does not need a preceding zero added on.
     S = np.cumsum(t)
