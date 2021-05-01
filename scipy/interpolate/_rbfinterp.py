@@ -324,6 +324,7 @@ class RBFInterpolator:
     >>> plt.show()
 
     """
+
     def __init__(self, y, d,
                  smoothing=0.0,
                  kernel='tps',
@@ -444,6 +445,7 @@ class KNearestRBFInterpolator:
     RBFInterpolator
 
     """
+
     def __init__(self, y, d,
                  k=50,
                  smoothing=0.0,
@@ -539,3 +541,4 @@ class KNearestRBFInterpolator:
         out = out.view(self.data_type)
         out = out.reshape((nx,) + self.data_shape)
         return out
+

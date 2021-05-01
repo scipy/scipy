@@ -240,3 +240,4 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
             out[i, j] = np.dot(coeffs[:, j], vec)
 
     return out
+
