@@ -37,14 +37,14 @@ def gaussian(r):
 
 
 NAME_TO_FUNC = {
-   'linear': linear,
-   'thin_plate_spline': thin_plate_spline,
-   'cubic': cubic,
-   'quintic': quintic,
-   'multiquadric': multiquadric,
-   'inverse_multiquadric': inverse_multiquadric,
-   'inverse_quadratic': inverse_quadratic,
-   'gaussian': gaussian
+   "linear": linear,
+   "thin_plate_spline": thin_plate_spline,
+   "cubic": cubic,
+   "quintic": quintic,
+   "multiquadric": multiquadric,
+   "inverse_multiquadric": inverse_multiquadric,
+   "inverse_quadratic": inverse_quadratic,
+   "gaussian": gaussian
    }
 
 
