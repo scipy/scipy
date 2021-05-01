@@ -1248,6 +1248,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
         If this is set to `True`, the reduced axes are left in the
         result as dimensions with size one. With this option,
         the result will broadcast correctly against the input array.
+        Default is False.
 
         .. versionadded:: 1.7.0
 
