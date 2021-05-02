@@ -302,6 +302,8 @@ class RBFInterpolator:
     values for the shape parameter correspond to wider RBFs. The problem can
     become ill-conditioned or singular when the shape parameter is too small.
 
+    .. versionadded:: 1.17.0
+
     See Also
     --------
     RBFLocalInterpolator
@@ -554,4 +556,3 @@ class RBFLocalInterpolator:
         out = out.view(self.data_type)
         out = out.reshape((nx,) + self.data_shape)
         return out
-
