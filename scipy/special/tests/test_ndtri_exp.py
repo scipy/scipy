@@ -49,5 +49,9 @@ class TestNdtriExp(object):
         assert_allclose(sc.ndtri_exp(sc.log_ndtr(points)), points,
                         rtol=1e-14)
 
+    def test_ndtri_exp_extreme(self):
+        assert sc.ndtri_exp(0.0) == np.inf
+        assert sc.ndtri_exp(-np.inf) == -np.inf
+
     def test_ndtri_exp_outside_domain(self):
         assert np.isnan(sc.ndtri_exp(1.0))

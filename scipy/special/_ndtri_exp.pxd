@@ -95,7 +95,8 @@
 
 
 import cython
-from libc.math cimport exp, expm1, log, log1p, sqrt
+from libc.float cimport DBL_MAX
+from libc.math cimport exp, expm1, log, log1p, sqrt, HUGE_VAL
 
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
@@ -164,7 +165,9 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
 
 cdef inline double ndtri_exp(double y) nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
-    if y < - 2.0:
+    if y < -DBL_MAX:
+        return -HUGE_VAL
+    elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > log1p(-exp(-2)):
         return -ndtri(-expm1(y))
