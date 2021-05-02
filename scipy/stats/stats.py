@@ -6385,10 +6385,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     .. [5] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
-    .. [6] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
-           in the case of a correlated system of variables is such that it can be reasonably 
-           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
-           (1900), pp. 157–175.
 
     Examples
     --------
@@ -6574,6 +6570,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
+           in the case of a correlated system of variables is such that it can be reasonably 
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           (1900), pp. 157–175.
 
     Examples
     --------
