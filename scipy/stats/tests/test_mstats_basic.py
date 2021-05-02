@@ -974,6 +974,16 @@ class TestNormalitytests():
         assert_allclose(z, z_ex, atol=1e-12)
         assert_allclose(p, p_ex, atol=1e-12)
 
+    def test_bad_alternative(self):
+        x = stats.norm.rvs(size=20, random_state=123)
+        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+
+        with pytest.raises(ValueError, match=msg):
+            mstats.skewtest(x, alternative='error')
+
+        with pytest.raises(ValueError, match=msg):
+            mstats.kurtosistest(x, alternative='error')
+
 
 class TestFOneway():
     def test_result_attributes(self):
