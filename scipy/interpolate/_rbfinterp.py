@@ -456,6 +456,11 @@ class RBFLocalInterpolator:
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
 
+    Notes
+    -----
+
+    .. versionadded:: 1.17.0
+
     See Also
     --------
     RBFInterpolator
