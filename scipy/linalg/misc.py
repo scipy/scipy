@@ -53,7 +53,8 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     -----
     For values of ``ord <= 0``, the result is, strictly speaking, not a
     mathematical 'norm', but it may still be useful for various numerical
-    purposes.
+    purposes. Empty array norm is set to 0.0  unless ``ord <= 0``, where an
+    error is raised.
 
     The following norms can be calculated:
 
@@ -140,6 +141,13 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
+
+    # define empty array norm as 0.0 for ord > 0
+    if a.size == 0:
+        if ord in (None, "fro") or ord > 0:
+            return 0.0
+        else:
+            raise ValueError("Empty array norm is ill-defined for ord <= 0")
 
     # Only use optimized norms if axis and keepdims are not specified.
     if a.dtype.char in 'fdFD' and axis is None and not keepdims:
