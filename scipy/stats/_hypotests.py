@@ -1323,6 +1323,13 @@ def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
     if vectorized not in {True, False}:
         raise ValueError("`vectorized` must be `True` or `False`.")
 
+    message = "`data` must be a tuple containing exactly two samples"
+    try:
+        if len(data) != 2:
+            raise ValueError(message)
+    except TypeError:
+        raise TypeError(message)
+
     data_iv = []
     for sample in data:
         sample = np.atleast_1d(sample)
@@ -1350,7 +1357,7 @@ def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
             alternative, axis_int, random_state)
 
 
-def permutation_test(a, b, statistic, paired=False, vectorized=False,
+def permutation_test(data, statistic, paired=False, vectorized=False,
                      permutations=np.inf, alternative="two-sided", axis=0,
                      random_state=None):
     """Performs a permutation test of a given statistic on provided data
@@ -1362,9 +1369,10 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
 
     Parameters
     ----------
-    a, b : array-like
-        Independent samples from underlying distributions. Dimensions of arrays
-        must be compatible for broadcasting except along `axis`.
+    data : tuple of array-like
+        Contains the two samples, each of which is an array of observations.
+        Dimensions of arrays must be compatible for broadcasting except along
+        `axis`.
     statistic : callable
         Statistic for which the p-value of the hypothesis test is to be
         calculated. `statistic` must be a callable that accepts `a` and `b`
@@ -1413,15 +1421,16 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
 
     Returns
     -------
-    statistic : float or array
+    statistic : float or ndarray
         The observed test statistic of the data.
-    pvalue : float or array
+    pvalue : float or ndarray
         The p-value for the given alternative.
-    null : array
+    null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
 
     Notes
     -----
+
     *Unpaired statistics*
 
     When ``1 < permutations < binom(n, k)``, where
@@ -1483,7 +1492,7 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
 
     >>> from scipy.stats import permutation_test
     >>> # because our statistic is vectorized, we pass `vectorized=True`
-    >>> res = permutation_test(x, y, statistic, vectorized=True,
+    >>> res = permutation_test((x, y), statistic, vectorized=True,
     ...                        alternative='less')
     >>> print(res.statistic)
     -3.5411688580987266
@@ -1501,21 +1510,29 @@ def permutation_test(a, b, statistic, paired=False, vectorized=False,
 
     >>> x = norm.rvs(size=100, random_state=rng)
     >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test(x, y, statistic, permutations=10000,
+    >>> res = permutation_test((x, y), statistic, permutations=100000,
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
     -0.5230459671240913
     >>> print(res.pvalue)
-    0.0002
+    0.00016
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
     again less than our chosen threshold of 5%, so again we have significant
     evidence to reject the null hypothesis in favor of the alternative.
 
+    The permutation distribution of the test statistic is provided for
+    further investigation.
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.hist(res.null_distribution, bins=50)
+    >>> plt.title("Permutation distribution of test statistic")
+    >>> plt.xlabel("Value of Statistic")
+    >>> plt.ylabel("Frequency")
+
     """
-    data = a, b
     args = _permutation_test_iv(data, statistic, paired, vectorized,
                                 permutations, alternative, axis, random_state)
     data, statistic, paired, vectorized = args[:4]
