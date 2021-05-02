@@ -6788,7 +6788,7 @@ class TestFNI:
     else:
         qrngs = []
     # `size=None` should not add anything to the shape, `size=1` should
-    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),  # type: ignore
+    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
              ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
     # Neither `d=None` nor `d=1` should add anything to the shape
     ds = [(None,  tuple()), (1, tuple()), (3, (3,))]
