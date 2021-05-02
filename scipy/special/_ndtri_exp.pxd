@@ -1,3 +1,99 @@
+# -*-cython-*-
+#
+# Implementation of the inverse of the logarithm of the CDF of the standard
+# normal distribution.
+#
+# Copyright: Albert Steppi
+#
+# Distributed under the same license as SciPy
+#
+#
+# Implementation Overview
+#
+# The inverse of the CDF of the standard normal distribution is available
+# in scipy through the Cephes Math Library where it is called ndtri.
+# We call our implementation of the inverse of the log CDF ndtri_exp.
+# For -2 <= y <= log(1 - exp(-2)),  ndtri_exp is computed as ndtri(exp(y)).
+# as ndtri(exp(y)).
+
+# For 0 < p < exp(-2), the cephes implementation of ndtri uses an approximation
+# for ndtri(p) which is a function of z = sqrt(-2.0 * log(p)). Letting
+# y = log(p), for y < -2, ndtri_exp uses this approximation in log(p) directly.
+# This allows this implementation to achieve high precision for very small y,
+# whereas ndtri(exp(y)) becomes inf when exp(y) underflows for y < ~ -745.1.
+#
+# When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
+# of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
+# for the use of the same approximation. When y > log(1 - exp(-2)) this
+# implementation calculates ndtri_exp as -ndtri(-exp1m(y)).
+#
+#
+# Accuracy
+#
+# Cephes provides the following relative error estimates for ndtri
+#                      Relative error:
+# arithmetic   domain        # trials      peak         rms
+#    IEEE     0.125, 1        20000       7.2e-16     1.3e-16
+#    IEEE     3e-308, 0.135   50000       4.6e-16     9.8e-17
+#
+# When y < -2, ndtri_exp must have relative error at least as small as the
+# Cephes implementation of ndtri for p < exp(-2). It relies on the same
+# approximation but does not have to lose precision by passing from p to log(p)
+# before applying the approximation.
+#
+# Relative error of ndtri for values of the argument p near 1 can be much higher
+# than claimed by the above chart. For p near 1, symmetry is exploited to
+# replace the calculation of ndtri(p) with -ndtri(1 - p). The inverse of the
+# normal CDF increases so rapidly near the endpoints of [0, 1] that the loss
+# of precision incurred by the subtraction 1 - p due to limitations in binary
+# approximation can make a significant difference in the results. Using
+# version 9.3.0 targeting x86_64-linux-gnu we've observed the following
+#
+#                                               Estimated Relative Error
+#  ndtri(1e-8)      = -5.612001244174789        1.55e-10
+# -ndtri(1 - 1e-8)  = -5.612001243305505        ''
+#  ndtri(1e-16)     = -8.222082216130435        0.0015
+# -ndtri(1 - 1e-16) = -8.209536151601387        ''
+#
+# If expm1 is correctly rounded for y in [log(1 - exp(-2), 0), ndtri_exp(y)
+# for y > log(1 - exp(-2)) should have the same relative error to ndtri(p)
+# for p > 1 - exp(-2), though as seen above, even then this error may be higher
+# than desired. IEEE-754 provides no guarantee on the accuracy of expm1
+# however, therefore accuracy of ndtri_exp in this range is platform
+# dependent.
+#
+# The case
+#
+# -2 <= y <= log(1 - exp(-2)) ~ -0.1454
+#
+# corresponds to ~ 0.135 <= p <= ~ 0.865
+#
+# The derivative of ndtri is
+# sqrt(2 * pi) * exp(ndtri(x)**2 / 2). It is ~4.597 at x ~ 0.135, decreases
+# monotonically to \sqrt(2 * pi) ~ 2.507 at x = 0 and increases monotonically
+# again to ~4.597 at x ~ 0.865.
+#
+# It can be checked that all higher derivatives follow a similar pattern where
+# their absolute value takes on at x ~ 0.135, decrease to a minimum at x = 0
+# and increases to the same maximm at x ~ 0.865. (The even order derivatives are
+# odd functions and odd order derivatives are even functions.) Thus the worst
+# possible loss of precision in ndtri(exp(x)) in the interval
+# [-2, log(1 - exp(-2))] due to error in calculating exp(x) must occur near the
+# endpoints. We may observe empirically that error at the endpoints due to
+# exp is negligible. Assuming that exp is accurate within
+# +-ULP (unit of least precision), we can check in Python for instance that
+# we've observed a different of at most 6.0474e-16 in
+# abs(ndtri(x + epsilon) - ndtri(x)) for x near exp(-2) or 1 - exp(-2),
+# and epsilon equal to the unit of least precision of x.
+
+# (IEEE-754 provides no guarantee on the accuracy of exp, but for most
+# compilers on most architectures an assumption of +-ULP should be
+# reasonable.)
+#
+# The error here is on the order of the error in the Cephes implementation of
+# ndtri itself, leading to an error profile that is still favorable.
+
+
 import cython
 from libc.math cimport exp, expm1, log, log1p, sqrt
 
