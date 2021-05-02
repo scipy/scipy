@@ -280,9 +280,9 @@ class FastNumericalInverse():
     method, the random variates generated may be nearly identical, given
     the same random state.
 
-    >>> rng = np.random.default_rng()
-    >>> rvs1 = dist.rvs(size=100, random_state=rng)
-    >>> rvs2 = fni.rvs(size=100, random_state=rng)
+    >>> seed = 500072020
+    >>> rvs1 = dist.rvs(size=100, random_state=np.random.default_rng(seed))
+    >>> rvs2 = fni.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> np.allclose(rvs1, rvs2)
     True
 
