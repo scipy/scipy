@@ -139,25 +139,6 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         Optional arguments not used by this particular solver. If
         ``unknown_options`` is non-empty, a warning is issued listing
         all unused options.
-    marginals : OptimizeResult
-         The sensitivity (partial derivative) of the objective function
-         with respect to the right-hand side of each constraint.
-         A dictionary consisting of the fields:
-
-         ineqlin : np.ndarray
-             The sensitivity with respect to the right-hand side
-             of the inequality constraints, `b_ub`.
-
-         eqlin : np.ndarray
-             The sensitivity with respect to the right-hand side
-             of the equality constraints, `b_eq`.
-
-         lower, upper : np.ndarray
-             The sensitivity with respect to the lower and upper
-             `bounds`.
-
-         These partial derivatives are also referred to as
-         "Lagrange multipliers", "dual values", and "shadow prices".
 
     Returns
     -------
@@ -202,6 +183,25 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             The number of primal/dual pushes performed during the
             crossover routine for the HiGHS interior-point method.
             This is ``0`` for the HiGHS simplex method.
+        marginals : OptimizeResult
+             The sensitivity (partial derivative) of the objective function
+             with respect to the right-hand side of each constraint.
+             A dictionary consisting of the fields:
+
+             ineqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the inequality constraints, `b_ub`.
+
+             eqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the equality constraints, `b_eq`.
+
+             lower, upper : np.ndarray
+                 The sensitivity with respect to the lower and upper
+                 `bounds`.
+
+             These partial derivatives are also referred to as
+             "Lagrange multipliers", "dual values", and "shadow prices".
 
     Notes
     -----
@@ -395,6 +395,25 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             This is always ``0`` for the HiGHS simplex method.
             For the HiGHS interior-point method, this is the number of
             primal/dual pushes performed during the crossover routine.
+        marginals : OptimizeResult
+             The sensitivity (partial derivative) of the objective function
+             with respect to the right-hand side of each constraint.
+             A dictionary consisting of the fields:
+
+             ineqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the inequality constraints, `b_ub`.
+
+             eqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the equality constraints, `b_eq`.
+
+             lower, upper : np.ndarray
+                 The sensitivity with respect to the lower and upper
+                 `bounds`.
+
+             These partial derivatives are also referred to as
+             "Lagrange multipliers", "dual values", and "shadow prices".
 
     Notes
     -----
@@ -578,6 +597,25 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         crossover_nit : int
             The number of primal/dual pushes performed during the
             crossover routine for the HiGHS interior-point method.
+        marginals : OptimizeResult
+             The sensitivity (partial derivative) of the objective function
+             with respect to the right-hand side of each constraint.
+             A dictionary consisting of the fields:
+
+             ineqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the inequality constraints, `b_ub`.
+
+             eqlin : np.ndarray
+                 The sensitivity with respect to the right-hand side
+                 of the equality constraints, `b_eq`.
+
+             lower, upper : np.ndarray
+                 The sensitivity with respect to the lower and upper
+                 `bounds`.
+
+             These partial derivatives are also referred to as
+             "Lagrange multipliers", "dual values", and "shadow prices".
 
     Notes
     -----
