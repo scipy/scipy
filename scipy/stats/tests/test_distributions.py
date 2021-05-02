@@ -5600,6 +5600,7 @@ class TestArgus:
         v = stats.argus.var(chi, scale=1)
         assert_allclose(v, expected_var, rtol=rtol)
 
+    # Expected values were computed with mpmath.
     @pytest.mark.parametrize('chi, expected, rtol',
                              [(0.9, 0.07646314974436118, 1e-14),
                               (0.51, 0.016325411021720426, 1e-14),
@@ -5607,12 +5608,13 @@ class TestArgus:
                               (0.1, 0.0001325825293278049, 1e-14),
                               (0.01, 1.3297677078224565e-07, 1e-15),
                               (1e-3, 1.3298072023958999e-10, 1e-14),
-                              (1e-4, 1.3298075973486862e-13, 1e-15),
+                              (1e-4, 1.3298075973486862e-13, 1e-14),
                               (1e-6, 1.32980760133771e-19, 1e-14),
                               (1e-9, 1.329807601338109e-28, 1e-15)])
     def test_argus_phi_small_chi(self, chi, expected, rtol):
         assert_allclose(_argus_phi(chi), expected, rtol=rtol)
 
+    # Expected values were computed with mpmath.
     @pytest.mark.parametrize(
         'chi, expected',
         [(0.51, (0.2835690771204658, 1.273201401142375, 1.2406365747599382)),
@@ -5628,6 +5630,7 @@ class TestArgus:
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.pdf(x, chi), expected, rtol=1e-13)
 
+    # Expected values were computed with mpmath.
     @pytest.mark.parametrize(
         'chi, expected',
         [(0.51, (0.9857950485296011, 0.6621451027344373, 0.08817307660509488)),
@@ -5643,6 +5646,7 @@ class TestArgus:
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.sf(x, chi), expected, rtol=1e-14)
 
+    # Expected values were computed with mpmath.
     @pytest.mark.parametrize(
         'chi, expected',
         [(0.51, (0.01420495147039894, 0.3378548972655627, 0.9118269233949051)),
@@ -5658,6 +5662,7 @@ class TestArgus:
         x = np.array([0.1, 0.5, 0.9])
         assert_allclose(stats.argus.cdf(x, chi), expected, rtol=1e-12)
 
+    # Expected values were computed with mpmath.
     @pytest.mark.parametrize(
         'chi, expected, rtol',
         [(0.1, (0.5893431757009437, 0.05301755449499372), 1e-11),

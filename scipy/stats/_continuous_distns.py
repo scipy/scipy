@@ -9011,7 +9011,9 @@ def _argus_phi(chi):
     Utility function for the argus distribution
     used in the pdf, sf and moment calculation.
     For small chi, use gammaincinv for better precision as for all x > 0:
-    gammaincinv(1.5, x**2/2) = 2 * _norm_cdf(x) - c * _norm_pdf(x) - 0.5
+    gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
+    this can be verified directly by noting that the cdf of Gamma(1.5) can
+    be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi)
     """
     return _lazywhere(chi > 0.5, (chi,),
                       lambda c: _norm_cdf(c) - c * _norm_pdf(c) - 0.5,
@@ -9055,12 +9057,11 @@ class argus_gen(rv_continuous):
     %(example)s
     """
     def _logpdf(self, x, chi):
-        def _lpdf(x, chi):
+        # for x = 0 or 1, logpdf returns -np.inf
+        with np.errstate(divide='ignore'):
             y = 1.0 - x*x
             A = 3*np.log(chi) - _norm_pdf_logC - np.log(_argus_phi(chi))
             return A + np.log(x) + 0.5*np.log1p(-x*x) - chi**2 * y / 2
-
-        return _lazywhere((x > 0) & (x < 1), (x, chi), _lpdf, -np.inf)
 
     def _pdf(self, x, chi):
         return np.exp(self._logpdf(x, chi))
