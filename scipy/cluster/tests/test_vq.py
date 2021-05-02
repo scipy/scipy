@@ -265,7 +265,12 @@ class TestKMean:
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
         k = int(1e6)
         for data in datas:
-            rng = np.random.default_rng(1234)
+            # check that np.random.Generator can be used (numpy >= 1.17)
+            if hasattr(np.random, 'default_rng'):
+                rng = np.random.default_rng(1234)
+            else:
+                rng = np.random.RandomState(1234)
+
             init = _krandinit(data, k, rng)
             orig_cov = np.cov(data, rowvar=0)
             init_cov = np.cov(init, rowvar=0)
