@@ -219,28 +219,29 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     Suppose we have sampled data from an unknown distribution.
 
     >>> import numpy as np
-    >>> np.random.seed(0)
+    >>> rng = np.random.default_rng()
     >>> from scipy.stats import norm
-    >>> dist = norm(loc=2, scale = 4)  # our "unknown" distribution
-    >>> data = dist.rvs(size=100)      # a random sample from the distribution
+    >>> dist = norm(loc=2, scale=4)  # our "unknown" distribution
+    >>> data = dist.rvs(size=100, random_state=rng)
 
     We are interested int the standard deviation of the distribution.
 
-    >>> std_true = dist.std()          # the true value of the statistic
+    >>> std_true = dist.std()      # the true value of the statistic
     >>> print(std_true)
     4.0
-    >>> std_sample = np.std(data)      # the sample statistic
+    >>> std_sample = np.std(data)  # the sample statistic
     >>> print(std_sample)
-    4.0315289788663184
+    3.9460644295563863
 
     We can calculate a 90% confidence interval of the statistic using
     `bootstrap_ci`.
 
     >>> from scipy.stats import bootstrap_ci
     >>> data = (data,)  # samples must be in a sequence
-    >>> ci_l, ci_u = bootstrap_ci(data, np.std, confidence_level=0.9)
+    >>> ci_l, ci_u = bootstrap_ci(data, np.std, confidence_level=0.9,
+    ...                           random_state=rng)
     >>> print(ci_l, ci_u)
-    3.644693455782651 4.5001372759222935
+    3.5636350108774204 4.371806172295983
 
     If we sample from the distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
@@ -249,32 +250,33 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> n_trials = 1000
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
-    ...    data = (dist.rvs(size=100),)
-    ...    ci = bootstrap_ci(data, np.std, confidence_level=0.9)
+    ...    data = (dist.rvs(size=100, random_state=rng),)
+    ...    ci = bootstrap_ci(data, np.std, confidence_level=0.9,
+                             random_state=rng)
     ...    if ci[0] < std_true < ci[1]:
-    ...        ci_contains_true_std+=1
+    ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    881
+    886
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
 
-    >>> data = (dist.rvs(size=(n_trials, 100)),)
-    >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1,
-    ...                                 confidence_level=0.9)
+    >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
+    >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1, confidence_level=0.9,
+    ...                           random_state=rng)
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
     ``n_trials = 1000`` samples.
 
     >>> print(ci_l[995:])
-    [3.68561285 3.36053728 3.75620766 3.8530454  3.5833175 ]
+    [3.4946531  3.43978116 3.31599914 3.68572393 3.88157142]
     >>> print(ci_u[995:])
-    [4.72530116 4.06591756 4.61738788 5.18122861 4.5465164 ]
+    [4.48025135 4.29112886 4.14016373 4.54505683 4.86451242]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    882
+    876
 
     `bootstrap_ci` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
@@ -291,24 +293,24 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
 
     Here, we use the 'percentile' method with the default 95% confidence level.
 
-    >>> np.random.seed(0)
-    >>> sample1 = norm.rvs(scale=1, size=100)
-    >>> sample2 = norm.rvs(scale=2, size=100)
+    >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
+    >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> ci = bootstrap_ci(data, my_statistic, method='basic')
+    >>> ci = bootstrap_ci(data, my_statistic, method='basic', random_state=rng)
+    >>> mood(sample1, sample2)  # element 0 is the statistic
+    -4.056321520284127
     >>> print(ci)
-    (-8.395704005413752, -5.386430769302427)
+    (-5.798587535600218, -2.415274860901717)
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
 
     >>> from scipy.stats import pearsonr
-    >>> np.random.seed(0)
     >>> n = 100
     >>> x = np.linspace(0, 10, n)
-    >>> y = x + np.random.rand(n)
-    >>> print(pearsonr(x, y))
-    (0.9952211894457882, 7.825101935996682e-101)
+    >>> y = x + rng.uniform(size=n)
+    >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
+    0.9957096551761004
 
     To ensure that samples remain paired, we define a function that accepts
     an array of _indices_ of the observations for which the statistic is to
@@ -321,7 +323,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     ...     return res[0]
     >>> i = np.arange(n)
     >>> print(my_statistic(i))
-    0.9952211894457882
+    0.9957096551761004
 
     `pearsonr` isn't vectorized, but NumPy can take care of that.
 
@@ -330,9 +332,9 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
 
     We call `bootstrap_ci` using the indices of the observations as `data`.
 
-    >>> ci = bootstrap_ci((i,), my_vectorized_statistic)
+    >>> ci = bootstrap_ci((i,), my_vectorized_statistic, random_state=rng)
     >>> print(ci)
-    (0.9940304577292599, 0.9967262700698384)
+    (0.9946237765750373, 0.9970407025134345)
 
     """
     # Input validation
