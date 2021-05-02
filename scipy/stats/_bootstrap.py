@@ -5,7 +5,7 @@ from scipy._lib._util import rng_integers
 
 
 def _jackknife_resample(sample):
-    '''Jackknife resample the sample. Supports only one-sample stats for now'''
+    """Jackknife resample the sample. Only one-sample stats for now."""
     n = sample.shape[-1]
 
     # jackknife - each row leaves out one observation
@@ -20,7 +20,7 @@ def _jackknife_resample(sample):
 
 
 def _bootstrap_resample(sample, n_resamples=None, random_state=None):
-    '''Bootstrap resample the sample'''
+    """Bootstrap resample the sample."""
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
@@ -31,17 +31,17 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 
 def _percentile_of_score(a, score, axis):
-    '''Vectorized, simplified scipy.stats.percentileofscore
+    """Vectorized, simplified `scipy.stats.percentileofscore`.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
-    '''
+    """
     B = a.shape[axis]
     return (a < score).sum(axis=axis) / B
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
-    '''np.percentile with different percentile for each slice'''
+    """`np.percentile` with different percentile for each slice."""
     # the difference between _percentile_along_axis and np.percentile is that
     # np.percentile gets _all_ the qs for each axis slice, whereas
     # _percentile_along_axis gets the q corresponding with each axis slice
@@ -55,7 +55,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
-    """Bias-corrected and accelerated interval """
+    """Bias-corrected and accelerated interval."""
     # closely follows [2] "BCa Bootstrap CIs"
     sample = data[0]  # only works with 1 sample statistics right now
 
@@ -84,8 +84,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
 
 def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
                      method, random_state):
-    """Input validation for bootstrap_ci"""
-
+    """Input validation for `bootstrap_ci`."""
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -134,7 +133,7 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
 def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
                  n_resamples=1000, method='basic', random_state=None):
     r"""
-    Compute a two-sided bootstrap confidence interval of a statistic
+    Compute a two-sided bootstrap confidence interval of a statistic.
 
     When `method` is ``'percentile'``, a bootstrap confidence interval is
     computed according to the following procedure.
@@ -187,7 +186,16 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
         bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
         Note that only ``'percentile'`` and ``'basic'`` support multi-sample
         statistics at this time.
-    random_state: int, RandomState, or Generator, optional
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
         Pseudorandom number generator state used to generate resamples.
 
     Returns
