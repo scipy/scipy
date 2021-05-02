@@ -1126,15 +1126,12 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         fisher_stat = pvalues[table[0, 0], table[0, 1]]
         index_arr = pvalues <= fisher_stat
     elif alternative == 'two-sided':
-        p1, p2 = table[0, 0] / total_col_1, table[0, 1] / total_col_2
-        if p1 >= p2 :
-            pvalues = hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T
-            _, fisher_stat = fisher_exact(table)
-            index_arr = pvalues <= fisher_stat
-        else:
-            pvalues = hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T
-            _, fisher_stat = fisher_exact(table)
-            index_arr = pvalues <= fisher_stat
+        pvalues = 2 * np.minimum(
+            hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T,
+            hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T,
+        )
+        fisher_stat = pvalues[table[0, 0], table[0, 1]]
+        index_arr = pvalues <= fisher_stat
     else:
         msg = (
             "`alternative` should be one of {'two-sided', 'less', 'greater'},"
