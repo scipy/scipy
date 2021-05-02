@@ -787,13 +787,15 @@ class TestPermutationTest:
 
     tie_case_1 = {'x': [1, 2, 3, 4], 'y': [1.5, 2, 2.5],
                   'expected_less': 0.2000000000,
-                  'expected_2sided': 0.3428571429,
+                  'expected_2sided': 0.4,  # 2*expected_less
+                  'expected_Pr_gte_S_mean': 0.3428571429,  # see note below
                   'expected_statistic': 7.5,
                   'expected_avg': 9.142857, 'expected_std': 1.40698}
     tie_case_2 = {'x': [111, 107, 100, 99, 102, 106, 109, 108],
                   'y': [107, 108, 106, 98, 105, 103, 110, 105, 104],
                   'expected_less': 0.1555738379,
-                  'expected_2sided': 0.2969971205,
+                  'expected_2sided': 0.3111476758,
+                  'expected_Pr_gte_S_mean': 0.2969971205,  # see note below
                   'expected_statistic': 32.5,
                   'expected_avg': 38.117647, 'expected_std': 5.172124}
 
@@ -820,6 +822,9 @@ class TestPermutationTest:
         run;
         ods graphics off;
 
+        Note: SAS provides Pr >= |S-Mean|, which is different from our
+        definition of a two-sided p-value.
+
         """
 
         x = case['x']
@@ -828,6 +833,7 @@ class TestPermutationTest:
         expected_statistic = case['expected_statistic']
         expected_less = case['expected_less']
         expected_2sided = case['expected_2sided']
+        expected_Pr_gte_S_mean = case['expected_Pr_gte_S_mean']
         expected_avg = case['expected_avg']
         expected_std = case['expected_std']
 
@@ -844,6 +850,14 @@ class TestPermutationTest:
         assert_allclose(res2.pvalue, expected_2sided, atol=1e-10)
         assert_allclose(res2.null_distribution.mean(), expected_avg, rtol=1e-6)
         assert_allclose(res2.null_distribution.std(), expected_std, rtol=1e-6)
+
+        # SAS provides Pr >= |S-Mean|; might as well check against that, too
+        S = res.statistic
+        mean = res.null_distribution.mean()
+        n = len(res.null_distribution)
+        Pr_gte_S_mean = np.sum(np.abs(res.null_distribution-mean)
+                               >= np.abs(S-mean))/n
+        assert_allclose(expected_Pr_gte_S_mean, Pr_gte_S_mean)
 
     @pytest.mark.parametrize('alternative, expected_pvalue',
                              (('less', 0.9708333333333),
