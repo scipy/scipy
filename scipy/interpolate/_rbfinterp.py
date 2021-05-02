@@ -289,8 +289,8 @@ class RBFInterpolator:
 
         - :math:`P(y)` must have full column rank. :math:`P(y)` always has full
           column rank when `degree` is -1 or 0. When `degree` is 1,
-          :math:`P(y)` has full column rank if there are N+1 data points and
-          they are not collinear (N=2), coplanar (N=3), etc.
+          :math:`P(y)` has full column rank if there are at least N+1 data
+          points and they are not collinear (N=2), coplanar (N=3), etc.
         - If `kernel` is 'multiquadric', 'linear', 'thin_plate_spline',
           'cubic', or 'quintic', then `degree` must not be lower than the
           minimum value listed above.
