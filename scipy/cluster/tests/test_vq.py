@@ -312,8 +312,13 @@ class TestKMean:
 
     def test_kmeans_and_kmeans2_random_seed(self):
 
-        for seed in [1234, np.random.default_rng(1234),
-                     np.random.RandomState(1234)]:
+        seed_list = [1234, np.random.RandomState(1234)]
+
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        if hasattr(np.random, 'default_rng'):
+            seed_list.append(np.random.default_rng(1234))
+
+        for seed in seed_list:
             # test for kmeans
             res1, _ = kmeans(TESTDATA_2D, 2, seed=seed)
             res2, _ = kmeans(TESTDATA_2D, 2, seed=seed)

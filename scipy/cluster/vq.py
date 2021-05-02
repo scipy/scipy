@@ -362,10 +362,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
 
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
@@ -677,10 +676,9 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
         seeded with `seed`.
