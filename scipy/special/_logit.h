@@ -1,19 +1,18 @@
 #ifndef _LOGIT_H_
 #define _LOGIT_H_
 
-#include "numpy/npy_math.h"
-
+#include<cmath>
 
 template <typename T>
 inline T _logit(T x) {
     x /= 1 - x;
-    return npy_log(x);
+    return std::log(x);
 };
 
 
 template<typename T>
 inline T _expit(T x) {
-    return 1 / (1 + npy_exp(-x));
+    return 1 / (1 + std::exp(-x));
 };
 
 
