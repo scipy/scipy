@@ -167,6 +167,9 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
+    # All magic numbers are from R wilcox.test unless otherwise specied
+    # https://rdrr.io/r/stats/wilcox.test.html
+
     # --- Test Input Validation ---
 
     def test_input_validation(self):
@@ -278,16 +281,31 @@ class TestMannWhitneyU:
         res = mannwhitneyu(self.x, self.y, **kwds)
         assert_allclose(res, expected)
 
-    cases_continuity = [[{"alternative": 'two-sided', "method": "asymptotic"},
+    cases_continuity = [[{"alternative": 'two-sided', "use_continuity": True},
                          (23, 0.6865041817876)],
-                        [{"alternative": 'less', "method": "asymptotic"},
+                        [{"alternative": 'less', "use_continuity": True},
                          (23, 0.7047591913255)],
-                        [{"alternative": 'greater', "method": "asymptotic"},
-                         (23, 0.3432520908938)]]
+                        [{"alternative": 'greater', "use_continuity": True},
+                         (23, 0.3432520908938)],
+                        [{"alternative": 'two-sided', "use_continuity": False},
+                         (23, 0.6377328900502)],
+                        [{"alternative": 'less', "use_continuity": False},
+                         (23, 0.6811335549749)],
+                        [{"alternative": 'greater', "use_continuity": False},
+                         (23, 0.3188664450251)]]
 
     @pytest.mark.parametrize(("kwds", "expected"), cases_continuity)
     def test_continuity(self, kwds, expected):
-        res = mannwhitneyu(self.y, self.x, **kwds)
+        # When x and y are interchanged, less and greater p-values should
+        # swap (compare to above). This wouldn't happen if the continuity
+        # correction were applied in the wrong direction. Note that less and
+        # greater p-values do not sum to 1 when continuity correction is on,
+        # which is what we'd expect. Also check that results match R when
+        # continuity correction is turned off.
+        # Note that method='asymptotic' -> exact=FALSE
+        # and use_continuity=False -> correct=FALSE, e.g.:
+        # wilcox.test(x, y, alternative="t", exact=FALSE, correct=FALSE)
+        res = mannwhitneyu(self.y, self.x, method='asymptotic', **kwds)
         assert_allclose(res, expected)
 
     def test_tie_correct(self):
@@ -398,7 +416,7 @@ class TestMannWhitneyU:
                            method="exact")
         assert_equal(res, (3, 1))
         # U == m*n/2 for asymptotic case tested in test_gh_2118
-        # The reason it's tricky for the asmptotic test has to do with
+        # The reason it's tricky for the asymptotic test has to do with
         # continuity correction.
 
     cases_scalar = [[{"alternative": 'two-sided', "method": "asymptotic"},
@@ -483,11 +501,10 @@ class TestMannWhitneyU:
 
         # Inf is not a problem. This is a rank test, and it's the largest value
         y[4] = np.inf
-        res2 = mannwhitneyu([1, 2, 3, 4],
-                            [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5])
+        res2 = mannwhitneyu(x, y)
 
         assert_equal(res1.statistic, res2.statistic)
-        assert_equal(res1.pvalue, res1.pvalue)
+        assert_equal(res1.pvalue, res2.pvalue)
 
         # NaNs should raise an error. No nan_policy for now.
         y[4] = np.nan
