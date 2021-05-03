@@ -539,7 +539,7 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     cdef double log_2 = 0.6931471805599453
     cdef double log_inv_sqrt_2pi = -0.9189385332046727
 
-    # terms are evaluated within logarithms when possible to avoid overflows
+    # suitable terms are evaluated within logarithms to avoid under/overflows
     log_terms = (math.log(k) + (df / 2) * math.log(df)
                  - (math.lgamma(df / 2) + (df / 2 - 1) * log_2)
                  + (df - 1) * math.log(s) - (df * s * s / 2)
@@ -572,7 +572,7 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     cdef double log_2 = 0.6931471805599453
     cdef double log_inv_sqrt_2pi = -0.9189385332046727
 
-    # terms are evaluated within logarithms when possible to avoid overflows
+    # suitable terms are evaluated within logarithms to avoid under/overflows
     const_log = ((df / 2) * math.log(df)
                  - math.lgamma(df / 2)
                  - (df / 2 - 1) * log_2
