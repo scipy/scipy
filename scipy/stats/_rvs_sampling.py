@@ -280,8 +280,9 @@ class FastNumericalInverse():
     method, the random variates generated may be nearly identical, given
     the same random state.
 
-    >>> rvs1 = dist.rvs(size=100, random_state=0)
-    >>> rvs2 = fni.rvs(size=100, random_state=0)
+    >>> seed = 500072020
+    >>> rvs1 = dist.rvs(size=100, random_state=np.random.default_rng(seed))
+    >>> rvs2 = fni.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> np.allclose(rvs1, rvs2)
     True
 
@@ -327,7 +328,9 @@ class FastNumericalInverse():
         ----------
         size : int, tuple of ints, or None; optional
             Defines shape of array of random variates. Default is ``None``.
-        random_state : (see below), optional
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
             Defines the object to use for drawing pseudorandom variates.
             If `random_state` is ``None`` the `np.random.RandomState`
             singleton is used.
@@ -336,6 +339,7 @@ class FastNumericalInverse():
             If `random_state` is already a ``RandomState`` or ``Generator``
             instance, then that object is used.
             Default is None.
+
         Returns
         -------
         rvs : ndarray or scalar
@@ -356,9 +360,9 @@ class FastNumericalInverse():
 
         Parameters
         ----------
-        size : tuple of ints, optional
+        size : int, tuple of ints, or None; optional
             Defines shape of random variates array. Default is ``None``.
-        d : int, optional
+        d : int or None, optional
             Defines dimension of uniform quasi-random variates to be
             transformed. Default is ``None``.
         qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
