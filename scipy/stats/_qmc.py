@@ -65,7 +65,7 @@ def check_random_state(seed=None):
                          ' instance' % seed)
 
 
-def scale(sample, l_bounds, u_bounds, reverse=False):
+def scale(sample, l_bounds, u_bounds, *, reverse=False):
     r"""Sample scaling from unit hypercube to different bounds.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
@@ -148,7 +148,7 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
         return (sample - lower) / (upper - lower)
 
 
-def discrepancy(sample, iterative=False, method="CD", workers=1):
+def discrepancy(sample, *, iterative=False, method="CD", workers=1):
     """Discrepancy of a given sample.
 
     Parameters
@@ -418,7 +418,7 @@ def n_primes(n):
     return primes
 
 
-def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
+def van_der_corput(n, base=2, *, start_index=0, scramble=False, seed=None):
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -567,7 +567,7 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(self, d, seed=None):
+    def __init__(self, d, *, seed=None):
         if not np.issubdtype(type(d), np.integer):
             raise ValueError('d must be an integer value')
 
@@ -707,7 +707,7 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, d, scramble=True, seed=None):
+    def __init__(self, d, *, scramble=True, seed=None):
         super().__init__(d=d, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
@@ -729,7 +729,7 @@ class Halton(QMCEngine):
         """
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), self.num_generated,
+        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
                                  scramble=self.scramble,
                                  seed=copy.deepcopy(self.seed))
                   for bdim in self.base]
@@ -807,7 +807,7 @@ class LatinHypercube(QMCEngine):
 
     """
 
-    def __init__(self, d, centered=False, seed=None):
+    def __init__(self, d, *, centered=False, seed=None):
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
@@ -958,7 +958,7 @@ class Sobol(QMCEngine):
     MAXDIM = _MAXDIM
     MAXBIT = _MAXBIT
 
-    def __init__(self, d, scramble=True, seed=None):
+    def __init__(self, d, *, scramble=True, seed=None):
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
@@ -1132,7 +1132,7 @@ class MultivariateNormalQMC(QMCEngine):
 
     """
 
-    def __init__(self, mean, cov=None, cov_root=None, inv_transform=True,
+    def __init__(self, mean, cov=None, *, cov_root=None, inv_transform=True,
                  engine=None, seed=None):
         mean = np.array(mean, copy=False, ndmin=1)
         d = mean.shape[0]
@@ -1283,7 +1283,7 @@ class MultinomialQMC(QMCEngine):
 
     """
 
-    def __init__(self, pvals, engine=None, seed=None):
+    def __init__(self, pvals, *, engine=None, seed=None):
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
