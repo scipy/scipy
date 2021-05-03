@@ -2012,8 +2012,10 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
         score = score[..., None]
         count = lambda x: np.count_nonzero(x, -1)
 
-        # Despite masking, Azure pipelines produces warnings
-        # when there are nans (which should not be processed)
+        # Despite using masked_array to omit nan values from processing,
+        # the CI tests on "Azure pipelines" (but not on the other CI servers)
+        # emits warnings when there are nan values, contrarily to the purpose of
+        # masked_arrays. As a fix, we simply suppress the warnings.
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning,
                        "invalid value encountered in less")
