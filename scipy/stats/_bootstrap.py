@@ -252,7 +252,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
     ...    ci = bootstrap_ci(data, np.std, confidence_level=0.9,
-    ...                       random_state=rng)
+    ...                      random_state=rng)
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
@@ -297,7 +297,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
     >>> ci = bootstrap_ci(data, my_statistic, method='basic', random_state=rng)
-    >>> mood(sample1, sample2)  # element 0 is the statistic
+    >>> mood(sample1, sample2)[0]  # element 0 is the statistic
     -4.056321520284127
     >>> print(ci)
     (-5.798587535600218, -2.415274860901717)
