@@ -9326,7 +9326,7 @@ class studentized_range_gen(rv_continuous):
 
          f(q; k, \nu) = f(q; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
                         2^{\nu/2-1}} \int_{0}^{\infty} \int_{-\infty}^{\infty}
-                        s e^{\nu s^2/2} \phi(z) \phi(sq + z) [\Phi(sq + z) -
+                        s e^{-\nu s^2/2} \phi(z) \phi(sq + z) [\Phi(sq + z) -
                         \Phi(z)]^{k-2} \,dz \,ds
 
     When `df` exceeds 100,000, an asymptotic approximation (infinte degrees of
