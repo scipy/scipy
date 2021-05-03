@@ -2965,6 +2965,7 @@ class TestPercentileOfScore:
              ("propagate", [1, 2], [1, 2, np.nan], [50, 100, np.nan]),
              ("omit", [1, 2, np.nan], [0, 1, 2], [0, 50, 100]),
              ("omit", [np.nan, np.nan], [0, 1, 2], [np.nan, np.nan, np.nan])]
+
     @pytest.mark.parametrize("policy, a, score, result", cases)
     def test_nans_ok(self, policy, a, score, result):
         assert_equal(self.f(a, score, nan_policy=policy), result)
@@ -2978,6 +2979,7 @@ class TestPercentileOfScore:
          ("The input scores contains nan values,"
           " which is incompatible with the 'omit' policy.")),
     ]
+
     @pytest.mark.parametrize("policy, a, score, message", )
     def test_nans_fail(self, policy, a, score, message):
         with assert_raises(ValueError, match=message):
