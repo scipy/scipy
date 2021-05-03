@@ -44,10 +44,10 @@ jobs:
 
       - restore_cache:
           keys:
-              - packages-{{ .Branch }}
+              - packages-{{ .Branch }}-1
       - restore_cache:
           keys:
-              - build-{{ .Branch }}
+              - build-{{ .Branch }}-1
 
       - run:
           name: setup Python venv
@@ -62,7 +62,7 @@ jobs:
             pip install pybind11
 
       - save_cache:
-          key: packages-{{ .Branch }}
+          key: packages-{{ .Branch }}-1
           paths:
             - venv
 
@@ -74,7 +74,7 @@ jobs:
             python setup.py build_ext --inplace -j2
 
       - save_cache:
-          key: build-{{ .Branch }}
+          key: build-{{ .Branch }}-1
           paths:
             - build
 
@@ -95,7 +95,7 @@ jobs:
 
       - restore_cache:
           keys:
-              - doc-{{ .Branch }}
+              - doc-{{ .Branch }}-1
 
       - run:
           name: build docs
@@ -110,7 +110,7 @@ jobs:
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - save_cache:
-          key: doc-{{ .Branch }}
+          key: doc-{{ .Branch }}-1
           paths:
             - doc/build
 
