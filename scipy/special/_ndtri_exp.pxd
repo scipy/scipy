@@ -73,18 +73,17 @@
 # monotonically to \sqrt(2 * pi) ~ 2.507 at x = 0 and increases monotonically
 # again to ~4.597 at x ~ 0.865.
 #
-# It can be checked that all higher derivatives follow a similar pattern where
-# their absolute value takes on at x ~ 0.135, decrease to a minimum at x = 0
-# and increases to the same maximm at x ~ 0.865. (The even order derivatives are
-# odd functions and odd order derivatives are even functions.) Thus the worst
-# possible loss of precision in ndtri(exp(x)) in the interval
-# [-2, log(1 - exp(-2))] due to error in calculating exp(x) must occur near the
-# endpoints. We may observe empirically that error at the endpoints due to
-# exp is negligible. Assuming that exp is accurate within
-# +-ULP (unit of least precision), we can check in Python for instance that
-# we've observed a different of at most 6.0474e-16 in
-# abs(ndtri(x + epsilon) - ndtri(x)) for x near exp(-2) or 1 - exp(-2),
-# and epsilon equal to the unit of least precision of x.
+# It can be checked that all higher derivatives follow a similar pattern,
+# their absolute value takes on a maximum (for this interval) at x ~ 0.135,
+# decrease to a minimum at x = 0 and increases to the same maximum at x ~ 0.865.
+# (The even order derivatives are odd functions and odd order derivatives are
+# even functions.) Thus the worst possible loss of precision in ndtri(exp(x))
+# in the interval [-2, log(1 - exp(-2))] due to error in calculating exp(x)
+# must occur near the endpoints. We may observe empirically that error at the
+# endpoints due to exp is not substantial. Assuming that exp is accurate within
+# +-ULP (unit of least precision), we've observed a different of at most
+# 6.0474e-16 in abs(ndtri(x + epsilon) - ndtri(x)) for x near exp(-2) or
+# 1 - exp(-2) and epsilon equal to the unit of least precision of x.
 
 # (IEEE-754 provides no guarantee on the accuracy of exp, but for most
 # compilers on most architectures an assumption of +-ULP should be
