@@ -412,6 +412,9 @@ class RBFInterpolator:
 class RBFLocalInterpolator:
     """RBF interpolation using the k nearest data points.
 
+    This class can be a faster and less memory intensive alternative to
+    `RBFInterpolator` when interpolating many data points.
+
     See the Notes section of `RBFInterpolator` for a description of RBF
     interpolation.
 
