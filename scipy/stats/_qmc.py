@@ -839,19 +839,6 @@ class LatinHypercube(QMCEngine):
         self.num_generated += n
         return samples
 
-    def reset(self):
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : LatinHypercube
-            Engine reset to its base state.
-
-        """
-        self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
-        self.num_generated = 0
-        return self
-
 
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
@@ -1082,8 +1069,8 @@ class Sobol(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self._quasi = self._shift.copy()
-        self.num_generated = 0
         return self
 
     def fast_forward(self, n):
@@ -1215,6 +1202,7 @@ class MultivariateNormalQMC(QMCEngine):
 
         """
         base_samples = self._standard_normal_samples(n)
+        self.num_generated += n
         return self._correlate(base_samples)
 
     def reset(self):
@@ -1226,6 +1214,7 @@ class MultivariateNormalQMC(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self.engine.reset()
         return self
 
@@ -1310,6 +1299,8 @@ class MultinomialQMC(QMCEngine):
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
 
+        super().__init__(d=1, seed=seed)
+
     def random(self, n=1):
         """Draw `n` QMC samples from the multinomial distribution.
 
@@ -1329,6 +1320,7 @@ class MultinomialQMC(QMCEngine):
         _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
+        self.num_generated += n
         return sample
 
     def reset(self):
@@ -1340,5 +1332,6 @@ class MultinomialQMC(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self.engine.reset()
         return self
