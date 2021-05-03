@@ -1525,14 +1525,8 @@ class TestSomeDistanceFunctions:
         # 1D arrays
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])
-        # 3x1 arrays
-        x31 = x[:, np.newaxis]
-        y31 = y[:, np.newaxis]
-        # 1x3 arrays
-        x13 = x31.T
-        y13 = y31.T
 
-        self.cases = [(x, y), (x31, y31), (x13, y13)]
+        self.cases = [(x, y)]
 
     def test_minkowski(self):
         for x, y in self.cases:
@@ -1609,6 +1603,39 @@ class TestSomeDistanceFunctions:
         for x, y in self.cases:
             dist = mahalanobis(x, y, vi)
             assert_almost_equal(dist, np.sqrt(6.0))
+
+
+def construct_squeeze_tests():
+    # Construct a class like TestSomeDistanceFunctions but testing 2-d vectors
+    # with a length-1 dimension which is deprecated
+    def setup_method(self):
+        # 1D arrays
+        x = np.array([1.0, 2.0, 3.0])
+        y = np.array([1.0, 1.0, 5.0])
+        # 3x1 arrays
+        x31 = x[:, np.newaxis]
+        y31 = y[:, np.newaxis]
+        # 1x3 arrays
+        x13 = x31.T
+        y13 = y31.T
+
+        self.cases = [(x31, y31), (x13, y13), (x31, y13)]
+
+    sup = suppress_warnings()
+    sup.filter(DeprecationWarning,
+            ".*distance metrics ignoring length-1 dimensions is deprecated.*")
+    base = TestSomeDistanceFunctions
+    attrs = {
+        name: sup(getattr(base, name))
+        for name in dir(base)
+        if name.startswith('test_')
+    }
+    attrs['setup_method'] = setup_method
+    name = 'TestDistanceFunctionsSqueeze'
+    globals()[name] = type(name, (base,), attrs)
+
+
+construct_squeeze_tests()
 
 
 class TestSquareForm:
@@ -1930,12 +1957,18 @@ def test_euclideans():
     assert_almost_equal(weuclidean(x1, x2), np.sqrt(3), decimal=14)
 
     # Check flattening for (1, N) or (N, 1) inputs
-    assert_almost_equal(weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
-                        np.sqrt(3), decimal=14)
-    assert_almost_equal(wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
-                        3.0, decimal=14)
-    assert_almost_equal(wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis]),
-                        3.0, decimal=14)
+    with pytest.warns(DeprecationWarning,
+                      match="ignoring length-1 dimensions is deprecated"):
+        assert_almost_equal(weuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
+                            np.sqrt(3), decimal=14)
+    with pytest.warns(DeprecationWarning,
+                      match="ignoring length-1 dimensions is deprecated"):
+        assert_almost_equal(wsqeuclidean(x1[np.newaxis, :], x2[np.newaxis, :]),
+                            3.0, decimal=14)
+    with pytest.warns(DeprecationWarning,
+                      match="ignoring length-1 dimensions is deprecated"):
+        assert_almost_equal(wsqeuclidean(x1[:, np.newaxis], x2[:, np.newaxis]),
+                            3.0, decimal=14)
 
     # Distance metrics only defined for vectors (= 1-D)
     x = np.arange(4).reshape(2, 2)
@@ -2030,6 +2063,28 @@ def test_sokalmichener():
     assert_equal(dist1, dist2)
 
 
+def test_sokalmichener_with_weight():
+    # from: | 1 |   | 0 |
+    # to:   | 1 |   | 1 |
+    # weight|   | 1 |   | 0.2
+    ntf = 0 * 1 + 0 * 0.2
+    nft = 0 * 1 + 1 * 0.2
+    ntt = 1 * 1 + 0 * 0.2
+    nff = 0 * 1 + 0 * 0.2
+    expected = 2 * (nft + ntf) / (ntt + nff + 2 * (nft + ntf))
+    assert_almost_equal(expected, 0.2857143)
+    actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
+    assert_almost_equal(expected, actual)
+
+    a1 = [False, False, True, True, True, False, False, True, True, True, True,
+          True, True, False, True, False, False, False, True, True]
+    a2 = [True, True, True, False, False, True, True, True, False, True,
+          True, True, True, True, False, False, False, True, True, True]
+
+    for w in [0.05, 0.1, 1.0, 20.0]:
+        assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
+
+
 def test_modifies_input():
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
@@ -2118,12 +2173,16 @@ def test__validate_vector():
     assert_equal(y, x)
 
     x = 1
-    y = _validate_vector(x)
+    with pytest.warns(DeprecationWarning,
+                      match="ignoring length-1 dimensions is deprecated"):
+        y = _validate_vector(x)
     assert_equal(y.ndim, 1)
     assert_equal(y, [x])
 
     x = np.arange(5).reshape(1, -1, 1)
-    y = _validate_vector(x)
+    with pytest.warns(DeprecationWarning,
+                      match="ignoring length-1 dimensions is deprecated"):
+        y = _validate_vector(x)
     assert_equal(y.ndim, 1)
     assert_array_equal(y, x[0, :, 0])
 

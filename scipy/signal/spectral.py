@@ -94,6 +94,7 @@ def lombscargle(x,
     Examples
     --------
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     First define some input parameters for the signal:
 
@@ -102,11 +103,11 @@ def lombscargle(x,
     >>> phi = 0.5 * np.pi
     >>> nin = 1000
     >>> nout = 100000
-    >>> frac_points = 0.9 # Fraction of points to select
+    >>> frac_points = 0.9  # Fraction of points to select
 
     Randomly select a fraction of an array with timesteps:
 
-    >>> r = np.random.rand(nin)
+    >>> r = rng.standard_normal(nin)
     >>> x = np.linspace(0.01, 10*np.pi, nin)
     >>> x = x[r >= frac_points]
 
@@ -135,7 +136,6 @@ def lombscargle(x,
     >>> plt.show()
 
     """
-
     x = np.asarray(x, dtype=np.float64)
     y = np.asarray(y, dtype=np.float64)
     freqs = np.asarray(freqs, dtype=np.float64)
@@ -216,7 +216,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)
+    >>> rng = np.random.default_rng()
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -228,7 +228,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / fs
     >>> x = amp*np.sin(2*np.pi*freq*time)
-    >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x += rng.normal(scale=np.sqrt(noise_power), size=time.shape)
 
     Compute and plot the power spectral density.
 
@@ -243,7 +243,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     peak, we can recover the noise power on the signal.
 
     >>> np.mean(Pxx_den[25000:])
-    0.00099728892368242854
+    0.000985320699252543
 
     Now compute and plot the power spectrum.
 
@@ -384,7 +384,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(1234)
+    >>> rng = np.random.default_rng()
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -396,7 +396,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / fs
     >>> x = amp*np.sin(2*np.pi*freq*time)
-    >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x += rng.normal(scale=np.sqrt(noise_power), size=time.shape)
 
     Compute and plot the power spectral density.
 
@@ -445,7 +445,6 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
-
     freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
                      return_onesided=return_onesided, scaling=scaling,
@@ -553,6 +552,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Generate two test signals with some common features.
 
@@ -563,10 +563,10 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / fs
     >>> b, a = signal.butter(2, 0.25, 'low')
-    >>> x = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
     >>> y = signal.lfilter(b, a, x)
     >>> x += amp*np.sin(2*np.pi*freq*time)
-    >>> y += np.random.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
+    >>> y += rng.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
 
     Compute and plot the magnitude of the cross spectral density.
 
@@ -575,8 +575,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('CSD [V**2/Hz]')
     >>> plt.show()
-    """
 
+    """
     freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
                                      detrend, return_onesided, scaling, axis,
                                      mode='psd')
@@ -600,8 +600,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    """
-    Compute a spectrogram with consecutive Fourier transforms.
+    """Compute a spectrogram with consecutive Fourier transforms.
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
@@ -695,6 +694,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     >>> from scipy import signal
     >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
     modulated around 3kHz, corrupted by white noise of exponentially
@@ -707,7 +707,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     >>> time = np.arange(N) / float(fs)
     >>> mod = 500*np.cos(2*np.pi*0.25*time)
     >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
-    >>> noise = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
     >>> noise *= np.exp(-time/5)
     >>> x = carrier + noise
 
@@ -726,6 +726,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
+
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
@@ -768,8 +769,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
-    r"""
-    Check whether the Constant OverLap Add (COLA) constraint is met
+    r"""Check whether the Constant OverLap Add (COLA) constraint is met.
 
     Parameters
     ----------
@@ -862,7 +862,6 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     True
 
     """
-
     nperseg = int(nperseg)
 
     if nperseg < 1:
@@ -892,8 +891,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
 
 def check_NOLA(window, nperseg, noverlap, tol=1e-10):
-    r"""
-    Check whether the Nonzero Overlap Add (NOLA) constraint is met
+    r"""Check whether the Nonzero Overlap Add (NOLA) constraint is met.
 
     Parameters
     ----------
@@ -987,8 +985,8 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     False
     >>> signal.check_NOLA(signal.windows.hann(64), 64, 2)
     True
-    """
 
+    """
     nperseg = int(nperseg)
 
     if nperseg < 1:
@@ -1021,8 +1019,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1):
-    r"""
-    Compute the Short Time Fourier Transform (STFT).
+    r"""Compute the Short Time Fourier Transform (STFT).
 
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
@@ -1138,6 +1135,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
     modulated around 3kHz, corrupted by white noise of exponentially
@@ -1150,8 +1148,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> time = np.arange(N) / float(fs)
     >>> mod = 500*np.cos(2*np.pi*0.25*time)
     >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
-    >>> noise = np.random.normal(scale=np.sqrt(noise_power),
-    ...                          size=time.shape)
+    >>> noise = rng.normal(scale=np.sqrt(noise_power),
+    ...                    size=time.shape)
     >>> noise *= np.exp(-time/5)
     >>> x = carrier + noise
 
@@ -1163,8 +1161,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
-    """
 
+    """
     freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided,
                                         scaling='spectrum', axis=axis,
@@ -1176,8 +1174,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
-    r"""
-    Perform the inverse Short Time Fourier transform (iSTFT).
+    r"""Perform the inverse Short Time Fourier transform (iSTFT).
 
     Parameters
     ----------
@@ -1284,6 +1281,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Generate a test signal, a 2 Vrms sine wave at 50Hz corrupted by
     0.001 V**2/Hz of white noise sampled at 1024 Hz.
@@ -1295,8 +1293,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / float(fs)
     >>> carrier = amp * np.sin(2*np.pi*50*time)
-    >>> noise = np.random.normal(scale=np.sqrt(noise_power),
-    ...                          size=time.shape)
+    >>> noise = rng.normal(scale=np.sqrt(noise_power),
+    ...                    size=time.shape)
     >>> x = carrier + noise
 
     Compute the STFT, and plot its magnitude
@@ -1339,7 +1337,6 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
-
     # Make sure input is an ndarray of appropriate complex dtype
     Zxx = np.asarray(Zxx) + 0j
     freq_axis = int(freq_axis)
@@ -1535,6 +1532,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
     Generate two test signals with some common features.
 
@@ -1545,10 +1543,10 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / fs
     >>> b, a = signal.butter(2, 0.25, 'low')
-    >>> x = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
     >>> y = signal.lfilter(b, a, x)
     >>> x += amp*np.sin(2*np.pi*freq*time)
-    >>> y += np.random.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
+    >>> y += rng.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
 
     Compute and plot the coherence.
 
@@ -1557,8 +1555,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('Coherence')
     >>> plt.show()
-    """
 
+    """
     freqs, Pxx = welch(x, fs=fs, window=window, nperseg=nperseg,
                        noverlap=noverlap, nfft=nfft, detrend=detrend,
                        axis=axis)
@@ -1576,8 +1574,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                      nfft=None, detrend='constant', return_onesided=True,
                      scaling='density', axis=-1, mode='psd', boundary=None,
                      padded=False):
-    """
-    Calculate various forms of windowed FFTs for PSD, CSD, etc.
+    """Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
     This is a helper function that implements the commonality between
     the stft, psd, csd, and spectrogram functions. It is not designed to
@@ -1869,7 +1866,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     """
     Calculate windowed FFT, for internal use by
-    scipy.signal._spectral_helper
+    `scipy.signal._spectral_helper`.
 
     This is a helper function that does the main FFT calculation for
     `_spectral helper`. All input validation is performed there, and the
@@ -1950,7 +1947,6 @@ def _triage_segments(window, nperseg, input_length):
         6
         window.
     """
-
     # parse window; if array like, then set nperseg = win.shape
     if isinstance(window, str) or isinstance(window, tuple):
         # if nperseg not specified

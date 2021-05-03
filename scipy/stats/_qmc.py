@@ -1,4 +1,5 @@
 """Quasi-Monte Carlo engines and helpers."""
+import os
 import copy
 import numbers
 from abc import ABC, abstractmethod
@@ -11,6 +12,13 @@ import scipy.stats as stats
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
+)
+from scipy.stats._qmc_cy import (
+    _cy_wrapper_centered_discrepancy,
+    _cy_wrapper_wrap_around_discrepancy,
+    _cy_wrapper_mixture_discrepancy,
+    _cy_wrapper_l2_star_discrepancy,
+    _cy_wrapper_update_discrepancy
 )
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
@@ -139,7 +147,7 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
         return (sample - lower) / (upper - lower)
 
 
-def discrepancy(sample, iterative=False, method='CD'):
+def discrepancy(sample, iterative=False, method="CD", workers=1):
     """Discrepancy of a given sample.
 
     Parameters
@@ -152,6 +160,9 @@ def discrepancy(sample, iterative=False, method='CD'):
     method : str, optional
         Type of discrepancy, can be ``CD``, ``WD``, ``MD`` or ``L2-star``.
         Refer to the notes for more details. Default is ``CD``.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -243,80 +254,39 @@ def discrepancy(sample, iterative=False, method='CD'):
     0.008142039609053513
 
     """
-    sample = np.asarray(sample)
+    sample = np.asarray(sample, dtype=np.float64, order="C")
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
-        raise ValueError('Sample is not a 2D array')
+        raise ValueError("Sample is not a 2D array")
 
     if not (np.all(sample >= 0) and np.all(sample <= 1)):
-        raise ValueError('Sample is not in unit hypercube')
+        raise ValueError("Sample is not in unit hypercube")
 
-    n, d = sample.shape
+    workers = int(workers)
+    if workers == -1:
+        workers = os.cpu_count()
+        if workers is None:
+            raise NotImplementedError(
+                "Cannot determine the number of cpus using os.cpu_count(), "
+                "cannot use -1 for the number of workers"
+            )
+    elif workers <= 0:
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
+                         "or > 0")
 
-    if iterative:
-        n += 1
+    methods = {
+        "CD": _cy_wrapper_centered_discrepancy,
+        "WD": _cy_wrapper_wrap_around_discrepancy,
+        "MD": _cy_wrapper_mixture_discrepancy,
+        "L2-star": _cy_wrapper_l2_star_discrepancy,
+    }
 
-    if method == 'CD':
-        # reference [1], page 71 Eq (3.7)
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
-
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            prod_arr *= (1
-                         + 0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5)
-                         - 0.5 * abs(s0[:, None] - s0))
-        disc2 = prod_arr.sum()
-
-        return ((13.0 / 12.0) ** d - 2.0 / n * disc1 +
-                1.0 / (n ** 2) * disc2)
-    elif method == 'WD':
-        # reference [1], page 73 Eq (3.8)
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            x_kikj = abs(s0[:, None] - s0)
-            prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
-
-        # typo in the book sign missing: - (4.0 / 3.0) ** d
-        return - (4.0 / 3.0) ** d + 1.0 / (n ** 2) * prod_arr.sum()
-    elif method == 'MD':
-        # reference [2], page 290 Eq (18)
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2,
-                               axis=1))
-
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            prod_arr *= (15.0 / 8.0
-                         - 0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5)
-                         - 3.0 / 4.0 * abs(s0[:, None] - s0)
-                         + 0.5 * abs(s0[:, None] - s0) ** 2)
-        disc2 = prod_arr.sum()
-
-        disc = (19.0 / 12.0) ** d
-        disc1 = 2.0 / n * disc1
-        disc2 = 1.0 / (n ** 2) * disc2
-
-        return disc - disc1 + disc2
-    elif method == 'L2-star':
-        # reference [1], page 69 Eq (3.5)
-        disc1 = np.sum(np.prod(1 - sample**2, axis=1))
-
-        xik = sample[None, :, :]
-        xjk = sample[:, None, :]
-        disc2 = np.sum(np.sum(np.prod(1 - np.maximum(xik, xjk), axis=2),
-                              axis=1))
-
-        return np.sqrt(
-            3 ** (-d) - 1 / n * 2 ** (1 - d) * disc1 + 1 / (n ** 2) * disc2
-        )
+    if method in methods:
+        return methods[method](sample, iterative, workers=workers)
     else:
-        raise ValueError('{} is not a valid method. Options are '
-                         'CD, WD, MD, L2-star.'.format(method))
+        raise ValueError(f"{method!r} is not a valid method. It must be one of"
+                         f" {set(methods)!r}")
 
 
 def update_discrepancy(x_new, sample, initial_disc):
@@ -353,8 +323,8 @@ def update_discrepancy(x_new, sample, initial_disc):
     0.008142039609053513
 
     """
-    sample = np.asarray(sample)
-    x_new = np.asarray(x_new)
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+    x_new = np.asarray(x_new, dtype=np.float64, order="C")
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
@@ -370,25 +340,14 @@ def update_discrepancy(x_new, sample, initial_disc):
     if not (np.all(x_new >= 0) and np.all(x_new <= 1)):
         raise ValueError('x_new is not in unit hypercube')
 
-    n = len(sample) + 1
-    abs_ = abs(x_new - 0.5)
+    if x_new.shape[0] != sample.shape[1]:
+        raise ValueError("x_new and sample must be broadcastable")
 
-    # derivation from P.T. Roy (@tupui)
-    disc1 = - 2 / n * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
-    disc2 = 2 / (n ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
-                                          1 / 2 * abs(sample - 0.5) -
-                                          1 / 2 * abs(x_new - sample),
-                                          axis=1))
-    disc3 = 1 / (n ** 2) * np.prod(1 + abs_)
-
-    return initial_disc + disc1 + disc2 + disc3
+    return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 
 
 def primes_from_2_to(n):
     """Prime numbers from 2 to *n*.
-
-    Taken from [1]_ by P.T. Roy, licensed under
-    `CC-BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_.
 
     Parameters
     ----------
@@ -399,6 +358,12 @@ def primes_from_2_to(n):
     -------
     primes : list(int)
         Primes in ``2 <= p < n``.
+
+    Notes
+    -----
+    Taken from [1]_ by P.T. Roy, written consent given on 23.04.2021
+    by the original author, Bruno Astrolino, for free use in SciPy under
+    the 3-clause BSD.
 
     References
     ----------
@@ -602,6 +567,9 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(self, d, seed=None):
+        if not np.issubdtype(type(d), np.integer):
+            raise ValueError('d must be an integer value')
+
         self.d = d
         self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(seed)
@@ -1003,11 +971,11 @@ class Sobol(QMCEngine):
     MAXBIT = _MAXBIT
 
     def __init__(self, d, scramble=True, seed=None):
+        super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(d=d, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()

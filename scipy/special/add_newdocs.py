@@ -6497,12 +6497,12 @@ add_newdoc("kolmogorov",
     the target distribution, a Normal(0, 1) distribution.
 
     >>> from scipy.stats import norm, laplace
+    >>> rng = np.random.default_rng()
     >>> n = 1000
-    >>> np.random.seed(seed=233423)
     >>> lap01 = laplace(0, 1)
-    >>> x = np.sort(lap01.rvs(n))
+    >>> x = np.sort(lap01.rvs(n, random_state=rng))
     >>> np.mean(x), np.std(x)
-    (-0.083073685397609842, 1.3676426568399822)
+    (-0.05841730131499543, 1.3968109101997568)
 
     Construct the Empirical CDF and the K-S statistic Dn.
 
@@ -6513,13 +6513,13 @@ add_newdoc("kolmogorov",
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
-    Dn=0.058286, sqrt(n)*Dn=1.843153
+    Dn=0.043363, sqrt(n)*Dn=1.371265
     >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
     For a sample of size n drawn from a N(0, 1) distribution:
-     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
-     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.371265 is 0.046533
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.371265 is 0.953467
 
     Plot the Empirical CDF against the target N(0, 1) CDF.
 
@@ -8782,37 +8782,37 @@ add_newdoc("smirnov",
     a target N(0, 1) CDF.
 
     >>> from scipy.stats import norm
+    >>> rng = np.random.default_rng()
     >>> n = 5
     >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
-    >>> np.random.seed(seed=233423)  # Set the seed for reproducibility
-    >>> x = np.sort(gendist.rvs(size=n))
+    >>> x = np.sort(gendist.rvs(size=n, random_state=rng))
     >>> x
-    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
+    array([-1.3922078 , -0.13526532,  0.1371477 ,  0.18981686,  1.81948167])
     >>> target = norm(0, 1)
     >>> cdfs = target.cdf(x)
     >>> cdfs
-    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
+    array([0.08192974, 0.44620105, 0.55454297, 0.57527368, 0.96558101])
     # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
     >>> ecdfs = np.arange(n+1, dtype=float)/n
     >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
     >>> np.set_printoptions(precision=3)
     >>> cols
-    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
-           [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
-           [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
-           [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
-           [  3.089e+00,   1.000e+00,   9.990e-01,   1.990e-01,   1.005e-03]])
+    array([[-1.392,  0.2  ,  0.082,  0.082,  0.118],
+           [-0.135,  0.4  ,  0.446,  0.246, -0.046],
+           [ 0.137,  0.6  ,  0.555,  0.155,  0.045],
+           [ 0.19 ,  0.8  ,  0.575, -0.025,  0.225],
+           [ 1.819,  1.   ,  0.966,  0.166,  0.034]])
     >>> gaps = cols[:, -2:]
     >>> Dnpm = np.max(gaps, axis=0)
     >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
-    Dn-=0.563278, Dn+=0.001005
+    Dn-=0.246201, Dn+=0.224726
     >>> probs = smirnov(n, Dnpm)
     >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
     ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
     ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
-     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
-     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
+     Smirnov n=5: Prob(Dn- >= 0.246201) = 0.4713
+     Smirnov n=5: Prob(Dn+ >= 0.224726) = 0.5243
 
     Plot the Empirical CDF against the target N(0, 1) CDF
 

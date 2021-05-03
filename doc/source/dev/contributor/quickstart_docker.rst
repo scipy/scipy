@@ -90,11 +90,11 @@ container do not persist after you close it.
    SciPy Docker container by entering the following command in a terminal
    window::
 
-      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> /bin/bash
+      docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev:<image-tag> 
    
    If you are using Windows cmd, you may run the following command instead::
 
-      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag> /bin/bash
+      docker run -it --rm -v %cd%:/home/scipy scipy/scipy-dev:<image-tag> 
 
    This command starts (``run``) an interactive (``-it``) Docker container
    named ``scipy-dev`` (based on Ubuntu focal) from the ``scipy``
@@ -110,9 +110,9 @@ container do not persist after you close it.
 
    as a prompt. Notice the ``(base)`` at the beginning, since we are using conda.
 
-#. Activate the ``scipydev`` conda environment::
+#. Activate the ``scipy-dev`` conda environment::
 
-      conda activate scipydev
+      conda activate scipy-dev
 
    this environment has all the dependencies you'll need to start using/building SciPy.
 
