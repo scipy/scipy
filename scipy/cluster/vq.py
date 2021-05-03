@@ -521,7 +521,7 @@ def _krandinit(data, k, rng):
     k : int
         Number of samples to generate.
     rng : `numpy.random.Generator` or `numpy.random.RandomState`
-        Random number generator
+        Random number generator.
 
     Returns
     -------
