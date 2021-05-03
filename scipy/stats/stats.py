@@ -1890,7 +1890,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     a : array_like
         Array to which `score` is compared.
     score : array_like
-        Array to compute percentiles for.
+        Scores to compute percentiles for.
     kind : {'rank', 'weak', 'strict', 'mean'}, optional
         Specifies the interpretation of the resulting score.
         The following options are available (default is 'rank'):
