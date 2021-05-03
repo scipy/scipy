@@ -77,16 +77,16 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-def _contains_nan(a, nan_policy='propagate', summary_check=True):
+def _contains_nan(a, nan_policy='propagate', use_summation=True):
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
     try:
-        # The summary check avoids creating a (potentially huge) array.
-        # However, it will set contains_nan to True for (e.g.) [-inf, 0, +inf].
-        # If this is undesirable, set summary_check to False instead.
-        if summary_check:
+        # The summation method avoids creating a (potentially huge) array.
+        # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
+        # If this is undesirable, set use_summation to False instead.
+        if use_summation:
             with np.errstate(invalid='ignore'):
                 contains_nan = np.isnan(np.sum(a))
         else:
@@ -1980,8 +1980,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy, summary_check=False)
-    cns, nps = _contains_nan(score, nan_policy, summary_check=False)
+    cna, npa = _contains_nan(a, nan_policy, use_summation=False)
+    cns, nps = _contains_nan(score, nan_policy, use_summation=False)
 
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
