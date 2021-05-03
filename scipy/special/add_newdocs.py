@@ -9660,10 +9660,33 @@ add_newdoc("ndtri_exp",
     r"""
     ndtri_exp(y)
 
-    Inverse of logarithim of CDF of Normal Distribution
+    Inverse of `log_ndtr` vs x. Allows for greater precision than
+    `ndtri` composed with `numpy.exp` for very small values of y and for
+    y close to 0.
 
     Parameters
     ----------
     y : array_like of float
-        a <= 0
+        y <= 0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+    >>> sc.ndtri(np.exp(-1))
+    -0.33747496376420244
+    >>> sc.ndtri_exp(-1)
+    -0.33747496376420244
+    >>> sc.ndtri(np.exp(-800))
+    -inf
+    >>> sc.ndtri_exp(-800)
+    -39.88469483825668
+    >>> sc.ndtri(np.exp(-1e-20))
+    inf
+    >>> sc.ndtri_exp(-1e-20)
+    9.262340089798409
+
+    See Also
+    --------
+    log_ndtr, ndtri, ndtr
     """)
