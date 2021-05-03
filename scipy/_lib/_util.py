@@ -483,7 +483,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         If provided, one above the largest (signed) integer to be drawn from
         the distribution (see above for behavior if high=None). If array-like,
         must contain integer values.
-    size : None
+    size : array-like of ints, optional
         Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
         samples are drawn. Default is None, in which case a single value is
         returned.
