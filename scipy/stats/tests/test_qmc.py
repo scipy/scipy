@@ -593,17 +593,27 @@ class TestSobol(QMCEngineTests):
 
 
 class TestMultinomialQMC:
-    def test_MultinomialNegativePs(self):
+    def test_validations(self):
+        # negative Ps
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
             qmc.MultinomialQMC(p)
 
-    def test_MultinomialSumOfPTooLarge(self):
+        # sum of P too large
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
-        with pytest.raises(ValueError, match=r"Elements of pvals must sum "
-                                             r"to 1."):
+        message = r"Elements of pvals must sum to 1."
+        with pytest.raises(ValueError, match=message):
             qmc.MultinomialQMC(p)
+
+        p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
+        message = r"Dimension of `engine` must be 1."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2))
+
+        message = r"`engine` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultinomialQMC(p, engine=np.random.RandomState)
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
@@ -778,11 +788,30 @@ class TestNormalQMC:
 
 
 class TestMultivariateNormalQMC:
-    def test_MultivariateNormalQMCNonPSD(self):
-        # try with non-psd, non-pd cov and expect an assertion error
-        with pytest.raises(ValueError, match=r"Covariance matrix not PSD."):
+
+    def test_validations(self):
+        message = r"Dimension of `engine` must be consistent"
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2))
+
+        message = r"`engine` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState)
+
+        message = r"Covariance matrix not PSD."
+        with pytest.raises(ValueError, match=message):
             seed = np.random.RandomState(123456)
             qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]], seed=seed)
+
+        message = r"Covariance matrix is not symmetric."
+        with pytest.raises(ValueError, match=message):
+            seed = np.random.RandomState(123456)
+            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
+
+        message = r"Dimension mismatch between mean and covariance."
+        with pytest.raises(ValueError, match=message):
+            seed = np.random.RandomState(123456)
+            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
 
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
@@ -791,21 +820,7 @@ class TestMultivariateNormalQMC:
             [0, 0, 0], [[1, 0, 1], [0, 1, 1], [1, 1, 2]],
             seed=seed
         )
-        assert_(engine._corr_matrix is not None)
-
-    def test_MultivariateNormalQMCSymmetric(self):
-        # try with non-symmetric cov and expect an error
-        with pytest.raises(ValueError, match=r"Covariance matrix is not "
-                                             r"symmetric."):
-            seed = np.random.RandomState(123456)
-            qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
-
-    def test_MultivariateNormalQMCDim(self):
-        # incompatible dimension of mean/cov
-        with pytest.raises(ValueError, match=r"Dimension mismatch between "
-                                             r"mean and covariance."):
-            seed = np.random.RandomState(123456)
-            qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
+        assert engine._corr_matrix is not None
 
     def test_MultivariateNormalQMC(self):
         # d = 1 scalar

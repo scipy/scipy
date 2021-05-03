@@ -1188,8 +1188,15 @@ class MultivariateNormalQMC(QMCEngine):
             engine_dim = d
         if engine is None:
             self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)
-        else:
+        elif isinstance(engine, QMCEngine) and engine.d != 1:
+            if engine.d != d:
+                raise ValueError("Dimension of `engine` must be consistent"
+                                 " with dimensions of mean and covariance.")
             self.engine = engine
+        else:
+            raise ValueError("`engine` must be an instance of "
+                             "`scipy.stats.qmc.QMCEngine` or `None`.")
+
         self._mean = mean
         self._corr_matrix = cov_root
 
@@ -1294,8 +1301,14 @@ class MultinomialQMC(QMCEngine):
         if not np.isclose(np.sum(pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         if engine is None:
-            engine = Sobol(d=1, scramble=True, seed=seed)
-        self.engine = engine
+            self.engine = Sobol(d=1, scramble=True, seed=seed)
+        elif isinstance(engine, QMCEngine):
+            if engine.d != 1:
+                raise ValueError("Dimension of `engine` must be 1.")
+            self.engine = engine
+        else:
+            raise ValueError("`engine` must be an instance of "
+                             "`scipy.stats.qmc.QMCEngine` or `None`.")
 
     def random(self, n=1):
         """Draw `n` QMC samples from the multinomial distribution.
