@@ -316,7 +316,7 @@ def _kmeans(obs, guess, thresh=1e-5):
 
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
-           seed=None):
+           *, seed=None):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
@@ -495,7 +495,7 @@ def _kpoints(data, k, rng):
     k : int
         Number of samples to generate.
     rng : `numpy.random.Generator` or `numpy.random.RandomState`
-        Random number generator
+        Random number generator.
 
     Returns
     -------
@@ -522,7 +522,7 @@ def _krandinit(data, k, rng):
     k : int
         Number of samples to generate.
     rng : `numpy.random.Generator` or `numpy.random.RandomState`
-        Random number generator
+        Random number generator.
 
     Returns
     -------
@@ -566,7 +566,7 @@ def _kpp(data, k, rng):
     k : int
         Number of samples to generate.
     rng : `numpy.random.Generator` or `numpy.random.RandomState`
-        Random number generator
+        Random number generator.
 
     Returns
     -------
@@ -616,7 +616,7 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-            missing='warn', check_finite=True, seed=None):
+            missing='warn', check_finite=True, *, seed=None):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
