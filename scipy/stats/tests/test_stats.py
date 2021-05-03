@@ -2970,6 +2970,18 @@ class TestPercentileOfScore:
         with assert_raises(ValueError, match=message):
             self.f(a, score, nan_policy=policy)
 
+    @pytest.mark.parametrize("shape", [
+        (6, ),
+        (2, 3),
+        (2, 1, 3),
+        (2, 1, 1, 3),
+    ])
+    def test_nd(self, shape):
+        a = np.array([0, 1, 2, 3, 4, 5])
+        scores = a.reshape(shape)
+        results = scores*10
+        assert_equal(self.f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], scores, kind="rank"), results)
+
 
 PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
                           ['f_obs', 'f_exp', 'ddof', 'axis',
