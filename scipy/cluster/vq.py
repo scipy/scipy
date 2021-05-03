@@ -315,7 +315,7 @@ def _kmeans(obs, guess, thresh=1e-5):
 
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
-           seed=None):
+           *, seed=None):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
