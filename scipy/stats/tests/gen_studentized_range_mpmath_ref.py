@@ -35,32 +35,33 @@ cdf_cases = [
     CdfCase(0.1, 3, 10, general_atol, general_rtol),
     CdfCase(1, 3, 10, general_atol, general_rtol),
     CdfCase(10, 3, 10, general_atol, general_rtol),
-    #
-    # CdfCase(0.1, 10, 10, general_atol, general_rtol),
-    # CdfCase(1, 10, 10, general_atol, general_rtol),
-    # CdfCase(10, 10, 10, general_atol, general_rtol),
-    #
-    # CdfCase(0.1, 3, 100, general_atol, general_rtol),
-    # CdfCase(1, 3, 100, general_atol, general_rtol),
-    # CdfCase(10, 3, 100, general_atol, general_rtol),
-    #
-    # CdfCase(0.1, 10, 100, general_atol, general_rtol),
-    # CdfCase(1, 10, 100, general_atol, general_rtol),
-    # CdfCase(10, 10, 100, general_atol, general_rtol),
-    #
-    # CdfCase(1, 3, 1000, general_atol, general_rtol),
-    # CdfCase(10, 3, 1000, 1e-10, general_rtol),
+
+    CdfCase(0.1, 10, 10, general_atol, general_rtol),
+    CdfCase(1, 10, 10, general_atol, general_rtol),
+    CdfCase(10, 10, 10, general_atol, general_rtol),
+
+    CdfCase(0.1, 3, 100, general_atol, general_rtol),
+    CdfCase(1, 3, 100, general_atol, general_rtol),
+    CdfCase(10, 3, 100, general_atol, general_rtol),
+
+    CdfCase(0.1, 10, 100, general_atol, general_rtol),
+    CdfCase(1, 10, 100, general_atol, general_rtol),
+    CdfCase(10, 10, 100, general_atol, general_rtol),
+
+    CdfCase(1, 3, 1000, general_atol, general_rtol),
+    CdfCase(10, 3, 1000, 1e-10, general_rtol),
 ]
 
 # PDF can use same cases as CDF
 pdf_cases = cdf_cases
 
+mom_atol, mom_rtol = 1e-9, 1e-9
 # These are EXTREMELY slow - Multiple days each in worst case.
 moment_cases = [
-    MomentCase(1, 3, 10, general_atol, general_rtol),
-    # MomentCase(2, 3, 10, general_atol, general_rtol),
-    # MomentCase(3, 3, 10, general_atol, general_rtol),
-    # MomentCase(4, 3, 10, general_atol, general_rtol)
+    MomentCase(1, 3, 10, mom_atol, mom_rtol),
+    MomentCase(2, 3, 10, mom_atol, mom_rtol),
+    MomentCase(3, 3, 10, mom_atol, mom_rtol),
+    MomentCase(4, 3, 10, mom_atol, mom_rtol)
 ]
 
 
