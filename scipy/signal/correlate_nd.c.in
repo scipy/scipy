@@ -105,32 +105,47 @@ clean_ax:
  * Implementation of the type-specific correlation 'kernels'
  */
 
-/**begin repeat
- * #fsuf = ubyte, byte, ushort, short, uint, int, ulong,
- *         long, ulonglong, longlong, float, double, longdouble#
- * #type = npy_ubyte, npy_byte, npy_ushort, short, npy_uint, int, npy_ulong,
- *         long, npy_ulonglong, npy_longlong, float, double, npy_longdouble#
- */
+{{py:
 
-static int _imp_correlate_nd_@fsuf@(PyArrayNeighborhoodIterObject *curx,
+INT_TYPES = ['npy_ubyte', 'npy_byte', 'npy_ushort', 'short', 'npy_uint', 'int',
+             'npy_ulong', 'long', 'npy_ulonglong', 'npy_longlong']
+INT_FSUFS = ['ubyte', 'byte', 'ushort', 'short', 'uint', 'int',
+             'ulong', 'long', 'ulonglong', 'longlong']
+
+
+REAL_TYPES = ['float', 'double', 'npy_longdouble']
+REAL_FSUFS = ['float', 'double', 'longdouble']
+
+ALL_TYPENUMS = ['UBYTE', 'BYTE', 'USHORT', 'SHORT', 'UINT', 'INT',
+                'ULONG', 'LONG', 'ULONGLONG', 'LONGLONG',
+                'FLOAT', 'DOUBLE', 'LONGDOUBLE',
+                'CFLOAT', 'CDOUBLE', 'CLONGDOUBLE']
+                
+CMPLX_FSUFS = ['cfloat', 'cdouble', 'clongdouble']
+
+}}
+
+
+{{for FSUF, TYPE in zip(INT_FSUFS + REAL_FSUFS, INT_TYPES + REAL_TYPES)}}
+static int _imp_correlate_nd_{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
     npy_intp i, j;
-    @type@ acc;
+    {{TYPE}} acc;
 
     for(i = 0; i < curx->size; ++i) {
         acc = 0;
         PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
-            acc += *((@type@*)(curneighx->dataptr)) * *((@type@*)(ity->dataptr));
+            acc += *(({{TYPE}}*)(curneighx->dataptr)) * *(({{TYPE}}*)(ity->dataptr));
 
             PyArrayNeighborhoodIter_Next(curneighx);
             PyArray_ITER_NEXT(ity);
         }
         PyArrayNeighborhoodIter_Next(curx);
 
-        *((@type@*)(itz->dataptr)) = acc;
+        *(({{TYPE}}*)(itz->dataptr)) = acc;
         PyArray_ITER_NEXT(itz);
 
         PyArray_ITER_RESET(ity);
@@ -139,28 +154,28 @@ static int _imp_correlate_nd_@fsuf@(PyArrayNeighborhoodIterObject *curx,
     return 0;
 }
 
-/**end repeat**/
+{{endfor}}
 
-/**begin repeat
- * #fsuf = float, double, longdouble#
- * #type = float, double, npy_longdouble#
+
+/*
+ * Complex-valued kernels
  */
-
-static int _imp_correlate_nd_c@fsuf@(PyArrayNeighborhoodIterObject *curx,
+{{for FSUF, TYPE in zip(REAL_FSUFS, REAL_TYPES)}}
+static int _imp_correlate_nd_c{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
     npy_intp i, j;
-    @type@ racc, iacc;
-    @type@ *ptr1, *ptr2;
+    {{TYPE}} racc, iacc;
+    {{TYPE}} *ptr1, *ptr2;
 
     for(i = 0; i < curx->size; ++i) {
         racc = 0;
         iacc = 0;
         PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
-            ptr1 = ((@type@*)(curneighx->dataptr));
-            ptr2 = ((@type@*)(ity->dataptr));
+            ptr1 = (({{TYPE}}*)(curneighx->dataptr));
+            ptr2 = (({{TYPE}}*)(ity->dataptr));
             racc += ptr1[0] * ptr2[0] + ptr1[1] * ptr2[1];
             iacc += ptr1[1] * ptr2[0] - ptr1[0] * ptr2[1];
 
@@ -169,8 +184,8 @@ static int _imp_correlate_nd_c@fsuf@(PyArrayNeighborhoodIterObject *curx,
         }
         PyArrayNeighborhoodIter_Next(curx);
 
-        ((@type@*)(itz->dataptr))[0] = racc;
-        ((@type@*)(itz->dataptr))[1] = iacc;
+        (({{TYPE}}*)(itz->dataptr))[0] = racc;
+        (({{TYPE}}*)(itz->dataptr))[1] = iacc;
         PyArray_ITER_NEXT(itz);
 
         PyArray_ITER_RESET(ity);
@@ -178,8 +193,8 @@ static int _imp_correlate_nd_c@fsuf@(PyArrayNeighborhoodIterObject *curx,
 
     return 0;
 }
+{{endfor}}
 
-/**end repeat**/
 
 static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
@@ -293,16 +308,12 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
     }
 
     switch(typenum) {
-/**begin repeat
- * #TYPE = UBYTE, BYTE, USHORT, SHORT, UINT, INT, ULONG, LONG, ULONGLONG,
- *         LONGLONG, FLOAT, DOUBLE, LONGDOUBLE, CFLOAT, CDOUBLE, CLONGDOUBLE#
- * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
- *         longlong, float, double, longdouble, cfloat, cdouble, clongdouble#
- */
-        case NPY_@TYPE@:
-            _imp_correlate_nd_@type@(curx, curneighx, ity, itz);
+
+        {{for TYPENUM, FSUF in zip(ALL_TYPENUMS, INT_FSUFS+REAL_FSUFS+CMPLX_FSUFS)}}
+        case NPY_{{TYPENUM}}:
+            _imp_correlate_nd_{{FSUF}}(curx, curneighx, ity, itz);
             break;
-/**end repeat**/
+        {{endfor}}
 
         /* The object array case does not worth being optimized, since most of
            the cost is numerical operations, not iterators moving in this case ? */

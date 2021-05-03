@@ -38,11 +38,12 @@ def configuration(parent_package='', top_path=None):
     # convert the *.c.in files : `lfilter.c.in -> lfilter.c` etc
     srcdir = os.path.join(os.getcwd(), 'scipy', 'signal')
     process_tempita(os.path.join(srcdir, 'lfilter.c.in') )
+    process_tempita(os.path.join(srcdir, 'correlate_nd.c.in') )
 
     sigtools = config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
                                   'medianfilter.c', 'lfilter.c',
-                                  'correlate_nd.c.src'],
+                                  'correlate_nd.c'],
                          depends=['sigtools.h'],
                          include_dirs=['.'],
                          **numpy_nodepr_api)
