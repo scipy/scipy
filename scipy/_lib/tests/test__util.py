@@ -12,7 +12,7 @@ from pytest import raises as assert_raises, deprecated_call
 import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
-                              rng_integers, _validate_int)
+                              rng_integers, _validate_int, rng_random)
 
 
 def test__aligned_zeros():
@@ -186,6 +186,31 @@ def test_numpy_deprecation_functionality():
 
         assert scipy.float64 == np.float64
         assert issubclass(np.float64, scipy.float64)
+
+
+def test_rng_random():
+    gen_list = [None, np.random.RandomState(1234)]
+
+    # check that np.random.Generator can be used (numpy >= 1.17)
+    if hasattr(np.random, 'default_rng'):
+        gen_list.append(np.random.default_rng(1234))
+
+    for gen in gen_list:
+        for size in [None, 3, (1, 2)]:
+            for dtype in [np.float64, np.float32]:
+                if size is None:
+                    out_list = [None]
+                else:
+                    out_list = [None, np.empty(size, dtype=dtype)]
+
+                for out in out_list:
+                    r = rng_random(gen, size=size, dtype=dtype, out=out)
+                    if size is None:
+                        assert isinstance(r, float)
+                    elif isinstance(size, int):
+                        assert r.shape[0] == size
+                    else:
+                        assert r.shape == size
 
 
 def test_rng_integers():
