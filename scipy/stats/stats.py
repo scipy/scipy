@@ -6545,12 +6545,18 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
+    scipy.stats.fisher_exact : A more powerful alternative to the chisquare
+                               test if any of the frequencies are less than 5.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5.
+    and expected frequencies should be at least 5. If one or more frequencies
+    are less than 5, Fisher's Exact Test can be used with greater statistical
+    power. According to [3]_, the total number of samples is recommended to be
+    greater than 13, otherwise a table-based method of obtaining p-values is 
+    recommended.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
@@ -6570,6 +6576,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
+           in the case of a correlated system of variables is such that it can be reasonably 
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           (1900), pp. 157-175.
 
     Examples
     --------
