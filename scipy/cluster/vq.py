@@ -625,7 +625,7 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-            missing='warn', check_finite=True, seed=None):
+            missing='warn', check_finite=True, *, seed=None):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
