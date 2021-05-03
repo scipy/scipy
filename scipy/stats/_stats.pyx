@@ -519,6 +519,12 @@ cdef double _phi(double z) nogil:
     return inv_sqrt_2pi * math.exp(-0.5 * z * z)
 
 
+cdef double _logphi(double z) nogil:
+    """evaluates the log of the normal PDF. Used in `studentized range`"""
+    cdef double log_inv_sqrt_2pi = -0.9189385332046727
+    return log_inv_sqrt_2pi - 0.5 * z * z
+
+
 cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized range`"""
     # use a custom evaluation because using cs.ndtr results in incorrect PDF
@@ -527,11 +533,18 @@ cdef double _Phi(double z) nogil:
     return 0.5 * math.erfc(-z * m_sqrt1_2)
 
 
-cpdef double genstudentized_range_logconst(double k, double df):
+cpdef double _genstudentized_range_cdf_logconst(double k, double df):
+    """Evaluates non-integrated terms in the cdf integrand as a log"""
     cdef double log_2 = 0.6931471805599453
-
     return (math.log(k) + (df / 2) * math.log(df)
      - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
+
+
+cpdef double _genstudentized_range_pdf_logconst(double k, double df):
+    """Evaluates non-integrated terms in the pdf integrand as a log"""
+    cdef double log_2 = 0.6931471805599453
+    return (math.log(k) + math.log(k - 1) + (df / 2) * math.log(df)
+                 - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
 
 
 cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil:
@@ -545,13 +558,11 @@ cdef double _genstudentized_range_cdf(int n, double[2] x, void *user_data) nogil
     s = x[1]
     z = x[0]
 
-    # harcoded constants to avoid useless log evals
-    cdef double log_2 = 0.6931471805599453
-    cdef double log_inv_sqrt_2pi = -0.9189385332046727
-
     # suitable terms are evaluated within logarithms to avoid under/overflows
-    log_terms = (log_const + (df - 1) * math.log(s) - (df * s * s / 2)
-                 + log_inv_sqrt_2pi - 0.5 * z * z)  # Normal PDF
+    log_terms = (log_const
+                 + (df - 1) * math.log(s)
+                 - (df * s * s / 2)
+                 + _logphi(z))
 
     # multiply remaining term outside of log because it can be 0
     return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
@@ -572,29 +583,21 @@ cdef double _genstudentized_range_pdf(int n, double[2] x, void *user_data) nogil
     q = (<double *> user_data)[0]
     k = (<double *> user_data)[1]
     df = (<double *> user_data)[2]
+    log_pdf_const = (<double *> user_data)[3]
 
     z = x[0]
     s = x[1]
 
-    # harcoded constants to avoid useless log evals
-    cdef double log_2 = 0.6931471805599453
-    cdef double log_inv_sqrt_2pi = -0.9189385332046727
-
     # suitable terms are evaluated within logarithms to avoid under/overflows
-    const_log = ((df / 2) * math.log(df)
-                 - math.lgamma(df / 2)
-                 - (df / 2 - 1) * log_2
+    log_terms = (log_pdf_const
                  + (df - 1) * math.log(s)
-                 - df * s * s / 2)
-
-    r_log = (math.log(k)
-             + math.log(k - 1)
-             + math.log(s)
-             + log_inv_sqrt_2pi - 0.5 * z * z  # Normal PDF
-             + log_inv_sqrt_2pi - 0.5 * (s * q + z) * (s * q + z))  # Normal PDF
+                 - df * s * s / 2
+                 + math.log(s)
+                 + _logphi(z)
+                 + _logphi(s * q + z))
 
     # multiply remaining term outside of log because it can be 0
-    return math.exp(r_log + const_log) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+    return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
 
 
 cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data) nogil:
@@ -602,18 +605,19 @@ cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data
     K = (<double *> user_data)[0]  # the Kth moment to calc.
     k = (<double *> user_data)[1]
     df = (<double *> user_data)[2]
+    log_pdf_const = (<double *> user_data)[4]
 
-    z = x_arg[0]
-    s = x_arg[1]
+    # Pull outermost intergration variable out to pass as q to PDF
     x = x_arg[2]
 
     # https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
-    cdef double pdf_data[3]
+    cdef double pdf_data[4]
     pdf_data[0] = x  # Q is integrated over by the third integral
     pdf_data[1] = k
     pdf_data[2] = df
+    pdf_data[3] = log_pdf_const
 
-    return math.pow(x, K) * _genstudentized_range_pdf(2, x_arg, pdf_data)
+    return math.pow(x, K) * _genstudentized_range_pdf(4, x_arg, pdf_data)
 
   
 cpdef double genhyperbolic_pdf(double x, double p, double a, double b) nogil:

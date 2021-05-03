@@ -9428,7 +9428,8 @@ class studentized_range_gen(rv_continuous):
         K, k, df = np.atleast_1d(K, k, df)
 
         def _single_moment(K, k, df):
-            arg = [K, k, df]
+            log_const = _stats._genstudentized_range_pdf_logconst(k, df)
+            arg = [K, k, df, log_const]
             usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
             llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
@@ -9447,7 +9448,8 @@ class studentized_range_gen(rv_continuous):
         x = np.atleast_1d(x)
 
         def _single_pdf(q, k, df):
-            arg = [q, k, df]
+            log_const = _stats._genstudentized_range_pdf_logconst(k, df)
+            arg = [q, k, df, log_const]
             usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
             llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
@@ -9471,7 +9473,8 @@ class studentized_range_gen(rv_continuous):
             # (Lund, Lund, page 205)
             if df < 100000:
                 cython_symbol = '_genstudentized_range_cdf'
-                log_const = _stats.genstudentized_range_logconst(k, df)
+                log_const = _stats._genstudentized_range_cdf_logconst(k, df)
+
                 arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
