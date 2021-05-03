@@ -521,6 +521,8 @@ cdef double _phi(double z) nogil:
 
 cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized range`"""
+    # use a custom evaluation because using cs.ndtr results in incorrect PDF
+    # evaluation at q=0 on 32bit systems
     cdef double m_sqrt1_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * m_sqrt1_2)
 
