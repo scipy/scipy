@@ -1961,7 +1961,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([-np.inf, 0, 1, np.inf], [1, 100])
     array([75., 75.])
 
-    If `a` is empty, or containing only nan's (which are omitted),
+    If `a` is empty, or containing only nan values (which are omitted),
     the resulting percentiles are all nan:
 
     >>> stats.percentileofscore([], 1)
@@ -1971,8 +1971,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     >>> stats.percentileofscore([np.nan, np.nan], [1, 2], nan_policy='omit')
     array([nan, nan])
 
-    The 'omit' policy does not make sense if there are nan's among the scores,
-    and so an error in that case.
+    The 'omit' policy does not make sense if there are nan values
+    among the scores, and so an error in that case.
     """
 
     a = np.asarray(a)
@@ -2038,7 +2038,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
                 raise ValueError(
                     "kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
-    # Re-insert nan's
+    # Re-insert nan values
     perct = ma.filled(perct, np.nan)
 
     if perct.ndim == 0:
