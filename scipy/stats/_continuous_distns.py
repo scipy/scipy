@@ -9471,8 +9471,8 @@ class studentized_range_gen(rv_continuous):
             # (Lund, Lund, page 205)
             if df < 100000:
                 cython_symbol = '_genstudentized_range_cdf'
-
-                arg = [q, k, df]
+                log_const = _stats.genstudentized_range_logconst(k, df)
+                arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
                 llc = LowLevelCallable.from_cython(
