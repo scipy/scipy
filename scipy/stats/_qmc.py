@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 
 import scipy.stats as stats
+from scipy._lib._util import rng_integers
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
@@ -994,19 +995,16 @@ class Sobol(QMCEngine):
 
     def _scramble(self):
         """Scramble the sequence."""
-        try:
-            rg_integers = self.rng.integers
-        except AttributeError:
-            rg_integers = self.rng.randint
         # Generate shift vector
         self._shift = np.dot(
-            rg_integers(2, size=(self.d, self.MAXBIT), dtype=int),
+            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT), dtype=int),
             2 ** np.arange(self.MAXBIT, dtype=int),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT),
-                                  dtype=int))
+        ltm = np.tril(rng_integers(self.rng, 2,
+                                   size=(self.d, self.MAXBIT, self.MAXBIT),
+                                   dtype=int))
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
