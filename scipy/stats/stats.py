@@ -2022,7 +2022,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
             sup.filter(RuntimeWarning,
                        "invalid value encountered in greater")
 
-            # Compute
+            # Main computations/logic
             if kind == 'rank':
                 left  = count(a < score)
                 right = count(a <= score)
