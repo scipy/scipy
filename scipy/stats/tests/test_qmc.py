@@ -611,9 +611,10 @@ class TestMultinomialQMC:
             qmc.MultinomialQMC(p)
 
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
+        seed = np.random.RandomState(12345)
         message = r"Dimension of `engine` must be 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2))
+            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2, seed=seed))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
@@ -803,27 +804,28 @@ class TestNormalQMC:
 class TestMultivariateNormalQMC:
 
     def test_validations(self):
+        seed = np.random.RandomState()
+
         message = r"Dimension of `engine` must be consistent"
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2))
+            qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2, seed=seed),
+                                      seed=seed)
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState)
+            qmc.MultivariateNormalQMC([0, 0], engine=np.random.RandomState,
+                                      seed=seed)
 
         message = r"Covariance matrix not PSD."
         with pytest.raises(ValueError, match=message):
-            seed = np.random.RandomState(123456)
             qmc.MultivariateNormalQMC([0, 0], [[1, 2], [2, 1]], seed=seed)
 
         message = r"Covariance matrix is not symmetric."
         with pytest.raises(ValueError, match=message):
-            seed = np.random.RandomState(123456)
             qmc.MultivariateNormalQMC([0, 0], [[1, 0], [2, 1]], seed=seed)
 
         message = r"Dimension mismatch between mean and covariance."
         with pytest.raises(ValueError, match=message):
-            seed = np.random.RandomState(123456)
             qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]], seed=seed)
 
     def test_MultivariateNormalQMCNonPD(self):
