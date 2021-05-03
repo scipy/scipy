@@ -9,24 +9,23 @@
 
 #include "sigtools.h"
 
-static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
+{{py:
+
+TNAMES = ['FLOAT', 'DOUBLE', 'EXTENDED']
+TYPES = ['float', 'double', 'npy_longdouble']
+
+}}
+
+
+{{for TNAME in TNAMES}}
+static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y);
-static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
+static void C{{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y);
-static void EXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                        npy_intp stride_Y);
-static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                        npy_intp stride_Y);
-static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                         npy_intp stride_Y);
-static void CEXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                         npy_intp stride_Y);
+{{endfor}}
+
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y);
@@ -543,21 +542,19 @@ fail:
  *   dimension of an N-D array.                                  *
  *****************************************************************/
 
-/**begin repeat
- * #type = float, double, npy_longdouble#
- * #NAME = FLOAT, DOUBLE, EXTENDED#
- */
-static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
+
+{{for TNAME, TYPE in zip(TNAMES, TYPES)}}
+static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y)
 {
     Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z;
-    @type@ *ptr_b = (@type@*)b;
-    @type@ *ptr_a = (@type@*)a;
-    @type@ *xn, *yn;
-    const @type@ a0 = *((@type@ *) a);
+    {{TYPE}} *ptr_Z;
+    {{TYPE}} *ptr_b = ({{TYPE}}*)b;
+    {{TYPE}} *ptr_a = ({{TYPE}}*)a;
+    {{TYPE}} *xn, *yn;
+    const {{TYPE}} a0 = *(({{TYPE}} *) a);
     npy_intp n;
     npy_uintp k;
 
@@ -568,12 +565,12 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 
     for (k = 0; k < len_x; k++) {
-        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
-        ptr_a = (@type@ *) a;
-        xn = (@type@ *) ptr_x;
-        yn = (@type@ *) ptr_y;
+        ptr_b = ({{TYPE}} *) b;   /* Reset a and b pointers */
+        ptr_a = ({{TYPE}} *) a;
+        xn = ({{TYPE}} *) ptr_x;
+        yn = ({{TYPE}} *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = ((@type@ *) Z);
+            ptr_Z = (({{TYPE}} *) Z);
             *yn = *ptr_Z + *ptr_b  * *xn;   /* Calculate first delay (output) */
             ptr_b++;
             ptr_a++;
@@ -597,29 +594,30 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     Py_END_ALLOW_THREADS
 }
 
-static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
+
+static void C{{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y)
 {
     Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z, *ptr_b;
-    @type@ *ptr_a;
-    @type@ *xn, *yn;
-    @type@ a0r = ((@type@ *) a)[0];
-    @type@ a0i = ((@type@ *) a)[1];
-    @type@ a0_mag, tmpr, tmpi;
+    {{TYPE}} *ptr_Z, *ptr_b;
+    {{TYPE}} *ptr_a;
+    {{TYPE}} *xn, *yn;
+    {{TYPE}} a0r = (({{TYPE}} *) a)[0];
+    {{TYPE}} a0i = (({{TYPE}} *) a)[1];
+    {{TYPE}} a0_mag, tmpr, tmpi;
     npy_intp n;
     npy_uintp k;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
-        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
-        ptr_a = (@type@ *) a;
-        xn = (@type@ *) ptr_x;
-        yn = (@type@ *) ptr_y;
+        ptr_b = ({{TYPE}} *) b;   /* Reset a and b pointers */
+        ptr_a = ({{TYPE}} *) a;
+        xn = ({{TYPE}} *) ptr_x;
+        yn = ({{TYPE}} *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = ((@type@ *) Z);
+            ptr_Z = (({{TYPE}} *) Z);
             tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
             tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
             /* Calculate first delay (output) */
@@ -666,7 +664,7 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     }
     Py_END_ALLOW_THREADS
 }
-/**end repeat**/
+{{endfor}}
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,

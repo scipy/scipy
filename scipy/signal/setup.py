@@ -1,5 +1,28 @@
 from scipy._build_utils import numpy_nodepr_api
 import os
+import sys
+
+def process_tempita(fromfile):
+    try:
+        try:
+            from Cython import Tempita as tempita
+        except ImportError:
+            import tempita
+    except ImportError:
+        raise Exception("Building requires tempita")
+
+    if not fromfile.endswith('c.in'):
+        raise ValueError("Unexpected extension: %s" % fromfile)
+
+    from_filename = tempita.Template.from_filename
+    template = from_filename(fromfile,
+                             encoding=sys.getdefaultencoding())    
+
+    content = template.substitute()
+
+    outfile = os.path.splitext(fromfile)[0]
+    with open(outfile, 'w') as f:
+        f.write(content)
 
 
 def configuration(parent_package='', top_path=None):
@@ -12,9 +35,13 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('windows')
 
+    # convert the *.c.in files : `lfilter.c.in -> lfilter.c` etc
+    srcdir = os.path.join(os.getcwd(), 'scipy', 'signal')
+    process_tempita(os.path.join(srcdir, 'lfilter.c.in') )
+
     sigtools = config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
-                                  'medianfilter.c', 'lfilter.c.src',
+                                  'medianfilter.c', 'lfilter.c',
                                   'correlate_nd.c.src'],
                          depends=['sigtools.h'],
                          include_dirs=['.'],
