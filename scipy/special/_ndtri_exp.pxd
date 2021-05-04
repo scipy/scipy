@@ -108,7 +108,6 @@ cdef extern from "cephes/polevl.h":
 
 from ._cephes cimport ndtri
 
-
 @cython.cdivision(True)
 cdef inline double _ndtri_exp_small_y(double y) nogil:
     """Return inverse of log CDF of normal distribution for very small y
@@ -173,7 +172,7 @@ cdef inline double ndtri_exp(double y) nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
     if y < - 2.0:
         return _ndtri_exp_small_y(y)
-    elif y > log1p(-exp(-2)):
+    elif y > -0.14541345786885906: # log1p(-exp(-2))
         return -ndtri(-expm1(y))
     else:
         return ndtri(exp(y))
