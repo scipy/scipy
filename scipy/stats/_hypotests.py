@@ -1126,7 +1126,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
         fisher_stat = pvalues[table[0, 0], table[0, 1]]
         index_arr = pvalues <= fisher_stat
     elif alternative == 'two-sided':
-        pvalues = 2 * np.minimum(
+        pvalues = np.minimum(
             hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T,
             hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T,
         )
