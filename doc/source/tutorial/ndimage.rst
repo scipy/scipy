@@ -1996,12 +1996,12 @@ References
 
 .. [3] C. R. Maurer, Jr., R. Qi, and V. Raghavan, "A linear time
        algorithm for computing exact euclidean distance transforms of
-       binary images in arbitrary dimensions. IEEE Trans. PAMI 25,
+       binary images in arbitrary dimensions." IEEE Trans. PAMI 25,
        265-270, 2003.
 
-.. [4] The image foresting transform: theory, algorithms, and applications,
-       Falcao, A. X., Stolfi, J., and Lotufo, R. de Alencar. Pattern
-       Analysis and Machine Intelligence (PAMI), 2004. 
+.. [4] A. X. Falcão, J. Stolfi, and R. A. Lotufo. "The image foresting
+       transform: Theory, algorithms, and applications." IEEE Trans.
+       PAMI 26, 19-29. 2004.
 
 .. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
        Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
