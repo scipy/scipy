@@ -76,14 +76,19 @@
 # It can be checked that all higher derivatives follow a similar pattern,
 # their absolute value takes on a maximum (for this interval) at x ~ 0.135,
 # decrease to a minimum at x = 0 and increases to the same maximum at x ~ 0.865.
-# (The even order derivatives are odd functions and odd order derivatives are
-# even functions.) Thus the worst possible loss of precision in ndtri(exp(x))
-# in the interval [-2, log(1 - exp(-2))] due to error in calculating exp(x)
-# must occur near the endpoints. We may observe empirically that error at the
-# endpoints due to exp is not substantial. Assuming that exp is accurate within
-# +-ULP (unit of least precision), we've observed a different of at most
-# 6.0474e-16 in abs(ndtri(x + epsilon) - ndtri(x)) for x near exp(-2) or
-# 1 - exp(-2) and epsilon equal to the unit of least precision of x.
+# Derivatives of all orders are positive at x=log(1 - exp(-2)). Thus the worst
+# possible loss of precision in ndtri(exp(x)) in the interval
+# [0, log(1 - exp(-2))] due to error in calculating exp(x) must occur near
+# x=log(1 - exp(-2)). By symmetry, the worst possible loss of precision in
+# [-2, log(1 - exp(-2)] must occur near the endpoints. We may observe
+# empirically that error at the endpoints due to exp is not substantial.
+# Assuming that exp is accurate within +-ULP (unit of least precision),
+# we've observed a value of at most ~6.0474e-16 for
+#
+# abs(ndtri(x + epsilon) - ndtri(x))
+#
+# for x near exp(-2) or 1 - exp(-2) and epsilon equal to the unit of least
+# precision of x.
 
 # (IEEE-754 provides no guarantee on the accuracy of exp, but for most
 # compilers on most architectures an assumption of +-ULP should be
