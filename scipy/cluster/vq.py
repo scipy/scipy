@@ -67,7 +67,8 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._util import _asarray_validated, check_random_state
+from scipy._lib._util import _asarray_validated, check_random_state,\
+    rng_integers
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -582,25 +583,15 @@ def _kpp(data, k, rng):
     dims = data.shape[1] if len(data.shape) > 1 else 1
     init = np.ndarray((k, dims))
 
-    # get random generator API
-    try:
-        rng_integers = rng.integers
-    except AttributeError:
-        rng_integers = rng.randint  # legacy API
-    try:
-        rng_random = rng.random
-    except AttributeError:
-        rng_random = rng.rand  # legacy API
-
     for i in range(k):
         if i == 0:
-            init[i, :] = data[rng_integers(data.shape[0])]
+            init[i, :] = data[rng_integers(rng, data.shape[0])]
 
         else:
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
-            r = rng_random()
+            r = rng.uniform()
             init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
