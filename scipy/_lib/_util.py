@@ -458,51 +458,6 @@ class MapWrapper:
                             " form f(func, iterable)") from e
 
 
-def rng_random(gen, *, size=None, dtype=np.float64, out=None):
-    """
-    Return random floats in the half-open interval [0.0, 1.0) using the
-    provided random number generator.
-
-    Parameters
-    ----------
-    gen : {None, np.random.RandomState, np.random.Generator}
-        Random number generator. If None, then the np.random.RandomState
-        singleton is used.
-    size : None or int or tuple of ints, optional
-        Output shape.  If the given shape is, e.g., ``(m, n, k)``, then
-        ``m * n * k`` samples are drawn.  Default is None, in which case a
-        single value is returned.
-    dtype : dtype, optional
-        Desired dtype of the result, only `float64` and `float32` are supported.
-        Byteorder must be native. The default value is np.float64. If `gen` is
-        a `np.random.RandomState`, this argument will be ignored.
-    out : ndarray, optional
-        Alternative output array in which to place the result. If size is not None,
-        it must have the same shape as the provided size and must match the type of
-        the output values. If `gen` is a `np.random.RandomState`, this argument
-        will be ignored.
-
-    Returns
-    -------
-    out : float or ndarray of floats
-        Array of random floats of shape `size` (unless ``size=None``, in which
-        case a single float is returned).
-    """
-    if isinstance(gen, Generator):
-        return gen.random(size=size, dtype=dtype, out=out)
-    else:  # legacy API
-        if gen is None:
-            # default is RandomState singleton used by np.random.
-            gen = np.random.mtrand._rand
-
-        if size is None:
-            return gen.rand()
-        elif isinstance(size, int):
-            return gen.rand(size)
-        else:
-            return gen.rand(*size)
-
-
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
                  endpoint=False):
     """
