@@ -1009,17 +1009,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    In order to compute Boschloo's exact test, we are using the Fisher's pvalue.
-
-    where the sum is over all  2x2 contingency tables :math:`X` such that:
-    * :math:`T(X) \leq T(X_0)` when `alternative` = "less",
-    * :math:`T(X) \geq T(X_0)` when `alternative` = "greater", or
-    * :math:`T(X) \geq |T(X_0)|` when `alternative` = "two-sided".
-    Above, :math:`c_1, c_2` are the sum of the columns 1 and 2,
-    and :math:`t` the total (sum of the 4 sample's element).
-
-    The returned p-value is the maximum p-value taken over the nuisance
-    parameter :math:`\pi`, where :math:`0 \leq \pi \leq 1`.
+    In order to compute Boschloo's exact test, we are using the Fisher's pvalue as a
+    statistic.
 
     This function's complexity is :math:`O(n c_1 c_2)`, where `n` is the
     number of sample points.
@@ -1034,60 +1025,50 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     .. [2] "Boschloo's test", Wikipedia,
            https://en.wikipedia.org/wiki/Boschloo%27s_test
 
+    .. [3] Work-related attitudes of u.s. Scientists.
+           :doi:`https://doi.org/10.1002/hrm.20032`
+
     Examples
     --------
-    We reconsider the example developped in `banard_exact` test :
+    In the following example, we consider the article “Work-Related Attitudes” [3]_
+    which reports the results of a survey from 63 Scientists and 117 College
+    Professors. Of the 63 Scientists, 31 said they were very satisfied with
+    their jobs, whereas 74 of the College Professors were very satisfied with their
+    work. Are there strong evidence suggesting that College Professors are more happy
+    with their works than Scientists?
+    The following table summurize the data mentionned above :
 
-        Consider the following example of a vaccine efficacy study
-        (Chan, 1998). In a randomized clinical trial of 30 subjects, 15 were
-        inoculated with a recombinant DNA influenza vaccine and the 15 were
-        inoculated with a placebo. Twelve of the 15 subjects in the placebo
-        group (80%) eventually became infected with influenza whereas for the
-        vaccine group, only 7 of the 15 subjects (47%) became infected. The
-        data are tabulated as a 2 x 2 table::
-
-                Vaccine  Placebo
-            Yes     7        12
-            No      8        3
+                           College Professors   Scientists
+          Very Satisfied   74                     31
+          Dissatisfied     43                     32
 
     When working with statistical hypothesis testing, we usually use a
     threshold probability or significance level upon which we decide
     to reject the null hypothesis :math:`H_0`. Suppose we choose the common
     significance level of 5%.
 
-    Our alternative hypothesis is that the vaccine will lower the chance of
-    becoming infected with the virus; that is, the probability :math:`p_1` of
-    catching the virus with the vaccine will be *less than* the probability
-    :math:`p_2` of catching the virus without the vaccine.  Therefore, we call
-    `boschloo_exact` with the ``alternative="less"`` option:
+    Our alternative hypothesis is that College Professors are trully more satisfied
+    in their works than Scientists. Therefore, we expect :math:`p_1` the proportion
+    of very satisfied College Professors to be greater than :math:`p_2`,
+    the proportion of very satisfied Scientists.
+    We thus call `boschloo_exact` with the ``alternative="greater"`` option:
 
     >>> import scipy.stats as stats
-    >>> res = stats.boschloo_exact([[7, 12], [8, 3]], alternative="less")
+    >>> res = stats.boschloo_exact([[74, 31], [43, 32]], alternative="greater")
     >>> res.statistic
-    0.064...
+    0.0483...
     >>> res.pvalue
-    0.0341...
+    0.0355...
 
-    Under the null hypothesis that the vaccine will not lower the chance of
-    becoming infected, the probability of obtaining test results at least as
-    extreme as the observed data is approximately 3.4%. Since this p-value is
-    less than our chosen significance level, we have evidence to reject
-    :math:`H_0` in favor of the alternative.
+    Under the null hypothesis that Scientists and College Professors are equally
+    satisfied of their works, the probability of obtaining test results at least as
+    extreme as the observed data is approximately 3.55%. Since this p-value is less
+    than our chosen significance level, we have evidence to reject :math:`H_0` in
+    favor of the alternative.
 
-    Suppose we had used Fisher's exact test instead:
-
-    >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
-    >>> pvalue
-    0.0640...
-
-    With the same threshold significance of 5%, we would not have been able
-    to reject the null hypothesis in favor of the alternative. As stated in
-    [2]_, Barnard's test is uniformly more powerful than Fisher's exact test
-    because Barnard's test does not condition on any margin. Fisher's test
-    should only be used when both sets of marginals are fixed.
-
+    Notice that the Fisher statistic given by `res.pvalue` is equal to 0.0483,
+    which is a little bit above our own statistic.
     """
-    fisher_exact = scipy.stats.fisher_exact
     hypergeom = distributions.hypergeom
 
     if n <= 0:
@@ -1116,7 +1097,6 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     x1_sum_x2 = x1 + x2
 
     if alternative == 'less':
-        # cdf(k, M, n, N, loc=0)
         pvalues = hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T
         fisher_stat = pvalues[table[0, 0], table[0, 1]]
         index_arr = pvalues <= fisher_stat
@@ -1188,7 +1168,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Notes
     -----
 
-    Barnard exact test iterate over a nuisance parameter
+    Barnard and Boschloo exact test iterate over a nuisance parameter
     :math:`\pi \in [0, 1]` to find the maximum p-value. To search this
     maxima, this function return the negative log pvalue with respect to the
     nuisance parameter passed in params. This negative log p-value is then
