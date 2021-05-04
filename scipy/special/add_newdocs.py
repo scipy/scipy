@@ -3011,7 +3011,6 @@ add_newdoc("eval_legendre",
 
     Evaluate the first-order Legendre polynomial between -1 and 1
 
-    >>> import numpy as np
     >>> X = np.linspace(-1, 1, 5)  # Domain of Legendre polynomials
     >>> eval_legendre(1, X)
     array([-1. , -0.5,  0. ,  0.5,  1. ])
@@ -9671,7 +9670,6 @@ add_newdoc("ndtri_exp",
 
     Examples
     --------
-    >>> import numpy as np
     >>> import scipy.special as sc
     >>> sc.ndtri(np.exp(-1))
     -0.33747496376420244
