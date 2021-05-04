@@ -360,9 +360,9 @@ class KDTree(cKDTree):
             distance to the real kth nearest neighbor.
         p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use.
-            1 is the sum-of-absolute-values "Manhattan" distance
-            2 is the usual Euclidean distance
-            infinity is the maximum-coordinate-difference distance
+            1 is the sum-of-absolute-values distance ("Manhattan" distance).
+            2 is the usual Euclidean distance.
+            infinity is the maximum-coordinate-difference distance.
             A large, finite p may cause a ValueError if overflow can occur.
         distance_upper_bound : nonnegative float, optional
             Return only neighbors within this distance. This is used to prune

@@ -1233,46 +1233,67 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
+def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
+          cond=None, rcond=None):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
-    Calculate a generalized inverse of a matrix using a least-squares
-    solver.
+    Calculate a generalized inverse of a matrix using its
+    singular-value decomposition ``U @ S @ V`` in the economy mode and picking
+    up only the columns/rows that are associated with significant singular
+    values.
+
+    If ``s`` is the maximum singular value of ``a``, then the
+    significance cut-off value is determined by ``atol + rtol * s``. Any
+    singular value below this value is assumed insignificant.
 
     Parameters
     ----------
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
-    cond, rcond : float, optional
-        Cutoff factor for 'small' singular values. In `lstsq`,
-        singular values less than ``cond*largest_singular_value`` will be
-        considered as zero. If both are omitted, the default value
-        ``max(M, N) * eps`` is passed to `lstsq` where ``eps`` is the
-        corresponding machine precision value of the datatype of ``a``.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
 
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just `eps` without the
-            factor ``max(M, N)``.
+        .. versionadded:: 1.7.0
+
+    rtol: float, optional
+        Relative threshold term, default value is ``max(M, N) * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``a``.
+
+        .. versionadded:: 1.7.0
 
     return_rank : bool, optional
-        if True, return the effective rank of the matrix
+        If True, return the effective rank of the matrix.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    cond, rcond : float, optional
+        In older versions, these values were meant to be used as ``atol`` with
+        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
+        the code was not correct. Thus using these are strongly discouraged and
+        the tolerances above are recommended instead. In fact, if provided,
+        atol, rtol takes precedence over these keywords.
+
+        .. versionchanged:: 1.7.0
+            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
+            will be removed in future versions of SciPy.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
     B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
-        The effective rank of the matrix. Returned if return_rank == True
+        The effective rank of the matrix. Returned if `return_rank` is True.
 
     Raises
     ------
     LinAlgError
-        If computation does not converge.
+        If SVD computation does not converge.
 
     Examples
     --------
@@ -1280,35 +1301,52 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
     >>> B = linalg.pinv(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
+    >>> np.allclose(a, a @ B @ a)
     True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
+    >>> np.allclose(B, B @ a @ B)
     True
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    # If a is sufficiently tall it is cheaper to compute using the transpose
-    trans = a.shape[0] / a.shape[1] >= 1.1
-    b = np.eye(a.shape[1] if trans else a.shape[0], dtype=a.dtype)
+    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
+    t = u.dtype.char.lower()
+    maxS = np.max(s)
 
-    if rcond is not None:
-        cond = rcond
+    if rcond or cond:
+        warn('Use of the "cond" and "rcond" keywords are deprecated and '
+             'will be removed in future versions of SciPy. Use "atol" and '
+             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
-    if cond is None:
-        cond = max(a.shape) * np.spacing(a.real.dtype.type(1))
+    # backwards compatible only atol and rtol are both missing
+    if (rcond or cond) and (atol is None) and (rtol is None):
+        atol = rcond or cond
+        rtol = 0.
 
-    x, resids, rank, s = lstsq(a.T if trans else a, b,
-                               cond=cond, check_finite=False)
+    atol = 0. if atol is None else atol
+    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+
+    if (atol < 0.) or (rtol < 0.):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    rank = np.sum(s > val)
+
+    u = u[:, :rank]
+    u /= s[:rank]
+    B = (u @ vh[:rank]).conj().T
 
     if return_rank:
-        return (x.T if trans else x), rank
+        return B, rank
     else:
-        return x.T if trans else x
+        return B
 
 
 def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+
+    `scipy.linalg.pinv2` is deprecated since SciPy 1.7.0, use
+    `scipy.linalg.pinv` instead for better tolerance control.
 
     Calculate a generalized inverse of a matrix using its
     singular-value decomposition and including all 'large' singular
@@ -1347,61 +1385,40 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     LinAlgError
         If SVD computation does not converge.
 
-    Examples
-    --------
-    >>> from scipy import linalg
-    >>> rng = np.random.default_rng()
-    >>> a = rng.standard_normal((9, 6))
-    >>> B = linalg.pinv2(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
-    True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
-    True
-
     """
-    a = _asarray_validated(a, check_finite=check_finite)
-    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
-
+    # SciPy 1.7.0 2021-04-10
+    warn('scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use '
+         'scipy.linalg.pinv instead', DeprecationWarning, stacklevel=2)
     if rcond is not None:
         cond = rcond
-    if cond in [None, -1]:
-        t = u.dtype.char.lower()
-        cond = np.max(s) * max(a.shape) * np.finfo(t).eps
 
-    rank = np.sum(s > cond)
-
-    u = u[:, :rank]
-    u /= s[:rank]
-    B = np.transpose(np.conjugate(np.dot(u, vh[:rank])))
-
-    if return_rank:
-        return B, rank
-    else:
-        return B
+    return pinv(a=a, atol=cond, rtol=None, return_rank=return_rank,
+                check_finite=check_finite)
 
 
-def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
-          check_finite=True):
+def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
+          check_finite=True, cond=None, rcond=None):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
-    Calculate a generalized inverse of a Hermitian or real symmetric matrix
-    using its eigenvalue decomposition and including all eigenvalues with
-    'large' absolute value.
+    Calculate a generalized inverse of a copmlex Hermitian/real symmetric
+    matrix using its eigenvalue decomposition and including all eigenvalues
+    with 'large' absolute value.
 
     Parameters
     ----------
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
-    cond, rcond : float or None
-        Cutoff for 'small' singular values; singular values smaller than this
-        value are considered as zero. If both are omitted, the default
-        ``max(M,N)*largest_eigenvalue*eps`` is used where ``eps`` is the
-        machine precision value of the datatype of ``a``.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
 
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
+        .. versionadded:: 1.7.0
+
+    rtol: float, optional
+        Relative threshold term, default value is ``N * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``a``.
+
+        .. versionadded:: 1.7.0
 
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
@@ -1412,6 +1429,20 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    cond, rcond : float, optional
+        In older versions, these values were meant to be used as ``atol`` with
+        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
+        the code was not correct. Thus using these are strongly discouraged and
+        the tolerances above are recommended instead.  In fact, if provided,
+        atol, rtol takes precedence over these keywords.
+
+        .. versionchanged:: 1.7.0
+            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
+            will be removed in future versions of SciPy.
+
+        .. versionchanged:: 1.3.0
+            Previously the default cutoff value was just ``eps*f`` where ``f``
+            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
@@ -1423,7 +1454,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     Raises
     ------
     LinAlgError
-        If eigenvalue does not converge
+        If eigenvalue algorithm does not converge.
 
     Examples
     --------
@@ -1432,27 +1463,40 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     >>> a = rng.standard_normal((9, 6))
     >>> a = np.dot(a, a.T)
     >>> B = pinvh(a)
-    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
+    >>> np.allclose(a, a @ B @ a)
     True
-    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
+    >>> np.allclose(B, B @ a @ B)
     True
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = decomp.eigh(a, lower=lower, check_finite=False)
+    t = u.dtype.char.lower()
+    maxS = np.max(np.abs(s))
 
-    if rcond is not None:
-        cond = rcond
-    if cond in [None, -1]:
-        t = u.dtype.char.lower()
-        cond = np.max(np.abs(s)) * max(a.shape) * np.finfo(t).eps
+    if rcond or cond:
+        warn('Use of the "cond" and "rcond" keywords are deprecated and '
+             'will be removed in future versions of SciPy. Use "atol" and '
+             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
-    # For Hermitian matrices, singular values equal abs(eigenvalues)
-    above_cutoff = (abs(s) > cond)
+    # backwards compatible only atol and rtol are both missing
+    if (rcond or cond) and (atol is None) and (rtol is None):
+        atol = rcond or cond
+        rtol = 0.
+
+    atol = 0. if atol is None else atol
+    rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
+
+    if (atol < 0.) or (rtol < 0.):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    above_cutoff = (abs(s) > val)
+
     psigma_diag = 1.0 / s[above_cutoff]
     u = u[:, above_cutoff]
 
-    B = np.dot(u * psigma_diag, np.conjugate(u).T)
+    B = (u * psigma_diag) @ u.conj().T
 
     if return_rank:
         return B, len(psigma_diag)
