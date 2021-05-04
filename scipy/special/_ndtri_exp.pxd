@@ -50,10 +50,10 @@
 # version 9.3.0 targeting x86_64-linux-gnu we've observed the following
 #
 #                                               Estimated Relative Error
-#  ndtri(1e-8)      = -5.612001244174789        1.55e-10
-# -ndtri(1 - 1e-8)  = -5.612001243305505        ''
-#  ndtri(1e-16)     = -8.222082216130435        0.0015
-# -ndtri(1 - 1e-16) = -8.209536151601387        ''
+#  ndtri(1e-8)      = -5.612001244174789        ''
+# -ndtri(1 - 1e-8)  = -5.612001243305505        1.55e-10
+#  ndtri(1e-16)     = -8.222082216130435        ''
+# -ndtri(1 - 1e-16) = -8.209536151601387        0.0015
 #
 # If expm1 is correctly rounded for y in [log(1 - exp(-2), 0), ndtri_exp(y)
 # for y > log(1 - exp(-2)) should have the same relative error to ndtri(p)
