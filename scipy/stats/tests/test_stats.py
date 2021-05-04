@@ -2980,7 +2980,7 @@ class TestPercentileOfScore:
           " which is incompatible with the 'omit' policy.")),
     ]
 
-    @pytest.mark.parametrize("policy, a, score, message", )
+    @pytest.mark.parametrize("policy, a, score, message", cases)
     def test_nans_fail(self, policy, a, score, message):
         with assert_raises(ValueError, match=message):
             self.f(a, score, nan_policy=policy)
