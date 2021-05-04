@@ -1352,7 +1352,7 @@ gradient magnitude filter. It uses an array containing initial markers
 for the objects:
 
 - The :func:`watershed_ift` function applies a watershed from markers
-  algorithm, using an Iterative Forest Transform, as described in
+  algorithm, using Image Foresting Transform, as described in
   [4]_.
 
 - The inputs of this function are the array to which the transform is
@@ -1999,9 +1999,9 @@ References
        binary images in arbitrary dimensions. IEEE Trans. PAMI 25,
        265-270, 2003.
 
-.. [4] P. Felkel, R. Wegenkittl, and M. Bruckschwaiger,
-       "Implementation and Complexity of the Watershed-from-Markers Algorithm
-       Computed as a Minimal Cost Forest.", Eurographics 2001, pp. C:26-35.
+.. [4] The image foresting transform: theory, algorithms, and applications,
+       Falcao, A. X., Stolfi, J., and Lotufo, R. de Alencar. Pattern
+       Analysis and Machine Intelligence (PAMI), 2004. 
 
 .. [5] T. Briand and P. Monasse, "Theory and Practice of Image B-Spline
        Interpolation", Image Processing On Line, 8, pp. 99–141, 2018.
