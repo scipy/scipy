@@ -5,12 +5,10 @@ name: Build Base Docker Image
 on:
   push: 
     branches:
-    - master
+      - master
     paths:
-    - './environment.yml'
-    tags:
-      - '*'
-      
+      - 'environment.yml'
+
 jobs: 
   build:
     name: Build base Docker image 
