@@ -2010,12 +2010,14 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     else:
         # Prepare broadcasting
         score = score[..., None]
-        count = lambda x: np.count_nonzero(x, -1)
+
+        def count(x):
+            return np.count_nonzero(x, -1)
 
         # Despite using masked_array to omit nan values from processing,
         # the CI tests on "Azure pipelines" (but not on the other CI servers)
-        # emits warnings when there are nan values, contrarily to the purpose of
-        # masked_arrays. As a fix, we simply suppress the warnings.
+        # emits warnings when there are nan values, contrarily to the purpose
+        # of masked_arrays. As a fix, we simply suppress the warnings.
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning,
                        "invalid value encountered in less")
@@ -2024,7 +2026,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
 
             # Main computations/logic
             if kind == 'rank':
-                left  = count(a < score)
+                left = count(a < score)
                 right = count(a <= score)
                 plus1 = left < right
                 perct = (left + right + plus1) * (50.0 / n)
@@ -2033,7 +2035,7 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
             elif kind == 'weak':
                 perct = count(a <= score) * (100.0 / n)
             elif kind == 'mean':
-                left  = count(a < score)
+                left = count(a < score)
                 right = count(a <= score)
                 perct = (left + right) * (50.0 / n)
             else:
