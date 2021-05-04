@@ -356,7 +356,7 @@ def test_subclassing_QMCEngine():
 
     # input validation
     with pytest.raises(ValueError, match=r"d must be an integer value"):
-            RandomEngine((2,), seed=seed)
+        RandomEngine((2,), seed=seed)  # noqa
 
 
 class QMCEngineTests:

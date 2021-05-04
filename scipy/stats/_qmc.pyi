@@ -35,7 +35,8 @@ def scale(
 
 
 def discrepancy(
-        sample: npt.ArrayLike, *, iterative: bool = ..., method: str = ...
+        sample: npt.ArrayLike, *, iterative: bool = ..., method: str = ...,
+        workers: _IntegerType = ...
 ) -> _FloatingType: ...
 
 
