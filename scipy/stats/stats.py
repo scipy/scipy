@@ -5780,7 +5780,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided"):
+              permutations=None, random_state=None, alternative="two-sided",
+              trim=0):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5849,6 +5850,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 1.6.0
 
+    trim : float, optional
+        If nonzero, performs a trimmed (Yuen's) t-test.
+        Defines the fraction of elements to be trimmed from each end of the
+        input samples. If 0 (default), no elements will be trimmed from either
+        side. The number of trimmed elements from each tail is the floor of the
+        trim times the number of elements. Valid range is [0, .5).
+
+        .. versionadded:: 1.7
+
     Returns
     -------
     statistic : float or array
@@ -5889,6 +5899,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     more accurate than the analytical test, but it does not make strong
     assumptions about the shape of the underlying distribution.
 
+    Use of trimming is commonly referred to as the trimmed t-test. At times
+    called Yuen's t-test, this is an extension of Welch's t-test, with the
+    difference being the use of winsorized means in calculation of the variance
+    and the trimmed sample size in calculation of the statistic. Trimming is
+    reccomended if the underlying distribution is long-tailed or contaminated
+    with outliers [4]_.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -5896,6 +5913,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
     .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+
+    .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
+           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+
+    .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
+           Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
+           no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
+           Accessed 30 Mar. 2021.
 
     Examples
     --------
@@ -5944,7 +5970,23 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     ...                 random_state=rng)
     Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
 
+    Take these two samples, one of which has an extreme tail.
+
+    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+    >>> b = (1.1, 2.9, 4.2)
+
+    Use the `trim` keyword to perform a trimmed (Yuen) t-test. For example,
+    using 20% trimming, ``trim=.2``, the test will reduce the impact of one
+    (``np.floor(trim*len(a))``) element from each tail of sample `a`. It will
+    have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
+
+    >>> stats.ttest_ind(a, b, trim=.2)
+    Ttest_indResult(statistic=3.4463884028073513,
+                    pvalue=0.01369338726499547)
     """
+    if not (0 <= trim < .5):
+        raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
+
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
@@ -5955,11 +5997,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if permutations or alternative != 'two-sided':
+        if permutations or alternative != 'two-sided' or trim != 0:
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by permutation tests or one-sided"
-                             "asymptotic tests.")
+                             "supported by permutation tests, one-sided "
+                             "asymptotic tests, or trimmed tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
@@ -5968,6 +6010,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations:
+        if trim != 0:
+            raise ValueError("Permutations are currently not supported "
+                             "with trimming.")
         if int(permutations) != permutations or permutations < 0:
             raise ValueError("Permutations must be a positive integer.")
 
@@ -5978,18 +6023,83 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                  alternative=alternative)
 
     else:
-        v1 = np.var(a, axis, ddof=1)
-        v2 = np.var(b, axis, ddof=1)
         n1 = a.shape[axis]
         n2 = b.shape[axis]
+
+        if trim == 0:
+            v1 = np.var(a, axis, ddof=1)
+            v2 = np.var(b, axis, ddof=1)
+            m1 = np.mean(a, axis)
+            m2 = np.mean(b, axis)
+        else:
+            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
         if equal_var:
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis),
-                                    denom, df, alternative)
+        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     return Ttest_indResult(*res)
+
+
+def _ttest_trim_var_mean_len(a, trim, axis):
+    """Variance, mean, and length of winsorized input along specified axis"""
+    # for use with `ttest_ind` when trimming.
+    # further calculations in this test assume that the inputs are sorted.
+    # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
+    a = np.sort(a, axis=axis)
+
+    # `g` is the number of elements to be replaced on each tail, converted
+    # from a percentage amount of trimming
+    n = a.shape[axis]
+    g = int(n * trim)
+
+    # Calculate the Winsorized variance of the input samples according to
+    # specified `g`
+    v = _calculate_winsorized_variance(a, g, axis)
+
+    # the total number of elements in the trimmed samples
+    n -= 2 * g
+
+    # calculate the g-times trimmed mean, as defined in [4] (1-1)
+    m = trim_mean(a, trim, axis=axis)
+    return v, m, n
+
+
+def _calculate_winsorized_variance(a, g, axis):
+    """Calculates g-times winsorized variance along specified axis"""
+    # it is expected that the input `a` is sorted along the correct axis
+    if g == 0:
+        return np.var(a, ddof=1, axis=axis)
+    # move the intended axis to the end that way it is easier to manipulate
+    a_win = np.moveaxis(a, axis, -1)
+
+    # save where NaNs are for later use.
+    nans_indices = np.any(np.isnan(a_win), axis=-1)
+
+    # Winsorization and variance calculation are done in one step in [4]
+    # (1-3), but here winsorization is done first; replace the left and
+    # right sides with the repeating value. This can be see in effect in (
+    # 1-3) in [4], where the leftmost and rightmost tails are replaced with
+    # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
+    # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
+    # array indexing.
+    a_win[..., :g] = a_win[..., [g]]
+    a_win[..., -g:] = a_win[..., [-g - 1]]
+
+    # Determine the variance. In [4], the degrees of freedom is expressed as
+    # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
+    # page 369, beginning of page 370). This is converted to NumPy's format,
+    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # array to accommodate indexing later.
+    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+
+    # with `nan_policy='propagate'`, NaNs may be completely trimmed out
+    # because they were sorted into the tail of the array. In these cases,
+    # replace computed variances with `np.nan`.
+    var_win[nans_indices] = np.nan
+    return var_win
 
 
 def _broadcast_concatenate(xs, axis):
@@ -6545,12 +6655,18 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
+    scipy.stats.fisher_exact : A more powerful alternative to the chisquare
+                               test if any of the frequencies are less than 5.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5.
+    and expected frequencies should be at least 5. If one or more frequencies
+    are less than 5, Fisher's Exact Test can be used with greater statistical
+    power. According to [3]_, the total number of samples is recommended to be
+    greater than 13, otherwise a table-based method of obtaining p-values is 
+    recommended.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
@@ -6570,6 +6686,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
+           in the case of a correlated system of variables is such that it can be reasonably 
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           (1900), pp. 157-175.
 
     Examples
     --------
