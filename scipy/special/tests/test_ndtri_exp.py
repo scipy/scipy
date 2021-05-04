@@ -43,7 +43,8 @@ class TestNdtriExp(object):
                         rtol=expected_rtol)
 
     def test_asymptotes(self):
-        assert_equal(sc.ndtri_exp([-np.inf, 0.0]), [-np.inf, np.inf])
+        assert_equal(sc.ndtri_exp([-np.inf, -9e307, 0.0]),
+                     [-np.inf, -np.inf, np.inf])
 
     def test_outside_domain(self):
         assert np.isnan(sc.ndtri_exp(1.0))
