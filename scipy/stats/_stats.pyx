@@ -605,7 +605,7 @@ cdef double _genstudentized_range_moment(int n, double[3] x_arg, void *user_data
     K = (<double *> user_data)[0]  # the Kth moment to calc.
     k = (<double *> user_data)[1]
     df = (<double *> user_data)[2]
-    log_pdf_const = (<double *> user_data)[4]
+    log_pdf_const = (<double *> user_data)[3]
 
     # Pull outermost intergration variable out to pass as q to PDF
     x = x_arg[2]
