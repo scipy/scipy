@@ -363,7 +363,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
 
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
         Seed for initializing the pseudo-random number generator.
         If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
