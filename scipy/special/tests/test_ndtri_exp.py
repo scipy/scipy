@@ -1,3 +1,4 @@
+import sys
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
@@ -22,7 +23,7 @@ class TestNdtriExp(object):
     for handling very small values and values very close to zero.
     """
     @pytest.mark.parametrize('test_input',
-                             [-1e1, -1e2, -1e10, -1e20, -1e100])
+                             [-1e1, -1e2, -1e10, -1e20, -sys.float_info.max])
     def test_very_small_arg(self, test_input):
         scale = test_input
         points = scale * uniform_random_points(0.5, 1, num_points=10**3,
@@ -43,8 +44,8 @@ class TestNdtriExp(object):
                         rtol=expected_rtol)
 
     def test_asymptotes(self):
-        assert_equal(sc.ndtri_exp([-np.inf, -9e307, 0.0]),
-                     [-np.inf, -np.inf, np.inf])
+        assert_equal(sc.ndtri_exp([-np.inf, 0.0]),
+                     [-np.inf,  np.inf])
 
     def test_outside_domain(self):
         assert np.isnan(sc.ndtri_exp(1.0))

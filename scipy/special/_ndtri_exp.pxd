@@ -156,9 +156,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     Q2[5] = 3.28014464682127739104e-4
     Q2[6] = 2.89247864745380683936e-6
     Q2[7] = 6.79019408009981274425e-9
-    x = sqrt(-2.0 * y)
-    if x > DBL_MAX:
-        return -HUGE_VAL
+    x = 1.4142135623730950 * sqrt(-y) # sqrt(-2 * y)
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
@@ -170,7 +168,9 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
 
 cdef inline double ndtri_exp(double y) nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
-    if y < - 2.0:
+    if y < -DBL_MAX:
+        return -HUGE_VAL
+    elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))
         return -ndtri(-expm1(y))
