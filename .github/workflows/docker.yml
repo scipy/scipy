@@ -7,9 +7,7 @@ on:
     branches:
       - master
     paths:
-    - './environment.yml'
-    tags:
-      - '*'
+      - 'environment.yml'
 
 jobs:
   build:
