@@ -390,6 +390,15 @@ class TestLeastSq:
     def test_concurrent_with_gradient(self):
         return sequence_parallel([self.test_basic_with_gradient] * 10)
 
+    def test_func_input_output_length_check(self):
+
+        def func(x):
+            return 2 * (x[0] - 3) ** 2 + 1
+
+        with assert_raises(TypeError,
+                           match='Improper input: func input vector length N='):
+            optimize.leastsq(func, x0=[0, 1])
+
 
 class TestCurveFit:
     def setup_method(self):
