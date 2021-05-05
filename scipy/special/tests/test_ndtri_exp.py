@@ -26,7 +26,7 @@ class TestNdtriExp(object):
                              [-1e1, -1e2, -1e10, -1e20, -sys.float_info.max])
     def test_very_small_arg(self, test_input):
         scale = test_input
-        points = scale * uniform_random_points(0.5, 1, num_points=10**3,
+        points = scale * uniform_random_points(0.5, 1, num_points=10**2,
                                                seed=561)
         assert_allclose(sc.log_ndtr(sc.ndtri_exp(points)), points,
                         rtol=1e-14)
@@ -38,10 +38,16 @@ class TestNdtriExp(object):
                               ((-1e-6, 0, 2821), 1e-6)])
     def test_in_interval(self, test_input, expected_rtol):
         left, right, seed = test_input
-        points = uniform_random_points(left, right, num_points=10**5,
+        points = uniform_random_points(left, right, num_points=10**3,
                                        seed=seed)
         assert_allclose(sc.log_ndtr(sc.ndtri_exp(points)), points,
                         rtol=expected_rtol)
+
+    def test_extreme(self):
+        assert_allclose([sc.log_ndtr(sc.ndtri_exp(-sys.float_info.max)),
+                         sc.log_ndtr(sc.ndtri_exp(-sys.float_info.min))],
+                        [-sys.float_info.max, -sys.float_info.min],
+                        rtol=1e-12)
 
     def test_asymptotes(self):
         assert_equal(sc.ndtri_exp([-np.inf, 0.0]),
@@ -49,5 +55,3 @@ class TestNdtriExp(object):
 
     def test_outside_domain(self):
         assert np.isnan(sc.ndtri_exp(1.0))
-
-
