@@ -156,7 +156,12 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     Q2[5] = 3.28014464682127739104e-4
     Q2[6] = 2.89247864745380683936e-6
     Q2[7] = 6.79019408009981274425e-9
-    x = 1.4142135623730950 * sqrt(-y) # sqrt(-2 * y)
+    # sqrt(-2 * y) is faster and has more precision but overflows when
+    # y < -DBL_MAX * 0.5
+    if y >= -DBL_MAX * 0.5:
+        x = sqrt(-2 * y)
+    else:
+        x = 1.4142135623730950 * sqrt(-y) # sqrt(-2 * y)
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
