@@ -652,7 +652,8 @@ class TestBoschlooExact:
                        tsmethod="central", np.interval=TRUE, beta=1e-8)
         ```
         """
-        res = boschloo_exact(input_sample, alternative="two-sided")
+        res = boschloo_exact(input_sample, alternative="two-sided", n=64)
+        # Need n = 64 for python 32-bit
         statistic, pvalue = res.statistic, res.pvalue
         assert_allclose([statistic, pvalue], expected, atol=1e-2)
 
