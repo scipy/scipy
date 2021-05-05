@@ -1742,11 +1742,11 @@ def white_tophat(input, size=None, footprint=None, structure=None,
 
     >>> from scipy.ndimage import generate_binary_structure, white_tophat
     >>> square = generate_binary_structure(rank=2, connectivity=3)
-    >>> bright_on_gray = numpy.array([[2, 3, 3, 3, 2],
-    ...                               [3, 4, 5, 4, 3],
-    ...                               [3, 5, 9, 5, 3],
-    ...                               [3, 4, 5, 4, 3],
-    ...                               [2, 3, 3, 3, 2]])
+    >>> bright_on_gray = np.array([[2, 3, 3, 3, 2],
+    ...                            [3, 4, 5, 4, 3],
+    ...                            [3, 5, 9, 5, 3],
+    ...                            [3, 4, 5, 4, 3],
+    ...                            [2, 3, 3, 3, 2]])
     >>> white_tophat(input=bright_on_gray, structure=square)
     array([[0, 0, 0, 0, 0],
            [0, 0, 1, 0, 0],
@@ -1818,11 +1818,11 @@ def black_tophat(input, size=None, footprint=None,
 
     >>> from scipy.ndimage import generate_binary_structure, black_tophat
     >>> square = generate_binary_structure(rank=2, connectivity=3)
-    >>> dark_on_gray = numpy.array([[7, 6, 6, 6, 7],
-    ...                             [6, 5, 4, 5, 6],
-    ...                             [6, 4, 0, 4, 6],
-    ...                             [6, 5, 4, 5, 6],
-    ...                             [7, 6, 6, 6, 7]])
+    >>> dark_on_gray = np.array([[7, 6, 6, 6, 7],
+    ...                          [6, 5, 4, 5, 6],
+    ...                          [6, 4, 0, 4, 6],
+    ...                          [6, 5, 4, 5, 6],
+    ...                          [7, 6, 6, 6, 7]])
     >>> black_tophat(input=dark_on_gray, structure=square)
     array([[0, 0, 0, 0, 0],
            [0, 0, 1, 0, 0],
