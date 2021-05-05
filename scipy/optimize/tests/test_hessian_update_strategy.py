@@ -1,7 +1,8 @@
 import numpy as np
 from copy import deepcopy
 from numpy.linalg import norm
-from numpy.testing import (TestCase, assert_array_almost_equal,
+from numpy.testing import (TestCase, # type: ignore[attr-defined]
+                           assert_array_almost_equal,
                            assert_array_equal, assert_array_less)
 from scipy.optimize import (BFGS, SR1)
 

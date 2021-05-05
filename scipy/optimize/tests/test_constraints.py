@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import TestCase, assert_array_equal
+from numpy.testing import TestCase, assert_array_equal # type: ignore[attr-defined]
 import scipy.sparse as sps
 from scipy.optimize._constraints import (
     Bounds, LinearConstraint, NonlinearConstraint, PreparedConstraint,
