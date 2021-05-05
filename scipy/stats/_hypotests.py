@@ -1009,8 +1009,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1 = p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    In order to compute Boschloo's exact test, we are using the Fisher's pvalue as a
-    statistic.
+    In order to compute Boschloo's exact test, we are using the Fisher's
+    pvalue as a statistic.
 
     This function's complexity is :math:`O(n c_1 c_2)`, where `n` is the
     number of sample points.
@@ -1019,8 +1019,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     References
     ----------
-    .. [1] Raised conditional level of significance for the 2 × 2‐table when testing
-           the equality of two probabilities. :doi:`10.1111/j.1467-9574.1970.tb00104.x`
+    .. [1] Raised conditional level of significance for the 2 x 2-table when
+           testing the equality of two probabilities.
+           :doi:`10.1111/j.1467-9574.1970.tb00104.x`
 
     .. [2] "Boschloo's test", Wikipedia,
            https://en.wikipedia.org/wiki/Boschloo%27s_test
@@ -1030,27 +1031,28 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     Examples
     --------
-    In the following example, we consider the article “Work-Related Attitudes” [3]_
+    In the following example, we consider the article "Work-Related
+    Attitudes" [3]_
     which reports the results of a survey from 63 Scientists and 117 College
     Professors. Of the 63 Scientists, 31 said they were very satisfied with
-    their jobs, whereas 74 of the College Professors were very satisfied with their
-    work. Are there strong evidence suggesting that College Professors are more happy
-    with their works than Scientists?
-    The following table summurize the data mentionned above :
+    their jobs, whereas 74 of the College Professors were very satisfied
+    with their work. Are there strong evidence suggesting that College
+    Professors are more happy with their works than Scientists?
+    The following table summurize the data mentionned above::
 
-                           College Professors   Scientists
-          Very Satisfied   74                     31
-          Dissatisfied     43                     32
+                         College Professors   Scientists
+        Very Satisfied   74                     31
+        Dissatisfied     43                     32
 
     When working with statistical hypothesis testing, we usually use a
     threshold probability or significance level upon which we decide
     to reject the null hypothesis :math:`H_0`. Suppose we choose the common
     significance level of 5%.
 
-    Our alternative hypothesis is that College Professors are trully more satisfied
-    in their works than Scientists. Therefore, we expect :math:`p_1` the proportion
-    of very satisfied College Professors to be greater than :math:`p_2`,
-    the proportion of very satisfied Scientists.
+    Our alternative hypothesis is that College Professors are trully more
+    satisfied in their works than Scientists. Therefore, we expect
+    :math:`p_1` the proportion of very satisfied College Professors to be
+    greater than :math:`p_2`, the proportion of very satisfied Scientists.
     We thus call `boschloo_exact` with the ``alternative="greater"`` option:
 
     >>> import scipy.stats as stats
@@ -1060,14 +1062,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> res.pvalue
     0.0355...
 
-    Under the null hypothesis that Scientists and College Professors are equally
-    satisfied of their works, the probability of obtaining test results at least as
-    extreme as the observed data is approximately 3.55%. Since this p-value is less
-    than our chosen significance level, we have evidence to reject :math:`H_0` in
-    favor of the alternative.
+    Under the null hypothesis that Scientists and College Professors are
+    equally satisfied of their works, the probability of obtaining test
+    results at least as extreme as the observed data is approximately 3.55%.
+    Since this p-value is less than our chosen significance level, we have
+    evidence to reject :math:`H_0` in favor of the alternative's hypothesis.
 
     Notice that the Fisher statistic given by `res.pvalue` is equal to 0.0483,
     which is a little bit above our own statistic.
+
     """
     hypergeom = distributions.hypergeom
 

@@ -8,7 +8,8 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
-                                    _pval_cvm_2samp_exact, barnard_exact, boschloo_exact)
+                                    _pval_cvm_2samp_exact, barnard_exact,
+                                    boschloo_exact)
 import scipy.stats as stats
 from scipy.stats import distributions
 from .common_tests import check_named_results
@@ -591,7 +592,6 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_allclose([statistic, pvalue], expected, atol=1e-4)
 
-
     @pytest.mark.parametrize(
         "input_sample,expected",
         [
@@ -656,7 +656,6 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_allclose([statistic, pvalue], expected, atol=1e-2)
 
-
     def test_raises(self):
         # test we raise an error for wrong input number of nuisances.
         error_msg = (
@@ -677,8 +676,8 @@ class TestBoschlooExact:
 
         # Test value error on wrong alternative param
         error_msg = (
-            "`alternative` should be one of \\('two-sided', 'less', 'greater'\\),"
-            " found .*"
+            "`alternative` should be one of \\('two-sided', 'less', "
+            "'greater'\\), found .*"
         )
         with assert_raises(ValueError, match=error_msg):
             boschloo_exact([[1, 2], [3, 4]], "not-correct")
