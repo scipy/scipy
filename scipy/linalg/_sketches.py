@@ -113,11 +113,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> from scipy import sparse
+    >>> rng = np.random.default_rng()
     >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = np.random.randn(n_rows, n_columns)
+    >>> D = rng.standard_normal((n_rows, n_columns))
     >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
     >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
     >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
@@ -132,7 +133,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((n_rows, n_columns))
     >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
     >>> sketch.shape
     (200, 100)
@@ -147,8 +149,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
-    >>> b = np.random.randn(n_rows)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((n_rows, n_columns))
+    >>> b = rng.standard_normal(n_rows)
     >>> x = np.linalg.lstsq(A, b, rcond=None)
     >>> Ab = np.hstack((A, b.reshape(-1,1)))
     >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows)

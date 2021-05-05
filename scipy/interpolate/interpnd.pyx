@@ -242,9 +242,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import LinearNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -804,8 +804,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """
-    CloughTocher2DInterpolator(points, values, tol=1e-6)
+    """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
@@ -853,9 +852,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))

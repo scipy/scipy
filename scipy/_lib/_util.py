@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import functools
 import operator
 import sys
@@ -23,7 +24,6 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
-
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -472,27 +472,27 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
 
     Parameters
     ----------
-    gen: {None, np.random.RandomState, np.random.Generator}
+    gen : {None, np.random.RandomState, np.random.Generator}
         Random number generator. If None, then the np.random.RandomState
         singleton is used.
-    low: int or array-like of ints
+    low : int or array-like of ints
         Lowest (signed) integers to be drawn from the distribution (unless
         high=None, in which case this parameter is 0 and this value is used
         for high).
-    high: int or array-like of ints
+    high : int or array-like of ints
         If provided, one above the largest (signed) integer to be drawn from
         the distribution (see above for behavior if high=None). If array-like,
         must contain integer values.
-    size: None
+    size : None
         Output shape. If the given shape is, e.g., (m, n, k), then m * n * k
         samples are drawn. Default is None, in which case a single value is
         returned.
-    dtype: {str, dtype}, optional
+    dtype : {str, dtype}, optional
         Desired dtype of the result. All dtypes are determined by their name,
         i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
         The default value is np.int_.
-    endpoint: bool, optional
+    endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
 
@@ -520,3 +520,14 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
 
         # exclusive
         return gen.randint(low, high=high, size=size, dtype=dtype)
+
+
+@contextmanager
+def _fixed_default_rng(seed=1638083107694713882823079058616272161):
+    """Context with a fixed np.random.default_rng seed."""
+    orig_fun = np.random.default_rng
+    np.random.default_rng = lambda seed=seed: orig_fun(seed)
+    try:
+        yield
+    finally:
+        np.random.default_rng = orig_fun

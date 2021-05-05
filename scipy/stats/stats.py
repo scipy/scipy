@@ -37,7 +37,7 @@ from numpy import array, asarray, ma
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import measurements
-from scipy._lib._util import (_lazywhere, check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper,
                               rng_integers, float_factorial)
 import scipy.special as special
 from scipy import linalg
@@ -173,7 +173,7 @@ def _broadcast_shapes(shape1, shape2):
     if d <= 0:
         shp1 = (1,)*(-d) + shape1
         shp2 = shape2
-    elif d > 0:
+    else:
         shp1 = shape1
         shp2 = (1,)*d + shape2
     shape = []
@@ -898,11 +898,16 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         return mstats_basic.moment(a, moment, axis)
 
     if a.size == 0:
+        moment_shape = list(a.shape)
+        del moment_shape[axis]
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
-        if np.isscalar(moment):
-            return np.nan
+        out_shape = (moment_shape if np.isscalar(moment)
+                    else [len(moment)] + moment_shape)
+        if len(out_shape) == 0:
+            return dtype(np.nan)
         else:
-            return np.full(np.asarray(moment).shape, np.nan, dtype=np.float64)
+            return np.full(out_shape, np.nan, dtype=dtype)
 
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
@@ -918,27 +923,18 @@ def _moment(a, moment, axis, *, mean=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
-    if moment == 0:
-        # When moment equals 0, the result is 1, by definition.
+    if moment == 0 or moment == 1:
+        # By definition the zeroth moment about the mean is 1, and the first
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.ones(shape, dtype=float)
-        else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return 1.0
+        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
-    elif moment == 1:
-        # By definition the first moment about the mean is 0.
-        shape = list(a.shape)
-        del shape[axis]
-        if shape:
-            # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float)
+        if len(shape) == 0:
+            return dtype(1.0 if moment == 0 else 0.0)
         else:
-            # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(0.0)
+            return (np.ones(shape, dtype=dtype) if moment == 0
+                    else np.zeros(shape, dtype=dtype))
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -1518,10 +1514,10 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kurtosistest(list(range(20)), alternative='greater')
     KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.9559783083373583)
 
-    >>> np.random.seed(28041990)
-    >>> s = np.random.normal(0, 1, 1000)
+    >>> rng = np.random.default_rng()
+    >>> s = rng.normal(0, 1, 1000)
     >>> kurtosistest(s)
-    KurtosistestResult(statistic=1.2317590987707365, pvalue=0.21803908613450895)
+    KurtosistestResult(statistic=-1.475047944490622, pvalue=0.14019965402996987)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1614,15 +1610,15 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Examples
     --------
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
     >>> pts = 1000
-    >>> np.random.seed(28041990)
-    >>> a = np.random.normal(0, 1, size=pts)
-    >>> b = np.random.normal(2, 1, size=pts)
+    >>> a = rng.normal(0, 1, size=pts)
+    >>> b = rng.normal(2, 1, size=pts)
     >>> x = np.concatenate((a, b))
     >>> k2, p = stats.normaltest(x)
     >>> alpha = 1e-3
     >>> print("p = {:g}".format(p))
-    p = 3.27207e-11
+    p = 8.4713e-19
     >>> if p < alpha:  # null hypothesis: x comes from a normal distribution
     ...     print("The null hypothesis can be rejected")
     ... else:
@@ -1679,15 +1675,15 @@ def jarque_bera(x):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(987654321)
-    >>> x = np.random.normal(0, 1, 100000)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.normal(0, 1, 100000)
     >>> jarque_bera_test = stats.jarque_bera(x)
     >>> jarque_bera_test
-    Jarque_beraResult(statistic=4.716570798957913, pvalue=0.0945822550304295)
+    Jarque_beraResult(statistic=3.3415184718131554, pvalue=0.18810419594996775)
     >>> jarque_bera_test.statistic
-    4.716570798957913
+    3.3415184718131554
     >>> jarque_bera_test.pvalue
-    0.0945822550304295
+    0.18810419594996775
 
     """
     x = np.asarray(x)
@@ -2611,10 +2607,10 @@ def gstd(a, axis=0, ddof=1):
     log scale this evaluates to approximately ``exp(1)``.
 
     >>> from scipy.stats import gstd
-    >>> np.random.seed(123)
-    >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
+    >>> rng = np.random.default_rng()
+    >>> sample = rng.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
-    2.7217860664589946
+    2.810010162475324
 
     Compute the geometric standard deviation of a multidimensional array and
     of a given axis.
@@ -4320,39 +4316,40 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     --------
     >>> from scipy import stats
     >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
-    (0.82078268166812329, 0.088587005313543798)
-    >>> np.random.seed(1234321)
-    >>> x2n = np.random.randn(100, 2)
-    >>> y2n = np.random.randn(100, 2)
+    SpearmanrResult(correlation=0.82078..., pvalue=0.08858...)
+    >>> rng = np.random.default_rng()
+    >>> x2n = rng.standard_normal((100, 2))
+    >>> y2n = rng.standard_normal((100, 2))
     >>> stats.spearmanr(x2n)
-    (0.059969996999699973, 0.55338590803773591)
+    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
     >>> stats.spearmanr(x2n[:,0], x2n[:,1])
-    (0.059969996999699973, 0.55338590803773591)
+    SpearmanrResult(correlation=-0.07960396039603959, pvalue=0.4311168705769747)
     >>> rho, pval = stats.spearmanr(x2n, y2n)
     >>> rho
-    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
-           [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
-           [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
-           [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
+    array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
+           [-0.07960396,  1.        , -0.14448245,  0.16738074],
+           [-0.08314431, -0.14448245,  1.        ,  0.03234323],
+           [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
     >>> pval
-    array([[ 0.        ,  0.55338591,  0.06435364,  0.53617935],
-           [ 0.55338591,  0.        ,  0.27592895,  0.80234077],
-           [ 0.06435364,  0.27592895,  0.        ,  0.73039992],
-           [ 0.53617935,  0.80234077,  0.73039992,  0.        ]])
+    array([[0.        , 0.43111687, 0.41084066, 0.33891628],
+           [0.43111687, 0.        , 0.15151618, 0.09600687],
+           [0.41084066, 0.15151618, 0.        , 0.74938561],
+           [0.33891628, 0.09600687, 0.74938561, 0.        ]])
     >>> rho, pval = stats.spearmanr(x2n.T, y2n.T, axis=1)
     >>> rho
-    array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
-           [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
-           [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
-           [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
+    array([[ 1.        , -0.07960396, -0.08314431,  0.09662166],
+           [-0.07960396,  1.        , -0.14448245,  0.16738074],
+           [-0.08314431, -0.14448245,  1.        ,  0.03234323],
+           [ 0.09662166,  0.16738074,  0.03234323,  1.        ]])
     >>> stats.spearmanr(x2n, y2n, axis=None)
-    (0.10816770419260482, 0.1273562188027364)
+    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
     >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
-    (0.10816770419260482, 0.1273562188027364)
+    SpearmanrResult(correlation=0.044981624540613524, pvalue=0.5270803651336189)
 
-    >>> xint = np.random.randint(10, size=(100, 2))
+    >>> rng = np.random.default_rng()
+    >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
-    (0.052760927029710199, 0.60213045837062351)
+    SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
 
     """
     if axis is not None and axis > 1:
@@ -5503,40 +5500,39 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     Examples
     --------
     >>> from scipy import stats
-
-    >>> np.random.seed(7654567)  # fix seed to get the same result
-    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50,2))
+    >>> rng = np.random.default_rng()
+    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50, 2), random_state=rng)
 
     Test if mean of random sample is equal to true mean, and different mean.
     We reject the null hypothesis in the second case and don't reject it in
     the first case.
 
-    >>> stats.ttest_1samp(rvs,5.0)
-    (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))
-    >>> stats.ttest_1samp(rvs,0.0)
-    (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))
+    >>> stats.ttest_1samp(rvs, 5.0)
+    Ttest_1sampResult(statistic=array([-2.09794637, -1.75977004]), pvalue=array([0.04108952, 0.08468867]))
+    >>> stats.ttest_1samp(rvs, 0.0)
+    Ttest_1sampResult(statistic=array([1.64495065, 1.62095307]), pvalue=array([0.10638103, 0.11144602]))
 
     Examples using axis and non-scalar dimension for population mean.
 
     >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
     >>> result.statistic
-    array([-0.68014479,  4.11038784]),
+    array([-2.09794637,  1.62095307])
     >>> result.pvalue
-    array([4.99613833e-01, 1.49986458e-04])
+    array([0.04108952, 0.11144602])
 
     >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
     >>> result.statistic
-    array([-0.68014479,  4.11038784])
+    array([-2.09794637,  1.62095307])
     >>> result.pvalue
-    array([4.99613833e-01, 1.49986458e-04])
+    array([0.04108952, 0.11144602])
 
     >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
     >>> result.statistic
-    array([[-0.68014479, -0.04323899],
-           [ 2.77025808,  4.11038784]])
+    array([[-2.09794637, -1.75977004],
+           [ 1.64495065,  1.62095307]])
     >>> result.pvalue
-    array([[4.99613833e-01, 9.65686743e-01],
-           [7.89094663e-03, 1.49986458e-04]])
+    array([[0.04108952, 0.08468867],
+           [0.10638103, 0.11144602]])
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -5784,7 +5780,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
 
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided"):
+              permutations=None, random_state=None, alternative="two-sided",
+              trim=0):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -5853,6 +5850,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         .. versionadded:: 1.6.0
 
+    trim : float, optional
+        If nonzero, performs a trimmed (Yuen's) t-test.
+        Defines the fraction of elements to be trimmed from each end of the
+        input samples. If 0 (default), no elements will be trimmed from either
+        side. The number of trimmed elements from each tail is the floor of the
+        trim times the number of elements. Valid range is [0, .5).
+
+        .. versionadded:: 1.7
+
     Returns
     -------
     statistic : float or array
@@ -5893,6 +5899,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     more accurate than the analytical test, but it does not make strong
     assumptions about the shape of the underlying distribution.
 
+    Use of trimming is commonly referred to as the trimmed t-test. At times
+    called Yuen's t-test, this is an extension of Welch's t-test, with the
+    difference being the use of winsorized means in calculation of the variance
+    and the trimmed sample size in calculation of the statistic. Trimming is
+    reccomended if the underlying distribution is long-tailed or contaminated
+    with outliers [4]_.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -5901,54 +5914,79 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
 
+    .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
+           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+
+    .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
+           Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
+           no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
+           Accessed 30 Mar. 2021.
+
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(12345678)
+    >>> rng = np.random.default_rng()
 
     Test with sample with identical means:
 
-    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
-    >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+    >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs2)
-    (0.26833823296239279, 0.78849443369564776)
+    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952038870015)
     >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
-    (0.26833823296239279, 0.78849452749500748)
+    Ttest_indResult(statistic=-0.4390847099199348, pvalue=0.6606952553131064)
 
     `ttest_ind` underestimates p for unequal variances:
 
-    >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
+    >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs3)
-    (-0.46580283298287162, 0.64145827413436174)
+    Ttest_indResult(statistic=-1.6370984482905417, pvalue=0.1019251574705033)
     >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
-    (-0.46580283298287162, 0.64149646246569292)
+    Ttest_indResult(statistic=-1.637098448290542, pvalue=0.10202110497954867)
 
     When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
-    >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
+    >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs4)
-    (-0.99882539442782481, 0.3182832709103896)
+    Ttest_indResult(statistic=-1.9481646859513422, pvalue=0.05186270935842703)
     >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
-    (-0.69712570584654099, 0.48716927725402048)
+    Ttest_indResult(statistic=-1.3146566100751664, pvalue=0.1913495266513811)
 
     T-test with different means, variance, and n:
 
-    >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)
     >>> stats.ttest_ind(rvs1, rvs5)
-    (-1.4679669854490653, 0.14263895620529152)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0046418707568707885)
     >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
-    (-0.94365973617132992, 0.34744170334794122)
+    Ttest_indResult(statistic=-1.8686598649188084, pvalue=0.06434714193919686)
 
     When performing a permutation test, more permutations typically yields
     more accurate results. Use a ``np.random.Generator`` to ensure
     reproducibility:
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
-    ...                 random_state=np.random.default_rng(12345))
-    (-1.467966985449, 0.14)
+    ...                 random_state=rng)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
 
+    Take these two samples, one of which has an extreme tail.
+
+    >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
+    >>> b = (1.1, 2.9, 4.2)
+
+    Use the `trim` keyword to perform a trimmed (Yuen) t-test. For example,
+    using 20% trimming, ``trim=.2``, the test will reduce the impact of one
+    (``np.floor(trim*len(a))``) element from each tail of sample `a`. It will
+    have no effect on sample `b` because ``np.floor(trim*len(b))`` is 0.
+
+    >>> stats.ttest_ind(a, b, trim=.2)
+    Ttest_indResult(statistic=3.4463884028073513,
+                    pvalue=0.01369338726499547)
     """
+    if not (0 <= trim < .5):
+        raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
+
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
@@ -5959,11 +5997,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
-        if permutations or alternative != 'two-sided':
+        if permutations or alternative != 'two-sided' or trim != 0:
             raise ValueError("nan-containing/masked inputs with "
                              "nan_policy='omit' are currently not "
-                             "supported by permutation tests or one-sided"
-                             "asymptotic tests.")
+                             "supported by permutation tests, one-sided "
+                             "asymptotic tests, or trimmed tests.")
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
@@ -5972,6 +6010,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return _ttest_nans(a, b, axis, Ttest_indResult)
 
     if permutations:
+        if trim != 0:
+            raise ValueError("Permutations are currently not supported "
+                             "with trimming.")
         if int(permutations) != permutations or permutations < 0:
             raise ValueError("Permutations must be a positive integer.")
 
@@ -5982,18 +6023,83 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                  alternative=alternative)
 
     else:
-        v1 = np.var(a, axis, ddof=1)
-        v2 = np.var(b, axis, ddof=1)
         n1 = a.shape[axis]
         n2 = b.shape[axis]
+
+        if trim == 0:
+            v1 = np.var(a, axis, ddof=1)
+            v2 = np.var(b, axis, ddof=1)
+            m1 = np.mean(a, axis)
+            m2 = np.mean(b, axis)
+        else:
+            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
         if equal_var:
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis),
-                                    denom, df, alternative)
+        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     return Ttest_indResult(*res)
+
+
+def _ttest_trim_var_mean_len(a, trim, axis):
+    """Variance, mean, and length of winsorized input along specified axis"""
+    # for use with `ttest_ind` when trimming.
+    # further calculations in this test assume that the inputs are sorted.
+    # From [4] Section 1 "Let x_1, ..., x_n be n ordered observations..."
+    a = np.sort(a, axis=axis)
+
+    # `g` is the number of elements to be replaced on each tail, converted
+    # from a percentage amount of trimming
+    n = a.shape[axis]
+    g = int(n * trim)
+
+    # Calculate the Winsorized variance of the input samples according to
+    # specified `g`
+    v = _calculate_winsorized_variance(a, g, axis)
+
+    # the total number of elements in the trimmed samples
+    n -= 2 * g
+
+    # calculate the g-times trimmed mean, as defined in [4] (1-1)
+    m = trim_mean(a, trim, axis=axis)
+    return v, m, n
+
+
+def _calculate_winsorized_variance(a, g, axis):
+    """Calculates g-times winsorized variance along specified axis"""
+    # it is expected that the input `a` is sorted along the correct axis
+    if g == 0:
+        return np.var(a, ddof=1, axis=axis)
+    # move the intended axis to the end that way it is easier to manipulate
+    a_win = np.moveaxis(a, axis, -1)
+
+    # save where NaNs are for later use.
+    nans_indices = np.any(np.isnan(a_win), axis=-1)
+
+    # Winsorization and variance calculation are done in one step in [4]
+    # (1-3), but here winsorization is done first; replace the left and
+    # right sides with the repeating value. This can be see in effect in (
+    # 1-3) in [4], where the leftmost and rightmost tails are replaced with
+    # `(g + 1) * x_{g + 1}` on the left and `(g + 1) * x_{n - g}` on the
+    # right. Zero-indexing turns `g + 1` to `g`, and `n - g` to `- g - 1` in
+    # array indexing.
+    a_win[..., :g] = a_win[..., [g]]
+    a_win[..., -g:] = a_win[..., [-g - 1]]
+
+    # Determine the variance. In [4], the degrees of freedom is expressed as
+    # `h - 1`, where `h = n - 2g` (unnumbered equations in Section 1, end of
+    # page 369, beginning of page 370). This is converted to NumPy's format,
+    # `n - ddof` for use with with `np.var`. The result is converted to an
+    # array to accommodate indexing later.
+    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+
+    # with `nan_policy='propagate'`, NaNs may be completely trimmed out
+    # because they were sorted into the tail of the array. In these cases,
+    # replace computed variances with `np.nan`.
+    var_win[nans_indices] = np.nan
+    return var_win
 
 
 def _broadcast_concatenate(xs, axis):
@@ -6194,17 +6300,17 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(12345678) # fix random seed to get same numbers
+    >>> rng = np.random.default_rng()
 
-    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> rvs2 = (stats.norm.rvs(loc=5,scale=10,size=500) +
-    ...         stats.norm.rvs(scale=0.2,size=500))
-    >>> stats.ttest_rel(rvs1,rvs2)
-    (0.24101764965300962, 0.80964043445811562)
-    >>> rvs3 = (stats.norm.rvs(loc=8,scale=10,size=500) +
-    ...         stats.norm.rvs(scale=0.2,size=500))
-    >>> stats.ttest_rel(rvs1,rvs3)
-    (-3.9995108708727933, 7.3082402191726459e-005)
+    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+    >>> rvs2 = (stats.norm.rvs(loc=5, scale=10, size=500, random_state=rng)
+    ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
+    >>> stats.ttest_rel(rvs1, rvs2)
+    Ttest_relResult(statistic=-0.4549717054410304, pvalue=0.6493274702088672)
+    >>> rvs3 = (stats.norm.rvs(loc=8, scale=10, size=500, random_state=rng)
+    ...         + stats.norm.rvs(scale=0.2, size=500, random_state=rng))
+    >>> stats.ttest_rel(rvs1, rvs3)
+    Ttest_relResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -6549,12 +6655,18 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
+    scipy.stats.fisher_exact : A more powerful alternative to the chisquare
+                               test if any of the frequencies are less than 5.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5.
+    and expected frequencies should be at least 5. If one or more frequencies
+    are less than 5, Fisher's Exact Test can be used with greater statistical
+    power. According to [3]_, the total number of samples is recommended to be
+    greater than 13, otherwise a table-based method of obtaining p-values is 
+    recommended.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
@@ -6574,6 +6686,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            Statistics". Chapter 8.
            https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
+           in the case of a correlated system of variables is such that it can be reasonably 
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           (1900), pp. 157-175.
 
     Examples
     --------
@@ -6731,33 +6847,33 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Examples
     --------
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
 
     >>> x = np.linspace(-15, 15, 9)
     >>> stats.ks_1samp(x, stats.norm.cdf)
     (0.44435602715924361, 0.038850142705171065)
 
-    >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.ks_1samp(stats.norm.rvs(size=100), stats.norm.cdf)
-    (0.058352892479417884, 0.8653960860778898)
+    >>> stats.ks_1samp(stats.norm.rvs(size=100, random_state=rng),
+    ...                stats.norm.cdf)
+    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
 
     *Test against one-sided alternative hypothesis*
 
     Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
 
-    >>> np.random.seed(987654321)
-    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    (0.12464329735846891, 0.040989164077641749)
+    KstestResult(statistic=0.100203351482..., pvalue=0.125544644447...)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    (0.0072115233216311081, 0.98531158590396395)
+    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
 
     Reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.ks_1samp(x, stats.norm.cdf)
-    (0.12464329735846891, 0.08197335233541582)
+    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
 
     Don't reject null hypothesis in favor of alternative hypothesis: two-sided
 
@@ -6767,17 +6883,17 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     distribution, and the K-S test does not reject the hypothesis that the
     sample came from the normal distribution:
 
-    >>> np.random.seed(987654321)
-    >>> stats.ks_1samp(stats.t.rvs(100,size=100), stats.norm.cdf)
-    (0.072018929165471257, 0.6505883498379312)
+    >>> stats.ks_1samp(stats.t.rvs(100,size=100, random_state=rng),
+    ...                stats.norm.cdf)
+    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at the 10% level:
 
-    >>> np.random.seed(987654321)
-    >>> stats.ks_1samp(stats.t.rvs(3,size=100), stats.norm.cdf)
-    (0.131016895759829, 0.058826222555312224)
+    >>> stats.ks_1samp(stats.t.rvs(3,size=100, random_state=rng),
+    ...                stats.norm.cdf)
+    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7147,7 +7263,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Note that the alternative hypotheses describe the *CDFs* of the
     underlying distributions, not the observed values. For example,
     suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
-    x1 tend to be less than those in x2.      
+    x1 tend to be less than those in x2.
 
 
     If the KS statistic is small or the p-value is high, then we cannot
@@ -7173,31 +7289,32 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     Examples
     --------
     >>> from scipy import stats
-    >>> np.random.seed(12345678)  #fix random seed to get the same result
+    >>> rng = np.random.default_rng()
+
     >>> n1 = 200  # size of first sample
     >>> n2 = 300  # size of second sample
 
     For a different distribution, we can reject the null hypothesis since the
     pvalue is below 1%:
 
-    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1)
-    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5)
+    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1, random_state=rng)
+    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5, random_state=rng)
     >>> stats.ks_2samp(rvs1, rvs2)
-    (0.20833333333333334, 5.129279597781977e-05)
+     KstestResult(statistic=0.24833333333333332, pvalue=5.846586728086578e-07)
 
     For a slightly different distribution, we cannot reject the null hypothesis
     at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
 
-    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0)
+    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0, random_state=rng)
     >>> stats.ks_2samp(rvs1, rvs3)
-    (0.10333333333333333, 0.14691437867433876)
+    KstestResult(statistic=0.07833333333333334, pvalue=0.4379658456442945)
 
     For an identical distribution, we cannot reject the null hypothesis since
     the p-value is high, 41%:
 
-    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0)
+    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0, random_state=rng)
     >>> stats.ks_2samp(rvs1, rvs4)
-    (0.07999999999999996, 0.41126949729859719)
+    KstestResult(statistic=0.12166666666666667, pvalue=0.05401863039081145)
 
     """
     if mode not in ['auto', 'exact', 'asymp']:
@@ -7372,45 +7489,43 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     Note that the alternative hypotheses describe the *CDFs* of the
     underlying distributions, not the observed values. For example,
     suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
-    x1 tend to be less than those in x2.      
+    x1 tend to be less than those in x2.
 
 
     Examples
     --------
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
 
     >>> x = np.linspace(-15, 15, 9)
     >>> stats.kstest(x, 'norm')
-    (0.44435602715924361, 0.038850142705171065)
+    KstestResult(statistic=0.444356027159..., pvalue=0.038850140086...)
 
-    >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> stats.kstest(stats.norm.rvs(size=100), stats.norm.cdf)
-    (0.058352892479417884, 0.8653960860778898)
+    >>> stats.kstest(stats.norm.rvs(size=100, random_state=rng), stats.norm.cdf)
+    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
 
     The above lines are equivalent to:
 
-    >>> np.random.seed(987654321)
     >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
-    (0.058352892479417884, 0.8653960860778898)
+    KstestResult(statistic=0.113810164200..., pvalue=0.138690052319...)  # may vary
 
     *Test against one-sided alternative hypothesis*
 
     Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
 
-    >>> np.random.seed(987654321)
-    >>> x = stats.norm.rvs(loc=0.2, size=100)
+    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
     >>> stats.kstest(x, 'norm', alternative='less')
-    (0.12464329735846891, 0.040989164077641749)
+    KstestResult(statistic=0.1002033514..., pvalue=0.1255446444...)
 
     Reject null hypothesis in favor of alternative hypothesis: less
 
     >>> stats.kstest(x, 'norm', alternative='greater')
-    (0.0072115233216311081, 0.98531158590396395)
+    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
 
     Don't reject null hypothesis in favor of alternative hypothesis: greater
 
     >>> stats.kstest(x, 'norm')
-    (0.12464329735846891, 0.08197335233541582)
+    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
 
     *Testing t distributed random variables against normal distribution*
 
@@ -7418,17 +7533,15 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     distribution, and the K-S test does not reject the hypothesis that the
     sample came from the normal distribution:
 
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(100, size=100), 'norm')
-    (0.072018929165471257, 0.6505883498379312)
+    >>> stats.kstest(stats.t.rvs(100, size=100, random_state=rng), 'norm')
+    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at the 10% level:
 
-    >>> np.random.seed(987654321)
-    >>> stats.kstest(stats.t.rvs(3, size=100), 'norm')
-    (0.131016895759829, 0.058826222555312224)
+    >>> stats.kstest(stats.t.rvs(3, size=100, random_state=rng), 'norm')
+    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
     # to not break compatibility with existing code
@@ -7640,8 +7753,9 @@ def ranksums(x, y, alternative='two-sided'):
     statistic.
 
     >>> from scipy.stats import ranksums
-    >>> sample1 = np.random.uniform(-1, 1, 200)
-    >>> sample2 = np.random.uniform(-0.5, 1.5, 300) # a shifted distribution
+    >>> rng = np.random.default_rng()
+    >>> sample1 = rng.uniform(-1, 1, 200)
+    >>> sample2 = rng.uniform(-0.5, 1.5, 300) # a shifted distribution
     >>> ranksums(sample1, sample2)
     RanksumsResult(statistic=-7.887059, pvalue=3.09390448e-15)  # may vary
     >>> ranksums(sample1, sample2, alternative='less')

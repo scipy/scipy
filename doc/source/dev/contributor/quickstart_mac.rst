@@ -46,7 +46,7 @@ Building SciPy
 
 #. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pythran pytest compilers sphinx matplotlib mypy`` to install the following packages:
+#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pythran pytest compilers sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy`` to install the following packages:
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
@@ -54,7 +54,7 @@ Building SciPy
 
    * ``pytest`` is needed for running the test suite.
 
-   * ``sphinx``, ``pydata-sphinx-theme`` and ``matplotlib`` are required to render the SciPy documentation.
+   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-panels`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
 

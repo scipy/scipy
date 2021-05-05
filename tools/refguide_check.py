@@ -115,6 +115,7 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
+    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -648,6 +649,7 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     success = True
     # Redirect stderr to the stdout or output
     tmp_stderr = sys.stdout if doctest_warnings else output
+    from scipy._lib._util import _fixed_default_rng
 
     @contextmanager
     def temp_cwd():
@@ -662,8 +664,9 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
 
     # Run tests, trying to restore global state afterward
     cwd = os.getcwd()
-    with np.errstate(), np.printoptions(), temp_cwd() as tmpdir, \
-            redirect_stderr(tmp_stderr):
+    with np.errstate(), np.printoptions(), temp_cwd(), \
+            redirect_stderr(tmp_stderr), \
+            _fixed_default_rng():
         # try to ensure random seed is NOT reproducible
         np.random.seed(None)
 
