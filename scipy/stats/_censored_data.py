@@ -200,7 +200,7 @@ class CensoredData:
         right_str = " ".join(np.array_repr(self._right).split())
         intervals_str = " ".join(np.array_repr(self._intervals).split())
         return (f"CensoredData(x={x_str}, left={left_str}, right={right_str},"
-                f" intervals={intervals_str}")
+                f" intervals={intervals_str})")
 
     def __str__(self):
         num_nc = len(self._x)
@@ -240,6 +240,9 @@ class CensoredData:
                 + len(self._intervals))
 
     def num_censored(self):
+        """
+        Number of censored values.
+        """
         return len(self._left) + len(self._right) + len(self._intervals)
 
     @classmethod
@@ -257,6 +260,28 @@ class CensoredData:
             values.  If ``censored[k]`` is True, the corresponding value
             in `x` is right-censored.  That is, the value ``x[k]``
             is the lower bound of the true (but unknown) value.
+
+        Returns
+        -------
+        data : `CensoredData`
+            An instance of `CensoredData` that represents the
+            collection of uncensored and right-censored values.
+
+        Examples
+        --------
+        >>> from scipy.stats import CensoredData
+
+        Two uncensored values (4 and 10) and two right-censored values
+        (24 and 25).
+
+        >>> data = CensoredData.right_censored([4, 10, 24, 25],
+        ...                                    [False, False, True, True])
+        >>> data
+        CensoredData(x=array([ 4., 10.]), left=array([], dtype=float64),
+        right=array([24., 25.]), intervals=array([], shape=(0, 2),
+        dtype=float64))
+        >>> print(data)
+        CensoredData(4 values: 2 not censored, 2 right-censored)
         """
         x, censored = _validate_x_censored(x, censored)
         return cls(x=x[~censored], right=x[censored])
@@ -276,6 +301,28 @@ class CensoredData:
             values.  If ``censored[k]`` is True, the corresponding value
             in `x` is left-censored.  That is, the value ``x[k]``
             is the upper bound of the true (but unknown) value.
+
+        Returns
+        -------
+        data : `CensoredData`
+            An instance of `CensoredData` that represents the
+            collection of uncensored and left-censored values.
+
+        Examples
+        --------
+        >>> from scipy.stats import CensoredData
+
+        Two uncensored values (0.12 and 0.033) and two left-censored values
+        (both 1e-3).
+
+        >>> data = CensoredData.left_censored([0.12, 0.033, 1e-3, 1e-3],
+        ...                                    [False, False, True, True])
+        >>> data
+        CensoredData(x=array([0.12 , 0.033]), left=array([0.001, 0.001]),
+        right=array([], dtype=float64), intervals=array([], shape=(0, 2),
+        dtype=float64))
+        >>> print(data)
+        CensoredData(4 values: 2 not censored, 2 left-censored)
         """
         x, censored = _validate_x_censored(x, censored)
         return cls(x=x[~censored], left=x[censored])
