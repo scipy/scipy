@@ -8,6 +8,9 @@ Continuous integration is part of our development process and ensure that
 every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
+.. note:: Before submitting or updating your PR, please ensure that you tested
+          locally your changes. See :ref:`pr-checklist`.
+
 Workflows
 =========
 
@@ -57,9 +60,10 @@ Skipping
 ========
 
 Being an open-source project, we have access to a quota of CI ressources.
-Ultimately, resources are limited and we should use them with care.
-Depending on the proposed change, you might want to skip part of the checks.
+Ultimately, resources are limited and we should use them with care. This is
+why we ask you to verify your changes locally before pushing them.
 
+Depending on the proposed change, you might want to skip part of the checks.
 It will be to the discretion of a maintainer to re-run some tests before
 integration.
 
@@ -70,3 +74,10 @@ Skipping CI can be achieve by adding a special text in the commit message:
 * ``[skip ci]``: will skip CicleCI
 
 Of course, you can combine these to skip multiple workflows.
+
+This skip information should be placed on a new line. In this example, we
+just updated a ``.rst`` file in the documentation and ask to skip Azure and
+GitHub Actions' workflows::
+
+    DOC: improve QMCEngine examples
+    [skip azp] [skip actions]
