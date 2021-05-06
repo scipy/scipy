@@ -290,8 +290,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        Should take at least one (possibly length N vector) argument and
-        returns M floating point numbers. It must not return NaNs or
+        Should take at least one (possibly length ``N`` vector) argument and
+        returns ``M`` floating point numbers. It must not return NaNs or
         fitting might fail. M must be greater than or equal to N (M >= N).
     x0 : ndarray
         The starting estimate for the minimization.
