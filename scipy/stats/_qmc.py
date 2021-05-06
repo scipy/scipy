@@ -1056,52 +1056,49 @@ class OptimalLatinHypercube(QMCEngine):
                   [0, n - 1],
                   [0, n - 1])
 
-        def inner_loop(sample, disc, th):
-            n_iters = 100  # M
-            n_perms = 50  # J
-            n_acpt = 0
-            n_imp = 0
-
-            for _ in range(n_iters):
-                col = rng_integers(self.rng, *bounds[0], size=n_perms)
-                row_1 = rng_integers(self.rng, *bounds[1], size=n_perms)
-                row_2 = rng_integers(self.rng, *bounds[2], size=n_perms)
-
-                best_disc = [_perturb_discrepancy(sample,
-                                                  row_1[i], row_2[i], col[i],
-                                                  disc)
-                             for i in range(n_perms)]
-
-                idx = np.argmin(best_disc)
-                best_disc = best_disc[idx]
-
-                if (best_disc - disc) < (th * self.rng.uniform()):
-                    col, row_1, row_2 = col[idx], row_1[idx], row_2[idx]
-                    sample[row_1, col], sample[row_2, col] = (
-                        sample[row_2, col], sample[row_1, col])
-
-                    disc = best_disc
-                    n_acpt += 1
-
-                    if disc < self.best_disc:
-                        self.best_sample = sample
-                        self.best_disc = disc
-                        n_imp += 1
-
-            r_acpt, r_imp =  n_acpt / n_iters, n_imp / n_iters
-
-            return sample, disc, r_acpt, r_imp
-
-        def outer_loop(alpha=0.8, alpha_2=0.9, alpha_3=0.7, tol=1.1):
+        def outer_loop(alpha=0.8, alpha_2=0.9, alpha_3=0.7, tol=1):
             th = 0.005 * self.best_disc
-
             sample = self.best_sample
             disc = self.best_disc
 
             for _ in range(self.niter):
                 old_best_disc = self.best_disc
 
-                sample, disc, r_acpt, r_imp = inner_loop(sample, disc, th)
+                # inner loop
+                n_iters = 100  # M
+                n_perms = 50  # J
+                n_acpt = 0
+                n_imp = 0
+
+                for _ in range(n_iters):
+                    col = rng_integers(self.rng, *bounds[0], size=n_perms)
+                    row_1 = rng_integers(self.rng, *bounds[1], size=n_perms)
+                    row_2 = rng_integers(self.rng, *bounds[2], size=n_perms)
+
+                    disc_inner = [_perturb_discrepancy(sample,
+                                                       row_1[i], row_2[i],
+                                                       col[i],
+                                                       disc)
+                                  for i in range(n_perms)]
+
+                    idx = np.argmin(disc_inner)
+                    disc_inner = disc_inner[idx]
+
+                    if (disc_inner - disc) <= (th * self.rng.uniform()):
+                        col, row_1, row_2 = col[idx], row_1[idx], row_2[idx]
+
+                        sample[row_1, col], sample[row_2, col] = (
+                            sample[row_2, col], sample[row_1, col])
+
+                        disc = disc_inner
+                        n_acpt += 1
+
+                        if disc < self.best_disc:
+                            self.best_sample = sample
+                            self.best_disc = disc
+                            n_imp += 1
+
+                r_acpt, r_imp = n_acpt / n_iters, n_imp / n_iters
 
                 if (old_best_disc / self.best_disc) > tol:
                     # improvement
