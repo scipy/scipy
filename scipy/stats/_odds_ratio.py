@@ -7,6 +7,7 @@ from scipy.special import ndtr, ndtri
 from scipy.optimize import brentq
 from ._discrete_distns import nchypergeom_fisher
 from .stats import fisher_exact
+from ._common import ConfidenceInterval
 
 
 def _sample_odds_ratio(table):
@@ -172,12 +173,6 @@ def _sample_odds_ratio_ci(table, confidence_level=0.95,
         loghigh = log_or + z*se
 
     return np.exp(loglow), np.exp(loghigh)
-
-
-@dataclass
-class ConfidenceInterval:
-    low: float
-    high: float
 
 
 @dataclass
