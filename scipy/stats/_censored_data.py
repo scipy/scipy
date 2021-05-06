@@ -194,13 +194,6 @@ class CensoredData:
         # intervals with nonzero but finite length.
         self._intervals = intervals2
 
-        # # Precompute masks for the various types of censoring.
-        # self._not_censored = lower == upper
-        # self._left_censored = np.isneginf(lower)
-        # self._right_censored = np.isposinf(upper)
-        # self._interval_censored = ~(self._not_censored | self._left_censored
-        #                             | self._right_censored)
-
     def __repr__(self):
         x_str = " ".join(np.array_repr(self._x).split())
         left_str = " ".join(np.array_repr(self._left).split())
