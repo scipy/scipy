@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import (TestCase, # type: ignore[attr-defined]
-                           assert_array_almost_equal,
+from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
 from scipy.sparse import csr_matrix
