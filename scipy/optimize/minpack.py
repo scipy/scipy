@@ -411,8 +411,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: func input vector length N=%s must '
-                        'not exceed func output vector length M=%s' % (n, m))
+        raise TypeError(f"Improper input: func input vector length N={n} must"
+                        f" not exceed func output vector length M={m}")
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
