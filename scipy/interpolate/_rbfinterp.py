@@ -302,11 +302,20 @@ class RBFInterpolator:
     values for the shape parameter correspond to wider RBFs. The problem can
     become ill-conditioned or singular when the shape parameter is too small.
 
+    The memory required to solve for the RBF interpolation coefficients
+    increases quadratically with the number of data points. This makes RBF
+    interpolation impractical when interpolating more than about a thousand
+    data points. See `RBFLocalInterpolator` for a more memory-efficient
+    alternative to this class.
+
     .. versionadded:: 1.17.0
 
     See Also
     --------
     RBFLocalInterpolator
+    NearestNDInterpolator
+    LinearNDInterpolator
+    CloughTocher2DInterpolator
 
     References
     ----------
@@ -412,7 +421,7 @@ class RBFInterpolator:
 class RBFLocalInterpolator:
     """RBF interpolation using the k nearest data points.
 
-    This class can be a faster and less memory intensive alternative to
+    This class can be a faster and more memory-efficient alternative to
     `RBFInterpolator` when interpolating many data points.
 
     See the Notes section of `RBFInterpolator` for a description of RBF
@@ -468,6 +477,9 @@ class RBFLocalInterpolator:
     See Also
     --------
     RBFInterpolator
+    LinearNDInterpolator
+    NearestNDInterpolator
+    CloughTocher2DInterpolator
 
     """
 
