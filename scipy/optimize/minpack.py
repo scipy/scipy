@@ -290,9 +290,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     Parameters
     ----------
     func : callable
-        Should take at least one (possibly length N vector) argument and
-        returns M floating point numbers. It must not return NaNs or
-        fitting might fail.
+        Should take at least one (possibly length ``N`` vector) argument and
+        returns ``M`` floating point numbers. It must not return NaNs or
+        fitting might fail. ``M`` must be greater than or equal to ``N``.
     x0 : ndarray
         The starting estimate for the minimization.
     args : tuple, optional
@@ -411,7 +411,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     m = shape[0]
 
     if n > m:
-        raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
+        raise TypeError(f"Improper input: func input vector length N={n} must"
+                        f" not exceed func output vector length M={m}")
 
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
