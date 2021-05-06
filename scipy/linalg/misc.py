@@ -53,7 +53,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     -----
     For values of ``ord <= 0``, the result is, strictly speaking, not a
     mathematical 'norm', but it may still be useful for various numerical
-    purposes. Empty array norm is set to 0.0  unless ``ord <= 0``, where an
+    purposes. Empty array norm is set to 0.0 unless ``ord < 0``, where an
     error is raised.
 
     The following norms can be calculated:
