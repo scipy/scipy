@@ -2063,6 +2063,28 @@ def test_sokalmichener():
     assert_equal(dist1, dist2)
 
 
+def test_sokalmichener_with_weight():
+    # from: | 1 |   | 0 |
+    # to:   | 1 |   | 1 |
+    # weight|   | 1 |   | 0.2
+    ntf = 0 * 1 + 0 * 0.2
+    nft = 0 * 1 + 1 * 0.2
+    ntt = 1 * 1 + 0 * 0.2
+    nff = 0 * 1 + 0 * 0.2
+    expected = 2 * (nft + ntf) / (ntt + nff + 2 * (nft + ntf))
+    assert_almost_equal(expected, 0.2857143)
+    actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
+    assert_almost_equal(expected, actual)
+
+    a1 = [False, False, True, True, True, False, False, True, True, True, True,
+          True, True, False, True, False, False, False, True, True]
+    a2 = [True, True, True, False, False, True, True, True, False, True,
+          True, True, True, True, False, False, False, True, True, True]
+
+    for w in [0.05, 0.1, 1.0, 20.0]:
+        assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
+
+
 def test_modifies_input():
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
@@ -2178,3 +2200,32 @@ def test_yule_all_same():
 
     d = cdist(x[:1], x[:1], 'yule')
     assert_equal(d, [[0.0]])
+
+
+def test_jensenshannon():
+    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0),
+                        1.0)
+    assert_almost_equal(jensenshannon([1.0, 0.0], [0.5, 0.5]),
+                        0.46450140402245893)
+    assert_almost_equal(jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0]), 0.0)
+
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0),
+                        [0.0, 0.0])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1),
+                        [0.0649045])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=0,
+                                      keepdims=True), [[0.0, 0.0]])
+    assert_almost_equal(jensenshannon([[1.0, 2.0]], [[0.5, 1.5]], axis=1,
+                                      keepdims=True), [[0.0649045]])
+
+    a = np.array([[1, 2, 3, 4],
+                  [5, 6, 7, 8],
+                  [9, 10, 11, 12]])
+    b = np.array([[13, 14, 15, 16],
+                  [17, 18, 19, 20],
+                  [21, 22, 23, 24]])
+
+    assert_almost_equal(jensenshannon(a, b, axis=0),
+                        [0.1954288, 0.1447697, 0.1138377, 0.0927636])
+    assert_almost_equal(jensenshannon(a, b, axis=1),
+                        [0.1402339, 0.0399106, 0.0201815])

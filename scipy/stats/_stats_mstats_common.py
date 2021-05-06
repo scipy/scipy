@@ -1,8 +1,8 @@
 import numpy as np
-
+import scipy.stats.stats
 from . import distributions
-
 from .._lib._bunch import _make_tuple_bunch
+
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -13,7 +13,7 @@ LinregressResult = _make_tuple_bunch('LinregressResult',
                                      extra_field_names=['intercept_stderr'])
 
 
-def linregress(x, y=None):
+def linregress(x, y=None, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -26,6 +26,15 @@ def linregress(x, y=None):
         are then found by splitting the array along the length-2 dimension. In
         the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the slope of the regression line is nonzero
+        * 'less': the slope of the regression line is less than zero
+        * 'greater':  the slope of the regression line is greater than zero
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
@@ -39,9 +48,10 @@ def linregress(x, y=None):
         rvalue : float
             Correlation coefficient.
         pvalue : float
-            Two-sided p-value for a hypothesis test whose null hypothesis is
+            The p-value for a hypothesis test whose null hypothesis is
             that the slope is zero, using Wald Test with t-distribution of
-            the test statistic.
+            the test statistic. See `alternative` above for alternative
+            hypotheses.
         stderr : float
             Standard error of the estimated slope (gradient), under the
             assumption of residual normality.
@@ -79,12 +89,12 @@ def linregress(x, y=None):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
 
     Generate some data:
 
-    >>> np.random.seed(12345678)
-    >>> x = np.random.random(10)
-    >>> y = 1.6*x + np.random.random(10)
+    >>> x = rng.random(10)
+    >>> y = 1.6*x + rng.random(10)
 
     Perform the linear regression:
 
@@ -93,7 +103,7 @@ def linregress(x, y=None):
     Coefficient of determination (R-squared):
 
     >>> print(f"R-squared: {res.rvalue**2:.6f}")
-    R-squared: 0.735498
+    R-squared: 0.717533
 
     Plot the data along with the fitted line:
 
@@ -111,10 +121,10 @@ def linregress(x, y=None):
 
     >>> ts = tinv(0.05, len(x)-2)
     >>> print(f"slope (95%): {res.slope:.6f} +/- {ts*res.stderr:.6f}")
-    slope (95%): 1.944864 +/- 0.950885
+    slope (95%): 1.453392 +/- 0.743465
     >>> print(f"intercept (95%): {res.intercept:.6f}"
     ...       f" +/- {ts*res.intercept_stderr:.6f}")
-    intercept (95%): 0.268578 +/- 0.488822
+    intercept (95%): 0.616950 +/- 0.544475
 
     """
     TINY = 1.0e-20
@@ -172,7 +182,8 @@ def linregress(x, y=None):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = 2 * distributions.t.sf(np.abs(t), df)
+        t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
         # Also calculate the standard error of the intercept

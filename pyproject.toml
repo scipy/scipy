@@ -42,3 +42,70 @@ requires = [
     "numpy; python_version>='3.10'",
     "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
 ]
+
+[project]
+name = "SciPy"
+license = {file = "LICENSE.txt"}
+
+maintainers = [
+    {name = "SciPy Developers", email = "scipy-dev@python.org"},
+]
+# Note: Python and NumPy upper version bounds should be set correctly in
+# release branches, see:
+#     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.16.5",
+]
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: C",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+]
+dynamic = ['version', 'description']
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "asv",
+    "mpmath",
+    "gmpy2",
+    "scikit-umfpack",
+]
+doc = [
+    "sphinx!=3.1.0",
+    "pydata-sphinx-theme>=0.6.1",
+    "sphinx-panels>=0.5.2",
+    "matplotlib>2",
+    "numpydoc==1.1.0",
+]
+dev = [
+    "mypy",
+    "typing_extensions",
+    "pycodestyle",
+    "flake8",
+]
+
+[project.urls]
+homepage = "https://scipy.org/"
+documentation = "https://docs.scipy.org/doc/scipy/reference/"
+source = "https://github.com/scipy/scipy"
+download = "https://github.com/scipy/scipy/releases"
+tracker = "https://github.com/scipy/scipy/issues"

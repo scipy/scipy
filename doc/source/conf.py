@@ -43,6 +43,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
+    'sphinx_panels',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
@@ -59,6 +60,10 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
+
+# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
+# already loads it
+panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

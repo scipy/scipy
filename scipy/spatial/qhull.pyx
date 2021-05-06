@@ -2180,16 +2180,17 @@ def tsearch(tri, xi):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
+    >>> rng = np.random.default_rng()
 
     The Delaunay triangulation of a set of random points:
 
-    >>> pts = np.random.rand(20, 2)
+    >>> pts = rng.random((20, 2))
     >>> tri = Delaunay(pts)
     >>> _ = delaunay_plot_2d(tri)
 
     Find the simplices containing a given set of points:
 
-    >>> loc = np.random.uniform(0.2, 0.8, (5, 2))
+    >>> loc = rng.uniform(0.2, 0.8, (5, 2))
     >>> s = tsearch(tri, loc)
     >>> plt.triplot(pts[:, 0], pts[:, 1], tri.simplices[s], 'b-', mask=s==-1)
     >>> plt.scatter(loc[:, 0], loc[:, 1], c='r', marker='x')
@@ -2323,13 +2324,13 @@ class ConvexHull(_QhullUser):
 
         .. versionadded:: 1.3.0
     area : float
-        Surface area of the convex hull when input dimension > 2. 
+        Surface area of the convex hull when input dimension > 2.
         When input `points` are 2-dimensional, this is the perimeter of the convex hull.
 
         .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull when input dimension > 2. 
-        When input `points` are 2-dimensional, this is the area of the convex hull. 
+        Volume of the convex hull when input dimension > 2.
+        When input `points` are 2-dimensional, this is the area of the convex hull.
 
         .. versionadded:: 0.17.0
 
@@ -2352,7 +2353,8 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
-    >>> points = np.random.rand(30, 2)   # 30 random points in 2-D
+    >>> rng = np.random.default_rng()
+    >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
 
     Plot it:
