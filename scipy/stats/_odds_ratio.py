@@ -316,6 +316,8 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     r"""
     Compute the odds ratio for a 2x2 contingency table.
 
+    Also test the null hypothesis that the true odds ratio is 1.
+
     Parameters
     ----------
     table : array_like of ints
@@ -328,9 +330,9 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided'
-        * 'less': one-sided
-        * 'greater': one-sided
+        * 'two-sided': the true odds ratio is not equal to 1.
+        * 'less': the true odds ratio is less than 1.
+        * 'greater': the true odds ratio is greater than 1.
 
     Returns
     -------
@@ -363,10 +365,17 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         The object has the method `odds_ratio_ci` that computes
         the confidence interval of the odds ratio.
 
+    See Also
+    --------
+    scipy.stats.fisher_exact
+    relative_risk
+
     Notes
     -----
     The conditional odds ratio was discussed by Fisher (see "Example 1"
     of [1]_).  Texts that cover the odds ratio include [2]_ and [3]_.
+
+    .. versionadded:: 1.7.0
 
     References
     ----------

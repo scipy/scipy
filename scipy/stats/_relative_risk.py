@@ -160,6 +160,10 @@ def relative_risk(exposed_cases, exposed_total, control_cases, control_total):
         the confidence interval of the relative risk for a given confidence
         level.
 
+    See Also
+    --------
+    odds_ratio
+
     Notes
     -----
     The R package epitools has the function `riskratio`, which accepts
