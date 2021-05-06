@@ -26,7 +26,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     ----------
     a : (M,) or (M, N) array_like
         Input array. If `axis` is None, `a` must be 1D or 2D.
-    ord : {non-zero int, inf, -inf, 'fro'}, optional
+    ord : {int, float, inf, -inf, 'fro', 'nuc'}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object
     axis : {int, 2-tuple of ints, None}, optional
@@ -63,6 +63,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     =====  ============================  ==========================
     None   Frobenius norm                2-norm
     'fro'  Frobenius norm                --
+    'nuc'  nuclear norm                  --
     inf    max(sum(abs(x), axis=1))      max(abs(x))
     -inf   min(sum(abs(x), axis=1))      min(abs(x))
     0      --                            sum(x != 0)
@@ -76,6 +77,11 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     The Frobenius norm is given by [1]_:
 
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+
+    The nuclear norm is the sum of the singular values.
+
+    Both the Frobenius and nuclear norm orders are only defined for
+    matrices and raise a ValueError when x.ndim != 2.
 
     The ``axis`` and ``keepdims`` arguments are passed directly to
     ``numpy.linalg.norm`` and are only usable if they are supported
