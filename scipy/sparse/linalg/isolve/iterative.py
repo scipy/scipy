@@ -430,7 +430,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None, callback_type=None, orth=None):
+          restrt=None, atol=None, callback_type=None, *, orth=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
