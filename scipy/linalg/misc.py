@@ -31,7 +31,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         ``a.ravel`` will be returned.
     ord : {int, float, inf, -inf, 'fro', 'nuc', None}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
-        `inf` object
+        `inf` object.
     axis : {int, 2-tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `a` along which to
         compute the vector norms.  If `axis` is a 2-tuple, it specifies the
@@ -56,8 +56,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     -----
     For values of ``ord <= 0``, the result is, strictly speaking, not a
     mathematical 'norm', but it may still be useful for various numerical
-    purposes. Empty array norm is set to 0.0 unless ``ord < 0``, where an
-    error is raised.
+    purposes.
 
     The following norms can be calculated:
 
