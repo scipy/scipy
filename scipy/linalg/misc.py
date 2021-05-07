@@ -148,15 +148,8 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     else:
         a = np.asarray(a)
 
-    # define empty array norm as 0.0 for ord > 0
-    if a.size == 0:
-        if ord in (None, "fro") or ord > 0:
-            return 0.0
-        else:
-            raise ValueError("Empty array norm is ill-defined for ord <= 0")
-
     # Only use optimized norms if axis and keepdims are not specified.
-    if a.dtype.char in 'fdFD' and axis is None and not keepdims:
+    if a.size and a.dtype.char in 'fdFD' and axis is None and not keepdims:
 
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
