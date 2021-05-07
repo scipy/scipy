@@ -827,9 +827,11 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     return postprocess(x), info
 
 
-def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None, callback=None, restrt=None):
+def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
+               callback=None, restrt=None):
     """
-    Use Restarted Generalized Minimal RESidual based on modified Gram-Schmidt iteration to solve ``Ax = b``.
+    Use Restarted Generalized Minimal RESidual based on modified Gram-Schmidt
+    iteration to solve ``Ax = b``.
 
     Parameters
     ----------
