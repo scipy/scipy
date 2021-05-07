@@ -916,9 +916,9 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
     maxOuterIter = maxiter
     if x0 is None:
         x0 = x.copy()
-    if restrt is None:
-        restrt = 20
-    m = min(restrt, ndofs)
+    if restart is None:
+        restart = 20
+    m = min(restart, ndofs)
 
     # Define orthonormal basis
     V = np.zeros((m+1, ndofs), dtype=dtype)
