@@ -65,14 +65,14 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     None   Frobenius norm                2-norm
     'fro'  Frobenius norm                --
     'nuc'  nuclear norm                  --
-    inf    max(sum(abs(x), axis=1))      max(abs(x))
-    -inf   min(sum(abs(x), axis=1))      min(abs(x))
-    0      --                            sum(x != 0)
-    1      max(sum(abs(x), axis=0))      as below
-    -1     min(sum(abs(x), axis=0))      as below
+    inf    max(sum(abs(a), axis=1))      max(abs(a))
+    -inf   min(sum(abs(a), axis=1))      min(abs(a))
+    0      --                            sum(a != 0)
+    1      max(sum(abs(a), axis=0))      as below
+    -1     min(sum(abs(a), axis=0))      as below
     2      2-norm (largest sing. value)  as below
     -2     smallest singular value       as below
-    other  --                            sum(abs(x)**ord)**(1./ord)
+    other  --                            sum(abs(a)**ord)**(1./ord)
     =====  ============================  ==========================
 
     The Frobenius norm is given by [1]_:
@@ -82,7 +82,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     The nuclear norm is the sum of the singular values.
 
     Both the Frobenius and nuclear norm orders are only defined for
-    matrices and raise a ValueError when x.ndim != 2.
+    matrices and raise a ValueError when `a.ndim != 2`.
 
     `ord=None` is supported for any array shape and returns the 2-norm
     of the flattened array.
