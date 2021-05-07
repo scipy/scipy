@@ -6,7 +6,7 @@
 #ifdef __GNUC__
 #define ALWAYS_INLINE inline __attribute__((always_inline))
 #define INLINE_LAMBDA __attribute__((always_inline))
-#elif defined(MSC_VER)
+#elif defined(_MSC_VER)
 #define ALWAYS_INLINE __forceinline
 #define INLINE_LAMBDA
 #else
