@@ -882,7 +882,7 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
 
     Notes
     -----
-    A preconditioner, P, is chosen such that P is close to A but easy to solve
+    A preconditioner ``P`` is chosen such that ``P`` is close to `A` but easy to solve
     for. The preconditioner parameter required by this routine is
     ``M = P^-1``. The inverse should preferably not be calculated
     explicitly.  Rather, use the following template to produce M::
