@@ -18,15 +18,16 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     """
     Matrix or vector norm.
 
-    This function is able to return one of seven different matrix norms,
+    This function is able to return one of eight different matrix norms,
     or one of an infinite number of vector norms (described below), depending
-    on the value of the ``ord`` parameter.
+    on the value of the ``ord`` parameter. For tensors with rank different from
+    1 or 2, only `ord=None` is supported.
 
     Parameters
     ----------
     a : (M,) or (M, N) array_like
         Input array. If `axis` is None, `a` must be 1D or 2D.
-    ord : {int, float, inf, -inf, 'fro', 'nuc'}, optional
+    ord : {int, float, inf, -inf, 'fro', 'nuc', None}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object
     axis : {int, 2-tuple of ints, None}, optional
@@ -82,6 +83,9 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
     Both the Frobenius and nuclear norm orders are only defined for
     matrices and raise a ValueError when x.ndim != 2.
+
+    `ord=None` is supported for any array shape and returns the 2-norm
+    of the flattened array.
 
     References
     ----------
