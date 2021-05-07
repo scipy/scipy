@@ -323,10 +323,16 @@ class dia_matrix(_data_matrix):
         if k <= -rows or k >= cols:
             return np.empty(0, dtype=self.data.dtype)
         idx, = np.nonzero(self.offsets == k)
-        first_col, last_col = max(0, k), min(rows + k, cols)
+        first_col = max(0, k)
+        last_col = min(rows + k, cols)
+        result_size = last_col - first_col
         if idx.size == 0:
-            return np.zeros(last_col - first_col, dtype=self.data.dtype)
-        return self.data[idx[0], first_col:last_col]
+            return np.zeros(result_size, dtype=self.data.dtype)
+        result = self.data[idx[0], first_col:last_col]
+        padding = result_size - len(result)
+        if padding > 0:
+            result = np.pad(result, (0, padding), mode='constant')
+        return result
 
     diagonal.__doc__ = spmatrix.diagonal.__doc__
 
