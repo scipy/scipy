@@ -837,7 +837,7 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
     ----------
     A : {sparse matrix, dense matrix, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : {array, matrix}
