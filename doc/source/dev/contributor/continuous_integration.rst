@@ -9,7 +9,7 @@ every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
 .. note:: Before submitting or updating your PR, please ensure that you tested
-          locally your changes. See :ref:`pr-checklist`.
+          locally your changes. See :ref:`pr-checklist` and :ref:`runtests`.
 
 Workflows
 =========
@@ -27,22 +27,27 @@ rendered.
 The logs can be long, but you will always find out why your did not pass a
 check. Simply click on ``Details`` to access the logs.
 
-Following is a list of all the different workflows in use. They are gouped
+Following is a list of all the different workflows in use. They are grouped
 by CI resources providers.
 
 GitHub Actions
 --------------
-* ``Linux Tests``: Python 3.7 and nightly Cpython 3.9
-* ``macOS Tests``: test matrix from Python 3.7 to 3.9
+* ``Linux Tests``: test suite runs for Linux (``x86_64``)
+* ``macOS Tests``: test suite runs for macOS (``x86_64``)
+
+Test suite runs on GitHub Actions and other platforms cover a range of
+test/environment conditions: Python and NumPy versions
+(lowest-supported to nightly builds), 32-bit vs. 64-bit, different compilers,
+and more - for details, see the ``.yml`` configuration files.
 
 Azure
 -----
 * ``Lint``: PEP8 and code style
-* ``Windows Python``: test matrix from Python 3.7 to 3.9
+* ``Windows Python``: test suite runs for Windows
 * ``Linux_Python_37_32bit_full``
 * ``wheel_optimized_gcc48``
-* ``source_distribution``
-* ``refguide_asv_check``: doctests from examples
+* ``source_distribution``: install via ``sdist``, then run the test suite
+* ``refguide_asv_check``: doctests from examples and benchmarks
 
 CircleCI
 --------
@@ -59,7 +64,7 @@ Codecov
 Skipping
 ========
 
-Being an open-source project, we have access to a quota of CI ressources.
+Being an open-source project, we have access to a quota of CI resources.
 Ultimately, resources are limited and we should use them with care. This is
 why we ask you to verify your changes locally before pushing them.
 
@@ -70,8 +75,8 @@ integration.
 Skipping CI can be achieve by adding a special text in the commit message:
 
 * ``[skip azp]``: will skip Azure
-* ``[skip actions]``: will skip GitHub Actions
-* ``[skip ci]``: will skip CicleCI
+* ``[skip github]``: will skip GitHub Actions
+* ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
 
@@ -79,5 +84,7 @@ This skip information should be placed on a new line. In this example, we
 just updated a ``.rst`` file in the documentation and ask to skip Azure and
 GitHub Actions' workflows::
 
-    DOC: improve QMCEngine examples
-    [skip azp] [skip actions]
+    DOC: improve QMCEngine examples.
+
+    [skip azp] [skip github]
+
