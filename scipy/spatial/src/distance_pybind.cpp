@@ -108,8 +108,6 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
         throw std::invalid_argument("x must be 2-dimensional");
     }
 
-    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
-
     StridedView2D<T> out_view;
     out_view.strides = {out.strides[0], 0};
     out_view.shape = {x.shape[0] - 1, x.shape[1]};
@@ -117,6 +115,7 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
 
     StridedView2D<const T> w_view;
     w_view.strides = {0, w.strides[0]};
+    w_view.shape = out_view.shape;
     w_view.data = w_data;
 
     StridedView2D<const T> x_view;
@@ -129,6 +128,7 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
     y_view.shape = out_view.shape;
     y_view.data = x_data;
 
+    const intptr_t num_rows = x.shape[0];
     for (intptr_t i = 0; i < num_rows - 1; ++i) {
         f(out_view, x_view, y_view, w_view);
 
@@ -212,8 +212,8 @@ void cdist_weighted_impl(ArrayDescriptor out, T* out_data,
     }
 }
 
-// Extract shape and stride information from NumPy array (requires GIL),
-// to a local C++ struct (safe to use without GIL).
+// Extract shape and stride information from NumPy array. Converts byte-strides
+// to element strides, and avoids an extra pointer indirection on access.
 ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto ndim = arr.ndim();
     ArrayDescriptor desc(ndim);
@@ -270,7 +270,7 @@ py::array pdist_unweighted(const py::array& out_obj, const py::array& x_obj,
         py::gil_scoped_release guard;
         pdist_impl(out_desc, out_data, x_desc, x_data, f);
     }
-    return out;
+    return std::move(out);
 }
 
 template <typename scalar_t>
@@ -294,7 +294,7 @@ py::array pdist_weighted(
         pdist_weighted_impl(
             out_desc, out_data, x_desc, x_data, w_desc, w_data, f);
     }
-    return out;
+    return std::move(out);
 }
 
 template <typename scalar_t>
@@ -316,7 +316,7 @@ py::array cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
         py::gil_scoped_release guard;
         cdist_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f);
     }
-    return out;
+    return std::move(out);
 }
 
 template <typename scalar_t>
@@ -346,7 +346,7 @@ py::array cdist_weighted(
         cdist_weighted_impl(
             out_desc, out_data, x_desc, x_data, y_desc, y_data, w_desc, w_data, f);
     }
-    return out;
+    return std::move(out);
 }
 
 py::dtype npy_promote_types(const py::dtype& type1, const py::dtype& type2) {
@@ -375,7 +375,7 @@ py::array prepare_out_argument(const py::object& obj, const py::dtype& dtype,
     const auto shape = out.shape();
     auto pao = reinterpret_cast<PyArrayObject*>(out.ptr());
 
-    if (ndim != out_shape.size() ||
+    if (ndim != static_cast<intptr_t>(out_shape.size()) ||
         !std::equal(shape, shape + ndim, out_shape.begin())) {
         throw std::invalid_argument("Output array has incorrect shape.");
     }
@@ -408,7 +408,7 @@ py::array prepare_single_weight(const py::object& obj, intptr_t len) {
 }
 
 py::dtype common_type(py::dtype type) {
-    return std::move(type);
+    return type;
 }
 
 template <typename... Args>
