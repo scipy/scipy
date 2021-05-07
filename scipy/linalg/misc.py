@@ -26,7 +26,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     Parameters
     ----------
     a : array_like
-        Input array.  If `axis` is None, `a` must be 1-D or 2-D, unless `ord`
+        Input array. If `axis` is None, `a` must be 1-D or 2-D, unless `ord`
         is None. If both `axis` and `ord` are None, the 2-norm of
         ``a.ravel`` will be returned.
     ord : {int, float, inf, -inf, 'fro', 'nuc', None}, optional
@@ -34,13 +34,13 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         `inf` object.
     axis : {int, 2-tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `a` along which to
-        compute the vector norms.  If `axis` is a 2-tuple, it specifies the
+        compute the vector norms. If `axis` is a 2-tuple, it specifies the
         axes that hold 2-D matrices, and the matrix norms of these matrices
-        are computed.  If `axis` is None then either a vector norm (when `a`
+        are computed. If `axis` is None then either a vector norm (when `a`
         is 1-D) or a matrix norm (when `a` is 2-D) is returned.
     keepdims : bool, optional
         If this is set to True, the axes which are normed over are left in the
-        result as dimensions with size one.  With this option the result will
+        result as dimensions with size one. With this option the result will
         broadcast correctly against the original `a`.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
