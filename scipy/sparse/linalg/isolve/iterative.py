@@ -885,12 +885,13 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
     A preconditioner ``P`` is chosen such that ``P`` is close to `A` but easy to solve
     for. The preconditioner parameter required by this routine is
     ``M = P^-1``. The inverse should preferably not be calculated
-    explicitly.  Rather, use the following template to produce M::
+    explicitly.  Rather, use the following template to produce ``M``:
 
-      # Construct a linear operator that computes P^-1 * x.
-      import scipy.sparse.linalg as spla
-      M_x = lambda x: spla.spsolve(P, x)
-      M = spla.LinearOperator((n, n), M_x)
+    >>> # Construct a linear operator that computes P^-1 * x.
+    >>> import scipy.sparse.linalg as spla
+    >>> M_x = lambda x: spla.spsolve(P, x)
+    >>> M = spla.LinearOperator((n, n), M_x)
+
     """
 
     # Change 'restrt' keyword to 'restart'
