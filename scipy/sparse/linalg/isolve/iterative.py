@@ -894,12 +894,6 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
 
     """
 
-    # Change 'restrt' keyword to 'restart'
-    if restrt is None:
-        restrt = restart
-    elif restart is not None:
-        raise ValueError("Cannot specifiy both restart and restrt keywords. "
-                         "Preferably use 'restart' only.")
 
     # Check data type
     dtype = A.dtype
