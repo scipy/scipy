@@ -949,6 +949,7 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None, call
 
         # Inner iterations
         for k in range(m):
+            # Modified Gram-Schmidt orthogonalization
             v = A.matvec(V[k])
             w = M.matvec(v)
             Hn[0:k+1, k] = V[0:k+1].conjugate().dot(w)
@@ -973,13 +974,10 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None, call
             for i in range(k):
                 tmp0 = rot[0, i] * Hn[i, k] + rot[1, i] * Hn[i+1, k]
                 tmp1 = -rot[1, i] * Hn[i, k] + rot[0, i] * Hn[i+1, k]
-                Hn[i, k] = tmp0
-                Hn[i+1, k] = tmp1
+                Hn[i, k], Hn[i+1, k] = tmp0, tmp1
             sq = np.sqrt(Hn[k+1, k]**2 + Hn[k, k]**2)
-            rot[0, k] = Hn[k, k] / sq
-            rot[1, k] = Hn[k+1, k] / sq
-            Hn[k, k] = sq
-            Hn[k+1, k] = 0.
+            rot[0:2, k] = Hn[k:k+2, k] / sq
+            Hn[k, k], Hn[k+1, k] = sq, 0.
             g[k+1] = -rot[1, k] * g[k]
             g[k] *= rot[0, k]
 
