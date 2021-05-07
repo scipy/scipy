@@ -156,7 +156,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
             nrm2 = get_blas_funcs('nrm2', dtype=a.dtype, ilp64='preferred')
             return nrm2(a)
 
-        if a.ndim == 2 and axis is None and not keepdims:
+        if a.ndim == 2:
             # Use lapack for a couple fast matrix norms.
             # For some reason the *lange frobenius norm is slow.
             lange_args = None
