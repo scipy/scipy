@@ -875,8 +875,6 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
         error tolerance.  By default, no preconditioner is used.
     callback : function
         User-supplied function to call after each iteration.
-    restrt : int, optional
-        DEPRECATED - use `restart` instead.
 
     See Also
     --------
