@@ -25,8 +25,10 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
     Parameters
     ----------
-    a : (M,) or (M, N) array_like
-        Input array. If `axis` is None, `a` must be 1D or 2D.
+    a : array_like
+        Input array.  If `axis` is None, `a` must be 1-D or 2-D, unless `ord`
+        is None. If both `axis` and `ord` are None, the 2-norm of
+        ``a.ravel`` will be returned.
     ord : {int, float, inf, -inf, 'fro', 'nuc', None}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object
@@ -83,9 +85,6 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
 
     Both the Frobenius and nuclear norm orders are only defined for
     matrices and raise a ValueError when `a.ndim != 2`.
-
-    `ord=None` is supported for any array shape and returns the 2-norm
-    of the flattened array.
 
     References
     ----------
