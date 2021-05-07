@@ -528,12 +528,10 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
     # Faster restarted GMRES based on modified Gram-Schmidt orthogonalization
     if orth == 'mgs':
-        if atol is None:
-            x, info = _gmres_mgs(A, b, x0=x0, restart=restart, tol=tol, maxiter=maxiter, M=M, 
-                                 callback=callback, restrt=restrt)
-            return x, info
-        else:
-            raise ValueError("The option 'atol' is not used in the case of 'orth == \'mgs\''")
+        x, info = _gmres_mgs(A, b, x0=x0, restart=restart, tol=tol, maxiter=maxiter, M=M,
+                             callback=callback, restrt=restrt, atol=atol,
+                             callback_type=callback_type)
+        return x, info
 
     # Change 'restrt' keyword to 'restart'
     if restrt is None:
@@ -828,14 +826,14 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
 
 
 def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
-               callback=None, restrt=None):
+               callback=None, restrt=None, atol=None, callback_type=None):
     """
     Use Restarted Generalized Minimal RESidual based on modified Gram-Schmidt
     iteration to solve ``Ax = b``.
 
     Parameters
     ----------
-    A : {sparse matrix, dense matrix, LinearOperator}
+    A : {array_like, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -863,6 +861,7 @@ def _gmres_mgs(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
         Default is 30.
     tol : float, optional
         Tolerances for convergence, ``norm(residual) <= tol*norm(b)``.
+        Default is 1.0e-5.
     maxiter : int, optional
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been

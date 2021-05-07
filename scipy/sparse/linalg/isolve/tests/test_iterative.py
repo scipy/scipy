@@ -686,26 +686,21 @@ class TestGMRES:
         # Expected output from SciPy 1.0.0 (callback has preconditioned residual!)
         assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
-    def test_abi(self):
+    @pytest.mark.parametrize("orth", [None, 'mgs'])
+    def test_abi(self, orth):
         # Check we don't segfault on gmres with complex argument
         A = eye(2)
         b = ones(2)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            r_x, r_info = gmres(A, b)
+            r_x, r_info = gmres(A, b, orth=orth)
             r_x = r_x.astype(complex)
-            r_x_mgs, r_info_mgs = gmres(A, b, orth='mgs')
-            r_x_mgs = r_x_mgs.astype(complex)
 
-            x, info = gmres(A.astype(complex), b.astype(complex))
-            x_mgs, info_mgs = gmres(A.astype(complex), b.astype(complex), orth='mgs')
+            x, info = gmres(A.astype(complex), b.astype(complex), orth=orth)
 
         assert_(iscomplexobj(x))
-        assert_(iscomplexobj(x_mgs))
         assert_allclose(r_x, x)
-        assert_allclose(r_x_mgs, x_mgs)
         assert_(r_info == info)
-        assert_(r_info_mgs == info_mgs)
 
     def test_atol_legacy(self):
         with suppress_warnings() as sup:
@@ -735,7 +730,8 @@ class TestGMRES:
         x, info = gmres(A, b, tol=1e-8, atol=0)
         assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
 
-    def test_defective_precond_breakdown(self):
+    @pytest.mark.parametrize("orth", [None, 'mgs'])
+    def test_defective_precond_breakdown(self, orth):
         # Breakdown due to defective preconditioner
         M = np.eye(3)
         M[2,2] = 0
@@ -744,37 +740,30 @@ class TestGMRES:
         x0 = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x0, M=M, tol=1e-15, atol=0)
-        x_mgs, info_mgs = gmres(A, b, x0=x0, M=M, tol=1e-15, orth='mgs')
+        x, info = gmres(A, b, x0=x0, M=M, tol=1e-15, atol=0, orth=orth)
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
-        assert_(not np.isnan(x_mgs).any())
         if info == 0:
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(A.dot(x0) - b))
-            assert_(np.linalg.norm(A.dot(x_mgs) - b) <= 1e-15*np.linalg.norm(A.dot(x0) - b))
 
         # The solution should be OK outside null space of M
         assert_allclose(M.dot(A.dot(x)), M.dot(b))
-        assert_allclose(M.dot(A.dot(x_mgs)), M.dot(b))
 
-    def test_defective_matrix_breakdown(self):
+    @pytest.mark.parametrize("orth", [None, 'mgs'])
+    def test_defective_matrix_breakdown(self, orth):
         # Breakdown due to defective matrix
         A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
         b = np.array([1, 0, 1])
-        x, info = gmres(A, b, tol=1e-8, atol=0)
-        x_mgs, info_mgs = gmres(A, b, tol=1e-8, orth='mgs')
+        x, info = gmres(A, b, tol=1e-8, atol=0, orth=orth)
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
-        assert_(not np.isnan(x_mgs).any())
         if info == 0:
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
-            assert_(np.linalg.norm(A.dot(x_mgs) - b) <= 1e-8*np.linalg.norm(b))
 
         # The solution should be OK outside null space of A
         assert_allclose(A.dot(A.dot(x)), A.dot(b))
-        assert_allclose(A.dot(A.dot(x_mgs)), A.dot(b))
 
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
@@ -821,7 +810,8 @@ class TestGMRES:
         assert info == 0
         assert cb_count[0] == 2
 
-    def test_callback_x_monotonic(self):
+    @pytest.mark.parametrize("orth", [None, 'mgs'])
+    def test_callback_x_monotonic(self, orth):
         # Check that callback_type='x' gives monotonic norm decrease
         np.random.seed(1)
         A = np.random.rand(20, 20) + np.eye(20)
@@ -837,16 +827,8 @@ class TestGMRES:
             count[0] += 1
 
         x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
-                        callback_type='x')
+                        callback_type='x', orth=orth)
 
         assert info == 20
-        assert count[0] == 21
+        assert count[0] == 21 if orth is None else 20
         x_cb(x)
-
-        # test for faster GMRES
-        prev_r = [np.inf]
-        count = [0]
-        x_mgs, info_mgs = gmres(A, b, tol=1e-6, callback=x_cb, maxiter=20, restart=10, orth='mgs')
-        assert info_mgs == 20
-        assert count[0] == 20
-        x_cb(x_mgs)
