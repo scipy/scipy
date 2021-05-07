@@ -29,7 +29,7 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
         Input array. If `axis` is None, `a` must be 1-D or 2-D, unless `ord`
         is None. If both `axis` and `ord` are None, the 2-norm of
         ``a.ravel`` will be returned.
-    ord : {int, float, inf, -inf, 'fro', 'nuc', None}, optional
+    ord : {int, inf, -inf, 'fro', 'nuc', None}, optional
         Order of the norm (see table under ``Notes``). inf means NumPy's
         `inf` object.
     axis : {int, 2-tuple of ints, None}, optional
