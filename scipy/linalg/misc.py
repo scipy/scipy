@@ -83,10 +83,6 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     Both the Frobenius and nuclear norm orders are only defined for
     matrices and raise a ValueError when x.ndim != 2.
 
-    The ``axis`` and ``keepdims`` arguments are passed directly to
-    ``numpy.linalg.norm`` and are only usable if they are supported
-    by the version of numpy in use.
-
     References
     ----------
     .. [1] G. H. Golub and C. F. Van Loan, *Matrix Computations*,
