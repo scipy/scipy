@@ -176,14 +176,8 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
                 lange = get_lapack_funcs('lange', dtype=a.dtype, ilp64='preferred')
                 return lange(*lange_args)
 
-    # Filter out the axis and keepdims arguments if they aren't used so they
-    # are never inadvertently passed to a version of numpy that doesn't
-    # support them.
-    if axis is not None:
-        if keepdims:
-            return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
-        return np.linalg.norm(a, ord=ord, axis=axis)
-    return np.linalg.norm(a, ord=ord)
+    # fall back to numpy in every other case
+    return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
 
 
 def _datacopied(arr, original):
