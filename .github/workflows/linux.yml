@@ -66,6 +66,7 @@ jobs:
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
         sudo apt install -y --no-install-recommends python3.10-dev python3.10-distutils python3.10-venv
+        # GitHub doesn't provide a pip interface with py3.10 yet. Therefore, install it manually :
         curl -O https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py && rm get-pip.py
         python3.10 -m pip install --upgrade pip setuptools
 
@@ -75,8 +76,7 @@ jobs:
 
     - name: Install packages
       run: |
-        git clone https://github.com/numpy/numpy.git && cd numpy && python3.10 -m pip install --user .
-        cd .. && rm -rf numpy
+        pip install --user git+https://github.com/numpy/numpy.git
         python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
         python3.10 -m pip install -r mypy_requirements.txt
 
