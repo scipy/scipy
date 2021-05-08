@@ -1101,26 +1101,23 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     if alternative == 'less':
         pvalues = hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T
-        fisher_stat = pvalues[table[0, 0], table[0, 1]]
-        index_arr = pvalues <= fisher_stat
     elif alternative == 'greater':
         # Same formula as the 'less' case, but with the second column.
         pvalues = hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T
-        fisher_stat = pvalues[table[0, 0], table[0, 1]]
-        index_arr = pvalues <= fisher_stat
     elif alternative == 'two-sided':
         pvalues = np.minimum(
             hypergeom.cdf(x1, total, x1_sum_x2, total_col_1).T,
             hypergeom.cdf(x2, total, x1_sum_x2, total_col_2).T,
         )
-        fisher_stat = pvalues[table[0, 0], table[0, 1]]
-        index_arr = pvalues <= fisher_stat
     else:
         msg = (
             f"`alternative` should be one of {'two-sided', 'less', 'greater'},"
             f" found {alternative!r}"
         )
         raise ValueError(msg)
+
+    fisher_stat = pvalues[table[0, 0], table[0, 1]]
+    index_arr = pvalues <= fisher_stat
 
     x1, x2, x1_sum_x2 = x1.T, x2.T, x1_sum_x2.T
     x1_log_comb = _compute_log_combinations(total_col_1)
