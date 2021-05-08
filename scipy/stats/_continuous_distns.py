@@ -1083,6 +1083,12 @@ class fisk_gen(burr_gen):
 
         f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
 
+    Also equivalent to:
+
+    .. math::
+
+        f(x, c) = c x^{c-1} (1 + x^{c})^{-2}
+
     for :math:`x >= 0` and :math:`c > 0`.
 
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
