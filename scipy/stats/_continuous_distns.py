@@ -885,6 +885,12 @@ class burr_gen(rv_continuous):
 
     .. math::
 
+        f(x, c, d) = c d x^{c - 1} / (1 + x^{c})^{d + 1}
+        
+    Also equivalent to:
+
+    .. math::
+
         f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
@@ -1080,14 +1086,15 @@ class fisk_gen(burr_gen):
     The probability density function for `fisk` is:
 
     .. math::
-
-        f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
+    
+        f(x, c) = c x^{c-1} (1 + x^{c})^{-2}
 
     Also equivalent to:
 
     .. math::
 
-        f(x, c) = c x^{c-1} (1 + x^{c})^{-2}
+        f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
+
 
     for :math:`x >= 0` and :math:`c > 0`.
 
