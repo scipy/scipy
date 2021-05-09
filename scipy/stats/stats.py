@@ -6924,6 +6924,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
             prob = _compute_prob_outside_square(n1, h)
         else:
             prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+            if not (0 <= prob <= 1):
+                raise Exception(f"_compute_prob_inside_method({n1},{n2},{g},{h}) calc prob = {prob} out of range")
     else:
         if n1 == n2:
             # prob = binom(2n, n-h) / binom(2n, n)
