@@ -4641,8 +4641,8 @@ class TestStudentizedRange:
     ks = [2, 8, 14, 20]
 
     # these arrays are written with `k` as column, and `v` as rows.
-    # Q values for alpha=.05 and .01 are taken from here:
-    # https://link.springer.com/chapter/10.1007/978-1-4613-9629-1_12
+    # Q values are taken from table 3:
+    # https://www.jstor.org/stable/2237810
     q05 = [17.97, 45.40, 54.33, 59.56,
            4.501, 8.853, 10.35, 11.24,
            3.151, 5.305, 6.028, 6.467,
@@ -4655,8 +4655,6 @@ class TestStudentizedRange:
            4.024, 5.839, 6.450, 6.823,
            3.702, 5.118, 5.562, 5.827,
            3.643, 4.987, 5.400, 5.645]
-    # Q values for alpha=.001 are taken from here:
-    # https://www.jstor.org/stable/2237810
     q001 = [900.3, 2272, 2718, 2980,
             18.28, 34.12, 39.69, 43.05,
             6.487, 9.352, 10.39, 11.03,
