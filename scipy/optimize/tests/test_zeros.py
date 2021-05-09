@@ -502,6 +502,24 @@ def test_gh_5557():
         assert_allclose(0.6, res, atol=atol, rtol=rtol)
 
 
+def test_brent_underflow_in_root_bracketing():
+    # Tetsing if an interval [a,b] brackets a zero of a function
+    # by checking f(a)*f(b) < 0 is not reliable when the product
+    # underflows/overflows. (reported in issue# 13737)
+
+    xa = -400.0
+    xb = -350.0
+    rt = -400.0
+    underflow_scenario = (xa, xb, rt)
+    overflow_scenario = (-xa, -xb, -rt)
+
+    for a, b, root in [underflow_scenario, overflow_scenario]:
+        c = np.exp(root)
+        for method in [zeros.brenth, zeros.brentq]:
+            res = method(lambda x: np.exp(x)-c, a, b)
+            assert_allclose(root, res, atol=1e-8)
+
+
 class TestRootResults:
     def test_repr(self):
         r = zeros.RootResults(root=1.0,
