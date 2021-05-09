@@ -6655,18 +6655,19 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
-    scipy.stats.fisher_exact : A more powerful alternative to the chisquare
-                               test if any of the frequencies are less than 5.
+    scipy.stats.fisher_exact 
+	barnard_exact: An unconditional exact test. Less conservative in small 
+		samples compared to Fisher's Exact test.
 
     Notes
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5. If one or more frequencies
-    are less than 5, Fisher's Exact Test can be used with greater statistical
-    power. According to [3]_, the total number of samples is recommended to be
-    greater than 13, otherwise a table-based method of obtaining p-values is 
-    recommended.
+    and expected frequencies should be at least 5. When dealing with small 
+	sample sizes, exact tests (such as Fisher's Exact test) are recommended
+	because they do not overreject. According to [3]_, the total number of 
+	samples is recommended to be greater than 13, otherwise an exact test 
+	should be used.
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `chisquare` raises an error if the sums do not
