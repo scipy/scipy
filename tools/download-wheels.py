@@ -30,7 +30,11 @@ def get_wheel_names(version):
         The release version. For instance, "1.5.0".
 
     """
-    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+    proxy = os.getenv('https_proxy')
+    if proxy is not None:
+        http = urllib3.ProxyManager(proxy)
+    else:
+        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
     tmpl = re.compile(rf"^.*{PREFIX}-{version}-.*\.whl$")
     index_url = f"{STAGING_URL}/files"
     index_html = http.request('GET', index_url)
@@ -52,7 +56,11 @@ def download_wheels(version, wheelhouse):
         Directory in which to download the wheels.
 
     """
-    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
+    proxy = os.getenv('https_proxy')
+    if proxy is not None:
+        http = urllib3.ProxyManager(proxy)
+    else:
+        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
     wheel_names = get_wheel_names(version)
 
     for i, wheel_name in enumerate(wheel_names):
