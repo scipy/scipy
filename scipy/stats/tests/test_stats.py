@@ -3686,7 +3686,6 @@ class TestKSTwoSamples:
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
-
     @pytest.mark.slow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
@@ -4014,45 +4013,6 @@ class Test_ttest_ind_permutations():
         assert_array_almost_equal(stat_a, stat_p, 5)
         assert_array_almost_equal(pvalue, p_d)
 
-    @pytest.mark.slow()
-    def test_ttest_ind_permutations_many_dims(self):
-        # Test that permutation test works on many-dimensional arrays
-        np.random.seed(0)
-        a = np.random.rand(5, 4, 4, 7, 1, 6)
-        b = np.random.rand(4, 1, 8, 2, 6)
-        res = stats.ttest_ind(a, b, permutations=200, axis=-3,
-                              random_state=0)
-
-        # compare fully-vectorized t-test against t-test on smaller slice
-        i, j, k = 2, 3, 1
-        a2 = a[i, :, j, :, 0, :]
-        b2 = b[:, 0, :, k, :]
-        res2 = stats.ttest_ind(a2, b2, permutations=200, axis=-2,
-                               random_state=0)
-        assert_equal(res.statistic[i, :, j, k, :],
-                     res2.statistic)
-        assert_equal(res.pvalue[i, :, j, k, :],
-                     res2.pvalue)
-
-        # compare against t-test on one axis-slice at a time
-
-        # manually broadcast with tile; move axis to end to simplify
-        x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
-        y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
-        shape = x.shape[:-1]
-        statistics = np.zeros(shape)
-        pvalues = np.zeros(shape)
-        for indices in product(*(range(i) for i in shape)):
-            xi = x[indices]  # use tuple to index single axis slice
-            yi = y[indices]
-            res3 = stats.ttest_ind(xi, yi, axis=-1, permutations=200,
-                                  random_state=0)
-            statistics[indices] = res3.statistic
-            pvalues[indices] = res3.pvalue
-
-        assert_allclose(statistics, res.statistic)
-        assert_allclose(pvalues, res.pvalue)
-
     def test_ttest_ind_exact_alternative(self):
         np.random.seed(0)
         N = 3
@@ -4205,6 +4165,213 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
+
+
+class Test_ttest_ind_common:
+    # for tests that are performed on variations of the t-test such as
+    # permutations and trimming
+    @pytest.mark.slow()
+    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
+                                      {'trim': .2}, {}],
+                             ids=["permutations", "trim", "basic"])
+    @pytest.mark.parametrize('equal_var', [True, False],
+                             ids=['equal_var', 'unequal_var'])
+    def test_ttest_many_dims(self, kwds, equal_var):
+        # Test that test works on many-dimensional arrays
+        np.random.seed(0)
+        a = np.random.rand(5, 4, 4, 7, 1, 6)
+        b = np.random.rand(4, 1, 8, 2, 6)
+        res = stats.ttest_ind(a, b, axis=-3, **kwds)
+
+        # compare fully-vectorized t-test against t-test on smaller slice
+        i, j, k = 2, 3, 1
+        a2 = a[i, :, j, :, 0, :]
+        b2 = b[:, 0, :, k, :]
+        res2 = stats.ttest_ind(a2, b2, axis=-2, **kwds)
+        assert_equal(res.statistic[i, :, j, k, :],
+                     res2.statistic)
+        assert_equal(res.pvalue[i, :, j, k, :],
+                     res2.pvalue)
+
+        # compare against t-test on one axis-slice at a time
+
+        # manually broadcast with tile; move axis to end to simplify
+        x = np.moveaxis(np.tile(a, (1, 1, 1, 1, 2, 1)), -3, -1)
+        y = np.moveaxis(np.tile(b, (5, 1, 4, 1, 1, 1)), -3, -1)
+        shape = x.shape[:-1]
+        statistics = np.zeros(shape)
+        pvalues = np.zeros(shape)
+        for indices in product(*(range(i) for i in shape)):
+            xi = x[indices]  # use tuple to index single axis slice
+            yi = y[indices]
+            res3 = stats.ttest_ind(xi, yi, axis=-1, **kwds)
+            statistics[indices] = res3.statistic
+            pvalues[indices] = res3.pvalue
+
+        assert_allclose(statistics, res.statistic)
+        assert_allclose(pvalues, res.pvalue)
+
+    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
+                                      {'trim': .2}, {}],
+                             ids=["trim", "permutations", "basic"])
+    @pytest.mark.parametrize("axis", [-1, 0])
+    def test_nans_on_axis(self, kwds, axis):
+        # confirm that with `nan_policy='propagate'`, NaN results are returned
+        # on the correct location
+        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        # set some indices in `a` and `b` to be `np.nan`.
+        a[0][2][3] = np.nan
+        b[2][0][6] = np.nan
+
+        # arbitrarily use `np.sum` as a baseline for which indices should be
+        # NaNs
+        expected = np.isnan(np.sum(a + b, axis=axis))
+        # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
+        # indices throws an warning. See issue gh-13844
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in less_equal")
+            res = stats.ttest_ind(a, b, axis=axis, **kwds)
+        p_nans = np.isnan(res.pvalue)
+        assert_array_equal(p_nans, expected)
+        statistic_nans = np.isnan(res.statistic)
+        assert_array_equal(statistic_nans, expected)
+
+
+class Test_ttest_trim:
+    params = [
+        [[1, 2, 3], [1.1, 2.9, 4.2], 0.53619490753126731, -0.6864951273557258,
+         .2],
+        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+         0.00998909252078421, 4.591598691181999, .2],
+        [[56, 128.6, 12, 123.8, 64.34, 78, 763.3], [1.1, 2.9, 4.2],
+         0.10512380092302633, 2.832256715395378, .32],
+        [[2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9],
+         [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1],
+         0.002878909511344, -4.2461168970325, .2],
+        [[-0.84504783, 0.13366078, 3.53601757, -0.62908581, 0.54119466,
+          -1.16511574, -0.08836614, 1.18495416, 2.48028757, -1.58925028,
+          -1.6706357, 0.3090472, -2.12258305, 0.3697304, -1.0415207,
+          -0.57783497, -0.90997008, 1.09850192, 0.41270579, -1.4927376],
+         [1.2725522, 1.1657899, 2.7509041, 1.2389013, -0.9490494, -1.0752459,
+          1.1038576, 2.9912821, 3.5349111, 0.4171922, 1.0168959, -0.7625041,
+          -0.4300008, 3.0431921, 1.6035947, 0.5285634, -0.7649405, 1.5575896,
+          1.3670797, 1.1726023], 0.005293305834235, -3.0983317739483, .2]]
+
+    @pytest.mark.parametrize("a,b,pr,tr,trim", params)
+    def test_ttest_compare_r(self, a, b, pr, tr, trim):
+        '''
+        Using PairedData's yuen.t.test method. Something to note is that there
+        are at least 3 R packages that come with a trimmed t-test method, and
+        comparisons were made between them. It was found that PairedData's
+        method's results match this method, SAS, and one of the other R
+        methods. A notable discrepancy was the DescTools implementation of the
+        function, which only sometimes agreed with SAS, WRS2, PairedData and
+        this implementation. For this reason, most comparisons in R are made
+        against PairedData's method.
+
+        Rather than providing the input and output for all evaluations, here is
+        a representative example:
+        > library(PairedData)
+        > a <- c(1, 2, 3)
+        > b <- c(1.1, 2.9, 4.2)
+        > options(digits=16)
+        > yuen.t.test(a, b, tr=.2)
+
+            Two-sample Yuen test, trim=0.2
+
+        data:  x and y
+        t = -0.68649512735573, df = 3.4104431643464, p-value = 0.5361949075313
+        alternative hypothesis: true difference in trimmed means is not equal
+        to 0
+        95 percent confidence interval:
+         -3.912777195645217  2.446110528978550
+        sample estimates:
+        trimmed mean of x trimmed mean of y
+        2.000000000000000 2.73333333333333
+        '''
+        statistic, pvalue = stats.ttest_ind(a, b, trim=trim, equal_var=False)
+        assert_allclose(statistic, tr, atol=1e-15)
+        assert_allclose(pvalue, pr, atol=1e-15)
+
+    def test_compare_SAS(self):
+        # Source of the data used in this test:
+        # https://support.sas.com/resources/papers/proceedings14/1660-2014.pdf
+        a = [12, 14, 18, 25, 32, 44, 12, 14, 18, 25, 32, 44]
+        b = [17, 22, 14, 12, 30, 29, 19, 17, 22, 14, 12, 30, 29, 19]
+        # In this paper, a trimming percentage of 5% is used. However,
+        # in their implementation, the number of values trimmed is rounded to
+        # the nearest whole number. However, consistent with
+        # `scipy.stats.trimmed_mean`, this test truncates to the lower
+        # whole number. In this example, the paper notes that 1 value is
+        # trimmed off of each side. 9% replicates this amount of trimming.
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.09, equal_var=False)
+        assert_allclose(pvalue, 0.514522, atol=1e-6)
+        assert_allclose(statistic, 0.669169, atol=1e-6)
+
+    def test_equal_var(self):
+        '''
+        The PairedData library only supports unequal variances. To compare
+        samples with equal variances, the multicon library is used.
+        > library(multicon)
+        > a <- c(2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9)
+        > b <- c(6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1)
+        > dv = c(a,b)
+        > iv = c(rep('a', length(a)), rep('b', length(b)))
+        > yuenContrast(dv~ iv, EQVAR = TRUE)
+        $Ms
+           N                 M wgt
+        a 11 2.442857142857143   1
+        b 11 5.385714285714286  -1
+
+        $test
+                              stat df              crit                   p
+        results -4.246116897032513 12 2.178812829667228 0.00113508833897713
+        '''
+        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
+        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+        # `equal_var=True` is default
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.2)
+        assert_allclose(pvalue, 0.00113508833897713, atol=1e-10)
+        assert_allclose(statistic, -4.246116897032513, atol=1e-10)
+
+    @pytest.mark.parametrize('alt,pr,tr',
+                             (('greater', 0.9985605452443, -4.2461168970325),
+                              ('less', 0.001439454755672, -4.2461168970325),),
+                             )
+    def test_alternatives(self, alt, pr, tr):
+        '''
+        > library(PairedData)
+        > a <- c(2.7,2.7,1.1,3.0,1.9,3.0,3.8,3.8,0.3,1.9,1.9)
+        > b <- c(6.5,5.4,8.1,3.5,0.5,3.8,6.8,4.9,9.5,6.2,4.1)
+        > options(digits=16)
+        > yuen.t.test(a, b, alternative = 'greater')
+        '''
+        a = [2.7, 2.7, 1.1, 3.0, 1.9, 3.0, 3.8, 3.8, 0.3, 1.9, 1.9]
+        b = [6.5, 5.4, 8.1, 3.5, 0.5, 3.8, 6.8, 4.9, 9.5, 6.2, 4.1]
+
+        statistic, pvalue = stats.ttest_ind(a, b, trim=.2, equal_var=False,
+                                            alternative=alt)
+        assert_allclose(pvalue, pr, atol=1e-10)
+        assert_allclose(statistic, tr, atol=1e-10)
+
+    def test_errors_unsupported(self):
+        # confirm that attempting to trim with NaNs or permutations raises an
+        # error
+        match = "Permutations are currently not supported with trimming."
+        with assert_raises(ValueError, match=match):
+            stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+        match = ("not supported by permutation tests, one-sided asymptotic "
+                 "tests, or trimmed tests.")
+        with assert_raises(ValueError, match=match):
+            stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
+
+    @pytest.mark.parametrize("trim", [-.2, .5, 1])
+    def test_trim_bounds_error(self, trim):
+        match = "Trimming percentage should be 0 <= `trim` < .5."
+        with assert_raises(ValueError, match=match):
+            stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 
 def test__broadcast_concatenate():
@@ -6017,7 +6184,8 @@ class TestKruskal:
         x = [1]
         y = [2]
         z = np.random.rand(2, 2)
-        with assert_raises(ValueError, match="Samples must be one-dimensional."):
+        with assert_raises(ValueError,
+                           match="Samples must be one-dimensional."):
             stats.kruskal(x, y, z)
 
     def test_kruskal_result_attributes(self):

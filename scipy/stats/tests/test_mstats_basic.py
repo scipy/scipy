@@ -407,7 +407,6 @@ class TestCorr:
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
 
-
     def test_kendall_p_exact_medium(self):
         # Test for the exact method with medium samples (some n >= 171)
         # expected values generated using SymPy
@@ -422,7 +421,6 @@ class TestCorr:
         for nc, expected in expectations.items():
             res = mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
-
 
     @pytest.mark.slow
     def test_kendall_p_exact_large(self):

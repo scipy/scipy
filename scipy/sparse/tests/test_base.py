@@ -714,6 +714,7 @@ class _TestCommon:
         mats.append([[1],[0],[2]])
         mats.append([[0,1],[0,2],[0,3]])
         mats.append([[0,0,1],[0,0,2],[0,3,0]])
+        mats.append([[1,0],[0,0]])
 
         mats.append(kron(mats[0],[[1,2]]))
         mats.append(kron(mats[0],[[1],[2]]))
