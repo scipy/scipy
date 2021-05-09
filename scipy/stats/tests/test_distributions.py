@@ -4665,6 +4665,18 @@ class TestStudentizedRange:
     ps = [.95, .99, .999]
     data = zip(product(ps, vs, ks), qs)
 
+    def test_cdf_against_tables(self):
+        for pvk, q in self.data:
+            p_expected, v, k = pvk
+            res_p = stats.studentized_range.cdf(q, k, v)
+            assert_allclose(res_p, p_expected, rtol=1e-4)
+
+    @pytest.mark.slow
+    def test_ppf_against_tables(self):
+        for pvk, q_expected in self.data:
+            res_q = stats.studentized_range.ppf(*pvk)
+            assert_allclose(res_q, q_expected, rtol=1e-4)
+
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
     with open(os.path.join(path_prefix, relative_path), "r") as file:
@@ -4674,10 +4686,8 @@ class TestStudentizedRange:
     def test_cdf_against_mp(self, case_result):
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
-
-        res = stats.studentized_range.cdf(src_case["q"],
-                                          src_case["k"],
-                                          src_case["v"])
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.cdf(*qkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
@@ -4687,10 +4697,8 @@ class TestStudentizedRange:
     def test_pdf_against_mp(self, case_result):
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
-
-        res = stats.studentized_range.pdf(src_case["q"],
-                                          src_case["k"],
-                                          src_case["v"])
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.pdf(*qkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
@@ -4701,31 +4709,15 @@ class TestStudentizedRange:
     def test_moment_against_mp(self, case_result):
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
-
-        res = stats.studentized_range.moment(src_case["m"],
-                                             src_case["k"],
-                                             src_case["v"])
+        mkv = src_case["m"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.moment(*mkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
-    def test_cdf_against_tables(self):
-        for pvk, q in self.data:
-            p_expected, v, k = pvk
-            res_p = stats.studentized_range.cdf(q, k, v)
-            assert_allclose(res_p, p_expected, rtol=1e-4)
-
-    @pytest.mark.slow
-    def test_ppf_against_tables(self):
-        for pvk, q_expected in self.data:
-            p, v, k = pvk
-            res_q = stats.studentized_range.ppf(p, k, v)
-            assert_allclose(res_q, q_expected, rtol=1e-4)
-
     def test_pdf_integration(self):
         k, v = 3, 10
-
         # Test whether PDF integration is 1 like it should be.
         res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
         assert_allclose(res[0], 1)
@@ -4767,10 +4759,8 @@ class TestStudentizedRange:
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
-
-        assert_allclose(
-            stats.studentized_range._munp([1, 2], [4, 5], [10, 11]).shape,
-            (2,))
+        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+        assert_allclose(m.shape, (2,))
 
         with pytest.raises(ValueError, match="...could not be broadcast..."):
             stats.studentized_range._munp(1, [4, 5], [10, 11, 12])

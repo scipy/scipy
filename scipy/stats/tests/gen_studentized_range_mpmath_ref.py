@@ -120,13 +120,12 @@ def moment_mp(m, k, nu):
     m, k, nu = mpf(m), mpf(k), mpf(nu)
 
     def integral(q, s, z):
-        return k * (k - 1) * s * phi(z) * phi(s * q + z) \
-               * (Phi(s * q + z) - Phi(z)) ** (k - 2)
+        return (k * (k - 1) * s * phi(z) * phi(s * q + z)
+                * (Phi(s * q + z) - Phi(z)) ** (k - 2))
 
     def whole(q, s, z):
-        return q ** m * nu ** (nu / 2) / (
-                gamma(nu / 2) * 2 ** (nu / 2 - 1)) * s ** (
-                       nu - 1) * exp(-nu * s ** 2 / 2) * integral(q, s, z)
+        return (q ** m * nu ** (nu / 2) / (gamma(nu / 2) * 2 ** (nu / 2 - 1))
+                * s ** (nu - 1) * exp(-nu * s ** 2 / 2) * integral(q, s, z))
 
     res = quad(whole, [0, inf], [0, inf], [-inf, inf],
                method="gauss-legendre", maxdegree=10)
@@ -153,9 +152,17 @@ def run_cases(cases, run_lambda):
             for index, case in enumerate(cases)]
 
 
-run_pdf = lambda case: pdf_mp(case.q, case.k, case.v)
-run_cdf = lambda case: cdf_mp(case.q, case.k, case.v)
-run_moment = lambda case: moment_mp(case.m, case.k, case.v)
+def run_pdf(case):
+    return pdf_mp(case.q, case.k, case.v)
+
+
+def run_cdf(case):
+    return cdf_mp(case.q, case.k, case.v)
+
+
+def run_moment(case):
+    return moment_mp(case.m, case.k, case.v)
+
 
 t_start = time.perf_counter()
 
