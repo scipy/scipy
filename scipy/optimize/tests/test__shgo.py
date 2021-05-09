@@ -669,13 +669,6 @@ class TestShgoArguments(object):
                    options=options, sampling_method='sobol')
         np.testing.assert_equal(0.0, res.fun)
 
-    def test_13_high_sobol(self):
-        """Test init of high-dimensional sobol sequences"""
-        def f(x):
-            return 0
-        bounds = [(None, None), ] * 41
-        SHGOc = SHGO(f, bounds, sampling_method='sobol')
-        SHGOc.sobol_points(2, 50)
 
     def test_14_local_iter(self):
         """Test limited local iterations for a pseudo-global mode"""
@@ -704,7 +697,6 @@ class TestShgoArguments(object):
 
     def test_18_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
-
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
 
@@ -768,8 +760,7 @@ class TestShgoFailures(object):
                    options=options, sampling_method='sobol')
 
         np.testing.assert_equal(False, res.success)
-        #np.testing.assert_equal(4, res.nfev)
-        np.testing.assert_equal(4, res.tnev)
+        np.testing.assert_equal(res.tnev, 4)
 
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
