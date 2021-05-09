@@ -46,9 +46,11 @@ from numpy.testing import (verbose, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
-                                    num_obs_dm, is_valid_dm, is_valid_y,
-                                    _validate_vector, _METRICS_NAMES)
+import scipy.spatial.distance
+from scipy.spatial import _distance_pybind
+from scipy.spatial.distance import (
+    squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
+    _validate_vector, _METRICS_NAMES, _METRICS)
 
 # these were missing: chebyshev cityblock kulsinski
 # jensenshannon, matching and seuclidean are referenced by string name.
@@ -611,6 +613,7 @@ class TestCdist:
                               cdist, X1, X2, metric, out=out3, **kwargs)
                 assert_raises(ValueError,
                               cdist, X1, X2, metric, out=out4, **kwargs)
+
                 # test for incorrect dtype
                 out5 = np.empty((out_r, out_c), dtype=np.int64)
                 assert_raises(ValueError,
