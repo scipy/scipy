@@ -96,7 +96,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
         the fixed parameters. If `jac` is a Boolean and is True, `fun` is
-        assumed to return and objective and gradient as an ``(f, g)`` tuple.
+        assumed to return a tuple ``(f, g)`` containing the objective
+        function and the gradient.
         Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
         'trust-krylov' require that either a callable be supplied, or that
         `fun` return the objective and gradient.

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
@@ -34,9 +36,8 @@ jobs:
         run: |      
           python3.7-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.7-dbg -m pip install --upgrade pip setuptools wheel
-          python3.7-dbg -m pip install --upgrade cython pytest pytest-xdist pybind11
+          python3.7-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
           python3.7-dbg -m pip install --upgrade mpmath gmpy2 pythran
-          python3.7-dbg -m pip install --upgrade --no-cache-dir numpy
           python3.7-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -56,18 +57,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        python-version: [3.10]
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
-    - name: Install Python 3.9
-      if: matrix.python-version == '3.9'
+    - name: Install Python 3.10
+      if: matrix.python-version == '3.10'
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends python3.9-dev python3.9-distutils python3.9-venv
-        python3.9 -m pip install --upgrade pip setuptools
+        sudo apt install -y --no-install-recommends python3.10-dev python3.10-distutils python3.10-venv
+        # GitHub doesn't provide a pip interface with py3.10 yet. Therefore, install it manually :
+        curl -O https://bootstrap.pypa.io/get-pip.py && python3.10 get-pip.py && rm get-pip.py
+        python3.10 -m pip install --upgrade pip setuptools
 
     - name: Install other build dependencies
       run: |
@@ -75,13 +80,14 @@ jobs:
 
     - name: Install packages
       run: |
-        python3.9 -m pip install --user numpy setuptools wheel cython pytest pytest-xdist pybind11 pytest-xdist pythran
-        python3.9 -m pip install -r mypy_requirements.txt
+        pip install --user git+https://github.com/numpy/numpy.git
+        python3.10 -m pip install --user setuptools wheel cython pytest pybind11 pytest-xdist pythran
+        python3.10 -m pip install -r mypy_requirements.txt
 
     - name: Mypy
       run: |
-        python3.9 -u runtests.py --mypy
+        python3.10 -u runtests.py --mypy
 
     - name: Test SciPy
       run: |
-        python3.9 -u runtests.py -m fast
+        python3.10 -u runtests.py -m fast

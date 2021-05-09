@@ -26,7 +26,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy, polygamma, entr
-from .test_continuous_basic import distcont, invdistcont
+from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root, fmin
@@ -2836,6 +2836,56 @@ class TestBeta:
         # More than one raises a ValueError.
         x = [0.1, 0.5, 0.6]
         assert_raises(ValueError, stats.beta.fit, x, fa=0.5, fix_a=0.5)
+
+    def test_issue_12635(self):
+        # Confirm that Boost's beta distribution resolves gh-12635.
+        # Check against R:
+        # options(digits=16)
+        # p = 0.9999999999997369
+        # a = 75.0
+        # b = 66334470.0
+        # print(qbeta(p, a, b))
+        p, a, b = 0.9999999999997369, 75.0, 66334470.0
+        assert_allclose(stats.beta.ppf(p, a, b), 2.343620802982393e-06)
+
+    def test_issue_12794(self):
+        # Confirm that Boost's beta distribution resolves gh-12794.
+        # Check against R.
+        # options(digits=16)
+        # p = 1e-11
+        # count_list = c(10,100,1000)
+        # print(qbeta(1-p, count_list + 1, 100000 - count_list))
+        inv_R = np.array([0.0004944464889611935,
+                          0.0018360586912635726,
+                          0.0122663919942518351])
+        count_list = np.array([10, 100, 1000])
+        p = 1e-11
+        inv = stats.beta.isf(p, count_list + 1, 100000 - count_list)
+        assert_allclose(inv, inv_R)
+        res = stats.beta.sf(inv, count_list + 1, 100000 - count_list)
+        assert_allclose(res, p)
+
+    def test_issue_12796(self):
+        # Confirm that Boost's beta distribution succeeds in the case
+        # of gh-12796
+        alpha_2 = 5e-6
+        count_ = np.arange(1, 20)
+        nobs = 100000
+        q, a, b = 1 - alpha_2, count_ + 1, nobs - count_
+        inv = stats.beta.ppf(q, a, b)
+        res = stats.beta.cdf(inv, a, b)
+        assert_allclose(res, 1 - alpha_2)
+
+    def test_endpoints(self):
+        # Confirm that boost's beta distribution returns inf at x=1
+        # when b<1
+        a, b = 1, 0.5
+        assert_equal(stats.beta.pdf(1, a, b), np.inf)
+
+        # Confirm that boost's beta distribution returns inf at x=0
+        # when a<1
+        a, b = 0.2, 3
+        assert_equal(stats.beta.pdf(0, a, b), np.inf)
 
 
 class TestBetaPrime:
