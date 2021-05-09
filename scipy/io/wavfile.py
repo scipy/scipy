@@ -386,11 +386,11 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     if format_tag == WAVE_FORMAT.PCM:
         if bytes_per_second != fs * block_align:
-            raise ValueError("WAV header is invalid: nAvgBytesPerSec must "
-                             "equal product of nSamplesPerSec and "
-                             "nBlockAlign, but file has nSamplesPerSec = "
-                             f"{fs}, nBlockAlign = {block_align}, and "
-                             f"nAvgBytesPerSec = {bytes_per_second}")
+            raise ValueError("WAV header is invalid: nAvgBytesPerSec must"
+                             " equal product of nSamplesPerSec and"
+                             " nBlockAlign, but file has nSamplesPerSec ="
+                             f" {fs}, nBlockAlign = {block_align}, and"
+                             f" nAvgBytesPerSec = {bytes_per_second}")
 
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
