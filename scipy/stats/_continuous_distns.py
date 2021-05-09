@@ -28,6 +28,7 @@ from ._distn_infrastructure import (
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+import scipy.stats._boost as _boost
 
 
 def _remove_optimizer_parameters(kwds):
@@ -602,7 +603,7 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return np.exp(self._logpdf(x, a, b))
+        return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -610,18 +611,23 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return sc.btdtr(a, b, x)
+        return _boost._beta_cdf(x, a, b)
+
+    def _sf(self, x, a, b):
+        return _boost._beta_sf(x, a, b)
+
+    def _isf(self, x, a, b):
+        return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        return sc.btdtri(a, b, q)
+        return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
-        mn = a*1.0 / (a + b)
-        var = (a*b*1.0)/(a+b+1.0)/(a+b)**2.0
-        g1 = 2.0*(b-a)*np.sqrt((1.0+a+b)/(a*b)) / (2+a+b)
-        g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
-        g2 /= a*b*(a+b+2)*(a+b+3)
-        return mn, var, g1, g2
+        return(
+            _boost._beta_mean(a, b),
+            _boost._beta_variance(a, b),
+            _boost._beta_skewness(a, b),
+            _boost._beta_kurtosis_excess(a, b))
 
     def _fitstart(self, data):
         g1 = _skew(data)
@@ -6934,7 +6940,7 @@ class rdist_gen(rv_continuous):
     """
     # use relation to the beta distribution for pdf, cdf, etc
     def _pdf(self, x, c):
-        return 0.5*beta._pdf((x + 1)/2, c/2, c/2)
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return -np.log(2) + beta._logpdf((x + 1)/2, c/2, c/2)

@@ -189,6 +189,9 @@ stages:
       vmImage: 'ubuntu-16.04'
     steps:
     - script: |
+        git submodule update --init
+      displayName: 'Fetch submodules'
+    - script: |
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /bin/bash -c "cd scipy && \
             apt-get -y update && \
@@ -262,6 +265,9 @@ stages:
         versionSpec: $(PYTHON_VERSION)
         addToPath: true
         architecture: $(PYTHON_ARCH)
+    - script: |
+        git submodule update --init
+      displayName: 'Fetch submodules'
     - script: |
         python -m pip install --upgrade pip "setuptools<50.0" wheel
       displayName: 'Install tools'
