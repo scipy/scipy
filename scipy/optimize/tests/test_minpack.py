@@ -812,6 +812,15 @@ class TestCurveFit:
                       p0=[1],
                       args=(1,))
 
+    def test_data_point_number_validation(self):
+        def func(x, a, b, c, d, e):
+            return a * np.exp(-b * x) + c + d + e
+
+        with assert_raises(TypeError, match="The number of func parameters="):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17])
+
 
 class TestFixedPoint:
 

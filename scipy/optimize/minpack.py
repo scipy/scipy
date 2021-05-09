@@ -780,6 +780,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("'args' is not a supported keyword argument.")
 
     if method == 'lm':
+        # if ydata.size == 1, this might be used for broadcast.
+        if ydata.size != 1 and n > ydata.size:
+            raise TypeError(f"The number of func parameters={n} must not"
+                            f" exceed the number of data points={ydata.size}")
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
