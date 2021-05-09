@@ -6946,6 +6946,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     if saw_fp_error:
         return False, d, np.nan
     if not (0 <= prob <= 1):
+        raise Exception(f"prob = {prob} out of range")
         return False, d, prob
     return True, d, prob
 
