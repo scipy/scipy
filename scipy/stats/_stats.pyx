@@ -514,19 +514,19 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
 
 
 cdef double _phi(double z) nogil:
-    """evaluates the normal PDF. Used in `studentized range`"""
+    """evaluates the normal PDF. Used in `studentized_range`"""
     cdef double inv_sqrt_2pi = 0.3989422804014327
     return inv_sqrt_2pi * math.exp(-0.5 * z * z)
 
 
 cdef double _logphi(double z) nogil:
-    """evaluates the log of the normal PDF. Used in `studentized range`"""
+    """evaluates the log of the normal PDF. Used in `studentized_range`"""
     cdef double log_inv_sqrt_2pi = -0.9189385332046727
     return log_inv_sqrt_2pi - 0.5 * z * z
 
 
 cdef double _Phi(double z) nogil:
-    """evaluates the normal CDF. Used in `studentized range`"""
+    """evaluates the normal CDF. Used in `studentized_range`"""
     # use a custom evaluation because using cs.ndtr results in incorrect PDF
     # evaluation at q=0 on 32bit systems
     cdef double m_sqrt1_2 = 0.7071067811865475
@@ -534,14 +534,14 @@ cdef double _Phi(double z) nogil:
 
 
 cpdef double _genstudentized_range_cdf_logconst(double k, double df):
-    """Evaluates non-integrated terms in the cdf integrand as a log"""
+    """Evaluates log of constant terms in the cdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + (df / 2) * math.log(df)
      - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
 
 
 cpdef double _genstudentized_range_pdf_logconst(double k, double df):
-    """Evaluates non-integrated terms in the pdf integrand as a log"""
+    """Evaluates log of constant terms in the pdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + math.log(k - 1) + (df / 2) * math.log(df)
                  - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))

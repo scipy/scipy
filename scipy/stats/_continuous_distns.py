@@ -9310,7 +9310,7 @@ class rv_histogram(rv_continuous):
 
 
 class studentized_range_gen(rv_continuous):
-    r"""The studentized range continuous random variable.
+    r"""A studentized range continuous random variable.
 
     %(before_notes)s
 
@@ -9357,7 +9357,7 @@ class studentized_range_gen(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
 
-    Calculate a few first moments:
+    Calculate the first four moments:
 
     >>> k, df = 3, 10
     >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
