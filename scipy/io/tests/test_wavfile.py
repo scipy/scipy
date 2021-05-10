@@ -361,6 +361,15 @@ def test_read_incomplete_chunk():
                 wavfile.read(fp, mmap=mmap)
 
 
+def test_read_inconsistent_header():
+    # File header's size fields contradict each other
+    for mmap in [False, True]:
+        filename = 'test-8000Hz-le-3ch-5S-24bit-inconsistent.wav'
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match="header is invalid"):
+                wavfile.read(fp, mmap=mmap)
+
+
 def _check_roundtrip(realfile, rate, dtype, channels, tmpdir):
     if realfile:
         tmpfile = str(tmpdir.join('temp.wav'))
