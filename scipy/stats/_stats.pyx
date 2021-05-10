@@ -534,21 +534,21 @@ cdef double _Phi(double z) nogil:
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
 
-cpdef double _genstudentized_range_cdf_logconst(double k, double df):
+cpdef double _studentized_range_cdf_logconst(double k, double df):
     """Evaluates log of constant terms in the cdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + (df / 2) * math.log(df)
             - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
 
 
-cpdef double _genstudentized_range_pdf_logconst(double k, double df):
+cpdef double _studentized_range_pdf_logconst(double k, double df):
     """Evaluates log of constant terms in the pdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + math.log(k - 1) + (df / 2) * math.log(df)
             - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
 
 
-cdef double _genstudentized_range_cdf(int n, double[2] integration_var,
+cdef double _studentized_range_cdf(int n, double[2] integration_var,
                                       void *user_data) nogil:
     # evaluates the integrand of Equation (3) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
@@ -570,7 +570,7 @@ cdef double _genstudentized_range_cdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
-cdef double _genstudentized_range_cdf_asymptotic(double z,
+cdef double _studentized_range_cdf_asymptotic(double z,
                                                  void *user_data) nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
@@ -580,7 +580,7 @@ cdef double _genstudentized_range_cdf_asymptotic(double z,
     return k * _phi(z) * math.pow(_Phi(z + q) - _Phi(z), k - 1)
 
 
-cdef double _genstudentized_range_pdf(int n, double[2] integration_var,
+cdef double _studentized_range_pdf(int n, double[2] integration_var,
                                       void *user_data) nogil:
     # evaluates the integrand of equation (4) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
@@ -604,7 +604,7 @@ cdef double _genstudentized_range_pdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
 
 
-cdef double _genstudentized_range_moment(int n, double[3] integration_var,
+cdef double _studentized_range_moment(int n, double[3] integration_var,
                                          void *user_data) nogil:
     # destined to be used in a LowLevelCallable
     K = (<double *> user_data)[0]  # the Kth moment to calc.
@@ -623,7 +623,7 @@ cdef double _genstudentized_range_moment(int n, double[3] integration_var,
     pdf_data[3] = log_pdf_const
 
     return (math.pow(q, K) *
-            _genstudentized_range_pdf(4, integration_var, pdf_data))
+            _studentized_range_pdf(4, integration_var, pdf_data))
 
   
 cpdef double genhyperbolic_pdf(double x, double p, double a, double b) nogil:

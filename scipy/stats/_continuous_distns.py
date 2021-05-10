@@ -9421,13 +9421,13 @@ class studentized_range_gen(rv_continuous):
         return super(studentized_range_gen, self)._fitstart(data, args=(2, 1))
 
     def _munp(self, K, k, df):
-        cython_symbol = '_genstudentized_range_moment'
+        cython_symbol = '_studentized_range_moment'
         _a, _b = self._get_support()
         # all three of these are used to create a numpy array so they must
         # be the same shape.
 
         def _single_moment(K, k, df):
-            log_const = _stats._genstudentized_range_pdf_logconst(k, df)
+            log_const = _stats._studentized_range_pdf_logconst(k, df)
             arg = [K, k, df, log_const]
             usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
@@ -9442,10 +9442,10 @@ class studentized_range_gen(rv_continuous):
         return np.float64(ufunc(K, k, df))
 
     def _pdf(self, x, k, df):
-        cython_symbol = '_genstudentized_range_pdf'
+        cython_symbol = '_studentized_range_pdf'
 
         def _single_pdf(q, k, df):
-            log_const = _stats._genstudentized_range_pdf_logconst(k, df)
+            log_const = _stats._studentized_range_pdf_logconst(k, df)
             arg = [q, k, df, log_const]
             usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
 
@@ -9467,8 +9467,8 @@ class studentized_range_gen(rv_continuous):
             # integral is evaluated rather than the standard double integral.
             # (Lund, Lund, page 205)
             if df < 100000:
-                cython_symbol = '_genstudentized_range_cdf'
-                log_const = _stats._genstudentized_range_cdf_logconst(k, df)
+                cython_symbol = '_studentized_range_cdf'
+                log_const = _stats._studentized_range_cdf_logconst(k, df)
 
                 arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
@@ -9482,7 +9482,7 @@ class studentized_range_gen(rv_continuous):
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
             else:
-                cython_symbol = '_genstudentized_range_cdf_asymptotic'
+                cython_symbol = '_studentized_range_cdf_asymptotic'
 
                 arg = [q, k]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
