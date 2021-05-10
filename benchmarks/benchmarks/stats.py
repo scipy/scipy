@@ -43,10 +43,10 @@ class CorrelationFunctions(Benchmark):
 
 class ANOVAFunction(Benchmark):
     def setup(self):
-        np.random.seed(12345678)
-        self.a = np.random.rand(6,3) * 10
-        self.b = np.random.rand(6,3) * 10
-        self.c = np.random.rand(6,3) * 10
+        rng = np.random.default_rng(12345678)
+        self.a = rng.random((6,3)) * 10
+        self.b = rng.random((6,3)) * 10
+        self.c = rng.random((6,3)) * 10
     
     def time_f_oneway(self):
         statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
