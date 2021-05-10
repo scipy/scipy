@@ -1,36 +1,19 @@
 import numpy as np
 
-try:
+from .common import Benchmark, LimitedParamBenchmark, safe_import
+
+with safe_import():
     from scipy.spatial import cKDTree, KDTree
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import distance
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import ConvexHull, Voronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import SphericalVoronoi
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial import geometric_slerp
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.spatial.transform import Rotation
-except ImportError:
-    pass
-
-from .common import Benchmark, LimitedParamBenchmark
 
 
 class Build(Benchmark):
@@ -374,6 +357,37 @@ class Xdist(Benchmark):
         sizes and metrics.
         """
         distance.pdist(self.points, self.metric, **self.kwargs)
+
+
+class XdistWeighted(Benchmark):
+    params = (
+        [10, 20, 100],
+        ['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
+         'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
+         'braycurtis', 'yule', 'dice', 'kulsinski', 'rogerstanimoto',
+         'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+    param_names = ['num_points', 'metric']
+
+    def setup(self, num_points, metric):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        else:
+            self.kwargs = {}
+        self.weights = np.ones(3)
+
+    def time_cdist(self, num_points, metric):
+        """Time scipy.spatial.distance.cdist for weighted distance metrics."""
+        distance.cdist(self.points, self.points, self.metric, w=self.weights,
+                       **self.kwargs)
+
+    def time_pdist(self, num_points, metric):
+        """Time scipy.spatial.distance.pdist for weighted distance metrics."""
+        distance.pdist(self.points, self.metric, w=self.weights, **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):

@@ -1,8 +1,17 @@
 import os
 
 
+def build_clib_pre_build_hook(cmd, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(cmd.compiler)
+    ext.setdefault('extra_compiler_args', [])
+    if std_flag is not None:
+        ext['extra_compiler_args'].append(std_flag)
+
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._lib._boost_utils import _boost_dir
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
@@ -50,6 +59,14 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[include_dir])
 
     config.add_subpackage('_uarray')
+
+    # ensure Boost was checked out and builds
+    config.add_library(
+        'test_boost_build',
+        sources=['tests/test_boost_build.cpp'],
+        include_dirs=_boost_dir(),
+        language='c++',
+        _pre_build_hook=build_clib_pre_build_hook)
 
     return config
 

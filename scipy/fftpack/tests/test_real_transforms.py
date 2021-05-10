@@ -154,7 +154,7 @@ def naive_dst4(x, norm=None):
     return y
 
 
-class TestComplex(object):
+class TestComplex:
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -186,7 +186,7 @@ class TestComplex(object):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(object):
+class _TestDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -351,7 +351,7 @@ class TestDCTIVInt(_TestDCTIVBase):
         self.type = 3
 
 
-class _TestIDCTBase(object):
+class _TestIDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -456,7 +456,7 @@ class TestIDCTIVInt(_TestIDCTBase):
         self.dec = 5
         self.type = 4
 
-class _TestDSTBase(object):
+class _TestDSTBase:
     def setup_method(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
@@ -581,7 +581,7 @@ class TestDSTIVInt(_TestDSTIVBase):
         self.type = 4
 
 
-class _TestIDSTBase(object):
+class _TestIDSTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = None
@@ -688,7 +688,7 @@ class TestIDSTIVnt(_TestIDSTBase):
         self.type = 4
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior."""
 
     real_dtypes = [np.float32, np.float64]
@@ -741,7 +741,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (2, 16), 1)
 
 
-class Test_DCTN_IDCTN(object):
+class Test_DCTN_IDCTN:
     dec = 14
     dct_type = [1, 2, 3, 4]
     norms = [None, 'ortho']

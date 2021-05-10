@@ -34,6 +34,7 @@
 #include "numpy/ndarrayobject.h"
 
 #include "sparsetools.h"
+#include "util.h"
 
 #define MAX_ARGS 16
 
@@ -468,23 +469,7 @@ static void *allocate_std_vector_typenum(int typenum)
     }
 
     try {
-        PROCESS(NPY_BOOL, npy_bool_wrapper);
-        PROCESS(NPY_BYTE, npy_byte);
-        PROCESS(NPY_UBYTE, npy_ubyte);
-        PROCESS(NPY_SHORT, npy_short);
-        PROCESS(NPY_USHORT, npy_ushort);
-        PROCESS(NPY_INT, npy_int);
-        PROCESS(NPY_UINT, npy_uint);
-        PROCESS(NPY_LONG, npy_long);
-        PROCESS(NPY_ULONG, npy_ulong);
-        PROCESS(NPY_LONGLONG, npy_longlong);
-        PROCESS(NPY_ULONGLONG, npy_ulonglong);
-        PROCESS(NPY_FLOAT, npy_float);
-        PROCESS(NPY_DOUBLE, npy_double);
-        PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-        PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-        PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-        PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+        SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
     } catch (std::exception &e) {
         /* failed */
     }
@@ -504,23 +489,7 @@ static void free_std_vector_typenum(int typenum, void *p)
         return;                                                 \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_int);
-    PROCESS(NPY_UINT, npy_uint);
-    PROCESS(NPY_LONG, npy_long);
-    PROCESS(NPY_ULONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_longlong);
-    PROCESS(NPY_ULONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
 
 #undef PROCESS
 }
@@ -540,23 +509,7 @@ static PyObject *array_from_std_vector_and_free(int typenum, void *p)
         return obj;                                             \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_int);
-    PROCESS(NPY_UINT, npy_uint);
-    PROCESS(NPY_LONG, npy_long);
-    PROCESS(NPY_ULONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_longlong);
-    PROCESS(NPY_ULONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
 
 #undef PROCESS
 

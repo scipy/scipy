@@ -7,7 +7,7 @@ from scipy.io.harwell_boeing._fortran_format_parser import (
         FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat)
 
 
-class TestFortranFormatParser(object):
+class TestFortranFormatParser:
     def setup_method(self):
         self.parser = FortranFormatParser()
 
@@ -42,7 +42,7 @@ class TestFortranFormatParser(object):
         _test_invalid("(E4.E3)")
 
 
-class TestIntFormat(object):
+class TestIntFormat:
     def test_to_fortran(self):
         f = [IntFormat(10), IntFormat(12, 10), IntFormat(12, 10, 3)]
         res = ["(I10)", "(I12.10)", "(3I12.10)"]
@@ -58,7 +58,7 @@ class TestIntFormat(object):
             assert_equal(IntFormat.from_number(i).__dict__, j.__dict__)
 
 
-class TestExpFormat(object):
+class TestExpFormat:
     def test_to_fortran(self):
         f = [ExpFormat(10, 5), ExpFormat(12, 10), ExpFormat(12, 10, min=3),
              ExpFormat(10, 5, repeat=3)]

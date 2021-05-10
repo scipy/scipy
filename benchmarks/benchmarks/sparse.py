@@ -4,23 +4,18 @@ Simple benchmarks for the sparse module
 import warnings
 import time
 import timeit
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random
 
-try:
+from .common import Benchmark, safe_import
+
+with safe_import():
     from scipy import sparse
     from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 def random_sparse(m, n, nnz_per_row):
@@ -57,7 +52,7 @@ def poisson2d(N, dtype='d', format=None):
 class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
-        ['csr'],
+        ['csr', 'csc', 'coo', 'dia'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]

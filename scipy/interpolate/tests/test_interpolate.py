@@ -28,7 +28,7 @@ from scipy.special import binom
 from scipy.sparse.sputils import matrix
 
 
-class TestInterp2D(object):
+class TestInterp2D:
     def test_interp2d(self):
         y, x = mgrid[0:2:20j, 0:pi:21j]
         z = sin(x+0.5*y)
@@ -109,7 +109,7 @@ class TestInterp2D(object):
         assert_(np.isfinite(iz[~my,:][:,~mx]).all())
 
 
-class TestInterp1D(object):
+class TestInterp1D:
 
     def setup_method(self):
         self.x5 = np.arange(5.)
@@ -135,8 +135,8 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic',
-                     'cubic', 'previous', 'next'):
+        for kind in ('nearest', 'nearest-up', 'zero', 'linear', 'slinear',
+                     'quadratic', 'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
@@ -300,14 +300,17 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10(1.5), np.array([1.5]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]),)
 
     def test_nearest(self):
         # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest asserts that half-integer case (1.5) rounds down to 1
         interp10 = interp1d(self.x10, self.y10, kind='nearest')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 6., 6.]),)
 
@@ -322,11 +325,33 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_nearest_up(self):
+        # Check the actual implementation of nearest-neighbour interpolation.
+        # Nearest-up asserts that half-integer case (1.5) rounds up to 2
+        interp10 = interp1d(self.x10, self.y10, kind='nearest-up')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='nearest-up',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='nearest-up',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     def test_previous(self):
         # Check the actual implementation of previous interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='previous')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]),)
 
@@ -346,6 +371,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='next')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(2.))
+        assert_array_almost_equal(interp10(1.5), np.array(2.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([3., 6., 6.]),)
 
@@ -365,6 +391,7 @@ class TestInterp1D(object):
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10(1.5), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]))
 
@@ -718,7 +745,7 @@ class TestInterp1D(object):
                 assert_(np.isfinite(vals).all())
 
 
-class TestLagrange(object):
+class TestLagrange:
 
     def test_lagrange(self):
         p = poly1d([5,2,1,4,3])
@@ -728,7 +755,7 @@ class TestLagrange(object):
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
-class TestAkima1DInterpolator(object):
+class TestAkima1DInterpolator:
     def test_eval(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
@@ -802,7 +829,7 @@ class TestAkima1DInterpolator(object):
             ak.extend(None, None)
 
 
-class TestPPolyCommon(object):
+class TestPPolyCommon:
     # test basic functionality for PPoly and BPoly
     def test_sort_check(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
@@ -943,7 +970,7 @@ class TestPPolyCommon(object):
                 assert_raises(ValueError, cls, **dict(c=c, x=x, axis=axis))
 
 
-class TestPolySubclassing(object):
+class TestPolySubclassing:
     class P(PPoly):
         pass
 
@@ -990,7 +1017,7 @@ class TestPolySubclassing(object):
         assert_equal(bp.__class__, self.B)
 
 
-class TestPPoly(object):
+class TestPPoly:
     def test_simple(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
         x = np.array([0, 0.5, 1])
@@ -1475,7 +1502,7 @@ class TestPPoly(object):
                 assert_allclose(pp.roots(), [1, -1])
 
 
-class TestBPoly(object):
+class TestBPoly:
     def test_simple(self):
         x = [0, 1]
         c = [[3]]
@@ -1605,7 +1632,7 @@ class TestBPoly(object):
                 assert_(not np.isnan(bp_d([-0.1, 2.1])).any())
 
 
-class TestBPolyCalculus(object):
+class TestBPolyCalculus:
     def test_derivative(self):
         x = [0, 1, 3]
         c = [[3, 0], [0, 0], [0, 2]]
@@ -1760,7 +1787,7 @@ class TestBPolyCalculus(object):
                         atol=1e-12, rtol=1e-12)
 
 
-class TestPolyConversions(object):
+class TestPolyConversions:
     def test_bp_from_pp(self):
         x = [0, 1, 3]
         c = [[3, 2], [1, 8], [4, 3]]
@@ -1809,7 +1836,7 @@ class TestPolyConversions(object):
             BPoly.from_power_basis(bp)
 
 
-class TestBPolyFromDerivatives(object):
+class TestBPolyFromDerivatives:
     def test_make_poly_1(self):
         c1 = BPoly._construct_from_derivatives(0, 1, [2], [3])
         assert_allclose(c1, [2., 3.])
@@ -1972,7 +1999,7 @@ class TestBPolyFromDerivatives(object):
         orders = 1
 
 
-class TestNdPPoly(object):
+class TestNdPPoly:
     def test_simple_1d(self):
         np.random.seed(1234)
 
@@ -2358,7 +2385,7 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
     return out
 
 
-class TestRegularGridInterpolator(object):
+class TestRegularGridInterpolator:
     def _get_sample_4d(self):
         # create a 4-D grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 4
@@ -2633,7 +2660,7 @@ class TestRegularGridInterpolator(object):
             interp(XY)
 
 
-class MyValue(object):
+class MyValue:
     """
     Minimal indexable object
     """
@@ -2653,7 +2680,7 @@ class MyValue(object):
         raise RuntimeError("No array representation")
 
 
-class TestInterpN(object):
+class TestInterpN:
     def _sample_2d_data(self):
         x = np.arange(1, 6)
         x = np.array([.5, 2., 3., 4., 5.5])

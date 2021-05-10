@@ -97,6 +97,7 @@ PUBLIC_SUBMODULES = [
     'stats',
     'stats.mstats',
     'stats.contingency',
+    'stats.qmc',
 ]
 
 # Docs for these modules are included in the parent module
@@ -114,6 +115,7 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
+    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -133,11 +135,15 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
+    r'scipy\.integrate\.simps',   # alias for simpson
+    r'scipy\.integrate\.trapz',   # alias for trapezoid
+    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -330,7 +336,7 @@ def validate_rst_syntax(text, name, dots=True):
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
-        'ref', 'func', 'toctree', 'moduleauthor',
+        'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
 
@@ -489,6 +495,7 @@ class DTRunner(doctest.DocTestRunner):
 
     def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
         self._item_name = item_name
+        self._had_unexpected_error = False
         doctest.DocTestRunner.__init__(self, checker=checker, verbose=verbose,
                                        optionflags=optionflags)
 
@@ -508,9 +515,15 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_success(self, out, test, example, got)
 
     def report_unexpected_exception(self, out, test, example, exc_info):
+        # Ignore name errors after failing due to an unexpected exception
+        exception_type = exc_info[0]
+        if self._had_unexpected_error and exception_type is NameError:
+            return
+        self._had_unexpected_error = True
+
         self._report_item_name(out)
-        return doctest.DocTestRunner.report_unexpected_exception(
-            self, out, test, example, exc_info)
+        return super().report_unexpected_exception(
+            out, test, example, exc_info)
 
     def report_failure(self, out, test, example, got):
         self._report_item_name(out)
@@ -636,6 +649,7 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     success = True
     # Redirect stderr to the stdout or output
     tmp_stderr = sys.stdout if doctest_warnings else output
+    from scipy._lib._util import _fixed_default_rng
 
     @contextmanager
     def temp_cwd():
@@ -650,8 +664,9 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
 
     # Run tests, trying to restore global state afterward
     cwd = os.getcwd()
-    with np.errstate(), np.printoptions(), temp_cwd() as tmpdir, \
-            redirect_stderr(tmp_stderr):
+    with np.errstate(), np.printoptions(), temp_cwd(), \
+            redirect_stderr(tmp_stderr), \
+            _fixed_default_rng():
         # try to ensure random seed is NOT reproducible
         np.random.seed(None)
 

@@ -61,6 +61,7 @@ def test_regression_std_vector_dtypes():
 
 
 @pytest.mark.slow
+@pytest.mark.xfail_on_32bit("Can't create large array for test")
 def test_nnz_overflow():
     # Regression test for gh-7230 / gh-7871, checking that coo_todense
     # with nnz > int32max doesn't overflow.
@@ -82,7 +83,7 @@ def test_nnz_overflow():
 
 @pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
                     reason="test requires 64-bit Linux")
-class TestInt32Overflow(object):
+class TestInt32Overflow:
     """
     Some of the sparsetools routines use dense 2D matrices whose
     total size is not bounded by the nnz of the sparse matrix. These

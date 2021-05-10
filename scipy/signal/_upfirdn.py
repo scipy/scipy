@@ -69,7 +69,7 @@ def _check_mode(mode):
     return enum
 
 
-class _UpFIRDn(object):
+class _UpFIRDn:
     """Helper for resampling."""
 
     def __init__(self, h, x_dtype, up, down):

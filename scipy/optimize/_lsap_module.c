@@ -35,14 +35,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static PyObject*
 calculate_assignment(PyObject* self, PyObject* args)
 {
-    PyObject* x = NULL;
+    PyObject* a = NULL;
+    PyObject* b = NULL;
+    PyObject* result = NULL;
     PyObject* obj_cost = NULL;
     if (!PyArg_ParseTuple(args, "O", &obj_cost))
         return NULL;
 
     PyArrayObject* obj_cont =
       (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 2, 2);
-    if (obj_cont == NULL) {
+    if (!obj_cont) {
         PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         return NULL;
     }
@@ -53,22 +55,38 @@ calculate_assignment(PyObject* self, PyObject* args)
         goto cleanup;
     }
 
-    int num_rows = PyArray_DIM(obj_cont, 0);
-    int num_cols = PyArray_DIM(obj_cont, 1);
+    npy_intp num_rows = PyArray_DIM(obj_cont, 0);
+    npy_intp num_cols = PyArray_DIM(obj_cont, 1);
+    npy_intp dim[1] = { num_rows < num_cols ? num_rows : num_cols };
+    a = PyArray_SimpleNew(1, dim, NPY_INT64);
+    if (!a)
+        goto cleanup;
 
-    npy_intp dim[1] = { num_rows };
-    x = PyArray_SimpleNew(1, dim, NPY_INT64);
-    int result = solve_rectangular_linear_sum_assignment(
-      num_rows, num_cols, cost_matrix, PyArray_DATA((PyArrayObject*)x));
-    if (result != 0) {
+    b = PyArray_SimpleNew(1, dim, NPY_INT64);
+    if (!b)
+        goto cleanup;
+
+    int ret = solve_rectangular_linear_sum_assignment(
+      num_rows, num_cols, cost_matrix,
+      PyArray_DATA((PyArrayObject*)a),
+      PyArray_DATA((PyArrayObject*)b));
+    if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
-        Py_DECREF(x);
-        x = NULL;
+        goto cleanup;
+    }
+    else if (ret == RECTANGULAR_LSAP_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "matrix contains invalid numeric entries");
+        goto cleanup;
     }
 
+    result = Py_BuildValue("OO", a, b);
+
 cleanup:
-    Py_DECREF((PyObject*)obj_cont);
-    return x;
+    Py_XDECREF((PyObject*)obj_cont);
+    Py_XDECREF(a);
+    Py_XDECREF(b);
+    return result;
 }
 
 static PyMethodDef lsap_module_methods[] = {

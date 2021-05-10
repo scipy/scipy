@@ -15,7 +15,7 @@ def _arr_to_scalar(x):
     return x.item() if isinstance(x, np.ndarray) else x
 
 
-class NonlinearConstraint(object):
+class NonlinearConstraint:
     """Nonlinear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -116,7 +116,7 @@ class NonlinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class LinearConstraint(object):
+class LinearConstraint:
     """Linear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -154,7 +154,7 @@ class LinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class Bounds(object):
+class Bounds:
     """Bounds constraint on the variables.
 
     The constraint has the general inequality form::
@@ -166,7 +166,7 @@ class Bounds(object):
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
@@ -180,18 +180,20 @@ class Bounds(object):
         Default is False. Has no effect for equality constraints.
     """
     def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = lb
-        self.ub = ub
+        self.lb = np.asarray(lb)
+        self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
+        start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            end = f", keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            end = ")"
+        return start + end
 
 
-class PreparedConstraint(object):
+class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and

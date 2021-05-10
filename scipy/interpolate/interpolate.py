@@ -86,7 +86,7 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
-class interp2d(object):
+class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
@@ -94,11 +94,14 @@ class interp2d(object):
     Interpolate over a 2-D grid.
 
     `x`, `y` and `z` are arrays of values used to approximate some function
-    f: ``z = f(x, y)``. This class returns a function whose call method uses
-    spline interpolation to find the value of new points.
+    f: ``z = f(x, y)`` which returns a scalar value `z`. This class returns a
+    function whose call method uses spline interpolation to find the value
+    of new points.
 
     If `x` and `y` represent a regular grid, consider using
-    RectBivariateSpline.
+    `RectBivariateSpline`.
+
+    If `z` is a vector value, consider using `interpn`.
 
     Note that calling `interp2d` with NaNs present in input values results in
     undefined behaviour.
@@ -342,14 +345,16 @@ class interp1d(_Interpolator1D):
         A N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`.
     kind : str or int, optional
-        Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',
-        'previous', 'next', where 'zero', 'slinear', 'quadratic' and 'cubic'
-        refer to a spline interpolation of zeroth, first, second or third
-        order; 'previous' and 'next' simply return the previous or next value
-        of the point) or as an integer specifying the order of the spline
-        interpolator to use.
-        Default is 'linear'.
+        Specifies the kind of interpolation as a string or as an integer
+        specifying the order of the spline interpolator to use.
+        The string has to be one of 'linear', 'nearest', 'nearest-up', 'zero',
+        'slinear', 'quadratic', 'cubic', 'previous', or 'next'. 'zero',
+        'slinear', 'quadratic' and 'cubic' refer to a spline interpolation of
+        zeroth, first, second or third order; 'previous' and 'next' simply
+        return the previous or next value of the point; 'nearest-up' and
+        'nearest' differ when interpolating half-integers (e.g. 0.5, 1.5)
+        in that 'nearest-up' rounds up and 'nearest' rounds down. Default
+        is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
         Interpolation defaults to the last axis of `y`.
@@ -402,8 +407,12 @@ class interp1d(_Interpolator1D):
     Calling `interp1d` with NaNs present in input values results in
     undefined behaviour.
 
-    Input values `x` and `y` must be convertible to `float` values like 
+    Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
+    
+    If the values in `x` are not unique, the resulting behavior is
+    undefined and specific to the choice of `kind`, i.e., changing
+    `kind` will change the behavior for duplicates.
 
 
     Examples
@@ -436,7 +445,8 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest', 'previous', 'next'):
+        elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
+                          'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -471,13 +481,22 @@ class interp1d(_Interpolator1D):
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
         # collection.  See: https://docs.python.org/reference/datamodel.html
-        if kind in ('linear', 'nearest', 'previous', 'next'):
+        if kind in ('linear', 'nearest', 'nearest-up', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
             if kind == 'nearest':
                 # Do division before addition to prevent possible integer
                 # overflow
+                self._side = 'left'
+                self.x_bds = self.x / 2.0
+                self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
+
+                self._call = self.__class__._call_nearest
+            elif kind == 'nearest-up':
+                # Do division before addition to prevent possible integer
+                # overflow
+                self._side = 'right'
                 self.x_bds = self.x / 2.0
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
@@ -622,7 +641,7 @@ class interp1d(_Interpolator1D):
         #    would be inserted.
         #    Note: use side='left' (right) to searchsorted() to define the
         #    halfway point to be nearest to the left (right) neighbor
-        x_new_indices = searchsorted(self.x_bds, x_new, side='left')
+        x_new_indices = searchsorted(self.x_bds, x_new, side=self._side)
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
         x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
@@ -702,7 +721,7 @@ class interp1d(_Interpolator1D):
         return below_bounds, above_bounds
 
 
-class _PPolyBase(object):
+class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
@@ -1890,7 +1909,7 @@ class BPoly(_PPolyBase):
         return out
 
 
-class NdPPoly(object):
+class NdPPoly:
     """
     Piecewise tensor product polynomial
 
@@ -2323,7 +2342,7 @@ class NdPPoly(object):
         return c
 
 
-class RegularGridInterpolator(object):
+class RegularGridInterpolator:
     """
     Interpolation on a regular grid in arbitrary dimensions
 
@@ -2381,7 +2400,8 @@ class RegularGridInterpolator(object):
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+    >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+    >>> data = f(xg, yg, zg)
 
     ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:
@@ -2601,17 +2621,17 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> from scipy.interpolate import interpn
     >>> def value_func_3d(x, y, z):
     ...     return 2 * x + 3 * y - z
-    >>> x = np.linspace(0, 5)
-    >>> y = np.linspace(0, 5)
-    >>> z = np.linspace(0, 5)
+    >>> x = np.linspace(0, 4, 5)
+    >>> y = np.linspace(0, 5, 6)
+    >>> z = np.linspace(0, 6, 7)
     >>> points = (x, y, z)
-    >>> values = value_func_3d(*np.meshgrid(*points))
+    >>> values = value_func_3d(*np.meshgrid(*points, indexing='ij'))
 
     Evaluate the interpolating function at a point
 
     >>> point = np.array([2.21, 3.12, 1.15])
     >>> print(interpn(points, values, point))
-    [11.72]
+    [12.63]
 
     See also
     --------

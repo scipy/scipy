@@ -25,7 +25,7 @@ def _broadcast_arrays(a, b):
     return x, y
 
 
-class IndexMixin(object):
+class IndexMixin:
     """
     This class provides common dispatching and validation logic for indexing.
     """
@@ -117,7 +117,8 @@ class IndexMixin(object):
         else:
             # Make x and i into the same shape
             x = np.asarray(x, dtype=self.dtype)
-            x, _ = _broadcast_arrays(x, i)
+            if x.squeeze().shape != i.squeeze().shape:
+                x = np.broadcast_to(x, i.shape)
             if x.size == 0:
                 return
             x = x.reshape(i.shape)

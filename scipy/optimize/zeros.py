@@ -30,7 +30,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
             _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
 
 
-class RootResults(object):
+class RootResults:
     """Represents the root finding result.
 
     Attributes
@@ -236,10 +236,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     >>> f = lambda x, a: x**3 - a
     >>> fder = lambda x, a: 3 * x**2
-    >>> np.random.seed(4321)
-    >>> x = np.random.randn(100)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.standard_normal(100)
     >>> a = np.arange(-50, 50)
-    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
+    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ), maxiter=200)
 
     The above is the equivalent of solving for each value in ``(x, a)``
     separately in a for-loop, just faster:
@@ -888,13 +888,6 @@ def brenth(f, a, b, args=(),
 #  See [1]
 
 
-def _within_tolerance(x, y, rtol, atol):
-    diff = np.abs(x - y)
-    z = np.abs(y)
-    result = (diff <= (atol + rtol * z))
-    return result
-
-
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
     notclosefvals = (
@@ -1033,7 +1026,7 @@ def _newton_quadratic(ab, fab, d, fd, k):
     return r
 
 
-class TOMS748Solver(object):
+class TOMS748Solver:
     """Solve f(x, *args) == 0 using Algorithm748 of Alefeld, Potro & Shi.
     """
     _MU = 0.5
@@ -1121,7 +1114,7 @@ class TOMS748Solver(object):
     def get_status(self):
         """Determine the current status."""
         a, b = self.ab[:2]
-        if _within_tolerance(a, b, self.rtol, self.xtol):
+        if np.isclose(a, b, rtol=self.rtol, atol=self.xtol):
             return _ECONVERGED, sum(self.ab) / 2.0
         if self.iterations >= self.maxiter:
             return _ECONVERR, sum(self.ab) / 2.0
