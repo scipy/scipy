@@ -4,7 +4,6 @@
 #include "zeros.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define SIGN(a) ((a) > 0. ? 1. : -1.)
 
 /*
  At the top of the loop the situation is the following:
@@ -50,7 +49,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
     fpre = (*f)(xpre,func_data);
     fcur = (*f)(xcur,func_data);
     solver_stats->funcalls = 2;
-    if (SIGN(fpre)*SIGN(fcur) > 0) {
+    if (fpre*fcur > 0) {
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
@@ -65,7 +64,8 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
     solver_stats->iterations = 0;
     for (i = 0; i < iter; i++) {
         solver_stats->iterations++;
-        if (SIGN(fpre)*SIGN(fcur) < 0) {
+        if (fpre != 0 && fcur != 0 &&
+	    (signbit(fpre) != signbit(fcur))) {
             xblk = xpre;
             fblk = fpre;
             spre = scur = xcur - xpre;
