@@ -18,7 +18,7 @@ import time
 
 import os
 import numpy as np
-from mpmath import gamma, pi, sqrt, quad, inf, mpf, mp, exp
+from mpmath import gamma, pi, sqrt, quad, inf, mpf, mp
 from mpmath import npdf as phi
 from mpmath import ncdf as Phi
 
@@ -125,8 +125,8 @@ def cdf_mp(q, k, nu):
         return s ** (nu - 1) * phi(sqrt(nu) * s) * inner(s, z)
 
     def whole(s, z):
-        return (sqrt(2 * pi) * k * nu ** (nu / 2) /
-                (gamma(nu / 2) * 2 ** (nu / 2 - 1)) * outer(s, z))
+        return (sqrt(2 * pi) * k * nu ** (nu / 2)
+                / (gamma(nu / 2) * 2 ** (nu / 2 - 1)) * outer(s, z))
 
     res = quad(whole, [0, inf], [-inf, inf],
                method="gauss-legendre", maxdegree=10)
@@ -156,13 +156,18 @@ def moment_mp(m, k, nu):
     """Implementation of the studentized range moment"""
     m, k, nu = mpf(m), mpf(k), mpf(nu)
 
-    def integral(q, s, z):
-        return (k * (k - 1) * s * phi(z) * phi(s * q + z)
-                * (Phi(s * q + z) - Phi(z)) ** (k - 2))
+    def inner(q, s, z):
+        return phi(z + q * s) * phi(z) * (Phi(z + q * s) - Phi(z)) ** (k - 2)
+
+    def outer(q, s, z):
+        return s ** nu * phi(sqrt(nu) * s) * inner(q, s, z)
+
+    def pdf(q, s, z):
+        return (sqrt(2 * pi) * k * (k - 1) * nu ** (nu / 2)
+                / (gamma(nu / 2) * 2 ** (nu / 2 - 1)) * outer(q, s, z))
 
     def whole(q, s, z):
-        return (q ** m * nu ** (nu / 2) / (gamma(nu / 2) * 2 ** (nu / 2 - 1))
-                * s ** (nu - 1) * exp(-nu * s ** 2 / 2) * integral(q, s, z))
+        return q ** m * pdf(q, s, z)
 
     res = quad(whole, [0, inf], [0, inf], [-inf, inf],
                method="gauss-legendre", maxdegree=10)
@@ -186,8 +191,8 @@ def run(case, run_lambda, set_key, index=0, total_cases=0):
 
     t_start = time.perf_counter()
     if len(existing_res) > 0:
+        # If a result already exists, do nothing.
         res_method = "from cache"
-        pass  # If a result already exists, do nothing.
     else:
         res_method = "calculated"
         res = run_lambda(case)
