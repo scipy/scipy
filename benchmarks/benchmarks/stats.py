@@ -41,6 +41,18 @@ class CorrelationFunctions(Benchmark):
         resBarnard = stats.barnard_exact(self.a, alternative=alternative)
 
 
+class ANOVAFunction(Benchmark):
+    def setup(self):
+        np.random.seed(12345678)
+        self.a = np.random.rand(6,3) * 10
+        self.b = np.random.rand(6,3) * 10
+        self.c = np.random.rand(6,3) * 10
+    
+    def time_f_oneway(self):
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
+        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+
+
 class Kendalltau(Benchmark):
     param_names = ['nan_policy','method','variant']
     params = [
