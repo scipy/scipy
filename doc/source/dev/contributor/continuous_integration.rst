@@ -9,23 +9,23 @@ every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
 .. note:: Before submitting or updating your PR, please ensure that you tested
-          locally your changes. See :ref:`pr-checklist` and :ref:`runtests`.
+          your changes locally. See :ref:`pr-checklist` and :ref:`runtests`.
 
 Workflows
 =========
 
-We run more than 20 different workflows with different version of the
+We run more than 20 different workflows with different versions of the
 dependencies, different architectures, etc. A PR must pass all these checks
 before it can be merged as to ensure a sustainable state of the project.
 
 Apart from the unit tests, the documentation and examples in the docstrings are
 also checked. These are common failing workflows as Sphinx and doctests have
 very strict rules. These aspects are very important as documentation and
-examples are user facing elements. Ensure that these elements are properly
+examples are user facing elements. Ensures that these elements are properly
 rendered.
 
-The logs can be long, but you will always find out why your did not pass a
-check. Simply click on ``Details`` to access the logs.
+The logs can be long, but you will always find out why your build/test did not
+pass a check. Simply click on ``Details`` to access the logs.
 
 Following is a list of all the different workflows in use. They are grouped
 by CI resources providers.
@@ -69,10 +69,10 @@ Ultimately, resources are limited and we should use them with care. This is
 why we ask you to verify your changes locally before pushing them.
 
 Depending on the proposed change, you might want to skip part of the checks.
-It will be to the discretion of a maintainer to re-run some tests before
+It will be at the discretion of a maintainer to re-run some tests before
 integration.
 
-Skipping CI can be achieve by adding a special text in the commit message:
+Skipping CI can be achieved by adding a special text in the commit message:
 
 * ``[skip azp]``: will skip Azure
 * ``[skip github]``: will skip GitHub Actions
