@@ -3,4 +3,4 @@ from collections import namedtuple
 
 
 ConfidenceInterval = namedtuple("ConfidenceInterval", ["low", "high"])
-ConfidenceInterval.doc = "Class for confidence intervals."
+ConfidenceInterval. __doc__ = "Class for confidence intervals."
