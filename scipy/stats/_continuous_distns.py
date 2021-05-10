@@ -9425,7 +9425,6 @@ class studentized_range_gen(rv_continuous):
         _a, _b = self._get_support()
         # all three of these are used to create a numpy array so they must
         # be the same shape.
-        K, k, df = np.atleast_1d(K, k, df)
 
         def _single_moment(K, k, df):
             log_const = _stats._genstudentized_range_pdf_logconst(k, df)
@@ -9440,11 +9439,10 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_moment, 3, 1)
-        return ufunc(K, k, df).astype("float64")
+        return np.float64(ufunc(K, k, df))
 
     def _pdf(self, x, k, df):
         cython_symbol = '_genstudentized_range_pdf'
-        x = np.atleast_1d(x)
 
         def _single_pdf(q, k, df):
             log_const = _stats._genstudentized_range_pdf_logconst(k, df)
@@ -9459,10 +9457,9 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
-        return ufunc(x, k, df).astype("float64")
+        return np.float64(ufunc(x, k, df))
 
     def _cdf(self, x, k, df):
-        x = np.atleast_1d(x)
 
         def _single_cdf(q, k, df):
             # "When the degrees of freedom V are infinite the probability
@@ -9499,7 +9496,7 @@ class studentized_range_gen(rv_continuous):
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
-        return ufunc(x, k, df).astype("float64")
+        return np.float64(ufunc(x, k, df))
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
