@@ -280,6 +280,7 @@ class FastNumericalInverse():
     method, the random variates generated may be nearly identical, given
     the same random state.
 
+    >>> # `seed` ensures identical random streams are used by each `rvs` method
     >>> seed = 500072020
     >>> rvs1 = dist.rvs(size=100, random_state=np.random.default_rng(seed))
     >>> rvs2 = fni.rvs(size=100, random_state=np.random.default_rng(seed))
