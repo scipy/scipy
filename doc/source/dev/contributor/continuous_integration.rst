@@ -75,7 +75,7 @@ integration.
 Skipping CI can be achieved by adding a special text in the commit message:
 
 * ``[skip azp]``: will skip Azure
-* ``[skip github]``: will skip GitHub Actions
+* ``[skip actions]``: will skip GitHub Actions
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
@@ -85,6 +85,5 @@ just updated a ``.rst`` file in the documentation and ask to skip Azure and
 GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
-
-    [skip azp] [skip github]
+    [skip azp] [skip actions]
 
