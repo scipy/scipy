@@ -123,6 +123,8 @@ from . import _hausdorff
 from ..linalg import norm
 from ..special import rel_entr
 
+from . import _distance_pybind
+
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -1766,6 +1768,8 @@ class MetricInfo:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
     types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    # true if out array must be C-contiguous
+    requires_contiguous_out: bool = True
 
 
 # Registry of implemented metrics:
@@ -1788,18 +1792,15 @@ _METRIC_INFOS = [
         canonical_name='chebyshev',
         aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
         dist_func=chebyshev,
-        validator=_validate_weight_with_size,
-        cdist_func=CDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
+        cdist_func=_distance_pybind.cdist_chebyshev,
+        pdist_func=_distance_pybind.pdist_chebyshev,
     ),
     MetricInfo(
         canonical_name='cityblock',
         aka={'cityblock', 'cblock', 'cb', 'c'},
         dist_func=cityblock,
-        cdist_func=CDistMetricWrapper('cityblock'),
-        pdist_func=PDistMetricWrapper('cityblock'),
+        cdist_func=_distance_pybind.cdist_cityblock,
+        pdist_func=_distance_pybind.pdist_cityblock,
     ),
     MetricInfo(
         canonical_name='correlation',
@@ -1827,8 +1828,8 @@ _METRIC_INFOS = [
         canonical_name='euclidean',
         aka={'euclidean', 'euclid', 'eu', 'e'},
         dist_func=euclidean,
-        cdist_func=CDistMetricWrapper('euclidean'),
-        pdist_func=PDistMetricWrapper('euclidean'),
+        cdist_func=_distance_pybind.cdist_euclidean,
+        pdist_func=_distance_pybind.pdist_euclidean,
     ),
     MetricInfo(
         canonical_name='hamming',
@@ -1875,10 +1876,8 @@ _METRIC_INFOS = [
         aka={'minkowski', 'mi', 'm', 'pnorm'},
         validator=_validate_minkowski_kwargs,
         dist_func=minkowski,
-        cdist_func=CDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
+        cdist_func=_distance_pybind.cdist_minkowski,
+        pdist_func=_distance_pybind.pdist_minkowski,
     ),
     MetricInfo(
         canonical_name='rogerstanimoto',
