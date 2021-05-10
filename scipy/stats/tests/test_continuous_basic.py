@@ -35,7 +35,7 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic']
+            'geninvgauss', 'genhyperbolic', 'studentized_range']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -44,14 +44,15 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
                      'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
                      'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
-                     'rv_histogram_instance']
+                     'rv_histogram_instance', 'studentized_range']
 
 # these were really slow in `test_fit`.py.
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
                     'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
-                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line']
+                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
+                    'studentized_range']
 # pearson3 fails due to something weird
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
@@ -74,7 +75,8 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'vonmises', 'vonmises_line']
+                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'studentized_range']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
@@ -103,7 +105,8 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'cosine', 'dgamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
                    'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -287,7 +290,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon']:
+    if dist in ['gausshyper', 'genexpon', 'studentized_range']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the
@@ -542,7 +545,8 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "divide by zero encountered in power",  # gengamma
             "invalid value encountered in add",  # genextreme
             "invalid value encountered in subtract",  # gengamma
-            "invalid value encountered in multiply"  # recipinvgauss
+            "invalid value encountered in multiply",  # recipinvgauss
+            "invalid value encountered in log"  # studentized_range
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)

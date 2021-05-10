@@ -6,6 +6,7 @@ import re
 import sys
 import pickle
 import os
+import json
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -20,7 +21,8 @@ from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
 from scipy import special
 from scipy._lib._util import check_random_state
-from scipy.integrate import IntegrationWarning, quad, trapezoid
+from scipy.integrate import (IntegrationWarning, quad, trapezoid,
+                             cumulative_trapezoid)
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -30,6 +32,7 @@ from scipy.stats._distr_params import distcont, invdistcont
 from .test_discrete_basic import distdiscrete, invdistdiscrete
 from scipy.stats._continuous_distns import FitDataError
 from scipy.optimize import root, fmin
+from itertools import product
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -4488,6 +4491,148 @@ class TestBurr:
         assert_(np.isfinite(e2))
         assert_(np.isfinite(e3))
         assert_(np.isfinite(e4))
+
+
+class TestStudentizedRange:
+    # For alpha=.05, .01, and .001, and for each value of
+    # v=[1, 3, 10, 20, 120, inf], a Q was picked from each table for
+    # k=[2, 8, 14, 20].
+
+    vs = [1, 3, 10, 20, 120, np.inf]
+    ks = [2, 8, 14, 20]
+
+    # these arrays are written with `k` as column, and `v` as rows.
+    # Q values are taken from table 3:
+    # https://www.jstor.org/stable/2237810
+    q05 = [17.97, 45.40, 54.33, 59.56,
+           4.501, 8.853, 10.35, 11.24,
+           3.151, 5.305, 6.028, 6.467,
+           2.950, 4.768, 5.357, 5.714,
+           2.800, 4.363, 4.842, 5.126,
+           2.772, 4.286, 4.743, 5.012]
+    q01 = [90.03, 227.2, 271.8, 298.0,
+           8.261, 15.64, 18.22, 19.77,
+           4.482, 6.875, 7.712, 8.226,
+           4.024, 5.839, 6.450, 6.823,
+           3.702, 5.118, 5.562, 5.827,
+           3.643, 4.987, 5.400, 5.645]
+    q001 = [900.3, 2272, 2718, 2980,
+            18.28, 34.12, 39.69, 43.05,
+            6.487, 9.352, 10.39, 11.03,
+            5.444, 7.313, 7.966, 8.370,
+            4.772, 6.039, 6.448, 6.695,
+            4.654, 5.823, 6.191, 6.411]
+    qs = np.concatenate((q05, q01, q001))
+    ps = [.95, .99, .999]
+    data = zip(product(ps, vs, ks), qs)
+
+    def test_cdf_against_tables(self):
+        for pvk, q in self.data:
+            p_expected, v, k = pvk
+            res_p = stats.studentized_range.cdf(q, k, v)
+            assert_allclose(res_p, p_expected, rtol=1e-4)
+
+    @pytest.mark.slow
+    def test_ppf_against_tables(self):
+        for pvk, q_expected in self.data:
+            res_q = stats.studentized_range.ppf(*pvk)
+            assert_allclose(res_q, q_expected, rtol=1e-4)
+
+    path_prefix = os.path.dirname(__file__)
+    relative_path = "data/studentized_range_mpmath_ref.json"
+    with open(os.path.join(path_prefix, relative_path), "r") as file:
+        pregenerated_data = json.load(file)
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
+    def test_cdf_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.cdf(*qkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    @pytest.mark.parametrize("case_result", pregenerated_data["pdf_data"])
+    def test_pdf_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        qkv = src_case["q"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.pdf(*qkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
+    def test_moment_against_mp(self, case_result):
+        src_case = case_result["src_case"]
+        mp_result = case_result["mp_result"]
+        mkv = src_case["m"], src_case["k"], src_case["v"]
+        res = stats.studentized_range.moment(*mkv)
+
+        assert_allclose(res, mp_result,
+                        atol=src_case["expected_atol"],
+                        rtol=src_case["expected_rtol"])
+
+    def test_pdf_integration(self):
+        k, v = 3, 10
+        # Test whether PDF integration is 1 like it should be.
+        res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
+        assert_allclose(res[0], 1)
+
+    @pytest.mark.xslow
+    def test_pdf_against_cdf(self):
+        k, v = 3, 10
+
+        # Test whether the integrated PDF matches the CDF using cumulative
+        # integration. Use a small step size to reduce error due to the
+        # summation. This is slow, but tests the results well.
+        x = np.arange(0, 10, step=0.01)
+
+        y_cdf = stats.distributions.studentized_range.cdf(x, k, v)[1:]
+        y_pdf_raw = stats.distributions.studentized_range.pdf(x, k, v)
+        y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
+
+        # Because of error caused by the summation, use a relatively large rtol
+        assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("moment", [1, 2, 3, 4])
+    def test_moment_against_pdf(self, moment):
+        k, v = 3, 10
+
+        res_act = stats.studentized_range.moment(moment, k, v)
+
+        def wrapper(x):
+            return x ** moment * stats.studentized_range.pdf(x, k, v)
+
+        res_exp = quad(wrapper, 0, np.inf)[0]
+
+        # Atol is large B/C of integration innacuracy with quad.
+        # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
+        # range causes the results to converge and pass default atol.
+        assert_allclose(res_act, res_exp, atol=1e-5)
+
+    @pytest.mark.slow
+    def test_moment_vectorization(self):
+        # Test moment broadcasting. Calls `_munp` directly because
+        # `rv_continuous.moment` is broken at time of writing. See gh-12192
+        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+        assert_allclose(m.shape, (2,))
+
+        with pytest.raises(ValueError, match="...could not be broadcast..."):
+            stats.studentized_range._munp(1, [4, 5], [10, 11, 12])
+
+    @pytest.mark.xslow
+    def test_fitstart_valid(self):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            # the integration warning message may differ
+            sup.filter(IntegrationWarning)
+            k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
+        assert_(stats.studentized_range._argcheck(k, df))
 
 
 def test_540_567():
