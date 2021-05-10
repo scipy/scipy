@@ -347,8 +347,9 @@ isolve:
 dsolve:
 
 - add sparse Cholesky or incomplete Cholesky
-- look at CHOLMOD
-
+- add sparse QR
+- improve interface to SuiteSparse UMFPACK
+- add interfaces to SuiteSparse CHOLMOD and SPQR
 
 Ideas for new features:
 
@@ -438,8 +439,8 @@ The following improvements will help SciPy better serve this role.
 - Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in scipy.special with better code, perhaps ported from the Boost C++
-  library. (e.g. merge `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__))
+  used in scipy.special with Boost implementations as in
+  `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
 
 In addition, we should:
 
@@ -450,4 +451,3 @@ In addition, we should:
   two-sided alternative hypotheses where applicable, return confidence
   intervals for the test statistic, and implement exact p-value calculations -
   considering the possibility of ties - where computationally feasible.
-- Get `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__ merged.
