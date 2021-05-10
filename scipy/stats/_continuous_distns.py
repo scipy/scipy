@@ -9444,7 +9444,6 @@ class studentized_range_gen(rv_continuous):
 
     def _pdf(self, x, k, df):
         cython_symbol = '_genstudentized_range_pdf'
-        _a, _b = self._get_support()
         x = np.atleast_1d(x)
 
         def _single_pdf(q, k, df):
@@ -9454,7 +9453,7 @@ class studentized_range_gen(rv_continuous):
 
             llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
 
-            ranges = [(-np.inf, np.inf), (_a, _b)]
+            ranges = [(-np.inf, np.inf), (0, np.inf)]
             opts = dict(epsabs=1e-11, epsrel=1e-12)
 
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
@@ -9463,7 +9462,6 @@ class studentized_range_gen(rv_continuous):
         return ufunc(x, k, df).astype("float64")
 
     def _cdf(self, x, k, df):
-        _a, _b = self._get_support()
         x = np.atleast_1d(x)
 
         def _single_cdf(q, k, df):
@@ -9481,7 +9479,7 @@ class studentized_range_gen(rv_continuous):
                 llc = LowLevelCallable.from_cython(
                     _stats, cython_symbol, usr_data)
 
-                ranges = [(-np.inf, np.inf), (_a, _b)]
+                ranges = [(-np.inf, np.inf), (0, np.inf)]
                 opts = dict(epsabs=1e-11, epsrel=1e-12)
 
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
@@ -9495,7 +9493,7 @@ class studentized_range_gen(rv_continuous):
                 llc = LowLevelCallable.from_cython(
                     _stats, cython_symbol, usr_data)
 
-                ranges = [(-np.inf, _b)]
+                ranges = [(-np.inf, np.inf)]
                 opts = dict(epsabs=1e-11, epsrel=1e-12)
 
                 return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
