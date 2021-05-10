@@ -67,7 +67,7 @@ def test_bootstrap_against_theory(method):
     res = bootstrap((data,), np.mean, n_resamples=5000,
                     confidence_level=alpha, method=method,
                     random_state=0)
-    assert_allclose(res.confidence_interval, expected_interval, rtol=6e-4)
+    assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
     assert_allclose(res.standard_error, expected_se, atol=3e-4)
 
 
@@ -95,7 +95,8 @@ def test_bootstrap_against_R(method, expected):
     # print(result)
     x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
                   23, 34, 50, 81, 89, 121, 134, 213])
-    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method)
+    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method,
+                    random_state=0)
     assert_allclose(res.confidence_interval, expected, rtol=0.005)
 
 
@@ -197,6 +198,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
 
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
+    np.random.seed(0)
     x = np.random.rand(*shape)
     y = _bootstrap._jackknife_resample(x)
 
@@ -219,10 +221,11 @@ def test_bootstrap_resample(rng_name):
 
     n_resamples = 10
     shape = 3, 4, 5, 6
+
+    np.random.seed(0)
     x = np.random.rand(*shape)
     y = _bootstrap._bootstrap_resample(x, n_resamples, random_state=rng1)
 
-    np.random.seed(0)
     for i in range(n_resamples):
         # each resample is indexed along second to last axis
         # (last axis is the one the statistic will be taken over / consumed)
@@ -238,6 +241,7 @@ def test_bootstrap_resample(rng_name):
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_percentile_of_score(score, axis):
     shape = 10, 20, 30
+    np.random.seed(0)
     x = np.random.rand(*shape)
     p = _bootstrap._percentile_of_score(x, score, axis=-1)
 
@@ -255,6 +259,7 @@ def test_percentile_along_axis():
     # _percentile_along_axis gets the q corresponding with each axis slice
 
     shape = 10, 20
+    np.random.seed(0)
     x = np.random.rand(*shape)
     q = np.random.rand(*shape[:-1]) * 100
     y = _bootstrap._percentile_along_axis(x, q)

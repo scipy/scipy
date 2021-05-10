@@ -252,7 +252,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> res = bootstrap(data, np.std, confidence_level=0.9,
     ...                 random_state=rng)
     >>> print(res.confidence_interval)
-    3.5636350108774204 4.371806172295983
+    ConfidenceInterval(low=3.570397848712619, high=4.3744412312285235)
 
     If we sample from the distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
@@ -262,32 +262,33 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
-    ...    ci = bootstrap(data, np.std, confidence_level=0.9,
+    ...    ci = bootstrap(data, np.std, confidence_level=0.9, n_resamples=1000,
     ...                   random_state=rng).confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    886
+    873
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
-    >>> ci_l, ci_u = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
-    ...                        random_state=rng).confidence_interval
+    >>> res = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
+    ...                 n_resamples=1000, random_state=rng)
+    >>> ci_l, ci_u = res.confidence_interval
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
     ``n_trials = 1000`` samples.
 
     >>> print(ci_l[995:])
-    [3.4946531  3.43978116 3.31599914 3.68572393 3.88157142]
+    [3.7168901  3.69223008 3.41495018 3.3701263  3.45061973]
     >>> print(ci_u[995:])
-    [4.48025135 4.29112886 4.14016373 4.54505683 4.86451242]
+    [4.78001236 4.79348079 4.23119694 4.32124204 4.52526014]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    876
+    897
 
     `bootstrap` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
@@ -308,14 +309,15 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
     >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
-    >>> mood(sample1, sample2)[0]  # element 0 is the statistic
-    -4.056321520284127
+    >>> print(mood(sample1, sample2)[0])  # element 0 is the statistic
+    -5.521109549096542
     >>> print(res.confidence_interval)
-    (-5.798587535600218, -2.415274860901717)
+    ConfidenceInterval(low=-7.255994487314675, high=-4.016202624747605)
 
-    the bootstrap estimate of the standard error is also available.
+    The bootstrap estimate of the standard error is also available.
+
     >>> print(res.standard_error)
-    0.0123
+    0.8344963846318795
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
@@ -325,7 +327,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> x = np.linspace(0, 10, n)
     >>> y = x + rng.uniform(size=n)
     >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
-    0.9957096551761004
+    0.9962357936065914
 
     To ensure that samples remain paired, we define a function that accepts
     an array of _indices_ of the observations for which the statistic is to
@@ -338,7 +340,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     ...     return res[0]
     >>> i = np.arange(n)
     >>> print(my_statistic(i))
-    0.9957096551761004
+    0.9962357936065914
 
     `pearsonr` isn't vectorized, but NumPy can take care of that.
 
@@ -349,7 +351,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
     >>> print(res.confidence_interval)
-    (0.9946237765750373, 0.9970407025134345)
+    ConfidenceInterval(low=0.9952937934357518, high=0.9973835291326288)
 
     """
     # Input validation
