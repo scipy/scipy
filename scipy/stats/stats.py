@@ -6918,37 +6918,34 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     if h == 0:
         return True, d, 1.0
     saw_fp_error, prob = False, np.nan
-    # try:
-    if alternative == 'two-sided':
-        if n1 == n2:
-            prob = _compute_prob_outside_square(n1, h)
-        else:
-            prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
-            if not (0 <= prob <= 1):
-                raise Exception(f"_compute_prob_inside_method({n1},{n2},{g},{h}) calc prob = {prob} out of range")
-    else:
-        if n1 == n2:
-            # prob = binom(2n, n-h) / binom(2n, n)
-            # Evaluating in that form incurs roundoff errors
-            # from special.binom. Instead calculate directly
-            jrange = np.arange(h)
-            prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
-        else:
-            num_paths = _count_paths_outside_method(n1, n2, g, h)
-            bin = special.binom(n1 + n2, n1)
-            if not np.isfinite(bin) or not np.isfinite(num_paths)\
-                    or num_paths > bin:
-                saw_fp_error = True
+    try:
+        if alternative == 'two-sided':
+            if n1 == n2:
+                prob = _compute_prob_outside_square(n1, h)
             else:
-                prob = num_paths / bin
+                prob = 1 - _compute_prob_inside_method(n1, n2, g, h)
+        else:
+            if n1 == n2:
+                # prob = binom(2n, n-h) / binom(2n, n)
+                # Evaluating in that form incurs roundoff errors
+                # from special.binom. Instead calculate directly
+                jrange = np.arange(h)
+                prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
+            else:
+                num_paths = _count_paths_outside_method(n1, n2, g, h)
+                bin = special.binom(n1 + n2, n1)
+                if not np.isfinite(bin) or not np.isfinite(num_paths)\
+                        or num_paths > bin:
+                    saw_fp_error = True
+                else:
+                    prob = num_paths / bin
 
-    # except FloatingPointError:
-    #     saw_fp_error = True
+    except FloatingPointError:
+        saw_fp_error = True
 
     if saw_fp_error:
         return False, d, np.nan
     if not (0 <= prob <= 1):
-        raise Exception(f"prob = {prob} out of range")
         return False, d, prob
     return True, d, prob
 
