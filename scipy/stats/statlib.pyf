@@ -29,29 +29,7 @@ python module statlib ! in
            integer intent(in) :: is
            integer intent(out) :: ifault
            double precision intent(out) :: prho
-         end function prho         
-         
-         function prtrng(q,v,r,ifault) ! in :statlib:cmustatlib.f
-            double precision intent(in) :: q
-            double precision intent(in) :: v
-            double precision intent(in) :: r
-            integer intent(out), dimension(3) :: ifault
-            double precision :: prtrng
-        end function prtrng
-        function qtrng(p,v,r,ifault) ! in :statlib:cmustatlib.f
-            double precision :: p
-            double precision :: v
-            double precision :: r
-            integer intent(out), dimension(3) :: ifault
-            double precision :: qtrng
-        end function qtrng
-        function qtrng0(p,v,r,ifault) ! in :statlib:cmustatlib.f
-            double precision intent(in) :: p
-            double precision intent(in) :: v
-            double precision intent(in) :: r
-            integer intent(out), dimension(3) :: ifault
-            double precision :: qtrng0
-        end function qtrng0
+         end function prho
 
     end interface 
 end python module statlib

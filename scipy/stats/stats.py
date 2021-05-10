@@ -48,6 +48,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
+from itertools import permutations
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -3813,22 +3814,13 @@ def tukeykramer(*args, sig_level=.05):
     args = [np.asarray(arg) for arg in args]
     means = [np.mean(arg) for arg in args]
 
-    def get_q(p, r, v, guess=3):
-        def wrapper_cdf(q_crit, treatments, ddof, alpha):
-            return alpha - (1 - prtrng(q_crit, ddof,
-                                       treatments)[0])
-        res = root(wrapper_cdf, guess, args=(r, v, p))
-        if res.success:
-            return res.x.item()
-        else:
-            raise ValueError(res.message)
-
     # determine the critical value of the studentized range using the
     # appropriate significance level, number of treatments, and degrees
     # of freedom as determined by the number of data less the number of
     # treatments. ("Confidence limits for Tukey's method")[1].
     nsamples = np.sum([a.shape[0] for a in args])
-    srd = get_q(sig_level, len(args), nsamples - len(args))
+    params = (sig_level, len(args), nsamples - len(args))
+    srd = distributions.studentized_range.ppf(*params)
 
     # determine mean square error
     mse = np.sum([(np.var(arg, ddof=1) *
@@ -3865,7 +3857,8 @@ def tukeykramer(*args, sig_level=.05):
     conf_levels = (mean_differences - tukey_criterions,
                    mean_differences + tukey_criterions)
     t_stat = np.abs(mean_differences) / stand_err
-    p_vals = [1 - prtrng(t, nsamples - 1, len(args))[0] for t in t_stat]
+    p_vals = 1 - distributions.studentized_range.cdf(t_stat, nsamples - 1,
+                                                     len(args))
 
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
