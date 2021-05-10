@@ -3859,7 +3859,6 @@ def tukeykramer(*args, sig_level=.05):
     t_stat = np.abs(mean_differences) / stand_err
     p_vals = 1 - distributions.studentized_range.cdf(t_stat, nsamples - 1,
                                                      len(args))
-
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
     # ("Conclusions")[1]
