@@ -1,44 +1,44 @@
 import numpy as np
 import pytest
-from scipy.stats import bootstrap_ci
+from scipy.stats import bootstrap
 from numpy.testing import assert_allclose
 from scipy import stats
-from .. import _bootstrap as bootstrap
+from .. import _bootstrap as _bootstrap
 from scipy._lib._util import rng_integers
 
 
-def test_bootstrap_ci_iv():
+def test_bootstrap_iv():
     message = "`data` must be a sequence of samples."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(1, np.mean)
+        bootstrap(1, np.mean)
 
     message = "`data` must contain at least one sample."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(tuple(), np.mean)
+        bootstrap(tuple(), np.mean)
 
     message = "each sample in `data` must contain two or more observations..."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3], [1]), np.mean)
+        bootstrap(([1, 2, 3], [1]), np.mean)
 
     message = "`axis` must be an integer."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, axis=1.5)
+        bootstrap(([1, 2, 3],), np.mean, axis=1.5)
 
     message = "could not convert string to float"
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, confidence_level='ni')
+        bootstrap(([1, 2, 3],), np.mean, confidence_level='ni')
 
     message = "`n_resamples` must be a positive integer."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, n_resamples=-1000)
+        bootstrap(([1, 2, 3],), np.mean, n_resamples=-1000)
 
     message = "`n_resamples` must be a positive integer."
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, n_resamples=1000.5)
+        bootstrap(([1, 2, 3],), np.mean, n_resamples=1000.5)
 
     message = "`method` must be in"
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, method='ekki')
+        bootstrap(([1, 2, 3],), np.mean, method='ekki')
 
     message = "`method = 'BCa' is only available for one-sample statistics"
 
@@ -48,23 +48,23 @@ def test_bootstrap_ci_iv():
         return mean1 - mean2
 
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([.1, .2, .3], [.1, .2, .3]), statistic, method='BCa')
+        bootstrap(([.1, .2, .3], [.1, .2, .3]), statistic, method='BCa')
 
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
-        bootstrap_ci(([1, 2, 3],), np.mean, random_state='herring')
+        bootstrap(([1, 2, 3],), np.mean, random_state='herring')
 
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-def test_bootstrap_ci_against_theory(method):
+def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
     data = stats.norm.rvs(loc=5, scale=2, size=5000)
     alpha = 0.95
     expected = stats.t.interval(alpha=alpha, df=len(data)-1,
                                 loc=np.mean(data), scale=stats.sem(data))
-    res = bootstrap_ci((data,), np.mean, n_resamples=5000,
-                       confidence_level=alpha, method=method,
-                       random_state=0)
+    res = bootstrap((data,), np.mean, n_resamples=5000,
+                    confidence_level=alpha, method=method,
+                    random_state=0)
     assert_allclose(res, expected, 6e-4)
 
 
@@ -74,7 +74,7 @@ tests_R = {"basic": (23.77, 79.12),
 
 
 @pytest.mark.parametrize("method, expected", tests_R.items())
-def test_bootstrap_ci_against_R(method, expected):
+def test_bootstrap_against_R(method, expected):
     # Compare against R's "boot" library
     # library(boot)
 
@@ -92,7 +92,7 @@ def test_bootstrap_ci_against_R(method, expected):
     # print(result)
     x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
                   23, 34, 50, 81, 89, 121, 134, 213])
-    res = bootstrap_ci((x,), np.mean, n_resamples=1000000, method=method)
+    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method)
     assert_allclose(res, expected, rtol=0.005)
 
 
@@ -104,10 +104,10 @@ tests_against_itself_1samp = {"basic": 1780,
 @pytest.mark.xfail_on_32bit("Uses too much memory")
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
-def test_bootstrap_ci_against_itself_1samp(method, expected):
-    # The expected values in this test were generated using bootstrap_ci
+def test_bootstrap_against_itself_1samp(method, expected):
+    # The expected values in this test were generated using bootstrap
     # to check for unintended changes in behavior. The test also makes sure
-    # that bootstrap_ci works with multi-sample statistics and that the
+    # that bootstrap works with multi-sample statistics and that the
     # `axis` argument works as expected / function is vectorized.
     np.random.seed(0)
 
@@ -122,12 +122,12 @@ def test_bootstrap_ci_against_itself_1samp(method, expected):
     # Do the same thing 1000 times. (The code is fully vectorized.)
     n_replications = 2000
     data = dist.rvs(size=(n_replications, n))
-    ci = bootstrap_ci((data,),
-                      statistic=np.mean,
-                      confidence_level=confidence_level,
-                      n_resamples=n_resamples,
-                      method=method,
-                      axis=-1)
+    ci = bootstrap((data,),
+                   statistic=np.mean,
+                   confidence_level=confidence_level,
+                   n_resamples=n_resamples,
+                   method=method,
+                   axis=-1)
 
     # ci contains vectors of lower and upper confidence interval bounds
     ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
@@ -146,10 +146,10 @@ tests_against_itself_2samp = {"basic": 888,
 @pytest.mark.xfail_on_32bit("Uses too much memory")
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_2samp.items())
-def test_bootstrap_ci_against_itself_2samp(method, expected):
-    # The expected values in this test were generated using bootstrap_ci
+def test_bootstrap_against_itself_2samp(method, expected):
+    # The expected values in this test were generated using bootstrap
     # to check for unintended changes in behavior. The test also makes sure
-    # that bootstrap_ci works with multi-sample statistics and that the
+    # that bootstrap works with multi-sample statistics and that the
     # `axis` argument works as expected / function is vectorized.
     np.random.seed(0)
 
@@ -173,12 +173,12 @@ def test_bootstrap_ci_against_itself_2samp(method, expected):
     n_replications = 1000
     data1 = dist1.rvs(size=(n_replications, n1))
     data2 = dist2.rvs(size=(n_replications, n2))
-    ci = bootstrap_ci((data1, data2),
-                      statistic=my_stat,
-                      confidence_level=confidence_level,
-                      n_resamples=n_resamples,
-                      method=method,
-                      axis=-1)
+    ci = bootstrap((data1, data2),
+                   statistic=my_stat,
+                   confidence_level=confidence_level,
+                   n_resamples=n_resamples,
+                   method=method,
+                   axis=-1)
 
     # ci contains vectors of lower and upper confidence interval bounds
     ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
@@ -193,7 +193,7 @@ def test_bootstrap_ci_against_itself_2samp(method, expected):
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     x = np.random.rand(*shape)
-    y = bootstrap._jackknife_resample(x)
+    y = _bootstrap._jackknife_resample(x)
 
     for i in range(shape[-1]):
         # each resample is indexed along second to last axis
@@ -215,7 +215,7 @@ def test_bootstrap_resample(rng_name):
     n_resamples = 10
     shape = 3, 4, 5, 6
     x = np.random.rand(*shape)
-    y = bootstrap._bootstrap_resample(x, n_resamples, random_state=rng1)
+    y = _bootstrap._bootstrap_resample(x, n_resamples, random_state=rng1)
 
     np.random.seed(0)
     for i in range(n_resamples):
@@ -234,7 +234,7 @@ def test_bootstrap_resample(rng_name):
 def test_percentile_of_score(score, axis):
     shape = 10, 20, 30
     x = np.random.rand(*shape)
-    p = bootstrap._percentile_of_score(x, score, axis=-1)
+    p = _bootstrap._percentile_of_score(x, score, axis=-1)
 
     def vectorized_pos(a, score, axis):
         return np.apply_along_axis(stats.percentileofscore, axis, a, score)
@@ -252,7 +252,7 @@ def test_percentile_along_axis():
     shape = 10, 20
     x = np.random.rand(*shape)
     q = np.random.rand(*shape[:-1]) * 100
-    y = bootstrap._percentile_along_axis(x, q)
+    y = _bootstrap._percentile_along_axis(x, q)
 
     for i in range(shape[0]):
         res = y[i]

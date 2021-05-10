@@ -82,9 +82,9 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b):
     return alpha_1, alpha_2
 
 
-def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
-                     method, random_state):
-    """Input validation for `bootstrap_ci`."""
+def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
+                  method, random_state):
+    """Input validation for `bootstrap`."""
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -130,8 +130,8 @@ def _bootstrap_ci_iv(data, statistic, axis, confidence_level, n_resamples,
             n_resamples_int, method, random_state)
 
 
-def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
-                 n_resamples=1000, method='basic', random_state=None):
+def bootstrap(data, statistic, axis=0, confidence_level=0.95,
+              n_resamples=1000, method='basic', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -158,7 +158,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
 
     If the samples in `data` are  taken at random from their respective
     distributions :math:`n` times, the confidence interval returned by
-    `bootstrap_ci` will contain the true value of the statistic for those
+    `bootstrap` will contain the true value of the statistic for those
     distributions approximately `confidence_level`:math:`\, \times \, n` times.
 
     Parameters
@@ -234,12 +234,12 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     3.9460644295563863
 
     We can calculate a 90% confidence interval of the statistic using
-    `bootstrap_ci`.
+    `bootstrap`.
 
-    >>> from scipy.stats import bootstrap_ci
+    >>> from scipy.stats import bootstrap
     >>> data = (data,)  # samples must be in a sequence
-    >>> ci_l, ci_u = bootstrap_ci(data, np.std, confidence_level=0.9,
-    ...                           random_state=rng)
+    >>> ci_l, ci_u = bootstrap(data, np.std, confidence_level=0.9,
+    ...                        random_state=rng)
     >>> print(ci_l, ci_u)
     3.5636350108774204 4.371806172295983
 
@@ -251,8 +251,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
-    ...    ci = bootstrap_ci(data, np.std, confidence_level=0.9,
-    ...                      random_state=rng)
+    ...    ci = bootstrap(data, np.std, confidence_level=0.9,
+    ...                   random_state=rng)
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
@@ -262,8 +262,8 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     for all 1000 samples at once.
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
-    >>> ci_l, ci_u = bootstrap_ci(data, np.std, axis=-1, confidence_level=0.9,
-    ...                           random_state=rng)
+    >>> ci_l, ci_u = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
+    ...                        random_state=rng)
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
     ``n_trials = 1000`` samples.
@@ -278,7 +278,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
     876
 
-    `bootstrap_ci` can also be used to estimate confidence intervals of
+    `bootstrap` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
     tests. `scipy.stats.mood` perform's Mood's test for equal scale parameters,
     and it returns two outputs: a statistic, and a p-value. To get a
@@ -296,7 +296,7 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> ci = bootstrap_ci(data, my_statistic, method='basic', random_state=rng)
+    >>> ci = bootstrap(data, my_statistic, method='basic', random_state=rng)
     >>> mood(sample1, sample2)[0]  # element 0 is the statistic
     -4.056321520284127
     >>> print(ci)
@@ -330,16 +330,16 @@ def bootstrap_ci(data, statistic, axis=0, confidence_level=0.95,
     >>> def my_vectorized_statistic(i, axis):
     ...    return np.apply_along_axis(my_statistic, axis, i)
 
-    We call `bootstrap_ci` using the indices of the observations as `data`.
+    We call `bootstrap` using the indices of the observations as `data`.
 
-    >>> ci = bootstrap_ci((i,), my_vectorized_statistic, random_state=rng)
+    >>> ci = bootstrap((i,), my_vectorized_statistic, random_state=rng)
     >>> print(ci)
     (0.9946237765750373, 0.9970407025134345)
 
     """
     # Input validation
-    args = _bootstrap_ci_iv(data, statistic, axis, confidence_level,
-                            n_resamples, method, random_state)
+    args = _bootstrap_iv(data, statistic, axis, confidence_level,
+                         n_resamples, method, random_state)
     data, statistic, axis, confidence_level = args[:4]
     n_resamples, method, random_state = args[4:]
 
