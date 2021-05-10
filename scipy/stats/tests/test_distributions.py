@@ -4722,7 +4722,7 @@ class TestStudentizedRange:
         res = quad(stats.studentized_range.pdf, 0, np.inf, args=(k, v))
         assert_allclose(res[0], 1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_pdf_against_cdf(self):
         k, v = 3, 10
 
@@ -4765,7 +4765,7 @@ class TestStudentizedRange:
         with pytest.raises(ValueError, match="...could not be broadcast..."):
             stats.studentized_range._munp(1, [4, 5], [10, 11, 12])
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_fitstart_valid(self):
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             # the integration warning message may differ
