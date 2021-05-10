@@ -130,7 +130,7 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
             n_resamples_int, method, random_state)
 
 
-def bootstrap(data, statistic, axis=0, confidence_level=0.95,
+def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
               n_resamples=1000, method='basic', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
