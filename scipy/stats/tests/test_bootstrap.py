@@ -58,14 +58,17 @@ def test_bootstrap_iv():
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
-    data = stats.norm.rvs(loc=5, scale=2, size=5000)
+    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
     alpha = 0.95
-    expected = stats.t.interval(alpha=alpha, df=len(data)-1,
-                                loc=np.mean(data), scale=stats.sem(data))
+    dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
+    expected_interval = dist.interval(alpha=alpha)
+    expected_se = dist.std()
+
     res = bootstrap((data,), np.mean, n_resamples=5000,
                     confidence_level=alpha, method=method,
                     random_state=0)
-    assert_allclose(res, expected, 6e-4)
+    assert_allclose(res.confidence_interval, expected_interval, rtol=6e-4)
+    assert_allclose(res.standard_error, expected_se, atol=3e-4)
 
 
 tests_R = {"basic": (23.77, 79.12),
@@ -93,7 +96,7 @@ def test_bootstrap_against_R(method, expected):
     x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
                   23, 34, 50, 81, 89, 121, 134, 213])
     res = bootstrap((x,), np.mean, n_resamples=1000000, method=method)
-    assert_allclose(res, expected, rtol=0.005)
+    assert_allclose(res.confidence_interval, expected, rtol=0.005)
 
 
 tests_against_itself_1samp = {"basic": 1780,
@@ -122,12 +125,13 @@ def test_bootstrap_against_itself_1samp(method, expected):
     # Do the same thing 1000 times. (The code is fully vectorized.)
     n_replications = 2000
     data = dist.rvs(size=(n_replications, n))
-    ci = bootstrap((data,),
-                   statistic=np.mean,
-                   confidence_level=confidence_level,
-                   n_resamples=n_resamples,
-                   method=method,
-                   axis=-1)
+    res = bootstrap((data,),
+                    statistic=np.mean,
+                    confidence_level=confidence_level,
+                    n_resamples=n_resamples,
+                    method=method,
+                    axis=-1)
+    ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
     ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
@@ -173,12 +177,13 @@ def test_bootstrap_against_itself_2samp(method, expected):
     n_replications = 1000
     data1 = dist1.rvs(size=(n_replications, n1))
     data2 = dist2.rvs(size=(n_replications, n2))
-    ci = bootstrap((data1, data2),
-                   statistic=my_stat,
-                   confidence_level=confidence_level,
-                   n_resamples=n_resamples,
-                   method=method,
-                   axis=-1)
+    res = bootstrap((data1, data2),
+                    statistic=my_stat,
+                    confidence_level=confidence_level,
+                    n_resamples=n_resamples,
+                    method=method,
+                    axis=-1)
+    ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
     ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))

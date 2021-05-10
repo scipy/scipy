@@ -2,6 +2,8 @@ import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri
 from scipy._lib._util import rng_integers
+from dataclasses import make_dataclass
+from ._common import ConfidenceInterval
 
 
 def _jackknife_resample(sample):
@@ -130,8 +132,12 @@ def _bootstrap_iv(data, statistic, axis, confidence_level, n_resamples,
             n_resamples_int, method, random_state)
 
 
+fields = ['confidence_interval', 'standard_error']
+BootstrapResult = make_dataclass("BootstrapResult", fields)
+
+
 def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
-              n_resamples=1000, method='basic', random_state=None):
+              n_resamples=9999, method='basic', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -179,7 +185,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
         The default is ``0.95``.
     n_resamples : int, optional
         The number of resamples performed to form the bootstrap distribution
-        of the statistic. The default is ``1000``.
+        of the statistic. The default is ``9999``.
     method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse'or the bias-corrected and accelerated
@@ -200,10 +206,15 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     Returns
     -------
-    ci_l : float
-        The lower bound of the confidence interval.
-    ci_u : float
-        The upper bound of the confidence interval.
+    res : BootstrapResult
+        An object with attributes:
+
+        confidence_interval : ConfidenceInterval
+            The bootstrap confidence interval as an instance of
+            `collections.namedtuple` with attributes `low` and `high`.
+        standard_error : float or ndarray
+            The bootstrap standard error, that is, the sample standard
+            deviation of the bootstrap distribution
 
     References
     ----------
@@ -238,9 +249,9 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     >>> from scipy.stats import bootstrap
     >>> data = (data,)  # samples must be in a sequence
-    >>> ci_l, ci_u = bootstrap(data, np.std, confidence_level=0.9,
-    ...                        random_state=rng)
-    >>> print(ci_l, ci_u)
+    >>> res = bootstrap(data, np.std, confidence_level=0.9,
+    ...                 random_state=rng)
+    >>> print(res.confidence_interval)
     3.5636350108774204 4.371806172295983
 
     If we sample from the distribution 1000 times and form a bootstrap
@@ -252,7 +263,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
     ...    ci = bootstrap(data, np.std, confidence_level=0.9,
-    ...                   random_state=rng)
+    ...                   random_state=rng).confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
@@ -263,7 +274,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
     >>> ci_l, ci_u = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
-    ...                        random_state=rng)
+    ...                        random_state=rng).confidence_interval
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
     ``n_trials = 1000`` samples.
@@ -296,11 +307,15 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
     >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> ci = bootstrap(data, my_statistic, method='basic', random_state=rng)
+    >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
     >>> mood(sample1, sample2)[0]  # element 0 is the statistic
     -4.056321520284127
-    >>> print(ci)
+    >>> print(res.confidence_interval)
     (-5.798587535600218, -2.415274860901717)
+
+    the bootstrap estimate of the standard error is also available.
+    >>> print(res.standard_error)
+    0.0123
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
@@ -332,8 +347,8 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
 
     We call `bootstrap` using the indices of the observations as `data`.
 
-    >>> ci = bootstrap((i,), my_vectorized_statistic, random_state=rng)
-    >>> print(ci)
+    >>> res = bootstrap((i,), my_vectorized_statistic, random_state=rng)
+    >>> print(res.confidence_interval)
     (0.9946237765750373, 0.9970407025134345)
 
     """
@@ -372,4 +387,5 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
-    return ci_l, ci_u
+    return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
+                           standard_error=np.std(theta_hat_b, ddof=1))
