@@ -11,18 +11,21 @@
 
 # Note: I would have prefered to use pickle rather than JSON, but -
 # due to security concerns - decided against it.
-
+import itertools
 from collections import namedtuple
 import json
 import time
 
 import os
+from multiprocessing import Pool, cpu_count
+
 import numpy as np
 from mpmath import gamma, pi, sqrt, quad, inf, mpf, mp
 from mpmath import npdf as phi
 from mpmath import ncdf as Phi
 
 results_filepath = "data/studentized_range_mpmath_ref.json"
+num_pools = max(cpu_count() - 1, 1)
 
 MPResult = namedtuple("MPResult", ["src_case", "mp_result"])
 
@@ -32,6 +35,7 @@ CdfCase = namedtuple("CdfCase",
 MomentCase = namedtuple("MomentCase",
                         ["m", "k", "v", "expected_atol", "expected_rtol"])
 
+# Load previously generated JSON results, or init a new dict if none exist
 if os.path.isfile(results_filepath):
     res_dict = json.load(open(results_filepath, mode="r"))
 else:
@@ -45,62 +49,39 @@ res_dict.setdefault("cdf_data", [])
 res_dict.setdefault("pdf_data", [])
 res_dict.setdefault("moment_data", [])
 
-general_atol = 1e-11
-general_rtol = 1e-11
+general_atol, general_rtol = 1e-11, 1e-11
+large_nu_atol = 1e-9  # Increase tolorances for large values of nu
+
 mp.dps = 24
 
-cdf_cases = [
-    CdfCase(0.1, 3, 10, general_atol, general_rtol),
-    CdfCase(1, 3, 10, general_atol, general_rtol),
-    CdfCase(10, 3, 10, general_atol, general_rtol),
+cp_q = [0.1, 1, 10]
+cp_k = [3, 10]
+cp_nu = [10, 100, 1000, np.inf]
 
-    CdfCase(0.1, 10, 10, general_atol, general_rtol),
-    CdfCase(1, 10, 10, general_atol, general_rtol),
-    CdfCase(10, 10, 10, general_atol, general_rtol),
-
-    CdfCase(0.1, 3, 100, general_atol, general_rtol),
-    CdfCase(1, 3, 100, general_atol, general_rtol),
-    CdfCase(10, 3, 100, general_atol, general_rtol),
-
-    CdfCase(0.1, 10, 100, general_atol, general_rtol),
-    CdfCase(1, 10, 100, general_atol, general_rtol),
-    CdfCase(10, 10, 100, general_atol, general_rtol),
-
-    CdfCase(0.1, 3, 1000, general_atol, general_rtol),
-    CdfCase(1, 3, 1000, general_atol, general_rtol),
-    CdfCase(10, 3, 1000, general_atol, general_rtol),
-
-    CdfCase(0.1, 10, 1000, general_atol, general_rtol),
-    CdfCase(1, 10, 1000, general_atol, general_rtol),
-    CdfCase(10, 10, 1000, general_atol, general_rtol),
-
-    CdfCase(0.1, 3, np.inf, general_atol, general_rtol),
-    CdfCase(1, 3, np.inf, general_atol, general_rtol),
-    CdfCase(10, 3, np.inf, general_atol, general_rtol),
-
-    CdfCase(0.1, 10, np.inf, general_atol, general_rtol),
-    CdfCase(1, 10, np.inf, general_atol, general_rtol),
-    CdfCase(10, 10, np.inf, general_atol, general_rtol),
+cdf_pdf_cases = [
+    CdfCase(*case,
+            general_atol if case[2] < 120 else large_nu_atol,
+            general_rtol)
+    for case in
+    itertools.product(cp_q, cp_k, cp_nu)
 ]
-
-# PDF can use same cases as CDF
-pdf_cases = cdf_cases
 
 mom_atol, mom_rtol = 1e-9, 1e-9
 # These are EXTREMELY slow - Multiple days each in worst case.
 moment_cases = [
-    MomentCase(1, 3, 10, mom_atol, mom_rtol),
-    MomentCase(2, 3, 10, mom_atol, mom_rtol),
-    MomentCase(3, 3, 10, mom_atol, mom_rtol),
-    MomentCase(4, 3, 10, mom_atol, mom_rtol)
+    MomentCase(i, 3, 10, mom_atol, mom_rtol)
+    for i in range(5)
 ]
 
 
 def write_data():
-    json.dump(res_dict, open(results_filepath, mode="w"), indent=2)
+    """Writes the current res_dict to the target JSON file"""
+    with open(results_filepath, mode="w") as f:
+        json.dump(res_dict, f, indent=2)
 
 
 def to_dict(named_tuple):
+    """Converts a namedtuple to a dict"""
     return dict(named_tuple._asdict())
 
 
@@ -174,39 +155,60 @@ def moment_mp(m, k, nu):
     return res
 
 
-total_cases = len(cdf_cases) + len(pdf_cases)
-print(f"Processing {total_cases} test cases")
-
-
-def run(case, run_lambda, set_key, index=0, total_cases=0):
-    """Runs the single passed case. Returns a result dict"""
+def result_exists(set_key, case):
+    """Searches the results dict for a result in the set that matches a case.
+    Returns True if such a case exists."""
     if set_key not in res_dict:
-        raise ValueError(f"{set_key} not present in res_dict structure!")
+        raise ValueError(f"{set_key} not present in data structure!")
 
-    # Search for an existing result
     case_dict = to_dict(case)
     existing_res = list(filter(
         lambda res: res["src_case"] == case_dict,  # dict comparison
         res_dict[set_key]))
 
+    return len(existing_res) > 0
+
+
+def run(case, run_lambda, set_key, index=0, total_cases=0):
+    """Runs the single passed case, returning an mp dictionary and index"""
     t_start = time.perf_counter()
-    if len(existing_res) > 0:
-        # If a result already exists, do nothing.
-        res_method = "from cache"
-    else:
-        res_method = "calculated"
-        res = run_lambda(case)
-        res_dict[set_key].append(mp_res_to_dict(MPResult(case, res)))
-        write_data()
+
+    res = run_lambda(case)
 
     print(f"Finished {index + 1}/{total_cases} in batch. "
-          f"(Took {time.perf_counter() - t_start}s) ({res_method})")
+          f"(Took {time.perf_counter() - t_start}s)")
+
+    return index, set_key, mp_res_to_dict(MPResult(case, res))
+
+
+def write_result(res):
+    """A callback for completed jobs. Inserts and writes a calculated result
+     to file."""
+    index, set_key, result_dict = res
+    res_dict[set_key].insert(index, result_dict)
+    write_data()
 
 
 def run_cases(cases, run_lambda, set_key):
-    """Runs an array of cases, returns an array of dicts"""
-    return [run(case, run_lambda, set_key, index, len(cases))
-            for index, case in enumerate(cases)]
+    """Runs an array of cases and writes to file"""
+    # Generate jobs to run from cases that do not have a result in
+    # the previously loaded JSON.
+    job_arg = [(case, run_lambda, set_key, index, len(cases))
+               for index, case in enumerate(cases)
+               if not result_exists(set_key, case)]
+
+    print(f"{len(cases) - len(job_arg)}/{len(cases)} cases won't be "
+          f"calculated because their results already exist.")
+
+    jobs = []
+    pool = Pool(num_pools)
+
+    # Run all using multiprocess
+    for case in job_arg:
+        jobs.append(pool.apply_async(run, args=case, callback=write_result))
+
+    pool.close()
+    pool.join()
 
 
 def run_pdf(case):
@@ -221,18 +223,26 @@ def run_moment(case):
     return moment_mp(case.m, case.k, case.v)
 
 
-t_start = time.perf_counter()
+def main():
+    t_start = time.perf_counter()
 
-print(f"Running 1st batch ({len(pdf_cases)} PDF cases). "
-      f"These take about 30s each.")
-run_cases(pdf_cases, run_pdf, "pdf_data")
+    total_cases = 2 * len(cdf_pdf_cases) + len(moment_cases)
+    print(f"Processing {total_cases} test cases")
 
-print(f"Running 2nd batch ({len(pdf_cases)} CDF cases). "
-      f"These take about 30s each.")
-run_cases(cdf_cases, run_cdf, "cdf_data")
+    print(f"Running 1st batch ({len(cdf_pdf_cases)} PDF cases). "
+          f"These take about 30s each.")
+    run_cases(cdf_pdf_cases, run_pdf, "pdf_data")
 
-print(f"Running 3rd batch ({len(moment_cases)} moment cases). "
-      f"These take about anywhere from a few hours to days each.")
-run_cases(moment_cases, run_moment, "moment_data")
+    print(f"Running 2nd batch ({len(cdf_pdf_cases)} CDF cases). "
+          f"These take about 30s each.")
+    run_cases(cdf_pdf_cases, run_cdf, "cdf_data")
 
-print(f"Test data generated in {time.perf_counter() - t_start}s")
+    print(f"Running 3rd batch ({len(moment_cases)} moment cases). "
+          f"These take about anywhere from a few hours to days each.")
+    run_cases(moment_cases, run_moment, "moment_data")
+
+    print(f"Test data generated in {time.perf_counter() - t_start}s")
+
+
+if __name__ == "__main__":
+    main()
