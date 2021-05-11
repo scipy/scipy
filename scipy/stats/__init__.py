@@ -449,6 +449,7 @@ from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
+from ._mannwhitneyu import mannwhitneyu
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
