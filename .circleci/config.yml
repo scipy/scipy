@@ -77,11 +77,11 @@ jobs:
 
       - run:
           name: build docs
-          no_output_timeout: 20m
+          no_output_timeout: 25m
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --doc html-scipyorg --doc latex
+            python -u runtests.py -g -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 

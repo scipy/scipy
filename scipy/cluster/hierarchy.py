@@ -1471,9 +1471,9 @@ def to_tree(Z, rd=False):
 
     nd = None
 
-    for i in range(0, n - 1):
-        fi = int(Z[i, 0])
-        fj = int(Z[i, 1])
+    for i, row in enumerate(Z):
+        fi = int(row[0])
+        fj = int(row[1])
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
@@ -1482,9 +1482,10 @@ def to_tree(Z, rd=False):
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
-        nd = ClusterNode(i + n, d[fi], d[fj], Z[i, 2])
-        #                 ^ id   ^ left ^ right ^ dist
-        if Z[i, 3] != nd.count:
+        
+        nd = ClusterNode(i + n, d[fi], d[fj], row[2])
+        #                ^ id   ^ left ^ right ^ dist
+        if row[3] != nd.count:
             raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
                               'incorrect.') % i)
         d[n + i] = nd

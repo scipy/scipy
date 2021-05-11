@@ -123,6 +123,8 @@ from . import _hausdorff
 from ..linalg import norm
 from ..special import rel_entr
 
+from . import _distance_pybind
+
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -1211,10 +1213,10 @@ def canberra(u, v, w=None):
     return d
 
 
-def jensenshannon(p, q, base=None):
+def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     """
     Compute the Jensen-Shannon distance (metric) between
-    two 1-D probability arrays. This is the square root
+    two probability arrays. This is the square root
     of the Jensen-Shannon divergence.
 
     The Jensen-Shannon distance between two probability
@@ -1239,11 +1241,26 @@ def jensenshannon(p, q, base=None):
         the base of the logarithm used to compute the output
         if not given, then the routine uses the default base of
         scipy.stats.entropy.
+    axis : int, optional
+        Axis along which the Jensen-Shannon distances are computed. The default
+        is 0.
+
+        .. versionadded:: 1.7.0
+    keepdims : bool, optional
+        If this is set to `True`, the reduced axes are left in the
+        result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
+        Default is False.
+
+        .. versionadded:: 1.7.0
 
     Returns
     -------
-    js : double
-        The Jensen-Shannon distance between `p` and `q`
+    js : double or ndarray
+        The Jensen-Shannon distances between `p` and `q` along the `axis`.
+
+    Notes
+    -----
 
     .. versionadded:: 1.2.0
 
@@ -1256,16 +1273,28 @@ def jensenshannon(p, q, base=None):
     0.46450140402245893
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
     0.0
+    >>> a = np.array([[1, 2, 3, 4],
+    ...               [5, 6, 7, 8],
+    ...               [9, 10, 11, 12]])
+    >>> b = np.array([[13, 14, 15, 16],
+    ...               [17, 18, 19, 20],
+    ...               [21, 22, 23, 24]])
+    >>> distance.jensenshannon(a, b, axis=0)
+    array([0.1954288, 0.1447697, 0.1138377, 0.0927636])
+    >>> distance.jensenshannon(a, b, axis=1)
+    array([0.1402339, 0.0399106, 0.0201815])
 
     """
     p = np.asarray(p)
     q = np.asarray(q)
-    p = p / np.sum(p, axis=0)
-    q = q / np.sum(q, axis=0)
+    p = p / np.sum(p, axis=axis, keepdims=True)
+    q = q / np.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
     left = rel_entr(p, m)
     right = rel_entr(q, m)
-    js = np.sum(left, axis=0) + np.sum(right, axis=0)
+    left_sum = np.sum(left, axis=axis, keepdims=keepdims)
+    right_sum = np.sum(right, axis=axis, keepdims=keepdims)
+    js = left_sum + right_sum
     if base is not None:
         js /= np.log(base)
     return np.sqrt(js / 2.0)
@@ -1543,17 +1572,9 @@ def sokalmichener(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == v.dtype == bool and w is None:
-        ntt = (u & v).sum()
-        nff = (~u & ~v).sum()
-    elif w is None:
-        ntt = (u * v).sum()
-        nff = ((1.0 - u) * (1.0 - v)).sum()
-    else:
+    if w is not None:
         w = _validate_weights(w)
-        ntt = (u * v * w).sum()
-        nff = ((1.0 - u) * (1.0 - v) * w).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
+    nff, nft, ntf, ntt = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
 
 
@@ -1747,6 +1768,8 @@ class MetricInfo:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
     types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    # true if out array must be C-contiguous
+    requires_contiguous_out: bool = True
 
 
 # Registry of implemented metrics:
@@ -1769,18 +1792,15 @@ _METRIC_INFOS = [
         canonical_name='chebyshev',
         aka={'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'},
         dist_func=chebyshev,
-        validator=_validate_weight_with_size,
-        cdist_func=CDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'chebyshev', 'weighted_chebyshev'),
+        cdist_func=_distance_pybind.cdist_chebyshev,
+        pdist_func=_distance_pybind.pdist_chebyshev,
     ),
     MetricInfo(
         canonical_name='cityblock',
         aka={'cityblock', 'cblock', 'cb', 'c'},
         dist_func=cityblock,
-        cdist_func=CDistMetricWrapper('cityblock'),
-        pdist_func=PDistMetricWrapper('cityblock'),
+        cdist_func=_distance_pybind.cdist_cityblock,
+        pdist_func=_distance_pybind.pdist_cityblock,
     ),
     MetricInfo(
         canonical_name='correlation',
@@ -1808,8 +1828,8 @@ _METRIC_INFOS = [
         canonical_name='euclidean',
         aka={'euclidean', 'euclid', 'eu', 'e'},
         dist_func=euclidean,
-        cdist_func=CDistMetricWrapper('euclidean'),
-        pdist_func=PDistMetricWrapper('euclidean'),
+        cdist_func=_distance_pybind.cdist_euclidean,
+        pdist_func=_distance_pybind.pdist_euclidean,
     ),
     MetricInfo(
         canonical_name='hamming',
@@ -1856,10 +1876,8 @@ _METRIC_INFOS = [
         aka={'minkowski', 'mi', 'm', 'pnorm'},
         validator=_validate_minkowski_kwargs,
         dist_func=minkowski,
-        cdist_func=CDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
-        pdist_func=PDistWeightedMetricWrapper(
-            'minkowski', 'weighted_minkowski'),
+        cdist_func=_distance_pybind.cdist_minkowski,
+        pdist_func=_distance_pybind.pdist_minkowski,
     ),
     MetricInfo(
         canonical_name='rogerstanimoto',

@@ -1244,7 +1244,7 @@ PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
 # TODO: replace with _all_partitions in _hypotests when gh-13661 merges
 def _all_partitions(nx, ny):
     """
-    Partition a set of indices into two fixed-length sets in all possible ways
+    Partition a set of indices into two fixed-length sets in all possible ways.
 
     Partition a set of indices 0 ... nx + ny - 1 into two sets of length nx and
     ny in all possible ways (ignoring order of elements).
@@ -1311,7 +1311,7 @@ def _data_permutations_paired(data, n, random_state=None):
 def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
                          permutations=np.inf, alternative="two-sided", axis=0,
                          random_state=None):
-    """Input validation for permutation_test"""
+    """Input validation for `permutation_test`."""
 
     axis_int = int(axis)
     if axis != axis_int:
@@ -1360,7 +1360,8 @@ def _permutation_test_iv(data, statistic, paired=False, vectorized=False,
 def permutation_test(data, statistic, paired=False, vectorized=False,
                      permutations=np.inf, alternative="two-sided", axis=0,
                      random_state=None):
-    """Performs a permutation test of a given statistic on provided data
+    """
+    Performs a permutation test of a given statistic on provided data.
 
     Performs a two-sample permutation test. For unpaired statistics,
     the null hypothesis is that the data are randomly sampled from the same
@@ -1395,15 +1396,13 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
         The alternative hypothesis for which the p-value is calculated.
         For each alternative, the p-value is defined as follows.
 
-        ``'two-sided'`` : the percentage of the null distribution that is as
-        far or farther from the mean of the null distribution as the observed
-        value of the test statistic.
-
-        ``'greater'`` : the percentage of of the null distribution that is
+        ``'greater'`` : the percentage of the null distribution that is
         greater than or equal to the observed value of the test statistic.
 
-        ``'less'`` : the percentage of of the null distribution that is
+        ``'less'`` : the percentage of the null distribution that is
         less than or equal to the observed value of the test statistic.
+
+        ``'two-sided'`` : twice the smaller of the p-values above.
 
     axis : int, optional (default: 0)
         The axis of samples over which to calculate the statistic.
