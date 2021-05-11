@@ -1019,15 +1019,16 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
     References
     ----------
-    .. [1] Raised conditional level of significance for the 2 x 2-table when
-           testing the equality of two probabilities.
-           :doi:`10.1111/j.1467-9574.1970.tb00104.x`
+    .. [1] R.D. Boschloo. "Raised conditional level of significance for the
+       2 x 2-table when testing the equality of two probabilities", 
+       STATISTICA NEERLANDICA, 24(1), 1970
 
     .. [2] "Boschloo's test", Wikipedia,
            https://en.wikipedia.org/wiki/Boschloo%27s_test
 
-    .. [3] Work-related attitudes of u.s. Scientists.
-           :doi:`https://doi.org/10.1002/hrm.20032`
+    .. [3] Lise M. Saari et al. "Employee attitudes and job satisfaction",
+       Human Resource Management, 43(4), 395–407, 2004,
+       :doi:`10.1002/hrm.20032`.
 
     Examples
     --------
