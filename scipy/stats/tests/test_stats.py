@@ -6737,6 +6737,10 @@ class TestFNI:
         assert u_tol < 1e-12
 
     def test_fni_input_validation(self):
+        match = "`dist' must be a frozen continuous distribution."
+        with pytest.raises(ValueError, match=match):
+            stats.FastNumericalInverse(stats.norm)
+
         match = "could not convert string to float"
         with pytest.raises(ValueError, match=match):
             stats.FastNumericalInverse(stats.norm(), tol='ekki')
@@ -6744,10 +6748,6 @@ class TestFNI:
         match = "`max_intervals' must be..."
         with pytest.raises(ValueError, match=match):
             stats.FastNumericalInverse(stats.norm(), max_intervals=-1)
-
-        match = "'str' object has no attribute"
-        with pytest.raises(AttributeError, match=match):
-            stats.FastNumericalInverse("ekki")
 
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):
@@ -6853,6 +6853,18 @@ class TestFNI:
             sample = qrvs[..., i]
             sample2 = qrvs2[:, i].reshape(size)
             assert_allclose(sample, sample2, atol=1e-12)
+
+    def test_FastNumericalInverse_inaccurate_CDF(self):
+        # CDF function with inaccurate tail cannot be inverted; see gh-13319
+        shapes = (2.3098496451481823, 0.6268795430096368)
+        match = "The interpolating spline could not be created."
+
+        # fails with default tol
+        with pytest.raises(ValueError, match=match):
+            stats.FastNumericalInverse(stats.beta(*shapes))
+
+        # no error with coarser tol
+        stats.FastNumericalInverse(stats.beta(*shapes), tol=1e-10)
 
 
 class TestPageTrendTest:

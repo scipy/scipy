@@ -3,6 +3,7 @@ import numpy as np
 from scipy._lib._util import check_random_state
 from scipy.interpolate import CubicHermiteSpline
 from scipy import stats
+from scipy.stats._distn_infrastructure import rv_frozen
 
 
 def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
@@ -178,7 +179,7 @@ class FastNumericalInverse():
     Object representing a Fast Numerical Inverse of a probability distribution.
 
     The initializer of `FastNumericalInverse` accepts `dist`, a frozen instance
-    of `scipy.stats.rv_continuous`, and provides an object with methods
+    of a continuous distribution, and provides an object with methods
     that approximate `dist.ppf` and `dist.rvs`. For most distributions,
     these methods are faster than those of `dist` itself.
 
@@ -235,7 +236,7 @@ class FastNumericalInverse():
 
     Examples
     --------
-    For some distributions, ``dist.ppf`` are ``dist.rvs`` are quite slow.
+    For some distributions, ``dist.ppf`` and ``dist.rvs`` are quite slow.
 
     >>> import numpy as np
     >>> from scipy.stats import genexpon
@@ -290,10 +291,12 @@ class FastNumericalInverse():
     """
 
     def __init__(self, dist, tol=1e-12, max_intervals=100000):
-        H, eu, intervals = _fast_numerical_inverse(dist, tol, max_intervals)
+        res =_fast_numerical_inverse(dist, tol, max_intervals)
+        H, eu, intervals, a, b = res
         self.H = H
         self.midpoint_error = eu
         self.intervals = intervals
+        self._a, self._b = a, b
 
     def ppf(self, q):
         r"""
@@ -349,6 +352,8 @@ class FastNumericalInverse():
         """
         random_state = check_random_state(random_state)
         uniform = random_state.uniform(size=size)
+        # scale to valid domain of interpolant
+        uniform = self._a + uniform * (self._b - self._a)
         return self.ppf(uniform)
 
     def qrvs(self, size=None, d=None, qmc_engine=None):
@@ -430,6 +435,8 @@ class FastNumericalInverse():
 
         # Get uniform QRVS from qmc_random and transform it
         uniform = qmc_engine.random(np.prod(tuple_size) or 1)
+        # scale to valid domain of interpolant
+        uniform = self._a + uniform * (self._b - self._a)
         qrvs = self.ppf(uniform)
 
         # Output reshaping for user convenience
@@ -447,10 +454,14 @@ def _fni_input_validation(dist, tol, max_intervals):
     Input validation for _fast_numerical_inverse.
 
     """
-    if int(max_intervals) != max_intervals or max_intervals <= 1:
-        raise ValueError("`max_intervals' must be an integer greater than 1.")
+
+    if not isinstance(dist, rv_frozen):
+        raise ValueError("`dist' must be a frozen continuous distribution.")
 
     tol = float(tol)  # if there's an exception, raise it now
+
+    if int(max_intervals) != max_intervals or max_intervals <= 1:
+        raise ValueError("`max_intervals' must be an integer greater than 1.")
 
     return dist, tol, max_intervals
 
@@ -482,6 +493,8 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
         The number of intervals of the interpolant.
     midpoint_error : float
         The maximum u-error at an interpolant interval midpoint.
+    a, b : float
+        The left and right endpoints of the valid domain of the interpolant.
 
     """
     dist, tol, max_intervals = _fni_input_validation(dist, tol, max_intervals)
@@ -516,7 +529,14 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
     f = dist.pdf(p)
     while p.size-1 <= max_intervals:
         # [1] Equation 4-8
-        H = CubicHermiteSpline(u, p, 1/f)
+        try:
+            H = CubicHermiteSpline(u, p, 1/f)
+        except ValueError:
+            message = ("The interpolating spline could not be created. This "
+                       "is often caused by of inaccurate CDF evaluation in a "
+                       "tail of the distribution. Increasing `tol` can "
+                       "resolve this error at the expense of lower accuracy.")
+            raise ValueError(message)
         # To improve performance, add update feature to CubicHermiteSpline
 
         # [1] Equation 12
@@ -540,4 +560,4 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
 
     # todo: add test for monotonicity [1] Section 2.4
     # todo: deal with vanishing density [1] Section 2.5
-    return H, eu, p.size-1
+    return H, eu, p.size-1, u[0], u[-1]
