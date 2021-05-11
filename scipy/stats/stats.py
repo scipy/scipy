@@ -6655,9 +6655,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     See Also
     --------
     scipy.stats.power_divergence
-    scipy.stats.fisher_exact 
-	barnard_exact: An unconditional exact test. Less conservative in small 
-		samples compared to Fisher's Exact test.
+    scipy.stats.barnard_exact: An unconditional exact test. An alternative
+                               to chi-squared test for small sample sizes.
 
     Notes
     -----
