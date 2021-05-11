@@ -571,8 +571,7 @@ class TestBoschlooExact:
             pytest.param(
                 ([[0, 1], [3, 2]], (0.5, 0.34375)),
                 marks=pytest.mark.xfail_on_32bit,
-                reason="Numerical error when calculating fisher stat"
-            ),
+            ),  # reason: small numerical error when calculating fisher stat
             ([[0, 2], [6, 4]], (0.2272727, 0.09850981)),
             ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
             ([[7, 12], [8, 3]], (0.06406797, 0.03410916)),
@@ -637,8 +636,7 @@ class TestBoschlooExact:
             pytest.param(
                 ([[0, 1], [3, 2]], (0.5, 0.6875)),
                 marks=pytest.mark.xfail_on_32bit,
-                reason="Numerical error when calculating fisher stat"
-            ),
+            ),  # reason: small numerical error when calculating fisher stat
             ([[0, 2], [6, 4]], (0.2272727, 0.1970196)),
             ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
             ([[7, 12], [8, 3]], (0.06406797, 0.06821831)),
