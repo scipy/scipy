@@ -43,7 +43,7 @@ class cKDTreeNode:
     @property
     def indices(self) -> np.ndarray: ...
 
-    # Read-only attributes that are technically not properties
+    # These are read-only attributes in cython, which behave like properties
     @property
     def level(self) -> int: ...
     @property
@@ -73,7 +73,7 @@ class cKDTree(Generic[_BoxType]):
     @property
     def tree(self) -> cKDTreeNode: ...
 
-    # Read-only attributes that are technically not properties
+    # These are read-only attributes in cython, which behave like properties
     @property
     def data(self) -> np.ndarray: ...
     @property
