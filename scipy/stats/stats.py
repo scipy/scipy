@@ -69,7 +69,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
-           'chisquare', 'power_divergence', 'mannwhitneyu',
+           'chisquare', 'power_divergence',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
@@ -7599,106 +7599,6 @@ def tiecorrect(rankvals):
 
     size = np.float64(arr.size)
     return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
-
-
-MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
-
-
-def mannwhitneyu(x, y, use_continuity=True, alternative=None):
-    """Compute the Mann-Whitney rank test on samples x and y.
-
-    Parameters
-    ----------
-    x, y : array_like
-        Array of samples, should be one-dimensional.
-    use_continuity : bool, optional
-            Whether a continuity correction (1/2.) should be taken into
-            account. Default is True.
-    alternative : {None, 'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is None):
-
-          * None: computes p-value half the size of the 'two-sided' p-value and
-            a different U statistic. The default behavior is not the same as
-            using 'less' or 'greater'; it only exists for backward compatibility
-            and is deprecated.
-          * 'two-sided'
-          * 'less': one-sided
-          * 'greater': one-sided
-
-        Use of the None option is deprecated.
-
-    Returns
-    -------
-    statistic : float
-        The Mann-Whitney U statistic, equal to min(U for x, U for y) if
-        `alternative` is equal to None (deprecated; exists for backward
-        compatibility), and U for y otherwise.
-    pvalue : float
-        p-value assuming an asymptotic normal distribution. One-sided or
-        two-sided, depending on the choice of `alternative`.
-
-    Notes
-    -----
-    Use only when the number of observation in each sample is > 20 and
-    you have 2 independent samples of ranks. Mann-Whitney U is
-    significant if the u-obtained is LESS THAN or equal to the critical
-    value of U.
-
-    This test corrects for ties and by default uses a continuity correction.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Mann-Whitney_U_test
-
-    .. [2] H.B. Mann and D.R. Whitney, "On a Test of Whether one of Two Random
-           Variables is Stochastically Larger than the Other," The Annals of
-           Mathematical Statistics, vol. 18, no. 1, pp. 50-60, 1947.
-
-    """
-    if alternative is None:
-        warnings.warn("Calling `mannwhitneyu` without specifying "
-                      "`alternative` is deprecated.", DeprecationWarning)
-
-    x = np.asarray(x)
-    y = np.asarray(y)
-    n1 = len(x)
-    n2 = len(y)
-    ranked = rankdata(np.concatenate((x, y)))
-    rankx = ranked[0:n1]  # get the x-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
-    u2 = n1*n2 - u1  # remainder is U for y
-    T = tiecorrect(ranked)
-    if T == 0:
-        raise ValueError('All numbers are identical in mannwhitneyu')
-    sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
-
-    meanrank = n1*n2/2.0 + 0.5 * use_continuity
-    if alternative is None or alternative == 'two-sided':
-        bigu = max(u1, u2)
-    elif alternative == 'less':
-        bigu = u1
-    elif alternative == 'greater':
-        bigu = u2
-    else:
-        raise ValueError("alternative should be None, 'less', 'greater' "
-                         "or 'two-sided'")
-
-    z = (bigu - meanrank) / sd
-    if alternative is None:
-        # This behavior, equal to half the size of the two-sided
-        # p-value, is deprecated.
-        p = distributions.norm.sf(abs(z))
-    elif alternative == 'two-sided':
-        p = 2 * distributions.norm.sf(abs(z))
-    else:
-        p = distributions.norm.sf(z)
-
-    u = u2
-    # This behavior is deprecated.
-    if alternative is None:
-        u = min(u1, u2)
-    return MannwhitneyuResult(u, p)
 
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
