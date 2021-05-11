@@ -10,14 +10,15 @@ Result classes
 .. autosummary::
    :toctree: generated/
 
-   RelativeRiskResult
    BinomTestResult
+   OddsRatioResult
+   RelativeRiskResult
 
 """
 
-__all__ = ['BinomTestResult', 'RelativeRiskResult', 'OddsRatioResult']
+__all__ = ['BinomTestResult', 'OddsRatioResult', 'RelativeRiskResult']
 
 
 from ._binomtest import BinomTestResult
-from ._relative_risk import RelativeRiskResult
 from ._odds_ratio import OddsRatioResult
+from ._relative_risk import RelativeRiskResult
