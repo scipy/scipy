@@ -48,7 +48,7 @@ def _is_conditionally_positive_definite(kernel, m):
     for ndim in [1, 2, 3, 4, 5]:
         # generate sample points with a Halton sequence to avoid samples that
         # are too close to eachother, which can make the matrix singular
-        seq = Halton(ndim, scramble=False)
+        seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
             A = _rbfinterp_pythran._kernel_matrix(x, kernel)
@@ -84,7 +84,7 @@ class _TestRBFInterpolator:
     def test_scale_invariance_1d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 1d
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
         x = 3*seq.random(50)
         y = _1d_test_function(x)
         xitp = 3*seq.random(50)
@@ -96,7 +96,7 @@ class _TestRBFInterpolator:
     def test_scale_invariance_2d(self, kernel):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 2d
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
         x = seq.random(100)
         y = _2d_test_function(x)
         xitp = seq.random(100)
@@ -108,7 +108,7 @@ class _TestRBFInterpolator:
     def test_extreme_domains(self, kernel):
         # Make sure the interpolant remains numerically stable for very
         # large/small domains
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
         scale = 1e50
         shift = 1e55
 
@@ -137,7 +137,7 @@ class _TestRBFInterpolator:
         # should be able to reproduce the polynomial exactly, provided that
         # `degree` is sufficiently high
         np.random.seed(0)
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
         degree = 3
 
         x = seq.random(50)
@@ -157,7 +157,7 @@ class _TestRBFInterpolator:
     def test_vector_data(self):
         # Make sure interpolating a vector field is the same as interpolating
         # each component separately
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
         xitp = seq.random(100)
@@ -175,7 +175,7 @@ class _TestRBFInterpolator:
     def test_complex_data(self):
         # Interpolating complex input should be the same as interpolating the
         # real and complex components
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
         xitp = seq.random(100)
@@ -193,7 +193,7 @@ class _TestRBFInterpolator:
     def test_interpolation_misfit_1d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 1d
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
@@ -209,7 +209,7 @@ class _TestRBFInterpolator:
     def test_interpolation_misfit_2d(self, kernel):
         # Make sure that each kernel, with its default `degree` and an
         # appropriate `epsilon`, does a good job at interpolation in 2d
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
         xitp = seq.random(100)
@@ -226,7 +226,7 @@ class _TestRBFInterpolator:
         # Make sure we can find a smoothing parameter for each kernel that
         # removes a sufficient amount of noise
         np.random.seed(0)
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         noise = 0.2
         rmse_tol = 0.1
@@ -253,7 +253,7 @@ class _TestRBFInterpolator:
         # test using an array for `smoothing` to give less weight to a known
         # outlier
         np.random.seed(0)
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
         degree = 2
 
         x = seq.random(50)
@@ -271,9 +271,9 @@ class _TestRBFInterpolator:
     def test_inconsistent_x_dimensions_error(self):
         # ValueError should be raised if the observations points and
         # interpolation points have a different number of dimensions
-        y = Halton(2, scramble=False).random(10)
+        y = Halton(2, scramble=False, seed=np.random.RandomState()).random(10)
         d = _2d_test_function(y)
-        x = Halton(1, scramble=False).random(10)
+        x = Halton(1, scramble=False, seed=np.random.RandomState()).random(10)
         match = 'Expected the second axis of `x`'
         with pytest.raises(ValueError, match=match):
             self.build(y, d)(x)
@@ -362,7 +362,7 @@ class _TestRBFInterpolator:
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
@@ -384,7 +384,7 @@ class TestRBFInterpolator(_TestRBFInterpolator):
     def test_smoothing_limit_1d(self):
         # For large smoothing parameters, the interpolant should approach a
         # least squares fit of a polynomial with the specified degree
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         degree = 3
         smoothing = 1e8
@@ -409,7 +409,7 @@ class TestRBFInterpolator(_TestRBFInterpolator):
     def test_smoothing_limit_2d(self):
         # For large smoothing parameters, the interpolant should approach a
         # least squares fit of a polynomial with the specified degree
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         degree = 3
         smoothing = 1e8
@@ -440,7 +440,7 @@ class TestRBFLocalInterpolator20(_TestRBFInterpolator):
     def test_equivalent_to_rbf_interpolator(self):
         # Make sure this is equivalent to using RBFInterpolator with the 20
         # nearest observations
-        seq = Halton(2, scramble=False)
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
 
         x = seq.random(100)
         xitp = seq.random(100)
@@ -465,7 +465,7 @@ class TestRBFLocalInterpolatorInf(TestRBFInterpolator):
         return RBFLocalInterpolator(*args, **kwargs, k=np.inf)
 
     def test_equivalent_to_rbf_interpolator(self):
-        seq = Halton(1, scramble=False)
+        seq = Halton(1, scramble=False, seed=np.random.RandomState())
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
