@@ -74,7 +74,8 @@ the goal is to be able to create releases that stay working for years. Hence
 correct upper bounds must be set. The following places must be updated after
 creating a maintenance branch:
 
-- ``pyproject.toml``: all build-time dependencies
+- ``pyproject.toml``: all build-time dependencies, as well as  supported Python
+                      and NumPy versions
 - ``setup.py``: supported Python and NumPy versions
 - ``scipy/__init__.py``: for NumPy version check
 

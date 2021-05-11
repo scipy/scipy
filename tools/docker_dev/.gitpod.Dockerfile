@@ -1,5 +1,5 @@
 # Doing a local shallow clone - keeps the container secure
-# and much slimmer than usins COPY directly
+# and much slimmer than using COPY directly or cloning a remote 
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as clone
 

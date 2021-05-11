@@ -1,6 +1,8 @@
 # To use:
 #   $ conda env create -f environment.yml  # `mamba` works too for this command
 #   $ conda activate scipy-dev
+#
+# Also used to build the `scipy-dev` Docker image via GitHub Actions
 name: scipy-dev
 channels:
   - conda-forge
@@ -28,6 +30,7 @@ dependencies:
   - ipython
   - matplotlib
   - pydata-sphinx-theme
+  - sphinx-panels
   # For linting
   - pycodestyle
   - flake8
