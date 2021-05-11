@@ -456,7 +456,7 @@ def _fni_input_validation(dist, tol, max_intervals):
     """
 
     if not isinstance(dist, rv_frozen):
-        raise ValueError("`dist' must be a frozen continuous distribution.")
+        raise ValueError("`dist` must be a frozen continuous distribution.")
 
     tol = float(tol)  # if there's an exception, raise it now
 
@@ -533,7 +533,7 @@ def _fast_numerical_inverse(dist, tol=1e-12, max_intervals=100000):
             H = CubicHermiteSpline(u, p, 1/f)
         except ValueError:
             message = ("The interpolating spline could not be created. This "
-                       "is often caused by of inaccurate CDF evaluation in a "
+                       "is often caused by inaccurate CDF evaluation in a "
                        "tail of the distribution. Increasing `tol` can "
                        "resolve this error at the expense of lower accuracy.")
             raise ValueError(message)

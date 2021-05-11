@@ -6737,7 +6737,7 @@ class TestFNI:
         assert u_tol < 1e-12
 
     def test_fni_input_validation(self):
-        match = "`dist' must be a frozen continuous distribution."
+        match = "`dist` must be a frozen continuous distribution."
         with pytest.raises(ValueError, match=match):
             stats.FastNumericalInverse(stats.norm)
 
