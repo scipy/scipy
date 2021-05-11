@@ -1,26 +1,28 @@
 name: Build Base Docker Image
 
+# Triggered only if environment.yml in master changes
+# Pushes a Docker image with all dev dependencies to Docker Hub
 on:
-  push: 
+  push:
     branches:
-    - master
+      - master
     paths:
-    - './environment.yml'
-    tags:
-      - '*'
-      
-jobs: 
+      - 'environment.yml'
+
+jobs:
   build:
-    name: Build base Docker image 
+    name: Build base Docker image
     runs-on: ubuntu-latest
     environment: scipy-dev
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     steps:
       - name: Clone repository
         uses: actions/checkout@v2
-      - name: Lint Docker 
+        with:
+          submodules: recursive
+      - name: Lint Docker
         uses: brpaz/hadolint-action@v1.2.1
-        with: 
+        with:
           dockerfile: ./tools/docker_dev/Dockerfile
       - name: Get refs
         shell: bash
@@ -54,6 +56,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
             scipy/scipy-dev:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-dev:latest
-      - name: Image digest 
+      - name: Image digest
         # Return details of the image build: sha and shell
         run: echo ${{ steps.docker_build.outputs.digest }}

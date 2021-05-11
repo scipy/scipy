@@ -80,6 +80,9 @@ def configuration(parent_package='', top_path=None):
     )
     ext._pre_build_hook = pre_build_hook
 
+    # add boost stats distributions
+    config.add_subpackage('_boost')
+
     # Type stubs
     config.add_data_files('*.pyi')
 

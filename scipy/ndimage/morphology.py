@@ -1736,6 +1736,24 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     output : ndarray
         Result of the filter of `input` with `structure`.
 
+    Examples
+    --------
+    Subtract gray background from a bright peak.
+
+    >>> from scipy.ndimage import generate_binary_structure, white_tophat
+    >>> square = generate_binary_structure(rank=2, connectivity=3)
+    >>> bright_on_gray = np.array([[2, 3, 3, 3, 2],
+    ...                            [3, 4, 5, 4, 3],
+    ...                            [3, 5, 9, 5, 3],
+    ...                            [3, 4, 5, 4, 3],
+    ...                            [2, 3, 3, 3, 2]])
+    >>> white_tophat(input=bright_on_gray, structure=square)
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0],
+           [0, 1, 5, 1, 0],
+           [0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0]])
+
     See also
     --------
     black_tophat
@@ -1794,6 +1812,24 @@ def black_tophat(input, size=None, footprint=None,
     black_tophat : ndarray
         Result of the filter of `input` with `structure`.
 
+    Examples
+    --------
+    Change dark peak to bright peak and subtract background.
+
+    >>> from scipy.ndimage import generate_binary_structure, black_tophat
+    >>> square = generate_binary_structure(rank=2, connectivity=3)
+    >>> dark_on_gray = np.array([[7, 6, 6, 6, 7],
+    ...                          [6, 5, 4, 5, 6],
+    ...                          [6, 4, 0, 4, 6],
+    ...                          [6, 5, 4, 5, 6],
+    ...                          [7, 6, 6, 6, 7]])
+    >>> black_tophat(input=dark_on_gray, structure=square)
+    array([[0, 0, 0, 0, 0],
+           [0, 0, 1, 0, 0],
+           [0, 1, 5, 1, 0],
+           [0, 0, 1, 0, 0],
+           [0, 0, 0, 0, 0]])
+
     See also
     --------
     white_tophat, grey_opening, grey_closing
@@ -1848,7 +1884,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Whether to calculate the feature transform.
         Default is False.
     distances : ndarray, optional
-        An output array to store the calculated distance transform, instead of 
+        An output array to store the calculated distance transform, instead of
         returning it.
         `return_distances` must be True.
         It must be the same shape as `input`, and of type float64 if `metric`

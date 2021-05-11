@@ -65,7 +65,7 @@ def configuration(parent_package='',top_path=None):
 
     # Extension _ufuncs
     headers = ['*.h', join('cephes', '*.h')]
-    ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
+    ufuncs_src = ['_ufuncs.c', 'sf_error.c',
                   'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
                   '_cosine.c']
 
@@ -111,7 +111,7 @@ def configuration(parent_package='',top_path=None):
     # Cython API
     config.add_data_files('cython_special.pxd')
 
-    cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
+    cython_special_src = ['cython_special.c', 'sf_error.c',
                           'amos_wrappers.c', 'cdf_wrappers.c',
                           'specfun_wrappers.c', '_cosine.c']
     cython_special_dep = (
