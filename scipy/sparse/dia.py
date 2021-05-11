@@ -276,13 +276,18 @@ class dia_matrix(_data_matrix):
             # allow also longer sequences
             values = values[:n]
 
+        data_rows, data_cols = self.data.shape
         if k in self.offsets:
+            if max_index > data_cols:
+                data = np.zeros((data_rows, max_index), dtype=self.data.dtype)
+                data[:, :data_cols] = self.data
+                self.data = data
             self.data[self.offsets == k, min_index:max_index] = values
         else:
             self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
-            m = max(max_index, self.data.shape[1])
-            data = np.zeros((self.data.shape[0]+1, m), dtype=self.data.dtype)
-            data[:-1,:self.data.shape[1]] = self.data
+            m = max(max_index, data_cols)
+            data = np.zeros((data_rows + 1, m), dtype=self.data.dtype)
+            data[:-1, :data_cols] = self.data
             data[-1, min_index:max_index] = values
             self.data = data
 
