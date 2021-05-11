@@ -2400,7 +2400,8 @@ class RegularGridInterpolator:
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
+    >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+    >>> data = f(xg, yg, zg)
 
     ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:

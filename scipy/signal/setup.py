@@ -1,5 +1,7 @@
 from scipy._build_utils import numpy_nodepr_api
+from scipy._build_utils import tempita
 import os
+import sys
 
 
 def configuration(parent_package='', top_path=None):
@@ -12,10 +14,15 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('windows')
 
+    # convert the *.c.in files : `lfilter.c.in -> lfilter.c` etc
+    srcdir = os.path.join(os.getcwd(), 'scipy', 'signal')
+    tempita.process_tempita(os.path.join(srcdir, 'lfilter.c.in') )
+    tempita.process_tempita(os.path.join(srcdir, 'correlate_nd.c.in') )
+
     sigtools = config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
-                                  'medianfilter.c', 'lfilter.c.src',
-                                  'correlate_nd.c.src'],
+                                  'medianfilter.c', 'lfilter.c',
+                                  'correlate_nd.c'],
                          depends=['sigtools.h'],
                          include_dirs=['.'],
                          **numpy_nodepr_api)

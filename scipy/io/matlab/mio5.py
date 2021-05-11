@@ -189,7 +189,7 @@ class MatFile5Reader(MatFileReader):
         Set codec to use for uint16 char arrays (e.g., 'utf-8').
         Use system default codec if None
         '''
-        super(MatFile5Reader, self).__init__(
+        super().__init__(
             mat_stream,
             byte_order,
             mat_dtype,

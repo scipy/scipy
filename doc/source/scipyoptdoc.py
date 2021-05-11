@@ -60,7 +60,7 @@ class ScipyOptimizeInterfaceDomain(PythonDomain):
     name = 'scipy-optimize'
 
     def __init__(self, *a, **kw):
-        super(ScipyOptimizeInterfaceDomain, self).__init__(*a, **kw)
+        super().__init__(*a, **kw)
         self.directives = dict(self.directives)
         self.directives['function'] = wrap_mangling_directive(self.directives['function'])
 

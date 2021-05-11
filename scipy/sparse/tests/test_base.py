@@ -714,6 +714,7 @@ class _TestCommon:
         mats.append([[1],[0],[2]])
         mats.append([[0,1],[0,2],[0,3]])
         mats.append([[0,0,1],[0,0,2],[0,3,0]])
+        mats.append([[1,0],[0,0]])
 
         mats.append(kron(mats[0],[[1,2]]))
         mats.append(kron(mats[0],[[1],[2]]))
@@ -4532,7 +4533,7 @@ class _NonCanonicalMixin:
     def spmatrix(self, D, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
-        construct = super(_NonCanonicalMixin, self).spmatrix
+        construct = super().spmatrix
         M = construct(D, **kwargs)
 
         zero_pos = (M.A == 0).nonzero()
