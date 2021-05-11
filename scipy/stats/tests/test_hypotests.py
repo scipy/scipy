@@ -1199,11 +1199,27 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
 
-        # ansari's two-sided is the twice the smaller of the two p-values
-        res = permutation_test((x, y), statistic1d, alternative='greater')
+        res = permutation_test((x, y), statistic1d, alternative='two-sided')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue*2, expected.pvalue, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    def test_permutation_test_against_mannwhitneyu(self, alternative):
+        np.random.seed(0)
+        x = stats.uniform.rvs(size=(3, 6, 2), loc=0)
+        y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05)
+
+        expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
+
+        def statistic1d(x, y, axis):
+            return stats.mannwhitneyu(x, y, axis=axis).statistic
+
+        res = permutation_test((x, y), statistic1d, vectorized=True,
+                               alternative=alternative, axis=1)
+
+        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
+        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     def test_permutation_test_against_cvm(self):
         np.random.seed(0)

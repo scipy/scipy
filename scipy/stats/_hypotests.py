@@ -1576,5 +1576,6 @@ def permutation_test(data, statistic, paired=False, vectorized=False,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
+    pvalues = np.clip(pvalues, 0, 1)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
