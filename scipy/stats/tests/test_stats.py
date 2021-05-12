@@ -6120,7 +6120,7 @@ class TestFOneWay:
             stats.f_oneway(a, b, axis=1)
 
 
-class TestTukeykramer(object):
+class TestTukeykramer:
     def test_SAS_same_size_treatments(self):
         '''
         Testing against these results from SAS:
@@ -6146,10 +6146,10 @@ class TestTukeykramer(object):
                    ['1', '3', '-0.260', '-3.909', '3.389', '0']]
         for comp in SAS_res[1:]:
             comp = np.asarray(comp, dtype=float)
-            assert_array_almost_equal(comp[2:],
-                                      res.get_pairwise(int(comp[0]),
-                                                       int(comp[1]))[:-1],
-                                      decimal=3)
+            res_nm = res.get_pairwise(int(comp[0]), int(comp[1]))[:-1]
+            res_sas = comp[2:]
+            assert_allclose(res_sas, res_nm)
+
 
     def test_SAS_diff_size_treatments(self):
         '''
@@ -6286,7 +6286,6 @@ class TestTukeykramer(object):
                                   [.97, 5.15, 1], decimal=2)
 
 
-class TestKruskal(object):
 class TestKruskal:
     def test_simple(self):
         x = [1]

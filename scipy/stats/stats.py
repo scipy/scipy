@@ -74,7 +74,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-           'brunnermunzel', 'epps_singleton_2samp', 'cramervonmises',
            'brunnermunzel', 'alexandergovern', 'tukeykramer']
 
 
@@ -3832,7 +3831,7 @@ def tukeykramer(*args, sig_level=.05):
     permutations_means = list(permutations(means, 2))
     permutations_lengths = list(permutations([len(x) for x in args], 2))
 
-    # also called maxmimum critical value, tukey criterion is the studentized
+    # also called maximum critical value, tukey criterion is the studentized
     # range value * the square root of mean square error over the sample size.
     # This only applies for treatments of equal sizes. The criterion is
     # calculated for each comparison when treatments differ in size.
@@ -3857,8 +3856,8 @@ def tukeykramer(*args, sig_level=.05):
     conf_levels = (mean_differences - tukey_criterions,
                    mean_differences + tukey_criterions)
     t_stat = np.abs(mean_differences) / stand_err
-    p_vals = 1 - distributions.studentized_range.cdf(t_stat, nsamples - 1,
-                                                     len(args))
+    p_vals = distributions.studentized_range.cdf(t_stat, nsamples - 1,
+                                                 len(args))
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
     # ("Conclusions")[1]
