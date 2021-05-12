@@ -527,9 +527,9 @@ cdef double _logphi(double z) nogil:
 
 cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized_range`"""
-    # use a custom evaluation because using cs.ndtr results in incorrect PDF
-    # evaluation at q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant
-    # rather than math constants because they're not availible on all systems
+    # use a custom function because using cs.ndtr results in incorrect PDF at
+    # q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant rather than
+    # math constants because they're not availible on all systems.
     cdef double inv_sqrt_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
@@ -549,7 +549,7 @@ cpdef double _studentized_range_pdf_logconst(double k, double df):
 
 
 cdef double _studentized_range_cdf(int n, double[2] integration_var,
-                                      void *user_data) nogil:
+                                   void *user_data) nogil:
     # evaluates the integrand of Equation (3) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -570,8 +570,7 @@ cdef double _studentized_range_cdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
-cdef double _studentized_range_cdf_asymptotic(double z,
-                                                 void *user_data) nogil:
+cdef double _studentized_range_cdf_asymptotic(double z, void *user_data) nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -581,7 +580,7 @@ cdef double _studentized_range_cdf_asymptotic(double z,
 
 
 cdef double _studentized_range_pdf(int n, double[2] integration_var,
-                                      void *user_data) nogil:
+                                   void *user_data) nogil:
     # evaluates the integrand of equation (4) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -605,7 +604,7 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
 
 
 cdef double _studentized_range_moment(int n, double[3] integration_var,
-                                         void *user_data) nogil:
+                                      void *user_data) nogil:
     # destined to be used in a LowLevelCallable
     K = (<double *> user_data)[0]  # the Kth moment to calc.
     k = (<double *> user_data)[1]
@@ -615,7 +614,6 @@ cdef double _studentized_range_moment(int n, double[3] integration_var,
     # Pull outermost intergration variable out to pass as q to PDF
     q = integration_var[2]
 
-    # https://www.scielo.br/pdf/cagro/v41n4/1981-1829-cagro-41-04-00378.pdf
     cdef double pdf_data[4]
     pdf_data[0] = q
     pdf_data[1] = k
@@ -625,7 +623,7 @@ cdef double _studentized_range_moment(int n, double[3] integration_var,
     return (math.pow(q, K) *
             _studentized_range_pdf(4, integration_var, pdf_data))
 
-  
+
 cpdef double genhyperbolic_pdf(double x, double p, double a, double b) nogil:
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
