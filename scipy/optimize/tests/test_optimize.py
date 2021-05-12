@@ -210,6 +210,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
+        # params[0] does not affect the objective function
+        assert_allclose(params[1:], self.solution[1:], atol=5e-6)
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
@@ -223,10 +225,16 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_(self.funccalls <= 116 + 20, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
-    @pytest.mark.xfail
-    def test_powell_B(self):
+
+    @pytest.mark.xfail(reason="This part of test_powell fails on some "
+                       "platforms, but the solution returned by powell is "
+                       "still valid.")
+    def test_powell_gh14014(self):
         # This part of test_powell started failing on some CI platforms;
-        # see gh-14014
+        # see gh-14014. Since the solution is still correct and the comments
+        # in test_powell suggest that small differences in the bits are known
+        # to change the "trace" of the solution, seems safe to xfail to get CI
+        # green now and investigate later.
 
         # Powell (direction set) optimization routine
         if self.use_wrapper:
