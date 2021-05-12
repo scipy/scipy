@@ -136,8 +136,8 @@ class _TestRBFInterpolator:
         # If the observed data comes from a polynomial, then the interpolant
         # should be able to reproduce the polynomial exactly, provided that
         # `degree` is sufficiently high
-        np.random.seed(0)
-        seq = Halton(2, scramble=False, seed=np.random.RandomState())
+        rng = np.random.RandomState(0)
+        seq = Halton(2, scramble=False, seed=rng)
         degree = 3
 
         x = seq.random(50)
@@ -146,7 +146,7 @@ class _TestRBFInterpolator:
         P = _vandermonde(x, degree)
         Pitp = _vandermonde(xitp, degree)
 
-        poly_coeffs = np.random.normal(0.0, 1.0, P.shape[1])
+        poly_coeffs = rng.normal(0.0, 1.0, P.shape[1])
 
         y = P.dot(poly_coeffs)
         yitp1 = Pitp.dot(poly_coeffs)
@@ -225,15 +225,15 @@ class _TestRBFInterpolator:
     def test_smoothing_misfit(self, kernel):
         # Make sure we can find a smoothing parameter for each kernel that
         # removes a sufficient amount of noise
-        np.random.seed(0)
-        seq = Halton(1, scramble=False, seed=np.random.RandomState())
+        rng = np.random.RandomState(0)
+        seq = Halton(1, scramble=False, seed=rng)
 
         noise = 0.2
         rmse_tol = 0.1
         smoothing_range = 10**np.linspace(-4, 1, 20)
 
         x = 3*seq.random(100)
-        y = _1d_test_function(x) + np.random.normal(0.0, noise, (100,))
+        y = _1d_test_function(x) + rng.normal(0.0, noise, (100,))
         ytrue = _1d_test_function(x)
         rmse_within_tol = False
         for smoothing in smoothing_range:
@@ -252,13 +252,13 @@ class _TestRBFInterpolator:
     def test_array_smoothing(self):
         # test using an array for `smoothing` to give less weight to a known
         # outlier
-        np.random.seed(0)
-        seq = Halton(1, scramble=False, seed=np.random.RandomState())
+        rng = np.random.RandomState(0)
+        seq = Halton(1, scramble=False, seed=rng)
         degree = 2
 
         x = seq.random(50)
         P = _vandermonde(x, degree)
-        poly_coeffs = np.random.normal(0.0, 1.0, P.shape[1])
+        poly_coeffs = rng.normal(0.0, 1.0, P.shape[1])
         y = P.dot(poly_coeffs)
         y_with_outlier = np.copy(y)
         y_with_outlier[10] += 1.0
