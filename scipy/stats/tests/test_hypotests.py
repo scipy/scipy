@@ -569,7 +569,7 @@ class TestBoschlooExact:
             ([[5, 16], [20, 25]], (0.08913823, 0.05827348)),
             ([[5, 0], [1, 4]], (1, 1)),
             pytest.param(
-                ([[0, 1], [3, 2]], (0.5, 0.34375)),
+                [[0, 1], [3, 2]], (0.5, 0.34375),
                 marks=pytest.mark.xfail_on_32bit,
             ),  # reason: small numerical error when calculating fisher stat
             ([[0, 2], [6, 4]], (0.2272727, 0.09850981)),
@@ -634,7 +634,7 @@ class TestBoschlooExact:
             ([[5, 16], [20, 25]], (0.08913823, 0.116547)),
             ([[5, 0], [1, 4]], (0.02380952, 0.01373073)),
             pytest.param(
-                ([[0, 1], [3, 2]], (0.5, 0.6875)),
+                [[0, 1], [3, 2]], (0.5, 0.6875),
                 marks=pytest.mark.xfail_on_32bit,
             ),  # reason: small numerical error when calculating fisher stat
             ([[0, 2], [6, 4]], (0.2272727, 0.1970196)),
