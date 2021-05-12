@@ -9469,31 +9469,18 @@ class studentized_range_gen(rv_continuous):
             if df < 100000:
                 cython_symbol = '_studentized_range_cdf'
                 log_const = _stats._studentized_range_cdf_logconst(k, df)
-
                 arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
-
-                llc = LowLevelCallable.from_cython(
-                    _stats, cython_symbol, usr_data)
-
                 ranges = [(-np.inf, np.inf), (0, np.inf)]
-                opts = dict(epsabs=1e-11, epsrel=1e-12)
-
-                return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
-
             else:
                 cython_symbol = '_studentized_range_cdf_asymptotic'
-
                 arg = [q, k]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
-
-                llc = LowLevelCallable.from_cython(
-                    _stats, cython_symbol, usr_data)
-
                 ranges = [(-np.inf, np.inf)]
-                opts = dict(epsabs=1e-11, epsrel=1e-12)
 
-                return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
+            llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
+            opts = dict(epsabs=1e-11, epsrel=1e-12)
+            return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
         return np.float64(ufunc(x, k, df))
