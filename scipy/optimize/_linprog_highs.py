@@ -195,25 +195,55 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                 The number of primal/dual pushes performed during the
                 crossover routine for ``solver='ipm'``.  This is ``0``
                 for ``solver='simplex'``.
-            marginals : OptimizeResult
-                The sensitivity (partial derivative) of the objective function
-                with respect to the right-hand side of each constraint.
-                A dictionary consisting of the fields:
+            ineqlin : OptimizeResult
+                Solution and sensitivity information corresponding to the
+                inequality constraints, `b_ub`. A dictionary consisting of the
+                fields:
 
-                ineqlin : np.ndarray
-                    The sensitivity with respect to the right-hand side
-                    of the inequality constraints, `b_ub`.
+                slack : np.ndnarray
+                    The (nominally positive) values of the slack variables,
+                    ``b_ub - A_ub @ x``.
 
-                eqlin : np.ndarray
-                    The sensitivity with respect to the right-hand side
-                    of the equality constraints, `b_eq`.
+                marginals : np.ndarray
+                    The sensitivity (partial derivative) of the objective
+                    function with respect to the right-hand side of the
+                    inequality constraints, `b_ub`.
 
-                lower, upper : np.ndarray
-                    The sensitivity with respect to the lower and upper
+            eqlin : OptimizeResult
+                Solution and sensitivity information corresponding to the
+                equality constraints, `b_eq`.  A dictionary consisting of the
+                fields:
+
+                violation : np.ndarray
+                    The (nominally zero) residuals of the equality constraints,
+                    ``b_eq - A_eq @ x``.
+
+                marginals : np.ndarray
+                    The sensitivity (partial derivative) of the objective
+                    function with respect to the right-hand side of the
+                    equality constraints, `b_eq`.
+
+            lower, upper : OptimizeResult
+                Solution and sensitivity information corresponding to the
+                lower and upper bounds on decision variables, `bounds`.
+
+                freedom : np.ndarray
+                    The (nominally positive) values of the quantity
+                    ``x - lb`` (lower) or ``ub - x`` (upper).
+
+                marginals : np.ndarray
+                    The sensitivity (partial derivative) of the objective
+                    function with respect to the lower and upper
                     `bounds`.
 
-                These partial derivatives are also referred to as
-                "Lagrange multipliers", "dual values", and "shadow prices".
+    Notes
+    -----
+    The result fields `ineqlin`, `eqlin`, `lower`, and `upper` all contain
+    `marginals`, or partial derivatives of the objective function with respect
+    to the right-hand side of each constraint. These partial derivatives are
+    also referred to as "Lagrange multipliers", "dual values", and
+    "shadow prices". The sign convention of `marginals` is opposite that
+    of Lagrange multipliers produced by many nonlinear solvers.
 
     References
     ----------
@@ -380,16 +410,27 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     else:
         status, message = statuses[res['status']]
 
-    sol = {'x': np.array(res['x']) if 'x' in res else None,
+    x = np.array(res['x']) if 'x' in res else None
+    sol = {'x': x,
            'slack': slack,
-           'marginals': OptimizeResult({
-               'ineqlin': marg_ineqlin,
-               'eqlin': marg_eqlin,
-               'upper': marg_upper,
-               'lower': marg_lower,
-           }),
-           'fun': res.get('fun'),
            'con': con,
+           'ineqlin': OptimizeResult({
+               'slack': slack,
+               'marginals': marg_ineqlin,
+           }),
+           'eqlin': OptimizeResult({
+               'slack': con,
+               'marginals': marg_eqlin,
+           }),
+           'lower': OptimizeResult({
+               'freedom': None if x is None else x - lb,
+               'marginals': marg_lower,
+           }),
+           'upper': OptimizeResult({
+               'freedom': None if x is None else ub - x,
+               'marginals': marg_upper
+            }),
+           'fun': res.get('fun'),
            'status': status,
            'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': message,

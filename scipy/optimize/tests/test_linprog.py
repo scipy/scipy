@@ -1690,7 +1690,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
                            method=self.method).fun
 
         dfdbub = approx_derivative(f_bub, b_ub, method='3-point', f0=res.fun)
-        assert_allclose(res.marginals.ineqlin, dfdbub)
+        assert_allclose(res.ineqlin.marginals, dfdbub)
 
         # sensitivity w.r.t. b_eq
         def f_beq(x):
@@ -1698,7 +1698,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
                            method=self.method).fun
 
         dfdbeq = approx_derivative(f_beq, b_eq, method='3-point', f0=res.fun)
-        assert_allclose(res.marginals.eqlin, dfdbeq)
+        assert_allclose(res.eqlin.marginals, dfdbeq)
 
         # sensitivity w.r.t. lb
         def f_lb(x):
@@ -1711,7 +1711,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
             dfdlb = approx_derivative(f_lb, lb, method='3-point', f0=res.fun)
             dfdlb[~np.isfinite(lb)] = 0
 
-        assert_allclose(res.marginals.lower, dfdlb)
+        assert_allclose(res.lower.marginals, dfdlb)
 
         # sensitivity w.r.t. ub
         def f_ub(x):
@@ -1723,7 +1723,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
             dfdub = approx_derivative(f_ub, ub, method='3-point', f0=res.fun)
             dfdub[~np.isfinite(ub)] = 0
 
-        assert_allclose(res.marginals.upper, dfdub)
+        assert_allclose(res.upper.marginals, dfdub)
 
     def test_dual_feasibility(self):
         # Ensure solution is dual feasible using marginals
@@ -1733,10 +1733,10 @@ class LinprogHiGHSTests(LinprogCommonTests):
 
         # KKT dual feasibility equation from Theorem 1 from
         # http://www.personal.psu.edu/cxg286/LPKKT.pdf
-        resid = (-c + A_ub.T @ res.marginals.ineqlin +
-                 A_eq.T @ res.marginals.eqlin +
-                 res.marginals.upper +
-                 res.marginals.lower)
+        resid = (-c + A_ub.T @ res.ineqlin.marginals +
+                 A_eq.T @ res.eqlin.marginals +
+                 res.upper.marginals +
+                 res.lower.marginals)
         assert_allclose(resid, 0, atol=1e-12)
 
     def test_complementary_slackness(self):
@@ -1748,7 +1748,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # KKT complementary slackness equation from Theorem 1 from
         # http://www.personal.psu.edu/cxg286/LPKKT.pdf modified for
         # non-zero RHS
-        assert np.allclose(res.marginals.ineqlin @ (b_ub - A_ub @ res.x), 0)
+        assert np.allclose(res.ineqlin.marginals @ (b_ub - A_ub @ res.x), 0)
 
 
 ################################
