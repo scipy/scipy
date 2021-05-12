@@ -4633,12 +4633,9 @@ class TestBurr:
 
 
 class TestStudentizedRange:
-    # For alpha=.05, .01, and .001, and for each value of
-    # v=[1, 3, 10, 20, 120, inf], a Q was picked from each table for
-    # k=[2, 8, 14, 20].
-
-    vs = [1, 3, 10, 20, 120, np.inf]
-    ks = [2, 8, 14, 20]
+    # For alpha = .05, .01, and .001, and for each value of
+    # v = [1, 3, 10, 20, 120, inf], a Q was picked from each table for
+    # k = [2, 8, 14, 20].
 
     # these arrays are written with `k` as column, and `v` as rows.
     # Q values are taken from table 3:
@@ -4663,6 +4660,9 @@ class TestStudentizedRange:
             4.654, 5.823, 6.191, 6.411]
     qs = np.concatenate((q05, q01, q001))
     ps = [.95, .99, .999]
+    vs = [1, 3, 10, 20, 120, np.inf]
+    ks = [2, 8, 14, 20]
+
     data = zip(product(ps, vs, ks), qs)
 
     def test_cdf_against_tables(self):
