@@ -8,6 +8,12 @@
 
 # Equations in this file have been taken from
 # https://en.wikipedia.org/wiki/Studentized_range_distribution
+# and have been checked against the following reference:
+# Lund, R. E., and J. R. Lund. "Algorithm AS 190: Probabilities and
+# Upper Quantiles for the Studentized Range." Journal of the Royal
+# Statistical Society. Series C (Applied Statistics), vol. 32, no. 2,
+# 1983, pp. 204-210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
+# Feb. 2021.
 
 # Note: I would have prefered to use pickle rather than JSON, but -
 # due to security concerns - decided against it.
