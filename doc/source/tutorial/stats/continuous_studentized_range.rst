@@ -30,7 +30,7 @@ When :math:`\nu` is sufficiently large, the asymptopic approximation of :math:`F
    :nowrap:
 
     \begin{eqnarray*}
-    F(q; k, \nu) = k \int_{-\infty}^{\infty} \phi(z)
+    F(q; k, \nu=\infty) = k \int_{-\infty}^{\infty} \phi(z)
     [\Phi(q + z) - \Phi(z)]^{k-1} \,dz
     \end{eqnarray*}
 
