@@ -1027,7 +1027,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
            https://en.wikipedia.org/wiki/Boschloo%27s_test
 
     .. [3] Lise M. Saari et al. "Employee attitudes and job satisfaction",
-       Human Resource Management, 43(4), 395–407, 2004,
+       Human Resource Management, 43(4), 395-407, 2004,
        :doi:`10.1002/hrm.20032`.
 
     Examples
