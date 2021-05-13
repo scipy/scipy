@@ -35,7 +35,7 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic', 'studentized_range']
+            'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
@@ -130,6 +130,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     if distname == 'truncnorm':
         pytest.xfail(reason=distname)
+    if distname == 'studentized_range':
+        pytest.skip("too slow")
 
     try:
         distfn = getattr(stats, distname)
@@ -545,8 +547,8 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "divide by zero encountered in power",  # gengamma
             "invalid value encountered in add",  # genextreme
             "invalid value encountered in subtract",  # gengamma
-            "invalid value encountered in multiply",  # recipinvgauss
-            "invalid value encountered in log"  # studentized_range
+            "invalid value encountered in multiply"  # recipinvgauss
+            # "invalid value encountered in log"  # studentized_range
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)
