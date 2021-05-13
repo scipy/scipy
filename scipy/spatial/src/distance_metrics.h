@@ -277,7 +277,8 @@ struct SquareEuclideanDistance {
 struct BraycurtisDistance {
     template <typename T>
     struct Acc {
-        T diff=0, sum=0;
+        Acc(): diff(0), sum(0) {}
+        T diff, sum;
     };
 
     template <typename T>
