@@ -1539,7 +1539,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
 # Delaunay triangulation interface, for Python
 #------------------------------------------------------------------------------
 
-class _QhullUser(object):
+class _QhullUser:
     """
     Takes care of basic dealings with the Qhull objects
     """

@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 
