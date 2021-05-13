@@ -593,9 +593,8 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
 
     # suitable terms are evaluated within logarithms to avoid under/overflows
     log_terms = (log_pdf_const
-                 + (df - 1) * math.log(s)
+                 + df * math.log(s)
                  - df * s * s / 2
-                 + math.log(s)
                  + _logphi(z)
                  + _logphi(s * q + z))
 
@@ -611,7 +610,7 @@ cdef double _studentized_range_moment(int n, double[3] integration_var,
     df = (<double *> user_data)[2]
     log_pdf_const = (<double *> user_data)[3]
 
-    # Pull outermost intergration variable out to pass as q to PDF
+    # Pull outermost integration variable out to pass as q to PDF
     q = integration_var[2]
 
     cdef double pdf_data[4]
