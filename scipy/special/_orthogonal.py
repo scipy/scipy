@@ -183,8 +183,10 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     x -= y/dy
 
     fm = f(n-1, x)
-    fm /= np.abs(fm).max()
-    dy /= np.abs(dy).max()
+    log_fm = np.log(np.abs(fm))
+    log_dy = np.log(np.abs(dy))
+    fm /= np.exp((log_fm.max() + log_fm.min()) / 2.)
+    dy /= np.exp((log_dy.max() + log_dy.min()) / 2.)
     w = 1.0 / (fm * dy)
 
     if symmetrize:
@@ -255,7 +257,10 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if alpha == beta:
         return roots_gegenbauer(m, alpha+0.5, mu)
 
-    mu0 = 2.0**(alpha+beta+1)*_ufuncs.beta(alpha+1, beta+1)
+    if (alpha + beta) <= 1000:
+        mu0 = 2.0**(alpha+beta+1)*_ufuncs.beta(alpha+1, beta+1)
+    else:
+        mu0 = np.exp((alpha + beta + 1) * np.log(2.0) + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
     b = beta
     if a + b == 0.0:
@@ -1484,8 +1489,14 @@ def roots_gegenbauer(n, alpha, mu=False):
         # keep doing so.
         return roots_chebyt(n, mu)
 
-    mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)
-           / _ufuncs.gamma(alpha + 1))
+    if alpha <= 170:
+        mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)) \
+              / _ufuncs.gamma(alpha + 1)
+    else:
+        inv_rt_alpha = 1. / np.sqrt(alpha)
+        mu0 = np.sqrt(np.pi) * (inv_rt_alpha - 0.125 * inv_rt_alpha ** 3 + 0.0078125 * inv_rt_alpha ** 5
+                                + 0.00488281 * inv_rt_alpha ** 7 - 0.000640869 * inv_rt_alpha ** 9
+                                - 0.00152206 * inv_rt_alpha ** 11 + 0.000207186 * inv_rt_alpha ** 13)
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
