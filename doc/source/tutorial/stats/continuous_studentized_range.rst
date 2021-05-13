@@ -24,7 +24,7 @@ This distribution has two shape parameters :math:`\nu>0.` and :math:`k>0` and su
 
 Note: :math:`\phi(z)` and :math:`\Phi(z)` represent the normal PDF and normal CDF, respectively.
 
-When :math:`\nu` is sufficiently large, the asymptopic approximation of :math:`F(q; k, \nu=\infty)` is used:
+When :math:`\nu` exceeds 100,000, the asymptopic approximation of :math:`F(q; k, \nu=\infty)` is used:
 
 .. math::
    :nowrap:

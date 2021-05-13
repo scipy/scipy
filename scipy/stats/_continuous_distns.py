@@ -9329,8 +9329,9 @@ class studentized_range_gen(rv_continuous):
                         s^{\nu} e^{-\nu s^2/2} \phi(z) \phi(sq + z)
                         [\Phi(sq + z) - \Phi(z)]^{k-2} \,dz \,ds
 
-    When `df` exceeds 100,000, an asymptotic approximation (infinte degrees of
-    freedom) is used to compute the cumulative distribution function. [4]_
+    When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinte
+    degrees of freedom) is used to compute the cumulative distribution
+    function [4]_.
 
     %(after_notes)s
 
