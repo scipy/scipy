@@ -1226,8 +1226,6 @@ class DifferentialEvolutionSolver:
 
         return self.x, self.population_energies[0]
 
-    next = __next__
-
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
