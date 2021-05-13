@@ -2504,16 +2504,14 @@ class TestBessel:
     def _cephes_vs_amos_points(self):
         """Yield points at which to compare Cephes implementation to AMOS"""
         # check several points, including large-amplitude ones
-        for v in [-120, -100.3, -20., -10., -1., -.5,
-                  0., 1., 12.49, 120., 301]:
-            for z in [-1300, -11, -10, -1, 1., 10., 200.5, 401., 600.5,
-                      700.6, 1300, 10003]:
-                yield v, z
+        v = [-120, -100.3, -20., -10., -1., -.5, 0., 1., 12.49, 120., 301]
+        z = [-1300, -11, -10, -1, 1., 10., 200.5, 401., 600.5, 700.6, 1300,
+             10003]
+        yield from itertools.product(v, z)
 
         # check half-integers; these are problematic points at least
         # for cephes/iv
-        for v in 0.5 + arange(-60, 60):
-            yield v, 3.5
+        yield from itertools.product(0.5 + arange(-60, 60), [3.5])
 
     def check_cephes_vs_amos(self, f1, f2, rtol=1e-11, atol=0, skip=None):
         for v, z in self._cephes_vs_amos_points():

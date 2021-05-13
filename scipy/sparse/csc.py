@@ -120,8 +120,7 @@ class csc_matrix(_cs_matrix):
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def __iter__(self):
-        for r in self.tocsr():
-            yield r
+        yield from self.tocsr()
 
     def tocsc(self, copy=False):
         if copy:

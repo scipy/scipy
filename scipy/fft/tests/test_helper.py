@@ -45,8 +45,7 @@ class TestNextFastLen:
         np.random.seed(1234)
 
         def nums():
-            for j in range(1, 1000):
-                yield j
+            yield from range(1, 1000)
             yield 2**5 * 3**5 * 4**5 + 1
 
         for n in nums():
