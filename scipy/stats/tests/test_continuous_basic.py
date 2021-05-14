@@ -251,8 +251,8 @@ def cases_test_moments():
             continue
 
         if distname == 'studentized_range':
-            msg = ("studentized_range is far to slow for this test and it is"
-                   " redundant to test_distributions::TestStudentizedRange::"
+            msg = ("studentized_range is far too slow for this test and it is "
+                   "redundant with test_distributions::TestStudentizedRange::"
                    "test_moment_against_mp")
             yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xslow(reason=msg))
