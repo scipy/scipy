@@ -12,6 +12,7 @@ This guide is designed to help you quickly find the information you need about S
 - :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally with Sphinx, and view documentation built during continuous integration checks
 - :ref:`toc-benchmarking` - how to benchmark code with airspeed velocity
 - :ref:`toc-cython` - how to add fast, compiled code to SciPy
+- :ref:`continuous-integration` - how does our continuous integration system works and how to debug your PR
 
 .. _dev-env:
 

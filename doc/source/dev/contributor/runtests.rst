@@ -87,6 +87,9 @@ Other useful options include:
    docs are built only in the ``html-scipyorg`` format, but you can
    change this by appending the name of the desired format
    (e.g. ``--doc latex``).
+- ``--bench`` to run all benchmarks. See :ref:`benchmarking-with-asv`.
+- ``--pep8`` to perform pep8 check.
+- ``--mypy`` to run *mypy* on the codebase.
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
