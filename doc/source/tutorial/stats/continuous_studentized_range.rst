@@ -2,7 +2,7 @@
 
 Studentized Range Distribution
 ==============================
-This distribution has two shape parameters :math:`\nu>0.` and :math:`k>0` and support is :math:`q \geq 0.`
+This distribution has two shape parameters, :math:`k>1` and :math:`\nu>0`, and the support is :math:`q \geq 0`.
 
 .. math::
    :nowrap:
