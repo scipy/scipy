@@ -9324,10 +9324,15 @@ class studentized_range_gen(rv_continuous):
 
     .. math::
 
-         f(q; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
+         f(x; k, \nu) = \frac{k(k-1)\nu^{\nu/2}}{\Gamma(\nu/2)
                         2^{\nu/2-1}} \int_{0}^{\infty} \int_{-\infty}^{\infty}
-                        s^{\nu} e^{-\nu s^2/2} \phi(z) \phi(sq + z)
-                        [\Phi(sq + z) - \Phi(z)]^{k-2} \,dz \,ds
+                        s^{\nu} e^{-\nu s^2/2} \phi(z) \phi(sx + z)
+                        [\Phi(sx + z) - \Phi(z)]^{k-2} \,dz \,ds
+
+    for :math:`x ≥ 0`, :math:`k > 1`, and :math:`\nu > 0`.
+
+    `studentized_range` takes ``k`` as a shape parameter for :math:`k` and
+     ``v`` for shape parameter :math:`\nu`.
 
     When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinite
     degrees of freedom) is used to compute the cumulative distribution
