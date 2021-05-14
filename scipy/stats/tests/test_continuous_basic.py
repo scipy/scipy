@@ -135,8 +135,6 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     if distname == 'truncnorm':
         pytest.xfail(reason=distname)
-    if distname == 'studentized_range':
-        pytest.skip("too slow")
 
     try:
         distfn = getattr(stats, distname)
@@ -258,6 +256,7 @@ def cases_test_moments():
                    "test_moment_against_mp")
             yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xslow(reason=msg))
+            continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
