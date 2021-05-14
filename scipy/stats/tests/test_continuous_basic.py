@@ -252,6 +252,12 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
+        if distname == 'studentized_range':
+            msg = ("studentized_range is far to slow for this test and it is"
+                   " redundant to test_distributions::TestStudentizedRange::"
+                   "test_moment_against_mp")
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xslow(reason=msg))
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
