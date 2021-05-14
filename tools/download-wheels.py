@@ -1,9 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-Download SciPy wheels from Anaconda staging area.
+Download wheels from Anaconda staging area.
+"""
 
-"""
-import sys
 import os
 import re
 import shutil
@@ -12,13 +11,10 @@ import argparse
 import urllib3
 from bs4 import BeautifulSoup
 
-__version__ = '0.1'
+__version__ = '0.2'
 
-# Edit these for other projects.
-STAGING_URL = 'https://anaconda.org/multibuild-wheels-staging/scipy'
-PREFIX = 'scipy'
 
-def get_wheel_names(version):
+def get_wheel_names(version, staging_url, prefix):
     """ Get wheel names from Anaconda HTML directory.
 
     This looks in the Anaconda multibuild-wheels-staging page and
@@ -28,20 +24,23 @@ def get_wheel_names(version):
     ----------
     version : str
         The release version. For instance, "1.5.0".
-
+    staging_url : str
+        URL at which to find packages
+    prefix : str
+        Prefix for wheels to download.
     """
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
-    tmpl = re.compile(rf"^.*{PREFIX}-{version}-.*\.whl$")
-    index_url = f"{STAGING_URL}/files"
+    tmpl = re.compile(rf"^.*{prefix}-{version}-.*\.whl$")
+    index_url = f"{staging_url}/files"
     index_html = http.request('GET', index_url)
     soup = BeautifulSoup(index_html.data, 'html.parser')
     return soup.findAll(text=tmpl)
 
 
-def download_wheels(version, wheelhouse):
+def download_wheels(version, wheelhouse, staging_url, prefix):
     """Download release wheels.
 
-    The release wheels for the given SciPy version are downloaded
+    The release wheels for the given package version are downloaded
     into the given directory.
 
     Parameters
@@ -50,13 +49,16 @@ def download_wheels(version, wheelhouse):
         The release version. For instance, "1.5.0".
     wheelhouse : str
         Directory in which to download the wheels.
-
+    staging_url : str
+        URL at which to find packages
+    prefix : str
+        Prefix for wheels to download.
     """
     http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED')
-    wheel_names = get_wheel_names(version)
+    wheel_names = get_wheel_names(version, staging_url, prefix)
 
     for i, wheel_name in enumerate(wheel_names):
-        wheel_url = f"{STAGING_URL}/{version}/download/{wheel_name}"
+        wheel_url = f"{staging_url}/{version}/download/{wheel_name}"
         wheel_path = os.path.join(wheelhouse, wheel_name)
         with open(wheel_path, 'wb') as f:
             with http.request('GET', wheel_url, preload_content=False,) as r:
@@ -69,7 +71,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "version",
-        help="SciPy version to download.")
+        help="Package version to download.")
+    parser.add_argument(
+        "--staging-url",
+        default='https://anaconda.org/multibuild-wheels-staging/scipy',
+        help="URL at which to find packages")
+    parser.add_argument(
+        "--prefix",
+        default='scipy',
+        help="Prefix for wheels (e.g 'scipy'")
     parser.add_argument(
         "-w", "--wheelhouse",
         default=os.path.join(os.getcwd(), "release", "installers"),
@@ -84,4 +94,4 @@ if __name__ == '__main__':
             f"{wheelhouse} wheelhouse directory is not present."
             " Perhaps you need to use the '-w' flag to specify one.")
 
-    download_wheels(args.version, wheelhouse)
+    download_wheels(args.version, wheelhouse, args.staging_url, args.prefix)
