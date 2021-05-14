@@ -6688,7 +6688,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
     .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable 
            in the case of a correlated system of variables is such that it can be reasonably 
-           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
+           supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50 
            (1900), pp. 157-175.
 
     Examples
