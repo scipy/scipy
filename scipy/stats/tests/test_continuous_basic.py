@@ -38,6 +38,9 @@ distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
 
+distxslow = ['studentized_range']
+# distxslow are sorted by speed (very slow to slow)
+
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
@@ -119,6 +122,8 @@ def cases_test_cont_basic():
             continue
         elif distname in distslow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        elif distname in distxslow:
+            yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
