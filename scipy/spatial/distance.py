@@ -1778,8 +1778,8 @@ _METRIC_INFOS = [
         canonical_name='braycurtis',
         aka={'braycurtis'},
         dist_func=braycurtis,
-        cdist_func=CDistMetricWrapper('braycurtis'),
-        pdist_func=PDistMetricWrapper('braycurtis'),
+        cdist_func=_distance_pybind.cdist_braycurtis,
+        pdist_func=_distance_pybind.pdist_braycurtis,
     ),
     MetricInfo(
         canonical_name='canberra',
@@ -1923,8 +1923,8 @@ _METRIC_INFOS = [
         canonical_name='sqeuclidean',
         aka={'sqeuclidean', 'sqe', 'sqeuclid'},
         dist_func=sqeuclidean,
-        cdist_func=CDistMetricWrapper('sqeuclidean'),
-        pdist_func=PDistMetricWrapper('sqeuclidean'),
+        cdist_func=_distance_pybind.cdist_sqeuclidean,
+        pdist_func=_distance_pybind.pdist_sqeuclidean,
     ),
     MetricInfo(
         canonical_name='wminkowski',
