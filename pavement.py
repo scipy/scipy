@@ -81,7 +81,7 @@ LOG_END = 'master'
 #-------------------------------------------------------
 
 # Default Python version
-PYVER="3.6"
+PYVER="3.9"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
