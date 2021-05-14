@@ -70,6 +70,7 @@ jobs:
         echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
 
     - name: A few other packages
+      continue-on-error: true
       run: |
         brew install libmpc suitesparse swig
 
