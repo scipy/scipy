@@ -3857,8 +3857,9 @@ def tukeykramer(*args, sig_level=.05):
     conf_levels = (mean_differences - tukey_criterions,
                    mean_differences + tukey_criterions)
     t_stat = np.abs(mean_differences) / stand_err
-    p_vals = distributions.studentized_range.cdf(t_stat, nsamples - 1,
-                                                 len(args))
+    
+    params = t_stat, len(args), nsamples - 1
+    p_vals = distributions.studentized_range.sf(*params)
     # The simultaneous pairwise comparisons are not significantly different
     # from 0 if their confidence intervals include 0.
     # ("Conclusions")[1]
