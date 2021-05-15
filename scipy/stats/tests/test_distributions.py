@@ -4494,12 +4494,9 @@ class TestBurr:
 
 
 class TestStudentizedRange:
-    # For alpha=.05, .01, and .001, and for each value of
-    # v=[1, 3, 10, 20, 120, inf], a Q was picked from each table for
-    # k=[2, 8, 14, 20].
-
-    vs = [1, 3, 10, 20, 120, np.inf]
-    ks = [2, 8, 14, 20]
+    # For alpha = .05, .01, and .001, and for each value of
+    # v = [1, 3, 10, 20, 120, inf], a Q was picked from each table for
+    # k = [2, 8, 14, 20].
 
     # these arrays are written with `k` as column, and `v` as rows.
     # Q values are taken from table 3:
@@ -4524,6 +4521,9 @@ class TestStudentizedRange:
             4.654, 5.823, 6.191, 6.411]
     qs = np.concatenate((q05, q01, q001))
     ps = [.95, .99, .999]
+    vs = [1, 3, 10, 20, 120, np.inf]
+    ks = [2, 8, 14, 20]
+
     data = zip(product(ps, vs, ks), qs)
 
     def test_cdf_against_tables(self):
@@ -4598,23 +4598,6 @@ class TestStudentizedRange:
 
         # Because of error caused by the summation, use a relatively large rtol
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
-
-    @pytest.mark.slow
-    @pytest.mark.parametrize("moment", [1, 2, 3, 4])
-    def test_moment_against_pdf(self, moment):
-        k, v = 3, 10
-
-        res_act = stats.studentized_range.moment(moment, k, v)
-
-        def wrapper(x):
-            return x ** moment * stats.studentized_range.pdf(x, k, v)
-
-        res_exp = quad(wrapper, 0, np.inf)[0]
-
-        # Atol is large B/C of integration innacuracy with quad.
-        # Setting epsabs to 1e-15 of the PDF + moment quads in studentized
-        # range causes the results to converge and pass default atol.
-        assert_allclose(res_act, res_exp, atol=1e-5)
 
     @pytest.mark.slow
     def test_moment_vectorization(self):

@@ -35,8 +35,11 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
             'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic', 'studentized_range']
+            'geninvgauss', 'genhyperbolic']
 # distslow are sorted by speed (very slow to slow)
+
+distxslow = ['studentized_range']
+# distxslow are sorted by speed (very slow to slow)
 
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -119,6 +122,8 @@ def cases_test_cont_basic():
             continue
         elif distname in distslow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        elif distname in distxslow:
+            yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
@@ -245,6 +250,13 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
+        if distname == 'studentized_range':
+            msg = ("studentized_range is far too slow for this test and it is "
+                   "redundant with test_distributions::TestStudentizedRange::"
+                   "test_moment_against_mp")
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xslow(reason=msg))
+            continue
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
@@ -545,8 +557,8 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "divide by zero encountered in power",  # gengamma
             "invalid value encountered in add",  # genextreme
             "invalid value encountered in subtract",  # gengamma
-            "invalid value encountered in multiply",  # recipinvgauss
-            "invalid value encountered in log"  # studentized_range
+            "invalid value encountered in multiply"  # recipinvgauss
+            # "invalid value encountered in log"  # studentized_range
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)
