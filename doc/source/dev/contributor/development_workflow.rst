@@ -42,7 +42,7 @@ SciPy.
 
       git submodule update --init
 
-   This fetch and update any submodules that SciPy needs (such as `Boost`).
+   This fetches and updates any submodules that SciPy needs (such as `Boost`).
 
 Basic workflow
 ##############
