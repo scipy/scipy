@@ -558,7 +558,6 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "invalid value encountered in add",  # genextreme
             "invalid value encountered in subtract",  # gengamma
             "invalid value encountered in multiply"  # recipinvgauss
-            # "invalid value encountered in log"  # studentized_range
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)

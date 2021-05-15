@@ -9331,7 +9331,8 @@ class studentized_range_gen(rv_continuous):
 
     for :math:`x ≥ 0`, :math:`k > 1`, and :math:`\nu > 0`.
 
-    `studentized_range` takes ``k`` and ``v`` as shape parameters.
+    `studentized_range` takes ``k`` for :math:`k` and ``df`` for :math:`\nu`
+    as shape parameters.
 
     When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinite
     degrees of freedom) is used to compute the cumulative distribution
