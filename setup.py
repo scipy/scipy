@@ -169,13 +169,16 @@ def check_submodules():
     """
     if not os.path.exists('.git'):
         return
+
+    msg_submodule = "git submodule update --init"
+
     with open('.gitmodules') as f:
         for l in f:
             if 'path' in l:
                 p = l.split('=')[-1].strip()
                 if not os.path.exists(p):
-                    raise ValueError('Submodule %s missing' % p)
-
+                    raise ValueError(f'Submodule {p} missing.'
+                                     f' Install with: {msg_submodule}')
 
     proc = subprocess.Popen(['git', 'submodule', 'status'],
                             stdout=subprocess.PIPE)
@@ -183,7 +186,8 @@ def check_submodules():
     status = status.decode("ascii", "replace")
     for line in status.splitlines():
         if line.startswith('-') or line.startswith('+'):
-            raise ValueError('Submodule not clean: %s' % line)
+            raise ValueError(f'Submodule not clean: {line}.'
+                             f' Update with: {msg_submodule}')
 
 
 class concat_license_files():
@@ -592,6 +596,9 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+
+        # boost submodule has to be installed to build
+        check_submodules()
 
         # Customize extension building
         cmdclass['build_ext'] = get_build_ext_override()
