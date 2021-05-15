@@ -395,6 +395,7 @@ class FastNumericalInverse():
           dimensions are inconsistent, a ``ValueError`` is raised.
         - After `d` is determined according to the rules above, the output
           shape is ``tuple_shape + d_shape``, where:
+
               - ``tuple_shape = tuple()`` if `size` is ``None``,
               - ``tuple_shape = (size,)`` if `size` is an ``int``,
               - ``tuple_shape = size`` if `size` is a sequence,

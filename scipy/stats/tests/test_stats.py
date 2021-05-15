@@ -6764,7 +6764,7 @@ class TestFNI:
 
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))
+        rngs.append(np.random.default_rng(0))  # type: ignore
     sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
 
     @pytest.mark.parametrize('rng', rngs)
