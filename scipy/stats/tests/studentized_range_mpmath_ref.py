@@ -25,7 +25,6 @@ import time
 import os
 from multiprocessing import Pool, cpu_count
 
-import numpy as np
 from mpmath import gamma, pi, sqrt, quad, inf, mpf, mp
 from mpmath import npdf as phi
 from mpmath import ncdf as Phi
@@ -56,17 +55,16 @@ res_dict.setdefault("pdf_data", [])
 res_dict.setdefault("moment_data", [])
 
 general_atol, general_rtol = 1e-11, 1e-11
-large_nu_atol = 1e-9  # Increase tolorances for large values of nu
 
 mp.dps = 24
 
-cp_q = [0.1, 1, 10]
-cp_k = [3, 10]
-cp_nu = [10, 100, 1000, np.inf]
+cp_q = [0.1, 1, 4, 10]
+cp_k = [3, 10, 20]
+cp_nu = [3, 10, 20, 50, 100, 120]
 
 cdf_pdf_cases = [
     CdfCase(*case,
-            general_atol if case[2] < 120 else large_nu_atol,
+            general_atol,
             general_rtol)
     for case in
     itertools.product(cp_q, cp_k, cp_nu)
