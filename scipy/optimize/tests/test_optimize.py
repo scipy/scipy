@@ -290,6 +290,12 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert self.funccalls <= 131 + 20
             assert self.gradcalls == 0
 
+    def test_warn_neldermead(self):
+        with pytest.warns(UserWarning, match=r'Maximum number of iterations'):
+            x0 = np.zeros(10)
+            func = optimize.rosen
+            optimize.fmin(func, x0, maxiter=5)
+
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:
@@ -1002,6 +1008,8 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
+
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
                               'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',

@@ -834,12 +834,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            print('Warning: ' + msg)
+            warnings.warn(msg, UserWarning, 3)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            print('Warning: ' + msg)
+            warnings.warn(msg, UserWarning, 3)
     else:
         msg = _status_message['success']
         if disp:
