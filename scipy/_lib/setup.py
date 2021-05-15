@@ -1,8 +1,19 @@
 import os
+import pathlib
+
+
+def check_boost_submodule():
+    from scipy._lib._boost_utils import _boost_dir
+
+    if not os.path.exists(_boost_dir(ret_path=True) / 'README.md'):
+        raise RuntimeError("Missing the `boost` submodule! Run `git submodule "
+                           "update --init` to fix this.")
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+
+    check_boost_submodule()
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
