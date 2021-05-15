@@ -335,6 +335,7 @@ Again using the same generic example folder from above
    cd C:\Users\<user name>\Documents\GitHub
    git clone https://github.com/scipy/scipy.git
    cd scipy
+   git submodule update --init
 
 Now we need to copy the :code:`openblas.a` file that we've built earlier to the
 correct location. If your Python is installed somewhere like the following:
