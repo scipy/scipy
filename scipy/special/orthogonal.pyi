@@ -273,8 +273,8 @@ def roots_sh_legendre(
 class orthopoly1d(numpy.poly1d):
     def __init__(
             self,
-            roots: Any,  # TODO: ArrayLike
-            weights: Optional[Any],  # TODO: ArrayLike
+            roots: numpy.typing.ArrayLike,
+            weights: Optional[numpy.typing.ArrayLike],
             hn: float = ...,
             kn: float = ...,
             wfunc = Optional[Callable[[float], float]],
@@ -285,7 +285,6 @@ class orthopoly1d(numpy.poly1d):
     @property
     def limits(self) -> Tuple[float, float]: ...
     def weight_func(self, x: float) -> float: ...
-    # TODO: ArrayLike
     def __call__(self, x: Any) -> Any: ...
 
 def legendre(n: _IntegerType, monic: bool = ...) -> orthopoly1d: ...
