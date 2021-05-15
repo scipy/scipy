@@ -3,6 +3,8 @@
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as clone
 
+# note this only needs to be done for the scipy repo
+# submodules can be dealt with in the runtime image
 COPY --chown=gitpod . /tmp/scipy_repo
 RUN git clone --depth 1 file:////tmp/scipy_repo /tmp/scipy
 
@@ -35,6 +37,7 @@ WORKDIR ${WORKSPACE}
 
 # Build scipy to populate the cache used by ccache
 # Must re-activate conda to ensure the ccache flags are picked up
+RUN git submodule update --init --depth=1 -- scipy/_lib/boost
 RUN conda activate ${CONDA_ENV} && \
     python setup.py build_ext --inplace && \
     ccache -s
