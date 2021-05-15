@@ -3818,8 +3818,9 @@ def tukeykramer(*args, sig_level=.05):
     # of freedom as determined by the number of data less the number of
     # treatments. ("Confidence limits for Tukey's method")[1].
     nsamples = np.sum([a.shape[0] for a in args])
-    params = (sig_level, len(args), nsamples - len(args))
+    params = (1 - sig_level, len(args), nsamples - len(args))
     srd = distributions.studentized_range.ppf(*params)
+    print(srd)
 
     # determine mean square error
     mse = np.sum([(np.var(arg, ddof=1) *
