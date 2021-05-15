@@ -25,10 +25,11 @@ from cpython cimport Py_INCREF, Py_DECREF
 from cpython cimport PyObject
 
 cdef extern from "Python.h":
+    unicode PyUnicode_FromString(const char *u)
     ctypedef struct PyTypeObject:
         pass
 
-from cpython cimport PyBytes_Size, PyBytes_FromString
+from cpython cimport PyBytes_Size
 
 import numpy as np
 cimport numpy as cnp
@@ -917,7 +918,7 @@ cdef class VarReader5:
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
-            name = PyBytes_FromString(n_ptr).decode('latin1')
+            name = PyUnicode_FromString(n_ptr)
             # Check if this is a duplicate field, rename if so
             dup_no = 0
             for j in range(i):
