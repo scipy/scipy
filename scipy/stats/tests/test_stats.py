@@ -14,7 +14,8 @@ from itertools import product
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_allclose, assert_warns, suppress_warnings)
+                           assert_allclose, assert_warns, suppress_warnings,
+                           assert_string_equal)
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
@@ -4962,23 +4963,6 @@ class TestMannWhitneyU:
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
-    def test_mannwhitneyu_default(self):
-        # The default value for alternative is None
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling `mannwhitneyu` without .*`alternative`")
-            u1, p1 = stats.mannwhitneyu(self.X, self.Y)
-            u2, p2 = stats.mannwhitneyu(self.Y, self.X)
-            u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative=None)
-
-        assert_equal(p1, p2)
-        assert_equal(p1, p3)
-        assert_equal(u1, 102)
-        assert_equal(u2, 102)
-        assert_equal(u3, 102)
-        assert_approx_equal(p1, 4.5941632666275e-05,
-                            significant=self.significant)
-
     def test_mannwhitneyu_no_correct_one_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='less')
@@ -5011,25 +4995,8 @@ class TestMannWhitneyU:
         assert_approx_equal(p1, 8.81880199916178e-05,
                             significant=self.significant)
 
-    def test_mannwhitneyu_no_correct_default(self):
-        # The default value for alternative is None
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling `mannwhitneyu` without .*`alternative`")
-            u1, p1 = stats.mannwhitneyu(self.X, self.Y, False)
-            u2, p2 = stats.mannwhitneyu(self.Y, self.X, False)
-            u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
-                                        alternative=None)
-
-        assert_equal(p1, p2)
-        assert_equal(p1, p3)
-        assert_equal(u1, 102)
-        assert_equal(u2, 102)
-        assert_equal(u3, 102)
-        assert_approx_equal(p1, 4.40940099958089e-05,
-                            significant=self.significant)
-
     def test_mannwhitneyu_ones(self):
+        # test for gh-1428
         x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
                       1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
                       1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -5062,11 +5029,14 @@ class TestMannWhitneyU:
                       1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
                       1., 1., 1., 1.])
 
-        # p-value verified with matlab and R to 5 significant digits
-        assert_array_almost_equal(stats.stats.mannwhitneyu(x, y,
-                                                           alternative='less'),
-                                  (16980.5, 2.8214327656317373e-005),
-                                  decimal=12)
+        # checked against R wilcox.test
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='less'),
+                        (16980.5, 2.8214327656317373e-005))
+        # p-value from R, e.g. wilcox.test(x, y, alternative="g")
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='greater'),
+                        (16980.5, 0.9999719954296))
+        assert_allclose(stats.mannwhitneyu(x, y, alternative='two-sided'),
+                        (16980.5, 5.642865531266e-05))
 
     def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results

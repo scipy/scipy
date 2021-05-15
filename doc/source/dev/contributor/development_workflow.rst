@@ -244,6 +244,8 @@ Standard acronyms to start the commit message with are::
    TST: addition or modification of tests
    REL: related to releasing SciPy
 
+.. note:: You can add some markers to skip part of the continuous integration.
+          See :ref:`continuous-integration`.
 
 .. _asking-for-merging:
 

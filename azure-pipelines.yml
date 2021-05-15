@@ -343,6 +343,7 @@ stages:
             # directly for i686 mingw
             $env:NPY_DISTUTILS_APPEND_FLAGS = 1
             $env:CFLAGS = "-m32"
+            $env:CXXFLAGS = "-m32"
             $env:LDFLAGS = "-m32"
             refreshenv
         }

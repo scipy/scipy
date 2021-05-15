@@ -112,7 +112,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
-class TestDifferentialEntropy(object):
+class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.
 
