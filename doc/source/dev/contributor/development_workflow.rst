@@ -38,6 +38,12 @@ SciPy.
    a "pull request" asking SciPy to "pull" your changes from your fork into
    the official repository.
 
+#. Initialize git submodules::
+
+      git submodule update --init
+
+   This fetch and update any submodules that SciPy needs (such as `Boost`).
+
 Basic workflow
 ##############
 
