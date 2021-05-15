@@ -4665,6 +4665,16 @@ class TestStudentizedRange:
 
     data = zip(product(ps, vs, ks), qs)
 
+    # A small selection of large-v cases generated with R's `ptukey`
+    # Each case is in the format (q, k, v, r_result)
+    r_data = [
+        (0.1, 3, 9001, 0.002752818526842),
+        (1, 10, 1000, 0.000526142388912),
+        (1, 3, np.inf, 0.240712641229283),
+        (4, 3, np.inf, 0.987012338626815),
+        (1, 10, np.inf, 0.000519869467083),
+    ]
+
     def test_cdf_against_tables(self):
         for pvk, q in self.data:
             p_expected, v, k = pvk
@@ -4737,6 +4747,13 @@ class TestStudentizedRange:
 
         # Because of error caused by the summation, use a relatively large rtol
         assert_allclose(y_pdf_cumulative, y_cdf, rtol=1e-4)
+
+    @pytest.mark.parametrize("r_case_result", r_data)
+    def test_cdf_against_r(self, r_case_result):
+        # Test large `v` values using R
+        q, k, v, r_res = r_case_result
+        res = stats.studentized_range.cdf(q, k, v)
+        assert_allclose(res, r_res)
 
     @pytest.mark.slow
     def test_moment_vectorization(self):
