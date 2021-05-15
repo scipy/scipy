@@ -9008,16 +9008,16 @@ crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Functi
 
 def _argus_phi(chi):
     """
-    Utility function for the argus distribution
-    used in the pdf, sf and moment calculation.
-    For small chi, use gammaincinv for better precision as for all x > 0:
+    Utility function for the argus distribution used in the pdf, sf and
+    moment calculation.
+    For small chi, use gammainc for better precision as for all x > 0:
     gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
     this can be verified directly by noting that the cdf of Gamma(1.5) can
-    be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi)
+    be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
+    We use gammainc for all chi since performance is slightly better than
+    using the normal pdf / cdf.
     """
-    return _lazywhere(chi > 0.5, (chi,),
-                      lambda c: _norm_cdf(c) - c * _norm_pdf(c) - 0.5,
-                      f2=lambda c: sc.gammainc(1.5, c**2/2) / 2)
+    return sc.gammainc(1.5, chi**2/2) / 2
 
 class argus_gen(rv_continuous):
     r"""
@@ -9169,13 +9169,13 @@ class argus_gen(rv_continuous):
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
-        chi2 = chi**2
         phi = _argus_phi(chi)
-        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi2/4) / phi
-        # compute second moment, use Taylor expansion for small chi
-        mu2 = _lazywhere(chi > 0.01, (chi,),
-            lambda c: 1 - 3 / c**2 + c * _norm_pdf(c) / _argus_phi(c),
-            f2=lambda c: np.polyval([2./2625, 0, 6./175, 0, 0.4], c))
+        m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi**2/4) / phi
+        # compute second moment, use Taylor expansion for small chi (<= 0.01)
+        coef = [-358/65690625, 0, -94/1010625, 0, 2/2625, 0, 6/175, 0, 0.4]
+        mu2 = _lazywhere(chi > 0.1, (chi,),
+                        lambda c: 1 - 3/c**2 + c*_norm_pdf(c)/_argus_phi(c),
+                        f2=lambda c: np.polyval(coef, c))
         return m, mu2 - m**2, None, None
 
 
