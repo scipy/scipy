@@ -6118,7 +6118,8 @@ class TestTukeykramer:
             comp = np.asarray(comp, dtype=float)
             res_nm = res.get_pairwise(int(comp[0]), int(comp[1]))[:-1]
             res_sas = comp[2:]
-            assert_allclose(res_sas, res_nm)
+            # SAS provide
+            assert_allclose(res_sas, res_nm, atol=1e-3)
 
 
     def test_SAS_diff_size_treatments(self):
@@ -6153,6 +6154,10 @@ class TestTukeykramer:
            MODEL RELIEF=BRAND;
            MEANS BRAND/TUKEY CLDIFF;
            TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+           ODS OUTPUT CLDiffs=tc
+        proc print data=tc
+            format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
+            title “Output with many digits”;
         RUN;
         QUIT;
         ODS RTF close;
@@ -6174,18 +6179,16 @@ class TestTukeykramer:
                                 [26.1, 28.3, 24.3, 26.2, 27.8])
         SAS_res = [['Brand', 'Comparison', 'Mean', 'Difference',
                     'Simultanious', '95%', 'Confidence', 'Limits'],
-                   ['2', '1', '3.645', '0.268', '7.022', '1'],
-                   ['2', '3', '4.340', '0.593', '8.087', '1'],
-                   ['1', '2', '-3.645', '-7.022', '-0.268', '1'],
-                   ['1', '3', '0.695', '-2.682', '4.072', '0'],
-                   ['3', '2', '-4.340', '-8.087', '-0.593', '1'],
-                   ['3', '1', '-0.695', '-4.072', '2.682', '0']]
+                   ['2', '1', '3.645', '0.2679292644988780', '7.022070735501120', '1'],
+                   ['2', '3', '4.340', '0.5934764007020940', '8.086523599297900', '1'],
+                   ['1', '2', '-3.645', '-7.02207073550113', '-.267929264498878', '1'],
+                   ['1', '3', '.6949999999999960', '-2.68207073550113', ' 4.072070735501120', '0'],
+                   ['3', '2', '-4.340', '-8.08652359929791', '-.593476400702094', '1'],
+                   ['3', '1', '-.694999999999997', ' -4.07207073550112', '2.682070735501120', '0']]
         for comp in SAS_res[1:]:
             comp = np.asarray(comp, dtype=float)
-            assert_array_almost_equal(comp[2:],
-                                      res.get_pairwise(int(comp[0]),
-                                                       int(comp[1]))[:-1],
-                                      decimal=3)
+            assert_allclose(comp[2:], res.get_pairwise(int(comp[0]),
+                                                       int(comp[1]))[:-1], atol=1e-7)
     def test_comp_R(self):
         '''  
         Testing against results and p-values from R:
