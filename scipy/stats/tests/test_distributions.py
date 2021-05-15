@@ -4741,8 +4741,8 @@ class TestStudentizedRange:
         # summation. This is slow, but tests the results well.
         x = np.arange(0, 10, step=0.01)
 
-        y_cdf = stats.distributions.studentized_range.cdf(x, k, v)[1:]
-        y_pdf_raw = stats.distributions.studentized_range.pdf(x, k, v)
+        y_cdf = stats.studentized_range.cdf(x, k, v)[1:]
+        y_pdf_raw = stats.studentized_range.pdf(x, k, v)
         y_pdf_cumulative = cumulative_trapezoid(y_pdf_raw, x)
 
         # Because of error caused by the summation, use a relatively large rtol
