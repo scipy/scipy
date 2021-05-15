@@ -188,7 +188,7 @@ def bootstrap(data, statistic, *, axis=0, confidence_level=0.95,
         of the statistic. The default is ``9999``.
     method : str in {'percentile', 'basic', 'bca'}, optional
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``), the 'reverse'or the bias-corrected and accelerated
+        (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
         bootstrap confidence interval (``'BCa'``). The default is ``'BCa'``.
         Note that only ``'percentile'`` and ``'basic'`` support multi-sample
         statistics at this time.
