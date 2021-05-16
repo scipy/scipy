@@ -177,6 +177,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
@@ -1002,6 +1003,7 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
                               'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
