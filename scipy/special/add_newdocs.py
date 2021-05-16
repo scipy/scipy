@@ -8890,7 +8890,7 @@ add_newdoc("spence",
     It is defined to be
 
     .. math::
-      \int_0^z \frac{\log(t)}{1 - t}dt
+      \int_1^z \frac{\log(t)}{1 - t}dt
 
     for complex :math:`z`, where the contour of integration is taken
     to avoid the branch cut of the logarithm. Spence's function is
