@@ -1156,7 +1156,7 @@ def hermite(n, monic=False):
     -0.49999999999999983
     >>> x = np.linspace(-3, 3, 400)
     >>> y = p_monic(x)
-    >>> plt.plot(x,y) 
+    >>> plt.plot(x, y)
     >>> plt.title("Monic Hermite polynomial of degree 3")
     >>> plt.xlabel("x")
     >>> plt.ylabel("H_3(x)")
