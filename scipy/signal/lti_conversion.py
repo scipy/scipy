@@ -283,7 +283,7 @@ def ss2tf(A, B, C, D, input=0):
 
 
 def zpk2ss(z, p, k):
-    """Zero-pole-gain representation to state-space representation
+    """Zero-pole-gain representation to state-space representation.
 
     Parameters
     ----------
@@ -338,11 +338,11 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     Parameters
     ----------
-    system : a tuple describing the system or an instance of `lti`
+    system : a tuple describing the continuous system or an instance of `lti`
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 1: (instance of `lti`,) in a tuple or bare instance of `lti`
+            * 1: (instance of `lti`)
             * 2: (num, den)
             * 3: (zeros, poles, gain)
             * 4: (A, B, C, D)
@@ -366,10 +366,12 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     Returns
     -------
-    sysd : tuple containing the discrete system or bare instance of `lti`
-        Based on the input type, the output will be of the form
+    sysd : a tuple containing the discrete system or an instance of `dlti`
+        If the input is a bare instance of `lti`, the output will be a bare
+        instance of `dlti`. Otherwise, based on the input tuple type, the
+        output tuple will be of the form
 
-        * bare instance of `lti` for `lti` input (in a tuple or not)
+        * (instance of `dlti`) for instance of `lti` input
         * (num, den, dt) for transfer function input
         * (zeros, poles, gain, dt) for zeros-poles-gain input
         * (A, B, C, D, dt) for state-space system input
@@ -408,7 +410,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         return system.to_discrete(dt, method=method, alpha=alpha)
 
     if n == 1:
-        return system[0].to_discrete(dt, method=method, alpha=alpha)
+        # Return a tuple if the input is a tuple
+        return system[0].to_discrete(dt, method=method, alpha=alpha),
     elif n == 2:
         sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
                              alpha=alpha)
