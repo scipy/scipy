@@ -1088,6 +1088,41 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     allvecs  :  list
         The value of xopt at each iteration. Only returned if retall is True.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import fmin_bfgs
+
+    >>> def rosenbrock(x):
+    ...     # Rosenbrock Function,
+    ...     # which has a global minimum 0 at (1, 1)
+    ...     # https://en.wikipedia.org/wiki/Rosenbrock_function
+    ...     return (1-x[0])**2 + 100*(x[1]-x[0]**2)**2
+
+    >>> x0 = np.array([-3, -4])
+    >>> fmin_bfgs(rosenbrock, x0)
+    Warning: Desired error not necessarily achieved due to precision loss.
+            Current function value: 0.000000
+            Iterations: 64
+            Function evaluations: 330
+            Gradient evaluations: 106
+    array([0.99999669, 0.99999329])
+
+    >>> def rosenbrock_grad(x):
+    ...     # Gradient of Rosenbrock Function
+    ...     grad_f = np.zeros_like(x)
+    ...     grad_f[0] = -2*(1-x[0]) - 400*x[0]*(x[1]-x[0]**2)
+    ...     grad_f[1] = 200*(x[1]-x[0]**2)
+    ...     return grad_f
+    ...
+    >>> fmin_bfgs(rosenbrock, x0, rosenbrock_grad)
+    Optimization terminated successfully.
+            Current function value: 0.000000
+            Iterations: 68
+            Function evaluations: 84
+            Gradient evaluations: 84
+    array([0.99999991, 0.99999982])
+
     See also
     --------
     minimize: Interface to minimization algorithms for multivariate
