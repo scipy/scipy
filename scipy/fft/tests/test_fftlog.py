@@ -83,9 +83,11 @@ def test_fht_agrees_with_fftlog():
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_identity(n, bias, offset, optimal):
-    a = np.random.randn(n)
-    dln = np.random.uniform(-1, 1)
-    mu = np.random.uniform(-2, 2)
+    rng = np.random.RandomState(3491349965)
+
+    a = rng.standard_normal(n)
+    dln = rng.uniform(-1, 1)
+    mu = rng.uniform(-2, 2)
 
     if optimal:
         offset = fhtoffset(dln, mu, initial=offset, bias=bias)
@@ -97,8 +99,10 @@ def test_fht_identity(n, bias, offset, optimal):
 
 
 def test_fht_special_cases():
-    a = np.random.randn(64)
-    dln = np.random.uniform(-1, 1)
+    rng = np.random.RandomState(3491349965)
+
+    a = rng.standard_normal(64)
+    dln = rng.uniform(-1, 1)
 
     # let xp = (mu+1+q)/2, xm = (mu+1-q)/2, M = {0, -1, -2, ...}
 
@@ -129,13 +133,15 @@ def test_fht_special_cases():
 
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_exact(n):
+    rng = np.random.RandomState(3491349965)
+
     # for a(r) a power law r^\gamma, the fast Hankel transform produces the
     # exact continuous Hankel transform if biased with q = \gamma
 
-    mu = np.random.uniform(0, 3)
+    mu = rng.uniform(0, 3)
 
     # convergence of HT: -1-mu < gamma < 1/2
-    gamma = np.random.uniform(-1-mu, 1/2)
+    gamma = rng.uniform(-1-mu, 1/2)
 
     r = np.logspace(-2, 2, n)
     a = r**gamma
