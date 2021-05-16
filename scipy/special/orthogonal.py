@@ -1146,6 +1146,9 @@ def hermite(n, monic=False):
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+
     >>> p_monic = special.hermite(3, monic=True)
     >>> p_monic
     poly1d([ 1. ,  0. , -1.5,  0. ])
