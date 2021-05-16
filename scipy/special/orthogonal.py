@@ -1151,11 +1151,13 @@ def hermite(n, monic=False):
     poly1d([ 1. ,  0. , -1.5,  0. ])
     >>> p_monic(1) # Evaluate to a point
     -0.49999999999999983
-
-
-    >>> p_not_monic = special.hermite(3, monic=False)
-    >>> p_not_monic
-    poly1d([  8.,   0., -12.,   0.])
+    >>> x = np.linspace(-3,3,400) # Choose x in (-3,3)
+    >>> y = p_monic(x) # Evaluate p_monic to x
+    >>> plt.plot(x,y) # Generate plot
+    >>> plt.title("Monic Hermite polynomial of degree 3")
+    >>> plt.xlabel("x")
+    >>> plt.ylabel("H_3(x)")
+    >>> plt.show()
 
     """
     if n < 0:
