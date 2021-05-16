@@ -1418,8 +1418,8 @@ def gegenbauer(n, alpha, monic=False):
     poly1d([ 2.5,  0. , -1.5,  0. ])
     >>> p(1)
     1.0
-    >>> x = np.linspace(-3, 3, 400) # Choose x in (-3,3)
-    >>> y = p(x) # Evaluate p to x
+    >>> x = np.linspace(-3, 3, 400)
+    >>> y = p(x) 
 
     >>> plt.plot(x, y)
     >>> plt.title("Gegenbauer (ultraspherical) polynomial of degree 3")
