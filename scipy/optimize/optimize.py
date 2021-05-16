@@ -1100,12 +1100,12 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     >>> x0 = np.array([-3, -4])
     >>> fmin_bfgs(rosenbrock, x0)
-    Warning: Desired error not necessarily achieved due to precision loss.
-            Current function value: 0.000000
-            Iterations: 64
-            Function evaluations: 330
-            Gradient evaluations: 106
-    array([0.99999669, 0.99999329])
+    Optimization terminated successfully.
+         Current function value: 0.000000
+         Iterations: 66                    # may vary
+         Function evaluations: 246         # may vary
+         Gradient evaluations: 82          # may vary
+    array([0.99999551, 0.99999101])        # may vary
 
     >>> def rosenbrock_grad(x):
     ...     # Gradient of Rosenbrock Function
