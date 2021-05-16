@@ -25,13 +25,13 @@ from cpython cimport Py_INCREF, Py_DECREF
 from cpython cimport PyObject
 
 cdef extern from "Python.h":
+    unicode PyUnicode_FromString(const char *u)
     ctypedef struct PyTypeObject:
         pass
 
-from cpython cimport PyBytes_Size, PyBytes_FromString
+from cpython cimport PyBytes_Size
 
 import numpy as np
-from numpy.compat import asbytes, asstr
 cimport numpy as cnp
 
 cdef extern from "numpy/arrayobject.h":
@@ -718,7 +718,7 @@ cdef class VarReader5:
         elif mc == mxSTRUCT_CLASS:
             arr = self.read_struct(header)
         elif mc == mxOBJECT_CLASS: # like structs, but with classname
-            classname = asstr(self.read_int8_string())
+            classname = self.read_int8_string().decode('latin1')
             arr = self.read_struct(header)
             arr = mio5p.MatlabObject(arr, classname)
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
@@ -918,7 +918,7 @@ cdef class VarReader5:
             char *n_ptr = names
             int j, dup_no
         for i in range(n_names):
-            name = asstr(PyBytes_FromString(n_ptr))
+            name = PyUnicode_FromString(n_ptr)
             # Check if this is a duplicate field, rename if so
             dup_no = 0
             for j in range(i):
