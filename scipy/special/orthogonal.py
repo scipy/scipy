@@ -1154,7 +1154,7 @@ def hermite(n, monic=False):
     poly1d([ 1. ,  0. , -1.5,  0. ])
     >>> p_monic(1) # Evaluate to a point
     -0.49999999999999983
-    >>> x = np.linspace(-3,3,400) # Choose x in (-3,3)
+    >>> x = np.linspace(-3, 3, 400)
     >>> y = p_monic(x) # Evaluate p_monic to x
     >>> plt.plot(x,y) # Generate plot
     >>> plt.title("Monic Hermite polynomial of degree 3")
