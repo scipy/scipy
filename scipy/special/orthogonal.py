@@ -1152,7 +1152,7 @@ def hermite(n, monic=False):
     >>> p_monic = special.hermite(3, monic=True)
     >>> p_monic
     poly1d([ 1. ,  0. , -1.5,  0. ])
-    >>> p_monic(1) # Evaluate to a point
+    >>> p_monic(1)
     -0.49999999999999983
     >>> x = np.linspace(-3, 3, 400)
     >>> y = p_monic(x) # Evaluate p_monic to x
