@@ -409,13 +409,33 @@ def compare_medians_ms(group_1, group_2, axis=None):
     in conjunction with a Welch-type test in hypothesis testing. 
     It is used for the special case of testing the hypothesis of equal medians, 
     when Yuen-Welch and Box methods are not recommended.
+    [1]_ Wilcox.
 
     >>> c = [-5, 82, 11, 11, 22, 55, 90]
     >>> stats.mstats.compare_medians_ms(b, c)
     0.275814234966238
 
+    The function is vectorized to compute along a given axis.
+    Numpy Broadcasting compares the shapes of two arrays element-wise. 
+    Two dimensions are compatible when they are equal or one of them is 1.
+    [2]_NumPy Broadcasting.
 
+    >>> import numpy as np
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(size=(3, 7))
+    >>> y = rng.random(size=(3, 8))
+    >>> stats.mstats.compare_medians_ms(x, y, axis=1)
+    array([0.1718035 , 0.17301209, 0.40799719])
+
+    default_rng() is the recommended constructor for generating 
+    random numbers from a variety of probability distributions.
+
+    References
+    ----------
+    [1] Wilcox, Rand R. “Introduction to Robust Estimation and Hypothesis Testing.” Science Direct, Academic Press, an Imprint of Elsevier, 2017, www.sciencedirect.com/book/9780123869838/introduction-to-robust-estimation-and-hypothesis-testing. 
+    [2] “General Broadcasting Rules.” Broadcasting - NumPy v1.20 Manual, 31 Jan. 2021, numpy.org/doc/stable/user/basics.broadcasting.html. 
     """
+    
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
     (std_1, std_2) = (mstats.stde_median(group_1, axis=axis),
                       mstats.stde_median(group_2, axis=axis))
