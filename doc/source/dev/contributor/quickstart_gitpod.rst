@@ -21,7 +21,7 @@ Gitpod
 Gitpod GitHub integration
 --------------------------
 
-To be able to use Gitpod, you will need tohave the Gitpod app installed on your GitHub account, so if
+To be able to use Gitpod, you will need to have the Gitpod app installed on your GitHub account, so if
 you do not have an account yet, you will need to create one first.
 
 Head over to the `Gitpod`_ website and click on the **Continue with GitHub** button. You will be redirected to the GitHub authentication page.
@@ -98,7 +98,7 @@ The  :ref:`development-workflow` section of this documentation contains informat
 When using Gitpod, note these main differences with the setup described in :ref:`development-workflow`.
 
 #. You do not need to configure your git username, and email as this should be done for you as you authenticated through GitHub. You can check the git configuration with the command ``git config --list`` in your terminal.
-#. As you started your workspace from your own SciPy fork, you will by default have both "upstream "and "origin "added as remotes. You can verify this by typing ``git remote`` on your terminal or by clicking on the **branch name** on the status bar (see image below).
+#. As you started your workspace from your own SciPy fork, you will by default have both "upstream" and "origin" added as remotes. You can verify this by typing ``git remote`` on your terminal or by clicking on the **branch name** on the status bar (see image below).
 
 .. image:: ../../_static/gitpod/scipy-gitpod-branches.png
     :alt: Gitpod workspace branches plugin screenshot
@@ -112,7 +112,7 @@ The documentation is pre-built during your workspace initialization. So once thi
 Option 1: Using Liveserve
 ***************************
 
-#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with "index.html "and browse, or you can jump straight to the file you're interested in.
+#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with "index.html" and browse, or you can jump straight to the file you're interested in.
 #. To see the rendered version of a page, you can right-click on the ``.html`` file and click on **Open with Live Serve**. Alternatively, you can open the file in the editor and click on the **Go live** button on the status bar.
 
     .. image:: ../../_static/gitpod/vscode-statusbar.png
