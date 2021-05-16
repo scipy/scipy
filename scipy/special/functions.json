@@ -1,4 +1,14 @@
 {
+    "_cosine_cdf": {
+        "_cosine.h": {
+            "cosine_cdf": "d->d"
+        }
+    },
+    "_cosine_invcdf": {
+        "_cosine.h": {
+            "cosine_invcdf": "d->d"
+        }
+    },
     "_cospi": {
 	"cephes.h": {
 	    "cospi": "d->d"
@@ -525,7 +535,7 @@
         }
     },
     "expit": {
-        "_logit.h": {
+        "_logit.h++": {
             "expit": "d->d",
             "expitf": "f->f",
             "expitl": "g->g"
@@ -919,7 +929,7 @@
         }
     },
     "logit": {
-        "_logit.h": {
+        "_logit.h++": {
             "logit": "d->d",
             "logitf": "f->f",
             "logitl": "g->g"

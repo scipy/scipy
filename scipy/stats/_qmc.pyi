@@ -19,8 +19,7 @@ _IntegerType = Union[int, np.integer]
 _FloatingType = Union[float, np.floating]
 
 __all__ = ['scale', 'discrepancy', 'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube',
-           'MultinomialQMC', 'MultivariateNormalQMC']
+           'LatinHypercube', 'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 def check_random_state(
@@ -31,12 +30,13 @@ def check_random_state(
 
 def scale(
         sample: npt.ArrayLike, l_bounds: npt.ArrayLike,
-        u_bounds: npt.ArrayLike, reverse: bool = ...
+        u_bounds: npt.ArrayLike, *, reverse: bool = ...
 ) -> np.ndarray: ...
 
 
 def discrepancy(
-        sample: npt.ArrayLike, iterative: bool = ..., method: str = ...
+        sample: npt.ArrayLike, *, iterative: bool = ..., method: str = ...,
+        workers: _IntegerType = ...
 ) -> _FloatingType: ...
 
 
@@ -53,7 +53,7 @@ def n_primes(n: _IntegerType) -> np.ndarray: ...
 
 
 def van_der_corput(
-        n: _IntegerType, base: _IntegerType = ...,
+        n: _IntegerType, base: _IntegerType = ..., *,
         start_index: _IntegerType = ..., scramble: bool = ...,
         seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
 ) -> np.ndarray: ...
@@ -64,7 +64,7 @@ class QMCEngine(ABC):
     @abstractmethod
     def __init__(
             self,
-            d: _IntegerType,
+            d: _IntegerType, *,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 
@@ -78,16 +78,7 @@ class QMCEngine(ABC):
 
 class Halton(QMCEngine):
     def __init__(
-            self, d: _IntegerType, scramble: bool = ...,
-            seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
-    ) -> None: ...
-
-    def random(self, n: _IntegerType = ...) -> np.ndarray: ...
-
-
-class OrthogonalLatinHypercube(QMCEngine):
-    def __init__(
-            self, d: _IntegerType,
+            self, d: _IntegerType, *, scramble: bool = ...,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 
@@ -96,7 +87,7 @@ class OrthogonalLatinHypercube(QMCEngine):
 
 class LatinHypercube(QMCEngine):
     def __init__(
-            self, d: _IntegerType, centered: bool = ...,
+            self, d: _IntegerType, *, centered: bool = ...,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 
@@ -107,7 +98,7 @@ class LatinHypercube(QMCEngine):
 
 class Sobol(QMCEngine):
     def __init__(
-            self, d: _IntegerType, scramble: bool = ...,
+            self, d: _IntegerType, *, scramble: bool = ...,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 
@@ -124,7 +115,7 @@ class Sobol(QMCEngine):
 
 class MultivariateNormalQMC(QMCEngine):
     def __init__(
-            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = ...,
+            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = ..., *,
             cov_root: Optional[npt.ArrayLike] = ...,
             inv_transform: bool = ...,
             engine: Optional[QMCEngine] = ...,
@@ -141,7 +132,7 @@ class MultivariateNormalQMC(QMCEngine):
 
 class MultinomialQMC(QMCEngine):
     def __init__(
-            self, pvals: npt.ArrayLike, engine: Optional[QMCEngine] = ...,
+            self, pvals: npt.ArrayLike, *, engine: Optional[QMCEngine] = ...,
             seed: Optional[Union[_IntegerType, np.random.Generator]] = ...
     ) -> None: ...
 

@@ -4,10 +4,7 @@ Simple benchmarks for the sparse module
 import warnings
 import time
 import timeit
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 import numpy
 import numpy as np
@@ -55,7 +52,7 @@ def poisson2d(N, dtype='d', format=None):
 class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
-        ['csr'],
+        ['csr', 'csc', 'coo', 'dia'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
