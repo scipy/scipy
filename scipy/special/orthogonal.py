@@ -1419,7 +1419,7 @@ def gegenbauer(n, alpha, monic=False):
     >>> p(1)
     1.0
     >>> x = np.linspace(-3, 3, 400)
-    >>> y = p(x) 
+    >>> y = p(x)
 
     >>> plt.plot(x, y)
     >>> plt.title("Gegenbauer (ultraspherical) polynomial of degree 3")
