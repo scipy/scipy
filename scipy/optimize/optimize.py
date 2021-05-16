@@ -1090,7 +1090,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.optimize import fmin_bfgs
 
     >>> def rosenbrock(x):
