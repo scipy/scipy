@@ -392,6 +392,29 @@ def compare_medians_ms(group_1, group_2, axis=None):
         ndarray of floats with a length equal to the length of `group_1`
         along `axis`.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = [1, 2, 3, 4, 5, 6, 7]
+    >>> b = [8, 9, 10, 11, 12, 13, 14]
+
+    Arrays must be at least of size 7.
+
+    >>> stats.mstats.compare_medians_ms(a, b, axis=None)
+    1.0693225866553746e-05
+
+    Since no axis is provided, the result is flattened.
+
+    The McKean–Schrader estimate of the standard error is used 
+    in conjunction with a Welch-type test in hypothesis testing. 
+    It is used for the special case of testing the hypothesis of equal medians, 
+    when Yuen-Welch and Box methods are not recommended.
+
+    >>> c = [-5, 82, 11, 11, 22, 55, 90]
+    >>> stats.mstats.compare_medians_ms(b, c)
+    0.275814234966238
+
+
     """
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
     (std_1, std_2) = (mstats.stde_median(group_1, axis=axis),
