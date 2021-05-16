@@ -249,6 +249,51 @@ class TestCorr:
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes, ma=True)
 
+    def test_spearmanr_alternative(self):
+        # check against R
+        # options(digits=16)
+        # cor.test(c(2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+        #            1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7),
+        #          c(22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+        #            0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4),
+        #          alternative='two.sided', method='spearman')
+        x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+             1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
+        y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+             0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
+
+        r_exp = 0.6887298747763864  # from cor.test
+
+        r, p = mstats.spearmanr(x, y)
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.004519192910756)
+
+        r, p = mstats.spearmanr(x, y, alternative='greater')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.002259596455378)
+
+        r, p = mstats.spearmanr(x, y, alternative='less')
+        assert_allclose(r, r_exp)
+        assert_allclose(p, 0.9977404035446)
+
+        # intuitive test (with obvious positive correlation)
+        n = 100
+        x = np.linspace(0, 5, n)
+        y = 0.1*x + np.random.rand(n)  # y is positively correlated w/ x
+
+        stat1, p1 = mstats.spearmanr(x, y)
+
+        stat2, p2 = mstats.spearmanr(x, y, alternative="greater")
+        assert_allclose(p2, p1 / 2)  # positive correlation -> small p
+
+        stat3, p3 = mstats.spearmanr(x, y, alternative="less")
+        assert_allclose(p3, 1 - p1 / 2)  # positive correlation -> large p
+
+        assert stat1 == stat2 == stat3
+
+        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+            mstats.spearmanr(x, y, alternative="ekki-ekki")
+
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
                         reason="fails/crashes on ppc64le")
     def test_kendalltau(self):
@@ -362,7 +407,6 @@ class TestCorr:
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
 
-
     def test_kendall_p_exact_medium(self):
         # Test for the exact method with medium samples (some n >= 171)
         # expected values generated using SymPy
@@ -377,7 +421,6 @@ class TestCorr:
         for nc, expected in expectations.items():
             res = mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
-
 
     @pytest.mark.slow
     def test_kendall_p_exact_large(self):
@@ -531,6 +574,15 @@ class TestMoments:
            [True, True, True, True, True],
            [False, False, True, False, False]], dtype=bool))
 
+    def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
+        expect = np.asarray(expect)
+        if shape is not None:
+            expect = np.broadcast_to(expect, shape)
+        assert_array_equal(actual, expect)
+        if dtype is None:
+            dtype = expect.dtype
+        assert actual.dtype == dtype
+
     def test_moment(self):
         y = mstats.moment(self.testcase,1)
         assert_almost_equal(y,0.0,10)
@@ -540,6 +592,33 @@ class TestMoments:
         assert_almost_equal(y,0.0)
         y = mstats.moment(self.testcase,4)
         assert_almost_equal(y,2.5625)
+
+        # check array_like input for moment
+        y = mstats.moment(self.testcase, [1, 2, 3, 4])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # check moment input consists only of integers
+        y = mstats.moment(self.testcase, 0.0)
+        assert_allclose(y, 1.0)
+        assert_raises(ValueError, mstats.moment, self.testcase, 1.2)
+        y = mstats.moment(self.testcase, [1.0, 2, 3, 4.0])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # test empty input
+        y = mstats.moment([])
+        self._assert_equal(y, np.nan, dtype=np.float64)
+        y = mstats.moment(np.array([], dtype=np.float32))
+        self._assert_equal(y, np.nan, dtype=np.float32)
+        y = mstats.moment(np.zeros((1, 0)), axis=0)
+        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+        y = mstats.moment([[]], axis=1)
+        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+        y = mstats.moment([[]], moment=[0, 1], axis=0)
+        self._assert_equal(y, [], shape=(2, 0))
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(mstats.moment(x, 2), ma.masked) # NaN value is ignored
 
     def test_variation(self):
         y = mstats.variation(self.testcase)

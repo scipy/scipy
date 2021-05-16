@@ -265,8 +265,13 @@ class TestKMean:
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
         k = int(1e6)
         for data in datas:
-            np.random.seed(1234)
-            init = _krandinit(data, k)
+            # check that np.random.Generator can be used (numpy >= 1.17)
+            if hasattr(np.random, 'default_rng'):
+                rng = np.random.default_rng(1234)
+            else:
+                rng = np.random.RandomState(1234)
+
+            init = _krandinit(data, k, rng)
             orig_cov = np.cov(data, rowvar=0)
             init_cov = np.cov(init, rowvar=0)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
@@ -309,3 +314,23 @@ class TestKMean:
         ])
         res, _ = kmeans2(data, 2, minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
+
+    def test_kmeans_and_kmeans2_random_seed(self):
+
+        seed_list = [1234, np.random.RandomState(1234)]
+
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        if hasattr(np.random, 'default_rng'):
+            seed_list.append(np.random.default_rng(1234))
+
+        for seed in seed_list:
+            # test for kmeans
+            res1, _ = kmeans(TESTDATA_2D, 2, seed=seed)
+            res2, _ = kmeans(TESTDATA_2D, 2, seed=seed)
+            assert_allclose(res1, res1)  # should be same results
+
+            # test for kmeans2
+            for minit in ["random", "points", "++"]:
+                res1, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
+                res2, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
+                assert_allclose(res1, res1)  # should be same results

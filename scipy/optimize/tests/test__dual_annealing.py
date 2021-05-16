@@ -182,10 +182,14 @@ class TestDualAnnealing:
         func = lambda x: np.sum((x-5) * (x-1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
-        dual_annealing(
-            func,
-            bounds=bounds,
-            local_search_options={"method": "SLSQP", "bounds": bounds})
+
+        with np.testing.suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Values in x were outside bounds ")
+
+            dual_annealing(
+                func,
+                bounds=bounds,
+                local_search_options={"method": "SLSQP", "bounds": bounds})
 
         with np.testing.suppress_warnings() as sup:
             sup.record(RuntimeWarning, "Method CG cannot handle ")

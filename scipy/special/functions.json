@@ -535,7 +535,7 @@
         }
     },
     "expit": {
-        "_logit.h": {
+        "_logit.h++": {
             "expit": "d->d",
             "expitf": "f->f",
             "expitl": "g->g"
@@ -929,7 +929,7 @@
         }
     },
     "logit": {
-        "_logit.h": {
+        "_logit.h++": {
             "logit": "d->d",
             "logitf": "f->f",
             "logitl": "g->g"
