@@ -3324,6 +3324,14 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         Trimmed version of array `a`. The order of the trimmed content is
         undefined.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.arange(20)
+    >>> b = stats.trim1(a, 0.5, 'left')
+    >>> b
+    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+
     """
     a = np.asarray(a)
     if axis is None:
