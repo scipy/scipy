@@ -1143,6 +1143,17 @@ def hermite(n, monic=False):
     The polynomials :math:`H_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2}`.
 
+    Examples
+    --------
+    >>> from scipy import special
+    >>> p_monic = special.hermite(3, monic= True)
+    >>> p_monic
+    poly1d([ 1. ,  0. , -1.5,  0. ])
+
+    >>> p_not_monic = special.hermite(3, monic= False)
+    >>> p_not_monic
+    poly1d([  8.,   0., -12.,   0.])
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
