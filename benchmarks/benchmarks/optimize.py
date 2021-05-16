@@ -3,7 +3,7 @@ import time
 import inspect
 import json
 import traceback
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 import numpy as np
 
@@ -433,7 +433,7 @@ class BenchGlobal(Benchmark):
     """
     timeout = 300
 
-    _functions = OrderedDict([
+    _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
         if (issubclass(item[1], gbf.Benchmark) and
             item[0] not in ('Benchmark') and

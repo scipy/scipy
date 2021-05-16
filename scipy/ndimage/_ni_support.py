@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections.abc import Iterable
+import warnings
 import numpy
 
 
@@ -81,10 +82,11 @@ def _get_output(output, input, shape=None, complex_output=False):
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         if complex_output and numpy.dtype(output).kind != 'c':
-            raise RuntimeError("output must have complex dtype")
+            warnings.warn("promoting specified output dtype to complex")
+            output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        output = numpy.typeDict[output]
+        output = numpy.sctypeDict[output]
         if complex_output and numpy.dtype(output).kind != 'c':
             raise RuntimeError("output must have complex dtype")
         output = numpy.zeros(shape, dtype=output)

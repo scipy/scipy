@@ -259,7 +259,8 @@ def lobpcg(A, X,
     Initial guess for eigenvectors, should have linearly independent
     columns. Column dimension = number of requested eigenvalues.
 
-    >>> X = np.random.rand(n, 3)
+    >>> rng = np.random.default_rng()
+    >>> X = rng.random((n, 3))
 
     Preconditioner in the inverse of A in this example:
 

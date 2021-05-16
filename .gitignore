@@ -17,6 +17,8 @@
 *.tmp
 *.vim
 tags
+.theia/
+.vscode/
 
 # Compiled source #
 ###################
@@ -115,7 +117,7 @@ Thumbs.db
 # Documentation generated files #
 #################################
 doc/frontpage/build
-doc/source/generated
+doc/source/reference/generated
 
 # Things specific to this project #
 ###################################
@@ -194,6 +196,7 @@ scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
+scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
 scipy/optimize/minpack2/minpack2module.c
@@ -203,7 +206,9 @@ scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
+scipy/signal/_spectral.cpp
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
 scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
@@ -270,9 +275,15 @@ scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/biasedurn.cxx
+scipy/stats/biasedurn.pyx
+scipy/stats/_sobol.c
+scipy/stats/_qmc_cy.cxx
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
+scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
+scipy/optimize/_highs/cython/src/_highs_constants.cxx

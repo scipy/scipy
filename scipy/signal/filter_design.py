@@ -388,8 +388,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     rows of an array with shape (2, 25). For this demonstration, we'll
     use random data:
 
-    >>> np.random.seed(42)
-    >>> b = np.random.rand(2, 25)
+    >>> rng = np.random.default_rng()
+    >>> b = rng.random((2, 25))
 
     To compute the frequency response for these two filters with one call
     to `freqz`, we must pass in ``b.T``, because `freqz` expects the first
@@ -2214,7 +2214,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     if wp.shape[0] == 2:
         if wp[0] < 0 or ws[0] < 0:
             raise ValueError("Values for wp, ws can't be negative")
-        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+        elif 1 < wp[1] or 1 < ws[1]:
+            raise ValueError("Values for wp, ws can't be larger than 1")
+        elif not((ws[0] < wp[0] and wp[1] < ws[1]) or
             (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                          " or vice versa")

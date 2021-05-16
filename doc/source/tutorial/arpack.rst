@@ -94,10 +94,10 @@ simplicity, we'll construct a symmetric, positive-definite matrix.
     >>> from scipy.linalg import eig, eigh
     >>> from scipy.sparse.linalg import eigs, eigsh
     >>> np.set_printoptions(suppress=True)
+    >>> rng = np.random.default_rng()
     >>>
-    >>> np.random.seed(0)
-    >>> X = np.random.random((100,100)) - 0.5
-    >>> X = np.dot(X, X.T) #create a symmetric matrix
+    >>> X = rng.random((100, 100)) - 0.5
+    >>> X = np.dot(X, X.T)  # create a symmetric matrix
 
 We now have a symmetric matrix ``X``, with which to test the routines. First,
 compute a standard eigenvalue decomposition using ``eigh``:
@@ -111,9 +111,9 @@ of ``X`` and compare them to the known results:
 
     >>> evals_large, evecs_large = eigsh(X, 3, which='LM')
     >>> print(evals_all[-3:])
-    [29.1446102  30.05821805 31.19467646]
+    [29.22435321 30.05590784 30.58591252]
     >>> print(evals_large)
-    [29.1446102  30.05821805 31.19467646]
+    [29.22435321 30.05590784 30.58591252]
     >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
     array([[-1.  0.  0.],       # may vary (signs)
            [ 0.  1.  0.],
@@ -137,9 +137,9 @@ convergence:
 
     >>> evals_small, evecs_small = eigsh(X, 3, which='SM', tol=1E-2)
     >>> evals_all[:3]
-    array([0.0003783, 0.00122714, 0.00715878])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> evals_small
-    array([0.00037831, 0.00122714, 0.00715881])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> np.dot(evecs_small.T, evecs_all[:,:3])
     array([[ 0.99999999  0.00000024 -0.00000049],    # may vary (signs)
            [-0.00000023  0.99999999  0.00000056],
@@ -150,9 +150,9 @@ to increase the maximum number of iterations (``maxiter``) from 1000 to 5000:
 
     >>> evals_small, evecs_small = eigsh(X, 3, which='SM', maxiter=5000)
     >>> evals_all[:3]
-    array([0.0003783, 0.00122714, 0.00715878])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> evals_small
-    array([0.0003783, 0.00122714, 0.00715878])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> np.dot(evecs_small.T, evecs_all[:,:3])
     array([[ 1.  0.  0.],           # may vary (signs)
            [-0.  1.  0.],
@@ -169,9 +169,9 @@ small eigenvalues :math:`\lambda` become large eigenvalues :math:`\nu`.
 
     >>> evals_small, evecs_small = eigsh(X, 3, sigma=0, which='LM')
     >>> evals_all[:3]
-    array([0.0003783, 0.00122714, 0.00715878])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> evals_small
-    array([0.0003783, 0.00122714, 0.00715878])
+    array([0.00053181, 0.00298319, 0.01387821])
     >>> np.dot(evecs_small.T, evecs_all[:,:3])
     array([[ 1.  0.  0.],    # may vary (signs)
            [ 0. -1. -0.],
@@ -190,9 +190,9 @@ the rest:
     >>> evals_mid, evecs_mid = eigsh(X, 3, sigma=1, which='LM')
     >>> i_sort = np.argsort(abs(1. / (1 - evals_all)))[-3:]
     >>> evals_all[i_sort]
-    array([1.16577199, 0.85081388, 1.06642272])
+    array([0.94164107, 1.05464515, 0.99090277])
     >>> evals_mid
-    array([0.85081388, 1.06642272, 1.16577199])
+    array([0.94164107, 0.99090277, 1.05464515])
     >>> print(np.dot(evecs_mid.T, evecs_all[:,i_sort]))
     array([[-0.  1.  0.],     # may vary (signs)
            [-0. -0.  1.],
@@ -232,18 +232,18 @@ the dense matrix:
    ...     def _rmatvec(self, x):
    ...         return self.diag*x
 
-   >>> np.random.seed(0)
    >>> N = 100
-   >>> d = np.random.normal(0, 1, N).astype(np.float64)
+   >>> rng = np.random.default_rng()
+   >>> d = rng.normal(0, 1, N).astype(np.float64)
    >>> D = np.diag(d)
    >>> Dop = Diagonal(d, dtype=np.float64)
 
    >>> evals_all, evecs_all = eigh(D)
    >>> evals_large, evecs_large = eigsh(Dop, 3, which='LA', maxiter=1e3)
    >>> evals_all[-3:]
-   array([1.9507754 , 2.2408932 , 2.26975462])
+   array([1.53092498, 1.77243671, 2.00582508])
    >>> evals_large
-   array([1.9507754 , 2.2408932 , 2.26975462])
+   array([1.53092498, 1.77243671, 2.00582508])
    >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
    array([[-1.  0.  0.],     # may vary (signs)
           [-0. -1.  0.],
