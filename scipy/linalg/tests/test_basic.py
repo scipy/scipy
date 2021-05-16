@@ -508,37 +508,87 @@ class TestSolve:
 
     def test_simple(self):
         a = [[1, 20], [-30, 4]]
-        for b in ([[1, 0], [0, 1]], [1, 0],
-                  [[2, 1], [-30, 4]]):
+        for b in ([[1, 0], [0, 1]],
+                  [1, 0],
+                  [[2, 1], [-30, 4]]
+                  ):
             x = solve(a, b)
-            assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym(self):
-        a = [[2, 3], [3, 5]]
-        for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]], [1, 0]):
-                x = solve(a, b, sym_pos=1, lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym_complex(self):
-        a = [[5, 2], [2, 4]]
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
-                  ]:
-            x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_simple_complex(self):
         a = array([[5, 2], [2j, 4]], 'D')
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
                   [1, 0j],
                   array([1, 0], 'D'),
-                  ]:
+                  ):
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos(self):
+        a = [[2, 3], [3, 5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='pos', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos_complexb(self):
+        a = [[5, 2], [2, 4]]
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
+                  ):
+            x = solve(a, b, assume_a='pos')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='sym', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complexb(self):
+        a = [[5, 2], [2, -4]]
+        for b in ([1j, 0],
+                  [[1j, 1j],[0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complex(self):
+        a = [[5, 2+1j], [2+1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_her_actuallysym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0],
+                      [1j, 0],
+                      ):
+                x = solve(a, b, assume_a='her', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+            
+    def test_simple_her(self):
+        a = [[5, 2+1j], [2-1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='her')
+            assert_array_almost_equal(dot(a, x), b)
+
+            
 
     def test_nils_20Feb04(self):
         n = 2

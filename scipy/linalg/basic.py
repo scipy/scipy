@@ -170,6 +170,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         raise ValueError('{} is not a recognized matrix structure'
                          ''.format(assume_a))
 
+    # for a real matrix, describe it as "symmetric", not "hermitian"
+    # (lapack doesn't know what to do with real hermitian matrices)
+    if assume_a == 'her' and not np.iscomplexobj(a1):
+        assume_a = 'sym'
+
     # Deprecate keyword "debug"
     if debug is not None:
         warn('Use of the "debug" keyword is deprecated '
@@ -1234,7 +1239,7 @@ lstsq.default_lapack_driver = 'gelsd'
 
 
 def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
-          cond=None, rcond=None):
+         cond=None, rcond=None):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
