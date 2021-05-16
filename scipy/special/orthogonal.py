@@ -1414,9 +1414,9 @@ def gegenbauer(n, alpha, monic=False):
     >>> import numpy as np
 
     >>> p = special.gegenbauer(3, 0.5, monic=False)
-    >>> p # Show that the return value is a poly1d object
+    >>> p
     poly1d([ 2.5,  0. , -1.5,  0. ])
-    >>> p(1) # Evaluate p to 1
+    >>> p(1)
     1.0
     >>> x = np.linspace(-3, 3, 400) # Choose x in (-3,3)
     >>> y = p(x) # Evaluate p to x
