@@ -8389,6 +8389,17 @@ add_newdoc("psi",
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
 
+    Examples
+    --------
+    >>> from scipy.special import psi
+    >>> z = 3 + 4j
+    >>> psi(z)
+    (1.55035981733341+1.0105022091860445j)
+
+    Verify psi(z) = psi(z + 1) - 1/z:
+
+    >>> psi(z + 1) - 1/z
+    (1.55035981733341+1.0105022091860445j)
     """)
 
 add_newdoc("radian",
