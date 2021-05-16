@@ -1476,7 +1476,7 @@ def bernoulli(n):
     >>> n = np.arange(1, 5)
     >>> -n * zeta(1 - n)
     array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
-    
+
     Note that, in the notation used in the wikipedia article,
       `bernoulli` computes B_n^- (i.e. it used the convention that
       B_1 is -1/2).  The relation given above is for B_n^+, so the
