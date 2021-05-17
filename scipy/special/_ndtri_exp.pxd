@@ -99,7 +99,7 @@ ndtri itself, leading to an error profile that is still favorable.
 
 import cython
 from libc.float cimport DBL_MAX
-from libc.math cimport exp, expm1, log, log1p, sqrt
+from libc.math cimport exp, expm1, log, log1p, sqrt, M_SQRT2
 
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
@@ -152,7 +152,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     if y >= -DBL_MAX * 0.5:
         x = sqrt(-2 * y)
     else:
-        x = 1.4142135623730950 * sqrt(-y) # sqrt(-2 * y)
+        x = M_SQRT2 * sqrt(-y) # sqrt(-2 * y)
     x0 = x - log(x) / x
     z = 1 / x
     if x < 8.0:
