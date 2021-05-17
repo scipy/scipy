@@ -99,11 +99,14 @@ ndtri itself, leading to an error profile that is still favorable.
 
 import cython
 from libc.float cimport DBL_MAX
-from libc.math cimport exp, expm1, log, log1p, sqrt, HUGE_VAL
+from libc.math cimport exp, expm1, log, log1p, sqrt
 
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
     double p1evl(double x, const double coef[], int N) nogil
+
+cdef extern from "numpy/npy_math.h":
+    double NPY_INFINITY
 
 from ._cephes cimport ndtri
 
@@ -162,7 +165,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
 cdef inline double ndtri_exp(double y) nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
     if y < -DBL_MAX:
-        return -HUGE_VAL
+        return -NPY_INFINITY
     elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))
