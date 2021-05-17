@@ -411,6 +411,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     ...    plt.step(s, np.squeeze(x_d), label=method, where='post')
     >>> plt.axis([t[0], t[-1], x[0], 1.4])
     >>> plt.legend(loc='best')
+    >>> plt.tight_layout()
     >>> plt.show()
 
     References
