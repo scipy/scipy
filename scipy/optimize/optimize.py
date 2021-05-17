@@ -1091,36 +1091,30 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     Examples
     --------
     >>> from scipy.optimize import fmin_bfgs
-
-    >>> def rosenbrock(x):
-    ...     # Rosenbrock Function,
-    ...     # which has a global minimum 0 at (1, 1)
-    ...     # https://en.wikipedia.org/wiki/Rosenbrock_function
-    ...     return (1-x[0])**2 + 100*(x[1]-x[0]**2)**2
-
-    >>> x0 = np.array([-3, -4])
-    >>> fmin_bfgs(rosenbrock, x0)
-    Optimization terminated successfully.
-         Current function value: 0.000000
-         Iterations: 66                    # may vary
-         Function evaluations: 246         # may vary
-         Gradient evaluations: 82          # may vary
-    array([0.99999551, 0.99999101])        # may vary
-
-    >>> def rosenbrock_grad(x):
-    ...     # Gradient of Rosenbrock Function
-    ...     grad_f = np.zeros_like(x)
-    ...     grad_f[0] = -2*(1-x[0]) - 400*x[0]*(x[1]-x[0]**2)
-    ...     grad_f[1] = 200*(x[1]-x[0]**2)
-    ...     return grad_f
+    >>> def quadratic_cost(x, Q):
+    ...     return x@Q@x
     ...
-    >>> fmin_bfgs(rosenbrock, x0, rosenbrock_grad)
+    >>> x0 = np.array([-3, -4])
+    >>> cost_weight =  np.diag([1., 10.])
+    >>> # Note that a trailing comma is necessary for a tuple with single element
+    >>> fmin_bfgs(quadratic_cost, x0, args=(cost_weight,))
     Optimization terminated successfully.
             Current function value: 0.000000
-            Iterations: 68
-            Function evaluations: 84
-            Gradient evaluations: 84
-    array([0.99999991, 0.99999982])
+            Iterations: 7                   # may vary
+            Function evaluations: 24        # may vary
+            Gradient evaluations: 8         # may vary
+    array([ 2.85169950e-06, -4.61820139e-07])
+
+    >>> def quadratic_cost_grad(x, Q):
+    ...     return 2*Q@x
+    ...
+    >>> fmin_bfgs(quadratic_cost, x0, quadratic_cost_grad, args=(cost_weight,))
+    Optimization terminated successfully.
+            Current function value: 0.000000
+            Iterations: 7
+            Function evaluations: 8
+            Gradient evaluations: 8
+    array([ 2.85916637e-06, -4.54371951e-07])
 
     See also
     --------
