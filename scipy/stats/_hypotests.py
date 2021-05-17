@@ -1012,8 +1012,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     In order to compute Boschloo's exact test, we are using the Fisher's
     pvalue as a statistic.
 
-    This function's complexity is :math:`O(n c_1 c_2)`, where `n` is the
-    number of sample points.
+    Boschloo's and Barnard's are both more powerful than Fisher's exact
+    test. From some local testing, it appears that Boschloo is very slightly
+    more powerfull than Barnard's procedure, but a lot slower.
 
     .. versionadded:: 1.7.0
 
