@@ -9666,21 +9666,36 @@ add_newdoc("ndtri_exp",
     Parameters
     ----------
     y : array_like of float
-        y <= 0
+
+    Returns
+    -------
+    scalar or ndarray
+        Inverse of the log CDF of the standard normal distribution, evaluated
+        at y.
 
     Examples
     --------
     >>> import scipy.special as sc
-    >>> sc.ndtri(np.exp(-1))
-    -0.33747496376420244
+
+    `ndtri_exp` agrees with the naive implementation when the latter does
+    not suffer from underflow.
+
     >>> sc.ndtri_exp(-1)
     -0.33747496376420244
+    >>> sc.ndtri(np.exp(-1))
+    -0.33747496376420244
+
+    For extreme values of y, the naive approach fails
+
     >>> sc.ndtri(np.exp(-800))
     -inf
-    >>> sc.ndtri_exp(-800)
-    -39.88469483825668
     >>> sc.ndtri(np.exp(-1e-20))
     inf
+
+    whereas `ndtri_exp` is still able to compute the result to high precision.
+
+    >>> sc.ndtri_exp(-800)
+    -39.88469483825668
     >>> sc.ndtri_exp(-1e-20)
     9.262340089798409
 
