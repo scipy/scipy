@@ -58,7 +58,8 @@ def configuration(parent_package='',top_path=None):
         from pythran.dist import PythranExtension
         ext = PythranExtension(
             'scipy.interpolate._rbfinterp_pythran',
-            sources=['scipy/interpolate/_rbfinterp_pythran.py']
+            sources=['scipy/interpolate/_rbfinterp_pythran.py'],
+            config=['compiler.blas=none']
             )
         config.ext_modules.append(ext)
 

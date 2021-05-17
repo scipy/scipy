@@ -209,13 +209,17 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
     xeps = x*epsilon
     xhat = (x - shift)/scale
 
-    out = np.empty((q, s), dtype=float)
+    out = np.zeros((q, s), dtype=float)
     vec = np.empty((p + r,), dtype=float)
     for i in range(q):
         kernel_vector(xeps[i], yeps, kernel_func, vec[:p])
         polynomial_vector(xhat[i], powers, vec[p:])
+        # Compute the dot product between coeffs and vec. Do not use np.dot
+        # because that introduces build complications with BLAS (see
+        # https://github.com/serge-sans-paille/pythran/issues/1346)
         for j in range(s):
-            out[i, j] = np.dot(coeffs[:, j], vec)
+            for k in range(p + r):
+                out[i, j] += coeffs[k, j]*vec[k]
 
     return out
 
