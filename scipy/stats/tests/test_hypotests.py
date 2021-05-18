@@ -1,19 +1,20 @@
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
 from itertools import product
+
+import numpy as np
+import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
-
-import pytest
 from pytest import raises as assert_raises
+
+import scipy.stats as stats
+from scipy.stats import distributions
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
-import scipy.stats as stats
-from scipy.stats import distributions
 from .common_tests import check_named_results
 
 
@@ -1019,8 +1020,8 @@ class TestBoschlooExact:
             pytest.param(
                 [[0, 1], [3, 2]], (0.5, 0.34375),
                 marks=pytest.mark.xfail_on_32bit(
-                    reason="reason: small numerical error when calculating "
-                           "fisher stat"),
+                    "This test is sensitive to machine epsilon level",
+                    reason="numerical error"),
             ),
             ([[0, 2], [6, 4]], (0.2272727, 0.09850981)),
             ([[2, 7], [8, 2]], (0.01852173, 0.009886142)),
@@ -1086,8 +1087,8 @@ class TestBoschlooExact:
             pytest.param(
                 [[0, 1], [3, 2]], (0.5, 0.6875),
                 marks=pytest.mark.xfail_on_32bit(
-                    reason="reason: small numerical error when calculating "
-                           "fisher stat"),
+                    "This test is sensitive to machine epsilon level",
+                    reason="numerical error"),
             ),
             ([[0, 2], [6, 4]], (0.2272727, 0.1970196)),
             ([[2, 7], [8, 2]], (0.01852173, 0.01977228)),
