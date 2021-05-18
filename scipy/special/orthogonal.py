@@ -1421,10 +1421,11 @@ def gegenbauer(n, alpha, monic=False):
     >>> x = np.linspace(-3, 3, 400)
     >>> y = p(x)
 
-    >>> plt.plot(x, y)
-    >>> plt.title("Gegenbauer (ultraspherical) polynomial of degree 3")
-    >>> plt.xlabel("x")
-    >>> plt.ylabel("G_3(x)")
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y)
+    >>> ax.set_title("Gegenbauer (ultraspherical) polynomial of degree 3")
+    >>> ax.set_xlabel("x")
+    >>> ax.set_ylabel("G_3(x)")
     >>> plt.show()
 
     """
