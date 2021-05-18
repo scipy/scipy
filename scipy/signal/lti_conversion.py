@@ -354,7 +354,8 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
             * gbt: generalized bilinear transformation
             * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+            * euler: Euler (or forward differencing) method ("gbt" with
+              alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default)
             * foh: first-order hold (*versionadded: 1.3.0*)
@@ -369,12 +370,12 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     sysd : a tuple containing the discrete system or an instance of `dlti`
         If the input is a bare instance of `lti`, the output will be a bare
         instance of `dlti`. Otherwise, based on the input tuple type, the
-        output tuple will be of the form
+        output tuple will be of the form:
 
-        * (instance of `dlti`) for instance of `lti` input
-        * (num, den, dt) for transfer function input
-        * (zeros, poles, gain, dt) for zeros-poles-gain input
-        * (A, B, C, D, dt) for state-space system input
+            * (instance of `dlti`) for instance of `lti` input
+            * (num, den, dt) for transfer function input
+            * (zeros, poles, gain, dt) for zeros-poles-gain input
+            * (A, B, C, D, dt) for state-space system input
 
     Notes
     -----
