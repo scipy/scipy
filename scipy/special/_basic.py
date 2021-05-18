@@ -1478,9 +1478,9 @@ def bernoulli(n):
     array([ 0.5       ,  0.16666667, -0.        , -0.03333333])
 
     Note that, in the notation used in the wikipedia article,
-      `bernoulli` computes B_n^- (i.e. it used the convention that
-      B_1 is -1/2).  The relation given above is for B_n^+, so the
-      sign of 0.5 does not match the output of `bernoulli(4)`.
+    `bernoulli` computes ``B_n^-`` (i.e. it used the convention that
+    B_1 is -1/2).  The relation given above is for ``B_n^+``, so the
+    sign of 0.5 does not match the output of `bernoulli(4)`.
 
     """
     if not isscalar(n) or (n < 0):
