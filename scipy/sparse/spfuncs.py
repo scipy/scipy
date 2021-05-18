@@ -8,10 +8,6 @@ from .csc import isspmatrix_csc
 from ._sparsetools import csr_count_blocks
 
 
-def extract_diagonal(A):
-    raise NotImplementedError('use .diagonal() instead')
-
-
 def estimate_blocksize(A,efficiency=0.7):
     """Attempt to determine the blocksize of a sparse matrix
 
