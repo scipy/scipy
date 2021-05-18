@@ -1449,7 +1449,7 @@ def bernoulli(n):
     Parameters
     ----------
     n : int
-        Indicated the number of terms in the Bernoulli series to generate
+        Indicated the number of terms in the Bernoulli series to generate.
 
     Returns
     -------
