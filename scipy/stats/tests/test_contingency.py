@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-         assert_array_almost_equal, assert_approx_equal, assert_allclose)
+                           assert_array_almost_equal, assert_approx_equal,
+                           assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 from scipy.special import xlogy
@@ -169,10 +170,12 @@ def test_chi2_contingency_R():
 
 def test_chi2_contingency_g():
     c = np.array([[15, 60], [15, 90]])
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=False)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=False)
     assert_allclose(g, 2*xlogy(c, c/e).sum())
 
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=True)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=True)
     c_corr = c + np.array([[-0.5, 0.5], [0.5, -0.5]])
     assert_allclose(g, 2*xlogy(c_corr, c_corr/e).sum())
 
@@ -206,7 +209,8 @@ def test_bad_association_args():
     # chi2_contingency exception
     assert_raises(ValueError, association, [[-1, 10], [1, 2]], 'cramer')
     # Invalid Array Item Data Type
-    assert_raises(ValueError, association, [[1, 2], ["dd", 4]], 'cramer')
+    assert_raises(ValueError, association,
+                  np.array([[1, 2], ["dd", 4]], dtype=object), 'cramer')
 
 
 @pytest.mark.parametrize('stat, expected',
