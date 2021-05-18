@@ -1785,8 +1785,8 @@ _METRIC_INFOS = [
         canonical_name='canberra',
         aka={'canberra'},
         dist_func=canberra,
-        cdist_func=CDistMetricWrapper('canberra'),
-        pdist_func=PDistMetricWrapper('canberra'),
+        cdist_func=_distance_pybind.cdist_canberra,
+        pdist_func=_distance_pybind.pdist_canberra,
     ),
     MetricInfo(
         canonical_name='chebyshev',
