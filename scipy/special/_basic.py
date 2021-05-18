@@ -1454,7 +1454,7 @@ def bernoulli(n):
     Returns
     -------
     ndarray
-        The Bernoulli numbers [B(0), B(1), ..., B(n)].
+        The Bernoulli numbers ``[B(0), B(1), ..., B(n)]``.
 
     References
     ----------
