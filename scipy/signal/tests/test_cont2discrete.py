@@ -347,6 +347,7 @@ class TestC2D:
         assert_allclose(den, den1, rtol=1e-13)
         assert_allclose(den, den2, rtol=1e-13)
 
+
 class TestC2dLti:
     def test_c2d_ss(self):
         # StateSpace
@@ -355,12 +356,34 @@ class TestC2dLti:
         C = np.array([[1, 0]])
         D = 0
 
+        dt = 0.05  # Sampling time
+
+        # Expected results
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
 
+        # Lti (ss)
         sys_ssc = lti(A, B, C, D)
-        sys_ssd = sys_ssc.to_discrete(0.05)
+
+        # Method
+        sys_ssd = sys_ssc.to_discrete(dt)
+
+        assert_allclose(sys_ssd.A, A_res)
+        assert_allclose(sys_ssd.B, B_res)
+        assert_allclose(sys_ssd.C, C)
+        assert_allclose(sys_ssd.D, D)
+
+        # Support of bare lti in cont2discrete() function
+        sys_ssd = c2d(sys_ssc, dt)
+
+        assert_allclose(sys_ssd.A, A_res)
+        assert_allclose(sys_ssd.B, B_res)
+        assert_allclose(sys_ssd.C, C)
+        assert_allclose(sys_ssd.D, D)
+
+        # Support of lti in a tuple in cont2discrete() function
+        sys_ssd, = c2d((sys_ssc,), dt)  # Return a tuple
 
         assert_allclose(sys_ssd.A, A_res)
         assert_allclose(sys_ssd.B, B_res)
@@ -368,17 +391,36 @@ class TestC2dLti:
         assert_allclose(sys_ssd.D, D)
 
     def test_c2d_tf(self):
+        # Transfer function
+        num = [0.5, 0.3]
+        den = [1.0, 0.4]
 
-        sys = lti([0.5, 0.3], [1.0, 0.4])
-        sys = sys.to_discrete(0.005)
+        dt = 0.05  # Sampling time
 
-        # Matlab results
+        # Expected results (Matlab)
         num_res = np.array([0.5, -0.485149004980066])
         den_res = np.array([1.0, -0.980198673306755])
 
-        # Somehow a lot of numerical errors
-        assert_allclose(sys.den, den_res, atol=0.02)
-        assert_allclose(sys.num, num_res, atol=0.02)
+        # Lti (tf)
+        sys_tfc = lti(num, den)
+
+        # Method
+        sys_tfd = sys_tfc.to_discrete(dt)
+
+        assert_allclose(sys_tfd.num, num_res)
+        assert_allclose(sys_tfd.den, den_res)
+
+        # Support of bare lti in cont2discrete() function
+        sys_tfd = c2d(sys_tfc, dt)
+
+        assert_allclose(sys_tfd.num, num_res)
+        assert_allclose(sys_tfd.den, den_res)
+
+        # Support of lti in a tuple in cont2discrete() function
+        sys_tfd, = c2d((sys_tfc,), dt)  # Return a tuple
+
+        assert_allclose(sys_tfd.num, num_res)
+        assert_allclose(sys_tfd.den, den_res)
 
 
 class TestC2dInvariants:
