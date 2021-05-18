@@ -1470,8 +1470,8 @@ def bernoulli(n):
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
 
     The wikipedia article points out the relationship between the
-      Bernoulli numbers and the zeta function, B_n^+ = -n * zeta(1 - n)
-      for n > 0:
+    Bernoulli numbers and the zeta function, ``B_n^+ = -n * zeta(1 - n)``
+    for ``n > 0``:
 
     >>> n = np.arange(1, 5)
     >>> -n * zeta(1 - n)
