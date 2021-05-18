@@ -3,7 +3,14 @@
 from typing import NamedTuple
 from warnings import warn
 from textwrap import dedent
+from shutil import copyfile
+import pathlib
+import os
 
+from gen_func_defs_pxd import (  # type: ignore
+    _gen_func_defs_pxd)
+from _info import (  # type: ignore
+    _x_funcs, _no_x_funcs, _klass_mapper)
 
 class _MethodDef(NamedTuple):
     ufunc_name: str
@@ -139,3 +146,32 @@ func{ii}[{jj}] = <void*>{boost_fun}[{boost_tmpl}]
                     0  # unused
                 )
                 '''))
+
+
+if __name__ == '__main__':
+    # create target directory
+    _boost_dir = pathlib.Path(__file__).resolve().parent.parent
+    src_dir = _boost_dir / 'src'
+    src_dir.mkdir(exist_ok=True, parents=True)
+
+    # copy contents of include into directory to satisfy Cython
+    # PXD include conditions
+    inc_dir = _boost_dir / 'include'
+    src = 'templated_pyufunc.pxd'
+    copyfile(inc_dir / src, src_dir / src)
+
+    # generate the PXD and PYX wrappers
+    _gen_func_defs_pxd(
+        f'{src_dir}/func_defs.pxd',
+        x_funcs=_x_funcs,
+        no_x_funcs=_no_x_funcs)
+    for b, s in _klass_mapper.items():
+        _ufunc_gen(
+            scipy_dist=s.scipy_name,
+            types=['NPY_FLOAT', 'NPY_DOUBLE', 'NPY_LONGDOUBLE'],
+            ctor_args=s.ctor_args,
+            filename=f'{src_dir}/{s.scipy_name}_ufunc.pyx',
+            boost_dist=f'{b}_distribution',
+            x_funcs=_x_funcs,
+            no_x_funcs=_no_x_funcs,
+        )
