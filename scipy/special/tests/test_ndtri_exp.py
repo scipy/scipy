@@ -17,12 +17,12 @@ def uniform_random_points():
 
 
 class TestNdtriExp:
-    """Tests that ndtri_exp is sufficiently close to an inverse of log_ndtr
+    """Tests that ndtri_exp is sufficiently close to an inverse of log_ndtr.
 
-    Separate tests for the five intervals (-inf, -10),
-    [-10, -2), [-2, -0.14542), [-0.14542, -1e-6), [-1e-6, 0).
+    We have separate tests for the five intervals (-inf, -10),
+    [-10, -2), [-2, -0.14542), [-0.14542, -1e-6), and [-1e-6, 0).
     ndtri_exp(y) is computed in three different ways depending on if y
-    is in (-inf, -2), [-2, log(1 - exp(-2))], [log(1 - exp(-2), 0).
+    is in (-inf, -2), [-2, log(1 - exp(-2))], or [log(1 - exp(-2), 0).
     Each of these intervals is given its own test with two additional tests
     for handling very small values and values very close to zero.
     """
