@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from scipy._lib._util import DecimalNumber
 
 
 def _cy_wrapper_centered_discrepancy(
@@ -35,5 +36,5 @@ def _cy_wrapper_l2_star_discrepancy(
 def _cy_wrapper_update_discrepancy(
         x_new_view: npt.ArrayLike,
         sample_view: npt.ArrayLike,
-        initial_disc: float,
+        initial_disc: DecimalNumber,
 ) -> float: ...
