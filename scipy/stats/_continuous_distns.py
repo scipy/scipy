@@ -9403,13 +9403,13 @@ class studentized_range_gen(rv_continuous):
     0, 7.41058083802274
 
     >>> from scipy.interpolate import interp1d
-    >>> random_state = np.random.default_rng(123)
+    >>> rng = np.random.default_rng()
     >>> xs = np.linspace(a, b, 50)
     >>> cdf = studentized_range.cdf(xs, k, df)
     # Create an interpolant of the inverse CDF
     >>> ppf = interp1d(cdf, xs, fill_value='extrapolate')
     # Perform inverse transform sampling using the interpolant
-    >>> r = ppf(random_state.uniform(size=1000))
+    >>> r = ppf(rng.uniform(size=1000))
 
     And compare the histogram:
 
