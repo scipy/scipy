@@ -9010,12 +9010,12 @@ def _argus_phi(chi):
     """
     Utility function for the argus distribution used in the pdf, sf and
     moment calculation.
-    For small chi, use gammainc for better precision as for all x > 0:
+    Note that for all x > 0:
     gammainc(1.5, x**2/2) = 2 * (_norm_cdf(x) - x * _norm_pdf(x) - 0.5).
-    this can be verified directly by noting that the cdf of Gamma(1.5) can
+    This can be verified directly by noting that the cdf of Gamma(1.5) can
     be written as erf(sqrt(x)) - 2*sqrt(x)*exp(-x)/sqrt(Pi).
-    We use gammainc for all chi since performance is slightly better than
-    using the normal pdf / cdf.
+    We use gammainc instead of the usual definition because it is more precise
+    for small chi.
     """
     return sc.gammainc(1.5, chi**2/2) / 2
 
@@ -9169,13 +9169,19 @@ class argus_gen(rv_continuous):
             return np.sqrt(1 - z*z / chi**2)
 
     def _stats(self, chi):
+        # need to ensure that dtype is float
+        # otherwise the mask below does not work for integers
+        chi = np.asarray(chi, dtype=float)
         phi = _argus_phi(chi)
         m = np.sqrt(np.pi/8) * chi * sc.ive(1, chi**2/4) / phi
-        # compute second moment, use Taylor expansion for small chi (<= 0.01)
+        # compute second moment, use Taylor expansion for small chi (<= 0.1)
+        mu2 = np.empty_like(chi)
+        mask = chi > 0.1
+        c = chi[mask]
+        mu2[mask] = 1 - 3 / c**2 + c * _norm_pdf(c) / phi[mask]
+        c = chi[~mask]
         coef = [-358/65690625, 0, -94/1010625, 0, 2/2625, 0, 6/175, 0, 0.4]
-        mu2 = _lazywhere(chi > 0.1, (chi,),
-                        lambda c: 1 - 3/c**2 + c*_norm_pdf(c)/_argus_phi(c),
-                        f2=lambda c: np.polyval(coef, c))
+        mu2[~mask] = np.polyval(coef, c)
         return m, mu2 - m**2, None, None
 
 
