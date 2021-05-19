@@ -17,8 +17,9 @@ For -2 <= y <= log(1 - exp(-2)),  ndtri_exp is computed as ndtri(exp(y)).
 For 0 < p < exp(-2), the cephes implementation of ndtri uses an approximation
 for ndtri(p) which is a function of z = sqrt(-2.0 * log(p)). Letting
 y = log(p), for y < -2, ndtri_exp uses this approximation in log(p) directly.
-This allows this implementation to achieve high precision for very small y,
-whereas ndtri(exp(y)) becomes inf when exp(y) underflows for y < ~ -745.1.
+This allows the implementation to achieve high precision for very small y,
+whereas ndtri(exp(y)) evaluates to infinity. This is because  exp(y) underflows
+for y < ~ -745.1.
 
 When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
 of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
@@ -53,39 +54,39 @@ version 9.3.0 targeting x86_64-linux-gnu we've observed the following
  ndtri(1e-16)     = -8.222082216130435        ''
 -ndtri(1 - 1e-16) = -8.209536151601387        0.0015
 
-If expm1 is correctly rounded for y in [log(1 - exp(-2), 0), ndtri_exp(y)
-for y > log(1 - exp(-2)) should have the same relative error to ndtri(p)
-for p > 1 - exp(-2), though as seen above, even then this error may be higher
-than desired. IEEE-754 provides no guarantee on the accuracy of expm1
-however, therefore accuracy of ndtri_exp in this range is platform
-dependent.
+If expm1 is correctly rounded for y in [log(1 - exp(-2), 0), then ndtri_exp(y)
+should have the same relative error as ndtri(p) for p > 1 - exp(-2). As seen
+above, this error may be higher than desired. IEEE-754 provides no guarantee on
+the accuracy of expm1 however, therefore accuracy of ndtri_exp in this range
+is platform dependent.
 
 The case
 
--2 <= y <= log(1 - exp(-2)) ~ -0.1454
+    -2 <= y <= log(1 - exp(-2)) ~ -0.1454
 
-corresponds to ~ 0.135 <= p <= ~ 0.865
+corresponds to
 
-The derivative of ndtri is
-sqrt(2 * pi) * exp(ndtri(x)**2 / 2). It is ~4.597 at x ~ 0.135, decreases
-monotonically to \sqrt(2 * pi) ~ 2.507 at x = 0 and increases monotonically
-again to ~4.597 at x ~ 0.865.
+     ~ 0.135 <= p <= ~ 0.865
 
-It can be checked that all higher derivatives follow a similar pattern,
-their absolute value takes on a maximum (for this interval) at x ~ 0.135,
+The derivative of ndtri is sqrt(2 * pi) * exp(ndtri(x)**2 / 2).
+It is ~4.597 at x ~ 0.135, decreases monotonically to sqrt(2 * pi) ~ 2.507
+at x = 0 and increases monotonically again to ~4.597 at x ~ 0.865.
+
+It can be checked that all higher derivatives follow a similar pattern.
+Their absolute value takes on a maximum (for this interval) at x ~ 0.135,
 decrease to a minimum at x = 0 and increases to the same maximum at x ~ 0.865.
 Derivatives of all orders are positive at x=log(1 - exp(-2)). Thus the worst
-possible loss of precision in ndtri(exp(x)) in the interval
+possible loss of precision of ndtri(exp(x)) in the interval
 [0, log(1 - exp(-2))] due to error in calculating exp(x) must occur near
 x=log(1 - exp(-2)). By symmetry, the worst possible loss of precision in
 [-2, log(1 - exp(-2)] must occur near the endpoints. We may observe
 empirically that error at the endpoints due to exp is not substantial.
 Assuming that exp is accurate within +-ULP (unit of least precision),
-we've observed a value of at most ~6.0474e-16 for
+we observed a value of at most ~6.0474e-16 for
 
-abs(ndtri(x + epsilon) - ndtri(x))
+    abs(ndtri(x + epsilon) - ndtri(x))
 
-for x near exp(-2) or 1 - exp(-2) and epsilon equal to the unit of least
+if x is near exp(-2) or 1 - exp(-2) and epsilon is equal to the unit of least
 precision of x.
 
 (IEEE-754 provides no guarantee on the accuracy of exp, but for most
